@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import zipkin.internal.Nullable;
+import javax.annotation.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.guava.LazyGuavaStorageComponent;

@@ -29,11 +29,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.nio.ByteBuffer;
 import java.util.List;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.storage.guava.GuavaSpanConsumer;
 

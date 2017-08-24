@@ -15,6 +15,7 @@ package zipkin.storage.elasticsearch.http.internal;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import zipkin.storage.Callback;
 
 /** Callback that succeeds if at least one value does. The first error is logged. */
@@ -34,7 +35,7 @@ abstract class LenientDoubleCallback<V> implements Callback<V> {
 
   abstract V merge(V v1, V v2);
 
-  @Override synchronized final public void onSuccess(V value) {
+  @Override synchronized final public void onSuccess(@Nullable V value) {
     if (t != null) {
       delegate.onSuccess(value);
     } else if (!vSet) {

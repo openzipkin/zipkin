@@ -13,13 +13,13 @@
  */
 package zipkin.server;
 
+import javax.annotation.Nullable;
 import org.springframework.boot.actuate.endpoint.PublicMetrics;
 import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.boot.actuate.metrics.buffer.BufferMetricReader;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import zipkin.collector.CollectorMetrics;
-import zipkin.internal.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;

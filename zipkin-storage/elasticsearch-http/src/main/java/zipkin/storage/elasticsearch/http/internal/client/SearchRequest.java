@@ -20,7 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import zipkin.internal.Nullable;
+import javax.annotation.Nullable;
 
 public final class SearchRequest {
 
@@ -49,7 +49,7 @@ public final class SearchRequest {
   Object query;
   Map<String, Aggregation> aggs;
 
-  SearchRequest(List<String> indices, String type) {
+  SearchRequest(List<String> indices, @Nullable String type) {
     this.indices = indices;
     this.type = type;
   }

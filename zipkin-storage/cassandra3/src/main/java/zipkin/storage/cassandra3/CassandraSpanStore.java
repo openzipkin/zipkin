@@ -46,6 +46,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import javax.annotation.Nullable;
+import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
@@ -55,7 +57,6 @@ import zipkin.internal.CorrectForClockSkew;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.GroupByTraceId;
 import zipkin.internal.MergeById;
-import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
 import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
@@ -258,12 +259,13 @@ final class CassandraSpanStore implements GuavaSpanStore {
       // @xxx the sorting by timestamp desc is broken here^
     }
     return transform(traceIds, new AsyncFunction<Collection<TraceIdUDT>, List<List<Span>>>() {
-      @Override public ListenableFuture<List<List<Span>>> apply(Collection<TraceIdUDT> traceIds) {
+      @Override
+      public ListenableFuture<List<List<Span>>> apply(@Nullable Collection<TraceIdUDT> traceIds) {
         ImmutableSet<TraceIdUDT> set =
             ImmutableSet.copyOf(Iterators.limit(traceIds.iterator(), request.limit));
         return transform(getSpansByTraceIds(set, maxTraceCols),
             new Function<List<Span>, List<List<Span>>>() {
-              @Override public List<List<Span>> apply(List<Span> input) {
+              @Override public List<List<Span>> apply(@Nullable List<Span> input) {
                 return GroupByTraceId.apply(input, strictTraceId, true);
               }
             });
@@ -295,7 +297,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   enum AdjustTrace implements Function<Collection<Span>, List<Span>> {
     INSTANCE;
 
-    @Override public List<Span> apply(Collection<Span> input) {
+    @Override public List<Span> apply(@Nullable Collection<Span> input) {
       List<Span> result = CorrectForClockSkew.apply(MergeById.apply(input));
       return result.isEmpty() ? null : result;
     }
@@ -340,7 +342,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   enum ConvertDependenciesResponse implements Function<ResultSet, List<DependencyLink>> {
     INSTANCE;
 
-    @Override public List<DependencyLink> apply(ResultSet rs) {
+    @Override public List<DependencyLink> apply(@Nullable ResultSet rs) {
       ImmutableList.Builder<DependencyLink> unmerged = ImmutableList.builder();
       for (Row row : rs) {
         ByteBuffer encodedDayOfDependencies = row.getBytes("links");
@@ -464,7 +466,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private static <K, T> AsyncFunction<ResultSet, Map<K, T>> readResultsAsMap(final Map<K, T> results,
       Function<Row, Map.Entry<K, T>> rowMapper) {
     return new AsyncFunction<ResultSet, Map<K, T>>() {
-      @Override public ListenableFuture<Map<K, T>> apply(ResultSet rs) throws Exception {
+      @Override public ListenableFuture<Map<K, T>> apply(@Nullable ResultSet rs) throws Exception {
         // How far we can go without triggering the blocking fetch:
         int remainingInPage = rs.getAvailableWithoutFetching();
 
@@ -494,7 +496,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       final List<T> results, Function<Row, T> rowMapper) {
     return new AsyncFunction<ResultSet, List<T>>() {
       @Override
-      public ListenableFuture<List<T>> apply(ResultSet rs) throws Exception {
+      public ListenableFuture<List<T>> apply(@Nullable ResultSet rs) throws Exception {
 
         // How far we can go without triggering the blocking fetch:
         int remainingInPage = rs.getAvailableWithoutFetching();
@@ -526,7 +528,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
       Function<Row, T> rowMapper) {
     return new AsyncFunction<ResultSet, List<T>>() {
       @Override
-      public ListenableFuture<List<T>> apply(ResultSet rs) throws Exception {
+      public ListenableFuture<List<T>> apply(@Nullable ResultSet rs) throws Exception {
 
         // How far we can go without triggering the blocking fetch:
         int remainingInPage = rs.getAvailableWithoutFetching();

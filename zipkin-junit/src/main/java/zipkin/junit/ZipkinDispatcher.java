@@ -15,6 +15,7 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.util.List;
+import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -113,7 +114,7 @@ final class ZipkinDispatcher extends Dispatcher {
 
     final MockResponse result = new MockResponse();
     consumer.acceptSpans(body, decoder, new Callback<Void>() {
-      @Override public void onSuccess(Void value) {
+      @Override public void onSuccess(@Nullable Void value) {
         result.setResponseCode(202);
       }
 

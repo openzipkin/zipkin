@@ -18,9 +18,9 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Locale;
+import javax.annotation.Nullable;
 import zipkin.internal.InetAddresses;
 import zipkin.internal.JsonCodec;
-import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;
@@ -99,7 +99,7 @@ public final class Endpoint implements Serializable { // for Spark jobs
   @Nullable
   public final Short port;
 
-  Endpoint(String serviceName, int ipv4, byte[] ipv6, Short port) {
+  Endpoint(String serviceName, int ipv4, @Nullable byte[] ipv6, @Nullable Short port) {
     this.serviceName = checkNotNull(serviceName, "serviceName").isEmpty() ? ""
         : serviceName.toLowerCase(Locale.ROOT);
     this.ipv4 = ipv4;

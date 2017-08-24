@@ -21,6 +21,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.Span.Kind;
@@ -66,7 +67,7 @@ public final class DependencyLinker {
   static final Node.MergeFunction<Span> MERGE_RPC = new MergeRpc();
 
   static final class MergeRpc implements Node.MergeFunction<Span> {
-    @Override public Span merge(Span left, Span right) {
+    @Override public Span merge(@Nullable Span left, @Nullable Span right) {
       if (left == null) return right;
       if (right == null) return left;
       if (left.kind() == null) {

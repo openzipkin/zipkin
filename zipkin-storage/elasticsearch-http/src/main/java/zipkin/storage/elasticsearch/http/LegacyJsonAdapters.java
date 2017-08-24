@@ -18,6 +18,7 @@ import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
 import zipkin.BinaryAnnotation;
@@ -30,7 +31,7 @@ import static zipkin.storage.elasticsearch.http.JsonAdapters.ENDPOINT_ADAPTER;
 
 final class LegacyJsonAdapters {
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
-    @Override
+    @Override @Nullable
     public Span fromJson(JsonReader reader) throws IOException {
       Span.Builder result = Span.builder();
       reader.beginObject();
@@ -89,13 +90,13 @@ final class LegacyJsonAdapters {
     }
 
     @Override
-    public void toJson(JsonWriter writer, Span value) throws IOException {
+    public void toJson(JsonWriter writer, @Nullable Span value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };
 
   static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
-    @Override
+    @Override @Nullable
     public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
       BinaryAnnotation.Builder result = BinaryAnnotation.builder();
       String number = null;
@@ -171,7 +172,7 @@ final class LegacyJsonAdapters {
     }
 
     @Override
-    public void toJson(JsonWriter writer, BinaryAnnotation value) throws IOException {
+    public void toJson(JsonWriter writer, @Nullable BinaryAnnotation value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };
