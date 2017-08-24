@@ -15,7 +15,9 @@ package zipkin.internal;
 
 import java.util.ArrayList;
 import java.util.List;
+import javax.annotation.Nullable;
 import zipkin.internal.v2.Span;
+import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
@@ -25,12 +27,12 @@ public abstract class V2StorageComponent implements StorageComponent {
     return new V2AsyncSpanConsumerAdapter(v2AsyncSpanConsumer());
   }
 
-  protected abstract zipkin.internal.v2.storage.AsyncSpanConsumer v2AsyncSpanConsumer();
+  protected abstract SpanConsumer v2AsyncSpanConsumer();
 
   static class V2AsyncSpanConsumerAdapter implements AsyncSpanConsumer {
-    final zipkin.internal.v2.storage.AsyncSpanConsumer delegate;
+    final SpanConsumer delegate;
 
-    V2AsyncSpanConsumerAdapter(zipkin.internal.v2.storage.AsyncSpanConsumer delegate) {
+    V2AsyncSpanConsumerAdapter(SpanConsumer delegate) {
       this.delegate = delegate;
     }
 
@@ -40,7 +42,7 @@ public abstract class V2StorageComponent implements StorageComponent {
       for (int i = 0; i < length; i++) {
         linkSpans.addAll(V2SpanConverter.fromSpan(spans.get(i)));
       }
-      delegate.accept(linkSpans, callback);
+      delegate.accept(linkSpans).enqueue(new V2CallbackAdapter(callback));
     }
   }
 }

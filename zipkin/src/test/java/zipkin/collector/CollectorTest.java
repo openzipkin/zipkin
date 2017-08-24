@@ -24,8 +24,7 @@ import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
 import zipkin.internal.v2.codec.MessageEncoder;
-import zipkin.internal.v2.storage.AsyncSpanConsumer;
-import zipkin.storage.Callback;
+import zipkin.internal.v2.storage.SpanConsumer;
 
 import static java.util.Arrays.asList;
 import static org.mockito.ArgumentMatchers.any;
@@ -99,10 +98,10 @@ public class CollectorTest {
    */
   @Test public void routesToSpan2Collector() {
     abstract class WithSpan2 extends V2StorageComponent implements zipkin.storage.StorageComponent {
-      @Override public abstract zipkin.internal.v2.storage.AsyncSpanConsumer v2AsyncSpanConsumer();
+      @Override public abstract SpanConsumer v2AsyncSpanConsumer();
     }
     WithSpan2 storage = mock(WithSpan2.class);
-    AsyncSpanConsumer span2Consumer = mock(AsyncSpanConsumer.class);
+    SpanConsumer span2Consumer = mock(SpanConsumer.class);
     when(storage.v2AsyncSpanConsumer()).thenReturn(span2Consumer);
 
     collector = spy(Collector.builder(Collector.class)
@@ -112,6 +111,6 @@ public class CollectorTest {
     collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
 
     verify(collector, never()).isSampled(any(zipkin.Span.class)); // skips v1 processing
-    verify(span2Consumer).accept(eq(asList(span2_1)), any(Callback.class)); // goes to v2 instead
+    verify(span2Consumer).accept(eq(asList(span2_1))); // goes to v2 instead
   }
 }

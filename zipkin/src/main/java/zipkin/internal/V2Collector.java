@@ -49,7 +49,7 @@ public final class V2Collector extends Collector<Decoder<Span>, Span> {
   }
 
   @Override protected void record(List<Span> sampled, Callback<Void> callback) {
-    storage.v2AsyncSpanConsumer().accept(sampled, callback);
+    storage.v2AsyncSpanConsumer().accept(sampled).enqueue(new V2CallbackAdapter(callback));
   }
 
   @Override protected String idString(Span span) {

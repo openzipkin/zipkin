@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import zipkin.Codec;
 import zipkin.DependencyLink;
@@ -32,9 +33,11 @@ public class InternalForTests {
       byte[] document = Codec.JSON.writeDependencyLink(link);
       indexer.add(index, DEPENDENCY, document, link.parent + "|" + link.child); // Unique constraint
     }
-    CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    indexer.execute(callback);
-    callback.get();
+    try {
+      indexer.newCall().execute();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   public static void clear(ElasticsearchHttpStorage es) throws IOException {

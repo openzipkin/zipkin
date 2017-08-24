@@ -11,14 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal.v2.storage;
+package zipkin.internal;
 
-import java.util.List;
-import zipkin.internal.v2.Span;
+import javax.annotation.Nullable;
 import zipkin.storage.Callback;
 
-// @FunctionalInterface
-public interface AsyncSpanConsumer {
+final class V2CallbackAdapter implements zipkin.internal.v2.Callback<Void> {
+  private final Callback<Void> callback;
 
-  void accept(List<Span> spans, Callback<Void> callback);
+  V2CallbackAdapter(Callback<Void> callback) {
+    this.callback = callback;
+  }
+
+  @Override public void onSuccess(@Nullable Void value) {
+    callback.onSuccess(value);
+  }
+
+  @Override public void onError(Throwable t) {
+    callback.onError(t);
+  }
 }

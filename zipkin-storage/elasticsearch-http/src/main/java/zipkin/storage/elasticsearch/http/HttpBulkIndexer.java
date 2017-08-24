@@ -69,7 +69,7 @@ final class HttpBulkIndexer {
   }
 
   /** Creates a bulk request when there is more than one object to store */
-  void execute(Callback<Void> callback) {
+  HttpCall<Void> newCall(){
     HttpUrl url = pipeline != null
         ? http.baseUrl.newBuilder("_bulk").addQueryParameter("pipeline", pipeline).build()
         : http.baseUrl.resolve("_bulk");
@@ -77,7 +77,7 @@ final class HttpBulkIndexer {
     Request request = new Request.Builder().url(url).tag(tag)
         .post(RequestBody.create(APPLICATION_JSON, body.readByteString())).build();
 
-    http.<Void>newCall(request, b -> {
+    return http.newCall(request, b -> {
       String content = b.readUtf8();
       if (content.indexOf("\"errors\":true") != -1) {
         throw new IllegalStateException(content);
@@ -85,7 +85,7 @@ final class HttpBulkIndexer {
       if (indices.isEmpty()) return null;
       ElasticsearchHttpStorage.flush(http, join(indices));
       return null;
-    }).submit(callback);
+    });
   }
 
   static String join(Collection<String> parts) {
