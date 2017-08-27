@@ -29,12 +29,11 @@ import zipkin.storage.QueryRequest;
  * This makes redundant read commands, concatenating results if two answers come back, or accepting
  * one if there's an error on the other.
  */
-// TODO: temporarily public until elasticsearch-http transitions to V2 SpanStore
-public final class LenientDoubleCallbackAsyncSpanStore implements AsyncSpanStore {
+final class LenientDoubleCallbackAsyncSpanStore implements AsyncSpanStore {
   final AsyncSpanStore left;
   final AsyncSpanStore right;
 
-  public LenientDoubleCallbackAsyncSpanStore(AsyncSpanStore left, AsyncSpanStore right) {
+  LenientDoubleCallbackAsyncSpanStore(AsyncSpanStore left, AsyncSpanStore right) {
     this.left = left;
     this.right = right;
   }

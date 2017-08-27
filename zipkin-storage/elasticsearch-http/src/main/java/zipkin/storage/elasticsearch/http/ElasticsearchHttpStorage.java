@@ -28,12 +28,10 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
-import zipkin.internal.LenientDoubleCallbackAsyncSpanStore;
 import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.storage.SpanConsumer;
+import zipkin.internal.v2.storage.SpanStore;
 import zipkin.storage.AsyncSpanStore;
-import zipkin.storage.SpanStore;
-import zipkin.storage.StorageAdapters;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
 import static zipkin.internal.Util.checkNotNull;
@@ -42,11 +40,10 @@ import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPEN
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
 @AutoValue
-public abstract class ElasticsearchHttpStorage extends V2StorageComponent
-  implements zipkin.storage.StorageComponent {
+public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
   /**
-   * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port
-   * format. Note this value is only read once.
+   * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
+   * Note this value is only read once.
    */
   public interface HostsSupplier {
     List<String> get();
@@ -56,18 +53,18 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
 
   public static Builder builder(OkHttpClient client) {
     return new $AutoValue_ElasticsearchHttpStorage.Builder()
-        .client(client)
-        .hosts(Collections.singletonList("http://localhost:9200"))
-        .maxRequests(64)
-        .strictTraceId(true)
-        .index("zipkin")
-        .dateSeparator('-')
-        .indexShards(5)
-        .indexReplicas(1)
-        .namesLookback(86400000)
-        .shutdownClientOnClose(false)
-        .flushOnWrites(false)
-        .legacyReadsEnabled(true);
+      .client(client)
+      .hosts(Collections.singletonList("http://localhost:9200"))
+      .maxRequests(64)
+      .strictTraceId(true)
+      .index("zipkin")
+      .dateSeparator('-')
+      .indexShards(5)
+      .indexReplicas(1)
+      .namesLookback(86400000)
+      .shutdownClientOnClose(false)
+      .flushOnWrites(false)
+      .legacyReadsEnabled(true);
   }
 
   public static Builder builder() {
@@ -83,8 +80,8 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
     abstract Builder shutdownClientOnClose(boolean shutdownClientOnClose);
 
     /**
-     * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port
-     * format. Defaults to "http://localhost:9200".
+     * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
+     * Defaults to "http://localhost:9200".
      */
     public final Builder hosts(final List<String> hosts) {
       checkNotNull(hosts, "hosts");
@@ -205,24 +202,17 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
 
   abstract boolean legacyReadsEnabled();
 
-  @Override public zipkin.internal.v2.storage.SpanStore v2SpanStore() {
-    throw new UnsupportedOperationException("TODO");
+  @Override public SpanStore v2SpanStore() {
+    ensureIndexTemplates();
+    return new ElasticsearchHttpSpanStore(this);
   }
 
-  @Override public SpanStore spanStore() {
-    return StorageAdapters.asyncToBlocking(asyncSpanStore());
-  }
-
-  @Override public AsyncSpanStore asyncSpanStore() {
+  @Override @Nullable protected AsyncSpanStore legacyAsyncSpanStore() {
     float version = ensureIndexTemplates().version();
     if (version >= 6 /* multi-type (legacy) index isn't possible */ || !legacyReadsEnabled()) {
-      return new ElasticsearchHttpSpanStore(this);
-    } else { // fan out queries as we don't know if old legacy collectors are in use
-      return new LenientDoubleCallbackAsyncSpanStore(
-        new ElasticsearchHttpSpanStore(this),
-        new LegacyElasticsearchHttpSpanStore(this)
-      );
+      return null;
     }
+    return new LegacyElasticsearchHttpSpanStore(this);
   }
 
   @Override public SpanConsumer v2SpanConsumer() {
@@ -240,8 +230,8 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
 
   void clear(String index) throws IOException {
     Request deleteRequest = new Request.Builder()
-        .url(http().baseUrl.newBuilder().addPathSegment(index).build())
-        .delete().tag("delete-index").build();
+      .url(http().baseUrl.newBuilder().addPathSegment(index).build())
+      .delete().tag("delete-index").build();
 
     http().execute(deleteRequest, b -> null);
 
@@ -251,9 +241,9 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
   /** This is a blocking call, only used in tests. */
   static void flush(HttpCall.Factory factory, String index) throws IOException {
     Request flushRequest = new Request.Builder()
-        .url(factory.baseUrl.newBuilder().addPathSegment(index).addPathSegment("_flush").build())
-        .post(RequestBody.create(APPLICATION_JSON, ""))
-        .tag("flush-index").build();
+      .url(factory.baseUrl.newBuilder().addPathSegment(index).addPathSegment("_flush").build())
+      .post(RequestBody.create(APPLICATION_JSON, ""))
+      .tag("flush-index").build();
 
     factory.execute(flushRequest, b -> null);
   }
@@ -265,7 +255,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
 
   CheckResult ensureClusterReady(String index) {
     Request request = new Request.Builder().url(http().baseUrl.resolve("/_cluster/health/" + index))
-        .tag("get-cluster-health").build();
+      .tag("get-cluster-health").build();
 
     try {
       return http().execute(request, b -> {
@@ -300,10 +290,10 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
     OkHttpClient ok = hosts.size() == 1
-        ? client()
-        : client().newBuilder()
-            .dns(PseudoAddressRecordSet.create(hosts, client().dns()))
-            .build();
+      ? client()
+      : client().newBuilder()
+        .dns(PseudoAddressRecordSet.create(hosts, client().dns()))
+        .build();
     ok.dispatcher().setMaxRequests(maxRequests());
     ok.dispatcher().setMaxRequestsPerHost(maxRequests());
     return new HttpCall.Factory(ok, HttpUrl.parse(hosts.get(0)));

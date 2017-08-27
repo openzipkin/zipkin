@@ -23,7 +23,6 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import zipkin.Component;
-import zipkin.internal.LenientDoubleCallbackAsyncSpanStore;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -80,8 +79,8 @@ public class ElasticsearchHttpStorageTest {
     es.enqueue(new MockResponse()); // get dependency template
 
     // check this isn't the double reading span store
-    assertThat(storage.asyncSpanStore())
-      .isInstanceOf(ElasticsearchHttpSpanStore.class);
+    assertThat(storage.asyncSpanStore().getClass().getSimpleName())
+      .isEqualTo("V2SpanStoreAdapter");
 
     es.takeRequest(); // get version
     es.takeRequest(); // get span template
@@ -99,8 +98,8 @@ public class ElasticsearchHttpStorageTest {
     es.enqueue(new MockResponse()); // get dependency template
 
     // check that we do double-reads on the legacy and new format
-    assertThat(storage.asyncSpanStore())
-      .isInstanceOf(LenientDoubleCallbackAsyncSpanStore.class);
+    assertThat(storage.asyncSpanStore().getClass().getSimpleName())
+      .isEqualTo("LenientDoubleCallbackAsyncSpanStore");
 
     es.takeRequest(); // get version
     es.takeRequest(); // get span template
@@ -119,8 +118,8 @@ public class ElasticsearchHttpStorageTest {
     es.enqueue(new MockResponse()); // get dependency template
 
     // check this isn't the double reading span store
-    assertThat(storage.asyncSpanStore())
-      .isInstanceOf(ElasticsearchHttpSpanStore.class);
+    assertThat(storage.asyncSpanStore().getClass().getSimpleName())
+      .isEqualTo("V2SpanStoreAdapter");
 
     es.takeRequest(); // get version
     es.takeRequest(); // get span template
