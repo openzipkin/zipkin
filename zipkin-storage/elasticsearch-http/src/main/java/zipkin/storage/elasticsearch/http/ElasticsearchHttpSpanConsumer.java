@@ -24,15 +24,15 @@ import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
 import zipkin.Annotation;
+import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
-import zipkin.internal.v2.storage.AsyncSpanConsumer;
-import zipkin.storage.Callback;
+import zipkin.internal.v2.storage.SpanConsumer;
+import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
-import static zipkin.internal.Util.propagateIfFatal;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
-class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final for testing
+class ElasticsearchHttpSpanConsumer implements SpanConsumer { // not final for testing
   static final Logger LOG = Logger.getLogger(ElasticsearchHttpSpanConsumer.class.getName());
 
   final ElasticsearchHttpStorage es;
@@ -43,22 +43,14 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     this.indexNameFormatter = es.indexNameFormatter();
   }
 
-  @Override public void accept(List<Span> spans, Callback<Void> callback) {
-    if (spans.isEmpty()) {
-      callback.onSuccess(null);
-      return;
-    }
-    try {
-      BulkSpanIndexer indexer = new BulkSpanIndexer(es);
-      indexSpans(indexer, spans);
-      indexer.execute(callback);
-    } catch (Throwable t) {
-      propagateIfFatal(t);
-      callback.onError(t);
-    }
+  @Override public Call<Void> accept(List<Span> spans) {
+    if (spans.isEmpty()) return Call.create(null);
+    BulkSpanIndexer indexer = new BulkSpanIndexer(es);
+    indexSpans(indexer, spans);
+    return indexer.newCall();
   }
 
-  void indexSpans(BulkSpanIndexer indexer, List<Span> spans) throws IOException {
+  void indexSpans(BulkSpanIndexer indexer, List<Span> spans) {
     for (Span span : spans) {
       Long spanTimestamp = span.timestamp();
       long indexTimestamp = 0L; // which index to store this span into
@@ -77,7 +69,7 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
     }
   }
 
-  static class BulkSpanIndexer {
+  static final class BulkSpanIndexer {
     final HttpBulkIndexer indexer;
     final IndexNameFormatter indexNameFormatter;
 
@@ -92,8 +84,8 @@ class ElasticsearchHttpSpanConsumer implements AsyncSpanConsumer { // not final 
       indexer.add(index, SPAN, document, null /* Allow ES to choose an ID */);
     }
 
-    void execute(Callback<Void> callback) throws IOException {
-      indexer.execute(callback);
+    HttpCall<Void> newCall() {
+      return indexer.newCall();
     }
   }
 

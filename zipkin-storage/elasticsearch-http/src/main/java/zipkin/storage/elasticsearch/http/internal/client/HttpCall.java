@@ -15,7 +15,6 @@ package zipkin.storage.elasticsearch.http.internal.client;
 
 import java.io.Closeable;
 import java.io.IOException;
-import okhttp3.Call;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -26,11 +25,12 @@ import okio.BufferedSource;
 import okio.GzipSource;
 import okio.Okio;
 import zipkin.internal.CallbackCaptor;
-import zipkin.storage.Callback;
+import zipkin.internal.v2.Call;
+import zipkin.internal.v2.Callback;
 
 import static zipkin.internal.Util.propagateIfFatal;
 
-public final class HttpCall<V> {
+public final class HttpCall<V> extends Call<V> {
 
   public interface BodyConverter<V> {
     V convert(BufferedSource content) throws IOException;
@@ -46,7 +46,7 @@ public final class HttpCall<V> {
     }
 
     public <V> HttpCall<V> newCall(Request request, BodyConverter<V> bodyConverter) {
-      return new HttpCall(this, request, bodyConverter);
+      return new HttpCall<>(this, request, bodyConverter);
     }
 
     public <V> V execute(Request request, BodyConverter<V> bodyConverter) {
@@ -60,57 +60,108 @@ public final class HttpCall<V> {
     }
   }
 
-  final Call.Factory ok;
-  final Request request;
+  final okhttp3.Call call;
   final BodyConverter<V> bodyConverter;
 
   HttpCall(Factory factory, Request request, BodyConverter<V> bodyConverter) {
-    this.ok = factory.ok;
-    this.request = request;
+    this(factory.ok.newCall(request), bodyConverter);
+  }
+
+  HttpCall(okhttp3.Call call, BodyConverter<V> bodyConverter) {
+    this.call = call;
     this.bodyConverter = bodyConverter;
   }
 
-  public void submit(Callback<V> delegate) {
-    ok.newCall(request).enqueue(new CallbackAdapter<>(bodyConverter, delegate));
+  @Override public V execute() throws IOException {
+    return parseResponse(call.execute(), bodyConverter);
   }
 
-  static class CallbackAdapter<V> implements okhttp3.Callback {
+  @Override public void enqueue(Callback<V> delegate) {
+    call.enqueue(new V2CallbackAdapter<>(bodyConverter, delegate));
+  }
+
+  public void submit(zipkin.storage.Callback<V> delegate) {
+    call.enqueue(new CallbackAdapter<>(bodyConverter, delegate));
+  }
+
+  @Override public void cancel() {
+    call.cancel();
+  }
+
+  @Override public boolean isCanceled() {
+    return call.isCanceled();
+  }
+
+  @Override public HttpCall<V> clone() {
+    return new HttpCall<V>(call.clone(), bodyConverter);
+  }
+
+  static class V2CallbackAdapter<V> implements okhttp3.Callback {
     final BodyConverter<V> bodyConverter;
     final Callback<V> delegate;
 
-    CallbackAdapter(BodyConverter<V> bodyConverter, Callback<V> delegate) {
+    V2CallbackAdapter(BodyConverter<V> bodyConverter, Callback<V> delegate) {
       this.bodyConverter = bodyConverter;
       this.delegate = delegate;
     }
 
-    @Override public void onFailure(Call call, IOException e) {
+    @Override public void onFailure(okhttp3.Call call, IOException e) {
       delegate.onError(e);
     }
 
     /** Note: this runs on the {@link okhttp3.OkHttpClient#dispatcher() dispatcher} thread! */
-    @Override public void onResponse(Call call, Response response) {
-      if (!HttpHeaders.hasBody(response)) {
-        if (response.isSuccessful()) {
-          delegate.onSuccess(null);
-        } else {
-          delegate.onError(new IllegalStateException("response failed: " + response));
-        }
-        return;
+    @Override public void onResponse(okhttp3.Call call, Response response) {
+      try {
+        delegate.onSuccess(parseResponse(response, bodyConverter));
+      } catch (Throwable e) {
+        propagateIfFatal(e);
+        delegate.onError(e);
       }
-      try (ResponseBody responseBody = response.body()) {
-        BufferedSource content = responseBody.source();
-        if ("gzip".equalsIgnoreCase(response.header("Content-Encoding"))) {
-          content = Okio.buffer(new GzipSource(responseBody.source()));
-        }
-        if (response.isSuccessful()) {
-          delegate.onSuccess(bodyConverter.convert(content));
-        } else {
-          delegate.onError(new IllegalStateException(
-            "response for " + response.request().tag() + " failed: " + content.readUtf8()));
-        }
-      } catch (Throwable t) {
-        propagateIfFatal(t);
-        delegate.onError(t);
+    }
+  }
+
+  static class CallbackAdapter<V> implements okhttp3.Callback {
+    final HttpCall.BodyConverter<V> bodyConverter;
+    final zipkin.storage.Callback<V> delegate;
+
+    CallbackAdapter(HttpCall.BodyConverter<V> bodyConverter, zipkin.storage.Callback<V> delegate) {
+      this.bodyConverter = bodyConverter;
+      this.delegate = delegate;
+    }
+
+    @Override public void onFailure(okhttp3.Call call, IOException e) {
+      delegate.onError(e);
+    }
+
+    /** Note: this runs on the {@link okhttp3.OkHttpClient#dispatcher() dispatcher} thread! */
+    @Override public void onResponse(okhttp3.Call call, Response response) {
+      try {
+        delegate.onSuccess(parseResponse(response, bodyConverter));
+      } catch (Throwable e) {
+        propagateIfFatal(e);
+        delegate.onError(e);
+      }
+    }
+  }
+
+  static <V> V parseResponse(Response response, BodyConverter<V> bodyConverter) throws IOException {
+    if (!HttpHeaders.hasBody(response)) {
+      if (response.isSuccessful()) {
+        return null;
+      } else {
+        throw new IllegalStateException("response failed: " + response);
+      }
+    }
+    try (ResponseBody responseBody = response.body()) {
+      BufferedSource content = responseBody.source();
+      if ("gzip".equalsIgnoreCase(response.header("Content-Encoding"))) {
+        content = Okio.buffer(new GzipSource(responseBody.source()));
+      }
+      if (response.isSuccessful()) {
+        return bodyConverter.convert(content);
+      } else {
+        throw new IllegalStateException(
+          "response for " + response.request().tag() + " failed: " + content.readUtf8());
       }
     }
   }

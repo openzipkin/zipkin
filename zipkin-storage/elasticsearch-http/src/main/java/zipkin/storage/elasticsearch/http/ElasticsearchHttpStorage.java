@@ -29,6 +29,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 import zipkin.internal.V2StorageComponent;
+import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageAdapters;
@@ -220,7 +221,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
     }
   }
 
-  @Override protected zipkin.internal.v2.storage.AsyncSpanConsumer v2AsyncSpanConsumer() {
+  @Override protected SpanConsumer v2AsyncSpanConsumer() {
     ensureIndexTemplates();
     return new ElasticsearchHttpSpanConsumer(this);
   }

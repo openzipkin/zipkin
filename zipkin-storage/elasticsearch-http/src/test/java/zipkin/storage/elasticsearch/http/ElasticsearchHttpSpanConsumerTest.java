@@ -23,7 +23,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import zipkin.TestObjects;
-import zipkin.internal.CallbackCaptor;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.Span.Kind;
 import zipkin.internal.v2.codec.Decoder;
@@ -213,8 +212,6 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   void accept(Span... spans) throws Exception {
-    CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    storage.v2AsyncSpanConsumer().accept(asList(spans), callback);
-    callback.get();
+    storage.v2AsyncSpanConsumer().accept(asList(spans)).execute();
   }
 }
