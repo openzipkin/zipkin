@@ -111,6 +111,7 @@ public abstract class Call<V> implements Cloneable {
         if (executed) throw new IllegalStateException("Already Executed");
         executed = true;
       }
+      if (canceled) throw new IOException("Canceled");
       return v;
     }
 
@@ -119,7 +120,11 @@ public abstract class Call<V> implements Cloneable {
         if (executed) throw new IllegalStateException("Already Executed");
         executed = true;
       }
-      callback.onSuccess(v);
+      if (canceled) {
+        callback.onError(new IOException("Canceled"));
+      } else {
+        callback.onSuccess(v);
+      }
     }
 
     @Override public void cancel() {
