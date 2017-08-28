@@ -28,7 +28,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.verify;
@@ -83,36 +83,22 @@ public class CallTest {
     Call<Void> call = Call.create(null);
     call.execute();
 
-    try {
-      call.execute();
-      failBecauseExceptionWasNotThrown(IllegalStateException.class);
-    } catch (IllegalStateException e) {
+    assertThatThrownBy(() -> call.execute())
+      .isInstanceOf(IllegalStateException.class);
 
-    }
-
-    try {
-      call.enqueue(callback);
-      failBecauseExceptionWasNotThrown(IllegalStateException.class);
-    } catch (IllegalStateException e) {
-
-    }
+    assertThatThrownBy(() -> call.enqueue(callback))
+      .isInstanceOf(IllegalStateException.class);
   }
 
   @Test public void enqueuesOnce() throws Exception {
     Call<Void> call = Call.create(null);
     call.enqueue(callback);
 
-    try {
-      call.enqueue(callback);
-      failBecauseExceptionWasNotThrown(IllegalStateException.class);
-    } catch (IllegalStateException e) {
-    }
+    assertThatThrownBy(() -> call.enqueue(callback))
+      .isInstanceOf(IllegalStateException.class);
 
-    try {
-      call.execute();
-      failBecauseExceptionWasNotThrown(IllegalStateException.class);
-    } catch (IllegalStateException e) {
-    }
+    assertThatThrownBy(() -> call.execute())
+      .isInstanceOf(IllegalStateException.class);
   }
 
   @Test(timeout = 1000L)
@@ -129,7 +115,6 @@ public class CallTest {
       }
 
       @Override public void onError(Throwable t) {
-
       }
     };
 
@@ -150,5 +135,120 @@ public class CallTest {
     exec.awaitTermination(1, TimeUnit.SECONDS);
 
     assertThat(executeOrSubmit.get()).isEqualTo(1);
+  }
+
+  @Test public void emptyList() throws Exception {
+    Call<List<String>> call = Call.emptyList();
+
+    assertThat(call.execute()).isEmpty();
+  }
+
+  @Test public void emptyList_independentInstances() throws Exception {
+    assertThat(Call.emptyList())
+      .isNotSameAs(Call.emptyList());
+  }
+
+  @Test public void map_execute() throws Exception {
+    Call<String> fooCall = Call.create("foo");
+    Call<String> fooBarCall = fooCall.map(foo -> {
+      assertThat(foo).isEqualTo("foo");
+      return "bar";
+    });
+
+    assertThat(fooBarCall.execute())
+      .isEqualTo("bar");
+  }
+
+  @Test public void map_enqueue() throws Exception {
+    Call<String> fooCall = Call.create("foo");
+    Call<String> fooBarCall = fooCall.map(foo -> "bar");
+
+    fooBarCall.enqueue(callback);
+
+    verify(callback).onSuccess("bar");
+  }
+
+  @Test public void map_enqueue_mappingException() throws Exception {
+    IllegalArgumentException error = new IllegalArgumentException();
+    Call<String> fooCall = Call.create("foo");
+    Call<String> fooBarCall = fooCall.map(foo -> {
+      throw error;
+    });
+
+    fooBarCall.enqueue(callback);
+
+    verify(callback).onError(error);
+  }
+
+  @Test public void flatMap_execute() throws Exception {
+    Call<String> fooCall = Call.create("foo");
+    Call<String> barCall = Call.create("bar");
+    Call<String> fooBarCall = fooCall.flatMap(foo -> {
+      assertThat(foo).isEqualTo("foo");
+      return barCall;
+    });
+
+    assertThat(fooBarCall.execute())
+      .isEqualTo("bar");
+  }
+
+  @Test public void flatMap_enqueue() throws Exception {
+    Call<String> fooCall = Call.create("foo");
+    Call<String> barCall = Call.create("bar");
+    Call<String> fooBarCall = fooCall.flatMap(foo -> barCall);
+
+    fooBarCall.enqueue(callback);
+
+    verify(callback).onSuccess("bar");
+  }
+
+  @Test public void flatMap_enqueue_mappingException() throws Exception {
+    IllegalArgumentException error = new IllegalArgumentException();
+    Call<String> fooCall = Call.create("foo");
+    Call<String> fooBarCall = fooCall.flatMap(foo -> {
+      assertThat(foo).isEqualTo("foo");
+      throw error;
+    });
+
+    fooBarCall.enqueue(callback);
+
+    verify(callback).onError(error);
+  }
+
+  @Test public void flatMap_enqueue_callException() throws Exception {
+    IllegalArgumentException error = new IllegalArgumentException();
+    Call<String> fooCall = Call.create("foo");
+    Call<String> exceptionCall = new Call.Base<String>() {
+      @Override String doExecute() throws IOException {
+        throw new AssertionError();
+      }
+
+      @Override void doEnqueue(Callback<String> callback) {
+        callback.onError(error);
+      }
+
+      @Override public Call<String> clone() {
+        throw new AssertionError();
+      }
+    };
+
+    Call<String> fooBarCall = fooCall.flatMap(foo -> exceptionCall);
+
+    fooBarCall.enqueue(callback);
+
+    verify(callback).onError(error);
+  }
+
+  @Test public void flatMap_cancelPropagates() throws Exception {
+    Call<String> fooCall = Call.create("foo");
+    Call<String> barCall = Call.create("bar");
+    Call<String> fooBarCall = fooCall.flatMap(foo -> barCall);
+
+    fooBarCall.execute(); // to instantiate the chain.
+    fooBarCall.cancel();
+
+    assertThat(fooBarCall.isCanceled()).isTrue();
+    assertThat(fooCall.isCanceled()).isTrue();
+    assertThat(barCall.isCanceled()).isTrue();
   }
 }
