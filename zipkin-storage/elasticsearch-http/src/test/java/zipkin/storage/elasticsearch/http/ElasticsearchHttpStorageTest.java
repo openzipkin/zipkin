@@ -23,7 +23,7 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import zipkin.Component;
-import zipkin.storage.elasticsearch.http.internal.LenientDoubleCallbackAsyncSpanStore;
+import zipkin.internal.LenientDoubleCallbackAsyncSpanStore;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

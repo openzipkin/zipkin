@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch.http.internal;
+package zipkin.internal;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +33,7 @@ abstract class LenientDoubleCallback<V> implements Callback<V> {
     this.delegate = delegate;
   }
 
-  abstract V merge(V v1, V v2);
+  abstract @Nullable V merge(@Nullable V v1, @Nullable V v2);
 
   @Override synchronized final public void onSuccess(@Nullable V value) {
     if (t != null) {

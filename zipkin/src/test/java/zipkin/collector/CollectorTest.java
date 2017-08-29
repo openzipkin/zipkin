@@ -98,11 +98,11 @@ public class CollectorTest {
    */
   @Test public void routesToSpan2Collector() {
     abstract class WithSpan2 extends V2StorageComponent implements zipkin.storage.StorageComponent {
-      @Override public abstract SpanConsumer v2AsyncSpanConsumer();
+      @Override public abstract SpanConsumer v2SpanConsumer();
     }
     WithSpan2 storage = mock(WithSpan2.class);
     SpanConsumer span2Consumer = mock(SpanConsumer.class);
-    when(storage.v2AsyncSpanConsumer()).thenReturn(span2Consumer);
+    when(storage.v2SpanConsumer()).thenReturn(span2Consumer);
 
     collector = spy(Collector.builder(Collector.class)
       .storage(storage).build());

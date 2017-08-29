@@ -212,6 +212,6 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   void accept(Span... spans) throws Exception {
-    storage.v2AsyncSpanConsumer().accept(asList(spans)).execute();
+    storage.v2SpanConsumer().accept(asList(spans)).execute();
   }
 }

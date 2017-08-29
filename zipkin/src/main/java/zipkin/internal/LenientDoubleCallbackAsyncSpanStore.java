@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch.http.internal;
+package zipkin.internal;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -21,8 +21,6 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
-import zipkin.internal.DependencyLinker;
-import zipkin.internal.MergeById;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
@@ -31,6 +29,7 @@ import zipkin.storage.QueryRequest;
  * This makes redundant read commands, concatenating results if two answers come back, or accepting
  * one if there's an error on the other.
  */
+// TODO: temporarily public until elasticsearch-http transitions to V2 SpanStore
 public final class LenientDoubleCallbackAsyncSpanStore implements AsyncSpanStore {
   final AsyncSpanStore left;
   final AsyncSpanStore right;

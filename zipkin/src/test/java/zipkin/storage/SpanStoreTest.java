@@ -32,7 +32,6 @@ import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.CallbackCaptor;
-import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -73,21 +72,17 @@ public abstract class SpanStoreTest {
   @Before
   public abstract void clear() throws IOException;
 
-  /** Notably, the cassandra implementation has day granularity */
-  // Use real time, as most span-stores have TTL logic which looks back several days.
-  long today = Util.midnightUTC(System.currentTimeMillis());
-
   Endpoint ep = Endpoint.create("service", 127 << 24 | 1);
 
   long spanId = 456;
-  Annotation ann1 = Annotation.create((today + 1) * 1000, "cs", ep);
-  Annotation ann2 = Annotation.create((today + 2) * 1000, "sr", ep);
-  Annotation ann3 = Annotation.create((today + 10) * 1000, "custom", ep);
-  Annotation ann4 = Annotation.create((today + 20) * 1000, "custom", ep);
-  Annotation ann5 = Annotation.create((today + 5) * 1000, "custom", ep);
-  Annotation ann6 = Annotation.create((today + 6) * 1000, "custom", ep);
-  Annotation ann7 = Annotation.create((today + 7) * 1000, "custom", ep);
-  Annotation ann8 = Annotation.create((today + 8) * 1000, "custom", ep);
+  Annotation ann1 = Annotation.create((TODAY + 1) * 1000, "cs", ep);
+  Annotation ann2 = Annotation.create((TODAY + 2) * 1000, "sr", ep);
+  Annotation ann3 = Annotation.create((TODAY + 10) * 1000, "custom", ep);
+  Annotation ann4 = Annotation.create((TODAY + 20) * 1000, "custom", ep);
+  Annotation ann5 = Annotation.create((TODAY + 5) * 1000, "custom", ep);
+  Annotation ann6 = Annotation.create((TODAY + 6) * 1000, "custom", ep);
+  Annotation ann7 = Annotation.create((TODAY + 7) * 1000, "custom", ep);
+  Annotation ann8 = Annotation.create((TODAY + 8) * 1000, "custom", ep);
 
   Span span1 = Span.builder()
       .traceId(123)
@@ -316,7 +311,7 @@ public abstract class SpanStoreTest {
   @Test
   public void getTraces_serviceNameInBinaryAnnotation() {
     Span localTrace = Span.builder().traceId(1L).name("targz").id(1L)
-        .timestamp(today * 1000 + 100L).duration(200L)
+        .timestamp(TODAY * 1000 + 100L).duration(200L)
         .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "archiver", ep)).build();
 
     accept(localTrace);
@@ -335,7 +330,7 @@ public abstract class SpanStoreTest {
 
     // Make a span that's over 1KiB in size
     Span span = Span.builder().traceId(1L).name("big").id(1L)
-        .timestamp(today * 1000 + 100L).duration(200L)
+        .timestamp(TODAY * 1000 + 100L).duration(200L)
         .addBinaryAnnotation(BinaryAnnotation.create("a", new String(kilobyteOfText), ep)).build();
 
     accept(span);
@@ -388,19 +383,19 @@ public abstract class SpanStoreTest {
     BinaryAnnotation archiver3 = component.endpoint(service3).build();
 
     Span targz = Span.builder().traceId(1L).id(1L)
-        .name("targz").timestamp(today * 1000 + 100L).duration(200L).addBinaryAnnotation(archiver1).build();
+        .name("targz").timestamp(TODAY * 1000 + 100L).duration(200L).addBinaryAnnotation(archiver1).build();
     Span tar = Span.builder().traceId(1L).id(2L).parentId(1L)
-        .name("tar").timestamp(today * 1000 + 200L).duration(150L).addBinaryAnnotation(archiver2).build();
+        .name("tar").timestamp(TODAY * 1000 + 200L).duration(150L).addBinaryAnnotation(archiver2).build();
     Span gz = Span.builder().traceId(1L).id(3L).parentId(1L)
-        .name("gz").timestamp(today * 1000 + 250L).duration(50L).addBinaryAnnotation(archiver3).build();
+        .name("gz").timestamp(TODAY * 1000 + 250L).duration(50L).addBinaryAnnotation(archiver3).build();
     Span zip = Span.builder().traceId(3L).id(3L)
-        .name("zip").timestamp(today * 1000 + 130L).duration(50L).addBinaryAnnotation(archiver2).build();
+        .name("zip").timestamp(TODAY * 1000 + 130L).duration(50L).addBinaryAnnotation(archiver2).build();
 
     List<Span> trace1 = asList(targz, tar, gz);
     List<Span> trace2 = asList(
-        targz.toBuilder().traceId(2L).timestamp(today * 1000 + 110L).binaryAnnotations(asList(archiver3)).build(),
-        tar.toBuilder().traceId(2L).timestamp(today * 1000 + 210L).binaryAnnotations(asList(archiver2)).build(),
-        gz.toBuilder().traceId(2L).timestamp(today * 1000 + 260L).binaryAnnotations(asList(archiver1)).build());
+        targz.toBuilder().traceId(2L).timestamp(TODAY * 1000 + 110L).binaryAnnotations(asList(archiver3)).build(),
+        tar.toBuilder().traceId(2L).timestamp(TODAY * 1000 + 210L).binaryAnnotations(asList(archiver2)).build(),
+        gz.toBuilder().traceId(2L).timestamp(TODAY * 1000 + 260L).binaryAnnotations(asList(archiver1)).build());
     List<Span> trace3 = asList(zip);
 
     accept(trace1.toArray(new Span[0]));
@@ -408,7 +403,7 @@ public abstract class SpanStoreTest {
     accept(trace3.toArray(new Span[0]));
 
     long lookback = 12L * 60 * 60 * 1000; // 12hrs, instead of 7days
-    long endTs = today + 1; // greater than all timestamps above
+    long endTs = TODAY + 1; // greater than all timestamps above
     QueryRequest.Builder q = QueryRequest.builder().serviceName("service1").lookback(lookback).endTs(endTs);
 
     // Min duration is inclusive and is applied by service.
@@ -470,22 +465,22 @@ public abstract class SpanStoreTest {
   @Test
   public void getTraces_multipleAnnotationsBecomeAndFilter() {
     Span foo = Span.builder().traceId(1).name("call1").id(1)
-        .timestamp((today + 1) * 1000)
-        .addAnnotation(Annotation.create((today + 1) * 1000, "foo", ep)).build();
+        .timestamp((TODAY + 1) * 1000)
+        .addAnnotation(Annotation.create((TODAY + 1) * 1000, "foo", ep)).build();
     // would be foo bar, except lexicographically bar precedes foo
     Span barAndFoo = Span.builder().traceId(2).name("call2").id(2)
-        .timestamp((today + 2) * 1000)
-        .addAnnotation(Annotation.create((today + 2) * 1000, "bar", ep))
-        .addAnnotation(Annotation.create((today + 2) * 1000, "foo", ep)).build();
+        .timestamp((TODAY + 2) * 1000)
+        .addAnnotation(Annotation.create((TODAY + 2) * 1000, "bar", ep))
+        .addAnnotation(Annotation.create((TODAY + 2) * 1000, "foo", ep)).build();
     Span fooAndBazAndQux = Span.builder().traceId(3).name("call3").id(3)
-        .timestamp((today + 3) * 1000)
-        .addAnnotation(Annotation.create((today + 3) * 1000, "foo", ep))
+        .timestamp((TODAY + 3) * 1000)
+        .addAnnotation(Annotation.create((TODAY + 3) * 1000, "foo", ep))
         .addBinaryAnnotation(BinaryAnnotation.create("baz", "qux", ep))
         .build();
     Span barAndFooAndBazAndQux = Span.builder().traceId(4).name("call4").id(4)
-        .timestamp((today + 4) * 1000)
-        .addAnnotation(Annotation.create((today + 4) * 1000, "bar", ep))
-        .addAnnotation(Annotation.create((today + 4) * 1000, "foo", ep))
+        .timestamp((TODAY + 4) * 1000)
+        .addAnnotation(Annotation.create((TODAY + 4) * 1000, "bar", ep))
+        .addAnnotation(Annotation.create((TODAY + 4) * 1000, "foo", ep))
         .addBinaryAnnotation(BinaryAnnotation.create("baz", "qux", ep))
         .build();
 
@@ -511,25 +506,25 @@ public abstract class SpanStoreTest {
   @Test
   public void getTraces_differentiateOnServiceName() {
     Span trace1 = Span.builder().traceId(1).name("get").id(1)
-        .timestamp((today + 1) * 1000)
+        .timestamp((TODAY + 1) * 1000)
         .duration(3000L)
-        .addAnnotation(Annotation.create((today + 1) * 1000, CLIENT_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(((today + 1) * 1000) + 500, "web", WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 2) * 1000, SERVER_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 3) * 1000, SERVER_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 4) * 1000, CLIENT_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 1) * 1000, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(((TODAY + 1) * 1000) + 500, "web", WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 2) * 1000, SERVER_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 3) * 1000, SERVER_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 4) * 1000, CLIENT_RECV, WEB_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("local", "web", WEB_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("web-b", "web", WEB_ENDPOINT))
         .build();
 
     Span trace2 = Span.builder().traceId(2).name("get").id(2)
-        .timestamp((today + 11) * 1000)
+        .timestamp((TODAY + 11) * 1000)
         .duration(3000L)
-        .addAnnotation(Annotation.create((today + 11) * 1000, CLIENT_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(((today + 11) * 1000) + 500, "app", APP_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 12) * 1000, SERVER_RECV, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 13) * 1000, SERVER_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create((today + 14) * 1000, CLIENT_RECV, APP_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 11) * 1000, CLIENT_SEND, APP_ENDPOINT))
+        .addAnnotation(Annotation.create(((TODAY + 11) * 1000) + 500, "app", APP_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 12) * 1000, SERVER_RECV, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 13) * 1000, SERVER_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create((TODAY + 14) * 1000, CLIENT_RECV, APP_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("local", "app", APP_ENDPOINT))
         .addBinaryAnnotation(BinaryAnnotation.create("app-b", "app", APP_ENDPOINT))
         .build();
@@ -586,7 +581,7 @@ public abstract class SpanStoreTest {
         .traceId(1)
         .name("call1")
         .id(1)
-        .timestamp((today + 1) * 1000)
+        .timestamp((TODAY + 1) * 1000)
         .addBinaryAnnotation(BinaryAnnotation.create("empty", "", ep)).build();
 
     accept(span);
@@ -646,13 +641,13 @@ public abstract class SpanStoreTest {
   public void getTraces_endTsAndLookback() {
     accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
-    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 1L).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(TODAY + 1L).build()))
         .extracting(t -> t.get(0).id)
         .containsExactly(span1.id);
-    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 2L).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(TODAY + 2L).build()))
         .extracting(t -> t.get(0).id)
         .containsExactly(span3.id, span1.id);
-    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 3L).build()))
+    assertThat(store().getTraces(QueryRequest.builder().serviceName("service").endTs(TODAY + 3L).build()))
         .extracting(t -> t.get(0).id)
         .containsExactly(span3.id, span1.id);
   }
@@ -663,20 +658,20 @@ public abstract class SpanStoreTest {
     accept(span1, span3); // span1's timestamp is 1000, span3's timestamp is 2000
 
     assertThat(
-        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 1L).lookback(1L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(TODAY + 1L).lookback(1L).build()))
         .extracting(t -> t.get(0).id)
         .containsExactly(span1.id);
 
     assertThat(
-        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 2L).lookback(1L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(TODAY + 2L).lookback(1L).build()))
         .extracting(t -> t.get(0).id)
         .containsExactly(span3.id, span1.id);
     assertThat(
-        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 3L).lookback(1L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(TODAY + 3L).lookback(1L).build()))
         .extracting(t -> t.get(0).id)
         .containsExactly(span3.id);
     assertThat(
-        store().getTraces(QueryRequest.builder().serviceName("service").endTs(today + 3L).lookback(2L).build()))
+        store().getTraces(QueryRequest.builder().serviceName("service").endTs(TODAY + 3L).lookback(2L).build()))
         .extracting(t -> t.get(0).id)
         .containsExactly(span3.id, span1.id);
   }
@@ -735,10 +730,10 @@ public abstract class SpanStoreTest {
         .traceId(1)
         .name("method1")
         .id(666)
-        .addAnnotation(Annotation.create((today + 100) * 1000, CLIENT_SEND, client))
-        .addAnnotation(Annotation.create((today + 95) * 1000, SERVER_RECV, frontend)) // before client sends
-        .addAnnotation(Annotation.create((today + 120) * 1000, SERVER_SEND, frontend)) // before client receives
-        .addAnnotation(Annotation.create((today + 135) * 1000, CLIENT_RECV, client)).build();
+        .addAnnotation(Annotation.create((TODAY + 100) * 1000, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create((TODAY + 95) * 1000, SERVER_RECV, frontend)) // before client sends
+        .addAnnotation(Annotation.create((TODAY + 120) * 1000, SERVER_SEND, frontend)) // before client receives
+        .addAnnotation(Annotation.create((TODAY + 135) * 1000, CLIENT_RECV, client)).build();
 
     /** Intentionally not setting span.timestamp, duration */
     Span remoteChild = Span.builder()
@@ -746,10 +741,10 @@ public abstract class SpanStoreTest {
         .name("method2")
         .id(777)
         .parentId(666L)
-        .addAnnotation(Annotation.create((today + 100) * 1000, CLIENT_SEND, frontend))
-        .addAnnotation(Annotation.create((today + 115) * 1000, SERVER_RECV, backend))
-        .addAnnotation(Annotation.create((today + 120) * 1000, SERVER_SEND, backend))
-        .addAnnotation(Annotation.create((today + 115) * 1000, CLIENT_RECV, frontend)) // before server sent
+        .addAnnotation(Annotation.create((TODAY + 100) * 1000, CLIENT_SEND, frontend))
+        .addAnnotation(Annotation.create((TODAY + 115) * 1000, SERVER_RECV, backend))
+        .addAnnotation(Annotation.create((TODAY + 120) * 1000, SERVER_SEND, backend))
+        .addAnnotation(Annotation.create((TODAY + 115) * 1000, CLIENT_RECV, frontend)) // before server sent
         .build();
 
     /** Local spans must explicitly set timestamp */
@@ -758,7 +753,7 @@ public abstract class SpanStoreTest {
         .name("local")
         .id(778)
         .parentId(666L)
-        .timestamp((today + 101) * 1000).duration(50L)
+        .timestamp((TODAY + 101) * 1000).duration(50L)
         .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "framey", frontend)).build();
 
     List<Span> skewed = asList(parent, remoteChild, localChild);
@@ -797,20 +792,20 @@ public abstract class SpanStoreTest {
     Endpoint client = Endpoint.create("client", 192 << 24 | 168 << 16 | 1);
     Endpoint server = Endpoint.create("server", 192 << 24 | 168 << 16 | 2);
 
-    long clientTimestamp = (today + 100) * 1000;
+    long clientTimestamp = (TODAY + 100) * 1000;
     long clientDuration = 35 * 1000;
 
     // both client and server set span.timestamp, duration
     Span clientView = Span.builder().traceId(1).name("direct").id(666)
         .timestamp(clientTimestamp).duration(clientDuration)
-        .addAnnotation(Annotation.create((today + 100) * 1000, CLIENT_SEND, client))
-        .addAnnotation(Annotation.create((today + 135) * 1000, CLIENT_RECV, client))
+        .addAnnotation(Annotation.create((TODAY + 100) * 1000, CLIENT_SEND, client))
+        .addAnnotation(Annotation.create((TODAY + 135) * 1000, CLIENT_RECV, client))
         .build();
 
     Span serverView = Span.builder().traceId(1).name("direct").id(666)
-        .timestamp((today + 105) * 1000).duration(25 * 1000L)
-        .addAnnotation(Annotation.create((today + 105) * 1000, SERVER_RECV, server))
-        .addAnnotation(Annotation.create((today + 130) * 1000, SERVER_SEND, server))
+        .timestamp((TODAY + 105) * 1000).duration(25 * 1000L)
+        .addAnnotation(Annotation.create((TODAY + 105) * 1000, SERVER_RECV, server))
+        .addAnnotation(Annotation.create((TODAY + 130) * 1000, SERVER_SEND, server))
         .build();
 
     // neither client, nor server set span.timestamp, duration
@@ -820,8 +815,8 @@ public abstract class SpanStoreTest {
         .build();
 
     Span serverViewDerived = Span.builder().traceId(1).name("derived").id(666)
-        .addAnnotation(Annotation.create((today + 105) * 1000, SERVER_RECV, server))
-        .addAnnotation(Annotation.create((today + 130) * 1000, SERVER_SEND, server))
+        .addAnnotation(Annotation.create((TODAY + 105) * 1000, SERVER_RECV, server))
+        .addAnnotation(Annotation.create((TODAY + 130) * 1000, SERVER_SEND, server))
         .build();
 
     accept(serverView, serverViewDerived); // server span hits the collection tier first
@@ -866,12 +861,12 @@ public abstract class SpanStoreTest {
   @Test
   public void whenSpanTimestampIsMissingClientSendIsPreferred() {
     Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2);
-    Annotation cs = Annotation.create((today + 50) * 1000, CLIENT_SEND, frontend);
-    Annotation cr = Annotation.create((today + 150) * 1000, CLIENT_RECV, frontend);
+    Annotation cs = Annotation.create((TODAY + 50) * 1000, CLIENT_SEND, frontend);
+    Annotation cr = Annotation.create((TODAY + 150) * 1000, CLIENT_RECV, frontend);
 
     Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 2);
-    Annotation sr = Annotation.create((today + 95) * 1000, SERVER_RECV, backend);
-    Annotation ss = Annotation.create((today + 100) * 1000, SERVER_SEND, backend);
+    Annotation sr = Annotation.create((TODAY + 95) * 1000, SERVER_RECV, backend);
+    Annotation ss = Annotation.create((TODAY + 100) * 1000, SERVER_SEND, backend);
 
     Span span = Span.builder().traceId(1).name("method1").id(666).build();
 
@@ -891,10 +886,10 @@ public abstract class SpanStoreTest {
   @Test
   public void rawTrace_doesntPerformQueryTimeAdjustment() {
     Endpoint sender = Endpoint.create("sender", 192 << 24 | 168 << 16 | 1);
-    Annotation send = Annotation.create((today + 95) * 1000, "send", sender);
+    Annotation send = Annotation.create((TODAY + 95) * 1000, "send", sender);
 
     Endpoint receiver = Endpoint.create("receiver", 192 << 24 | 168 << 16 | 2);
-    Annotation receive = Annotation.create((today + 100) * 1000, "receive", receiver);
+    Annotation receive = Annotation.create((TODAY + 100) * 1000, "receive", receiver);
 
     Span span = Span.builder().traceId(1).name("start").id(666).build();
 
@@ -925,11 +920,11 @@ public abstract class SpanStoreTest {
 
     long gapBetweenSpans = 100;
     List<Span> earlySpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("early")
-        .traceId(i).id(i).timestamp((today - i) * 1000).duration(1L)
+        .traceId(i).id(i).timestamp((TODAY - i) * 1000).duration(1L)
         .addBinaryAnnotation(annotations.get(i - 1)).build()).collect(toList());
 
     List<Span> lateSpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("late")
-        .traceId(i + 10).id(i + 10).timestamp((today + gapBetweenSpans - i) * 1000).duration(1L)
+        .traceId(i + 10).id(i + 10).timestamp((TODAY + gapBetweenSpans - i) * 1000).duration(1L)
         .addBinaryAnnotation(annotations.get(i - 1)).build()).collect(toList());
 
     accept(earlySpans.toArray(new Span[10]));
@@ -950,11 +945,11 @@ public abstract class SpanStoreTest {
         .containsExactly(lateTraces);
 
     assertThat(store().getTraces(QueryRequest.builder().limit(20)
-        .endTs(today + gapBetweenSpans).lookback(gapBetweenSpans).build()))
+        .endTs(TODAY + gapBetweenSpans).lookback(gapBetweenSpans).build()))
         .containsExactly(lateTraces);
 
     assertThat(store().getTraces(QueryRequest.builder().limit(20)
-        .endTs(today).build()))
+        .endTs(TODAY).build()))
         .containsExactly(earlyTraces);
   }
 
