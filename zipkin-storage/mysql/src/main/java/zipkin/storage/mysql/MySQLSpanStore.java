@@ -28,13 +28,12 @@ import javax.sql.DataSource;
 import org.jooq.Condition;
 import org.jooq.Cursor;
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.Row3;
 import org.jooq.SelectConditionStep;
-import org.jooq.SelectField;
 import org.jooq.SelectOffsetStep;
 import org.jooq.TableField;
-import org.jooq.TableOnConditionStep;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.BinaryAnnotation.Type;
@@ -46,10 +45,9 @@ import zipkin.internal.Pair;
 import zipkin.internal.v2.Span;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
-import zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations;
 
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.groupingBy;
+import static org.jooq.impl.DSL.exists;
 import static org.jooq.impl.DSL.row;
 import static zipkin.BinaryAnnotation.Type.STRING;
 import static zipkin.Constants.CLIENT_ADDR;
@@ -91,54 +89,69 @@ final class MySQLSpanStore implements SpanStore {
     long endTs = (request.endTs > 0 && request.endTs != Long.MAX_VALUE) ? request.endTs * 1000
         : System.currentTimeMillis() * 1000;
 
-    TableOnConditionStep<?> table = ZIPKIN_SPANS.join(ZIPKIN_ANNOTATIONS)
-        .on(schema.joinCondition(ZIPKIN_ANNOTATIONS));
+    Field<Long> max = ZIPKIN_SPANS.START_TS.max().as("max");
+    List<Field<?>> distinctFields = new ArrayList<>(schema.spanIdFields);
+    distinctFields.add(max);
+    List<Field<?>> spanFields = new ArrayList<>(distinctFields);
+    spanFields.add(ZIPKIN_SPANS.ID);
+    spanFields.add(ZIPKIN_SPANS.START_TS);
+    SelectConditionStep<Record> spanQuery = context
+      .select(distinctFields)
+      .from(ZIPKIN_SPANS)
+      .where(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
 
-    int i = 0;
+    Map<String, String> annotationQuery = new LinkedHashMap<>();
     for (String key : request.annotations) {
-      ZipkinAnnotations aTable = ZIPKIN_ANNOTATIONS.as("a" + i++);
-      table = maybeOnService(table.join(aTable)
-          .on(schema.joinCondition(aTable))
-          .and(aTable.A_KEY.eq(key)), aTable, request.serviceName);
+      annotationQuery.put(key, "");
     }
-
     for (Map.Entry<String, String> kv : request.binaryAnnotations.entrySet()) {
-      ZipkinAnnotations aTable = ZIPKIN_ANNOTATIONS.as("a" + i++);
-      table = maybeOnService(table.join(aTable)
-          .on(schema.joinCondition(aTable))
-          .and(aTable.A_TYPE.eq(STRING.value))
-          .and(aTable.A_KEY.eq(kv.getKey()))
-          .and(aTable.A_VALUE.eq(kv.getValue().getBytes(UTF_8))), aTable, request.serviceName);
+      annotationQuery.put(kv.getKey(), kv.getValue());
     }
 
-    List<SelectField<?>> distinctFields = new ArrayList<>(schema.spanIdFields);
-    distinctFields.add(ZIPKIN_SPANS.START_TS.max());
-    SelectConditionStep<Record> dsl = context.selectDistinct(distinctFields)
-        .from(table)
-        .where(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback * 1000, endTs));
+    if (annotationQuery.isEmpty()) {
+      spanQuery.and(exists(constraintsWithoutAnnotations(context, request, spanFields)));
+    }
+
+    // The annotation query needs to be run per key/value pair
+    for (Map.Entry<String, String> kv : annotationQuery.entrySet()) {
+      SelectConditionStep and = constraintsWithoutAnnotations(context, request, spanFields);
+
+      if (kv.getValue().isEmpty()) { // timeline annotation value or tag key
+        and.and(ZIPKIN_ANNOTATIONS.A_KEY.eq(kv.getKey()));
+      } else { // tag key + value
+        and.and(ZIPKIN_ANNOTATIONS.A_TYPE.eq(STRING.value))
+          .and(ZIPKIN_ANNOTATIONS.A_KEY.eq(kv.getKey()))
+          .and(ZIPKIN_ANNOTATIONS.A_VALUE.eq(kv.getValue().getBytes(UTF_8)));
+      }
+
+      spanQuery.and(exists(and));
+    }
+
+    return spanQuery.groupBy(schema.spanIdFields)
+      .orderBy(max.desc()).limit(request.limit);
+  }
+
+  private SelectConditionStep constraintsWithoutAnnotations(DSLContext context,
+    QueryRequest request, List<Field<?>> spanFields) {
+    SelectConditionStep and = context.selectOne()
+      .from(ZIPKIN_ANNOTATIONS)
+      .where(schema.joinCondition(ZIPKIN_ANNOTATIONS));
 
     if (request.serviceName != null) {
-      dsl.and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName));
+      and.and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName));
     }
 
     if (request.spanName != null) {
-      dsl.and(ZIPKIN_SPANS.NAME.eq(request.spanName));
+      spanFields.add(ZIPKIN_SPANS.NAME);
+      and.and(ZIPKIN_SPANS.NAME.eq(request.spanName));
     }
 
     if (request.minDuration != null && request.maxDuration != null) {
-      dsl.and(ZIPKIN_SPANS.DURATION.between(request.minDuration, request.maxDuration));
+      and.and(ZIPKIN_SPANS.DURATION.between(request.minDuration, request.maxDuration));
     } else if (request.minDuration != null) {
-      dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration));
+      and.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration));
     }
-    return dsl
-        .groupBy(schema.spanIdFields)
-        .orderBy(ZIPKIN_SPANS.START_TS.max().desc()).limit(request.limit);
-  }
-
-  static TableOnConditionStep<?> maybeOnService(TableOnConditionStep<Record> table,
-      ZipkinAnnotations aTable, String serviceName) {
-    if (serviceName == null) return table;
-    return table.and(aTable.ENDPOINT_SERVICE_NAME.eq(serviceName));
+    return and;
   }
 
   List<List<zipkin.Span>> getTraces(@Nullable QueryRequest request, @Nullable Long traceIdHigh,
@@ -215,7 +228,8 @@ final class MySQLSpanStore implements SpanStore {
     return GroupByTraceId.apply(allSpans, strictTraceId, !raw);
   }
 
-  static <T> T maybeGet(Record record, TableField<Record, T> field, T defaultValue) {
+  @Nullable
+  static <T> T maybeGet(Record record, TableField<Record, T> field, @Nullable T defaultValue) {
     if (record.fieldsRow().indexOf(field) < 0) {
       return defaultValue;
     } else {
@@ -264,7 +278,6 @@ final class MySQLSpanStore implements SpanStore {
 
   @Override
   public List<String> getSpanNames(String serviceName) {
-    if (serviceName == null) return emptyList();
     serviceName = serviceName.toLowerCase(); // service names are always lowercase!
     try (Connection conn = datasource.getConnection()) {
       return context.get(conn)

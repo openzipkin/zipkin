@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import org.jooq.Condition;
 import org.jooq.Field;
@@ -106,7 +107,7 @@ final class Schema {
     }
   }
 
-  Condition spanTraceIdCondition(Long traceIdHigh, long traceIdLow) {
+  Condition spanTraceIdCondition(@Nullable Long traceIdHigh, long traceIdLow) {
     return traceIdHigh != null && hasTraceIdHigh
         ? row(ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID).eq(traceIdHigh, traceIdLow)
         : ZIPKIN_SPANS.TRACE_ID.eq(traceIdLow);
