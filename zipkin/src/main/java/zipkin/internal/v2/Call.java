@@ -145,7 +145,7 @@ public abstract class Call<V> implements Cloneable {
   public abstract boolean isCanceled();
 
   /** Returns a copy of this object, so you can make an identical follow-up request. */
-  public abstract Call<V> clone();
+  @Override public abstract Call<V> clone();
 
   static final class Constant<V> extends Base<V> {
     final V v;
