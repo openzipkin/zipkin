@@ -20,6 +20,7 @@ import java.util.stream.IntStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentMatcher;
 import org.slf4j.LoggerFactory;
 import zipkin.Annotation;
 import zipkin.Span;
@@ -91,8 +92,13 @@ abstract class CassandraSpanConsumerTest {
   }
 
   private static Object considerSwitchStrategyLog() {
-    return argThat(argument -> ((LoggingEvent) argument).getFormattedMessage()
-      .contains("If this happens a lot consider switching back to SizeTieredCompactionStrategy"));
+    return argThat(new ArgumentMatcher<LoggingEvent>() {
+      @Override public boolean matches(Object argument) {
+        return ((LoggingEvent) argument).getFormattedMessage()
+          .contains(
+            "If this happens a lot consider switching back to SizeTieredCompactionStrategy");
+      }
+    });
   }
 
   /**
