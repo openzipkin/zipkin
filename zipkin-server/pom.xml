@@ -124,6 +124,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- RabbitMQ Collector -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Scribe Collector -->
     <dependency>
       <groupId>${project.groupId}</groupId>
