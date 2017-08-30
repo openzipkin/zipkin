@@ -21,6 +21,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -28,6 +29,7 @@ import org.springframework.context.annotation.Configuration;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2InMemoryStorage;
+import zipkin.internal.V2StorageComponent;
 import zipkin.server.brave.TracedStorageComponent;
 import zipkin.storage.StorageComponent;
 
@@ -58,6 +60,16 @@ public class ZipkinServerConfiguration {
   }
 
   @Configuration
+  @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
+  // ConditionalOnBean won't work in a public type as StorageComponent isn't loaded in that scope
+  @ConditionalOnBean(V2StorageComponent.class)
+  static class ZipkinQueryApiV2Configuration {
+    ZipkinQueryApiV2 queryV2(ZipkinQueryApiV2 api){ // inject and configure
+      return api;
+    }
+  }
+
+  @Configuration
   @ConditionalOnSelfTracing
   static class BraveTracedStorageComponentEnhancer implements BeanPostProcessor {
 
@@ -71,7 +83,8 @@ public class ZipkinServerConfiguration {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof StorageComponent && brave != null) {
+      if (bean instanceof StorageComponent && brave != null &&
+        !(bean instanceof V2StorageComponent) /* TODO */) {
         return new TracedStorageComponent(brave, (StorageComponent) bean);
       }
       return bean;

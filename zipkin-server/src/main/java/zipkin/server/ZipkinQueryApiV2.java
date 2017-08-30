@@ -13,7 +13,6 @@
  */
 package zipkin.server;
 
-import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -21,8 +20,6 @@ import javax.annotation.Nullable;
 import okio.Buffer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,10 +46,7 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
 @RestController
 @RequestMapping("/api/v2")
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
-@ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
-@ConditionalOnBean(V2StorageComponent.class)
 public class ZipkinQueryApiV2 {
-
   @Autowired
   @Value("${zipkin.query.lookback:86400000}")
   long defaultLookback = 86400000; // 1 day in millis
@@ -115,18 +109,18 @@ public class ZipkinQueryApiV2 {
 
     List<List<Span>> traces = storage.v2SpanStore().getTraces(queryRequest).execute();
     Buffer buffer = new Buffer();
-    JsonWriter writer = JsonWriter.of(buffer);
-    writer.beginArray();
-    for (int i = 0, iLength = traces.size(); i < iLength; i++) {
-      writer.beginArray();
+    buffer.writeByte('[');
+    for (int i = 0, iLength = traces.size(); i < iLength;) {
+      buffer.writeByte('[');
       List<Span> trace = traces.get(i);
       for (int j = 0, jLength = trace.size(); j < jLength; j++) {
         buffer.write(Encoder.JSON.encode(trace.get(j)));
-        if (j < jLength) buffer.writeByte(',');
+        if (++j < jLength) buffer.writeByte(',');
       }
-      writer.endArray();
+      buffer.writeByte(']');
+      if (++i < iLength) buffer.writeByte(',');
     }
-    writer.endArray();
+    buffer.writeByte(']');
     return buffer.readUtf8();
   }
 
@@ -139,13 +133,12 @@ public class ZipkinQueryApiV2 {
       throw new TraceNotFoundException(traceIdHex, traceIdHigh, traceIdLow);
     }
     Buffer buffer = new Buffer();
-    JsonWriter writer = JsonWriter.of(buffer);
-    writer.beginArray();
-    for (int i = 0, length = trace.size(); i < length; i++) {
+    buffer.writeByte('[');
+    for (int i = 0, length = trace.size(); i < length; ) {
       buffer.write(Encoder.JSON.encode(trace.get(i)));
-      if (i < length) buffer.writeByte(',');
+      if (++i < length) buffer.writeByte(',');
     }
-    writer.endArray();
+    buffer.writeByte(']');
     return buffer.readUtf8();
   }
 
