@@ -212,7 +212,18 @@ public abstract class QueryRequest {
    * <p>This is used when the backend cannot fully refine a trace query.
    */
   public boolean test(List<Span> spans) {
-    Long timestamp = spans.get(0).timestamp();
+    // v2 returns raw spans in any order, get the root's timestamp or the first timestamp
+    Long timestamp = null;
+    for (Span span : spans) {
+      if (span.timestamp() == null) continue;
+      if (span.parentId() == null) {
+        timestamp = span.timestamp();
+        break;
+      }
+      if (timestamp == null || timestamp > span.timestamp()) {
+        timestamp = span.timestamp();
+      }
+    }
     if (timestamp == null ||
       timestamp < (endTs() - lookback()) * 1000 ||
       timestamp > endTs() * 1000) {
@@ -236,7 +247,13 @@ public abstract class QueryRequest {
             annotationQueryRemaining.remove(a.value);
           }
         }
-        annotationQueryRemaining.entrySet().removeAll(span.tags().entrySet());
+        for (Map.Entry<String, String> t : span.tags().entrySet()) {
+          String value = annotationQueryRemaining.get(t.getKey());
+          if (value == null) continue;
+          if (value.isEmpty() || value.equals(t.getValue())) {
+            annotationQueryRemaining.remove(t.getKey());
+          }
+        }
         if (spanNameToMatch == null || spanNameToMatch.equals(span.name())) {
           spanNameToMatch = null;
         }

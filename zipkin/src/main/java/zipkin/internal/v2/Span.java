@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 import zipkin.Annotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
@@ -55,6 +56,7 @@ import static zipkin.internal.Util.writeHexLong;
  * {@link zipkin.Span span} does. This results in simpler and smaller data.
  */
 @AutoValue
+@Immutable
 public abstract class Span implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
@@ -184,6 +186,20 @@ public abstract class Span implements Serializable { // for Spark jobs
    * start the span.
    */
   @Nullable public abstract Boolean shared();
+
+  @Nullable public String localServiceName() {
+    Endpoint localEndpoint = localEndpoint();
+    return localEndpoint != null && !"".equals(localEndpoint.serviceName)
+      ? localEndpoint.serviceName
+      : null;
+  }
+
+  @Nullable public String remoteServiceName() {
+    Endpoint remoteEndpoint = remoteEndpoint();
+    return remoteEndpoint != null && !"".equals(remoteEndpoint.serviceName)
+      ? remoteEndpoint.serviceName
+      : null;
+  }
 
   /** Returns the hex representation of the span's trace ID */
   public String traceIdString() {
