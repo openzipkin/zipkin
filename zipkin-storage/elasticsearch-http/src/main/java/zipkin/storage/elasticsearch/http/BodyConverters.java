@@ -19,9 +19,9 @@ import java.util.List;
 import java.util.Set;
 import okio.BufferedSource;
 import zipkin.DependencyLink;
-import zipkin.Span;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.Util;
+import zipkin.internal.v2.Span;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall.BodyConverter;
 import zipkin.storage.elasticsearch.http.internal.client.SearchResultConverter;
 
@@ -34,8 +34,6 @@ final class BodyConverters {
   };
   static final BodyConverter<List<Span>> SPANS =
       SearchResultConverter.create(JsonAdapters.SPAN_ADAPTER);
-  static final BodyConverter<List<Span>> NULLABLE_SPANS =
-      SearchResultConverter.create(JsonAdapters.SPAN_ADAPTER).defaultToNull();
   static final BodyConverter<List<DependencyLink>> DEPENDENCY_LINKS =
       new SearchResultConverter<DependencyLink>(JsonAdapters.DEPENDENCY_LINK_ADAPTER) {
         @Override public List<DependencyLink> convert(BufferedSource content) throws IOException {

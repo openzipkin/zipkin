@@ -23,16 +23,15 @@ import zipkin.Annotation;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.internal.v2.Span;
-import zipkin.internal.V2SpanConverter;
 
 /**
  * Read-only json adapters resurrected from before we switched to Java 6 as storage components can
  * be Java 7+
  */
 final class JsonAdapters {
-  static final JsonAdapter<zipkin.Span> SPAN_ADAPTER = new JsonAdapter<zipkin.Span>() {
+  static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
     @Override @Nonnull
-    public zipkin.Span fromJson(JsonReader reader) throws IOException {
+    public Span fromJson(JsonReader reader) throws IOException {
       Span.Builder result = Span.builder();
       reader.beginObject();
       while (reader.hasNext()) {
@@ -95,11 +94,11 @@ final class JsonAdapters {
         }
       }
       reader.endObject();
-      return V2SpanConverter.toSpan(result.build());
+      return result.build();
     }
 
     @Override
-    public void toJson(JsonWriter writer, @Nullable zipkin.Span value) throws IOException {
+    public void toJson(JsonWriter writer, @Nullable Span value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };

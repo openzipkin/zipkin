@@ -21,7 +21,6 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Util;
 
 import static java.util.Arrays.asList;
@@ -44,14 +43,14 @@ public class ElasticsearchHttpSpanStoreTest {
 
   @Test public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
     es.enqueue(new MockResponse().setBody(SERVICE_NAMES));
-    spanStore.getServiceNames(new CallbackCaptor<>());
+    spanStore.getServiceNames().execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }
 
   @Test public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
     es.enqueue(new MockResponse().setBody(SPAN_NAMES));
-    spanStore.getSpanNames("foo", new CallbackCaptor<>());
+    spanStore.getSpanNames("foo").execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }

@@ -14,10 +14,8 @@
 package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
-import java.util.List;
 import okio.Buffer;
 import org.junit.Test;
-import zipkin.BinaryAnnotation;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
@@ -110,8 +108,8 @@ public class JsonAdaptersTest {
       + "  }"
       + "}";
 
-    List<Span> spans = V2SpanConverter.fromSpan(JsonAdapters.SPAN_ADAPTER.fromJson(json));
-    assertThat(spans.get(0).tags())
+    Span span = JsonAdapters.SPAN_ADAPTER.fromJson(json);
+    assertThat(span.tags())
       .containsExactly(entry("num", "9223372036854775807"));
   }
 
@@ -126,8 +124,8 @@ public class JsonAdaptersTest {
       + "  }"
       + "}";
 
-    List<Span> spans = V2SpanConverter.fromSpan(JsonAdapters.SPAN_ADAPTER.fromJson(json));
-    assertThat(spans.get(0).tags())
+    Span span = JsonAdapters.SPAN_ADAPTER.fromJson(json);
+    assertThat(span.tags())
       .containsExactly(entry("num", "1.23456789"));
   }
 
@@ -138,7 +136,7 @@ public class JsonAdaptersTest {
     Buffer bytes = new Buffer();
     bytes.write(Encoder.JSON.encode(span2));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
-      .isEqualTo(span);
+      .isEqualTo(span2);
   }
 
   /**
@@ -163,7 +161,7 @@ public class JsonAdaptersTest {
     Buffer bytes = new Buffer();
     bytes.write(Encoder.JSON.encode(worstSpanInTheWorld));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
-      .isEqualTo(V2SpanConverter.toSpan(worstSpanInTheWorld));
+      .isEqualTo(worstSpanInTheWorld);
   }
 
   @Test
@@ -178,9 +176,8 @@ public class JsonAdaptersTest {
       + "  }\n"
       + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).binaryAnnotations)
-      .containsExactly(BinaryAnnotation.create("lc", "",
-        Endpoint.builder().serviceName("service").port(65535).build()));
+    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+      .isEqualTo(Endpoint.builder().serviceName("service").port(65535).build());
   }
 
   @Test
@@ -194,9 +191,8 @@ public class JsonAdaptersTest {
       + "  }\n"
       + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).binaryAnnotations)
-      .containsExactly(BinaryAnnotation.create("lc", "",
-        Endpoint.builder().serviceName("").port(65535).build()));
+    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+      .isEqualTo(Endpoint.builder().serviceName("").port(65535).build());
   }
 
   @Test
@@ -211,9 +207,8 @@ public class JsonAdaptersTest {
       + "  }\n"
       + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).binaryAnnotations)
-      .containsExactly(BinaryAnnotation.create("lc", "",
-        Endpoint.builder().serviceName("").port(65535).build()));
+    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+      .isEqualTo(Endpoint.builder().serviceName("").port(65535).build());
   }
 
   @Test
