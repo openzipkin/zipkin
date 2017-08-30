@@ -15,7 +15,9 @@ package zipkin.internal.v2;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -218,19 +220,7 @@ public class CallTest {
   @Test public void flatMap_enqueue_callException() throws Exception {
     IllegalArgumentException error = new IllegalArgumentException();
     Call<String> fooCall = Call.create("foo");
-    Call<String> exceptionCall = new Call.Base<String>() {
-      @Override String doExecute() throws IOException {
-        throw new AssertionError();
-      }
-
-      @Override void doEnqueue(Callback<String> callback) {
-        callback.onError(error);
-      }
-
-      @Override public Call<String> clone() {
-        throw new AssertionError();
-      }
-    };
+    Call<String> exceptionCall = errorCall(error);
 
     Call<String> fooBarCall = fooCall.flatMap(foo -> exceptionCall);
 
@@ -250,5 +240,101 @@ public class CallTest {
     assertThat(fooBarCall.isCanceled()).isTrue();
     assertThat(fooCall.isCanceled()).isTrue();
     assertThat(barCall.isCanceled()).isTrue();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void onErrorReturn_execute_onError() throws Exception {
+    IllegalArgumentException exception = new IllegalArgumentException();
+    Call<String> errorCall = errorCall(exception);
+
+    Call<String> resolvedCall = errorCall.handleError(
+      (error, callback) -> callback.onError(error)
+    );
+
+    resolvedCall.execute();
+  }
+
+  @Test public void onErrorReturn_execute_onSuccess() throws Exception {
+    IllegalArgumentException exception = new IllegalArgumentException();
+    Call<String> errorCall = errorCall(exception);
+
+    Call<String> resolvedCall = errorCall.handleError(
+      (error, callback) -> callback.onSuccess("foo")
+    );
+
+    assertThat(resolvedCall.execute())
+      .isEqualTo("foo");
+  }
+
+  @Test public void onErrorReturn_execute_onSuccess_null() throws Exception {
+    IllegalArgumentException exception = new IllegalArgumentException();
+    Call<String> errorCall = errorCall(exception);
+
+    Call<String> resolvedCall = errorCall.handleError(
+      (error, callback) -> callback.onSuccess(null)
+    );
+
+    assertThat(resolvedCall.execute())
+      .isNull();
+  }
+
+  @Test public void onErrorReturn_enqueue_onError() throws Exception {
+    IllegalArgumentException exception = new IllegalArgumentException();
+    Call<String> errorCall = errorCall(exception);
+
+    Call<String> resolvedCall = errorCall.handleError(
+      (error, callback) -> callback.onError(error)
+    );
+
+    resolvedCall.enqueue(callback);
+
+    verify(callback).onError(exception);
+  }
+
+  @Test public void onErrorReturn_enqueue_onSuccess() throws Exception {
+    IllegalArgumentException exception = new IllegalArgumentException();
+    Call<String> errorCall = errorCall(exception);
+
+    Call<String> resolvedCall = errorCall.handleError(
+      (error, callback) -> callback.onSuccess("foo")
+    );
+
+    resolvedCall.enqueue(callback);
+
+    verify(callback).onSuccess("foo");
+  }
+
+  @Test public void onErrorReturn_enqueue_onSuccess_null() throws Exception {
+    NoSuchElementException exception = new NoSuchElementException();
+    Call<List<String>> call = errorCall(exception);
+
+    Call<List<String>> resolvedCall = call.handleError((error, callback) -> {
+        if (error instanceof NoSuchElementException) {
+          callback.onSuccess(Collections.emptyList());
+        } else {
+          callback.onError(error);
+        }
+      }
+    );
+
+    resolvedCall.enqueue(callback);
+
+    verify(callback).onSuccess(Collections.emptyList());
+  }
+
+  static <T> Call<T> errorCall(RuntimeException error) {
+    return new Call.Base<T>() {
+      @Override T doExecute() throws IOException {
+        throw error;
+      }
+
+      @Override void doEnqueue(Callback<T> callback) {
+        callback.onError(error);
+      }
+
+      @Override public Call<T> clone() {
+        throw new AssertionError();
+      }
+    };
   }
 }

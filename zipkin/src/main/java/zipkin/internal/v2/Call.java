@@ -16,6 +16,8 @@ package zipkin.internal.v2;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import javax.annotation.Nullable;
 
 /**
  * This captures a (usually remote) request and can be used once, either {@link #execute()
@@ -45,9 +47,18 @@ import java.util.List;
  * <p>This type owes its design to {@code retrofit2.Call}, which is nearly the same, except limited
  * to HTTP transports.
  *
- * @param <V> the success type, only null when {@code V} is {@linkplain Void}.
+ * @param <V> the success type, typically not null except when {@code V} is {@linkplain Void}.
  */
 public abstract class Call<V> implements Cloneable {
+  /**
+   * Returns a completed call which has the supplied value. This is useful when input parameters
+   * imply there's no call needed. For example, an empty input might always result in an empty
+   * output.
+   */
+  public static <V> Call<V> create(V v) {
+    return new Constant<>(v);
+  }
+
   @SuppressWarnings("unchecked")
   public static <T> Call<List<T>> emptyList() {
     return Call.create(Collections.emptyList());
@@ -98,13 +109,28 @@ public abstract class Call<V> implements Cloneable {
     return new FlatMapping<>(flatMapper, this);
   }
 
+  public interface ErrorHandler<V> {
+    /** Attempts to resolve an error. The user must call the callback. */
+    void onErrorReturn(Throwable error, Callback<V> callback);
+  }
+
   /**
-   * Returns a completed call which has the supplied value. This is useful when input parameters
-   * imply there's no call needed. For example, an empty input might always result in an empty
-   * output.
+   * Returns a call which can attempt to resolve an exception. This is useful when a remote call
+   * returns an error when a resource is not found.
+   *
+   * <p>Here's an example of coercing 404 to empty:
+   * <pre>{@code
+   * call.handleError((error, callback) -> {
+   *   if (error instanceof HttpException && ((HttpException) error).code == 404) {
+   *     callback.onSuccess(Collections.emptyList());
+   *   } else {
+   *     callback.onError(error);
+   *   }
+   * });
+   * }</pre>
    */
-  public static <V> Call<V> create(V v) {
-    return new Constant<>(v);
+  public final Call<V> handleError(ErrorHandler<V> errorHandler) {
+    return new ErrorHandling<>(errorHandler, this);
   }
 
   /**
@@ -243,6 +269,60 @@ public abstract class Call<V> implements Cloneable {
 
     @Override public Call<R> clone() {
       return new FlatMapping<>(flatMapper, delegate.clone());
+    }
+  }
+
+  static final class ErrorHandling<V> extends Base<V> {
+    static final Object SENTINEL = new Object(); // to differentiate from null
+    final ErrorHandler<V> errorHandler;
+    final Call<V> delegate;
+
+    ErrorHandling(ErrorHandler<V> errorHandler, Call<V> delegate) {
+      this.errorHandler = errorHandler;
+      this.delegate = delegate;
+    }
+
+    @Override public V doExecute() throws IOException {
+      try {
+        return delegate.execute();
+      } catch (IOException | RuntimeException | Error e) {
+        final AtomicReference ref = new AtomicReference(SENTINEL);
+        errorHandler.onErrorReturn(e, new Callback<V>() {
+          @Override public void onSuccess(@Nullable V value) {
+            ref.set(value);
+          }
+
+          @Override public void onError(Throwable t) {
+          }
+        });
+        Object result = ref.get();
+        if (SENTINEL == result) throw e;
+        return (V) result;
+      }
+    }
+
+    @Override public void doEnqueue(final Callback<V> callback) {
+      delegate.enqueue(new Callback<V>() {
+        @Override public void onSuccess(V value) {
+          callback.onSuccess(value);
+        }
+
+        @Override public void onError(Throwable t) {
+          errorHandler.onErrorReturn(t, callback);
+        }
+      });
+    }
+
+    @Override public void cancel() {
+      delegate.cancel();
+    }
+
+    @Override public boolean isCanceled() {
+      return delegate.isCanceled();
+    }
+
+    @Override public Call<V> clone() {
+      return new ErrorHandling<>(errorHandler, delegate.clone());
     }
   }
 
