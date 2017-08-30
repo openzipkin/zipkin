@@ -78,7 +78,7 @@ public final class DependencyLinker {
       }
       Span server = left.kind() == Kind.SERVER ? left : right;
       Span client = left == server ? right : left;
-      if (server.remoteEndpoint() != null && !"".equals(server.remoteEndpoint().serviceName)) {
+      if (server.remoteServiceName() != null) {
         return copyError(client, server);
       }
       return copyError(client, server).toBuilder().remoteEndpoint(client.localEndpoint()).build();
@@ -126,8 +126,8 @@ public final class DependencyLinker {
         continue;
       }
 
-      String serviceName = serviceName(currentSpan);
-      String remoteServiceName = remoteServiceName(currentSpan);
+      String serviceName = currentSpan.localServiceName();
+      String remoteServiceName = currentSpan.remoteServiceName();
       if (kind == null) {
         // Treat unknown type of span as a client span if we know both sides
         if (serviceName != null && remoteServiceName != null) {
@@ -178,7 +178,7 @@ public final class DependencyLinker {
 
       Span rpcAncestor = findRpcAncestor(current);
       String rpcAncestorName;
-      if (rpcAncestor != null && (rpcAncestorName = serviceName(rpcAncestor)) != null) {
+      if (rpcAncestor != null && (rpcAncestorName = rpcAncestor.localServiceName()) != null) {
         // Some users accidentally put the remote service name on client annotations.
         // Check for this and backfill a link from the nearest remote to that service as necessary.
         if (kind == Kind.CLIENT && serviceName != null && !rpcAncestorName.equals(serviceName)) {
@@ -275,17 +275,5 @@ public final class DependencyLinker {
         .build());
     }
     return result;
-  }
-
-  static String serviceName(Span span) {
-    return span.localEndpoint() != null && !"".equals(span.localEndpoint().serviceName)
-      ? span.localEndpoint().serviceName
-      : null;
-  }
-
-  static String remoteServiceName(Span span) {
-    return span.remoteEndpoint() != null && !"".equals(span.remoteEndpoint().serviceName)
-      ? span.remoteEndpoint().serviceName
-      : null;
   }
 }

@@ -225,7 +225,7 @@ public final class QueryRequest {
      *
      * @see QueryRequest#toAnnotationQuery()
      */
-    public Builder parseAnnotationQuery(String annotationQuery) {
+    public Builder parseAnnotationQuery(@Nullable String annotationQuery) {
       if (annotationQuery != null && !annotationQuery.isEmpty()) {
         for (String ann : annotationQuery.split(" and ")) {
           int idx = ann.indexOf('=');
