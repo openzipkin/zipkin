@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,12 +19,19 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.springframework.context.annotation.Import;
+import zipkin.autoconfigure.ui.ZipkinUiAutoConfiguration;
 import zipkin.server.brave.BraveConfiguration;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
-@Import({ZipkinServerConfiguration.class, BraveConfiguration.class, ZipkinQueryApiV1.class, ZipkinHttpCollector.class})
+@Import({
+  ZipkinServerConfiguration.class,
+  BraveConfiguration.class,
+  ZipkinQueryApiV1.class,
+  ZipkinQueryApiV2.class,
+  ZipkinHttpCollector.class
+})
 public @interface EnableZipkinServer {
 
 }

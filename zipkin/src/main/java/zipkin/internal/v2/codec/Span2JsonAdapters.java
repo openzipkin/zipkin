@@ -17,7 +17,10 @@ import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.MalformedJsonException;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import zipkin.Annotation;
 import zipkin.Endpoint;
@@ -342,4 +345,25 @@ final class Span2JsonAdapters {
       b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value).writeAscii("\"}");
     }
   };
+
+  static final class Span2ListReader implements JsonReaderAdapter<List<Span>> {
+    Span2Reader spanReader;
+
+    @Override public List<Span> fromJson(JsonReader reader) throws IOException {
+      reader.beginArray();
+      if (!reader.hasNext()) {
+        reader.endArray();
+        return Collections.emptyList();
+      }
+      List<Span> result = new LinkedList<>(); // because we don't know how long it will be
+      if (spanReader == null) spanReader = new Span2Reader();
+      while (reader.hasNext()) result.add(spanReader.fromJson(reader));
+      reader.endArray();
+      return result;
+    }
+
+    @Override public String toString() {
+      return "List<Span>";
+    }
+  }
 }
