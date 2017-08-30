@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.storage.cassandra.SessionFactory.Default.buildCluster;
 
 @RunWith(Enclosed.class)
-public class CassandraTest {
+public class ITCassandraStorage {
 
   @ClassRule
   public static LazyCassandraStorage storage =

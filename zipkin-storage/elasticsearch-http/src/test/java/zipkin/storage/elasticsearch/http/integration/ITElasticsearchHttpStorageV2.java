@@ -21,7 +21,7 @@ import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
 
 @RunWith(Enclosed.class)
-public class ElasticsearchHttpV2Test {
+public class ITElasticsearchHttpStorageV2 {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
@@ -55,7 +55,7 @@ public class ElasticsearchHttpV2Test {
 
   public static class StrictTraceIdFalseTest extends ElasticsearchHttpStrictTraceIdFalseTest {
     @Override protected ElasticsearchHttpStorage.Builder storageBuilder() {
-      return ElasticsearchHttpV2Test.storage.computeStorageBuilder();
+      return ITElasticsearchHttpStorageV2.storage.computeStorageBuilder();
     }
   }
 }
