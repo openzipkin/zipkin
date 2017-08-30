@@ -29,7 +29,6 @@ import zipkin.server.brave.BraveConfiguration;
   ZipkinServerConfiguration.class,
   BraveConfiguration.class,
   ZipkinQueryApiV1.class,
-  ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class
 })
 public @interface EnableZipkinServer {

@@ -183,6 +183,13 @@ public class ZipkinServerIntegrationTest {
         .andExpect(status().isOk());
   }
 
+  @Test
+  public void v2WiresUp() throws Exception {
+    mockMvc
+      .perform(get("/api/v2/services"))
+      .andExpect(status().isOk());
+  }
+
   public void writeSpans_gzipEncoded() throws Exception {
     byte[] body = Codec.JSON.writeSpans(TRACE);
 
