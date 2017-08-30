@@ -29,10 +29,17 @@ public interface Decoder<S> {
     @Override public List<Span> decodeList(byte[] span) {
       return JsonCodec.readList(new Span2JsonAdapters.Span2Reader(), span);
     }
+
+    @Override public List<List<Span>> decodeNestedList(byte[] span) {
+      return JsonCodec.readList(new Span2JsonAdapters.Span2ListReader(), span);
+    }
   };
 
   Encoding encoding();
 
   /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
   List<S> decodeList(byte[] span);
+
+  /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
+  List<List<S>> decodeNestedList(byte[] span);
 }
