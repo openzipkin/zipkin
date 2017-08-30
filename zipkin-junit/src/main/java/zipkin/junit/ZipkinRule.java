@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,8 @@
 package zipkin.junit;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -29,9 +31,13 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
-import zipkin.storage.InMemoryStorage;
+import zipkin.internal.CallbackCaptor;
+import zipkin.internal.GroupByTraceId;
+import zipkin.internal.V2InMemoryStorage;
+import zipkin.internal.V2SpanConverter;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
+import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
 
 /**
  * Starts up a local Zipkin server, listening for http requests on {@link #httpUrl}.
@@ -42,8 +48,7 @@ import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
  * See http://openzipkin.github.io/zipkin-api/#/
  */
 public final class ZipkinRule implements TestRule {
-
-  private final InMemoryStorage storage = new InMemoryStorage();
+  private final V2InMemoryStorage storage = V2InMemoryStorage.newBuilder().build();
   private final InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   private final MockWebServer server = new MockWebServer();
   private final BlockingQueue<MockResponse> failureQueue = new LinkedBlockingQueue<>();
@@ -109,7 +114,9 @@ public final class ZipkinRule implements TestRule {
    * you'd add the parent here.
    */
   public ZipkinRule storeSpans(List<Span> spans) {
-    storage.spanConsumer().accept(spans);
+    CallbackCaptor<Void> callback = new CallbackCaptor<>();
+    storage.asyncSpanConsumer().accept(spans, callback);
+    callback.get();
     return this;
   }
 
@@ -131,7 +138,17 @@ public final class ZipkinRule implements TestRule {
 
   /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
-    return storage.spanStore().getRawTraces();
+    List<List<zipkin.internal.v2.Span>> traces = storage.v2SpanStore().getTraces();
+    List<List<Span>> result = new ArrayList<>(traces.size());
+    for (List<zipkin.internal.v2.Span> trace2 : traces) {
+      List<Span> sameTraceId = new ArrayList<>();
+      for (zipkin.internal.v2.Span span2 : trace2) {
+        sameTraceId.add(V2SpanConverter.toSpan(span2));
+      }
+      result.addAll(GroupByTraceId.apply(sameTraceId, false, false));
+    }
+    Collections.sort(result, TRACE_DESCENDING);
+    return result;
   }
 
   /**

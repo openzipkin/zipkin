@@ -174,10 +174,11 @@ public class ZipkinRuleTest {
    */
   @Test
   public void collectorMetrics_spans() throws IOException {
-    postSpans(TRACE);
-    postSpans(TRACE);
+    postSpans(asList(LOTS_OF_SPANS[0]));
+    postSpans(asList(LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]));
 
-    assertThat(zipkin.collectorMetrics().spans()).isEqualTo(TRACE.size() * 2);
+    assertThat(zipkin.collectorMetrics().spans())
+      .isEqualTo(3);
   }
 
   @Test

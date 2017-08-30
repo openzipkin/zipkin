@@ -27,8 +27,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.internal.V2InMemoryStorage;
 import zipkin.server.brave.TracedStorageComponent;
-import zipkin.storage.InMemoryStorage;
 import zipkin.storage.StorageComponent;
 
 @Configuration
@@ -86,7 +86,10 @@ public class ZipkinServerConfiguration {
     @Bean StorageComponent storage(
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
       @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
-      return InMemoryStorage.builder().strictTraceId(strictTraceId).maxSpanCount(maxSpans).build();
+      return V2InMemoryStorage.newBuilder()
+        .strictTraceId(strictTraceId)
+        .maxSpanCount(maxSpans)
+        .build();
     }
   }
 }
