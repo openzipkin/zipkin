@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.elasticsearch.http.internal;
+package zipkin.internal;
 
 import java.util.function.Consumer;
 import org.junit.Before;

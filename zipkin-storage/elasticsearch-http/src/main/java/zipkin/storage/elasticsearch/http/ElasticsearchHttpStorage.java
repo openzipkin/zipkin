@@ -28,12 +28,12 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
+import zipkin.internal.LenientDoubleCallbackAsyncSpanStore;
 import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageAdapters;
-import zipkin.storage.elasticsearch.http.internal.LenientDoubleCallbackAsyncSpanStore;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
 import static zipkin.internal.Util.checkNotNull;
@@ -205,6 +205,10 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
 
   abstract boolean legacyReadsEnabled();
 
+  @Override public zipkin.internal.v2.storage.SpanStore v2SpanStore() {
+    throw new UnsupportedOperationException("TODO");
+  }
+
   @Override public SpanStore spanStore() {
     return StorageAdapters.asyncToBlocking(asyncSpanStore());
   }
@@ -221,7 +225,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
     }
   }
 
-  @Override protected SpanConsumer v2AsyncSpanConsumer() {
+  @Override public SpanConsumer v2SpanConsumer() {
     ensureIndexTemplates();
     return new ElasticsearchHttpSpanConsumer(this);
   }
