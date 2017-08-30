@@ -11,61 +11,44 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.storage.mysql;
+package zipkin.junit;
 
-import org.junit.ClassRule;
+import java.io.IOException;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import zipkin.storage.StorageComponent;
+import zipkin.Span;
+import zipkin.TestObjects;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)
-public class MySQLTest {
-
-  @ClassRule
-  public static LazyMySQLStorage storage = new LazyMySQLStorage("1.29.1");
+public class ITHttpStorage {
 
   public static class DependenciesTest extends zipkin.storage.DependenciesTest {
+    @Rule public ZipkinRule server = new ZipkinRule();
+    HttpStorage storage = new HttpStorage(server.httpUrl());
 
-    @Override protected StorageComponent storage() {
-      return storage.get();
+    @Override protected HttpStorage storage() {
+      return storage;
     }
 
     @Override public void clear() {
-      storage.get().clear();
+      // no need.. the test rule does this
     }
   }
 
   public static class SpanStoreTest extends zipkin.storage.SpanStoreTest {
+    @Rule public ZipkinRule server = new ZipkinRule();
+    HttpStorage storage = new HttpStorage(server.httpUrl());
 
-    @Override protected StorageComponent storage() {
-      return storage.get();
-    }
-
-    @Override
-    public void clear() {
-      storage.get().clear();
-    }
-  }
-
-  public static class StrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
-
-    private final MySQLStorage storage;
-
-    public StrictTraceIdFalseTest() {
-      this.storage = MySQLTest.storage.computeStorageBuilder()
-          .strictTraceId(false)
-          .build();
-    }
-
-    @Override protected StorageComponent storage() {
+    @Override protected HttpStorage storage() {
       return storage;
     }
 
-    @Override
-    public void clear() {
-      storage.clear();
+    @Override public void clear() throws IOException {
+      // no need.. the test rule does this
     }
   }
-
-
 }

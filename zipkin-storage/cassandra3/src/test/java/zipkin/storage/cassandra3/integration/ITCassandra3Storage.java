@@ -26,7 +26,7 @@ import zipkin.storage.cassandra3.Cassandra3Storage;
 import zipkin.storage.cassandra3.InternalForTests;
 
 @RunWith(Enclosed.class)
-public class Cassandra3Test {
+public class ITCassandra3Storage {
 
   @ClassRule
   public static LazyCassandra3Storage storage =
