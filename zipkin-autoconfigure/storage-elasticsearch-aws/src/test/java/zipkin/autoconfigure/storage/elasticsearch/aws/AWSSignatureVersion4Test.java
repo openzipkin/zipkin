@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -111,5 +111,28 @@ public class AWSSignatureVersion4Test {
             + "\n"
             + "host;x-amz-date\n"
             + "2fd35cb36e5de91bbae279313c371fb630a6b3aab1478df378c5e73e667a1747");
+  }
+
+  /** Starting with Zipkin 1.31 colons are used to delimit index types in ES */
+  @Test
+  public void canonicalString_colonsInPath() throws InterruptedException, IOException {
+    es.enqueue(new MockResponse());
+
+    Request request = new Request.Builder()
+      .header("host", "search-zipkin53-mhdyquzbwwzwvln6phfzr3mmdi.ap-southeast-1.es.amazonaws.com")
+      .header("x-amz-date", "20170830T143137Z")
+      .url(es.url("_cluster/health/zipkin:span-*"))
+      .get().build();
+
+    // Ensure that the canonical string encodes commas with %2C
+    assertThat(AWSSignatureVersion4.canonicalString(request).readUtf8())
+      .isEqualTo("GET\n"
+        + "/_cluster/health/zipkin%3Aspan-%2A\n"
+        + "\n"
+        + "host:search-zipkin53-mhdyquzbwwzwvln6phfzr3mmdi.ap-southeast-1.es.amazonaws.com\n"
+        + "x-amz-date:20170830T143137Z\n"
+        + "\n"
+        + "host;x-amz-date\n"
+        + "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   }
 }
