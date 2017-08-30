@@ -13,6 +13,8 @@
  */
 package zipkin.server;
 
+import java.io.IOException;
+import java.util.List;
 import okio.Buffer;
 import okio.GzipSink;
 import org.junit.Before;
@@ -32,6 +34,7 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
+import zipkin.internal.V2InMemoryStorage;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.codec.Encoder;
 import zipkin.internal.v2.codec.MessageEncoder;
@@ -61,7 +64,7 @@ public class ZipkinServerIntegrationTest {
   @Autowired
   ConfigurableWebApplicationContext context;
   @Autowired
-  InMemoryStorage storage;
+  V2InMemoryStorage storage;
   @Autowired
   ActuateCollectorMetrics metrics;
 
@@ -103,7 +106,8 @@ public class ZipkinServerIntegrationTest {
 
   @Test
   public void writeSpans_updatesMetrics() throws Exception {
-    byte[] body = Codec.JSON.writeSpans(TRACE);
+    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
+    byte[] body = Codec.JSON.writeSpans(spans);
     mockMvc.perform(post("/api/v1/spans").content(body));
     mockMvc.perform(post("/api/v1/spans").content(body));
 
@@ -114,9 +118,9 @@ public class ZipkinServerIntegrationTest {
         .andExpect(jsonPath("$.['counter.zipkin_collector.bytes.http']").value(body.length * 2))
         .andExpect(jsonPath("$.['gauge.zipkin_collector.message_bytes.http']")
             .value(Double.valueOf(body.length))) // most recent size
-        .andExpect(jsonPath("$.['counter.zipkin_collector.spans.http']").value(TRACE.size() * 2))
+        .andExpect(jsonPath("$.['counter.zipkin_collector.spans.http']").value(spans.size() * 2))
         .andExpect(jsonPath("$.['gauge.zipkin_collector.message_spans.http']")
-            .value(Double.valueOf(TRACE.size()))); // most recent count
+            .value(Double.valueOf(spans.size()))); // most recent count
   }
 
   @Test

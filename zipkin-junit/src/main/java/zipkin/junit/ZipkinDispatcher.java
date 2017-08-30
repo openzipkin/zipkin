@@ -137,11 +137,11 @@ final class ZipkinDispatcher extends Dispatcher {
                                  .limit(maybeInteger(url.queryParameter("limit"))).build();
   }
 
-  static Long maybeLong(String input) {
+  static Long maybeLong(@Nullable String input) {
     return input != null ? Long.valueOf(input) : null;
   }
 
-  static Integer maybeInteger(String input) {
+  static Integer maybeInteger(@Nullable String input) {
     return input != null ? Integer.valueOf(input) : null;
   }
 
