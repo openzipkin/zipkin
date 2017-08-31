@@ -230,9 +230,9 @@ public class V2SpanConverterTest {
   /** Buggy instrumentation can send data with missing endpoints. Make sure we can record it. */
   @Test public void missingEndpoints() {
     Span span2 = Span.builder()
-      .traceId(1L)
-      .parentId(1L)
-      .id(2L)
+      .traceId("1")
+      .parentId("1")
+      .id("2")
       .name("foo")
       .timestamp(1472470996199000L)
       .duration(207000L)
@@ -255,9 +255,9 @@ public class V2SpanConverterTest {
   /** No special treatment for invalid core annotations: missing endpoint */
   @Test public void missingEndpoints_coreAnnotation() {
     Span span2 = Span.builder()
-      .traceId(1L)
-      .parentId(1L)
-      .id(2L)
+      .traceId("1")
+      .parentId("1")
+      .id("2")
       .name("foo")
       .timestamp(1472470996199000L)
       .addAnnotation(1472470996199000L, "sr")
@@ -280,9 +280,9 @@ public class V2SpanConverterTest {
 
   @Test public void localSpan_emptyComponent() {
     Span simpleLocal = Span.builder()
-      .traceId(1L)
-      .parentId(1L)
-      .id(2L)
+      .traceId("1")
+      .parentId("1")
+      .id("2")
       .name("local")
       .localEndpoint(frontend)
       .timestamp(1472470996199000L)
@@ -777,9 +777,9 @@ public class V2SpanConverterTest {
       .build();
 
     Span span2 = Span.builder()
-      .traceId(1)
+      .traceId("1")
       .name("test")
-      .id(2)
+      .id("2")
       .localEndpoint(frontend)
       .putTag("bool", "true")
       .putTag("short", "20")

@@ -30,6 +30,7 @@ import static zipkin.BinaryAnnotation.Type.BOOL;
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.LOCAL_COMPONENT;
 import static zipkin.Constants.SERVER_ADDR;
+import static zipkin.internal.Util.lowerHexToUnsignedLong;
 import static zipkin.internal.Util.writeBase64Url;
 
 /**
@@ -289,23 +290,26 @@ public final class V2SpanConverter {
 
   static Span.Builder newBuilder(zipkin.Span source) {
     return Span.builder()
-      .traceIdHigh(source.traceIdHigh)
-      .traceId(source.traceId)
-      .parentId(source.parentId)
-      .id(source.id)
+      .traceId(source.traceIdString())
+      .parentId(source.parentId != null ? Util.toLowerHex(source.parentId) : null)
+      .id(Util.toLowerHex(source.id))
       .name(source.name)
       .debug(source.debug);
   }
 
   /** Converts the input, parsing {@link Span#kind()} into RPC annotations. */
   public static zipkin.Span toSpan(Span in) {
+    String traceId = in.traceId();
     zipkin.Span.Builder result = zipkin.Span.builder()
-      .traceIdHigh(in.traceIdHigh())
-      .traceId(in.traceId())
-      .parentId(in.parentId())
-      .id(in.id())
+      .traceId(lowerHexToUnsignedLong(traceId))
+      .parentId(in.parentId() != null ? lowerHexToUnsignedLong(in.parentId()) : null)
+      .id(lowerHexToUnsignedLong(in.id()))
       .debug(in.debug())
-      .name(in.name() == null ? "" : in.name()); // avoid a NPE
+      .name(in.name() != null ? in.name() : ""); // avoid a NPE
+
+    if (traceId.length() == 32) {
+      result.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
+    }
 
     long timestamp = in.timestamp() == null ? 0L : in.timestamp();
     long duration = in.duration() == null ? 0L : in.duration();

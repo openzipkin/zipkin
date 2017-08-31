@@ -29,6 +29,7 @@ import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
+import static zipkin.internal.Util.toLowerHex;
 
 final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanStore {
   final SpanStore delegate;
@@ -69,7 +70,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
   }
 
   Call<List<zipkin.Span>> getTraceCall(long traceIdHigh, long traceIdLow) {
-    return delegate.getTrace(traceIdHigh, traceIdLow).map(getTraceMapper);
+    return delegate.getTrace(toLowerHex(traceIdHigh, traceIdLow)).map(getTraceMapper);
   }
 
   @Nullable @Override public List<zipkin.Span> getRawTrace(long traceIdHigh, long traceIdLow) {
@@ -87,7 +88,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
   }
 
   Call<List<zipkin.Span>> getRawTraceCall(long traceIdHigh, long traceIdLow) {
-    return delegate.getTrace(traceIdHigh, traceIdLow).map(getRawTraceMapper);
+    return delegate.getTrace(toLowerHex(traceIdHigh, traceIdLow)).map(getRawTraceMapper);
   }
 
   @Override public List<String> getServiceNames() {

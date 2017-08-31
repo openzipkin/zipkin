@@ -30,10 +30,10 @@ import java.util.TreeMap;
 import zipkin.DependencyLink;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.Pair;
+import zipkin.internal.Util;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
 
-import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
 import static zipkin.internal.Util.sortedList;
 
 /**
@@ -147,18 +147,19 @@ public final class InMemoryStorage implements SpanConsumer, SpanStore {
     evictToRecoverSpans(spansToRecover);
     for (Span span : spans) {
       Long timestamp = span.timestamp() != null ? span.timestamp() : Long.MIN_VALUE;
-      Pair<Long> traceIdTimeStamp = Pair.create(span.traceId(), timestamp);
+      long traceId = Util.lowerHexToUnsignedLong(span.traceId());
+      Pair<Long> traceIdTimeStamp = Pair.create(traceId, timestamp);
       spansByTraceIdTimeStamp.put(traceIdTimeStamp, span);
-      traceIdToTraceIdTimeStamps.put(span.traceId(), traceIdTimeStamp);
+      traceIdToTraceIdTimeStamps.put(traceId, traceIdTimeStamp);
       acceptedSpanCount++;
 
       String spanName = span.name();
       if (span.localServiceName() != null) {
-        serviceToTraceIds.put(span.localServiceName(), span.traceId());
+        serviceToTraceIds.put(span.localServiceName(), traceId);
         serviceToSpanNames.put(span.localServiceName(), spanName);
       }
       if (span.remoteServiceName() != null) {
-        serviceToTraceIds.put(span.remoteServiceName(), span.traceId());
+        serviceToTraceIds.put(span.remoteServiceName(), traceId);
         serviceToSpanNames.put(span.remoteServiceName(), spanName);
       }
     }
@@ -222,13 +223,13 @@ public final class InMemoryStorage implements SpanConsumer, SpanStore {
   }
 
   static Collection<List<Span>> strictByTraceId(List<Span> next) {
-    Map<Pair<Long>, List<Span>> groupedByTraceId = new LinkedHashMap<>();
+    Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
     for (Span span : next) {
-      Pair<Long> traceIdPair = Pair.create(span.traceIdHigh(), span.traceId());
-      if (!groupedByTraceId.containsKey(traceIdPair)) {
-        groupedByTraceId.put(traceIdPair, new LinkedList<>());
+      String traceId = span.traceId();
+      if (!groupedByTraceId.containsKey(traceId)) {
+        groupedByTraceId.put(traceId, new LinkedList<>());
       }
-      groupedByTraceId.get(traceIdPair).add(span);
+      groupedByTraceId.get(traceId).add(span);
     }
     return groupedByTraceId.values();
   }
@@ -265,15 +266,16 @@ public final class InMemoryStorage implements SpanConsumer, SpanStore {
     return result;
   }
 
-  @Override public synchronized Call<List<Span>> getTrace(long traceIdHigh, long traceId) {
-    List<Span> spans = spansByTraceId(traceId);
+  @Override public synchronized Call<List<Span>> getTrace(String traceId) {
+    traceId = Span.normalizeTraceId(traceId);
+    List<Span> spans = spansByTraceId(Util.lowerHexToUnsignedLong(traceId));
     if (spans == null || spans.isEmpty()) return Call.emptyList();
     if (!strictTraceId) return Call.create(spans);
 
     List<Span> filtered = new ArrayList<>(spans);
     Iterator<Span> iterator = filtered.iterator();
     while (iterator.hasNext()) {
-      if (iterator.next().traceIdHigh() != traceIdHigh) {
+      if (!iterator.next().traceId().equals(traceId)) {
         iterator.remove();
       }
     }
@@ -385,9 +387,9 @@ public final class InMemoryStorage implements SpanConsumer, SpanStore {
     }
   }
 
-  private List<Span> spansByTraceId(long traceId) {
+  private List<Span> spansByTraceId(long lowTraceId) {
     List<Span> sameTraceId = new ArrayList<>();
-    for (Pair<Long> traceIdTimestamp : traceIdToTraceIdTimeStamps.get(traceId)) {
+    for (Pair<Long> traceIdTimestamp : traceIdToTraceIdTimeStamps.get(lowTraceId)) {
       sameTraceId.addAll(spansByTraceIdTimeStamp.get(traceIdTimestamp));
     }
     return sameTraceId;
@@ -401,14 +403,4 @@ public final class InMemoryStorage implements SpanConsumer, SpanStore {
     Collections.sort(traceIdTimestamps, VALUE_2_DESCENDING);
     return traceIdTimestamps;
   }
-
-  /** Compares by {@link Span#timestamp()} if present. */
-  final static Comparator<Span> SPAN_COMPARATOR = new Comparator<Span>() {
-    @Override public int compare(Span left, Span right) {
-      if (left == right) return 0;
-      long x = left.timestamp() == null ? Long.MIN_VALUE : left.timestamp();
-      long y = right.timestamp() == null ? Long.MIN_VALUE : right.timestamp();
-      return x < y ? -1 : x == y ? 0 : 1;
-    }
-  };
 }

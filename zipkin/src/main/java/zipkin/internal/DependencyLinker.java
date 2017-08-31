@@ -100,7 +100,7 @@ public final class DependencyLinker {
 
     Span first = spans.next();
     Node.TreeBuilder<Span> builder =
-      new Node.TreeBuilder<>(logger, MERGE_RPC, first.traceIdString());
+      new Node.TreeBuilder<>(logger, MERGE_RPC, first.traceId());
     builder.addNode(first.parentId(), first.id(), first);
     while (spans.hasNext()) {
       Span next = spans.next();
@@ -192,7 +192,7 @@ public final class DependencyLinker {
         // When an RPC is split between spans, we skip the child (server side). If our parent is a
         // client, we need to check it for errors.
         if (!isError && Kind.CLIENT.equals(rpcAncestor.kind()) &&
-          currentSpan.parentId() != null && currentSpan.parentId() == rpcAncestor.id()) {
+          currentSpan.parentId() != null && currentSpan.parentId().equals(rpcAncestor.id())) {
           isError = rpcAncestor.tags().containsKey(ERROR);
         }
       }

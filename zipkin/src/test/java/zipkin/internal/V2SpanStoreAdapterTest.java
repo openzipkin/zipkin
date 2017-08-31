@@ -157,7 +157,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTrace_sync_callsExecute() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenReturn(Collections.emptyList());
@@ -170,7 +170,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test(expected = UncheckedIOException.class)
   public void getTrace_sync_wrapsIOE() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenThrow(IOException.class);
@@ -179,7 +179,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTrace_async_callsEnqueue() {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onSuccess(Collections.emptyList()));
 
@@ -190,7 +190,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test public void getTrace_async_doesntWrapIOE() {
     IOException throwable = new IOException();
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onError(throwable));
 
@@ -200,7 +200,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getRawTrace_sync_callsExecute() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenReturn(Collections.emptyList());
@@ -213,7 +213,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test(expected = UncheckedIOException.class)
   public void getRawTrace_sync_wrapsIOE() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenThrow(IOException.class);
@@ -222,7 +222,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getRawTrace_async_callsEnqueue() {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onSuccess(Collections.emptyList()));
 
@@ -233,7 +233,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test public void getRawTrace_async_doesntWrapIOE() {
     IOException throwable = new IOException();
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onError(throwable));
 
@@ -378,8 +378,8 @@ public class V2SpanStoreAdapterTest {
 
   @Test public void getTracesMapper_descendingOrder() {
     assertThat(V2SpanStoreAdapter.getTracesMapper.map(asList(
-      asList(builder.traceId(1L).timestamp((TODAY + 1) * 1000).build()),
-      asList(builder.traceId(2L).timestamp((TODAY + 2) * 1000).build())
+      asList(builder.traceId("1").timestamp((TODAY + 1) * 1000).build()),
+      asList(builder.traceId("2").timestamp((TODAY + 2) * 1000).build())
     ))).flatExtracting(s -> s)
       .extracting(s -> s.timestamp)
       .containsExactly((TODAY + 2) * 1000, (TODAY + 1) * 1000);

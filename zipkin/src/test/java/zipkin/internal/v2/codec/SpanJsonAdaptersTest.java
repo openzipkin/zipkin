@@ -67,7 +67,7 @@ public class SpanJsonAdaptersTest {
   }
 
   @Test public void spanRoundTrip_64bitTraceId() throws IOException {
-    span = span.toBuilder().traceIdHigh(0L).build();
+    span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
     assertThat(Decoder.JSON.decodeList(encodeList(span)))
       .containsOnly(span);
@@ -81,7 +81,7 @@ public class SpanJsonAdaptersTest {
   }
 
   @Test public void sizeInBytes_64bitTraceId() throws IOException {
-    span = span.toBuilder().traceIdHigh(0L).build();
+    span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
     assertThat(Span2JsonAdapters.SPAN_WRITER.sizeInBytes(span))
       .isEqualTo(Encoder.JSON.encode(span).length);
@@ -93,7 +93,7 @@ public class SpanJsonAdaptersTest {
    */
   @Test public void specialCharsInJson() throws IOException {
     // service name is surrounded by control characters
-    Span worstSpanInTheWorld = Span.builder().traceId(1L).id(1L)
+    Span worstSpanInTheWorld = Span.builder().traceId("1").id("1")
       // name is terrible
       .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
       .localEndpoint(Endpoint.create(new String(new char[] {0, 'a', 1}), 0))
@@ -109,8 +109,7 @@ public class SpanJsonAdaptersTest {
 
   @Test public void niceErrorOnUppercase_traceId() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage(
-      "48485A3953BB6124 should be a 1 to 32 character lower-hex string with no prefix");
+    thrown.expectMessage("48485A3953BB6124 should be lower-hex encoded with no prefix");
 
     String json = "[{\n"
       + "  \"traceId\": \"48485A3953BB6124\",\n"
@@ -151,10 +150,9 @@ public class SpanJsonAdaptersTest {
 
   @Test public void writesTraceIdHighIntoTraceIdField() {
     Span with128BitTraceId = Span.builder()
-      .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
-      .traceId(Util.lowerHexToUnsignedLong("6b221d5bc9e6496c"))
+      .traceId("48485a3953bb61246b221d5bc9e6496c")
       .localEndpoint(frontend)
-      .id(1).name("").build();
+      .id("1").name("").build();
 
     assertThat(new String(Encoder.JSON.encode(with128BitTraceId), Util.UTF_8))
       .startsWith("{\"traceId\":\"48485a3953bb61246b221d5bc9e6496c\"");
@@ -174,7 +172,7 @@ public class SpanJsonAdaptersTest {
 
     assertThat(Decoder.JSON.decodeList(with128BitTraceId).get(0))
       .isEqualTo(Decoder.JSON.decodeList(withLower64bitsTraceId).get(0).toBuilder()
-        .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
+        .traceId("48485a3953bb61246b221d5bc9e6496c").build());
   }
 
   @Test public void ignoresNull_topLevelFields() {

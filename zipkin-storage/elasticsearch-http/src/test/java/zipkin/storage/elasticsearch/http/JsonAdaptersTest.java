@@ -21,7 +21,6 @@ import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Util;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
@@ -147,7 +146,7 @@ public class JsonAdaptersTest {
   public void span_specialCharsInJson() throws IOException {
     // service name is surrounded by control characters
     Endpoint e = Endpoint.create(new String(new char[] {0, 'a', 1}), 0);
-    Span worstSpanInTheWorld = Span.builder().traceId(1L).id(1L)
+    Span worstSpanInTheWorld = Span.builder().traceId("1").id("1")
       // name is terrible
       .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
       .localEndpoint(e)
@@ -226,7 +225,7 @@ public class JsonAdaptersTest {
 
     assertThat(JsonAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
       .isEqualTo(JsonAdapters.SPAN_ADAPTER.fromJson(withLower64bitsTraceId).toBuilder()
-        .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
+        .traceId("48485a3953bb61246b221d5bc9e6496c").build());
   }
 
   @Test

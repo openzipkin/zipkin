@@ -69,8 +69,10 @@ public class SpanBenchmarks {
         .build();
   }
 
-  static final long traceId = Util.lowerHexToUnsignedLong("86154a4ba6e91385");
-  static final long spanId = Util.lowerHexToUnsignedLong("4d1e00c0db9010db");
+  static final String traceIdHex = "86154a4ba6e91385";
+  static final String spanIdHex = "4d1e00c0db9010db";
+  static final long traceId = Util.lowerHexToUnsignedLong(traceIdHex);
+  static final long spanId = Util.lowerHexToUnsignedLong(spanIdHex);
   static final Endpoint frontend = Endpoint.create("frontend", 127 << 24 | 1);
   static final Endpoint backend = Endpoint.builder()
     .serviceName("backend")
@@ -113,9 +115,9 @@ public class SpanBenchmarks {
 
   static Span buildClientOnlySpan2(Span.Builder builder) {
     return builder
-      .traceId(traceId)
-      .parentId(traceId)
-      .id(spanId)
+      .traceId(traceIdHex)
+      .parentId(traceIdHex)
+      .id(spanIdHex)
       .name("get")
       .kind(Span.Kind.CLIENT)
       .localEndpoint(frontend)

@@ -42,7 +42,6 @@ import zipkin.internal.v2.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 @RestController
 @RequestMapping("/api/v2")
@@ -147,12 +146,8 @@ public class ZipkinQueryApiV2 {
   public String getTrace(@PathVariable String traceIdHex, WebRequest request) throws IOException {
     if (storage == null) throw new Version2StorageNotConfigured();
 
-    long traceIdHigh = traceIdHex.length() == 32 ? lowerHexToUnsignedLong(traceIdHex, 0) : 0L;
-    long traceIdLow = lowerHexToUnsignedLong(traceIdHex);
-    List<Span> trace = storage.v2SpanStore().getTrace(traceIdHigh, traceIdLow).execute();
-    if (trace.isEmpty()) {
-      throw new TraceNotFoundException(traceIdHex, traceIdHigh, traceIdLow);
-    }
+    List<Span> trace = storage.v2SpanStore().getTrace(traceIdHex).execute();
+    if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
     Buffer buffer = new Buffer();
     buffer.writeByte('[');
     for (int i = 0, length = trace.size(); i < length; ) {
@@ -181,9 +176,8 @@ public class ZipkinQueryApiV2 {
   }
 
   static class TraceNotFoundException extends RuntimeException {
-    TraceNotFoundException(String traceIdHex, long traceIdHigh, long traceId) {
-      super(String.format("Cannot find trace for id=%s, parsed value=%s", traceIdHex,
-        traceIdHigh != 0 ? traceIdHigh + "," + traceId : traceId));
+    TraceNotFoundException(String traceIdHex) {
+      super("Cannot find trace " + traceIdHex);
     }
   }
 

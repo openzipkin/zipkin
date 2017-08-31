@@ -25,6 +25,7 @@ import zipkin.TestObjects;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin.internal.Util.toLowerHex;
 
 public class NodeTest {
   List<String> messages = new ArrayList<>();
@@ -97,7 +98,9 @@ public class NodeTest {
     Node.TreeBuilder<Span> treeBuilder =
       new Node.TreeBuilder<>(logger, copy.get(0).traceIdString());
     for (Span span : copy) {
-      treeBuilder.addNode(span.parentId, span.id, span);
+      treeBuilder.addNode(
+        span.parentId != null ? toLowerHex(span.parentId) : null, toLowerHex(span.id), span
+      );
     }
     Node<Span> root = treeBuilder.build();
     assertThat(root.value())
@@ -123,8 +126,9 @@ public class NodeTest {
     Node.TreeBuilder<Span> treeBuilder =
       new Node.TreeBuilder<>(logger, spans.get(0).traceIdString());
     for (Span span : spans) {
-      assertThat(treeBuilder.addNode(span.parentId, span.id, span))
-        .isTrue();
+      assertThat(treeBuilder.addNode(
+        span.parentId != null ? toLowerHex(span.parentId) : null, toLowerHex(span.id), span
+      )).isTrue();
     }
     Node<Span> tree = treeBuilder.build();
     Iterator<Node<Span>> iter = tree.traverse();
@@ -146,7 +150,9 @@ public class NodeTest {
 
     Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, s2.traceIdString());
     for (Span span : asList(s2, s3, s4)) {
-      treeBuilder.addNode(span.parentId, span.id, span);
+      treeBuilder.addNode(
+        span.parentId != null ? toLowerHex(span.parentId) : null, toLowerHex(span.id), span
+      );
     }
     Node<Span> root = treeBuilder.build();
     assertThat(root.isSyntheticRootForPartialTree())
@@ -164,8 +170,12 @@ public class NodeTest {
     Span s2 = Span.builder().traceId(137L).parentId(2L).id(2L).name("s2").build();
 
     Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, s2.traceIdString());
-    treeBuilder.addNode(s1.parentId, s1.id, s1);
-    assertThat(treeBuilder.addNode(s2.parentId, s2.id, s2)).isFalse();
+    treeBuilder.addNode(
+      s1.parentId != null ? toLowerHex(s1.parentId) : null, toLowerHex(s1.id), s1
+    );
+    assertThat(treeBuilder.addNode(
+      s2.parentId != null ? toLowerHex(s2.parentId) : null, toLowerHex(s2.id), s2
+    )).isFalse();
 
     treeBuilder.build();
     assertThat(messages).containsExactly(

@@ -23,8 +23,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import zipkin.DependencyLink;
-import zipkin.internal.Pair;
-import zipkin.internal.Util;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.storage.QueryRequest;
@@ -92,14 +90,14 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
     // be no significant difference in user experience since span start times are usually very
     // close to each other in human time.
     Aggregation traceIdTimestamp = Aggregation.terms("traceId", request.limit())
-        .addSubAggregation(Aggregation.min("timestamp_millis"))
-        .orderBy("timestamp_millis", "desc");
+      .addSubAggregation(Aggregation.min("timestamp_millis"))
+      .orderBy("timestamp_millis", "desc");
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest esRequest = SearchRequest.create(indices)
-        .filters(filters).addAggregation(traceIdTimestamp);
+      .filters(filters).addAggregation(traceIdTimestamp);
 
     HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.SORTED_KEYS);
 
@@ -111,7 +109,7 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
       // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
       for (Iterator<List<Span>> trace = traces.iterator(); trace.hasNext(); ) {
         List<Span> next = trace.next();
-        if (next.get(0).traceIdHigh() != 0 && !request.test(next)) {
+        if (next.get(0).traceId().length() > 16 && !request.test(next)) {
           trace.remove();
         }
       }
@@ -126,12 +124,14 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
     });
   }
 
-  @Override public Call<List<Span>> getTrace(long traceIdHigh, long traceIdLow) {
-    String traceIdHex = Util.toLowerHex(strictTraceId ? traceIdHigh : 0L, traceIdLow);
+  @Override public Call<List<Span>> getTrace(String traceId) {
+    // make sure we have a 16 or 32 character trace ID
+    traceId = Span.normalizeTraceId(traceId);
 
-    SearchRequest request = SearchRequest.create(asList(allSpanIndices))
-        .term("traceId", traceIdHex);
+    // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+    if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
 
+    SearchRequest request = SearchRequest.create(asList(allSpanIndices)).term("traceId", traceId);
     return search.newCall(request, BodyConverters.SPANS);
   }
 
@@ -147,9 +147,9 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
     SearchRequest.Filters filters = new SearchRequest.Filters();
     filters.addRange("timestamp_millis", beginMillis, endMillis);
     SearchRequest request = SearchRequest.create(indices)
-        .filters(filters)
-        .addAggregation(Aggregation.terms("localEndpoint.serviceName", Integer.MAX_VALUE))
-        .addAggregation(Aggregation.terms("remoteEndpoint.serviceName", Integer.MAX_VALUE));
+      .filters(filters)
+      .addAggregation(Aggregation.terms("localEndpoint.serviceName", Integer.MAX_VALUE))
+      .addAggregation(Aggregation.terms("remoteEndpoint.serviceName", Integer.MAX_VALUE));
     return search.newCall(request, BodyConverters.SORTED_KEYS);
   }
 
@@ -164,12 +164,12 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
 
     // A span name is only valid on a local endpoint, as a span name is defined locally
     SearchRequest.Filters filters = new SearchRequest.Filters()
-        .addRange("timestamp_millis", beginMillis, endMillis)
-        .addTerm("localEndpoint.serviceName", serviceName.toLowerCase(Locale.ROOT));
+      .addRange("timestamp_millis", beginMillis, endMillis)
+      .addTerm("localEndpoint.serviceName", serviceName.toLowerCase(Locale.ROOT));
 
     SearchRequest request = SearchRequest.create(indices)
-        .filters(filters)
-        .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
+      .filters(filters)
+      .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
 
     return search.newCall(request, BodyConverters.SORTED_KEYS);
   }
@@ -188,9 +188,11 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
   static List<List<Span>> groupByTraceId(Collection<Span> input, boolean strictTraceId) {
     if (input.isEmpty()) return Collections.emptyList();
 
-    Map<Pair<Long>, List<Span>> groupedByTraceId = new LinkedHashMap<>();
+    Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
     for (Span span : input) {
-      Pair<Long> traceId = Pair.create(strictTraceId ? span.traceIdHigh() : 0L, span.traceId());
+      String traceId = strictTraceId || span.traceId().length() == 16
+        ? span.traceId()
+        : span.traceId().substring(16);
       if (!groupedByTraceId.containsKey(traceId)) {
         groupedByTraceId.put(traceId, new LinkedList<>());
       }

@@ -29,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.APP_ENDPOINT;
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
+import static zipkin.internal.Util.toLowerHex;
 
 public class InMemoryStorageTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
@@ -40,11 +41,13 @@ public class InMemoryStorageTest {
 
     long gapBetweenSpans = 100;
     List<Span> earlySpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("early")
-      .traceId(i).id(i).timestamp((TODAY - i) * 1000).duration(1L)
+      .traceId(toLowerHex(i)).id(toLowerHex(i))
+      .timestamp((TODAY - i) * 1000).duration(1L)
       .localEndpoint(endpoints.get(i - 1)).build()).collect(toList());
 
     List<Span> lateSpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("late")
-      .traceId(i + 10).id(i + 10).timestamp((TODAY + gapBetweenSpans - i) * 1000).duration(1L)
+      .traceId(toLowerHex(i + 10)).id(toLowerHex(i + 10))
+      .timestamp((TODAY + gapBetweenSpans - i) * 1000).duration(1L)
       .localEndpoint(endpoints.get(i - 1)).build()).collect(toList());
 
     storage.accept(earlySpans).execute();
@@ -77,7 +80,7 @@ public class InMemoryStorageTest {
 
   /** It should be safe to run dependency link jobs twice */
   @Test public void replayOverwrites() throws IOException {
-    Span span = Span.builder().traceId(10L).id(10L).name("receive")
+    Span span = Span.builder().traceId("10").id("10").name("receive")
       .kind(Span.Kind.CONSUMER)
       .localEndpoint(APP_ENDPOINT)
       .remoteEndpoint(Endpoint.builder().serviceName("kafka").build())

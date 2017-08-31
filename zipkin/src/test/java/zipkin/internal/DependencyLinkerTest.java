@@ -29,6 +29,7 @@ import zipkin.internal.v2.Span.Kind;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.ERROR;
+import static zipkin.internal.Util.toLowerHex;
 
 public class DependencyLinkerTest {
   List<String> messages = new ArrayList<>();
@@ -467,7 +468,7 @@ public class DependencyLinkerTest {
 
   @Test
   public void linksRelatedSpansWhenMissingRootSpan() {
-    long missingParentId = 1;
+    long missingParentId = 1L;
     List<Span> trace = asList(
       span2(1L, missingParentId, 2L, Kind.SERVER, "service1", null, false),
       span2(1L, 2L, 3L, Kind.SERVER, "service2", null, false)
@@ -554,8 +555,11 @@ public class DependencyLinkerTest {
 
   static Span span2(long traceId, @Nullable Long parentId, long id, @Nullable Kind kind,
     @Nullable String local, @Nullable String remote, boolean isError) {
-    Span.Builder result = Span.builder();
-    result.traceId(traceId).parentId(parentId).id(id).kind(kind);
+    Span.Builder result = Span.builder()
+      .traceId(toLowerHex(traceId))
+      .parentId(parentId != null ? toLowerHex(parentId) : null)
+      .id(toLowerHex(id))
+      .kind(kind);
     if (local != null) result.localEndpoint(Endpoint.builder().serviceName(local).build());
     if (remote != null) result.remoteEndpoint(Endpoint.builder().serviceName(remote).build());
     if (isError) result.putTag(ERROR, "");

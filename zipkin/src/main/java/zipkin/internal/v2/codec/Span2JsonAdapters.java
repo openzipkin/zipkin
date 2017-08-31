@@ -214,8 +214,7 @@ final class Span2JsonAdapters {
   static final Buffer.Writer<Span> SPAN_WRITER = new Buffer.Writer<Span>() {
     @Override public int sizeInBytes(Span value) {
       int sizeInBytes = 0;
-      if (value.traceIdHigh() != 0) sizeInBytes += 16;
-      sizeInBytes += "{\"traceId\":\"".length() + 16 + 1;
+      sizeInBytes += "{\"traceId\":\"".length() + value.traceId().length() + 1;
       if (value.parentId() != null) {
         sizeInBytes += ",\"parentId\":\"".length() + 16 + 1;
       }
@@ -274,15 +273,11 @@ final class Span2JsonAdapters {
     }
 
     @Override public void write(Span value, Buffer b) {
-      b.writeAscii("{\"traceId\":\"");
-      if (value.traceIdHigh() != 0) {
-        b.writeLowerHex(value.traceIdHigh());
-      }
-      b.writeLowerHex(value.traceId()).writeByte('"');
+      b.writeAscii("{\"traceId\":\"").writeAscii(value.traceId()).writeByte('"');
       if (value.parentId() != null) {
-        b.writeAscii(",\"parentId\":\"").writeLowerHex(value.parentId()).writeByte('"');
+        b.writeAscii(",\"parentId\":\"").writeAscii(value.parentId()).writeByte('"');
       }
-      b.writeAscii(",\"id\":\"").writeLowerHex(value.id()).writeByte('"');
+      b.writeAscii(",\"id\":\"").writeAscii(value.id()).writeByte('"');
       if (value.kind() != null) {
         b.writeAscii(",\"kind\":\"").writeJsonEscaped(value.kind().toString()).writeByte('"');
       }

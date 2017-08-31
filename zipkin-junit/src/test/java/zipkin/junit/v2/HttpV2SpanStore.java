@@ -21,7 +21,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-import zipkin.internal.Util;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Decoder;
@@ -50,10 +49,9 @@ final class HttpV2SpanStore implements SpanStore {
       content -> Decoder.JSON.decodeNestedList(content.readByteArray()));
   }
 
-  @Override public Call<List<Span>> getTrace(long traceIdHigh, long traceIdLow) {
-    String traceIdHex = Util.toLowerHex(traceIdHigh, traceIdLow);
+  @Override public Call<List<Span>> getTrace(String traceId) {
     return factory.newCall(new Request.Builder()
-      .url(factory.baseUrl.resolve("/api/v2/trace/" + traceIdHex))
+      .url(factory.baseUrl.resolve("/api/v2/trace/" + Span.normalizeTraceId(traceId)))
       .build(), content -> Decoder.JSON.decodeList(content.readByteArray()))
       .handleError(((error, callback) -> {
         if (error instanceof HttpException && ((HttpException) error).code == 404) {

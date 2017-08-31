@@ -39,6 +39,7 @@ import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
+import static zipkin.internal.v2.Span.normalizeTraceId;
 
 final class ZipkinDispatcher extends Dispatcher {
   static final long DEFAULT_LOOKBACK = 86400000L; // 1 day in millis
@@ -142,9 +143,7 @@ final class ZipkinDispatcher extends Dispatcher {
       return jsonResponse(bout.toByteArray());
     } else if (url.encodedPath().startsWith("/api/v2/trace/")) {
       String traceIdHex = url.encodedPath().replace("/api/v2/trace/", "");
-      long traceIdHigh = traceIdHex.length() == 32 ? lowerHexToUnsignedLong(traceIdHex, 0) : 0L;
-      long traceIdLow = lowerHexToUnsignedLong(traceIdHex);
-      List<zipkin.internal.v2.Span> trace = store2.getTrace(traceIdHigh, traceIdLow).execute();
+      List<zipkin.internal.v2.Span> trace = store2.getTrace(normalizeTraceId(traceIdHex)).execute();
       if (!trace.isEmpty()) {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
         writeTrace(bout, trace);

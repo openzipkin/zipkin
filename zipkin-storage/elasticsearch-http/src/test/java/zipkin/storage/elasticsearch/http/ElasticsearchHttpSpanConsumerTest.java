@@ -62,7 +62,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void addsTimestamp_millisIntoJson() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span span = Span.builder().traceId(20L).id(20L).name("get")
+    Span span = Span.builder().traceId("20").id("20").name("get")
       .timestamp(TODAY * 1000).build();
 
     accept(span);
@@ -72,7 +72,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_skipsWhenNoData() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(0L)
+    Span span = Span.builder().traceId("20").id("22").name("").parentId("21").timestamp(0L)
       .localEndpoint(TestObjects.WEB_ENDPOINT)
       .kind(Kind.CLIENT)
       .build();
@@ -84,7 +84,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_addsTimestampMillis() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L).timestamp(1L)
+    Span span = Span.builder().traceId("20").id("22").name("").parentId("21").timestamp(1L)
       .localEndpoint(TestObjects.WEB_ENDPOINT)
       .kind(Kind.CLIENT)
       .build();
@@ -96,7 +96,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_addsAnnotationQuery() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L)
+    Span span = Span.builder().traceId("20").id("22").name("").parentId("21")
       .localEndpoint(TestObjects.WEB_ENDPOINT)
       .addAnnotation(1L, "\"foo")
       .build();
@@ -108,7 +108,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_addsAnnotationQueryTags() throws Exception {
-    Span span = Span.builder().traceId(20L).id(22L).name("").parentId(21L)
+    Span span = Span.builder().traceId("20").id("22").name("").parentId("21")
       .localEndpoint(TestObjects.WEB_ENDPOINT)
       .putTag("\"foo", "\"bar")
       .build();
@@ -120,7 +120,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   @Test public void prefixWithTimestampMillisAndQuery_readable() throws Exception {
-    Span span = Span.builder().traceId(20L).id(20L).name("get")
+    Span span = Span.builder().traceId("20").id("20").name("get")
       .timestamp(TODAY * 1000).build();
 
     byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
@@ -134,7 +134,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void doesntWriteDocumentId() throws Exception {
     es.enqueue(new MockResponse());
 
-    accept(Span.builder().traceId(1L).id(1L).name("foo").build());
+    accept(Span.builder().traceId("1").id("1").name("foo").build());
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getBody().readByteString().utf8())
@@ -144,8 +144,8 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void writesSpanNaturallyWhenNoTimestamp() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span span = Span.builder().traceId(1L).id(1L).name("foo").build();
-    accept(Span.builder().traceId(1L).id(1L).name("foo").build());
+    Span span = Span.builder().traceId("1").id("1").name("foo").build();
+    accept(Span.builder().traceId("1").id("1").name("foo").build());
 
     assertThat(es.takeRequest().getBody().readByteString().utf8())
       .contains("\n" + new String(Encoder.JSON.encode(span), UTF_8) + "\n");
@@ -154,13 +154,13 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void traceIsSearchableByServerServiceName() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span clientSpan = Span.builder().traceId(20L).id(22L).name("").parentId(21L)
+    Span clientSpan = Span.builder().traceId("20").id("22").name("").parentId("21")
       .timestamp(1000L)
       .kind(Kind.CLIENT)
       .localEndpoint(TestObjects.WEB_ENDPOINT)
       .build();
 
-    Span serverSpan = Span.builder().traceId(20L).id(22L).name("get").parentId(21L)
+    Span serverSpan = Span.builder().traceId("20").id("22").name("get").parentId("21")
       .timestamp(2000L)
       .kind(Kind.SERVER)
       .localEndpoint(TestObjects.APP_ENDPOINT)
@@ -185,7 +185,7 @@ public class ElasticsearchHttpSpanConsumerTest {
 
     es.enqueue(new MockResponse());
 
-    accept(Span.builder().traceId(1L).id(1L).name("foo").build());
+    accept(Span.builder().traceId("1").id("1").name("foo").build());
 
     RecordedRequest request = es.takeRequest();
     assertThat(request.getPath())
@@ -195,7 +195,7 @@ public class ElasticsearchHttpSpanConsumerTest {
   @Test public void choosesTypeSpecificIndex() throws Exception {
     es.enqueue(new MockResponse());
 
-    Span span = Span.builder().traceId(1L).id(2L).parentId(1L).name("s")
+    Span span = Span.builder().traceId("1").id("2").parentId("1").name("s")
       .localEndpoint(TestObjects.APP_ENDPOINT)
       .addAnnotation(TimeUnit.DAYS.toMicros(365) /* 1971-01-01 */, "foo")
       .build();

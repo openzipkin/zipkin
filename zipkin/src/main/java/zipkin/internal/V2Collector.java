@@ -45,7 +45,7 @@ public final class V2Collector extends Collector<Decoder<Span>, Span> {
   }
 
   @Override protected boolean isSampled(Span span) {
-    return sampler.isSampled(span.traceId(), span.debug());
+    return sampler.isSampled(Util.lowerHexToUnsignedLong(span.traceId()), span.debug());
   }
 
   @Override protected void record(List<Span> sampled, Callback<Void> callback) {
@@ -53,6 +53,6 @@ public final class V2Collector extends Collector<Decoder<Span>, Span> {
   }
 
   @Override protected String idString(Span span) {
-    return span.idString();
+    return span.traceId() + "/" + span.id();
   }
 }

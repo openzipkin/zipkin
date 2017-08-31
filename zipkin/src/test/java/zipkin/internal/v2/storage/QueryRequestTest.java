@@ -31,7 +31,7 @@ import static zipkin.TraceKeys.HTTP_METHOD;
 public class QueryRequestTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
   QueryRequest.Builder queryBuilder = QueryRequest.newBuilder().endTs(TODAY).lookback(60).limit(10);
-  Span span = Span.builder().traceId(10L).id(10L).name("receive")
+  Span span = Span.builder().traceId("10").id("10").name("receive")
     .localEndpoint(APP_ENDPOINT)
     .kind(Span.Kind.CONSUMER)
     .timestamp(TODAY * 1000)
@@ -146,7 +146,7 @@ public class QueryRequestTest {
       .build();
 
     assertThat(request.test(asList(
-      span.toBuilder().id(2).parentId(span.id()).timestamp(null).build(),
+      span.toBuilder().id("2").parentId(span.id()).timestamp(null).build(),
       span
     ))).isTrue();
   }
@@ -156,8 +156,8 @@ public class QueryRequestTest {
       .build();
 
     assertThat(request.test(asList(
-      span.toBuilder().id(2).parentId(span.id()).timestamp(span.timestamp() + DAY * 1000).build(),
-      span.toBuilder().id(3).parentId(span.id()).build()
+      span.toBuilder().id("2").parentId(span.id()).timestamp(span.timestamp() + DAY * 1000).build(),
+      span.toBuilder().id("3").parentId(span.id()).build()
     ))).isTrue();
   }
 
@@ -227,17 +227,17 @@ public class QueryRequestTest {
       .isFalse();
   }
 
-  Span foo = span.toBuilder().traceId(1).name("call1").id(1)
+  Span foo = span.toBuilder().traceId("1").name("call1").id("1")
     .addAnnotation(span.timestamp(), "foo").build();
   // would be foo bar, except lexicographically bar precedes foo
-  Span barAndFoo = span.toBuilder().traceId(2).name("call2").id(2)
+  Span barAndFoo = span.toBuilder().traceId("2").name("call2").id("2")
     .addAnnotation(span.timestamp(), "bar")
     .addAnnotation(span.timestamp(), "foo").build();
-  Span fooAndBazAndQux = span.toBuilder().traceId(3).name("call3").id(3)
+  Span fooAndBazAndQux = span.toBuilder().traceId("3").name("call3").id("3")
     .addAnnotation(span.timestamp(), "foo")
     .putTag("baz", "qux")
     .build();
-  Span barAndFooAndBazAndQux = span.toBuilder().traceId(4).name("call4").id(4)
+  Span barAndFooAndBazAndQux = span.toBuilder().traceId("4").name("call4").id("4")
     .addAnnotation(span.timestamp(), "bar")
     .addAnnotation(span.timestamp(), "foo")
     .putTag("baz", "qux")
