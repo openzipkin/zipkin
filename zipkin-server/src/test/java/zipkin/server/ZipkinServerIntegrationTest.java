@@ -13,7 +13,6 @@
  */
 package zipkin.server;
 
-import java.io.IOException;
 import java.util.List;
 import okio.Buffer;
 import okio.GzipSink;
@@ -38,7 +37,6 @@ import zipkin.internal.V2InMemoryStorage;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.codec.Encoder;
 import zipkin.internal.v2.codec.MessageEncoder;
-import zipkin.storage.InMemoryStorage;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
