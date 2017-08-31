@@ -21,7 +21,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -57,16 +56,6 @@ public class ZipkinServerConfiguration {
     // MetricsDropwizardAutoConfiguration can be manually excluded either, as Cassandra metrics won't be recorded.
     return new ActuateCollectorMetrics(counterBuffers.orElse(new CounterBuffers()),
                                        gaugeBuffers.orElse(new GaugeBuffers()));
-  }
-
-  @Configuration
-  @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
-  // ConditionalOnBean won't work in a public type as StorageComponent isn't loaded in that scope
-  @ConditionalOnBean(V2StorageComponent.class)
-  static class ZipkinQueryApiV2Configuration {
-    ZipkinQueryApiV2 queryV2(ZipkinQueryApiV2 api){ // inject and configure
-      return api;
-    }
   }
 
   @Configuration

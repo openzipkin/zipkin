@@ -18,8 +18,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
 import okio.Buffer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +39,7 @@ import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.Encoder;
 import zipkin.internal.v2.storage.QueryRequest;
+import zipkin.storage.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
@@ -46,20 +47,30 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
 @RestController
 @RequestMapping("/api/v2")
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
+@ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
 public class ZipkinQueryApiV2 {
-  @Autowired
-  @Value("${zipkin.query.lookback:86400000}")
-  long defaultLookback = 86400000; // 1 day in millis
+  final String storageType;
+  final V2StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
+  final long defaultLookback;
+  /** The Cache-Control max-age (seconds) for /api/v2/services and /api/v2/spans */
+  final int namesMaxAge;
 
-  /** The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans */
-  @Value("${zipkin.query.names-max-age:300}")
-  int namesMaxAge = 300; // 5 minutes
   volatile int serviceCount; // used as a threshold to start returning cache-control headers
 
-  private final V2StorageComponent storage;
-
-  @Autowired ZipkinQueryApiV2(V2StorageComponent storage) {
-    this.storage = storage; // don't cache spanStore here as it can cause the app to crash!
+  ZipkinQueryApiV2(
+    StorageComponent storage,
+    @Value("${zipkin.storage.type:mem}") String storageType,
+    @Value("${zipkin.query.lookback:86400000}") long defaultLookback, // 1 day in millis
+    @Value("${zipkin.query.names-max-age:300}") int namesMaxAge // 5 minutes
+  ) {
+    if (storage instanceof V2StorageComponent) {
+      this.storage = (V2StorageComponent) storage;
+    } else {
+      this.storage = null;
+    }
+    this.storageType = storageType;
+    this.defaultLookback = defaultLookback;
+    this.namesMaxAge = namesMaxAge;
   }
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -67,6 +78,8 @@ public class ZipkinQueryApiV2 {
     @RequestParam(value = "endTs", required = true) long endTs,
     @Nullable @RequestParam(value = "lookback", required = false) Long lookback
   ) throws IOException {
+    if (storage == null) throw new Version2StorageNotConfigured();
+
     Call<List<DependencyLink>> call = storage.v2SpanStore()
       .getDependencies(endTs, lookback != null ? lookback : defaultLookback);
     return Codec.JSON.writeDependencyLinks(call.execute());
@@ -74,6 +87,8 @@ public class ZipkinQueryApiV2 {
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
   public ResponseEntity<List<String>> getServiceNames() throws IOException {
+    if (storage == null) throw new Version2StorageNotConfigured();
+
     List<String> serviceNames = storage.v2SpanStore().getServiceNames().execute();
     serviceCount = serviceNames.size();
     return maybeCacheNames(serviceNames);
@@ -83,6 +98,8 @@ public class ZipkinQueryApiV2 {
   public ResponseEntity<List<String>> getSpanNames(
     @RequestParam(value = "serviceName", required = true) String serviceName
   ) throws IOException {
+    if (storage == null) throw new Version2StorageNotConfigured();
+
     return maybeCacheNames(storage.v2SpanStore().getSpanNames(serviceName).execute());
   }
 
@@ -97,6 +114,8 @@ public class ZipkinQueryApiV2 {
     @Nullable @RequestParam(value = "lookback", required = false) Long lookback,
     @RequestParam(value = "limit", defaultValue = "10") int limit
   ) throws IOException {
+    if (storage == null) throw new Version2StorageNotConfigured();
+
     QueryRequest queryRequest = QueryRequest.newBuilder()
       .serviceName(serviceName)
       .spanName(spanName)
@@ -110,10 +129,10 @@ public class ZipkinQueryApiV2 {
     List<List<Span>> traces = storage.v2SpanStore().getTraces(queryRequest).execute();
     Buffer buffer = new Buffer();
     buffer.writeByte('[');
-    for (int i = 0, iLength = traces.size(); i < iLength;) {
+    for (int i = 0, iLength = traces.size(); i < iLength; ) {
       buffer.writeByte('[');
       List<Span> trace = traces.get(i);
-      for (int j = 0, jLength = trace.size(); j < jLength; j++) {
+      for (int j = 0, jLength = trace.size(); j < jLength; ) {
         buffer.write(Encoder.JSON.encode(trace.get(j)));
         if (++j < jLength) buffer.writeByte(',');
       }
@@ -126,6 +145,8 @@ public class ZipkinQueryApiV2 {
 
   @RequestMapping(value = "/trace/{traceIdHex}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public String getTrace(@PathVariable String traceIdHex, WebRequest request) throws IOException {
+    if (storage == null) throw new Version2StorageNotConfigured();
+
     long traceIdHigh = traceIdHex.length() == 32 ? lowerHexToUnsignedLong(traceIdHex, 0) : 0L;
     long traceIdLow = lowerHexToUnsignedLong(traceIdHex);
     List<Span> trace = storage.v2SpanStore().getTrace(traceIdHigh, traceIdLow).execute();
@@ -140,6 +161,18 @@ public class ZipkinQueryApiV2 {
     }
     buffer.writeByte(']');
     return buffer.readUtf8();
+  }
+
+  @ExceptionHandler(Version2StorageNotConfigured.class)
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  public void version2StorageNotConfigured() {
+  }
+
+  /** {@linkplain V2StorageComponent} is still an internal, so we can't hard-wire based on it. */
+  class Version2StorageNotConfigured extends RuntimeException {
+    Version2StorageNotConfigured() {
+      super("Api version 2 not yet supported for " + storageType);
+    }
   }
 
   @ExceptionHandler(TraceNotFoundException.class)
