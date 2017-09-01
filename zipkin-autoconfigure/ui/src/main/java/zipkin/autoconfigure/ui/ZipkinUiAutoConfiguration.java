@@ -148,4 +148,9 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   public ModelAndView redirectRoot() {
     return new ModelAndView("redirect:/zipkin/");
   }
+
+  @RequestMapping(value = "/config.json", method = GET)
+  public ModelAndView redirectConfig() {
+    return new ModelAndView("redirect:/zipkin/config.json");
+  }
 }
