@@ -130,6 +130,7 @@ zipkin:
 
 server:
   port: ${QUERY_PORT:9411}
+  use-forward-headers: true
   compression:
     enabled: true
     # compresses any response over min-response-size (default is 2KiB)
