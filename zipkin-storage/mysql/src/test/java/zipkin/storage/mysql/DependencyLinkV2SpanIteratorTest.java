@@ -55,8 +55,8 @@ public class DependencyLinkV2SpanIteratorTest {
     Span span = iterator.next();
 
     assertThat(span.kind()).isNull();
-    assertThat(span.localEndpoint().serviceName).isEqualTo("service1");
-    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service2");
+    assertThat(span.localServiceName()).isEqualTo("service1");
+    assertThat(span.remoteServiceName()).isEqualTo("service2");
   }
 
   /** The linker is biased towards server spans, or client spans that know the peer localEndpoint(). */
@@ -79,7 +79,7 @@ public class DependencyLinkV2SpanIteratorTest {
     Span span = iterator.next();
 
     assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
-    assertThat(span.localEndpoint().serviceName).isEqualTo("service");
+    assertThat(span.localServiceName()).isEqualTo("service");
     assertThat(span.remoteEndpoint()).isNull();
   }
 
@@ -116,8 +116,8 @@ public class DependencyLinkV2SpanIteratorTest {
     Span span = iterator.next();
 
     assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
-    assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
-    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
+    assertThat(span.localServiceName()).isEqualTo("service2");
+    assertThat(span.remoteServiceName()).isEqualTo("service1");
   }
 
   /**
@@ -132,8 +132,8 @@ public class DependencyLinkV2SpanIteratorTest {
     Span span = iterator.next();
 
     assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
-    assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
-    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
+    assertThat(span.localServiceName()).isEqualTo("service2");
+    assertThat(span.remoteServiceName()).isEqualTo("service1");
   }
 
   /** {@link Constants#CLIENT_ADDR} is more authoritative than {@link Constants#CLIENT_SEND} */
@@ -146,8 +146,8 @@ public class DependencyLinkV2SpanIteratorTest {
     Span span = iterator.next();
 
     assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
-    assertThat(span.localEndpoint().serviceName).isEqualTo("service2");
-    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service1");
+    assertThat(span.localServiceName()).isEqualTo("service2");
+    assertThat(span.remoteServiceName()).isEqualTo("service1");
   }
 
   /** Finagle labels two sides of the same socket "ca", Type.BOOL.value, "sa" with the local endpoint name */
@@ -162,7 +162,7 @@ public class DependencyLinkV2SpanIteratorTest {
     // When there's no "sr" annotation, we assume it is a client.
     assertThat(span.kind()).isEqualTo(Span.Kind.CLIENT);
     assertThat(span.localEndpoint()).isNull();
-    assertThat(span.remoteEndpoint().serviceName).isEqualTo("service");
+    assertThat(span.remoteServiceName()).isEqualTo("service");
   }
 
   @Test public void specialCasesFinagleLocalSocketLabeling_server() {
@@ -175,7 +175,7 @@ public class DependencyLinkV2SpanIteratorTest {
 
     // When there is an "sr" annotation, we know it is a server
     assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
-    assertThat(span.localEndpoint().serviceName).isEqualTo("service");
+    assertThat(span.localServiceName()).isEqualTo("service");
     assertThat(span.remoteEndpoint()).isNull();
   }
 
@@ -190,7 +190,7 @@ public class DependencyLinkV2SpanIteratorTest {
     Span span = iterator.next();
 
     assertThat(span.kind()).isEqualTo(Span.Kind.SERVER);
-    assertThat(span.localEndpoint().serviceName).isEqualTo("service1");
+    assertThat(span.localServiceName()).isEqualTo("service1");
     assertThat(span.remoteEndpoint()).isNull();
   }
 

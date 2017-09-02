@@ -35,8 +35,7 @@ import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.V2InMemoryStorage;
 import zipkin.internal.V2SpanConverter;
-import zipkin.internal.v2.codec.Encoder;
-import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -86,8 +85,8 @@ public class ZipkinServerIntegrationTest {
   public void writeSpans_version2() throws Exception {
     Span span = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
 
-    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
-      Encoder.JSON.encode(V2SpanConverter.fromSpan(span).get(0))
+    byte[] message = BytesEncoder.JSON.encodeList(asList(
+      V2SpanConverter.fromSpan(span).get(0)
     ));
 
     performAsync(post("/api/v2/spans").content(message))

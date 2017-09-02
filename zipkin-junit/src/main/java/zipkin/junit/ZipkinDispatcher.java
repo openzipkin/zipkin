@@ -13,7 +13,6 @@
  */
 package zipkin.junit;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 import javax.annotation.Nullable;
@@ -32,7 +31,7 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.V2JsonSpanDecoder;
 import zipkin.internal.V2StorageComponent;
-import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 import zipkin.internal.v2.internal.Platform;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
@@ -132,35 +131,15 @@ final class ZipkinDispatcher extends Dispatcher {
       return jsonResponse(Codec.JSON.writeDependencyLinks(result));
     } else if (url.encodedPath().equals("/api/v2/traces")) {
       List<List<zipkin.internal.v2.Span>> traces = store2.getTraces(toQueryRequest2(url)).execute();
-      ByteArrayOutputStream bout = new ByteArrayOutputStream();
-      bout.write('[');
-      for (int i = 0, length = traces.size(); i < length; ) {
-        List<zipkin.internal.v2.Span> trace = traces.get(i);
-        writeTrace(bout, trace);
-        if (++i < length) bout.write(',');
-      }
-      bout.write(']');
-      return jsonResponse(bout.toByteArray());
+      return jsonResponse(BytesEncoder.JSON.encodeNestedList(traces));
     } else if (url.encodedPath().startsWith("/api/v2/trace/")) {
       String traceIdHex = url.encodedPath().replace("/api/v2/trace/", "");
       List<zipkin.internal.v2.Span> trace = store2.getTrace(normalizeTraceId(traceIdHex)).execute();
       if (!trace.isEmpty()) {
-        ByteArrayOutputStream bout = new ByteArrayOutputStream();
-        writeTrace(bout, trace);
-        return jsonResponse(bout.toByteArray());
+        return jsonResponse(BytesEncoder.JSON.encodeList(trace));
       }
     }
     return new MockResponse().setResponseCode(404);
-  }
-
-  static void writeTrace(ByteArrayOutputStream bout, List<zipkin.internal.v2.Span> trace)
-    throws IOException {
-    bout.write('[');
-    for (int i = 0, length = trace.size(); i < length; ) {
-      bout.write(Encoder.JSON.encode(trace.get(i)));
-      if (++i < length) bout.write(',');
-    }
-    bout.write(']');
   }
 
   MockResponse acceptSpans(RecordedRequest request, SpanDecoder decoder) {

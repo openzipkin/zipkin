@@ -23,8 +23,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
-import zipkin.Annotation;
-import zipkin.Endpoint;
+import zipkin.internal.v2.Annotation;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
 /**
@@ -237,14 +237,14 @@ public abstract class QueryRequest {
 
     for (Span span : spans) {
       Endpoint localEndpoint = span.localEndpoint();
-      String localServiceName = localEndpoint != null ? localEndpoint.serviceName : null;
+      String localServiceName = span.localServiceName();
 
       if (localServiceName != null) serviceNames.add(localServiceName);
 
       if (serviceName() == null || serviceName().equals(localServiceName)) {
         for (Annotation a : span.annotations()) {
-          if ("".equals(annotationQueryRemaining.get(a.value))) {
-            annotationQueryRemaining.remove(a.value);
+          if ("".equals(annotationQueryRemaining.get(a.value()))) {
+            annotationQueryRemaining.remove(a.value());
           }
         }
         for (Map.Entry<String, String> t : span.tags().entrySet()) {

@@ -11,25 +11,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.server;
+package zipkin.internal.v2;
 
-import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import org.springframework.context.annotation.Import;
-import zipkin.server.brave.BraveConfiguration;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
-@Target(ElementType.TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-@Documented
-@Import({
-  ZipkinServerConfiguration.class,
-  BraveConfiguration.class,
-  ZipkinQueryApiV1.class,
-  ZipkinHttpCollector.class
-})
-public @interface EnableZipkinServer {
+import static org.assertj.core.api.Assertions.assertThat;
 
+public class AnnotationTest {
+  @Rule public ExpectedException thrown = ExpectedException.none();
+
+  @Test public void messageWhenMissingValue() {
+    thrown.expect(NullPointerException.class);
+    thrown.expectMessage("value");
+
+    Annotation.create(1L, null);
+  }
+
+  @Test public void toString_isNice() {
+    assertThat(Annotation.create(1L, "foo"))
+      .hasToString("Annotation{timestamp=1, value=foo}");
+  }
 }

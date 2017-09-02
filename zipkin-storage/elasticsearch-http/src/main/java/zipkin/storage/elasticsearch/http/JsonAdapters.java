@@ -13,15 +13,16 @@
  */
 package zipkin.storage.elasticsearch.http;
 
+import com.google.gson.stream.MalformedJsonException;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import zipkin.Annotation;
 import zipkin.DependencyLink;
-import zipkin.Endpoint;
+import zipkin.internal.v2.Annotation;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
 /**
@@ -32,7 +33,7 @@ final class JsonAdapters {
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
     @Override @Nonnull
     public Span fromJson(JsonReader reader) throws IOException {
-      Span.Builder result = Span.builder();
+      Span.Builder result = Span.newBuilder();
       reader.beginObject();
       while (reader.hasNext()) {
         String nextName = reader.nextName();
@@ -72,7 +73,7 @@ final class JsonAdapters {
             reader.beginArray();
             while (reader.hasNext()) {
               Annotation a = ANNOTATION_ADAPTER.fromJson(reader);
-              result.addAnnotation(a.timestamp, a.value);
+              result.addAnnotation(a.timestamp(), a.value());
             }
             reader.endArray();
             break;
@@ -104,27 +105,27 @@ final class JsonAdapters {
   };
 
   static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
-    @Override @Nonnull
-    public Annotation fromJson(JsonReader reader) throws IOException {
-      Annotation.Builder result = Annotation.builder();
+    @Override @Nonnull public Annotation fromJson(JsonReader reader) throws IOException {
       reader.beginObject();
+      Long timestamp = null;
+      String value = null;
       while (reader.hasNext()) {
         switch (reader.nextName()) {
           case "timestamp":
-            result.timestamp(reader.nextLong());
+            timestamp = reader.nextLong();
             break;
           case "value":
-            result.value(reader.nextString());
-            break;
-          case "endpoint":
-            result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
+            value = reader.nextString();
             break;
           default:
             reader.skipValue();
         }
       }
       reader.endObject();
-      return result.build();
+      if (timestamp == null || value == null) {
+        throw new MalformedJsonException("Incomplete annotation at " + reader.getPath());
+      }
+      return Annotation.create(timestamp, value);
     }
 
     @Override
@@ -134,10 +135,10 @@ final class JsonAdapters {
   };
 
   static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
-    @Override @Nonnull
-    public Endpoint fromJson(JsonReader reader) throws IOException {
-      Endpoint.Builder result = Endpoint.builder().serviceName("");
+    @Override @Nonnull public Endpoint fromJson(JsonReader reader) throws IOException {
       reader.beginObject();
+      String serviceName = null, ipv4 = null, ipv6 = null;
+      Integer port = null;
       while (reader.hasNext()) {
         String nextName = reader.nextName();
         if (reader.peek() == JsonReader.Token.NULL) {
@@ -146,21 +147,26 @@ final class JsonAdapters {
         }
         switch (nextName) {
           case "serviceName":
-            result.serviceName(reader.nextString());
+            serviceName = reader.nextString();
             break;
           case "ipv4":
+            ipv4 = reader.nextString();
+            break;
           case "ipv6":
-            result.parseIp(reader.nextString());
+            ipv6 = reader.nextString();
             break;
           case "port":
-            result.port(reader.nextInt());
+            port = reader.nextInt();
             break;
           default:
             reader.skipValue();
         }
       }
       reader.endObject();
-      return result.build();
+      if (serviceName == null && ipv4 == null && ipv6 == null && port == null) {
+        throw new MalformedJsonException("Incomplete endpoint at " + reader.getPath());
+      }
+      return Endpoint.newBuilder().serviceName(serviceName).ip(ipv4).ip(ipv6).port(port).build();
     }
 
     @Override

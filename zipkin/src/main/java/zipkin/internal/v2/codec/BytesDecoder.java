@@ -20,26 +20,33 @@ import zipkin.internal.v2.Span;
 /**
  * @param <S> type of the span, usually {@link zipkin.Span}
  */
-public interface Decoder<S> {
-  Decoder<Span> JSON = new Decoder<Span>() {
+public interface BytesDecoder<S> {
+  BytesDecoder<Span> JSON = new BytesDecoder<Span>() {
     @Override public Encoding encoding() {
       return Encoding.JSON;
     }
 
-    @Override public List<Span> decodeList(byte[] span) {
-      return JsonCodec.readList(new Span2JsonAdapters.Span2Reader(), span);
+    @Override public Span decode(byte[] span) { // ex decode span in dependencies job
+      return JsonCodec.read(new Span2JsonAdapters.Span2Reader(), span);
     }
 
-    @Override public List<List<Span>> decodeNestedList(byte[] span) {
-      return JsonCodec.readList(new Span2JsonAdapters.Span2ListReader(), span);
+    @Override public List<Span> decodeList(byte[] spans) { // ex getTrace
+      return JsonCodec.readList(new Span2JsonAdapters.Span2Reader(), spans);
+    }
+
+    @Override public List<List<Span>> decodeNestedList(byte[] traces) { // ex getTraces
+      return JsonCodec.readList(new Span2JsonAdapters.Span2ListReader(), traces);
     }
   };
 
   Encoding encoding();
 
-  /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
-  List<S> decodeList(byte[] span);
+  /** throws {@linkplain IllegalArgumentException} if the span couldn't be decoded */
+  S decode(byte[] span);
 
   /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
-  List<List<S>> decodeNestedList(byte[] span);
+  List<S> decodeList(byte[] spans);
+
+  /** throws {@linkplain IllegalArgumentException} if the traces couldn't be decoded */
+  List<List<S>> decodeNestedList(byte[] traces);
 }

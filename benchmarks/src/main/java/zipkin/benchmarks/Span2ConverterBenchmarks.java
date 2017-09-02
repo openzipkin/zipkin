@@ -38,6 +38,8 @@ import zipkin.internal.v2.Span;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.Util;
 
+import static zipkin.internal.V2SpanConverter.convert;
+
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
 @Fork(3)
@@ -88,15 +90,15 @@ public class Span2ConverterBenchmarks {
     .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, frontend))
     .build();
 
-  Span server2 = Span.builder()
+  Span server2 = Span.newBuilder()
     .traceId("7180c278b62e8f6a216a2aea45d08fc9")
     .parentId("6b221d5bc9e6496c")
     .id("5b4185666d50f68b")
     .name("get")
     .kind(Span.Kind.SERVER)
     .shared(true)
-    .localEndpoint(backend)
-    .remoteEndpoint(frontend)
+    .localEndpoint(convert(backend))
+    .remoteEndpoint(convert(frontend))
     .timestamp(1472470996250000L)
     .duration(100000L)
     .putTag(TraceKeys.HTTP_PATH, "/backend")

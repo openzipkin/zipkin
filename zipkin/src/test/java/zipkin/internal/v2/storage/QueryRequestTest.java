@@ -19,11 +19,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin.Constants;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.TestObjects.APP_ENDPOINT;
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
 import static zipkin.TraceKeys.HTTP_METHOD;
@@ -31,8 +31,8 @@ import static zipkin.TraceKeys.HTTP_METHOD;
 public class QueryRequestTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
   QueryRequest.Builder queryBuilder = QueryRequest.newBuilder().endTs(TODAY).lookback(60).limit(10);
-  Span span = Span.builder().traceId("10").id("10").name("receive")
-    .localEndpoint(APP_ENDPOINT)
+  Span span = Span.newBuilder().traceId("10").id("10").name("receive")
+    .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
     .kind(Span.Kind.CONSUMER)
     .timestamp(TODAY * 1000)
     .build();

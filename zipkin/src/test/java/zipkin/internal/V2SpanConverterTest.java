@@ -26,6 +26,7 @@ import zipkin.internal.v2.Span.Kind;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.LOCAL_COMPONENT;
+import static zipkin.internal.V2SpanConverter.convert;
 
 public class V2SpanConverterTest {
   Endpoint frontend = Endpoint.create("frontend", 127 << 24 | 1);
@@ -37,14 +38,14 @@ public class V2SpanConverterTest {
   Endpoint kafka = Endpoint.create("kafka", 0);
 
   @Test public void client() {
-    Span simpleClient = Span.builder()
+    Span simpleClient = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get")
       .kind(Kind.CLIENT)
-      .localEndpoint(frontend)
-      .remoteEndpoint(backend)
+      .localEndpoint(convert(frontend))
+      .remoteEndpoint(convert(backend))
       .timestamp(1472470996199000L)
       .duration(207000L)
       .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
@@ -77,13 +78,13 @@ public class V2SpanConverterTest {
   }
 
   @Test public void client_unfinished() {
-    Span simpleClient = Span.builder()
+    Span simpleClient = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get")
       .kind(Kind.CLIENT)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
       .build();
@@ -106,12 +107,12 @@ public class V2SpanConverterTest {
   }
 
   @Test public void client_kindInferredFromAnnotation() {
-    Span simpleClient = Span.builder()
+    Span simpleClient = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get")
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(1472470996238000L - 1472470996199000L)
       .addAnnotation(1472470996199000L, Constants.CLIENT_SEND)
@@ -134,13 +135,13 @@ public class V2SpanConverterTest {
   }
 
   @Test public void noAnnotationsExceptAddresses() {
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get")
-      .localEndpoint(frontend)
-      .remoteEndpoint(backend)
+      .localEndpoint(convert(frontend))
+      .remoteEndpoint(convert(backend))
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -164,13 +165,13 @@ public class V2SpanConverterTest {
   }
 
   @Test public void fromSpan_redundantAddressAnnotations() {
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .kind(Kind.CLIENT)
       .name("get")
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -194,13 +195,13 @@ public class V2SpanConverterTest {
   }
 
   @Test public void server() {
-    Span simpleServer = Span.builder()
+    Span simpleServer = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .id("216a2aea45d08fc9")
       .name("get")
       .kind(Kind.SERVER)
-      .localEndpoint(backend)
-      .remoteEndpoint(frontend)
+      .localEndpoint(convert(backend))
+      .remoteEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(207000L)
       .putTag(TraceKeys.HTTP_PATH, "/api")
@@ -229,7 +230,7 @@ public class V2SpanConverterTest {
 
   /** Buggy instrumentation can send data with missing endpoints. Make sure we can record it. */
   @Test public void missingEndpoints() {
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("1")
       .parentId("1")
       .id("2")
@@ -254,7 +255,7 @@ public class V2SpanConverterTest {
 
   /** No special treatment for invalid core annotations: missing endpoint */
   @Test public void missingEndpoints_coreAnnotation() {
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("1")
       .parentId("1")
       .id("2")
@@ -279,12 +280,12 @@ public class V2SpanConverterTest {
   }
 
   @Test public void localSpan_emptyComponent() {
-    Span simpleLocal = Span.builder()
+    Span simpleLocal = Span.newBuilder()
       .traceId("1")
       .parentId("1")
       .id("2")
       .name("local")
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -326,7 +327,7 @@ public class V2SpanConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
       .build();
 
-    Span.Builder builder = Span.builder()
+    Span.Builder builder = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -335,8 +336,8 @@ public class V2SpanConverterTest {
     // the client side owns timestamp and duration
     Span client = builder.clone()
       .kind(Kind.CLIENT)
-      .localEndpoint(frontend)
-      .remoteEndpoint(backend)
+      .localEndpoint(convert(frontend))
+      .remoteEndpoint(convert(backend))
       .timestamp(1472470996199000L)
       .duration(207000L)
       .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
@@ -349,8 +350,8 @@ public class V2SpanConverterTest {
     Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(backend)
-      .remoteEndpoint(frontend)
+      .localEndpoint(convert(backend))
+      .remoteEndpoint(convert(frontend))
       .timestamp(1472470996250000L)
       .duration(100000L)
       .putTag(TraceKeys.HTTP_PATH, "/backend")
@@ -376,14 +377,14 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996350000L, Constants.SERVER_SEND, backend))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get")
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(backend)
+      .localEndpoint(convert(backend))
       .timestamp(1472470996250000L)
       .duration(100000L)
       .build();
@@ -407,7 +408,7 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996406000L, Constants.CLIENT_RECV, frontend))
       .build();
 
-    Span.Builder builder = Span.builder()
+    Span.Builder builder = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -415,7 +416,7 @@ public class V2SpanConverterTest {
 
     Span client = builder.clone()
       .kind(Kind.CLIENT)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -423,7 +424,7 @@ public class V2SpanConverterTest {
     Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996250000L)
       .duration(100000L)
       .build();
@@ -443,7 +444,7 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996250000L, Constants.SERVER_RECV, frontend))
       .build();
 
-    Span.Builder builder = Span.builder()
+    Span.Builder builder = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -451,14 +452,14 @@ public class V2SpanConverterTest {
 
     Span client = builder.clone()
       .kind(Kind.CLIENT)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .build();
 
     Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996250000L)
       .build();
 
@@ -476,13 +477,13 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_SEND, frontend))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.PRODUCER)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .build();
 
@@ -502,15 +503,15 @@ public class V2SpanConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.PRODUCER)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
-      .remoteEndpoint(kafka)
+      .remoteEndpoint(convert(kafka))
       .build();
 
     assertThat(V2SpanConverter.toSpan(span2))
@@ -532,13 +533,13 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996250000L, Constants.WIRE_SEND, frontend))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.PRODUCER)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(51000L)
       .build();
@@ -560,13 +561,13 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996199000L, Constants.MESSAGE_RECV, frontend))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.CONSUMER)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .build();
 
@@ -588,14 +589,14 @@ public class V2SpanConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.CONSUMER)
-      .localEndpoint(frontend)
-      .remoteEndpoint(kafka)
+      .localEndpoint(convert(frontend))
+      .remoteEndpoint(convert(kafka))
       .timestamp(1472470996199000L)
       .build();
 
@@ -618,13 +619,13 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996250000L, Constants.MESSAGE_RECV, frontend))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.CONSUMER)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(51000L)
       .build();
@@ -650,7 +651,7 @@ public class V2SpanConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.address(Constants.MESSAGE_ADDR, kafka))
       .build();
 
-    Span.Builder builder = Span.builder()
+    Span.Builder builder = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -658,8 +659,8 @@ public class V2SpanConverterTest {
 
     Span producer = builder.clone()
       .kind(Kind.PRODUCER)
-      .localEndpoint(frontend)
-      .remoteEndpoint(kafka)
+      .localEndpoint(convert(frontend))
+      .remoteEndpoint(convert(kafka))
       .timestamp(1472470996199000L)
       .duration(1472470996238000L - 1472470996199000L)
       .build();
@@ -667,8 +668,8 @@ public class V2SpanConverterTest {
     Span consumer = builder.clone()
       .kind(Kind.CONSUMER)
       .shared(true)
-      .localEndpoint(backend)
-      .remoteEndpoint(kafka)
+      .localEndpoint(convert(backend))
+      .remoteEndpoint(convert(kafka))
       .timestamp(1472470996403000L)
       .duration(1472470996406000L - 1472470996403000L)
       .build();
@@ -691,7 +692,7 @@ public class V2SpanConverterTest {
       .addAnnotation(Annotation.create(1472470996406000L, Constants.MESSAGE_RECV, frontend))
       .build();
 
-    Span.Builder builder = Span.builder()
+    Span.Builder builder = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
@@ -699,7 +700,7 @@ public class V2SpanConverterTest {
 
     Span producer = builder.clone()
       .kind(Kind.PRODUCER)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996199000L)
       .duration(1472470996238000L - 1472470996199000L)
       .build();
@@ -707,7 +708,7 @@ public class V2SpanConverterTest {
     Span consumer = builder.clone()
       .kind(Kind.CONSUMER)
       .shared(true)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp(1472470996403000L)
       .duration(1472470996406000L - 1472470996403000L)
       .build();
@@ -731,13 +732,13 @@ public class V2SpanConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.create("missing", "", null))
       .build();
 
-    Span.Builder builder = Span.builder()
+    Span.Builder builder = Span.newBuilder()
       .traceId("216a2aea45d08fc9")
       .id("5b4185666d50f68b")
       .name("missing");
 
     Span first = builder.clone()
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .addAnnotation(1472470996199000L, "foo")
       .addAnnotation(1472470996238000L, "bar")
       .addAnnotation(1472470996403000L, "missing")
@@ -746,7 +747,7 @@ public class V2SpanConverterTest {
       .build();
 
     Span second = builder.clone()
-      .localEndpoint(backend)
+      .localEndpoint(convert(backend))
       .addAnnotation(1472470996250000L, "baz")
       .addAnnotation(1472470996350000L, "qux")
       .putTag("baz", "qux")
@@ -776,11 +777,11 @@ public class V2SpanConverterTest {
       .addBinaryAnnotation(BinaryAnnotation.create("bytes", bytesBuffer, Type.BYTES, frontend))
       .build();
 
-    Span span2 = Span.builder()
+    Span span2 = Span.newBuilder()
       .traceId("1")
       .name("test")
       .id("2")
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .putTag("bool", "true")
       .putTag("short", "20")
       .putTag("int", "32800")

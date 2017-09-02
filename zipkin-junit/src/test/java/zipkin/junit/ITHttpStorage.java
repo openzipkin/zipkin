@@ -15,13 +15,8 @@ package zipkin.junit;
 
 import java.io.IOException;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import zipkin.Span;
-import zipkin.TestObjects;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)
 public class ITHttpStorage {

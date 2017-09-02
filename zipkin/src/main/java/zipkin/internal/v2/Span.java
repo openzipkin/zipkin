@@ -15,7 +15,9 @@ package zipkin.internal.v2;
 
 import com.google.auto.value.AutoValue;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,15 +26,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import zipkin.Annotation;
 import zipkin.Constants;
-import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.v2.codec.Encoder;
-
-import static zipkin.internal.Util.UTF_8;
-import static zipkin.internal.Util.checkNotNull;
-import static zipkin.internal.Util.sortedList;
+import zipkin.internal.v2.codec.BytesEncoder;
 
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
@@ -56,6 +52,8 @@ import static zipkin.internal.Util.sortedList;
 @AutoValue
 @Immutable
 public abstract class Span implements Serializable { // for Spark jobs
+  static final Charset UTF_8 = Charset.forName("UTF-8");
+
   private static final long serialVersionUID = 0L;
 
   /**
@@ -166,7 +164,13 @@ public abstract class Span implements Serializable { // for Spark jobs
   // Nullable for data conversion especially late arriving data which might not have an annotation
   @Nullable public abstract Endpoint localEndpoint();
 
-  /** When an RPC (or messaging) span, indicates the other side of the connection. */
+  /**
+   * When an RPC (or messaging) span, indicates the other side of the connection.
+   *
+   * <p>By recording the remote endpoint, your trace will contain network context even if the peer
+   * is not tracing. For example,For example, you can record the IP from the {@code X-Forwarded-For}
+   * header or or the service name and socket of a remote peer.
+   */
   @Nullable public abstract Endpoint remoteEndpoint();
 
   /**
@@ -198,19 +202,15 @@ public abstract class Span implements Serializable { // for Spark jobs
 
   @Nullable public String localServiceName() {
     Endpoint localEndpoint = localEndpoint();
-    return localEndpoint != null && !"".equals(localEndpoint.serviceName)
-      ? localEndpoint.serviceName
-      : null;
+    return localEndpoint != null ? localEndpoint.serviceName() : null;
   }
 
   @Nullable public String remoteServiceName() {
     Endpoint remoteEndpoint = remoteEndpoint();
-    return remoteEndpoint != null && !"".equals(remoteEndpoint.serviceName)
-      ? remoteEndpoint.serviceName
-      : null;
+    return remoteEndpoint != null ? remoteEndpoint.serviceName() : null;
   }
 
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -379,14 +379,16 @@ public abstract class Span implements Serializable { // for Spark jobs
     /** @see Span#annotations */
     public Builder addAnnotation(long timestamp, String value) {
       if (annotations == null) annotations = new ArrayList<>(2);
-      annotations.add(Annotation.create(timestamp, value, null));
+      annotations.add(Annotation.create(timestamp, value));
       return this;
     }
 
     /** @see Span#tags */
     public Builder putTag(String key, String value) {
       if (tags == null) tags = new TreeMap<>();
-      this.tags.put(checkNotNull(key, "key"), checkNotNull(value, "value"));
+      if (key == null) throw new NullPointerException("key == null");
+      if (value == null) throw new NullPointerException("value of " + key + " == null");
+      this.tags.put(key, value);
       return this;
     }
 
@@ -425,7 +427,7 @@ public abstract class Span implements Serializable { // for Spark jobs
   }
 
   @Override public String toString() {
-    return new String(Encoder.JSON.encode(this), UTF_8);
+    return new String(BytesEncoder.JSON.encode(this), UTF_8);
   }
 
   /**
@@ -463,5 +465,14 @@ public abstract class Span implements Serializable { // for Spark jobs
         throw new IllegalArgumentException(id + " should be lower-hex encoded with no prefix");
       }
     }
+  }
+
+  static <T extends Comparable<? super T>> List<T> sortedList(@Nullable List<T> in) {
+    if (in == null || in.isEmpty()) return Collections.emptyList();
+    if (in.size() == 1) return Collections.singletonList(in.get(0));
+    Object[] array = in.toArray();
+    Arrays.sort(array);
+    List result = Arrays.asList(array);
+    return Collections.unmodifiableList(result);
   }
 }

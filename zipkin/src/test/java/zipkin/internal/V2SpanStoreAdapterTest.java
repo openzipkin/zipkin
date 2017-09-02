@@ -41,6 +41,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static zipkin.TestObjects.TODAY;
+import static zipkin.internal.V2SpanConverter.convert;
 
 public class V2SpanStoreAdapterTest {
   @Rule public MockitoRule mocks = MockitoJUnit.rule();
@@ -52,7 +53,7 @@ public class V2SpanStoreAdapterTest {
 
   Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2);
   Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3);
-  Span.Builder builder = Span.builder()
+  Span.Builder builder = Span.newBuilder()
     .traceId("7180c278b62e8f6a5b4185666d50f68b")
     .id("5b4185666d50f68b")
     .name("get");
@@ -60,14 +61,14 @@ public class V2SpanStoreAdapterTest {
   List<Span> skewedTrace2 = asList(
     builder.clone()
       .kind(Span.Kind.CLIENT)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp((TODAY + 200) * 1000)
       .duration(120_000L)
       .build(),
     builder.clone()
       .kind(Span.Kind.SERVER)
       .shared(true)
-      .localEndpoint(backend)
+      .localEndpoint(convert(backend))
       .timestamp((TODAY + 100) * 1000) // received before sent!
       .duration(60_000L)
       .build()
@@ -254,6 +255,16 @@ public class V2SpanStoreAdapterTest {
     verify(call).execute();
   }
 
+  @Test public void getServiceNames_sortsList() throws IOException {
+    when(spanStore.getServiceNames())
+      .thenReturn(call);
+    when(call.execute())
+      .thenReturn(asList("foo", "bar"));
+
+    assertThat(adapter.getServiceNames())
+      .containsExactly("bar", "foo");
+  }
+
   @Test(expected = UncheckedIOException.class)
   public void getServiceNames_sync_wrapsIOE() throws IOException {
     when(spanStore.getServiceNames())
@@ -295,6 +306,16 @@ public class V2SpanStoreAdapterTest {
       .isEmpty();
 
     verify(call).execute();
+  }
+
+  @Test public void getSpanNames_sortsList() throws IOException {
+    when(spanStore.getSpanNames("service1"))
+      .thenReturn(call);
+    when(call.execute())
+      .thenReturn(asList("foo", "bar"));
+
+    assertThat(adapter.getSpanNames("service1"))
+      .containsExactly("bar", "foo");
   }
 
   @Test(expected = UncheckedIOException.class)

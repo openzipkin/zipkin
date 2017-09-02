@@ -16,7 +16,6 @@ package zipkin.storage;
 import java.util.List;
 import zipkin.Codec;
 import zipkin.Span;
-import zipkin.collector.CollectorSampler;
 
 /**
  * Spans are created in instrumentation, transported out-of-band, and eventually persisted. A span

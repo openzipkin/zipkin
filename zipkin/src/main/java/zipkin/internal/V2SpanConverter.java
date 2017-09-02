@@ -13,6 +13,8 @@
  */
 package zipkin.internal;
 
+import java.net.Inet6Address;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,7 +24,7 @@ import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
-import zipkin.Endpoint;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.Span.Kind;
 
@@ -107,7 +109,7 @@ public final class V2SpanConverter {
         if (closeEnough(cs.endpoint, sr.endpoint)) {
           client.kind(Kind.CLIENT);
           // fork a new span for the server side
-          server = newSpanBuilder(source, sr.endpoint).kind(Kind.SERVER);
+          server = newSpanBuilder(source, convert(sr.endpoint)).kind(Kind.SERVER);
         } else {
           server = forEndpoint(source, sr.endpoint);
         }
@@ -148,7 +150,7 @@ public final class V2SpanConverter {
         if (closeEnough(ms.endpoint, mr.endpoint)) {
           producer.kind(Kind.PRODUCER);
           // fork a new span for the consumer side
-          consumer = newSpanBuilder(source, mr.endpoint).kind(Kind.CONSUMER);
+          consumer = newSpanBuilder(source, convert(mr.endpoint)).kind(Kind.CONSUMER);
         } else {
           consumer = forEndpoint(source, mr.endpoint);
         }
@@ -186,7 +188,7 @@ public final class V2SpanConverter {
     }
 
     void processBinaryAnnotations(zipkin.Span source) {
-      Endpoint ca = null, sa = null, ma = null;
+      zipkin.Endpoint ca = null, sa = null, ma = null;
       for (int i = 0, length = source.binaryAnnotations.size(); i < length; i++) {
         BinaryAnnotation b = source.binaryAnnotations.get(i);
         if (b.type == BOOL) {
@@ -231,40 +233,41 @@ public final class V2SpanConverter {
       }
 
       if (cs != null && sa != null && !closeEnough(sa, cs.endpoint)) {
-        forEndpoint(source, cs.endpoint).remoteEndpoint(sa);
+        forEndpoint(source, cs.endpoint).remoteEndpoint(convert(sa));
       }
 
       if (sr != null && ca != null && !closeEnough(ca, sr.endpoint)) {
-        forEndpoint(source, sr.endpoint).remoteEndpoint(ca);
+        forEndpoint(source, sr.endpoint).remoteEndpoint(convert(ca));
       }
 
       if (ms != null && ma != null && !closeEnough(ma, ms.endpoint)) {
-        forEndpoint(source, ms.endpoint).remoteEndpoint(ma);
+        forEndpoint(source, ms.endpoint).remoteEndpoint(convert(ma));
       }
 
       if (mr != null && ma != null && !closeEnough(ma, mr.endpoint)) {
-        forEndpoint(source, mr.endpoint).remoteEndpoint(ma);
+        forEndpoint(source, mr.endpoint).remoteEndpoint(convert(ma));
       }
 
       // special-case when we are missing core annotations, but we have both address annotations
       if ((cs == null && sr == null) && (ca != null && sa != null)) {
-        forEndpoint(source, ca).remoteEndpoint(sa);
+        forEndpoint(source, ca).remoteEndpoint(convert(sa));
       }
     }
 
-    Span.Builder forEndpoint(zipkin.Span source, @Nullable Endpoint e) {
+    Span.Builder forEndpoint(zipkin.Span source, @Nullable zipkin.Endpoint e) {
       if (e == null) return spans.get(0); // allocate missing endpoint data to first span
+      Endpoint converted = convert(e);
       for (int i = 0, length = spans.size(); i < length; i++) {
         Span.Builder next = spans.get(i);
         Endpoint nextLocalEndpoint = next.localEndpoint();
         if (nextLocalEndpoint == null) {
-          next.localEndpoint(e);
+          next.localEndpoint(converted);
           return next;
-        } else if (closeEnough(nextLocalEndpoint, e)) {
+        } else if (closeEnough(convert(nextLocalEndpoint), e)) {
           return next;
         }
       }
-      return newSpanBuilder(source, e);
+      return newSpanBuilder(source, converted);
     }
 
     Span.Builder newSpanBuilder(zipkin.Span source, Endpoint e) {
@@ -284,12 +287,12 @@ public final class V2SpanConverter {
     }
   }
 
-  static boolean closeEnough(Endpoint left, Endpoint right) {
+  static boolean closeEnough(zipkin.Endpoint left, zipkin.Endpoint right) {
     return left.serviceName.equals(right.serviceName);
   }
 
   static Span.Builder newBuilder(zipkin.Span source) {
-    return Span.builder()
+    return Span.newBuilder()
       .traceId(source.traceIdString())
       .parentId(source.parentId != null ? Util.toLowerHex(source.parentId) : null)
       .id(Util.toLowerHex(source.id))
@@ -311,25 +314,25 @@ public final class V2SpanConverter {
       result.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
     }
 
-    long timestamp = in.timestamp() == null ? 0L : in.timestamp();
-    long duration = in.duration() == null ? 0L : in.duration();
-    if (timestamp != 0L) {
-      result.timestamp(timestamp);
-      if (duration != 0L) result.duration(duration);
+    long startTs = in.timestamp() == null ? 0L : in.timestamp();
+    Long endTs = in.duration() == null ? 0L : in.timestamp() + in.duration();
+    if (startTs != 0L) {
+      result.timestamp(startTs);
+      result.duration(in.duration());
     }
 
+    zipkin.Endpoint local = in.localEndpoint() != null ? convert(in.localEndpoint()) : null;
+    zipkin.Endpoint remote = in.remoteEndpoint() != null ? convert(in.remoteEndpoint()) : null;
     Kind kind = in.kind();
-    Annotation cs = null, sr = null, ss = null, cr = null, ms = null, mr = null, ws = null, wr =
-      null;
+    Annotation
+      cs = null, sr = null, ss = null, cr = null, ms = null, mr = null, ws = null, wr = null;
     String remoteEndpointType = null;
 
     boolean wroteEndpoint = false;
 
     for (int i = 0, length = in.annotations().size(); i < length; i++) {
-      Annotation a = in.annotations().get(i);
-      if (in.localEndpoint() != null) {
-        a = a.toBuilder().endpoint(in.localEndpoint()).build();
-      }
+      zipkin.internal.v2.Annotation input = in.annotations().get(i);
+      Annotation a = Annotation.create(input.timestamp(), input.value(), local);
       if (a.value.length() == 2) {
         if (a.value.equals(Constants.CLIENT_SEND)) {
           kind = Kind.CLIENT;
@@ -369,39 +372,26 @@ public final class V2SpanConverter {
       switch (kind) {
         case CLIENT:
           remoteEndpointType = Constants.SERVER_ADDR;
-          if (timestamp != 0L) {
-            cs = Annotation.create(timestamp, Constants.CLIENT_SEND, in.localEndpoint());
-          }
-          if (duration != 0L) {
-            cr = Annotation.create(timestamp + duration, Constants.CLIENT_RECV, in.localEndpoint());
-          }
+          if (startTs != 0L) cs = Annotation.create(startTs, Constants.CLIENT_SEND, local);
+          if (endTs != 0L) cr = Annotation.create(endTs, Constants.CLIENT_RECV, local);
           break;
         case SERVER:
           remoteEndpointType = Constants.CLIENT_ADDR;
-          if (timestamp != 0L) {
-            sr = Annotation.create(timestamp, Constants.SERVER_RECV, in.localEndpoint());
-          }
-          if (duration != 0L) {
-            ss = Annotation.create(timestamp + duration, Constants.SERVER_SEND, in.localEndpoint());
-          }
+          if (startTs != 0L) sr = Annotation.create(startTs, Constants.SERVER_RECV, local);
+          if (endTs != 0L) ss = Annotation.create(endTs, Constants.SERVER_SEND, local);
           break;
         case PRODUCER:
           remoteEndpointType = Constants.MESSAGE_ADDR;
-          if (timestamp != 0L) {
-            ms = Annotation.create(timestamp, Constants.MESSAGE_SEND, in.localEndpoint());
-          }
-          if (duration != 0L) {
-            ws = Annotation.create(timestamp + duration, Constants.WIRE_SEND, in.localEndpoint());
-          }
+          if (startTs != 0L) ms = Annotation.create(startTs, Constants.MESSAGE_SEND, local);
+          if (endTs != 0L) ws = Annotation.create(endTs, Constants.WIRE_SEND, local);
           break;
         case CONSUMER:
           remoteEndpointType = Constants.MESSAGE_ADDR;
-          if (timestamp != 0L && duration != 0L) {
-            wr = Annotation.create(timestamp, Constants.WIRE_RECV, in.localEndpoint());
-            mr =
-              Annotation.create(timestamp + duration, Constants.MESSAGE_RECV, in.localEndpoint());
-          } else if (timestamp != 0L) {
-            mr = Annotation.create(timestamp, Constants.MESSAGE_RECV, in.localEndpoint());
+          if (startTs != 0L && endTs != 0L) {
+            wr = Annotation.create(startTs, Constants.WIRE_RECV, local);
+            mr = Annotation.create(endTs, Constants.MESSAGE_RECV, local);
+          } else if (startTs != 0L) {
+            mr = Annotation.create(startTs, Constants.MESSAGE_RECV, local);
           }
           break;
         default:
@@ -411,8 +401,7 @@ public final class V2SpanConverter {
 
     for (Map.Entry<String, String> tag : in.tags().entrySet()) {
       wroteEndpoint = true;
-      result.addBinaryAnnotation(
-        BinaryAnnotation.create(tag.getKey(), tag.getValue(), in.localEndpoint()));
+      result.addBinaryAnnotation(BinaryAnnotation.create(tag.getKey(), tag.getValue(), local));
     }
 
     if (cs != null
@@ -432,23 +421,57 @@ public final class V2SpanConverter {
       if (ms != null) result.addAnnotation(ms);
       if (mr != null) result.addAnnotation(mr);
       wroteEndpoint = true;
-    } else if (in.localEndpoint() != null && in.remoteEndpoint() != null) {
+    } else if (local != null && remote != null) {
       // special-case when we are missing core annotations, but we have both address annotations
-      result.addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, in.localEndpoint()));
+      result.addBinaryAnnotation(BinaryAnnotation.address(CLIENT_ADDR, local));
       wroteEndpoint = true;
       remoteEndpointType = SERVER_ADDR;
     }
 
-    if (remoteEndpointType != null && in.remoteEndpoint() != null) {
-      result.addBinaryAnnotation(BinaryAnnotation.address(remoteEndpointType, in.remoteEndpoint()));
+    if (remoteEndpointType != null && remote != null) {
+      result.addBinaryAnnotation(BinaryAnnotation.address(remoteEndpointType, remote));
     }
 
     // don't report server-side timestamp on shared or incomplete spans
     if (Boolean.TRUE.equals(in.shared()) && sr != null) {
       result.timestamp(null).duration(null);
     }
-    if (in.localEndpoint() != null && !wroteEndpoint) { // create a dummy annotation
-      result.addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "", in.localEndpoint()));
+    if (local != null && !wroteEndpoint) { // create a dummy annotation
+      result.addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "", local));
+    }
+    return result.build();
+  }
+
+  public static zipkin.internal.v2.Endpoint convert(zipkin.Endpoint input) {
+    zipkin.internal.v2.Endpoint.Builder result = zipkin.internal.v2.Endpoint.newBuilder()
+      .serviceName(input.serviceName)
+      .port(input.port != null ? input.port & 0xffff : null);
+    if (input.ipv4 != 0) {
+      result.parseIp(new StringBuilder()
+        .append(input.ipv4 >> 24 & 0xff).append('.')
+        .append(input.ipv4 >> 16 & 0xff).append('.')
+        .append(input.ipv4 >> 8 & 0xff).append('.')
+        .append(input.ipv4 & 0xff).toString());
+    }
+    if (input.ipv6 != null) {
+      try {
+        result.parseIp(Inet6Address.getByAddress(input.ipv6));
+      } catch (UnknownHostException e) {
+        throw new AssertionError(e); // ipv6 is fixed length, so shouldn't happen.
+      }
+    }
+    return result.build();
+  }
+
+  public static zipkin.Endpoint convert(Endpoint input) {
+    zipkin.Endpoint.Builder result = zipkin.Endpoint.builder()
+      .serviceName(input.serviceName() != null ? input.serviceName() : "")
+      .port(input.port() != null ? input.port() : 0);
+    if (input.ipv6() != null) {
+      result.parseIp(input.ipv6()); // parse first in case there's a mapped IP
+    }
+    if (input.ipv4() != null) {
+      result.parseIp(input.ipv4());
     }
     return result.build();
   }

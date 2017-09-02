@@ -14,10 +14,10 @@
 package zipkin.server;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.annotation.Nullable;
-import okio.Buffer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
@@ -37,7 +37,7 @@ import zipkin.DependencyLink;
 import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 import zipkin.internal.v2.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 
@@ -48,6 +48,8 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
 @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
 public class ZipkinQueryApiV2 {
+  static final Charset UTF_8 = Charset.forName("UTF-8");
+
   final String storageType;
   final V2StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
   final long defaultLookback;
@@ -126,20 +128,7 @@ public class ZipkinQueryApiV2 {
       .limit(limit).build();
 
     List<List<Span>> traces = storage.v2SpanStore().getTraces(queryRequest).execute();
-    Buffer buffer = new Buffer();
-    buffer.writeByte('[');
-    for (int i = 0, iLength = traces.size(); i < iLength; ) {
-      buffer.writeByte('[');
-      List<Span> trace = traces.get(i);
-      for (int j = 0, jLength = trace.size(); j < jLength; ) {
-        buffer.write(Encoder.JSON.encode(trace.get(j)));
-        if (++j < jLength) buffer.writeByte(',');
-      }
-      buffer.writeByte(']');
-      if (++i < iLength) buffer.writeByte(',');
-    }
-    buffer.writeByte(']');
-    return buffer.readUtf8();
+    return new String(BytesEncoder.JSON.encodeNestedList(traces), UTF_8);
   }
 
   @RequestMapping(value = "/trace/{traceIdHex}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -148,14 +137,7 @@ public class ZipkinQueryApiV2 {
 
     List<Span> trace = storage.v2SpanStore().getTrace(traceIdHex).execute();
     if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
-    Buffer buffer = new Buffer();
-    buffer.writeByte('[');
-    for (int i = 0, length = trace.size(); i < length; ) {
-      buffer.write(Encoder.JSON.encode(trace.get(i)));
-      if (++i < length) buffer.writeByte(',');
-    }
-    buffer.writeByte(']');
-    return buffer.readUtf8();
+    return new String(BytesEncoder.JSON.encodeList(trace), UTF_8);
   }
 
   @ExceptionHandler(Version2StorageNotConfigured.class)

@@ -13,6 +13,7 @@
  */
 package zipkin.internal.v2.codec;
 
+import java.util.List;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.v2.Span;
 
@@ -21,8 +22,8 @@ import static zipkin.internal.v2.codec.Span2JsonAdapters.SPAN_WRITER;
 /**
  * @param <S> type of the span, usually {@link zipkin.Span}
  */
-public interface Encoder<S> {
-  Encoder<Span> JSON = new Encoder<Span>() {
+public interface BytesEncoder<S> {
+  BytesEncoder<Span> JSON = new BytesEncoder<Span>() {
     @Override public Encoding encoding() {
       return Encoding.JSON;
     }
@@ -30,14 +31,24 @@ public interface Encoder<S> {
     @Override public byte[] encode(Span span) {
       return JsonCodec.write(SPAN_WRITER, span);
     }
+
+    @Override public byte[] encodeList(List<Span> spans) {
+      return JsonCodec.writeList(SPAN_WRITER, spans);
+    }
+
+    @Override public byte[] encodeNestedList(List<List<Span>> spans) {
+      return JsonCodec.writeNestedList(SPAN_WRITER, spans);
+    }
   };
 
   Encoding encoding();
 
-  /**
-   * Serialize a span recorded from instrumentation into its binary form.
-   *
-   * @param span cannot be null
-   */
+  /** Serializes a span recorded from instrumentation into its binary form. */
   byte[] encode(S span);
+
+  /** Serializes a list of spans recorded from instrumentation into its binary form. */
+  byte[] encodeList(List<S> spans);
+
+  /** Serializes a list of spans recorded from instrumentation into its binary form. */
+  byte[] encodeNestedList(List<List<S>> traces);
 }

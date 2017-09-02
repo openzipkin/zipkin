@@ -22,8 +22,7 @@ import zipkin.internal.Util;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.Encoder;
-import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 import zipkin.internal.v2.storage.SpanConsumer;
 
 import static java.util.Arrays.asList;
@@ -85,7 +84,7 @@ public class CollectorTest {
   }
 
   @Test public void convertsSpan2Format() {
-    byte[] bytes = MessageEncoder.JSON_BYTES.encode(asList(Encoder.JSON.encode(span2_1)));
+    byte[] bytes = BytesEncoder.JSON.encodeList(asList(span2_1));
     collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
 
     verify(collector).acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
@@ -107,7 +106,7 @@ public class CollectorTest {
     collector = spy(Collector.builder(Collector.class)
       .storage(storage).build());
 
-    byte[] bytes = MessageEncoder.JSON_BYTES.encode(asList(Encoder.JSON.encode(span2_1)));
+    byte[] bytes = BytesEncoder.JSON.encodeList(asList(span2_1));
     collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
 
     verify(collector, never()).isSampled(any(zipkin.Span.class)); // skips v1 processing

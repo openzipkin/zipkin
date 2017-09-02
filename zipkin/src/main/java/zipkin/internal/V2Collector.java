@@ -19,12 +19,12 @@ import javax.annotation.Nullable;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.Decoder;
+import zipkin.internal.v2.codec.BytesDecoder;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.Util.checkNotNull;
 
-public final class V2Collector extends Collector<Decoder<Span>, Span> {
+public final class V2Collector extends Collector<BytesDecoder<Span>, Span> {
   final V2StorageComponent storage;
   final CollectorSampler sampler;
 
@@ -36,11 +36,11 @@ public final class V2Collector extends Collector<Decoder<Span>, Span> {
   }
 
   @Override
-  public void acceptSpans(byte[] serializedSpans, Decoder<Span> decoder, Callback<Void> callback) {
+  public void acceptSpans(byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
     super.acceptSpans(serializedSpans, decoder, callback);
   }
 
-  @Override protected List<Span> decodeList(Decoder<Span> decoder, byte[] serialized) {
+  @Override protected List<Span> decodeList(BytesDecoder<Span> decoder, byte[] serialized) {
     return decoder.decodeList(serialized);
   }
 

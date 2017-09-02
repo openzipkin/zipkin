@@ -23,7 +23,7 @@ import zipkin.internal.V2JsonSpanDecoder;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.Decoder;
+import zipkin.internal.v2.codec.BytesDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
@@ -108,7 +108,7 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, zipkin.Spa
       return;
     }
     if (storage2 != null && decoder instanceof V2JsonSpanDecoder) {
-      storage2.acceptSpans(serializedSpans, Decoder.JSON, callback);
+      storage2.acceptSpans(serializedSpans, BytesDecoder.JSON, callback);
     } else {
       super.acceptSpans(serializedSpans, decoder, callback);
     }

@@ -29,6 +29,7 @@ import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
+import static zipkin.internal.Util.sortedList;
 import static zipkin.internal.Util.toLowerHex;
 
 final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanStore {
@@ -93,7 +94,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
 
   @Override public List<String> getServiceNames() {
     try {
-      return delegate.getServiceNames().execute();
+      return sortedList(delegate.getServiceNames().execute());
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
     }
@@ -105,7 +106,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
 
   @Override public List<String> getSpanNames(String serviceName) {
     try {
-      return delegate.getSpanNames(serviceName).execute();
+      return sortedList(delegate.getSpanNames(serviceName).execute());
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
     }

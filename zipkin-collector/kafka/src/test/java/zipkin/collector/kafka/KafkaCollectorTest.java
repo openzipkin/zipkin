@@ -32,8 +32,7 @@ import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.collector.kafka.KafkaCollector.Builder;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.V2SpanConverter;
-import zipkin.internal.v2.codec.MessageEncoder;
-import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
@@ -147,9 +146,9 @@ public class KafkaCollectorTest {
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
-      Encoder.JSON.encode(V2SpanConverter.fromSpan(spans.get(0)).get(0)),
-      Encoder.JSON.encode(V2SpanConverter.fromSpan(spans.get(1)).get(0))
+    byte[] message = BytesEncoder.JSON.encodeList(asList(
+      V2SpanConverter.fromSpan(spans.get(0)).get(0),
+      V2SpanConverter.fromSpan(spans.get(1)).get(0)
     ));
 
     producer.send(new KeyedMessage<>(builder.topic, message));

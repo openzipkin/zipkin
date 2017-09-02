@@ -19,8 +19,8 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
-import zipkin.Endpoint;
 import zipkin.internal.PeekingIterator;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
@@ -133,7 +133,7 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
     if (equal(saService, caService)) caService = null;
 
     Long parentId = row.getValue(ZipkinSpans.ZIPKIN_SPANS.PARENT_ID);
-    Span.Builder result = Span.builder()
+    Span.Builder result = Span.newBuilder()
       .traceId(toLowerHex(traceIdHi != null ? traceIdHi : 0L, traceIdLo))
       .parentId(parentId != null ? toLowerHex(parentId) : null)
       .id(toLowerHex(spanId));
@@ -176,6 +176,6 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
   }
 
   static Endpoint ep(@Nullable String serviceName) {
-    return serviceName != null ? Endpoint.builder().serviceName(serviceName).build() : null;
+    return serviceName != null ? Endpoint.newBuilder().serviceName(serviceName).build() : null;
   }
 }

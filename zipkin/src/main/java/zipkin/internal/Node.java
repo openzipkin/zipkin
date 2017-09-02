@@ -29,7 +29,6 @@ import static java.lang.String.format;
 import static java.util.logging.Level.FINE;
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
-import static zipkin.internal.Util.toLowerHex;
 
 /**
  * Convenience type representing a tree. This is here because multiple facets in zipkin require

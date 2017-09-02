@@ -18,16 +18,18 @@ import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
+import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
+import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
-import static zipkin.storage.elasticsearch.http.JsonAdapters.ENDPOINT_ADAPTER;
 
 final class LegacyJsonAdapters {
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
@@ -67,7 +69,7 @@ final class LegacyJsonAdapters {
           case "annotations":
             reader.beginArray();
             while (reader.hasNext()) {
-              result.addAnnotation(JsonAdapters.ANNOTATION_ADAPTER.fromJson(reader));
+              result.addAnnotation(ANNOTATION_ADAPTER.fromJson(reader));
             }
             reader.endArray();
             break;
@@ -176,4 +178,70 @@ final class LegacyJsonAdapters {
       throw new UnsupportedOperationException();
     }
   };
+
+  static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
+    @Override @Nonnull
+    public Annotation fromJson(JsonReader reader) throws IOException {
+      Annotation.Builder result = Annotation.builder();
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "timestamp":
+            result.timestamp(reader.nextLong());
+            break;
+          case "value":
+            result.value(reader.nextString());
+            break;
+          case "endpoint":
+            result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
+            break;
+          default:
+            reader.skipValue();
+        }
+      }
+      reader.endObject();
+      return result.build();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, @Nullable Annotation value) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+  };
+
+  static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
+    @Override @Nonnull
+    public Endpoint fromJson(JsonReader reader) throws IOException {
+      Endpoint.Builder result = Endpoint.builder().serviceName("");
+      reader.beginObject();
+      while (reader.hasNext()) {
+        String nextName = reader.nextName();
+        if (reader.peek() == JsonReader.Token.NULL) {
+          reader.skipValue();
+          continue;
+        }
+        switch (nextName) {
+          case "serviceName":
+            result.serviceName(reader.nextString());
+            break;
+          case "ipv4":
+          case "ipv6":
+            result.parseIp(reader.nextString());
+            break;
+          case "port":
+            result.port(reader.nextInt());
+            break;
+          default:
+            reader.skipValue();
+        }
+      }
+      reader.endObject();
+      return result.build();
+    }
+
+    @Override
+    public void toJson(JsonWriter writer, @Nullable Endpoint value) throws IOException {
+      throw new UnsupportedOperationException();
+    }
+  }.nullSafe();
 }

@@ -21,8 +21,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import org.junit.Test;
 import zipkin.DependencyLink;
-import zipkin.Endpoint;
 import zipkin.TestObjects;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.Span.Kind;
 
@@ -555,13 +555,13 @@ public class DependencyLinkerTest {
 
   static Span span2(long traceId, @Nullable Long parentId, long id, @Nullable Kind kind,
     @Nullable String local, @Nullable String remote, boolean isError) {
-    Span.Builder result = Span.builder()
+    Span.Builder result = Span.newBuilder()
       .traceId(toLowerHex(traceId))
       .parentId(parentId != null ? toLowerHex(parentId) : null)
       .id(toLowerHex(id))
       .kind(kind);
-    if (local != null) result.localEndpoint(Endpoint.builder().serviceName(local).build());
-    if (remote != null) result.remoteEndpoint(Endpoint.builder().serviceName(remote).build());
+    if (local != null) result.localEndpoint(Endpoint.newBuilder().serviceName(local).build());
+    if (remote != null) result.remoteEndpoint(Endpoint.newBuilder().serviceName(remote).build());
     if (isError) result.putTag(ERROR, "");
     return result.build();
   }
