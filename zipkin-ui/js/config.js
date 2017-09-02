@@ -11,7 +11,8 @@ const defaults = {
 };
 
 export default function loadConfig() {
-  return $.ajax('/zipkin/config.json', {
+  // eslint-disable-next-line camelcase, no-undef
+  return $.ajax(`${__webpack_public_path__}config.json`, {
     type: 'GET',
     dataType: 'json'
   }).then(data => function config(key) {

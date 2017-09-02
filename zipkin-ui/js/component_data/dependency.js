@@ -7,7 +7,8 @@ export default component(function dependency() {
   let dependencies = {};
 
   this.getDependency = function(endTs, lookback) {
-    let url = `/zipkin/api/v1/dependencies?endTs=${endTs}`;
+    // eslint-disable-next-line camelcase, no-undef
+    let url = `${__webpack_public_path__}api/v1/dependencies?endTs=${endTs}`;
     if (lookback) {
       url += `&lookback=${lookback}`;
     }

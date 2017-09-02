@@ -7,7 +7,8 @@ import GoToTraceUI from '../component_ui/goToTrace';
 
 export default component(function CommonUI() {
   this.after('initialize', function() {
-    this.$node.html(layoutTemplate());
+    // eslint-disable-next-line camelcase, no-undef
+    this.$node.html(layoutTemplate({contextRoot: __webpack_public_path__}));
     NavbarUI.attachTo('#navbar');
     ErrorUI.attachTo('#errorPanel');
     EnvironmentUI.attachTo('#environment', {config: this.attr.config});

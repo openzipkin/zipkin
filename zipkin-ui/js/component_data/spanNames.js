@@ -8,7 +8,8 @@ export default component(function spanNames() {
       this.trigger('dataSpanNames', {spans: []});
       return;
     }
-    $.ajax(`/zipkin/api/v1/spans?serviceName=${serviceName}`, {
+    // eslint-disable-next-line camelcase, no-undef
+    $.ajax(`${__webpack_public_path__}api/v1/spans?serviceName=${serviceName}`, {
       type: 'GET',
       dataType: 'json'
     }).done(spans => {

@@ -4,7 +4,8 @@ import $ from 'jquery';
 
 export default component(function serviceNames() {
   this.updateServiceNames = function(ev, lastServiceName) {
-    $.ajax('/zipkin/api/v1/services', {
+    // eslint-disable-next-line camelcase, no-undef
+    $.ajax(`${__webpack_public_path__}api/v1/services`, {
       type: 'GET',
       dataType: 'json'
     }).done(names => {

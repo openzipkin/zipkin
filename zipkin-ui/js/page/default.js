@@ -58,6 +58,7 @@ const DefaultPageComponent = component(function DefaultPage() {
         serviceName,
         annotationQuery,
         queryWasPerformed,
+        contextRoot: __webpack_public_path__, // eslint-disable-line no-undef
         count: modelView.traces.length,
         sortOrderOptions: sortOptions,
         sortOrderSelected: sortSelected(sortOrder),

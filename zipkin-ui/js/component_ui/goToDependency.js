@@ -5,7 +5,8 @@ export default component(function goToDependency() {
     evt.preventDefault();
     const endTs = document.getElementById('endTs').value;
     const startTs = document.getElementById('startTs').value;
-    window.location.href = `/zipkin/dependency?endTs=${endTs}&startTs=${startTs}`;
+    // eslint-disable-next-line camelcase, no-undef
+    window.location.href = `${__webpack_public_path__}dependency?endTs=${endTs}&startTs=${startTs}`;
   };
 
   this.after('initialize', function() {

@@ -4,7 +4,8 @@ export default component(function goToTrace() {
   this.navigateToTrace = function(evt) {
     evt.preventDefault();
     const traceId = document.getElementById('traceIdQuery').value;
-    window.location.href = `/zipkin/traces/${traceId}`;
+    // eslint-disable-next-line camelcase, no-undef
+    window.location.href = `${__webpack_public_path__}traces/${traceId}`;
   };
 
   this.after('initialize', function() {

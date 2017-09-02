@@ -32,8 +32,10 @@ var webpackConfig = {
     },
     output: {
         path: __dirname + '/target/classes/zipkin-ui/',
-        filename: 'app-[hash].min.js',
-        publicPath: '/zipkin/'
+        filename: 'app-[hash].min.js'
+        // 'publicPath' must not be set here in order to support Zipkin running in any context root.
+        // '__webpack_public_path__' has to be set dynamically as per
+        // https://webpack.github.io/docs/configuration.html#output-publicpath
     },
     devtool: 'source-map',
     plugins: [
@@ -42,7 +44,9 @@ var webpackConfig = {
             jQuery: "jquery"
         }),
         new ExtractTextPlugin("app-[hash].min.css", {allChunks: true}),
-        new HtmlWebpackPlugin(),
+        new HtmlWebpackPlugin({
+          template: __dirname + '/index.ejs'
+        }),
         new CopyWebpackPlugin([
             { from: 'static' }
         ])

@@ -1,3 +1,8 @@
+// read the public path from the <base> tag where it has to be set anyway because of
+// html-webpack-plugin limitations: https://github.com/jantimon/html-webpack-plugin/issues/119
+// otherwise it could be: window.location.pathname.replace(/(.*)\/zipkin\/.*/, '$1/zipkin/')
+__webpack_public_path__ = $('base').attr('href'); // eslint-disable-line camelcase, no-undef
+
 import {compose, registry, advice, debug} from 'flightjs';
 import crossroads from 'crossroads';
 import initializeDefault from './page/default';
@@ -13,9 +18,10 @@ loadConfig().then(config => {
 
   CommonUI.attachTo(window.document.body, {config});
 
-  crossroads.addRoute('zipkin/', () => initializeDefault(config));
-  crossroads.addRoute('zipkin/traces/{id}', traceId => initializeTrace(traceId, config));
-  crossroads.addRoute('zipkin/dependency', () => initializeDependency(config));
+  const root = __webpack_public_path__; // eslint-disable-line camelcase, no-undef
+  crossroads.addRoute(root, () => initializeDefault(config));
+  crossroads.addRoute(`${root}traces/{id}`, traceId => initializeTrace(traceId, config));
+  crossroads.addRoute(`${root}dependency`, () => initializeDependency(config));
   crossroads.parse(window.location.pathname);
 }, e => {
   // TODO: better error message, but this is better than a blank screen...

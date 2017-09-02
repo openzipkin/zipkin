@@ -14,7 +14,8 @@ export default component(function TraceData() {
   this.after('initialize', function() {
     const traceId = this.attr.traceId;
     const logsUrl = toContextualLogsUrl(this.attr.logsUrl, traceId);
-    $.ajax(`/zipkin/api/v1/trace/${traceId}`, {
+    // eslint-disable-next-line camelcase, no-undef
+    $.ajax(`${__webpack_public_path__}api/v1/trace/${traceId}`, {
       type: 'GET',
       dataType: 'json'
     }).done(trace => {

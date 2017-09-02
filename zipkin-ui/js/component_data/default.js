@@ -21,7 +21,8 @@ export default component(function DefaultData() {
     const query = convertToApiQuery(window.location.search);
     const serviceName = query.serviceName;
     if (serviceName) {
-      const apiURL = `/zipkin/api/v1/traces?${queryString.stringify(query)}`;
+      // eslint-disable-next-line camelcase, no-undef
+      const apiURL = `${__webpack_public_path__}api/v1/traces?${queryString.stringify(query)}`;
       $.ajax(apiURL, {
         type: 'GET',
         dataType: 'json'
