@@ -41,6 +41,25 @@ public class ElasticsearchHttpSpanStoreTest {
     storage.close();
   }
 
+  @Test public void doesntTruncateTraceIdByDefault() throws Exception {
+    es.enqueue(new MockResponse());
+    spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
+
+    assertThat(es.takeRequest().getBody().readUtf8())
+      .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
+  }
+
+  @Test public void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
+    storage = storage.toBuilder().strictTraceId(false).build();
+    spanStore = new ElasticsearchHttpSpanStore(storage);
+
+    es.enqueue(new MockResponse());
+    spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
+
+    assertThat(es.takeRequest().getBody().readUtf8())
+      .contains("\"traceId\":\"3041d36dc43227fd\"");
+  }
+
   @Test public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
     es.enqueue(new MockResponse().setBody(SERVICE_NAMES));
     spanStore.getServiceNames().execute();

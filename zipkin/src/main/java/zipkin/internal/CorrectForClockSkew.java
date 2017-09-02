@@ -72,7 +72,13 @@ public final class CorrectForClockSkew {
         }
         rootSpanId = next.id;
       }
-      if (!treeBuilder.addNode(next.parentId, next.id, next)) dataError = true;
+      if (!treeBuilder.addNode(
+        next.parentId != null ? toLowerHex(next.parentId) : null,
+        toLowerHex(next.id),
+        next
+      )) {
+        dataError = true;
+      }
     }
 
     if (rootSpanId == null) {

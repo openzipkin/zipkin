@@ -22,15 +22,14 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import zipkin.Annotation;
-import zipkin.Endpoint;
 import zipkin.internal.Buffer;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.JsonCodec.JsonReaderAdapter;
+import zipkin.internal.v2.Annotation;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
 import static zipkin.internal.Buffer.asciiSizeInBytes;
-import static zipkin.internal.Buffer.ipv6SizeInBytes;
 import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
 
 /**
@@ -44,7 +43,7 @@ final class Span2JsonAdapters {
 
     @Override public Span fromJson(JsonReader reader) throws IOException {
       if (builder == null) {
-        builder = Span.builder();
+        builder = Span.newBuilder();
       } else {
         builder.clear();
       }
@@ -128,7 +127,7 @@ final class Span2JsonAdapters {
   }
 
   static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = reader -> {
-    Endpoint.Builder result = Endpoint.builder().serviceName("");
+    Endpoint.Builder result = Endpoint.newBuilder();
     reader.beginObject();
     boolean readField = false;
     while (reader.hasNext()) {
@@ -157,55 +156,52 @@ final class Span2JsonAdapters {
 
   static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
     @Override public int sizeInBytes(Endpoint value) {
-      int sizeInBytes = 1; // start curly-brace
-      if (!value.serviceName.isEmpty()) {
-        sizeInBytes += "\"serviceName\":\"".length();
-        sizeInBytes += jsonEscapedSizeInBytes(value.serviceName) + 1; // for end quote
+      int sizeInBytes = 1; // {
+      if (value.serviceName() != null) {
+        sizeInBytes += 16; // "serviceName":""
+        sizeInBytes += jsonEscapedSizeInBytes(value.serviceName());
       }
-      if (value.ipv4 != 0) {
-        if (sizeInBytes != 1) sizeInBytes++;// comma
-        sizeInBytes += "\"ipv4\":\"".length();
-        sizeInBytes += asciiSizeInBytes(value.ipv4 >> 24 & 0xff) + 1; // for dot
-        sizeInBytes += asciiSizeInBytes(value.ipv4 >> 16 & 0xff) + 1; // for dot
-        sizeInBytes += asciiSizeInBytes(value.ipv4 >> 8 & 0xff) + 1; // for dot
-        sizeInBytes += asciiSizeInBytes(value.ipv4 & 0xff) + 1; // for end quote
+      if (value.ipv4() != null) {
+        if (sizeInBytes != 1) sizeInBytes++; // ,
+        sizeInBytes += 9; // "ipv4":""
+        sizeInBytes += value.ipv4().length();
       }
-      if (value.ipv6 != null) {
-        if (sizeInBytes != 1) sizeInBytes++;// comma
-        sizeInBytes += "\"ipv6\":\"".length() + ipv6SizeInBytes(value.ipv6) + 1;
+      if (value.ipv6() != null) {
+        if (sizeInBytes != 1) sizeInBytes++; // ,
+        sizeInBytes += 9; // "ipv6":""
+        sizeInBytes += value.ipv6().length();
       }
-      if (value.port != null && value.port != 0) {
-        if (sizeInBytes != 1) sizeInBytes++;// comma
-        sizeInBytes += "\"port\":".length() + asciiSizeInBytes(value.port & 0xffff);
+      if (value.port() != null) {
+        if (sizeInBytes != 1) sizeInBytes++; // ,
+        sizeInBytes += 7; // "port":
+        sizeInBytes += asciiSizeInBytes(value.port());
       }
-      return ++sizeInBytes;// end curly-brace
+      return ++sizeInBytes; // }
     }
 
     @Override public void write(Endpoint value, Buffer b) {
       b.writeByte('{');
       boolean wroteField = false;
-      if (!value.serviceName.isEmpty()) {
+      if (value.serviceName() != null) {
         b.writeAscii("\"serviceName\":\"");
-        b.writeJsonEscaped(value.serviceName).writeByte('"');
+        b.writeJsonEscaped(value.serviceName()).writeByte('"');
         wroteField = true;
       }
-      if (value.ipv4 != 0) {
+      if (value.ipv4() != null) {
         if (wroteField) b.writeByte(',');
         b.writeAscii("\"ipv4\":\"");
-        b.writeAscii(value.ipv4 >> 24 & 0xff).writeByte('.');
-        b.writeAscii(value.ipv4 >> 16 & 0xff).writeByte('.');
-        b.writeAscii(value.ipv4 >> 8 & 0xff).writeByte('.');
-        b.writeAscii(value.ipv4 & 0xff).writeByte('"');
+        b.writeAscii(value.ipv4()).writeByte('"');
         wroteField = true;
       }
-      if (value.ipv6 != null) {
+      if (value.ipv6() != null) {
         if (wroteField) b.writeByte(',');
-        b.writeAscii("\"ipv6\":\"").writeIpV6(value.ipv6).writeByte('"');
+        b.writeAscii("\"ipv6\":\"");
+        b.writeAscii(value.ipv6()).writeByte('"');
         wroteField = true;
       }
-      if (value.port != null && value.port != 0) {
+      if (value.port() != null) {
         if (wroteField) b.writeByte(',');
-        b.writeAscii("\"port\":").writeAscii(value.port & 0xffff);
+        b.writeAscii("\"port\":").writeAscii(value.port());
       }
       b.writeByte('}');
     }
@@ -213,76 +209,69 @@ final class Span2JsonAdapters {
 
   static final Buffer.Writer<Span> SPAN_WRITER = new Buffer.Writer<Span>() {
     @Override public int sizeInBytes(Span value) {
-      int sizeInBytes = 0;
-      if (value.traceIdHigh() != 0) sizeInBytes += 16;
-      sizeInBytes += "{\"traceId\":\"".length() + 16 + 1;
+      int sizeInBytes = 13; // {"traceId":""
+      sizeInBytes += value.traceId().length();
       if (value.parentId() != null) {
-        sizeInBytes += ",\"parentId\":\"".length() + 16 + 1;
+        sizeInBytes += 30; // ,"parentId":"0123456789abcdef"
       }
-      sizeInBytes += ",\"id\":\"".length() + 16 + 1;
+      sizeInBytes += 24; // ,"id":"0123456789abcdef"
       if (value.kind() != null) {
-        sizeInBytes += ",\"kind\":\"".length();
-        sizeInBytes += value.kind().toString().length() + 1;
+        sizeInBytes += 10; // ,"kind":""
+        sizeInBytes += value.kind().name().length();
       }
       if (value.name() != null) {
-        sizeInBytes += ",\"name\":\"".length();
-        sizeInBytes += jsonEscapedSizeInBytes(value.name()) + 1;
+        sizeInBytes += 10; // ,"name":""
+        sizeInBytes += jsonEscapedSizeInBytes(value.name());
       }
       if (value.timestamp() != null) {
-        sizeInBytes += ",\"timestamp\":".length();
+        sizeInBytes += 13; // ,"timestamp":
         sizeInBytes += asciiSizeInBytes(value.timestamp());
       }
       if (value.duration() != null) {
-        sizeInBytes += ",\"duration\":".length();
+        sizeInBytes += 12; // ,"duration":
         sizeInBytes += asciiSizeInBytes(value.duration());
       }
       if (value.localEndpoint() != null) {
-        sizeInBytes += ",\"localEndpoint\":".length();
+        sizeInBytes += 17; // ,"localEndpoint":
         sizeInBytes += ENDPOINT_WRITER.sizeInBytes(value.localEndpoint());
       }
       if (value.remoteEndpoint() != null) {
-        sizeInBytes += ",\"remoteEndpoint\":".length();
+        sizeInBytes += 18; // ,"remoteEndpoint":
         sizeInBytes += ENDPOINT_WRITER.sizeInBytes(value.remoteEndpoint());
       }
       if (!value.annotations().isEmpty()) {
-        sizeInBytes += ",\"annotations\":".length();
+        sizeInBytes += 17; // ,"annotations":[]
         int length = value.annotations().size();
-        sizeInBytes += 2; // brackets
         if (length > 1) sizeInBytes += length - 1; // comma to join elements
         for (int i = 0; i < length; i++) {
           sizeInBytes += ANNOTATION_WRITER.sizeInBytes(value.annotations().get(i));
         }
       }
       if (!value.tags().isEmpty()) {
-        sizeInBytes += ",\"tags\":".length();
-        sizeInBytes += 2; // curly braces
+        sizeInBytes += 10; // ,"tags":{}
         int tagCount = value.tags().size();
         if (tagCount > 1) sizeInBytes += tagCount - 1; // comma to join elements
         for (Map.Entry<String, String> entry : value.tags().entrySet()) {
-          sizeInBytes += 5; // 4 quotes and a colon
+          sizeInBytes += 5; // "":""
           sizeInBytes += jsonEscapedSizeInBytes(entry.getKey());
           sizeInBytes += jsonEscapedSizeInBytes(entry.getValue());
         }
       }
       if (Boolean.TRUE.equals(value.debug())) {
-        sizeInBytes += ",\"debug\":true".length();
+        sizeInBytes += 13; // ,"debug":true
       }
       if (Boolean.TRUE.equals(value.shared())) {
-        sizeInBytes += ",\"shared\":true".length();
+        sizeInBytes += 14; // ,"shared":true
       }
-      return ++sizeInBytes;// end curly-brace
+      return ++sizeInBytes; // }
     }
 
     @Override public void write(Span value, Buffer b) {
-      b.writeAscii("{\"traceId\":\"");
-      if (value.traceIdHigh() != 0) {
-        b.writeLowerHex(value.traceIdHigh());
-      }
-      b.writeLowerHex(value.traceId()).writeByte('"');
+      b.writeAscii("{\"traceId\":\"").writeAscii(value.traceId()).writeByte('"');
       if (value.parentId() != null) {
-        b.writeAscii(",\"parentId\":\"").writeLowerHex(value.parentId()).writeByte('"');
+        b.writeAscii(",\"parentId\":\"").writeAscii(value.parentId()).writeByte('"');
       }
-      b.writeAscii(",\"id\":\"").writeLowerHex(value.id()).writeByte('"');
+      b.writeAscii(",\"id\":\"").writeAscii(value.id()).writeByte('"');
       if (value.kind() != null) {
         b.writeAscii(",\"kind\":\"").writeJsonEscaped(value.kind().toString()).writeByte('"');
       }
@@ -334,15 +323,15 @@ final class Span2JsonAdapters {
 
   static final Buffer.Writer<Annotation> ANNOTATION_WRITER = new Buffer.Writer<Annotation>() {
     @Override public int sizeInBytes(Annotation value) {
-      int sizeInBytes = 0;
-      sizeInBytes += "{\"timestamp\":".length() + asciiSizeInBytes(value.timestamp);
-      sizeInBytes += ",\"value\":\"".length() + jsonEscapedSizeInBytes(value.value) + 1;
-      return ++sizeInBytes;// end curly-brace
+      int sizeInBytes = 25; // {"timestamp":,"value":""}
+      sizeInBytes += asciiSizeInBytes(value.timestamp());
+      sizeInBytes += jsonEscapedSizeInBytes(value.value());
+      return sizeInBytes;
     }
 
     @Override public void write(Annotation value, Buffer b) {
-      b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp);
-      b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value).writeAscii("\"}");
+      b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp());
+      b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value()).writeAscii("\"}");
     }
   };
 

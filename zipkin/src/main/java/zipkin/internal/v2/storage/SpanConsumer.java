@@ -16,7 +16,6 @@ package zipkin.internal.v2.storage;
 import java.util.List;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
-import zipkin.storage.Callback;
 
 // @FunctionalInterface
 public interface SpanConsumer {

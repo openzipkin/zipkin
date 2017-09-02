@@ -41,12 +41,13 @@ public interface SpanStore {
    * found.
    *
    * <p>When {@link StorageComponent.Builder#strictTraceId(boolean)} is true, spans with the same
-   * {@code traceIdLow} are returned even if the {@code traceIdHigh is different}.
+   * right-most 16 characters are returned even if the characters to the left are not.
    *
-   * @param traceIdHigh The upper 64-bits of the trace ID. See {@link Span#traceIdHigh()}
-   * @param traceIdLow The lower 64-bits of the trace ID. See {@link Span#traceId()}
+   * <p>Implementations should use {@link Span#normalizeTraceId(String)} to ensure consistency.
+   *
+   * @param traceId the {@link Span#traceId() trace ID}
    */
-  Call<List<Span>> getTrace(long traceIdHigh, long traceIdLow);
+  Call<List<Span>> getTrace(String traceId);
 
   /**
    * Retrieves all {@link Span#localEndpoint() local} and {@link Span#remoteEndpoint() remote}

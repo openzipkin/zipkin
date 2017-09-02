@@ -19,8 +19,8 @@ import org.jooq.Record;
 import org.jooq.TableField;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
-import zipkin.Endpoint;
 import zipkin.internal.PeekingIterator;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
@@ -30,6 +30,7 @@ import static zipkin.Constants.ERROR;
 import static zipkin.Constants.SERVER_ADDR;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.internal.Util.equal;
+import static zipkin.internal.Util.toLowerHex;
 import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 
 /**
@@ -37,9 +38,8 @@ import static zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations.Z
  * short-cuts to require less data. For example, it folds shared RPC spans into one, and doesn't
  * include tags, non-core annotations or time units.
  *
- * <p>Out-of-date schemas may be missing the trace_id_high field. When present, this becomes {@link
- * Span#traceIdHigh()} used as the left-most 16 characters of the traceId in logging
- * statements.
+ * <p>Out-of-date schemas may be missing the trace_id_high field. When present, the {@link
+ * Span#traceId()} could be 32 characters in logging statements.
  */
 final class DependencyLinkV2SpanIterator implements Iterator<Span> {
 
@@ -132,11 +132,11 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
     // Skip the client side, so it isn't mistaken for a loopback request
     if (equal(saService, caService)) caService = null;
 
-    Span.Builder result = Span.builder()
-      .traceIdHigh(traceIdHi != null ? traceIdHi : 0L)
-      .traceId(traceIdLo)
-      .parentId(row.getValue(ZipkinSpans.ZIPKIN_SPANS.PARENT_ID))
-      .id(spanId);
+    Long parentId = row.getValue(ZipkinSpans.ZIPKIN_SPANS.PARENT_ID);
+    Span.Builder result = Span.newBuilder()
+      .traceId(toLowerHex(traceIdHi != null ? traceIdHi : 0L, traceIdLo))
+      .parentId(parentId != null ? toLowerHex(parentId) : null)
+      .id(toLowerHex(spanId));
 
     if (error) {
       result.putTag(Constants.ERROR, "" /* actual value doesn't matter */);
@@ -176,6 +176,6 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
   }
 
   static Endpoint ep(@Nullable String serviceName) {
-    return serviceName != null ? Endpoint.builder().serviceName(serviceName).build() : null;
+    return serviceName != null ? Endpoint.newBuilder().serviceName(serviceName).build() : null;
   }
 }

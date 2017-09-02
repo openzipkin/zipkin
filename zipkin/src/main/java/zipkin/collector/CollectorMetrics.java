@@ -15,7 +15,6 @@ package zipkin.collector;
 
 import java.util.List;
 import zipkin.Codec;
-import zipkin.Span;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 

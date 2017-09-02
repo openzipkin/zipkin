@@ -23,10 +23,10 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
-import zipkin.Annotation;
+import zipkin.internal.v2.Annotation;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
@@ -60,7 +60,7 @@ class ElasticsearchHttpSpanConsumer implements SpanConsumer { // not final for t
         // guessTimestamp is made for determining the span's authoritative timestamp. When choosing
         // the index bucket, any annotation is better than using current time.
         for (int i = 0, length = span.annotations().size(); i < length; i++) {
-          indexTimestamp = span.annotations().get(i).timestamp / 1000;
+          indexTimestamp = span.annotations().get(i).timestamp() / 1000;
           break;
         }
         if (indexTimestamp == 0L) indexTimestamp = System.currentTimeMillis();
@@ -114,8 +114,8 @@ class ElasticsearchHttpSpanConsumer implements SpanConsumer { // not final for t
         writer.name("_q");
         writer.beginArray();
         for (Annotation a : span.annotations()) {
-          if (a.value.length() > 255) continue;
-          writer.value(a.value);
+          if (a.value().length() > 255) continue;
+          writer.value(a.value());
         }
         for (Map.Entry<String, String> tag : span.tags().entrySet()) {
           if (tag.getKey().length() + tag.getValue().length() + 1 > 255) continue;
@@ -131,9 +131,9 @@ class ElasticsearchHttpSpanConsumer implements SpanConsumer { // not final for t
       if (LOG.isLoggable(Level.FINE)) {
         LOG.log(Level.FINE, "Error indexing query for span: " + span, e);
       }
-      return Encoder.JSON.encode(span);
+      return BytesEncoder.JSON.encode(span);
     }
-    byte[] document = Encoder.JSON.encode(span);
+    byte[] document = BytesEncoder.JSON.encode(span);
     if (query.rangeEquals(0L, ByteString.of(new byte[] {'{', '}'}))) {
       return document;
     }

@@ -487,20 +487,24 @@ public final class JsonCodec implements Codec {
 
   @Override
   public byte[] writeTraces(List<List<Span>> traces) {
+    return writeNestedList(SPAN_WRITER, traces);
+  }
+
+  public static <T> byte[] writeNestedList(Buffer.Writer<T> writer, List<List<T>> traces) {
     // Get the encoded size of the nested list so that we don't need to grow the buffer
     int sizeInBytes = overheadInBytes(traces);
     for (int i = 0, length = traces.size(); i < length; i++) {
-      List<Span> spans = traces.get(i);
+      List<T> spans = traces.get(i);
       sizeInBytes += overheadInBytes(spans);
       for (int j = 0, jLength = spans.size(); j < jLength; j++) {
-        sizeInBytes += SPAN_WRITER.sizeInBytes(spans.get(j));
+        sizeInBytes += writer.sizeInBytes(spans.get(j));
       }
     }
 
     Buffer out = new Buffer(sizeInBytes);
     out.writeByte('['); // start list of traces
     for (int i = 0, length = traces.size(); i < length; i++) {
-      writeList(SPAN_WRITER, traces.get(i), out);
+      writeList(writer, traces.get(i), out);
       if (i + 1 < length) out.writeByte(',');
     }
     out.writeByte(']'); // stop list of traces
@@ -638,7 +642,7 @@ public final class JsonCodec implements Codec {
     return writeList(STRING_WRITER, value);
   }
 
-  static <T> T read(JsonReaderAdapter<T> adapter, byte[] bytes) {
+  public static <T> T read(JsonReaderAdapter<T> adapter, byte[] bytes) {
     checkArgument(bytes.length > 0, "Empty input reading %s", adapter);
     try {
       return adapter.fromJson(jsonReader(bytes));
@@ -715,7 +719,7 @@ public final class JsonCodec implements Codec {
     return sizeInBytes;
   }
 
-  static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
+  public static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
     if (value.isEmpty()) return new byte[] {'[', ']'};
     Buffer result = new Buffer(JsonCodec.sizeInBytes(writer, value));
     writeList(writer, value, result);

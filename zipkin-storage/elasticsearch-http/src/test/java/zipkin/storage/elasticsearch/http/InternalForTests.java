@@ -18,7 +18,6 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-import zipkin.internal.CallbackCaptor;
 
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPENDENCY;
 

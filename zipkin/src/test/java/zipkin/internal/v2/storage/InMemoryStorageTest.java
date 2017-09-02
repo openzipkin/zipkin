@@ -20,31 +20,34 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Test;
 import zipkin.DependencyLink;
-import zipkin.Endpoint;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.TestObjects.APP_ENDPOINT;
 import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
+import static zipkin.internal.Util.toLowerHex;
 
 public class InMemoryStorageTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
 
   @Test public void getTraces_filteringMatchesMostRecentTraces() throws IOException {
-    List<Endpoint> endpoints = IntStream.rangeClosed(1, 10).mapToObj(i ->
-      Endpoint.create("service" + i, 127 << 24 | i))
+    List<Endpoint> endpoints = IntStream.rangeClosed(1, 10)
+      .mapToObj(i -> Endpoint.newBuilder().serviceName("service" + i).ip("127.0.0.1").build())
       .collect(Collectors.toList());
 
     long gapBetweenSpans = 100;
-    List<Span> earlySpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("early")
-      .traceId(i).id(i).timestamp((TODAY - i) * 1000).duration(1L)
-      .localEndpoint(endpoints.get(i - 1)).build()).collect(toList());
+    List<Span> earlySpans =
+      IntStream.rangeClosed(1, 10).mapToObj(i -> Span.newBuilder().name("early")
+        .traceId(toLowerHex(i)).id(toLowerHex(i))
+        .timestamp((TODAY - i) * 1000).duration(1L)
+        .localEndpoint(endpoints.get(i - 1)).build()).collect(toList());
 
-    List<Span> lateSpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.builder().name("late")
-      .traceId(i + 10).id(i + 10).timestamp((TODAY + gapBetweenSpans - i) * 1000).duration(1L)
+    List<Span> lateSpans = IntStream.rangeClosed(1, 10).mapToObj(i -> Span.newBuilder().name("late")
+      .traceId(toLowerHex(i + 10)).id(toLowerHex(i + 10))
+      .timestamp((TODAY + gapBetweenSpans - i) * 1000).duration(1L)
       .localEndpoint(endpoints.get(i - 1)).build()).collect(toList());
 
     storage.accept(earlySpans).execute();
@@ -77,10 +80,10 @@ public class InMemoryStorageTest {
 
   /** It should be safe to run dependency link jobs twice */
   @Test public void replayOverwrites() throws IOException {
-    Span span = Span.builder().traceId(10L).id(10L).name("receive")
+    Span span = Span.newBuilder().traceId("10").id("10").name("receive")
       .kind(Span.Kind.CONSUMER)
-      .localEndpoint(APP_ENDPOINT)
-      .remoteEndpoint(Endpoint.builder().serviceName("kafka").build())
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .remoteEndpoint(Endpoint.newBuilder().serviceName("kafka").build())
       .timestamp(TODAY * 1000)
       .build();
 

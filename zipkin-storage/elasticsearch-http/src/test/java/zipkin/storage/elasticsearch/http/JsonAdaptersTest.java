@@ -18,13 +18,12 @@ import okio.Buffer;
 import org.junit.Test;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-import zipkin.Endpoint;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.Util;
 import zipkin.internal.V2SpanConverter;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.Encoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -134,7 +133,7 @@ public class JsonAdaptersTest {
     zipkin.Span span = ApplyTimestampAndDuration.apply(TestObjects.LOTS_OF_SPANS[0]);
     Span span2 = V2SpanConverter.fromSpan(span).get(0);
     Buffer bytes = new Buffer();
-    bytes.write(Encoder.JSON.encode(span2));
+    bytes.write(BytesEncoder.JSON.encode(span2));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(span2);
   }
@@ -146,8 +145,8 @@ public class JsonAdaptersTest {
   @Test
   public void span_specialCharsInJson() throws IOException {
     // service name is surrounded by control characters
-    Endpoint e = Endpoint.create(new String(new char[] {0, 'a', 1}), 0);
-    Span worstSpanInTheWorld = Span.builder().traceId(1L).id(1L)
+    Endpoint e = Endpoint.newBuilder().serviceName(new String(new char[] {0, 'a', 1})).build();
+    Span worstSpanInTheWorld = Span.newBuilder().traceId("1").id("1")
       // name is terrible
       .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
       .localEndpoint(e)
@@ -159,7 +158,7 @@ public class JsonAdaptersTest {
       .build();
 
     Buffer bytes = new Buffer();
-    bytes.write(Encoder.JSON.encode(worstSpanInTheWorld));
+    bytes.write(BytesEncoder.JSON.encode(worstSpanInTheWorld));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(worstSpanInTheWorld);
   }
@@ -177,7 +176,7 @@ public class JsonAdaptersTest {
       + "}";
 
     assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
-      .isEqualTo(Endpoint.builder().serviceName("service").port(65535).build());
+      .isEqualTo(Endpoint.newBuilder().serviceName("service").port(65535).build());
   }
 
   @Test
@@ -192,7 +191,7 @@ public class JsonAdaptersTest {
       + "}";
 
     assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
-      .isEqualTo(Endpoint.builder().serviceName("").port(65535).build());
+      .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
   @Test
@@ -208,7 +207,7 @@ public class JsonAdaptersTest {
       + "}";
 
     assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
-      .isEqualTo(Endpoint.builder().serviceName("").port(65535).build());
+      .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
   @Test
@@ -226,7 +225,7 @@ public class JsonAdaptersTest {
 
     assertThat(JsonAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
       .isEqualTo(JsonAdapters.SPAN_ADAPTER.fromJson(withLower64bitsTraceId).toBuilder()
-        .traceIdHigh(Util.lowerHexToUnsignedLong("48485a3953bb6124")).build());
+        .traceId("48485a3953bb61246b221d5bc9e6496c").build());
   }
 
   @Test

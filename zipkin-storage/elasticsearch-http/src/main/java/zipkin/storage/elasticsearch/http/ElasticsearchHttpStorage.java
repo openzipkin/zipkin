@@ -73,6 +73,8 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
     return result;
   }
 
+  abstract Builder toBuilder();
+
   @AutoValue.Builder
   public static abstract class Builder implements zipkin.storage.StorageComponent.Builder {
     abstract Builder client(OkHttpClient client);

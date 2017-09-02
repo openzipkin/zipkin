@@ -15,7 +15,9 @@ package zipkin.internal.v2;
 
 import com.google.auto.value.AutoValue;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -24,17 +26,9 @@ import java.util.Map;
 import java.util.TreeMap;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import zipkin.Annotation;
 import zipkin.Constants;
-import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.v2.codec.Encoder;
-
-import static zipkin.internal.Util.UTF_8;
-import static zipkin.internal.Util.checkNotNull;
-import static zipkin.internal.Util.lowerHexToUnsignedLong;
-import static zipkin.internal.Util.sortedList;
-import static zipkin.internal.Util.writeHexLong;
+import zipkin.internal.v2.codec.BytesEncoder;
 
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
@@ -58,23 +52,36 @@ import static zipkin.internal.Util.writeHexLong;
 @AutoValue
 @Immutable
 public abstract class Span implements Serializable { // for Spark jobs
+  static final Charset UTF_8 = Charset.forName("UTF-8");
+
   private static final long serialVersionUID = 0L;
 
-  /** When non-zero, the trace containing this span uses 128-bit trace identifiers. */
-  public abstract long traceIdHigh();
-
-  /** Unique 8-byte identifier for a trace, set on all spans within it. */
-  public abstract long traceId();
-
-  /** The parent's {@link #id} or null if this the root span in a trace. */
-  @Nullable public abstract Long parentId();
+  /**
+   * Trace identifier, set on all spans within it.
+   *
+   * <p>Encoded as 16 or 32 lowercase hex characters corresponding to 64 or 128 bits. For example, a
+   * 128bit trace ID looks like {@code 4e441824ec2b6a44ffdc9bb9a6453df3}.
+   *
+   * <p>Some systems downgrade trace identifiers to 64bit by dropping the left-most 16 characters.
+   * For example, {@code 4e441824ec2b6a44ffdc9bb9a6453df3} becomes {@code ffdc9bb9a6453df3}.
+   */
+  public abstract String traceId();
 
   /**
-   * Unique 8-byte identifier of this span within a trace.
+   * The parent's {@link #id} or null if this the root span in a trace.
+   *
+   * <p>This is the same encoding as {@link #id}. For example {@code ffdc9bb9a6453df3}
+   */
+  @Nullable public abstract String parentId();
+
+  /**
+   * Unique 64bit identifier for this operation within the trace.
+   *
+   * <p>Encoded as 16 lowercase hex characters. For example {@code ffdc9bb9a6453df3}
    *
    * <p>A span is uniquely identified in storage by ({@linkplain #traceId}, {@linkplain #id()}).
    */
-  public abstract long id();
+  public abstract String id();
 
   /** Indicates the primary span type. */
   public enum Kind {
@@ -157,7 +164,13 @@ public abstract class Span implements Serializable { // for Spark jobs
   // Nullable for data conversion especially late arriving data which might not have an annotation
   @Nullable public abstract Endpoint localEndpoint();
 
-  /** When an RPC (or messaging) span, indicates the other side of the connection. */
+  /**
+   * When an RPC (or messaging) span, indicates the other side of the connection.
+   *
+   * <p>By recording the remote endpoint, your trace will contain network context even if the peer
+   * is not tracing. For example,For example, you can record the IP from the {@code X-Forwarded-For}
+   * header or or the service name and socket of a remote peer.
+   */
   @Nullable public abstract Endpoint remoteEndpoint();
 
   /**
@@ -189,53 +202,15 @@ public abstract class Span implements Serializable { // for Spark jobs
 
   @Nullable public String localServiceName() {
     Endpoint localEndpoint = localEndpoint();
-    return localEndpoint != null && !"".equals(localEndpoint.serviceName)
-      ? localEndpoint.serviceName
-      : null;
+    return localEndpoint != null ? localEndpoint.serviceName() : null;
   }
 
   @Nullable public String remoteServiceName() {
     Endpoint remoteEndpoint = remoteEndpoint();
-    return remoteEndpoint != null && !"".equals(remoteEndpoint.serviceName)
-      ? remoteEndpoint.serviceName
-      : null;
+    return remoteEndpoint != null ? remoteEndpoint.serviceName() : null;
   }
 
-  /** Returns the hex representation of the span's trace ID */
-  public String traceIdString() {
-    if (traceIdHigh() != 0) {
-      char[] result = new char[32];
-      writeHexLong(result, 0, traceIdHigh());
-      writeHexLong(result, 16, traceId());
-      return new String(result);
-    }
-    char[] result = new char[16];
-    writeHexLong(result, 0, traceId());
-    return new String(result);
-  }
-
-  /** Returns {@code $traceId.$spanId<:$parentId or $spanId} */
-  public String idString() {
-    int resultLength = (3 * 16) + 3; // 3 ids and the constant delimiters
-    if (traceIdHigh() != 0) resultLength += 16;
-    char[] result = new char[resultLength];
-    int pos = 0;
-    if (traceIdHigh() != 0) {
-      writeHexLong(result, pos, traceIdHigh());
-      pos += 16;
-    }
-    writeHexLong(result, pos, traceId());
-    pos += 16;
-    result[pos++] = '.';
-    writeHexLong(result, pos, id());
-    pos += 16;
-    result[pos++] = '<';
-    result[pos++] = ':';
-    writeHexLong(result, pos, parentId() != null ? parentId() : id());
-    return new String(result);
-  }
-
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
@@ -244,10 +219,9 @@ public abstract class Span implements Serializable { // for Spark jobs
   }
 
   public static final class Builder {
-    Long traceId;
-    long traceIdHigh;
-    Long parentId;
-    Long id;
+    String traceId;
+    String parentId;
+    String id;
     Kind kind;
     String name;
     Long timestamp;
@@ -260,7 +234,6 @@ public abstract class Span implements Serializable { // for Spark jobs
     Boolean shared;
 
     public Builder clear() {
-      traceIdHigh = 0L;
       traceId = null;
       parentId = null;
       id = null;
@@ -279,7 +252,6 @@ public abstract class Span implements Serializable { // for Spark jobs
 
     @Override public Builder clone() {
       Builder result = new Builder();
-      result.traceIdHigh = traceIdHigh;
       result.traceId = traceId;
       result.parentId = parentId;
       result.id = id;
@@ -331,60 +303,38 @@ public abstract class Span implements Serializable { // for Spark jobs
     }
 
     /**
-     * Decodes the trace ID from its lower-hex representation.
-     *
-     * <p>Use this instead decoding yourself and calling {@link #traceIdHigh(long)} and {@link
-     * #traceId(long)}
+     * @throws IllegalArgumentException if not lower-hex format
+     * @see Span#id()
      */
     public Builder traceId(String traceId) {
-      checkNotNull(traceId, "traceId");
-      if (traceId.length() == 32) {
-        traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
-      }
-      return traceId(lowerHexToUnsignedLong(traceId));
-    }
-
-    /** @see Span#traceIdHigh */
-    public Builder traceIdHigh(long traceIdHigh) {
-      this.traceIdHigh = traceIdHigh;
-      return this;
-    }
-
-    /** @see Span#traceId */
-    public Builder traceId(long traceId) {
-      this.traceId = traceId;
+      this.traceId = normalizeTraceId(traceId);
       return this;
     }
 
     /**
-     * Decodes the parent ID from its lower-hex representation.
-     *
-     * <p>Use this instead decoding yourself and calling {@link #parentId(Long)}
+     * @throws IllegalArgumentException if not lower-hex format
+     * @see Span#parentId()
      */
     public Builder parentId(@Nullable String parentId) {
-      this.parentId = parentId != null ? lowerHexToUnsignedLong(parentId) : null;
-      return this;
-    }
-
-    /** @see Span#parentId */
-    public Builder parentId(@Nullable Long parentId) {
-      this.parentId = parentId;
+      if (parentId != null) {
+        int length = parentId.length();
+        if (length > 16) throw new IllegalArgumentException("parentId.length > 16");
+        validateHex(parentId);
+        this.parentId = length < 16 ? padLeft(parentId, 16) : parentId;
+      }
       return this;
     }
 
     /**
-     * Decodes the span ID from its lower-hex representation.
-     *
-     * <p>Use this instead decoding yourself and calling {@link #id(long)}
+     * @throws IllegalArgumentException if not lower-hex format
+     * @see Span#id()
      */
     public Builder id(String id) {
-      this.id = lowerHexToUnsignedLong(id);
-      return this;
-    }
-
-    /** @see Span#id */
-    public Builder id(long id) {
-      this.id = id;
+      if (id == null) throw new NullPointerException("id == null");
+      int length = id.length();
+      if (length > 16) throw new IllegalArgumentException("id.length > 16");
+      validateHex(id);
+      this.id = length < 16 ? padLeft(id, 16) : id;
       return this;
     }
 
@@ -429,14 +379,16 @@ public abstract class Span implements Serializable { // for Spark jobs
     /** @see Span#annotations */
     public Builder addAnnotation(long timestamp, String value) {
       if (annotations == null) annotations = new ArrayList<>(2);
-      annotations.add(Annotation.create(timestamp, value, null));
+      annotations.add(Annotation.create(timestamp, value));
       return this;
     }
 
     /** @see Span#tags */
     public Builder putTag(String key, String value) {
       if (tags == null) tags = new TreeMap<>();
-      this.tags.put(checkNotNull(key, "key"), checkNotNull(value, "value"));
+      if (key == null) throw new NullPointerException("key == null");
+      if (value == null) throw new NullPointerException("value of " + key + " == null");
+      this.tags.put(key, value);
       return this;
     }
 
@@ -454,7 +406,6 @@ public abstract class Span implements Serializable { // for Spark jobs
 
     public Span build() {
       return new AutoValue_Span(
-        traceIdHigh,
         traceId,
         parentId,
         id,
@@ -476,6 +427,52 @@ public abstract class Span implements Serializable { // for Spark jobs
   }
 
   @Override public String toString() {
-    return new String(Encoder.JSON.encode(this), UTF_8);
+    return new String(BytesEncoder.JSON.encode(this), UTF_8);
+  }
+
+  /**
+   * Returns a valid lower-hex trace ID, padded left as needed to 16 or 32 characters.
+   *
+   * @throws IllegalArgumentException if oversized or not lower-hex
+   */
+  public static String normalizeTraceId(String traceId) {
+    if (traceId == null) throw new NullPointerException("traceId == null");
+    int length = traceId.length();
+    if (length > 32) throw new IllegalArgumentException("traceId.length > 32");
+    validateHex(traceId);
+    if (length == 32 || length == 16) {
+      return traceId;
+    } else if (length < 16) {
+      return padLeft(traceId, 16);
+    } else {
+      return padLeft(traceId, 32);
+    }
+  }
+
+  static String padLeft(String id, int desiredLength) {
+    StringBuilder builder = new StringBuilder(desiredLength);
+    int offset = desiredLength - id.length();
+
+    for (int i = 0; i < offset; i++) builder.append('0');
+    builder.append(id);
+    return builder.toString();
+  }
+
+  static void validateHex(String id) {
+    for (int i = 0, length = id.length(); i < length; i++) {
+      char c = id.charAt(i);
+      if ((c < '0' || c > '9') && (c < 'a' || c > 'f')) {
+        throw new IllegalArgumentException(id + " should be lower-hex encoded with no prefix");
+      }
+    }
+  }
+
+  static <T extends Comparable<? super T>> List<T> sortedList(@Nullable List<T> in) {
+    if (in == null || in.isEmpty()) return Collections.emptyList();
+    if (in.size() == 1) return Collections.singletonList(in.get(0));
+    Object[] array = in.toArray();
+    Arrays.sort(array);
+    List result = Arrays.asList(array);
+    return Collections.unmodifiableList(result);
   }
 }

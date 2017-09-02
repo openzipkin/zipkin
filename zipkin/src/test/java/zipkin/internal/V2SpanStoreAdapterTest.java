@@ -41,6 +41,7 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static zipkin.TestObjects.TODAY;
+import static zipkin.internal.V2SpanConverter.convert;
 
 public class V2SpanStoreAdapterTest {
   @Rule public MockitoRule mocks = MockitoJUnit.rule();
@@ -52,7 +53,7 @@ public class V2SpanStoreAdapterTest {
 
   Endpoint frontend = Endpoint.create("frontend", 192 << 24 | 168 << 16 | 2);
   Endpoint backend = Endpoint.create("backend", 192 << 24 | 168 << 16 | 3);
-  Span.Builder builder = Span.builder()
+  Span.Builder builder = Span.newBuilder()
     .traceId("7180c278b62e8f6a5b4185666d50f68b")
     .id("5b4185666d50f68b")
     .name("get");
@@ -60,14 +61,14 @@ public class V2SpanStoreAdapterTest {
   List<Span> skewedTrace2 = asList(
     builder.clone()
       .kind(Span.Kind.CLIENT)
-      .localEndpoint(frontend)
+      .localEndpoint(convert(frontend))
       .timestamp((TODAY + 200) * 1000)
       .duration(120_000L)
       .build(),
     builder.clone()
       .kind(Span.Kind.SERVER)
       .shared(true)
-      .localEndpoint(backend)
+      .localEndpoint(convert(backend))
       .timestamp((TODAY + 100) * 1000) // received before sent!
       .duration(60_000L)
       .build()
@@ -157,7 +158,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTrace_sync_callsExecute() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenReturn(Collections.emptyList());
@@ -170,7 +171,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test(expected = UncheckedIOException.class)
   public void getTrace_sync_wrapsIOE() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenThrow(IOException.class);
@@ -179,7 +180,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTrace_async_callsEnqueue() {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onSuccess(Collections.emptyList()));
 
@@ -190,7 +191,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test public void getTrace_async_doesntWrapIOE() {
     IOException throwable = new IOException();
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onError(throwable));
 
@@ -200,7 +201,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getRawTrace_sync_callsExecute() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenReturn(Collections.emptyList());
@@ -213,7 +214,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test(expected = UncheckedIOException.class)
   public void getRawTrace_sync_wrapsIOE() throws IOException {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     when(call.execute())
       .thenThrow(IOException.class);
@@ -222,7 +223,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getRawTrace_async_callsEnqueue() {
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onSuccess(Collections.emptyList()));
 
@@ -233,7 +234,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test public void getRawTrace_async_doesntWrapIOE() {
     IOException throwable = new IOException();
-    when(spanStore.getTrace(3L, 4L))
+    when(spanStore.getTrace("00000000000000030000000000000004"))
       .thenReturn(call);
     doEnqueue(c -> c.onError(throwable));
 
@@ -252,6 +253,16 @@ public class V2SpanStoreAdapterTest {
       .isEmpty();
 
     verify(call).execute();
+  }
+
+  @Test public void getServiceNames_sortsList() throws IOException {
+    when(spanStore.getServiceNames())
+      .thenReturn(call);
+    when(call.execute())
+      .thenReturn(asList("foo", "bar"));
+
+    assertThat(adapter.getServiceNames())
+      .containsExactly("bar", "foo");
   }
 
   @Test(expected = UncheckedIOException.class)
@@ -295,6 +306,16 @@ public class V2SpanStoreAdapterTest {
       .isEmpty();
 
     verify(call).execute();
+  }
+
+  @Test public void getSpanNames_sortsList() throws IOException {
+    when(spanStore.getSpanNames("service1"))
+      .thenReturn(call);
+    when(call.execute())
+      .thenReturn(asList("foo", "bar"));
+
+    assertThat(adapter.getSpanNames("service1"))
+      .containsExactly("bar", "foo");
   }
 
   @Test(expected = UncheckedIOException.class)
@@ -378,8 +399,8 @@ public class V2SpanStoreAdapterTest {
 
   @Test public void getTracesMapper_descendingOrder() {
     assertThat(V2SpanStoreAdapter.getTracesMapper.map(asList(
-      asList(builder.traceId(1L).timestamp((TODAY + 1) * 1000).build()),
-      asList(builder.traceId(2L).timestamp((TODAY + 2) * 1000).build())
+      asList(builder.traceId("1").timestamp((TODAY + 1) * 1000).build()),
+      asList(builder.traceId("2").timestamp((TODAY + 2) * 1000).build())
     ))).flatExtracting(s -> s)
       .extracting(s -> s.timestamp)
       .containsExactly((TODAY + 2) * 1000, (TODAY + 1) * 1000);

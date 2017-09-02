@@ -16,8 +16,7 @@ package zipkin.internal;
 import org.junit.Test;
 import zipkin.SpanDecoder;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.Encoder;
-import zipkin.internal.v2.codec.MessageEncoder;
+import zipkin.internal.v2.codec.BytesEncoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,14 +31,11 @@ public class V2JsonSpanDecoderTest {
   SpanDecoder decoder = new V2JsonSpanDecoder();
 
   @Test(expected = UnsupportedOperationException.class) public void readSpan() {
-    decoder.readSpan(Encoder.JSON.encode(span2_1));
+    decoder.readSpan(BytesEncoder.JSON.encode(span2_1));
   }
 
   @Test public void readSpans() {
-    byte[] message = MessageEncoder.JSON_BYTES.encode(asList(
-      Encoder.JSON.encode(span2_1),
-      Encoder.JSON.encode(span2_2)
-    ));
+    byte[] message = BytesEncoder.JSON.encodeList(asList(span2_1, span2_2));
 
     assertThat(decoder.readSpans(message))
       .containsExactly(span1, span2);

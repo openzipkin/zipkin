@@ -17,63 +17,22 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import okio.Buffer;
 import org.junit.Test;
-import zipkin.Annotation;
-import zipkin.internal.Util;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
 import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin.internal.V2SpanConverter.convert;
 
 public class SpanTest {
-  Span base = Span.builder().traceId(1L).id(1L).localEndpoint(APP_ENDPOINT).build();
+  Span base = Span.newBuilder().traceId("1").id("1").localEndpoint(convert(APP_ENDPOINT)).build();
 
   @Test public void traceIdString() {
-    Span with128BitId = Span.builder()
-      .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
-      .id(1)
+    Span with128BitId = base.toBuilder()
+      .traceId("463ac35c9f6413ad48485a3953bb6124")
       .name("foo").build();
 
-    assertThat(with128BitId.traceIdString())
-      .isEqualTo("48485a3953bb6124");
-  }
-
-  @Test public void traceIdString_high() {
-    Span with128BitId = Span.builder()
-      .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
-      .traceIdHigh(Util.lowerHexToUnsignedLong("463ac35c9f6413ad"))
-      .id(1)
-      .name("foo").build();
-
-    assertThat(with128BitId.traceIdString())
+    assertThat(with128BitId.traceId())
       .isEqualTo("463ac35c9f6413ad48485a3953bb6124");
-  }
-
-  @Test
-  public void idString_traceIdHigh() {
-    Span with128BitId = Span.builder()
-      .traceId(Util.lowerHexToUnsignedLong("48485a3953bb6124"))
-      .traceIdHigh(Util.lowerHexToUnsignedLong("463ac35c9f6413ad"))
-      .id(1)
-      .name("foo").build();
-
-    assertThat(with128BitId.idString())
-      .isEqualTo("463ac35c9f6413ad48485a3953bb6124.0000000000000001<:0000000000000001");
-  }
-
-  @Test
-  public void idString_withParent() {
-    Span withParent = Span.builder().name("foo").traceId(1).id(3).parentId(2L).build();
-
-    assertThat(withParent.idString())
-      .isEqualTo("0000000000000001.0000000000000003<:0000000000000002");
-  }
-
-  @Test
-  public void idString_noParent() {
-    Span noParent = Span.builder().name("foo").traceId(1).id(1).build();
-
-    assertThat(noParent.idString())
-      .isEqualTo("0000000000000001.0000000000000001<:0000000000000001");
   }
 
   @Test public void spanNamesLowercase() {
@@ -89,8 +48,8 @@ public class SpanTest {
 
     // note: annotations don't also have endpoints, as it is implicit to Span.localEndpoint
     assertThat(span.annotations()).containsExactly(
-      Annotation.create(1L, "foo", null),
-      Annotation.create(2L, "foo", null)
+      Annotation.create(1L, "foo"),
+      Annotation.create(2L, "foo")
     );
   }
 

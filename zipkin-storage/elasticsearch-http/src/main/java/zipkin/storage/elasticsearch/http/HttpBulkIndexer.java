@@ -23,7 +23,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 import zipkin.internal.JsonCodec;
-import zipkin.storage.Callback;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage.APPLICATION_JSON;

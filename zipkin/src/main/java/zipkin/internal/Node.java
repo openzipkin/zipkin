@@ -29,7 +29,6 @@ import static java.lang.String.format;
 import static java.util.logging.Level.FINE;
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
-import static zipkin.internal.Util.toLowerHex;
 
 /**
  * Convenience type representing a tree. This is here because multiple facets in zipkin require
@@ -141,29 +140,29 @@ public final class Node<V> {
       this.traceId = traceId;
     }
 
-    Long rootId = null;
+    String rootId = null;
     Node<V> rootNode = null;
     // Nodes representing the trace tree
-    Map<Long, Node<V>> idToNode = new LinkedHashMap<>();
+    Map<String, Node<V>> idToNode = new LinkedHashMap<>();
     // Collect the parent-child relationships between all spans.
-    Map<Long, Long> idToParent = new LinkedHashMap<>(idToNode.size());
+    Map<String, String> idToParent = new LinkedHashMap<>(idToNode.size());
 
     /** Returns false after logging to FINE if the value couldn't be added */
-    public boolean addNode(@Nullable Long parentId, long id, V value) {
+    public boolean addNode(@Nullable String parentId, String id, V value) {
       if (parentId == null) {
         if (rootId != null) {
           if (logger.isLoggable(FINE)) {
             logger.fine(format(
               "attributing span missing parent to root: traceId=%s, rootSpanId=%s, spanId=%s",
-              traceId, toLowerHex(rootId), toLowerHex(id)));
+              traceId, rootId, id));
           }
         } else {
           rootId = id;
         }
-      } else if (parentId == id) {
+      } else if (parentId.equals(id)) {
         if (logger.isLoggable(FINE)) {
           logger.fine(
-            format("skipping circular dependency: traceId=%s, spanId=%s", traceId, toLowerHex(id)));
+            format("skipping circular dependency: traceId=%s, spanId=%s", traceId, id));
         }
         return false;
       }
@@ -174,7 +173,7 @@ public final class Node<V> {
       if (parentId == null && rootNode == null) {
         rootNode = node;
         rootId = id;
-      } else if (parentId == null && rootId == id) {
+      } else if (parentId == null && rootId.equals(id)) {
         rootNode.value(mergeFunction.merge(rootNode.value, node.value));
       } else {
         Node<V> previous = idToNode.put(id, node);
@@ -187,7 +186,7 @@ public final class Node<V> {
     /** Builds a tree from calls to {@link #addNode}, or returns an empty tree. */
     public Node<V> build() {
       // Materialize the tree using parent - child relationships
-      for (Map.Entry<Long, Long> entry : idToParent.entrySet()) {
+      for (Map.Entry<String, String> entry : idToParent.entrySet()) {
         Node<V> node = idToNode.get(entry.getKey());
         Node<V> parent = idToNode.get(entry.getValue());
         if (parent == null) { // handle headless
