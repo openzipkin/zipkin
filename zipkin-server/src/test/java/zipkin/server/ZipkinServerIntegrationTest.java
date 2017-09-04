@@ -14,17 +14,20 @@
 package zipkin.server;
 
 import java.util.List;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import okio.Buffer;
 import okio.GzipSink;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpHeaders;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -39,6 +42,7 @@ import zipkin.internal.v2.codec.BytesEncoder;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -52,9 +56,11 @@ import static zipkin.TestObjects.TRACE;
 import static zipkin.TestObjects.span;
 import static zipkin.internal.Util.UTF_8;
 
-@SpringBootTest(classes = ZipkinServer.class)
+@SpringBootTest(
+  classes = ZipkinServer.class,
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
+)
 @RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
 @TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server"})
 public class ZipkinServerIntegrationTest {
 
@@ -64,6 +70,8 @@ public class ZipkinServerIntegrationTest {
   V2InMemoryStorage storage;
   @Autowired
   ActuateCollectorMetrics metrics;
+  @LocalServerPort
+  int zipkinPort;
 
   MockMvc mockMvc;
 
@@ -294,10 +302,22 @@ public class ZipkinServerIntegrationTest {
       .andExpect(status().isOk());
   }
 
-  @Test
-  public void redirectsRootToZipkin() throws Exception {
-    mockMvc.perform(get("/"))
-      .andExpect(status().is(302));
+  /** Simulate a proxy which forwards / to zipkin as opposed to resolving / -> /zipkin first */
+  @Test public void redirectedHeaderUsesOriginalHostAndPort() throws Exception {
+    OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
+
+    Request forwarded = new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/")
+      .addHeader("Host", "zipkin.com")
+      .addHeader("X-Forwarded-Proto", "https")
+      .addHeader("X-Forwarded-Port", "444")
+      .build();
+
+    Response response = client.newCall(forwarded).execute();
+
+    // Redirect header should be the proxy, not the backed IP/port
+    assertThat(response.header("Location"))
+      .isEqualTo("https://zipkin.com:444/zipkin/");
   }
 
   ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {
