@@ -13,7 +13,6 @@
  */
 package zipkin.storage.elasticsearch.http;
 
-import com.google.gson.stream.MalformedJsonException;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
@@ -123,7 +122,7 @@ final class JsonAdapters {
       }
       reader.endObject();
       if (timestamp == null || value == null) {
-        throw new MalformedJsonException("Incomplete annotation at " + reader.getPath());
+        throw new IllegalStateException("Incomplete annotation at " + reader.getPath());
       }
       return Annotation.create(timestamp, value);
     }
@@ -164,7 +163,7 @@ final class JsonAdapters {
       }
       reader.endObject();
       if (serviceName == null && ipv4 == null && ipv6 == null && port == null) {
-        throw new MalformedJsonException("Incomplete endpoint at " + reader.getPath());
+        throw new IllegalStateException("Incomplete endpoint at " + reader.getPath());
       }
       return Endpoint.newBuilder().serviceName(serviceName).ip(ipv4).ip(ipv6).port(port).build();
     }
