@@ -15,7 +15,7 @@ package zipkin.moshi;
 
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import java.util.Set;
+import java.util.List;
 import okio.Buffer;
 import org.junit.Test;
 
@@ -50,7 +50,7 @@ public class JsonReadersTest {
 
   @Test
   public void collectValuesNamed_emptyWhenNotFound() throws IOException {
-    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8(
+    List<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8(
         "{\"took\":1,\"timed_out\":false,\"_shards\":{\"total\":0,\"successful\":0,\"failed\":0},\"hits\":{\"total\":0,\"max_score\":0.0,\"hits\":[]}}"
     )), "key");
 
@@ -59,7 +59,7 @@ public class JsonReadersTest {
 
   @Test
   public void collectValuesNamed_mergesArrays() throws IOException {
-    Set<String> result =
+    List<String> result =
         JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8(SPAN_NAMES)), "key");
 
     assertThat(result).containsExactly("methodcall", "yak");
@@ -67,7 +67,7 @@ public class JsonReadersTest {
 
   @Test
   public void collectValuesNamed_mergesChildren() throws IOException {
-    Set<String> result =
+    List<String> result =
         JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8(SERVICE_NAMES)), "key");
 
     assertThat(result).containsExactly("yak", "service");
@@ -75,7 +75,7 @@ public class JsonReadersTest {
 
   @Test
   public void collectValuesNamed_nested() throws IOException {
-    Set<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8("{\n"
+    List<String> result = JsonReaders.collectValuesNamed(JsonReader.of(new Buffer().writeUtf8("{\n"
         + "  \"took\": 49,\n"
         + "  \"timed_out\": false,\n"
         + "  \"_shards\": {\n"

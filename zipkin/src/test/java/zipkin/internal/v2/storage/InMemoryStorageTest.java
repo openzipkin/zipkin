@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Test;
-import zipkin.DependencyLink;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
@@ -91,7 +91,7 @@ public class InMemoryStorageTest {
     storage.accept(asList(span));
 
     assertThat(storage.getDependencies(TODAY + 1000L, TODAY).execute()).containsOnly(
-      DependencyLink.builder().parent("kafka").child("app").callCount(1L).build()
+      DependencyLink.newBuilder().parent("kafka").child("app").callCount(1L).build()
     );
   }
 

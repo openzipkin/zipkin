@@ -22,9 +22,9 @@ import okhttp3.HttpUrl;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
-import zipkin.internal.JsonCodec;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
+import static zipkin.internal.v2.internal.JsonEscaper.jsonEscape;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage.APPLICATION_JSON;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
@@ -57,7 +57,7 @@ final class HttpBulkIndexer {
     // the _type parameter is needed for Elasticsearch <6.x
     body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
     if (id != null) {
-      body.writeUtf8(",\"_id\":\"").writeUtf8(JsonCodec.escape(id)).writeByte('"');
+      body.writeUtf8(",\"_id\":\"").writeUtf8(jsonEscape(id)).writeByte('"');
     }
     body.writeUtf8("}}\n");
   }

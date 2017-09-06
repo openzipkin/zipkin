@@ -25,13 +25,11 @@ import org.junit.Test;
 import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.Span.Kind;
-import zipkin.internal.v2.codec.BytesDecoder;
-import zipkin.internal.v2.codec.BytesEncoder;
+import zipkin.internal.v2.codec.SpanBytesCodec;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.TODAY;
-import static zipkin.internal.Util.UTF_8;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanConsumer.prefixWithTimestampMillisAndQuery;
 
 public class ElasticsearchHttpSpanConsumerTest {
@@ -81,7 +79,7 @@ public class ElasticsearchHttpSpanConsumerTest {
 
     byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
-    assertThat(new String(result, UTF_8))
+    assertThat(new String(result, "UTF-8"))
       .startsWith("{\"traceId\":\"");
   }
 
@@ -93,7 +91,7 @@ public class ElasticsearchHttpSpanConsumerTest {
 
     byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
-    assertThat(new String(result, UTF_8))
+    assertThat(new String(result, "UTF-8"))
       .startsWith("{\"timestamp_millis\":1,\"traceId\":");
   }
 
@@ -105,7 +103,7 @@ public class ElasticsearchHttpSpanConsumerTest {
 
     byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
-    assertThat(new String(result, UTF_8))
+    assertThat(new String(result, "UTF-8"))
       .startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
   }
 
@@ -117,7 +115,7 @@ public class ElasticsearchHttpSpanConsumerTest {
 
     byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
 
-    assertThat(new String(result, UTF_8))
+    assertThat(new String(result, "UTF-8"))
       .startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
   }
 
@@ -125,7 +123,7 @@ public class ElasticsearchHttpSpanConsumerTest {
     Span span = Span.newBuilder().traceId("20").id("20").name("get")
       .timestamp(TODAY * 1000).build();
 
-    assertThat(BytesDecoder.JSON.decode(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
+    assertThat(SpanBytesCodec.JSON.decode(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
       .isEqualTo(span); // ignores timestamp_millis field
   }
 
@@ -146,7 +144,7 @@ public class ElasticsearchHttpSpanConsumerTest {
     accept(Span.newBuilder().traceId("1").id("1").name("foo").build());
 
     assertThat(es.takeRequest().getBody().readByteString().utf8())
-      .contains("\n" + new String(BytesEncoder.JSON.encode(span), UTF_8) + "\n");
+      .contains("\n" + new String(SpanBytesCodec.JSON.encode(span), "UTF-8") + "\n");
   }
 
   @Test public void traceIsSearchableByServerServiceName() throws Exception {

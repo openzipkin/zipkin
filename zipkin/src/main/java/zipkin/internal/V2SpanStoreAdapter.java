@@ -31,6 +31,7 @@ import zipkin.storage.Callback;
 import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
 import static zipkin.internal.Util.sortedList;
 import static zipkin.internal.Util.toLowerHex;
+import static zipkin.internal.V2SpanConverter.toSpans;
 
 final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanStore {
   final SpanStore delegate;
@@ -54,7 +55,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
   }
 
   Call<List<List<zipkin.Span>>> getTracesCall(zipkin.storage.QueryRequest v1Request) {
-    return delegate.getTraces(convert(v1Request)).map(getTracesMapper);
+    return delegate.getTraces(convertRequest(v1Request)).map(getTracesMapper);
   }
 
   @Nullable @Override public List<zipkin.Span> getTrace(long traceIdHigh, long traceIdLow) {
@@ -130,7 +131,8 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
   }
 
   Call<List<DependencyLink>> getDependenciesCall(long endTs, @Nullable Long lookback) {
-    return delegate.getDependencies(endTs, lookback != null ? lookback : endTs);
+    return delegate.getDependencies(endTs, lookback != null ? lookback : endTs)
+      .map(V2SpanConverter::toLinks);
   }
 
   @Nullable @Override public List<zipkin.Span> getTrace(long traceId) {
@@ -154,23 +156,23 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
     int length = trace2s.size();
     List<List<zipkin.Span>> trace1s = new ArrayList<>(length);
     for (int i = 0; i < length; i++) {
-      trace1s.add(CorrectForClockSkew.apply(MergeById.apply(convert(trace2s.get(i)))));
+      trace1s.add(CorrectForClockSkew.apply(MergeById.apply(toSpans(trace2s.get(i)))));
     }
     Collections.sort(trace1s, TRACE_DESCENDING);
     return trace1s;
   };
 
   static final Mapper<List<Span>, List<zipkin.Span>> getTraceMapper = (spans) -> {
-    List<zipkin.Span> span1s = CorrectForClockSkew.apply(MergeById.apply(convert(spans)));
+    List<zipkin.Span> span1s = CorrectForClockSkew.apply(MergeById.apply(toSpans(spans)));
     return (span1s.isEmpty()) ? null : span1s;
   };
 
   static final Mapper<List<Span>, List<zipkin.Span>> getRawTraceMapper = (spans) -> {
-    List<zipkin.Span> span1s = convert(spans);
+    List<zipkin.Span> span1s = toSpans(spans);
     return (span1s.isEmpty()) ? null : span1s;
   };
 
-  static QueryRequest convert(zipkin.storage.QueryRequest v1Request) {
+  static QueryRequest convertRequest(zipkin.storage.QueryRequest v1Request) {
     return QueryRequest.newBuilder()
       .serviceName(v1Request.serviceName)
       .spanName(v1Request.spanName)
@@ -180,15 +182,5 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
       .endTs(v1Request.endTs)
       .lookback(v1Request.lookback)
       .limit(v1Request.limit).build();
-  }
-
-  static List<zipkin.Span> convert(List<zipkin.internal.v2.Span> spans) {
-    if (spans.isEmpty()) return Collections.emptyList();
-    int length = spans.size();
-    List<zipkin.Span> span1s = new ArrayList<>(length);
-    for (int i = 0; i < length; i++) {
-      span1s.add(V2SpanConverter.toSpan(spans.get(i)));
-    }
-    return span1s;
   }
 }

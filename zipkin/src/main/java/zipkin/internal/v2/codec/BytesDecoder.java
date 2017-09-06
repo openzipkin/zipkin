@@ -14,39 +14,16 @@
 package zipkin.internal.v2.codec;
 
 import java.util.List;
-import zipkin.internal.JsonCodec;
-import zipkin.internal.v2.Span;
 
 /**
- * @param <S> type of the span, usually {@link zipkin.Span}
+ * @param <T> type of the object to deserialize
  */
-public interface BytesDecoder<S> {
-  BytesDecoder<Span> JSON = new BytesDecoder<Span>() {
-    @Override public Encoding encoding() {
-      return Encoding.JSON;
-    }
-
-    @Override public Span decode(byte[] span) { // ex decode span in dependencies job
-      return JsonCodec.read(new Span2JsonAdapters.Span2Reader(), span);
-    }
-
-    @Override public List<Span> decodeList(byte[] spans) { // ex getTrace
-      return JsonCodec.readList(new Span2JsonAdapters.Span2Reader(), spans);
-    }
-
-    @Override public List<List<Span>> decodeNestedList(byte[] traces) { // ex getTraces
-      return JsonCodec.readList(new Span2JsonAdapters.Span2ListReader(), traces);
-    }
-  };
-
+public interface BytesDecoder<T> {
   Encoding encoding();
 
-  /** throws {@linkplain IllegalArgumentException} if the span couldn't be decoded */
-  S decode(byte[] span);
+  /** throws {@linkplain IllegalArgumentException} if the type couldn't be decoded */
+  T decode(byte[] serialized);
 
-  /** throws {@linkplain IllegalArgumentException} if the spans couldn't be decoded */
-  List<S> decodeList(byte[] spans);
-
-  /** throws {@linkplain IllegalArgumentException} if the traces couldn't be decoded */
-  List<List<S>> decodeNestedList(byte[] traces);
+  /** throws {@linkplain IllegalArgumentException} if the type couldn't be decoded */
+  List<T> decodeList(byte[] serialized);
 }

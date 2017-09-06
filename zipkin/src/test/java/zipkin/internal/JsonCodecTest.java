@@ -193,58 +193,6 @@ public final class JsonCodecTest extends CodecTest {
   }
 
   @Test
-  public void doesntStackOverflowOnToBufferWriterBug_lessThanBytes() {
-    thrown.expect(AssertionError.class);
-    thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a");
-
-    class FooWriter implements Buffer.Writer {
-      @Override public int sizeInBytes(Object value) {
-        return 2;
-      }
-
-      @Override public void write(Object value, Buffer buffer) {
-        buffer.writeByte('a');
-        throw new RuntimeException("buggy");
-      }
-    }
-
-    class Foo {
-      @Override
-      public String toString() {
-        return new String(JsonCodec.write(new FooWriter(), this), UTF_8);
-      }
-    }
-
-    new Foo().toString();
-  }
-
-  @Test
-  public void doesntStackOverflowOnToBufferWriterBug_Overflow() {
-    thrown.expect(AssertionError.class);
-    thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 2/2 bytes: ab");
-
-    // pretend there was a bug calculating size, ex it calculated incorrectly as to small
-    class FooWriter implements Buffer.Writer {
-      @Override public int sizeInBytes(Object value) {
-        return 2;
-      }
-
-      @Override public void write(Object value, Buffer buffer) {
-        buffer.writeByte('a').writeByte('b').writeByte('c'); // wrote larger than size!
-      }
-    }
-
-    class Foo {
-      @Override
-      public String toString() {
-        return new String(JsonCodec.write(new FooWriter(), this), UTF_8);
-      }
-    }
-
-    new Foo().toString();
-  }
-
-  @Test
   public void niceErrorOnNull_id() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Expected a string but was NULL");

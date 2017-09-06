@@ -13,145 +13,38 @@
  */
 package zipkin.internal.v2.codec;
 
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
-import com.google.gson.stream.MalformedJsonException;
-import java.io.IOException;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import zipkin.internal.Buffer;
-import zipkin.internal.JsonCodec;
-import zipkin.internal.JsonCodec.JsonReaderAdapter;
 import zipkin.internal.v2.Annotation;
 import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
+import zipkin.internal.v2.internal.Buffer;
+import zipkin.internal.v2.internal.JsonCodec;
 
-import static zipkin.internal.Buffer.asciiSizeInBytes;
-import static zipkin.internal.Buffer.jsonEscapedSizeInBytes;
+import static zipkin.internal.v2.internal.Buffer.asciiSizeInBytes;
+import static zipkin.internal.v2.internal.JsonEscaper.jsonEscape;
+import static zipkin.internal.v2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
-/**
- * Internal type supporting codec operations in {@link Span}. Design rationale is the same as
- * {@link JsonCodec}.
- */
-final class Span2JsonAdapters {
-
-  static final class Span2Reader implements JsonReaderAdapter<Span> {
-    Span.Builder builder;
-
-    @Override public Span fromJson(JsonReader reader) throws IOException {
-      if (builder == null) {
-        builder = Span.newBuilder();
-      } else {
-        builder.clear();
-      }
-      reader.beginObject();
-      while (reader.hasNext()) {
-        String nextName = reader.nextName();
-        if (nextName.equals("traceId")) {
-          builder.traceId(reader.nextString());
-          continue;
-        } else if (nextName.equals("id")) {
-          builder.id(reader.nextString());
-          continue;
-        } else if (reader.peek() == JsonToken.NULL) {
-          reader.skipValue();
-          continue;
-        }
-
-        // read any optional fields
-        if (nextName.equals("parentId")) {
-          builder.parentId(reader.nextString());
-        } else if (nextName.equals("kind")) {
-          builder.kind(Span.Kind.valueOf(reader.nextString()));
-        } else if (nextName.equals("name")) {
-          builder.name(reader.nextString());
-        } else if (nextName.equals("timestamp")) {
-          builder.timestamp(reader.nextLong());
-        } else if (nextName.equals("duration")) {
-          builder.duration(reader.nextLong());
-        } else if (nextName.equals("localEndpoint")) {
-          builder.localEndpoint(ENDPOINT_READER.fromJson(reader));
-        } else if (nextName.equals("remoteEndpoint")) {
-          builder.remoteEndpoint(ENDPOINT_READER.fromJson(reader));
-        } else if (nextName.equals("annotations")) {
-          reader.beginArray();
-          while (reader.hasNext()) {
-            reader.beginObject();
-            Long timestamp = null;
-            String value = null;
-            while (reader.hasNext()) {
-              nextName = reader.nextName();
-              if (nextName.equals("timestamp")) {
-                timestamp = reader.nextLong();
-              } else if (nextName.equals("value")) {
-                value = reader.nextString();
-              } else {
-                reader.skipValue();
-              }
-            }
-            if (timestamp == null || value == null) {
-              throw new MalformedJsonException("Incomplete annotation at " + reader.getPath());
-            }
-            reader.endObject();
-            builder.addAnnotation(timestamp, value);
-          }
-          reader.endArray();
-        } else if (nextName.equals("tags")) {
-          reader.beginObject();
-          while (reader.hasNext()) {
-            String key = reader.nextName();
-            if (reader.peek() == JsonToken.NULL) {
-              throw new MalformedJsonException("No value at " + reader.getPath());
-            }
-            builder.putTag(key, reader.nextString());
-          }
-          reader.endObject();
-        } else if (nextName.equals("debug")) {
-          if (reader.nextBoolean()) builder.debug(true);
-        } else if (nextName.equals("shared")) {
-          if (reader.nextBoolean()) builder.shared(true);
-        } else {
-          reader.skipValue();
-        }
-      }
-      reader.endObject();
-      return builder.build();
+/** Limited interface needed by those writing span reporters */
+public enum SpanBytesEncoder implements BytesEncoder<Span> {
+  /** Corresponds to the Zipkin v2 json format */
+  JSON {
+    @Override public Encoding encoding() {
+      return Encoding.JSON;
     }
 
-    @Override public String toString() {
-      return "Span";
+    @Override public int sizeInBytes(Span input) {
+      return SPAN_WRITER.sizeInBytes(input);
     }
-  }
 
-  static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = reader -> {
-    Endpoint.Builder result = Endpoint.newBuilder();
-    reader.beginObject();
-    boolean readField = false;
-    while (reader.hasNext()) {
-      String nextName = reader.nextName();
-      if (reader.peek() == JsonToken.NULL) {
-        reader.skipValue();
-        continue;
-      }
-      if (nextName.equals("serviceName")) {
-        result.serviceName(reader.nextString());
-        readField = true;
-      } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
-        result.parseIp(reader.nextString());
-        readField = true;
-      } else if (nextName.equals("port")) {
-        result.port(reader.nextInt());
-        readField = true;
-      } else {
-        reader.skipValue();
-      }
+    @Override public byte[] encode(Span span) {
+      return JsonCodec.write(SPAN_WRITER, span);
     }
-    reader.endObject();
-    if (!readField) throw new MalformedJsonException("Empty endpoint at " + reader.getPath());
-    return result.build();
+
+    @Override public byte[] encodeList(List<Span> spans) {
+      return JsonCodec.writeList(SPAN_WRITER, spans);
+    }
   };
 
   static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
@@ -184,7 +77,7 @@ final class Span2JsonAdapters {
       boolean wroteField = false;
       if (value.serviceName() != null) {
         b.writeAscii("\"serviceName\":\"");
-        b.writeJsonEscaped(value.serviceName()).writeByte('"');
+        b.writeUtf8(jsonEscape(value.serviceName())).writeByte('"');
         wroteField = true;
       }
       if (value.ipv4() != null) {
@@ -204,6 +97,20 @@ final class Span2JsonAdapters {
         b.writeAscii("\"port\":").writeAscii(value.port());
       }
       b.writeByte('}');
+    }
+  };
+
+  static final Buffer.Writer<Annotation> ANNOTATION_WRITER = new Buffer.Writer<Annotation>() {
+    @Override public int sizeInBytes(Annotation value) {
+      int sizeInBytes = 25; // {"timestamp":,"value":""}
+      sizeInBytes += asciiSizeInBytes(value.timestamp());
+      sizeInBytes += jsonEscapedSizeInBytes(value.value());
+      return sizeInBytes;
+    }
+
+    @Override public void write(Annotation value, Buffer b) {
+      b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp());
+      b.writeAscii(",\"value\":\"").writeUtf8(jsonEscape(value.value())).writeAscii("\"}");
     }
   };
 
@@ -273,10 +180,10 @@ final class Span2JsonAdapters {
       }
       b.writeAscii(",\"id\":\"").writeAscii(value.id()).writeByte('"');
       if (value.kind() != null) {
-        b.writeAscii(",\"kind\":\"").writeJsonEscaped(value.kind().toString()).writeByte('"');
+        b.writeAscii(",\"kind\":\"").writeAscii(value.kind().toString()).writeByte('"');
       }
       if (value.name() != null) {
-        b.writeAscii(",\"name\":\"").writeJsonEscaped(value.name()).writeByte('"');
+        b.writeAscii(",\"name\":\"").writeUtf8(jsonEscape(value.name())).writeByte('"');
       }
       if (value.timestamp() != null) {
         b.writeAscii(",\"timestamp\":").writeAscii(value.timestamp());
@@ -294,15 +201,20 @@ final class Span2JsonAdapters {
       }
       if (!value.annotations().isEmpty()) {
         b.writeAscii(",\"annotations\":");
-        JsonCodec.writeList(ANNOTATION_WRITER, value.annotations(), b);
+        b.writeByte('[');
+        for (int i = 0, length = value.annotations().size(); i < length; ) {
+          ANNOTATION_WRITER.write(value.annotations().get(i++), b);
+          if (i < length) b.writeByte(',');
+        }
+        b.writeByte(']');
       }
       if (!value.tags().isEmpty()) {
         b.writeAscii(",\"tags\":{");
         Iterator<Map.Entry<String, String>> i = value.tags().entrySet().iterator();
         while (i.hasNext()) {
           Map.Entry<String, String> entry = i.next();
-          b.writeByte('"').writeJsonEscaped(entry.getKey()).writeAscii("\":\"");
-          b.writeJsonEscaped(entry.getValue()).writeByte('"');
+          b.writeByte('"').writeUtf8(jsonEscape(entry.getKey())).writeAscii("\":\"");
+          b.writeUtf8(jsonEscape(entry.getValue())).writeByte('"');
           if (i.hasNext()) b.writeByte(',');
         }
         b.writeByte('}');
@@ -320,39 +232,4 @@ final class Span2JsonAdapters {
       return "Span";
     }
   };
-
-  static final Buffer.Writer<Annotation> ANNOTATION_WRITER = new Buffer.Writer<Annotation>() {
-    @Override public int sizeInBytes(Annotation value) {
-      int sizeInBytes = 25; // {"timestamp":,"value":""}
-      sizeInBytes += asciiSizeInBytes(value.timestamp());
-      sizeInBytes += jsonEscapedSizeInBytes(value.value());
-      return sizeInBytes;
-    }
-
-    @Override public void write(Annotation value, Buffer b) {
-      b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp());
-      b.writeAscii(",\"value\":\"").writeJsonEscaped(value.value()).writeAscii("\"}");
-    }
-  };
-
-  static final class Span2ListReader implements JsonReaderAdapter<List<Span>> {
-    Span2Reader spanReader;
-
-    @Override public List<Span> fromJson(JsonReader reader) throws IOException {
-      reader.beginArray();
-      if (!reader.hasNext()) {
-        reader.endArray();
-        return Collections.emptyList();
-      }
-      List<Span> result = new LinkedList<>(); // because we don't know how long it will be
-      if (spanReader == null) spanReader = new Span2Reader();
-      while (reader.hasNext()) result.add(spanReader.fromJson(reader));
-      reader.endArray();
-      return result;
-    }
-
-    @Override public String toString() {
-      return "List<Span>";
-    }
-  }
 }

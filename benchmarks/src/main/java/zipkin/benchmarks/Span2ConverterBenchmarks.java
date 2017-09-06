@@ -38,7 +38,7 @@ import zipkin.internal.v2.Span;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.Util;
 
-import static zipkin.internal.V2SpanConverter.convert;
+import static zipkin.internal.V2SpanConverter.toEndpoint;
 
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
@@ -97,8 +97,8 @@ public class Span2ConverterBenchmarks {
     .name("get")
     .kind(Span.Kind.SERVER)
     .shared(true)
-    .localEndpoint(convert(backend))
-    .remoteEndpoint(convert(frontend))
+    .localEndpoint(toEndpoint(backend))
+    .remoteEndpoint(toEndpoint(frontend))
     .timestamp(1472470996250000L)
     .duration(100000L)
     .putTag(TraceKeys.HTTP_PATH, "/backend")

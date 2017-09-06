@@ -16,29 +16,24 @@ package zipkin.storage.elasticsearch.http;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.util.List;
-import java.util.Set;
 import okio.BufferedSource;
-import zipkin.DependencyLink;
-import zipkin.internal.DependencyLinker;
-import zipkin.internal.Util;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Span;
+import zipkin.internal.v2.internal.DependencyLinker;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall.BodyConverter;
 import zipkin.storage.elasticsearch.http.internal.client.SearchResultConverter;
 
 import static zipkin.moshi.JsonReaders.collectValuesNamed;
 
 final class BodyConverters {
-  static final BodyConverter<List<String>> SORTED_KEYS = b -> {
-    Set<String> result = collectValuesNamed(JsonReader.of(b), "key");
-    return Util.sortedList(result);
-  };
+  static final BodyConverter<List<String>> KEYS = b -> collectValuesNamed(JsonReader.of(b), "key");
   static final BodyConverter<List<Span>> SPANS =
-      SearchResultConverter.create(JsonAdapters.SPAN_ADAPTER);
+    SearchResultConverter.create(JsonAdapters.SPAN_ADAPTER);
   static final BodyConverter<List<DependencyLink>> DEPENDENCY_LINKS =
-      new SearchResultConverter<DependencyLink>(JsonAdapters.DEPENDENCY_LINK_ADAPTER) {
-        @Override public List<DependencyLink> convert(BufferedSource content) throws IOException {
-          List<DependencyLink> result = super.convert(content);
-          return result.isEmpty() ? result : DependencyLinker.merge(result);
-        }
-      };
+    new SearchResultConverter<DependencyLink>(JsonAdapters.DEPENDENCY_LINK_ADAPTER) {
+      @Override public List<DependencyLink> convert(BufferedSource content) throws IOException {
+        List<DependencyLink> result = super.convert(content);
+        return result.isEmpty() ? result : DependencyLinker.merge(result);
+      }
+    };
 }

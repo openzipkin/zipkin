@@ -24,8 +24,6 @@ import javax.annotation.Nullable;
 import okhttp3.Dns;
 import okhttp3.HttpUrl;
 
-import static zipkin.internal.Util.checkArgument;
-
 /**
  * This returns a Dns provider that combines the IPv4 or IPv6 addresses from a supplied list of
  * urls, provided they are all http and share the same port.
@@ -61,9 +59,12 @@ final class PseudoAddressRecordSet {
       ports.add(httpUrl.port());
     }
 
-    checkArgument(ports.size() == 1, "Only one port supported with multiple hosts %s", urls);
-    checkArgument(schemes.size() == 1 && schemes.iterator().next().equals("http"),
-        "Only http supported with multiple hosts %s", urls);
+    if (ports.size() != 1) {
+      throw new IllegalArgumentException("Only one port supported with multiple hosts " + urls);
+    }
+    if (schemes.size() != 1 || !schemes.iterator().next().equals("http")) {
+      throw new IllegalArgumentException("Only http supported with multiple hosts " + urls);
+    }
 
     if (hosts.isEmpty()) return new StaticDns(ipAddresses);
     return new ConcatenatingDns(ipAddresses, hosts, actualDns);

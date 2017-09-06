@@ -13,6 +13,7 @@
  */
 package zipkin.storage.elasticsearch.http;
 
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.annotation.Nullable;
+import okio.BufferedSource;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CorrectForClockSkew;
@@ -47,6 +49,13 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     SearchResultConverter.create(LegacyJsonAdapters.SPAN_ADAPTER);
   static final BodyConverter<List<Span>> NULLABLE_SPANS =
     SearchResultConverter.create(LegacyJsonAdapters.SPAN_ADAPTER).defaultToNull();
+  static final BodyConverter<List<DependencyLink>> DEPENDENCY_LINKS =
+    new SearchResultConverter<DependencyLink>(LegacyJsonAdapters.LINK_ADAPTER) {
+      @Override public List<DependencyLink> convert(BufferedSource content) throws IOException {
+        List<DependencyLink> result = super.convert(content);
+        return result.isEmpty() ? result : zipkin.internal.DependencyLinker.merge(result);
+      }
+    };
 
   final SearchCallFactory search;
   final String[] allIndices;
@@ -70,8 +79,8 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     filters.addRange("timestamp_millis", beginMillis, endMillis);
     if (request.serviceName != null) {
       filters.addNestedTerms(asList(
-          "annotations.endpoint.serviceName",
-          "binaryAnnotations.endpoint.serviceName"
+        "annotations.endpoint.serviceName",
+        "binaryAnnotations.endpoint.serviceName"
       ), request.serviceName);
     }
 
@@ -116,8 +125,8 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     // be no significant difference in user experience since span start times are usually very
     // close to each other in human time.
     Aggregation traceIdTimestamp = Aggregation.terms("traceId", request.limit)
-        .addSubAggregation(Aggregation.min("timestamp_millis"))
-        .orderBy("timestamp_millis", "desc");
+      .addSubAggregation(Aggregation.min("timestamp_millis"))
+      .orderBy("timestamp_millis", "desc");
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(null, beginMillis, endMillis);
     if (indices.isEmpty()) {
@@ -126,9 +135,9 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     }
 
     SearchRequest esRequest = SearchRequest.create(indices, SPAN)
-        .filters(filters).addAggregation(traceIdTimestamp);
+      .filters(filters).addAggregation(traceIdTimestamp);
 
-    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.SORTED_KEYS);
+    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
 
     // When we receive span results, we need to group them by trace ID
     Callback<List<Span>> successCallback = new Callback<List<Span>>() {
@@ -193,14 +202,14 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     String traceIdHex = Util.toLowerHex(strictTraceId ? traceIdHigh : 0L, traceIdLow);
 
     SearchRequest request = SearchRequest.create(asList(allIndices), SPAN)
-        .term("traceId", traceIdHex);
+      .term("traceId", traceIdHex);
 
     search.newCall(request, NULLABLE_SPANS).submit(callback);
   }
 
   @Override public void getServiceNames(Callback<List<String>> callback) {
-    long endMillis =  System.currentTimeMillis();
-    long beginMillis =  endMillis - namesLookback;
+    long endMillis = System.currentTimeMillis();
+    long beginMillis = endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(null, beginMillis, endMillis);
     if (indices.isEmpty()) {
@@ -209,9 +218,9 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     }
 
     SearchRequest request = SearchRequest.create(indices, SERVICE_SPAN)
-        .addAggregation(Aggregation.terms("serviceName", Integer.MAX_VALUE));
+      .addAggregation(Aggregation.terms("serviceName", Integer.MAX_VALUE));
 
-    search.newCall(request, BodyConverters.SORTED_KEYS).submit(new Callback<List<String>>() {
+    search.newCall(request, BodyConverters.KEYS).submit(new Callback<List<String>>() {
       @Override public void onSuccess(@Nullable List<String> value) {
         if (!value.isEmpty()) callback.onSuccess(value);
 
@@ -220,9 +229,9 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
         SearchRequest.Filters filters = new SearchRequest.Filters();
         filters.addRange("timestamp_millis", beginMillis, endMillis);
         SearchRequest request = SearchRequest.create(indices, SPAN).filters(filters)
-            .addAggregation(Aggregation.nestedTerms("annotations.endpoint.serviceName"))
-            .addAggregation(Aggregation.nestedTerms("binaryAnnotations.endpoint.serviceName"));
-        search.newCall(request, BodyConverters.SORTED_KEYS).submit(callback);
+          .addAggregation(Aggregation.nestedTerms("annotations.endpoint.serviceName"))
+          .addAggregation(Aggregation.nestedTerms("binaryAnnotations.endpoint.serviceName"));
+        search.newCall(request, BodyConverters.KEYS).submit(callback);
       }
 
       @Override public void onError(Throwable t) {
@@ -237,8 +246,8 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
       return;
     }
 
-    long endMillis =  System.currentTimeMillis();
-    long beginMillis =  endMillis - namesLookback;
+    long endMillis = System.currentTimeMillis();
+    long beginMillis = endMillis - namesLookback;
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(null, beginMillis, endMillis);
     if (indices.isEmpty()) {
@@ -247,10 +256,10 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     }
 
     SearchRequest request = SearchRequest.create(indices, SERVICE_SPAN)
-        .term("serviceName", serviceName.toLowerCase(Locale.ROOT))
-        .addAggregation(Aggregation.terms("spanName", Integer.MAX_VALUE));
+      .term("serviceName", serviceName.toLowerCase(Locale.ROOT))
+      .addAggregation(Aggregation.terms("spanName", Integer.MAX_VALUE));
 
-    search.newCall(request, BodyConverters.SORTED_KEYS).submit(new Callback<List<String>>() {
+    search.newCall(request, BodyConverters.KEYS).submit(new Callback<List<String>>() {
       @Override public void onSuccess(@Nullable List<String> value) {
         if (!value.isEmpty()) callback.onSuccess(value);
 
@@ -259,12 +268,12 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
         SearchRequest.Filters filters = new SearchRequest.Filters();
         filters.addRange("timestamp_millis", beginMillis, endMillis);
         filters.addNestedTerms(asList(
-            "annotations.endpoint.serviceName",
-            "binaryAnnotations.endpoint.serviceName"
+          "annotations.endpoint.serviceName",
+          "binaryAnnotations.endpoint.serviceName"
         ), serviceName.toLowerCase(Locale.ROOT));
         SearchRequest request = SearchRequest.create(indices, SPAN).filters(filters)
-            .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
-        search.newCall(request, BodyConverters.SORTED_KEYS).submit(callback);
+          .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
+        search.newCall(request, BodyConverters.KEYS).submit(callback);
       }
 
       @Override public void onError(Throwable t) {
@@ -274,7 +283,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   }
 
   @Override public void getDependencies(long endTs, @Nullable Long lookback,
-      Callback<List<DependencyLink>> callback) {
+    Callback<List<DependencyLink>> callback) {
     long beginMillis = lookback != null ? Math.max(endTs - lookback, EARLIEST_MS) : EARLIEST_MS;
 
     // We just return all dependencies in the days that fall within endTs and lookback as
@@ -291,6 +300,6 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   void getDependencies(List<String> indices, Callback<List<DependencyLink>> callback) {
     SearchRequest request = SearchRequest.create(indices, DEPENDENCY_LINK);
 
-    search.newCall(request, BodyConverters.DEPENDENCY_LINKS).submit(callback);
+    search.newCall(request, DEPENDENCY_LINKS).submit(callback);
   }
 }

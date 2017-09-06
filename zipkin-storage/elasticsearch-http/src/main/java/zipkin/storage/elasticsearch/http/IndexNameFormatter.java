@@ -24,7 +24,6 @@ import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
 import javax.annotation.Nullable;
-import zipkin.internal.Util;
 
 @AutoValue
 abstract class IndexNameFormatter {
@@ -116,7 +115,13 @@ abstract class IndexNameFormatter {
 
   static GregorianCalendar midnightUTC(long epochMillis) {
     GregorianCalendar result = new GregorianCalendar(UTC);
-    result.setTimeInMillis(Util.midnightUTC(epochMillis));
+    Calendar day = Calendar.getInstance(UTC);
+    day.setTimeInMillis(epochMillis);
+    day.set(Calendar.MILLISECOND, 0);
+    day.set(Calendar.SECOND, 0);
+    day.set(Calendar.MINUTE, 0);
+    day.set(Calendar.HOUR_OF_DAY, 0);
+    result.setTimeInMillis(day.getTimeInMillis());
     return result;
   }
 

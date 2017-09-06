@@ -22,14 +22,14 @@ import org.junit.rules.ExpectedException;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.Util;
+import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.internal.Util.UTF_8;
-import static zipkin.internal.V2SpanConverter.convert;
+import static zipkin.internal.V2SpanConverter.toEndpoint;
 
-public class SpanJsonAdaptersTest {
+public class SpanJsonSpanAdaptersTest {
   Endpoint frontend = Endpoint.create("frontend", 127 << 24 | 1);
   Endpoint backend = Endpoint.builder()
     .serviceName("backend")
@@ -43,8 +43,8 @@ public class SpanJsonAdaptersTest {
     .id("5b4185666d50f68b")
     .name("get")
     .kind(Span.Kind.CLIENT)
-    .localEndpoint(convert(frontend))
-    .remoteEndpoint(convert(backend))
+    .localEndpoint(toEndpoint(frontend))
+    .remoteEndpoint(toEndpoint(backend))
     .timestamp(1472470996199000L)
     .duration(207000L)
     .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
@@ -56,34 +56,34 @@ public class SpanJsonAdaptersTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Test public void spanRoundTrip() throws IOException {
-    assertThat(BytesDecoder.JSON.decode(BytesEncoder.JSON.encode(span)))
+    assertThat(SpanBytesCodec.JSON.decode(SpanBytesEncoder.JSON.encode(span)))
       .isEqualTo(span);
   }
 
   @Test public void sizeInBytes() throws IOException {
-    assertThat(Span2JsonAdapters.SPAN_WRITER.sizeInBytes(span))
-      .isEqualTo(BytesEncoder.JSON.encode(span).length);
+    assertThat(SpanBytesEncoder.SPAN_WRITER.sizeInBytes(span))
+      .isEqualTo(SpanBytesEncoder.JSON.encode(span).length);
   }
 
   @Test public void spanRoundTrip_64bitTraceId() throws IOException {
     span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
-    assertThat(BytesDecoder.JSON.decode(BytesEncoder.JSON.encode(span)))
+    assertThat(SpanBytesCodec.JSON.decode(SpanBytesEncoder.JSON.encode(span)))
       .isEqualTo(span);
   }
 
   @Test public void spanRoundTrip_shared() throws IOException {
     span = span.toBuilder().shared(true).build();
 
-    assertThat(BytesDecoder.JSON.decode(BytesEncoder.JSON.encode(span)))
+    assertThat(SpanBytesCodec.JSON.decode(SpanBytesEncoder.JSON.encode(span)))
       .isEqualTo(span);
   }
 
   @Test public void sizeInBytes_64bitTraceId() throws IOException {
     span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
-    assertThat(Span2JsonAdapters.SPAN_WRITER.sizeInBytes(span))
-      .isEqualTo(BytesEncoder.JSON.encode(span).length);
+    assertThat(SpanBytesEncoder.SPAN_WRITER.sizeInBytes(span))
+      .isEqualTo(SpanBytesEncoder.JSON.encode(span).length);
   }
 
   /**
@@ -101,7 +101,7 @@ public class SpanJsonAdaptersTest {
       .putTag("\"foo", "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
       .build();
 
-    assertThat(BytesDecoder.JSON.decode(BytesEncoder.JSON.encode(worstSpanInTheWorld)))
+    assertThat(SpanBytesCodec.JSON.decode(SpanBytesEncoder.JSON.encode(worstSpanInTheWorld)))
       .isEqualTo(worstSpanInTheWorld);
   }
 
@@ -115,14 +115,14 @@ public class SpanJsonAdaptersTest {
       + "  \"id\": \"6b221d5bc9e6496c\"\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnEmpty_inputSpans() throws IOException {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Empty input reading List<Span>");
 
-    BytesDecoder.JSON.decodeList(new byte[0]);
+    SpanBytesCodec.JSON.decodeList(new byte[0]);
   }
 
   /**
@@ -132,25 +132,25 @@ public class SpanJsonAdaptersTest {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Malformed reading List<Span> from ");
 
-    BytesDecoder.JSON.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
+    SpanBytesCodec.JSON.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }
 
   @Test public void spansRoundTrip() throws IOException {
     List<Span> tenClientSpans = Collections.nCopies(10, span);
 
-    byte[] message = BytesEncoder.JSON.encodeList(tenClientSpans);
+    byte[] message = SpanBytesEncoder.JSON.encodeList(tenClientSpans);
 
-    assertThat(BytesDecoder.JSON.decodeList(message))
+    assertThat(SpanBytesCodec.JSON.decodeList(message))
       .isEqualTo(tenClientSpans);
   }
 
   @Test public void writesTraceIdHighIntoTraceIdField() {
     Span with128BitTraceId = Span.newBuilder()
       .traceId("48485a3953bb61246b221d5bc9e6496c")
-      .localEndpoint(convert(frontend))
+      .localEndpoint(toEndpoint(frontend))
       .id("1").name("").build();
 
-    assertThat(new String(BytesEncoder.JSON.encode(with128BitTraceId), Util.UTF_8))
+    assertThat(new String(SpanBytesEncoder.JSON.encode(with128BitTraceId), UTF_8))
       .startsWith("{\"traceId\":\"48485a3953bb61246b221d5bc9e6496c\"");
   }
 
@@ -166,8 +166,8 @@ public class SpanJsonAdaptersTest {
       + "  \"id\": \"6b221d5bc9e6496c\"\n"
       + "}").getBytes(UTF_8);
 
-    assertThat(BytesDecoder.JSON.decode(with128BitTraceId))
-      .isEqualTo(BytesDecoder.JSON.decode(withLower64bitsTraceId).toBuilder()
+    assertThat(SpanBytesCodec.JSON.decode(with128BitTraceId))
+      .isEqualTo(SpanBytesCodec.JSON.decode(withLower64bitsTraceId).toBuilder()
         .traceId("48485a3953bb61246b221d5bc9e6496c").build());
   }
 
@@ -187,7 +187,7 @@ public class SpanJsonAdaptersTest {
       + "  \"shared\": null\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void ignoresNull_endpoint_topLevelFields() {
@@ -203,7 +203,7 @@ public class SpanJsonAdaptersTest {
       + "  }\n"
       + "}";
 
-    assertThat(convert(BytesDecoder.JSON.decode(json.getBytes(UTF_8)).localEndpoint()))
+    assertThat(V2SpanConverter.toEndpoint(SpanBytesCodec.JSON.decode(json.getBytes(UTF_8)).localEndpoint()))
       .isEqualTo(Endpoint.create("", 127 << 24 | 1));
   }
 
@@ -222,7 +222,7 @@ public class SpanJsonAdaptersTest {
       + "    \"port\": null\n"
       + "  }\n"
       + "}";
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnIncomplete_annotation() {
@@ -238,7 +238,7 @@ public class SpanJsonAdaptersTest {
       + "  ]\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_traceId() {
@@ -251,7 +251,7 @@ public class SpanJsonAdaptersTest {
       + "  \"id\": \"6b221d5bc9e6496c\"\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_id() {
@@ -264,7 +264,7 @@ public class SpanJsonAdaptersTest {
       + "  \"id\": null\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_tagValue() {
@@ -280,7 +280,7 @@ public class SpanJsonAdaptersTest {
       + "  }\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_annotationValue() {
@@ -296,7 +296,7 @@ public class SpanJsonAdaptersTest {
       + "  ]\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void niceErrorOnNull_annotationTimestamp() {
@@ -312,7 +312,7 @@ public class SpanJsonAdaptersTest {
       + "  ]\n"
       + "}";
 
-    BytesDecoder.JSON.decode(json.getBytes(UTF_8));
+    SpanBytesCodec.JSON.decode(json.getBytes(UTF_8));
   }
 
   @Test public void readSpan_localEndpoint_noServiceName() {
@@ -325,7 +325,7 @@ public class SpanJsonAdaptersTest {
       + "  }\n"
       + "}";
 
-    assertThat(BytesDecoder.JSON.decode(json.getBytes(UTF_8)).localServiceName())
+    assertThat(SpanBytesCodec.JSON.decode(json.getBytes(UTF_8)).localServiceName())
       .isNull();
   }
 
@@ -339,24 +339,24 @@ public class SpanJsonAdaptersTest {
       + "  }\n"
       + "}";
 
-    assertThat(BytesDecoder.JSON.decode(json.getBytes(UTF_8)).remoteServiceName())
+    assertThat(SpanBytesCodec.JSON.decode(json.getBytes(UTF_8)).remoteServiceName())
       .isNull();
   }
 
   @Test public void spanRoundTrip_noRemoteServiceName() throws IOException {
     span = span.toBuilder()
-      .remoteEndpoint(convert(backend.toBuilder().serviceName("").build())).build();
+      .remoteEndpoint(toEndpoint(backend.toBuilder().serviceName("").build())).build();
 
-    assertThat(BytesDecoder.JSON.decode(BytesEncoder.JSON.encode(span)))
+    assertThat(SpanBytesCodec.JSON.decode(SpanBytesEncoder.JSON.encode(span)))
       .isEqualTo(span);
   }
 
   @Test public void doesntWriteEmptyServiceName() throws IOException {
     span = span.toBuilder()
-      .localEndpoint(convert(frontend.toBuilder().serviceName("").build()))
+      .localEndpoint(toEndpoint(frontend.toBuilder().serviceName("").build()))
       .remoteEndpoint(null).build();
 
-    assertThat(new String(BytesEncoder.JSON.encode(span), UTF_8))
+    assertThat(new String(SpanBytesEncoder.JSON.encode(span), UTF_8))
       .contains("{\"ipv4\":\"127.0.0.1\"}");
   }
 }

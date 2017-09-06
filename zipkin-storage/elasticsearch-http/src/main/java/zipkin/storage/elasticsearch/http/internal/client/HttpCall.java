@@ -24,11 +24,8 @@ import okhttp3.internal.http.HttpHeaders;
 import okio.BufferedSource;
 import okio.GzipSource;
 import okio.Okio;
-import zipkin.internal.CallbackCaptor;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Callback;
-
-import static zipkin.internal.Util.propagateIfFatal;
 
 public final class HttpCall<V> extends Call<V> {
 
@@ -47,12 +44,6 @@ public final class HttpCall<V> extends Call<V> {
 
     public <V> HttpCall<V> newCall(Request request, BodyConverter<V> bodyConverter) {
       return new HttpCall<>(this, request, bodyConverter);
-    }
-
-    public <V> V execute(Request request, BodyConverter<V> bodyConverter) {
-      CallbackCaptor<V> response = new CallbackCaptor<>();
-      newCall(request, bodyConverter).submit(response);
-      return response.get();
     }
 
     @Override public void close() {

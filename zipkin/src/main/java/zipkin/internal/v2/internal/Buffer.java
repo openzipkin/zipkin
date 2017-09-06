@@ -11,9 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal;
+package zipkin.internal.v2.internal;
+
+import java.nio.charset.Charset;
 
 public final class Buffer {
+  static final Charset UTF_8 = Charset.forName("UTF-8");
+
   public interface Writer<T> {
     int sizeInBytes(T value);
 
@@ -32,35 +36,9 @@ public final class Buffer {
     return this;
   }
 
-  Buffer write(byte[] v) {
+  public Buffer write(byte[] v) {
     System.arraycopy(v, 0, buf, pos, v.length);
     pos += v.length;
-    return this;
-  }
-
-  Buffer writeShort(int v) {
-    writeByte((v >>> 8L) & 0xff);
-    writeByte(v & 0xff);
-    return this;
-  }
-
-  Buffer writeInt(int v) {
-    buf[pos++] = (byte) ((v >>> 24L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 16L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 8L) & 0xff);
-    buf[pos++] = (byte) (v & 0xff);
-    return this;
-  }
-
-  Buffer writeLong(long v) {
-    buf[pos++] = (byte) ((v >>> 56L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 48L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 40L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 32L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 24L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 16L) & 0xff);
-    buf[pos++] = (byte) ((v >>> 8L) & 0xff);
-    buf[pos++] = (byte) (v & 0xff);
     return this;
   }
 
@@ -90,21 +68,7 @@ public final class Buffer {
     return sizeInBytes;
   }
 
-  /** Writes a length-prefixed string */
-  Buffer writeLengthPrefixed(String v) {
-    boolean ascii = isAscii(v);
-    if (ascii) {
-      writeInt(v.length());
-      return writeAscii(v);
-    } else {
-      byte[] temp = v.getBytes(Util.UTF_8);
-      writeInt(temp.length);
-      write(temp);
-    }
-    return this;
-  }
-
-  Buffer writeAscii(String v) {
+  public Buffer writeAscii(String v) {
     int length = v.length();
     for (int i = 0; i < length; i++) {
       buf[pos++] = (byte) v.charAt(i);
@@ -120,6 +84,72 @@ public final class Buffer {
     }
     return true;
   }
+
+  public Buffer writeUtf8(String v) {
+    if (isAscii(v)) return writeAscii(v);
+    byte[] temp = v.getBytes(UTF_8);
+    write(temp);
+    return this;
+  }
+
+  /**
+   * Binary search for character width which favors matching lower numbers.
+   *
+   * <p>Adapted from okio.Buffer
+   */
+  public static int asciiSizeInBytes(long v) {
+    if (v == 0) return 1;
+    if (v == Long.MIN_VALUE) return 20;
+
+    boolean negative = false;
+    if (v < 0) {
+      v = -v; // making this positive allows us to compare using less-than
+      negative = true;
+    }
+    int width =
+      v < 100000000L
+        ? v < 10000L
+        ? v < 100L
+        ? v < 10L ? 1 : 2
+        : v < 1000L ? 3 : 4
+        : v < 1000000L
+          ? v < 100000L ? 5 : 6
+          : v < 10000000L ? 7 : 8
+        : v < 1000000000000L
+          ? v < 10000000000L
+          ? v < 1000000000L ? 9 : 10
+          : v < 100000000000L ? 11 : 12
+          : v < 1000000000000000L
+            ? v < 10000000000000L ? 13
+            : v < 100000000000000L ? 14 : 15
+            : v < 100000000000000000L
+              ? v < 10000000000000000L ? 16 : 17
+              : v < 1000000000000000000L ? 18 : 19;
+    return negative ? width + 1 : width; // conditionally add room for negative sign
+  }
+
+  public Buffer writeAscii(long v) {
+    if (v == 0) return writeByte('0');
+    if (v == Long.MIN_VALUE) return writeAscii("-9223372036854775808");
+
+    int width = asciiSizeInBytes(v);
+    int pos = this.pos += width; // We write backwards from right to left.
+
+    boolean negative = false;
+    if (v < 0) {
+      negative = true;
+      v = -v; // needs to be positive so we can use this for an array index
+    }
+    while (v != 0) {
+      int digit = (int) (v % 10);
+      buf[--pos] = DIGITS[digit];
+      v /= 10;
+    }
+    if (negative) buf[--pos] = '-';
+    return this;
+  }
+
+  static final byte[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
   byte[] toByteArray() {
     //assert pos == buf.length;

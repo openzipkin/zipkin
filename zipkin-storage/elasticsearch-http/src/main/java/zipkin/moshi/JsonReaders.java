@@ -16,7 +16,9 @@ package zipkin.moshi;
 import com.squareup.moshi.JsonReader;
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 import javax.annotation.Nullable;
 
@@ -69,10 +71,10 @@ public final class JsonReaders {
     return null;
   }
 
-  public static Set<String> collectValuesNamed(JsonReader reader, String name) throws IOException {
+  public static List<String> collectValuesNamed(JsonReader reader, String name) throws IOException {
     Set<String> result = new LinkedHashSet<>();
     visitObject(reader, name, result);
-    return result;
+    return new ArrayList<>(result);
   }
 
   static void visitObject(JsonReader reader, String name, Set<String> result) throws IOException {

@@ -28,7 +28,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import zipkin.Constants;
 import zipkin.TraceKeys;
-import zipkin.internal.v2.codec.BytesEncoder;
+import zipkin.internal.v2.codec.SpanBytesEncoder;
 
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
@@ -427,7 +427,7 @@ public abstract class Span implements Serializable { // for Spark jobs
   }
 
   @Override public String toString() {
-    return new String(BytesEncoder.JSON.encode(this), UTF_8);
+    return new String(SpanBytesEncoder.JSON.encode(this), UTF_8);
   }
 
   /**

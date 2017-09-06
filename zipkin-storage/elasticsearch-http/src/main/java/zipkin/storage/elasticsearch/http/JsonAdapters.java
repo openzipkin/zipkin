@@ -19,8 +19,8 @@ import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import zipkin.DependencyLink;
 import zipkin.internal.v2.Annotation;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
@@ -177,7 +177,7 @@ final class JsonAdapters {
   static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
     @Override @Nonnull
     public DependencyLink fromJson(JsonReader reader) throws IOException {
-      DependencyLink.Builder result = DependencyLink.builder();
+      DependencyLink.Builder result = DependencyLink.newBuilder();
       reader.beginObject();
       while (reader.hasNext()) {
         switch (reader.nextName()) {
