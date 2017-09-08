@@ -31,7 +31,8 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.V2JsonSpanDecoder;
 import zipkin.internal.V2StorageComponent;
-import zipkin.internal.v2.codec.BytesEncoder;
+import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
+import zipkin.internal.v2.codec.SpanBytesCodec;
 import zipkin.internal.v2.internal.Platform;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
@@ -124,20 +125,18 @@ final class ZipkinDispatcher extends Dispatcher {
     } else if (url.encodedPath().equals("/api/v2/dependencies")) {
       Long endTs = maybeLong(url.queryParameter("endTs"));
       Long lookback = maybeLong(url.queryParameter("lookback"));
-      List<DependencyLink> result = store2.getDependencies(
+      List<zipkin.internal.v2.DependencyLink> result = store2.getDependencies(
         endTs != null ? endTs : System.currentTimeMillis(),
         lookback != null ? lookback : DEFAULT_LOOKBACK
       ).execute();
-      return jsonResponse(Codec.JSON.writeDependencyLinks(result));
+      return jsonResponse(DependencyLinkBytesCodec.JSON.encodeList(result));
     } else if (url.encodedPath().equals("/api/v2/traces")) {
       List<List<zipkin.internal.v2.Span>> traces = store2.getTraces(toQueryRequest2(url)).execute();
-      return jsonResponse(BytesEncoder.JSON.encodeNestedList(traces));
+      return jsonResponse(SpanBytesCodec.JSON.encodeNestedList(traces));
     } else if (url.encodedPath().startsWith("/api/v2/trace/")) {
       String traceIdHex = url.encodedPath().replace("/api/v2/trace/", "");
       List<zipkin.internal.v2.Span> trace = store2.getTrace(normalizeTraceId(traceIdHex)).execute();
-      if (!trace.isEmpty()) {
-        return jsonResponse(BytesEncoder.JSON.encodeList(trace));
-      }
+      if (!trace.isEmpty()) return jsonResponse(SpanBytesCodec.JSON.encodeList(trace));
     }
     return new MockResponse().setResponseCode(404);
   }

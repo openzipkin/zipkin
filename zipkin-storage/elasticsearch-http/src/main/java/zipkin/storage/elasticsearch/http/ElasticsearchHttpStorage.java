@@ -29,12 +29,12 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 import zipkin.internal.V2StorageComponent;
+import zipkin.internal.v2.internal.Platform;
 import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.internal.v2.storage.SpanStore;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
-import static zipkin.internal.Util.checkNotNull;
 import static zipkin.moshi.JsonReaders.enterPath;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPENDENCY;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
@@ -86,7 +86,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
      * Defaults to "http://localhost:9200".
      */
     public final Builder hosts(final List<String> hosts) {
-      checkNotNull(hosts, "hosts");
+      if (hosts == null) throw new NullPointerException("hosts == null");
       return hostsSupplier(new HostsSupplier() {
         @Override public List<String> get() {
           return hosts;
@@ -235,7 +235,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
       .url(http().baseUrl.newBuilder().addPathSegment(index).build())
       .delete().tag("delete-index").build();
 
-    http().execute(deleteRequest, b -> null);
+    http().newCall(deleteRequest, b -> null).execute();
 
     flush(http(), index);
   }
@@ -247,7 +247,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
       .post(RequestBody.create(APPLICATION_JSON, ""))
       .tag("flush-index").build();
 
-    factory.execute(flushRequest, b -> null);
+    factory.newCall(flushRequest, b -> null).execute();
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
@@ -260,7 +260,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
       .tag("get-cluster-health").build();
 
     try {
-      return http().execute(request, b -> {
+      return http().newCall(request, b -> {
         b.request(Long.MAX_VALUE); // Buffer the entire body.
         Buffer body = b.buffer();
         JsonReader status = enterPath(JsonReader.of(body.clone()), "status");
@@ -271,8 +271,8 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
           throw new IllegalStateException("Health status is RED");
         }
         return CheckResult.OK;
-      });
-    } catch (RuntimeException e) {
+      }).execute();
+    } catch (IOException | RuntimeException e) {
       return CheckResult.failed(e);
     }
   }
@@ -280,11 +280,15 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
   @Memoized // since we don't want overlapping calls to apply the index templates
   IndexTemplates ensureIndexTemplates() {
     String index = indexNameFormatter().index();
-    IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
-    EnsureIndexTemplate.apply(http(), index + ":" + SPAN + "_template", templates.span());
-    EnsureIndexTemplate.apply(http(), index + ":" + DEPENDENCY + "_template",
-      templates.dependency());
-    return templates;
+    try {
+      IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
+      EnsureIndexTemplate.apply(http(), index + ":" + SPAN + "_template", templates.span());
+      EnsureIndexTemplate.apply(http(), index + ":" + DEPENDENCY + "_template",
+        templates.dependency());
+      return templates;
+    } catch (IOException e) {
+      throw Platform.get().uncheckedIOException(e);
+    }
   }
 
   @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance

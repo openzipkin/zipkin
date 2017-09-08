@@ -21,10 +21,10 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.data.MapEntry.entry;
 import static zipkin.TestObjects.APP_ENDPOINT;
-import static zipkin.internal.V2SpanConverter.convert;
+import static zipkin.internal.V2SpanConverter.toEndpoint;
 
 public class SpanTest {
-  Span base = Span.newBuilder().traceId("1").id("1").localEndpoint(convert(APP_ENDPOINT)).build();
+  Span base = Span.newBuilder().traceId("1").id("1").localEndpoint(toEndpoint(APP_ENDPOINT)).build();
 
   @Test public void traceIdString() {
     Span with128BitId = base.toBuilder()

@@ -54,18 +54,6 @@ public final class SearchRequest {
     this.type = type;
   }
 
-  public static class Should extends LinkedList<Object> {
-    public Should addTerm(String field, String value) {
-      add(new Term(field, value));
-      return this;
-    }
-
-    public Should addExists(String field) {
-      add(new Exists(field));
-      return this;
-    }
-  }
-
   public static class Filters extends LinkedList<Object> {
     public Filters addRange(String field, long from, Long to) {
       add(new Range(field, from, to));
@@ -75,12 +63,6 @@ public final class SearchRequest {
     public Filters addTerm(String field, String value) {
       add(new Term(field, value));
       return this;
-    }
-
-    public Should should() {
-      Should result = new Should();
-      add(new SearchRequest.BoolQuery("should", result));
-      return result;
     }
 
     public Filters addNestedTerms(Collection<String> nestedFields, String value) {

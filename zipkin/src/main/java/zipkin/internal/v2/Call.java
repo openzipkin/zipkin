@@ -133,6 +133,17 @@ public abstract class Call<V> implements Cloneable {
     return new ErrorHandling<>(errorHandler, this);
   }
 
+  // Taken from RxJava throwIfFatal, which was taken from scala
+  public static void propagateIfFatal(Throwable t) {
+    if (t instanceof VirtualMachineError) {
+      throw (VirtualMachineError) t;
+    } else if (t instanceof ThreadDeath) {
+      throw (ThreadDeath) t;
+    } else if (t instanceof LinkageError) {
+      throw (LinkageError) t;
+    }
+  }
+
   /**
    * Invokes a request, returning a success value or propagating an error to the caller. Invoking
    * this more than once will result in an error. To repeat a call, make a copy with {@linkplain

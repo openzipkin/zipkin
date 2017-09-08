@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal;
+package zipkin.internal.v2.internal;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,12 +20,11 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.Test;
-import zipkin.Span;
-import zipkin.TestObjects;
+import zipkin.internal.v2.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin.internal.Util.toLowerHex;
+import static zipkin.internal.v2.internal.DependencyLinkerTest.span2;
 
 public class NodeTest {
   List<String> messages = new ArrayList<>();
@@ -62,8 +61,7 @@ public class NodeTest {
    *     e f g     h
    * }</pre>
    */
-  @Test
-  public void traversesBreadthFirst() {
+  @Test public void traversesBreadthFirst() {
     Node<Character> a = new Node<Character>().value('a');
     Node<Character> b = new Node<Character>().value('b');
     Node<Character> c = new Node<Character>().value('c');
@@ -87,48 +85,47 @@ public class NodeTest {
   /**
    * Makes sure that the trace tree is constructed based on parent-child, not by parameter order.
    */
-  @Test
-  public void constructsTraceTree() {
+  @Test public void constructsTraceTree() {
+    List<Span> trace = asList(
+      span2("a", null, "a", Span.Kind.CLIENT, "client", null, false),
+      span2("a", "a", "b", Span.Kind.SERVER, "server", null, false),
+      span2("a", "b", "c", Span.Kind.CLIENT, "server", null, false)
+    );
     // TRACE is sorted with root span first, lets shuffle them to make
     // sure the trace is stitched together by id.
-    List<Span> copy = new ArrayList<>(TestObjects.TRACE);
+    List<Span> copy = new ArrayList<>(trace);
 
     Collections.shuffle(copy);
 
     Node.TreeBuilder<Span> treeBuilder =
-      new Node.TreeBuilder<>(logger, copy.get(0).traceIdString());
+      new Node.TreeBuilder<>(logger, copy.get(0).traceId());
     for (Span span : copy) {
-      treeBuilder.addNode(
-        span.parentId != null ? toLowerHex(span.parentId) : null, toLowerHex(span.id), span
-      );
+      treeBuilder.addNode(span.parentId(), span.id(), span);
     }
     Node<Span> root = treeBuilder.build();
     assertThat(root.value())
-        .isEqualTo(TestObjects.TRACE.get(0));
+        .isEqualTo(trace.get(0));
 
     assertThat(root.children()).extracting(Node::value)
-        .containsExactly(TestObjects.TRACE.get(1));
+        .containsExactly(trace.get(1));
 
     Node<Span> child = root.children().iterator().next();
     assertThat(child.children()).extracting(Node::value)
-        .containsExactly(TestObjects.TRACE.get(2));
+        .containsExactly(trace.get(2));
   }
 
-  @Test
-  public void constructTree_noChildLeftBehind() {
+  @Test public void constructTree_noChildLeftBehind() {
     List<Span> spans = asList(
-      Span.builder().traceId(137L).id(1L).name("root-0").build(),
-      Span.builder().traceId(137L).parentId(1L).id(2L).name("child-0").build(),
-      Span.builder().traceId(137L).parentId(1L).id(3L).name("child-1").build(),
-      Span.builder().traceId(137L).id(4L).name("lost-0").build(),
-      Span.builder().traceId(137L).id(5L).name("lost-1").build());
+      Span.newBuilder().traceId("a").id("b").name("root-0").build(),
+      Span.newBuilder().traceId("a").parentId("b").id("c").name("child-0").build(),
+      Span.newBuilder().traceId("a").parentId("b").id("d").name("child-1").build(),
+      Span.newBuilder().traceId("a").id("e").name("lost-0").build(),
+      Span.newBuilder().traceId("a").id("f").name("lost-1").build());
     int treeSize = 0;
-    Node.TreeBuilder<Span> treeBuilder =
-      new Node.TreeBuilder<>(logger, spans.get(0).traceIdString());
+    Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, spans.get(0).traceId());
     for (Span span : spans) {
-      assertThat(treeBuilder.addNode(
-        span.parentId != null ? toLowerHex(span.parentId) : null, toLowerHex(span.id), span
-      )).isTrue();
+      assertThat(treeBuilder.addNode(span.parentId(), span.id(), span))
+        .isTrue();
     }
     Node<Span> tree = treeBuilder.build();
     Iterator<Node<Span>> iter = tree.traverse();
@@ -138,21 +135,19 @@ public class NodeTest {
     }
     assertThat(treeSize).isEqualTo(spans.size());
     assertThat(messages).containsExactly(
-      "attributing span missing parent to root: traceId=0000000000000089, rootSpanId=0000000000000001, spanId=0000000000000004",
-      "attributing span missing parent to root: traceId=0000000000000089, rootSpanId=0000000000000001, spanId=0000000000000005"
+      "attributing span missing parent to root: traceId=000000000000000a, rootSpanId=000000000000000b, spanId=000000000000000e",
+      "attributing span missing parent to root: traceId=000000000000000a, rootSpanId=000000000000000b, spanId=000000000000000f"
     );
   }
 
   @Test public void constructTree_headless() {
-    Span s2 = Span.builder().traceId(137L).parentId(1L).id(2L).name("s2").build();
-    Span s3 = Span.builder().traceId(137L).parentId(1L).id(3L).name("s3").build();
-    Span s4 = Span.builder().traceId(137L).parentId(1L).id(4L).name("s4").build();
+    Span s2 = Span.newBuilder().traceId("a").parentId("a").id("b").name("s2").build();
+    Span s3 = Span.newBuilder().traceId("a").parentId("a").id("c").name("s3").build();
+    Span s4 = Span.newBuilder().traceId("a").parentId("a").id("d").name("s4").build();
 
-    Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, s2.traceIdString());
+    Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, s2.traceId());
     for (Span span : asList(s2, s3, s4)) {
-      treeBuilder.addNode(
-        span.parentId != null ? toLowerHex(span.parentId) : null, toLowerHex(span.id), span
-      );
+      treeBuilder.addNode(span.parentId(), span.id(), span);
     }
     Node<Span> root = treeBuilder.build();
     assertThat(root.isSyntheticRootForPartialTree())
@@ -160,26 +155,21 @@ public class NodeTest {
     assertThat(root.children()).extracting(Node::value)
       .containsExactly(s2, s3, s4);
     assertThat(messages).containsExactly(
-      "substituting dummy node for missing root span: traceId=0000000000000089"
+      "substituting dummy node for missing root span: traceId=000000000000000a"
     );
   }
 
-  @Test
-  public void addNode_skipsOnCycle() {
-    Span s1 = Span.builder().traceId(137L).parentId(null).id(1L).name("s1").build();
-    Span s2 = Span.builder().traceId(137L).parentId(2L).id(2L).name("s2").build();
+  @Test public void addNode_skipsOnCycle() {
+    Span s1 = Span.newBuilder().traceId("a").parentId(null).id("a").name("s1").build();
+    Span s2 = Span.newBuilder().traceId("a").parentId("b").id("b").name("s2").build();
 
-    Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, s2.traceIdString());
-    treeBuilder.addNode(
-      s1.parentId != null ? toLowerHex(s1.parentId) : null, toLowerHex(s1.id), s1
-    );
-    assertThat(treeBuilder.addNode(
-      s2.parentId != null ? toLowerHex(s2.parentId) : null, toLowerHex(s2.id), s2
-    )).isFalse();
+    Node.TreeBuilder<Span> treeBuilder = new Node.TreeBuilder<>(logger, s2.traceId());
+    treeBuilder.addNode(s1.parentId(), s1.id(), s1);
+    assertThat(treeBuilder.addNode(s2.parentId(), s2.id(), s2)).isFalse();
 
     treeBuilder.build();
     assertThat(messages).containsExactly(
-      "skipping circular dependency: traceId=0000000000000089, spanId=0000000000000002"
+      "skipping circular dependency: traceId=000000000000000a, spanId=000000000000000b"
     );
   }
 }

@@ -32,12 +32,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
-import zipkin.Codec;
-import zipkin.DependencyLink;
 import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.Call;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.BytesEncoder;
+import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
+import zipkin.internal.v2.codec.SpanBytesCodec;
 import zipkin.internal.v2.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 
@@ -83,7 +83,7 @@ public class ZipkinQueryApiV2 {
 
     Call<List<DependencyLink>> call = storage.v2SpanStore()
       .getDependencies(endTs, lookback != null ? lookback : defaultLookback);
-    return Codec.JSON.writeDependencyLinks(call.execute());
+    return DependencyLinkBytesCodec.JSON.encodeList(call.execute());
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
@@ -128,7 +128,7 @@ public class ZipkinQueryApiV2 {
       .limit(limit).build();
 
     List<List<Span>> traces = storage.v2SpanStore().getTraces(queryRequest).execute();
-    return new String(BytesEncoder.JSON.encodeNestedList(traces), UTF_8);
+    return new String(SpanBytesCodec.JSON.encodeNestedList(traces), UTF_8);
   }
 
   @RequestMapping(value = "/trace/{traceIdHex}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -137,7 +137,7 @@ public class ZipkinQueryApiV2 {
 
     List<Span> trace = storage.v2SpanStore().getTrace(traceIdHex).execute();
     if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
-    return new String(BytesEncoder.JSON.encodeList(trace), UTF_8);
+    return new String(SpanBytesCodec.JSON.encodeList(trace), UTF_8);
   }
 
   @ExceptionHandler(Version2StorageNotConfigured.class)

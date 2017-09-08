@@ -14,11 +14,10 @@
 package zipkin.internal.v2.storage;
 
 import java.util.List;
-import zipkin.DependencyLink;
-import zipkin.Endpoint;
 import zipkin.internal.v2.Call;
+import zipkin.internal.v2.DependencyLink;
+import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
-import zipkin.storage.StorageComponent;
 
 /**
  * Queries data derived from {@link SpanConsumer}.
@@ -31,8 +30,8 @@ public interface SpanStore {
   /**
    * Retrieves spans grouped by trace ID from the storage system with no ordering expectation.
    *
-   * <p>If {@link StorageComponent.Builder#strictTraceId(boolean)} is enabled, spans with the same
-   * 64-bit trace ID will be grouped together.
+   * <p>When strict trace ID is disabled, spans are grouped by the right-most 16 characters of the
+   * trace ID.
    */
   Call<List<List<Span>>> getTraces(QueryRequest request);
 
@@ -40,8 +39,8 @@ public interface SpanStore {
    * Retrieves spans that share a 128-bit trace id with no ordering expectation or empty if none are
    * found.
    *
-   * <p>When {@link StorageComponent.Builder#strictTraceId(boolean)} is true, spans with the same
-   * right-most 16 characters are returned even if the characters to the left are not.
+   * <p>When strict trace ID is disabled, spans with the same right-most 16 characters are returned
+   * even if the characters to the left are not.
    *
    * <p>Implementations should use {@link Span#normalizeTraceId(String)} to ensure consistency.
    *
@@ -71,12 +70,11 @@ public interface SpanStore {
    * was 25 hours, the implementation would query against 2 buckets.
    *
    * <p>Some implementations parse spans from storage and call {@link
-   * zipkin.internal.DependencyLinker} to aggregate links. The reason is certain graph logic, such
-   * as skipping up the tree is difficult to implement as a storage query.
+   * zipkin.internal.v2.internal.DependencyLinker} to aggregate links. The reason is certain graph
+   * logic, such as skipping up the tree is difficult to implement as a storage query.
    *
-   * <p>There's no parameter to indicate how to handle mixed ID length: this operates the same as if
-   * {@link StorageComponent.Builder#strictTraceId(boolean)} was set to false. This ensures call
-   * counts are not incremented twice due to one hop downgrading from 128 to 64-bit trace IDs.
+   * <p>Spans are grouped by the right-most 16 characters of the trace ID. This ensures call counts
+   * are not incremented twice due to one hop downgrading from 128 to 64-bit trace IDs.
    *
    * @param endTs only return links from spans where {@link Span#timestamp} are at or before this
    * time in epoch milliseconds.

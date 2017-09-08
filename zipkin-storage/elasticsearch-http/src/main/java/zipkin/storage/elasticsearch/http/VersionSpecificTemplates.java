@@ -14,6 +14,7 @@
 package zipkin.storage.elasticsearch.http;
 
 import com.squareup.moshi.JsonReader;
+import java.io.IOException;
 import java.util.logging.Logger;
 import okhttp3.Request;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
@@ -123,7 +124,7 @@ final class VersionSpecificTemplates {
     + "  \"mappings\": {\"" + DEPENDENCY + "\": { \"enabled\": false }}\n"
     + "}";
 
-  IndexTemplates get(HttpCall.Factory callFactory) {
+  IndexTemplates get(HttpCall.Factory callFactory) throws IOException {
     float version = getVersion(callFactory);
     return IndexTemplates.builder()
       .version(version)
@@ -132,9 +133,9 @@ final class VersionSpecificTemplates {
       .build();
   }
 
-  static float getVersion(HttpCall.Factory callFactory) {
+  static float getVersion(HttpCall.Factory callFactory) throws IOException {
     Request getNode = new Request.Builder().url(callFactory.baseUrl).tag("get-node").build();
-    return callFactory.execute(getNode, b -> {
+    return callFactory.newCall(getNode, b -> {
       JsonReader version = enterPath(JsonReader.of(b), "version", "number");
       if (version == null) throw new IllegalStateException(".version.number not in response");
       String versionString = version.nextString();
@@ -143,7 +144,7 @@ final class VersionSpecificTemplates {
         LOG.warning("Please upgrade to Elasticsearch 2 or later. version=" + versionString);
       }
       return result;
-    });
+    }).execute();
   }
 
   private String versionSpecificSpanIndexTemplate(float version) {

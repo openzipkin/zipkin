@@ -18,20 +18,23 @@ import com.squareup.moshi.JsonDataException;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
+import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.Util;
+import zipkin.internal.V2SpanConverter;
 
-import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
 final class LegacyJsonAdapters {
+  static final Charset UTF_8 = Charset.forName("UTF-8");
+
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
     @Override @Nullable
     public Span fromJson(JsonReader reader) throws IOException {
@@ -55,10 +58,10 @@ final class LegacyJsonAdapters {
             result.name(reader.nextString());
             break;
           case "id":
-            result.id(Util.lowerHexToUnsignedLong(reader.nextString()));
+            result.id(lowerHexToUnsignedLong(reader.nextString()));
             break;
           case "parentId":
-            result.parentId(Util.lowerHexToUnsignedLong(reader.nextString()));
+            result.parentId(lowerHexToUnsignedLong(reader.nextString()));
             break;
           case "timestamp":
             result.timestamp(reader.nextLong());
@@ -98,80 +101,80 @@ final class LegacyJsonAdapters {
   };
 
   static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
-    @Override @Nullable
-    public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
-      BinaryAnnotation.Builder result = BinaryAnnotation.builder();
-      String number = null;
-      String string = null;
-      BinaryAnnotation.Type type = BinaryAnnotation.Type.STRING;
-      reader.beginObject();
-      while (reader.hasNext()) {
-        switch (reader.nextName()) {
-          case "key":
-            result.key(reader.nextString());
+      @Override @Nullable
+      public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
+        BinaryAnnotation.Builder result = BinaryAnnotation.builder();
+        String number = null;
+        String string = null;
+        BinaryAnnotation.Type type = BinaryAnnotation.Type.STRING;
+        reader.beginObject();
+        while (reader.hasNext()) {
+          switch (reader.nextName()) {
+            case "key":
+              result.key(reader.nextString());
+              break;
+            case "value":
+              switch (reader.peek()) {
+                case BOOLEAN:
+                  type = BinaryAnnotation.Type.BOOL;
+                  result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
+                  break;
+                case STRING:
+                  string = reader.nextString();
+                  break;
+                case NUMBER:
+                  number = reader.nextString();
+                  break;
+                default:
+                  throw new JsonDataException(
+                    "Expected value to be a boolean, string or number but was " + reader.peek()
+                      + " at path " + reader.getPath());
+              }
+              break;
+            case "type":
+              type = BinaryAnnotation.Type.valueOf(reader.nextString());
+              break;
+            case "endpoint":
+              result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
+              break;
+            default:
+              reader.skipValue();
+          }
+        }
+        reader.endObject();
+        result.type(type);
+        switch (type) {
+          case BOOL:
+            return result.build();
+          case STRING:
+            return result.value(string.getBytes(UTF_8)).build();
+          case BYTES:
+            return result.value(ByteString.decodeBase64(string).toByteArray()).build();
+          default:
             break;
-          case "value":
-            switch (reader.peek()) {
-              case BOOLEAN:
-                type = BinaryAnnotation.Type.BOOL;
-                result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
-                break;
-              case STRING:
-                string = reader.nextString();
-                break;
-              case NUMBER:
-                number = reader.nextString();
-                break;
-              default:
-                throw new JsonDataException(
-                  "Expected value to be a boolean, string or number but was " + reader.peek()
-                    + " at path " + reader.getPath());
-            }
+        }
+        Buffer buffer = new Buffer();
+        switch (type) {
+          case I16:
+            buffer.writeShort(Short.parseShort(number));
             break;
-          case "type":
-            type = BinaryAnnotation.Type.valueOf(reader.nextString());
+          case I32:
+            buffer.writeInt(Integer.parseInt(number));
             break;
-          case "endpoint":
-            result.endpoint(ENDPOINT_ADAPTER.fromJson(reader));
+          case I64:
+          case DOUBLE:
+            if (number == null) number = string;
+            long v = type == BinaryAnnotation.Type.I64
+              ? Long.parseLong(number)
+              : Double.doubleToRawLongBits(Double.parseDouble(number));
+            buffer.writeLong(v);
             break;
           default:
-            reader.skipValue();
+            throw new AssertionError(
+              "BinaryAnnotationType " + type + " was added, but not handled");
         }
+        return result.value(buffer.readByteArray()).build();
       }
-      reader.endObject();
-      result.type(type);
-      switch (type) {
-        case BOOL:
-          return result.build();
-        case STRING:
-          return result.value(string.getBytes(UTF_8)).build();
-        case BYTES:
-          return result.value(ByteString.decodeBase64(string).toByteArray()).build();
-        default:
-          break;
-      }
-      Buffer buffer = new Buffer();
-      switch (type) {
-        case I16:
-          buffer.writeShort(Short.parseShort(number));
-          break;
-        case I32:
-          buffer.writeInt(Integer.parseInt(number));
-          break;
-        case I64:
-        case DOUBLE:
-          if (number == null) number = string;
-          long v = type == BinaryAnnotation.Type.I64
-            ? Long.parseLong(number)
-            : Double.doubleToRawLongBits(Double.parseDouble(number));
-          buffer.writeLong(v);
-          break;
-        default:
-          throw new AssertionError(
-            "BinaryAnnotationType " + type + " was added, but not handled");
-      }
-      return result.value(buffer.readByteArray()).build();
-    }
 
     @Override
     public void toJson(JsonWriter writer, @Nullable BinaryAnnotation value) throws IOException {
@@ -244,4 +247,16 @@ final class LegacyJsonAdapters {
       throw new UnsupportedOperationException();
     }
   }.nullSafe();
+
+  static final JsonAdapter<DependencyLink> LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
+    @Nonnull @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
+      zipkin.internal.v2.DependencyLink result =
+        JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(reader);
+      return V2SpanConverter.toLink(result);
+    }
+
+    @Override public void toJson(JsonWriter writer, @Nullable DependencyLink value) {
+      throw new UnsupportedOperationException();
+    }
+  };
 }

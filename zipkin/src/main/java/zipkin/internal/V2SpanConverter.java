@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.Span.Kind;
@@ -109,7 +110,7 @@ public final class V2SpanConverter {
         if (closeEnough(cs.endpoint, sr.endpoint)) {
           client.kind(Kind.CLIENT);
           // fork a new span for the server side
-          server = newSpanBuilder(source, convert(sr.endpoint)).kind(Kind.SERVER);
+          server = newSpanBuilder(source, toEndpoint(sr.endpoint)).kind(Kind.SERVER);
         } else {
           server = forEndpoint(source, sr.endpoint);
         }
@@ -150,7 +151,7 @@ public final class V2SpanConverter {
         if (closeEnough(ms.endpoint, mr.endpoint)) {
           producer.kind(Kind.PRODUCER);
           // fork a new span for the consumer side
-          consumer = newSpanBuilder(source, convert(mr.endpoint)).kind(Kind.CONSUMER);
+          consumer = newSpanBuilder(source, toEndpoint(mr.endpoint)).kind(Kind.CONSUMER);
         } else {
           consumer = forEndpoint(source, mr.endpoint);
         }
@@ -233,37 +234,37 @@ public final class V2SpanConverter {
       }
 
       if (cs != null && sa != null && !closeEnough(sa, cs.endpoint)) {
-        forEndpoint(source, cs.endpoint).remoteEndpoint(convert(sa));
+        forEndpoint(source, cs.endpoint).remoteEndpoint(toEndpoint(sa));
       }
 
       if (sr != null && ca != null && !closeEnough(ca, sr.endpoint)) {
-        forEndpoint(source, sr.endpoint).remoteEndpoint(convert(ca));
+        forEndpoint(source, sr.endpoint).remoteEndpoint(toEndpoint(ca));
       }
 
       if (ms != null && ma != null && !closeEnough(ma, ms.endpoint)) {
-        forEndpoint(source, ms.endpoint).remoteEndpoint(convert(ma));
+        forEndpoint(source, ms.endpoint).remoteEndpoint(toEndpoint(ma));
       }
 
       if (mr != null && ma != null && !closeEnough(ma, mr.endpoint)) {
-        forEndpoint(source, mr.endpoint).remoteEndpoint(convert(ma));
+        forEndpoint(source, mr.endpoint).remoteEndpoint(toEndpoint(ma));
       }
 
       // special-case when we are missing core annotations, but we have both address annotations
       if ((cs == null && sr == null) && (ca != null && sa != null)) {
-        forEndpoint(source, ca).remoteEndpoint(convert(sa));
+        forEndpoint(source, ca).remoteEndpoint(toEndpoint(sa));
       }
     }
 
     Span.Builder forEndpoint(zipkin.Span source, @Nullable zipkin.Endpoint e) {
       if (e == null) return spans.get(0); // allocate missing endpoint data to first span
-      Endpoint converted = convert(e);
+      Endpoint converted = toEndpoint(e);
       for (int i = 0, length = spans.size(); i < length; i++) {
         Span.Builder next = spans.get(i);
         Endpoint nextLocalEndpoint = next.localEndpoint();
         if (nextLocalEndpoint == null) {
           next.localEndpoint(converted);
           return next;
-        } else if (closeEnough(convert(nextLocalEndpoint), e)) {
+        } else if (closeEnough(toEndpoint(nextLocalEndpoint), e)) {
           return next;
         }
       }
@@ -321,8 +322,8 @@ public final class V2SpanConverter {
       result.duration(in.duration());
     }
 
-    zipkin.Endpoint local = in.localEndpoint() != null ? convert(in.localEndpoint()) : null;
-    zipkin.Endpoint remote = in.remoteEndpoint() != null ? convert(in.remoteEndpoint()) : null;
+    zipkin.Endpoint local = in.localEndpoint() != null ? toEndpoint(in.localEndpoint()) : null;
+    zipkin.Endpoint remote = in.remoteEndpoint() != null ? toEndpoint(in.remoteEndpoint()) : null;
     Kind kind = in.kind();
     Annotation
       cs = null, sr = null, ss = null, cr = null, ms = null, mr = null, ws = null, wr = null;
@@ -442,8 +443,8 @@ public final class V2SpanConverter {
     return result.build();
   }
 
-  public static zipkin.internal.v2.Endpoint convert(zipkin.Endpoint input) {
-    zipkin.internal.v2.Endpoint.Builder result = zipkin.internal.v2.Endpoint.newBuilder()
+  public static Endpoint toEndpoint(zipkin.Endpoint input) {
+    Endpoint.Builder result = Endpoint.newBuilder()
       .serviceName(input.serviceName)
       .port(input.port != null ? input.port & 0xffff : null);
     if (input.ipv4 != 0) {
@@ -463,7 +464,7 @@ public final class V2SpanConverter {
     return result.build();
   }
 
-  public static zipkin.Endpoint convert(Endpoint input) {
+  public static zipkin.Endpoint toEndpoint(Endpoint input) {
     zipkin.Endpoint.Builder result = zipkin.Endpoint.builder()
       .serviceName(input.serviceName() != null ? input.serviceName() : "")
       .port(input.port() != null ? input.port() : 0);
@@ -474,5 +475,58 @@ public final class V2SpanConverter {
       result.parseIp(input.ipv4());
     }
     return result.build();
+  }
+
+  static List<zipkin.Span> toSpans(List<zipkin.internal.v2.Span> spans) {
+    if (spans.isEmpty()) return Collections.emptyList();
+    int length = spans.size();
+    List<zipkin.Span> span1s = new ArrayList<>(length);
+    for (int i = 0; i < length; i++) {
+      span1s.add(V2SpanConverter.toSpan(spans.get(i)));
+    }
+    return span1s;
+  }
+
+  public static DependencyLink fromLink(zipkin.DependencyLink link) {
+    return DependencyLink.newBuilder()
+      .parent(link.parent)
+      .child(link.child)
+      .callCount(link.callCount)
+      .errorCount(link.errorCount).build();
+  }
+
+  public static zipkin.DependencyLink toLink(DependencyLink link) {
+    return zipkin.DependencyLink.builder()
+      .parent(link.parent())
+      .child(link.child())
+      .callCount(link.callCount())
+      .errorCount(link.errorCount()).build();
+  }
+
+  public static List<zipkin.DependencyLink> toLinks(List<DependencyLink> links) {
+    if (links.isEmpty()) return Collections.emptyList();
+    int length = links.size();
+    List<zipkin.DependencyLink> result = new ArrayList<>(length);
+    for (int i = 0; i < length; i++) {
+      DependencyLink link2 = links.get(i);
+      result.add(zipkin.DependencyLink.builder()
+        .parent(link2.parent())
+        .child(link2.child())
+        .callCount(link2.callCount())
+        .errorCount(link2.errorCount()).build());
+    }
+    return result;
+  }
+
+  public static List<DependencyLink> fromLinks(Iterable<zipkin.DependencyLink> links) {
+    List<DependencyLink> result = new ArrayList<>();
+    for (zipkin.DependencyLink link1 : links) {
+      result.add(DependencyLink.newBuilder()
+        .parent(link1.parent)
+        .child(link1.child)
+        .callCount(link1.callCount)
+        .errorCount(link1.errorCount).build());
+    }
+    return result;
   }
 }

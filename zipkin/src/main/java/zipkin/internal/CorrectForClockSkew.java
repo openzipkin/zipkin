@@ -26,6 +26,7 @@ import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.internal.v2.internal.Node;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINE;

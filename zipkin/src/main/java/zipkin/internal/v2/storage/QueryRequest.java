@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.Nullable;
 import zipkin.internal.v2.Annotation;
-import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 
 /**
@@ -236,7 +235,6 @@ public abstract class QueryRequest {
     Map<String, String> annotationQueryRemaining = new LinkedHashMap<>(annotationQuery());
 
     for (Span span : spans) {
-      Endpoint localEndpoint = span.localEndpoint();
       String localServiceName = span.localServiceName();
 
       if (localServiceName != null) serviceNames.add(localServiceName);

@@ -28,10 +28,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import zipkin.DependencyLink;
-import zipkin.internal.DependencyLinker;
 import zipkin.internal.v2.Call;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Span;
+import zipkin.internal.v2.internal.DependencyLinker;
 
 /**
  * Test storage component that keeps all spans in memory, accepting them on the calling thread.

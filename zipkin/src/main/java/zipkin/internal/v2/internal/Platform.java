@@ -31,6 +31,12 @@ public abstract class Platform {
     return new RuntimeException(e);
   }
 
+  public AssertionError assertionError(String message, Throwable cause) {
+    AssertionError error = new AssertionError(message);
+    error.initCause(cause);
+    throw error;
+  }
+
   public static Platform get() {
     return PLATFORM;
   }
@@ -49,7 +55,7 @@ public abstract class Platform {
     return Jre6.build();
   }
 
-  static final class Jre8 extends Platform {
+  static final class Jre8 extends Jre7 {
     static Jre8 buildIfSupported() {
       // Find JRE 8 new types
       try {
@@ -66,7 +72,7 @@ public abstract class Platform {
     }
   }
 
-  static final class Jre7 extends Platform {
+  static class Jre7 extends Platform {
     static Jre7 buildIfSupported() {
       // Find JRE 7 new types
       try {
@@ -76,6 +82,11 @@ public abstract class Platform {
         // pre JRE 7
       }
       return null;
+    }
+
+    @IgnoreJRERequirement @Override
+    public AssertionError assertionError(String message, Throwable cause) {
+      return new AssertionError(message, cause);
     }
   }
 

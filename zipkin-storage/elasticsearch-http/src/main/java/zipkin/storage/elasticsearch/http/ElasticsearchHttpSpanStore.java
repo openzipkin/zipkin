@@ -22,8 +22,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import zipkin.DependencyLink;
 import zipkin.internal.v2.Call;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.storage.QueryRequest;
 import zipkin.internal.v2.storage.SpanStore;
@@ -99,7 +99,7 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
     SearchRequest esRequest = SearchRequest.create(indices)
       .filters(filters).addAggregation(traceIdTimestamp);
 
-    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.SORTED_KEYS);
+    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
 
     // When we receive span results, we need to group them by trace ID
     BodyConverter<List<List<Span>>> converter = content -> {
@@ -150,7 +150,7 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
       .filters(filters)
       .addAggregation(Aggregation.terms("localEndpoint.serviceName", Integer.MAX_VALUE))
       .addAggregation(Aggregation.terms("remoteEndpoint.serviceName", Integer.MAX_VALUE));
-    return search.newCall(request, BodyConverters.SORTED_KEYS);
+    return search.newCall(request, BodyConverters.KEYS);
   }
 
   @Override public Call<List<String>> getSpanNames(String serviceName) {
@@ -171,7 +171,7 @@ final class ElasticsearchHttpSpanStore implements SpanStore {
       .filters(filters)
       .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
 
-    return search.newCall(request, BodyConverters.SORTED_KEYS);
+    return search.newCall(request, BodyConverters.KEYS);
   }
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {

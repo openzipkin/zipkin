@@ -26,7 +26,7 @@ import okio.ByteString;
 import zipkin.internal.v2.Annotation;
 import zipkin.internal.v2.Call;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.BytesEncoder;
+import zipkin.internal.v2.codec.SpanBytesEncoder;
 import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
@@ -131,9 +131,9 @@ class ElasticsearchHttpSpanConsumer implements SpanConsumer { // not final for t
       if (LOG.isLoggable(Level.FINE)) {
         LOG.log(Level.FINE, "Error indexing query for span: " + span, e);
       }
-      return BytesEncoder.JSON.encode(span);
+      return SpanBytesEncoder.JSON.encode(span);
     }
-    byte[] document = BytesEncoder.JSON.encode(span);
+    byte[] document = SpanBytesEncoder.JSON.encode(span);
     if (query.rangeEquals(0L, ByteString.of(new byte[] {'{', '}'}))) {
       return document;
     }

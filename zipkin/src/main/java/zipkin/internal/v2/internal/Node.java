@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.internal;
+package zipkin.internal.v2.internal;
 
 import java.util.ArrayDeque;
 import java.util.Collection;
@@ -27,8 +27,6 @@ import javax.annotation.Nullable;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINE;
-import static zipkin.internal.Util.checkArgument;
-import static zipkin.internal.Util.checkNotNull;
 
 /**
  * Convenience type representing a tree. This is here because multiple facets in zipkin require
@@ -58,12 +56,13 @@ public final class Node<V> {
   }
 
   public Node<V> value(V newValue) {
-    this.value = checkNotNull(newValue, "newValue");
+    if (newValue == null) throw new NullPointerException("newValue == null");
+    this.value = newValue;
     return this;
   }
 
   public Node<V> addChild(Node<V> child) {
-    checkArgument(child != this, "circular dependency on %s", this);
+    if (child == this) throw new IllegalArgumentException("circular dependency on " + this);
     child.parent = this;
     if (children.equals(Collections.emptyList())) children = new LinkedList<>();
     children.add(child);
@@ -125,12 +124,12 @@ public final class Node<V> {
    *
    * @param <V> same type as {@link Node#value}
    */
-  static final class TreeBuilder<V> {
+  public static final class TreeBuilder<V> {
     final Logger logger;
     final MergeFunction<V> mergeFunction;
     final String traceId;
 
-    TreeBuilder(Logger logger, String traceId) {
+    public TreeBuilder(Logger logger, String traceId) {
       this(logger, FIRST_NOT_NULL, traceId);
     }
 

@@ -19,9 +19,8 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
-import okio.Buffer;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.BytesEncoder;
+import zipkin.internal.v2.codec.SpanBytesCodec;
 import zipkin.internal.v2.storage.SpanConsumer;
 
 /** Implements the span consumer interface by forwarding requests over http. */
@@ -33,16 +32,10 @@ final class HttpV2SpanConsumer implements SpanConsumer {
   }
 
   @Override public zipkin.internal.v2.Call<Void> accept(List<Span> spans) {
-    Buffer json = new Buffer();
-    json.writeByte('[');
-    for (int i = 0, length = spans.size(); i < length; ) {
-      json.write(BytesEncoder.JSON.encode(spans.get(i)));
-      if (++i < length) json.writeByte(',');
-    }
-    json.writeByte(']');
+    byte[] json = SpanBytesCodec.JSON.encodeList(spans);
     return factory.newCall(new Request.Builder()
         .url(factory.baseUrl.resolve("/api/v2/spans"))
-        .post(RequestBody.create(MediaType.parse("application/json"), json.readByteArray())).build(),
+        .post(RequestBody.create(MediaType.parse("application/json"), json)).build(),
       b -> null /* void */
     );
   }

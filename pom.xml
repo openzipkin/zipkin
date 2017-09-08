@@ -324,6 +324,12 @@
       </dependency>
 
       <dependency>
+        <groupId>com.squareup.moshi</groupId>
+        <artifactId>moshi</artifactId>
+        <version>1.5.0</version>
+      </dependency>
+
+      <dependency>
         <groupId>com.google.auto.value</groupId>
         <artifactId>auto-value</artifactId>
         <version>1.5</version>

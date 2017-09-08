@@ -16,14 +16,14 @@ package zipkin.storage.elasticsearch.http;
 import java.io.IOException;
 import okio.Buffer;
 import org.junit.Test;
-import zipkin.Codec;
-import zipkin.DependencyLink;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.V2SpanConverter;
+import zipkin.internal.v2.DependencyLink;
 import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.BytesEncoder;
+import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
+import zipkin.internal.v2.codec.SpanBytesEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -133,7 +133,7 @@ public class JsonAdaptersTest {
     zipkin.Span span = ApplyTimestampAndDuration.apply(TestObjects.LOTS_OF_SPANS[0]);
     Span span2 = V2SpanConverter.fromSpan(span).get(0);
     Buffer bytes = new Buffer();
-    bytes.write(BytesEncoder.JSON.encode(span2));
+    bytes.write(SpanBytesEncoder.JSON.encode(span2));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(span2);
   }
@@ -158,7 +158,7 @@ public class JsonAdaptersTest {
       .build();
 
     Buffer bytes = new Buffer();
-    bytes.write(BytesEncoder.JSON.encode(worstSpanInTheWorld));
+    bytes.write(SpanBytesEncoder.JSON.encode(worstSpanInTheWorld));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(worstSpanInTheWorld);
   }
@@ -230,24 +230,27 @@ public class JsonAdaptersTest {
 
   @Test
   public void dependencyLinkRoundTrip() throws IOException {
-    DependencyLink link = DependencyLink.create("foo", "bar", 2);
+    DependencyLink link = DependencyLink.newBuilder()
+      .parent("foo")
+      .child("bar")
+      .callCount(2).build();
 
     Buffer bytes = new Buffer();
-    bytes.write(Codec.JSON.writeDependencyLink(link));
+    bytes.write(DependencyLinkBytesCodec.JSON.encode(link));
     assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
         .isEqualTo(link);
   }
 
   @Test
   public void dependencyLinkRoundTrip_withError() throws IOException {
-    DependencyLink link = DependencyLink.builder()
+    DependencyLink link = DependencyLink.newBuilder()
       .parent("foo")
       .child("bar")
       .callCount(2)
       .errorCount(1).build();
 
     Buffer bytes = new Buffer();
-    bytes.write(Codec.JSON.writeDependencyLink(link));
+    bytes.write(DependencyLinkBytesCodec.JSON.encode(link));
     assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
       .isEqualTo(link);
   }
