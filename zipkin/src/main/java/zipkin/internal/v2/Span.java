@@ -427,7 +427,7 @@ public abstract class Span implements Serializable { // for Spark jobs
   }
 
   @Override public String toString() {
-    return new String(SpanBytesEncoder.JSON.encode(this), UTF_8);
+    return new String(SpanBytesEncoder.JSON_V2.encode(this), UTF_8);
   }
 
   /**

@@ -16,6 +16,7 @@ package zipkin.internal.v2.internal;
 public final class JsonEscaper {
   /** Exposed for ElasticSearch HttpBulkIndexer */
   public static String jsonEscape(String v) {
+    if (v.isEmpty()) return v;
     int afterReplacement = 0;
     int length = v.length();
     StringBuilder builder = null;

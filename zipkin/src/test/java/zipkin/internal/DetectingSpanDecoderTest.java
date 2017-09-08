@@ -69,15 +69,15 @@ public class DetectingSpanDecoderTest {
 
   /** Single-element reads were for legacy non-list encoding. Don't add new code that does this */
   @Test(expected = UnsupportedOperationException.class) public void readSpan_json2() {
-    decoder.readSpan(SpanBytesEncoder.JSON.encode(span2_1));
+    decoder.readSpan(SpanBytesEncoder.JSON_V2.encode(span2_1));
   }
 
   @Test(expected = IllegalArgumentException.class) public void readSpans_json2_not_list() {
-    decoder.readSpans(SpanBytesEncoder.JSON.encode(span2_1));
+    decoder.readSpans(SpanBytesEncoder.JSON_V2.encode(span2_1));
   }
 
   @Test public void readSpans_json2() {
-    byte[] message = SpanBytesEncoder.JSON.encodeList(asList(span2_1, span2_2));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span2_1, span2_2));
 
     assertThat(decoder.readSpans(message))
       .containsExactly(span1, span2);

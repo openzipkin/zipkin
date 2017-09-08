@@ -32,7 +32,7 @@ final class HttpV2SpanConsumer implements SpanConsumer {
   }
 
   @Override public zipkin.internal.v2.Call<Void> accept(List<Span> spans) {
-    byte[] json = SpanBytesCodec.JSON.encodeList(spans);
+    byte[] json = SpanBytesCodec.JSON_V2.encodeList(spans);
     return factory.newCall(new Request.Builder()
         .url(factory.baseUrl.resolve("/api/v2/spans"))
         .post(RequestBody.create(MediaType.parse("application/json"), json)).build(),

@@ -31,11 +31,11 @@ public class V2JsonSpanDecoderTest {
   SpanDecoder decoder = new V2JsonSpanDecoder();
 
   @Test(expected = UnsupportedOperationException.class) public void readSpan() {
-    decoder.readSpan(SpanBytesEncoder.JSON.encode(span2_1));
+    decoder.readSpan(SpanBytesEncoder.JSON_V2.encode(span2_1));
   }
 
   @Test public void readSpans() {
-    byte[] message = SpanBytesEncoder.JSON.encodeList(asList(span2_1, span2_2));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span2_1, span2_2));
 
     assertThat(decoder.readSpans(message))
       .containsExactly(span1, span2);

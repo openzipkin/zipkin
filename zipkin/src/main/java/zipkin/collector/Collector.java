@@ -108,7 +108,7 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, zipkin.Spa
       return;
     }
     if (storage2 != null && decoder instanceof V2JsonSpanDecoder) {
-      storage2.acceptSpans(serializedSpans, SpanBytesCodec.JSON, callback);
+      storage2.acceptSpans(serializedSpans, SpanBytesCodec.JSON_V2, callback);
     } else {
       super.acceptSpans(serializedSpans, decoder, callback);
     }

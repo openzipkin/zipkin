@@ -42,6 +42,7 @@ import zipkin.Codec;
 import zipkin.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.SpanBytesCodec;
+import zipkin.internal.v2.codec.SpanBytesEncoder;
 
 /**
  * This compares the speed of the bundled java codec with the approach used in the scala
@@ -155,29 +156,39 @@ public class CodecBenchmarks {
     return serialize(clientSpanLibThrift);
   }
 
-  static final byte[] span2Json = read("/span2.json");
-  static final Span span2 = SpanBytesCodec.JSON.decode(span2Json);
-  static final List<Span> tenSpan2s = Collections.nCopies(10, span2);
-  static final byte[] tenSpan2sJson = SpanBytesCodec.JSON.encodeList(tenSpan2s);
+  static final byte[] zipkin2Json = read("/zipkin2-client.json");
+  static final Span zipkin2 = SpanBytesCodec.JSON_V2.decode(zipkin2Json);
+  static final List<Span> tenSpan2s = Collections.nCopies(10, zipkin2);
+  static final byte[] tenSpan2sJson = SpanBytesCodec.JSON_V2.encodeList(tenSpan2s);
 
   @Benchmark
-  public Span readClientSpan_json_span2() {
-    return SpanBytesCodec.JSON.decode(span2Json);
+  public Span readClientSpan_json_zipkin2() {
+    return SpanBytesCodec.JSON_V2.decode(zipkin2Json);
   }
 
   @Benchmark
-  public List<Span> readTenClientSpans_json_span2() {
-    return SpanBytesCodec.JSON.decodeList(tenSpan2sJson);
+  public List<Span> readTenClientSpans_json_zipkin2() {
+    return SpanBytesCodec.JSON_V2.decodeList(tenSpan2sJson);
   }
 
   @Benchmark
-  public byte[] writeClientSpan_json_span2() {
-    return SpanBytesCodec.JSON.encode(span2);
+  public byte[] writeClientSpan_json_zipkin2() {
+    return SpanBytesEncoder.JSON_V2.encode(zipkin2);
   }
 
   @Benchmark
-  public byte[] writeTenClientSpans_json_span2() {
-    return SpanBytesCodec.JSON.encodeList(tenSpan2s);
+  public byte[] writeTenClientSpans_json_zipkin2() {
+    return SpanBytesEncoder.JSON_V2.encodeList(tenSpan2s);
+  }
+
+  @Benchmark
+  public byte[] writeClientSpan_json_zipkin2_legacy() {
+    return SpanBytesEncoder.JSON_V1.encode(zipkin2);
+  }
+
+  @Benchmark
+  public byte[] writeTenClientSpans_json_zipkin2_legacy() {
+    return SpanBytesEncoder.JSON_V1.encodeList(tenSpan2s);
   }
 
   static final byte[] rpcSpanJson = read("/span-rpc.json");
@@ -253,7 +264,7 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*ClientSpan.*")
+        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*")
         .build();
 
     new Runner(opt).run();

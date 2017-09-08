@@ -132,11 +132,11 @@ final class ZipkinDispatcher extends Dispatcher {
       return jsonResponse(DependencyLinkBytesCodec.JSON.encodeList(result));
     } else if (url.encodedPath().equals("/api/v2/traces")) {
       List<List<zipkin.internal.v2.Span>> traces = store2.getTraces(toQueryRequest2(url)).execute();
-      return jsonResponse(SpanBytesCodec.JSON.encodeNestedList(traces));
+      return jsonResponse(SpanBytesCodec.JSON_V2.encodeNestedList(traces));
     } else if (url.encodedPath().startsWith("/api/v2/trace/")) {
       String traceIdHex = url.encodedPath().replace("/api/v2/trace/", "");
       List<zipkin.internal.v2.Span> trace = store2.getTrace(normalizeTraceId(traceIdHex)).execute();
-      if (!trace.isEmpty()) return jsonResponse(SpanBytesCodec.JSON.encodeList(trace));
+      if (!trace.isEmpty()) return jsonResponse(SpanBytesCodec.JSON_V2.encodeList(trace));
     }
     return new MockResponse().setResponseCode(404);
   }

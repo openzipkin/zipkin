@@ -123,7 +123,7 @@ public class ElasticsearchHttpSpanConsumerTest {
     Span span = Span.newBuilder().traceId("20").id("20").name("get")
       .timestamp(TODAY * 1000).build();
 
-    assertThat(SpanBytesCodec.JSON.decode(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
+    assertThat(SpanBytesCodec.JSON_V2.decode(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
       .isEqualTo(span); // ignores timestamp_millis field
   }
 
@@ -144,7 +144,7 @@ public class ElasticsearchHttpSpanConsumerTest {
     accept(Span.newBuilder().traceId("1").id("1").name("foo").build());
 
     assertThat(es.takeRequest().getBody().readByteString().utf8())
-      .contains("\n" + new String(SpanBytesCodec.JSON.encode(span), "UTF-8") + "\n");
+      .contains("\n" + new String(SpanBytesCodec.JSON_V2.encode(span), "UTF-8") + "\n");
   }
 
   @Test public void traceIsSearchableByServerServiceName() throws Exception {

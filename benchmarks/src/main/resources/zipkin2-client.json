@@ -18,11 +18,11 @@
   "annotations": [
     {
       "timestamp": 1472470996238000,
-      "value": "ws"
+      "value": "foo"
     },
     {
       "timestamp": 1472470996403000,
-      "value": "wr"
+      "value": "bar"
     }
   ],
   "tags": {
