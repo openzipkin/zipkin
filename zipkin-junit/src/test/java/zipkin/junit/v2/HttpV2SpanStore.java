@@ -52,13 +52,13 @@ final class HttpV2SpanStore implements SpanStore {
     maybeAddQueryParam(url, "lookback", request.lookback());
     maybeAddQueryParam(url, "limit", request.limit());
     return factory.newCall(new Request.Builder().url(url.build()).build(),
-      content -> SpanBytesCodec.JSON.decodeNestedList(content.readByteArray()));
+      content -> SpanBytesCodec.JSON_V2.decodeNestedList(content.readByteArray()));
   }
 
   @Override public Call<List<Span>> getTrace(String traceId) {
     return factory.newCall(new Request.Builder()
       .url(factory.baseUrl.resolve("/api/v2/trace/" + Span.normalizeTraceId(traceId)))
-      .build(), content -> SpanBytesCodec.JSON.decodeList(content.readByteArray()))
+      .build(), content -> SpanBytesCodec.JSON_V2.decodeList(content.readByteArray()))
       .handleError(((error, callback) -> {
         if (error instanceof HttpException && ((HttpException) error).code == 404) {
           callback.onSuccess(Collections.emptyList());

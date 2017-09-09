@@ -14,20 +14,21 @@
 package zipkin.internal.v2.internal;
 
 import java.nio.charset.Charset;
+import javax.annotation.concurrent.Immutable;
 
 public final class Buffer {
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  public interface Writer<T> {
+  @Immutable public interface Writer<T> {
     int sizeInBytes(T value);
 
     void write(T value, Buffer buffer);
   }
 
   private final byte[] buf;
-  private int pos;
+  int pos; // visible for testing
 
-  Buffer(int size) {
+  public Buffer(int size) {
     buf = new byte[size];
   }
 
@@ -151,7 +152,7 @@ public final class Buffer {
 
   static final byte[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
-  byte[] toByteArray() {
+  public byte[] toByteArray() {
     //assert pos == buf.length;
     return buf;
   }

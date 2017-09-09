@@ -16,7 +16,7 @@
     },
     {
       "timestamp": 1472470996238000,
-      "value": "ws",
+      "value": "foo",
       "endpoint": {
         "serviceName": "frontend",
         "ipv4": "127.0.0.1"
@@ -24,7 +24,7 @@
     },
     {
       "timestamp": 1472470996403000,
-      "value": "wr",
+      "value": "bar",
       "endpoint": {
         "serviceName": "frontend",
         "ipv4": "127.0.0.1"

@@ -1,15 +1,15 @@
 # collector-kafka10
 
 ## KafkaCollector
-This collector is implemented as a Kafka consumer supporting Kafka brokers running 
+This collector is implemented as a Kafka consumer supporting Kafka brokers running
 version 0.10.0.0 or later. It polls a Kafka topic for messages that contain
 a list of spans in json or TBinaryProtocol big-endian encoding. These
 spans are pushed to a span consumer.
 
-For information about running this collector as a module in Zipkin server, see 
+For information about running this collector as a module in Zipkin server, see
 [zipkin-autoconfigure/collector-kafka10](../../zipkin-autoconfigure/collector-kafka10/).
 
-When using this collector as a library outside of Zipkin server, 
+When using this collector as a library outside of Zipkin server,
 [zipkin.collector.kafka10.KafkaCollector.Builder](src/main/java/zipkin/collector/kafka10/KafkaCollector.java)
 includes defaults that will operate against a Kafka topic name `zipkin`.
 

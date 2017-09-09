@@ -23,25 +23,26 @@ import java.util.List;
 import zipkin.internal.v2.Endpoint;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.internal.JsonCodec;
+import zipkin.internal.v2.internal.V2SpanWriter;
 
 /** This is separate from {@link SpanBytesEncoder}, as it isn't needed for instrumentation */
 public enum SpanBytesCodec implements BytesEncoder<Span>, BytesDecoder<Span> {
   /** Corresponds to the Zipkin v2 json format */
-  JSON {
+  JSON_V2 {
     @Override public Encoding encoding() {
       return Encoding.JSON;
     }
 
     @Override public int sizeInBytes(Span input) {
-      return SpanBytesEncoder.JSON.sizeInBytes(input);
+      return SpanBytesEncoder.JSON_V2.sizeInBytes(input);
     }
 
     @Override public byte[] encode(Span input) {
-      return SpanBytesEncoder.JSON.encode(input);
+      return SpanBytesEncoder.JSON_V2.encode(input);
     }
 
     @Override public byte[] encodeList(List<Span> input) {
-      return SpanBytesEncoder.JSON.encodeList(input);
+      return SpanBytesEncoder.JSON_V2.encodeList(input);
     }
 
     @Override public Span decode(byte[] span) { // ex decode span in dependencies job
@@ -53,7 +54,7 @@ public enum SpanBytesCodec implements BytesEncoder<Span>, BytesDecoder<Span> {
     }
 
     @Override public byte[] encodeNestedList(List<List<Span>> traces) {
-      return JsonCodec.writeNestedList(SpanBytesEncoder.SPAN_WRITER, traces);
+      return JsonCodec.writeNestedList(new V2SpanWriter(), traces);
     }
 
     @Override public List<List<Span>> decodeNestedList(byte[] traces) { // ex getTraces

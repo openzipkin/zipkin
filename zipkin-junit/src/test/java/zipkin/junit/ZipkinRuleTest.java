@@ -68,7 +68,7 @@ public class ZipkinRuleTest {
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] message = SpanBytesCodec.JSON.encodeList(asList(
+    byte[] message = SpanBytesCodec.JSON_V2.encodeList(asList(
       V2SpanConverter.fromSpan(spans.get(0)).get(0),
       V2SpanConverter.fromSpan(spans.get(1)).get(0)
     ));

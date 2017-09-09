@@ -131,9 +131,9 @@ class ElasticsearchHttpSpanConsumer implements SpanConsumer { // not final for t
       if (LOG.isLoggable(Level.FINE)) {
         LOG.log(Level.FINE, "Error indexing query for span: " + span, e);
       }
-      return SpanBytesEncoder.JSON.encode(span);
+      return SpanBytesEncoder.JSON_V2.encode(span);
     }
-    byte[] document = SpanBytesEncoder.JSON.encode(span);
+    byte[] document = SpanBytesEncoder.JSON_V2.encode(span);
     if (query.rangeEquals(0L, ByteString.of(new byte[] {'{', '}'}))) {
       return document;
     }

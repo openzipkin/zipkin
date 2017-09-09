@@ -133,7 +133,7 @@ public class JsonAdaptersTest {
     zipkin.Span span = ApplyTimestampAndDuration.apply(TestObjects.LOTS_OF_SPANS[0]);
     Span span2 = V2SpanConverter.fromSpan(span).get(0);
     Buffer bytes = new Buffer();
-    bytes.write(SpanBytesEncoder.JSON.encode(span2));
+    bytes.write(SpanBytesEncoder.JSON_V2.encode(span2));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(span2);
   }
@@ -158,7 +158,7 @@ public class JsonAdaptersTest {
       .build();
 
     Buffer bytes = new Buffer();
-    bytes.write(SpanBytesEncoder.JSON.encode(worstSpanInTheWorld));
+    bytes.write(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
       .isEqualTo(worstSpanInTheWorld);
   }

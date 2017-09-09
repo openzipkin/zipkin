@@ -128,7 +128,7 @@ public class ZipkinQueryApiV2 {
       .limit(limit).build();
 
     List<List<Span>> traces = storage.v2SpanStore().getTraces(queryRequest).execute();
-    return new String(SpanBytesCodec.JSON.encodeNestedList(traces), UTF_8);
+    return new String(SpanBytesCodec.JSON_V2.encodeNestedList(traces), UTF_8);
   }
 
   @RequestMapping(value = "/trace/{traceIdHex}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -137,7 +137,7 @@ public class ZipkinQueryApiV2 {
 
     List<Span> trace = storage.v2SpanStore().getTrace(traceIdHex).execute();
     if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
-    return new String(SpanBytesCodec.JSON.encodeList(trace), UTF_8);
+    return new String(SpanBytesCodec.JSON_V2.encodeList(trace), UTF_8);
   }
 
   @ExceptionHandler(Version2StorageNotConfigured.class)

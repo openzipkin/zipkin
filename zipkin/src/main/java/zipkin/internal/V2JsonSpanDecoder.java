@@ -27,7 +27,7 @@ public final class V2JsonSpanDecoder implements SpanDecoder {
   }
 
   @Override public List<zipkin.Span> readSpans(byte[] span) {
-    List<Span> span2s = SpanBytesCodec.JSON.decodeList(span);
+    List<Span> span2s = SpanBytesCodec.JSON_V2.decodeList(span);
     if (span2s.isEmpty()) return Collections.emptyList();
     int length = span2s.size();
     List<zipkin.Span> result = new ArrayList<>(length);

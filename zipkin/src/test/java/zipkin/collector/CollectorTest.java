@@ -84,7 +84,7 @@ public class CollectorTest {
   }
 
   @Test public void convertsSpan2Format() {
-    byte[] bytes = SpanBytesEncoder.JSON.encodeList(asList(span2_1));
+    byte[] bytes = SpanBytesEncoder.JSON_V2.encodeList(asList(span2_1));
     collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
 
     verify(collector).acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
@@ -106,7 +106,7 @@ public class CollectorTest {
     collector = spy(Collector.builder(Collector.class)
       .storage(storage).build());
 
-    byte[] bytes = SpanBytesEncoder.JSON.encodeList(asList(span2_1));
+    byte[] bytes = SpanBytesEncoder.JSON_V2.encodeList(asList(span2_1));
     collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);
 
     verify(collector, never()).isSampled(any(zipkin.Span.class)); // skips v1 processing
