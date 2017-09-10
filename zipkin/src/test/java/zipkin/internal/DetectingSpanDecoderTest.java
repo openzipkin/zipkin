@@ -16,8 +16,8 @@ package zipkin.internal;
 import org.junit.Test;
 import zipkin.Codec;
 import zipkin.SpanDecoder;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.SpanBytesEncoder;
+import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

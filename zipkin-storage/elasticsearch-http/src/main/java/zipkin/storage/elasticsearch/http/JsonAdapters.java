@@ -19,10 +19,10 @@ import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import zipkin.internal.v2.Annotation;
-import zipkin.internal.v2.DependencyLink;
-import zipkin.internal.v2.Endpoint;
-import zipkin.internal.v2.Span;
+import zipkin2.Annotation;
+import zipkin2.DependencyLink;
+import zipkin2.Endpoint;
+import zipkin2.Span;
 
 /**
  * Read-only json adapters resurrected from before we switched to Java 6 as storage components can

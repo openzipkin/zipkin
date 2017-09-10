@@ -17,9 +17,9 @@ import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.util.List;
 import okio.BufferedSource;
-import zipkin.internal.v2.DependencyLink;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.internal.DependencyLinker;
+import zipkin2.DependencyLink;
+import zipkin2.Span;
+import zipkin2.internal.DependencyLinker;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall.BodyConverter;
 import zipkin.storage.elasticsearch.http.internal.client.SearchResultConverter;
 

@@ -22,10 +22,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import zipkin.TestObjects;
-import zipkin.internal.v2.Call;
-import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
+import zipkin2.Call;
+import zipkin2.storage.SpanConsumer;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
@@ -50,19 +50,19 @@ public class V2SpanConsumerAdapterTest {
   }
 
   @Test public void accept_success() {
-    doNothing().when(call).enqueue(any(zipkin.internal.v2.Callback.class));
+    doNothing().when(call).enqueue(any(zipkin2.Callback.class));
 
     asyncSpanConsumer.accept(TestObjects.TRACE, callback);
 
-    verify(call).enqueue(any(zipkin.internal.v2.Callback.class));
+    verify(call).enqueue(any(zipkin2.Callback.class));
   }
 
   @Test public void accept_exception() {
     IllegalStateException throwable = new IllegalStateException("failed");
     doAnswer(invocation -> {
-      ((zipkin.internal.v2.Callback) invocation.getArguments()[0]).onError(throwable);
+      ((zipkin2.Callback) invocation.getArguments()[0]).onError(throwable);
       return invocation;
-    }).when(call).enqueue(any(zipkin.internal.v2.Callback.class));
+    }).when(call).enqueue(any(zipkin2.Callback.class));
 
     asyncSpanConsumer.accept(TestObjects.TRACE, callback);
 

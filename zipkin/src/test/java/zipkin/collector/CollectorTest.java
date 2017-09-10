@@ -21,9 +21,10 @@ import zipkin.internal.DetectingSpanDecoder;
 import zipkin.internal.Util;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.V2StorageComponent;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.SpanBytesEncoder;
-import zipkin.internal.v2.storage.SpanConsumer;
+import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.mockito.Matchers.any;
@@ -96,8 +97,8 @@ public class CollectorTest {
    * double-conversion.
    */
   @Test public void routesToSpan2Collector() {
-    zipkin.internal.v2.storage.StorageComponent storage =
-      mock(zipkin.internal.v2.storage.StorageComponent.class);
+    StorageComponent storage =
+      mock(StorageComponent.class);
     SpanConsumer span2Consumer = mock(SpanConsumer.class);
     when(storage.spanConsumer()).thenReturn(span2Consumer);
 

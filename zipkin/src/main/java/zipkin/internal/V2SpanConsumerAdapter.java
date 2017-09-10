@@ -16,10 +16,10 @@ package zipkin.internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
+import zipkin2.Span;
+import zipkin2.storage.SpanConsumer;
 
 final class V2SpanConsumerAdapter implements AsyncSpanConsumer {
   final SpanConsumer delegate;

@@ -16,7 +16,9 @@ package zipkin.internal;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.MalformedJsonException;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -28,22 +30,20 @@ import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
-import zipkin.internal.v2.internal.Buffer;
-import zipkin.internal.v2.internal.JsonCodec.JsonReaderAdapter;
+import zipkin2.codec.DependencyLinkBytesEncoder;
+import zipkin2.internal.Buffer;
 
 import static java.lang.Double.doubleToRawLongBits;
+import static java.lang.String.format;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 import static zipkin.internal.Util.writeBase64Url;
-import static zipkin.internal.v2.internal.Buffer.asciiSizeInBytes;
-import static zipkin.internal.v2.internal.JsonCodec.read;
-import static zipkin.internal.v2.internal.JsonCodec.readList;
-import static zipkin.internal.v2.internal.JsonCodec.write;
-import static zipkin.internal.v2.internal.JsonCodec.writeList;
-import static zipkin.internal.v2.internal.JsonCodec.writeNestedList;
-import static zipkin.internal.v2.internal.JsonEscaper.jsonEscape;
-import static zipkin.internal.v2.internal.JsonEscaper.jsonEscapedSizeInBytes;
+import static zipkin2.internal.Buffer.asciiSizeInBytes;
+import static zipkin2.internal.JsonCodec.write;
+import static zipkin2.internal.JsonCodec.writeList;
+import static zipkin2.internal.JsonEscaper.jsonEscape;
+import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
+import static zipkin2.internal.JsonEscaper.needsJsonEscaping;
 
 /**
  * This explicitly constructs instances of model classes via manual parsing for a number of
@@ -85,7 +85,7 @@ public final class JsonCodec implements Codec {
 
   static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
     @Override public int sizeInBytes(Endpoint v) {
-      zipkin.internal.v2.Endpoint value = V2SpanConverter.fromEndpoint(v);
+      zipkin2.Endpoint value = v.toV2();
       int sizeInBytes = 17; // {"serviceName":""
       if (value.serviceName() != null) {
         sizeInBytes += jsonEscapedSizeInBytes(value.serviceName());
@@ -109,7 +109,7 @@ public final class JsonCodec implements Codec {
     }
 
     @Override public void write(Endpoint v, Buffer b) {
-      zipkin.internal.v2.Endpoint value = V2SpanConverter.fromEndpoint(v);
+      zipkin2.Endpoint value = v.toV2();
       b.writeAscii("{\"serviceName\":\"");
       if (value.serviceName() != null) {
         b.writeUtf8(jsonEscape(value.serviceName()));
@@ -199,8 +199,8 @@ public final class JsonCodec implements Codec {
             break;
           default:
             throw new MalformedJsonException(
-                "Expected value to be a boolean, string or number but was " + reader.peek()
-                    + " at path " + reader.getPath());
+              "Expected value to be a boolean, string or number but was " + reader.peek()
+                + " at path " + reader.getPath());
         }
       } else if (nextName.equals("type")) {
         type = Type.valueOf(reader.nextString());
@@ -237,8 +237,8 @@ public final class JsonCodec implements Codec {
     } else if (type == Type.I64 || type == Type.DOUBLE) {
       if (number == null) number = string;
       long v = type == Type.I64
-          ? Long.parseLong(number)
-          : doubleToRawLongBits(Double.parseDouble(number));
+        ? Long.parseLong(number)
+        : doubleToRawLongBits(Double.parseDouble(number));
       value = ByteBuffer.allocate(8).putLong(0, v).array();
     } else {
       throw new AssertionError("BinaryAnnotationType " + type + " was added, but not handled");
@@ -246,91 +246,94 @@ public final class JsonCodec implements Codec {
     return result.value(value).build();
   };
 
-  static final Buffer.Writer<BinaryAnnotation> BINARY_ANNOTATION_WRITER = new Buffer.Writer<BinaryAnnotation>() {
-    @Override public int sizeInBytes(BinaryAnnotation value) {
-      int sizeInBytes = 0;
-      sizeInBytes += "{\"key\":\"".length() + jsonEscapedSizeInBytes(value.key);
-      sizeInBytes += "\",\"value\":".length();
-      switch (value.type) {
-        case BOOL:
-          sizeInBytes += value.value[0] == 1 ? 4 /* true */ : 5 /* false */;
-          break;
-        case STRING:
-          int escapedSize = needsJsonEscaping(value.value)
-            ? jsonEscapedSizeInBytes(new String(value.value, UTF_8))
-            : value.value.length;
-          sizeInBytes += escapedSize + 2; //for quotes
-          break;
-        case BYTES:
-          sizeInBytes += (/* base64 */(value.value.length + 2) / 3 * 4) + 2; //for quotes
-          break;
-        case I16:
-          sizeInBytes += asciiSizeInBytes(ByteBuffer.wrap(value.value).getShort());
-          break;
-        case I32:
-          sizeInBytes += asciiSizeInBytes(ByteBuffer.wrap(value.value).getInt());
-          break;
-        case I64:
-          long number = ByteBuffer.wrap(value.value).getLong();
-          sizeInBytes += asciiSizeInBytes(number);
-          if (number > MAX_SAFE_INTEGER) sizeInBytes += 2; //for quotes
-          break;
-        case DOUBLE:
-          double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(value.value).getLong());
-          sizeInBytes += Double.toString(wrapped).length();
-          break;
-        default:
+  static final Buffer.Writer<BinaryAnnotation> BINARY_ANNOTATION_WRITER =
+    new Buffer.Writer<BinaryAnnotation>() {
+      @Override public int sizeInBytes(BinaryAnnotation value) {
+        int sizeInBytes = 0;
+        sizeInBytes += "{\"key\":\"".length() + jsonEscapedSizeInBytes(value.key);
+        sizeInBytes += "\",\"value\":".length();
+        switch (value.type) {
+          case BOOL:
+            sizeInBytes += value.value[0] == 1 ? 4 /* true */ : 5 /* false */;
+            break;
+          case STRING:
+            int escapedSize = needsJsonEscaping(value.value)
+              ? jsonEscapedSizeInBytes(new String(value.value, UTF_8))
+              : value.value.length;
+            sizeInBytes += escapedSize + 2; //for quotes
+            break;
+          case BYTES:
+            sizeInBytes += (/* base64 */(value.value.length + 2) / 3 * 4) + 2; //for quotes
+            break;
+          case I16:
+            sizeInBytes += asciiSizeInBytes(ByteBuffer.wrap(value.value).getShort());
+            break;
+          case I32:
+            sizeInBytes += asciiSizeInBytes(ByteBuffer.wrap(value.value).getInt());
+            break;
+          case I64:
+            long number = ByteBuffer.wrap(value.value).getLong();
+            sizeInBytes += asciiSizeInBytes(number);
+            if (number > MAX_SAFE_INTEGER) sizeInBytes += 2; //for quotes
+            break;
+          case DOUBLE:
+            double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(value.value).getLong());
+            sizeInBytes += Double.toString(wrapped).length();
+            break;
+          default:
+        }
+        if (value.type != BinaryAnnotation.Type.STRING
+          && value.type != BinaryAnnotation.Type.BOOL) {
+          sizeInBytes += ",\"type\":\"".length() + value.type.name().length() + 1;
+        }
+        if (value.endpoint != null) {
+          sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_WRITER.sizeInBytes(value.endpoint);
+        }
+        return ++sizeInBytes;// end curly-brace
       }
-      if (value.type != BinaryAnnotation.Type.STRING && value.type != BinaryAnnotation.Type.BOOL) {
-        sizeInBytes += ",\"type\":\"".length() + value.type.name().length() + 1;
-      }
-      if (value.endpoint != null) {
-        sizeInBytes += ENDPOINT_HEADER.length() + ENDPOINT_WRITER.sizeInBytes(value.endpoint);
-      }
-      return ++sizeInBytes;// end curly-brace
-    }
 
-    @Override public void write(BinaryAnnotation value, Buffer b) {
-      b.writeAscii("{\"key\":\"").writeUtf8(jsonEscape(value.key));
-      b.writeAscii("\",\"value\":");
-      switch (value.type) {
-        case BOOL:
-          b.writeAscii(value.value[0] == 1 ? "true" : "false");
-          break;
-        case STRING:
-          b.writeByte('"').writeUtf8(jsonEscape(new String(value.value, UTF_8))).writeByte('"');
-          break;
-        case BYTES:
-          b.writeByte('"').writeAscii(writeBase64Url(value.value)).writeByte('"');
-          break;
-        case I16:
-          b.writeAscii(ByteBuffer.wrap(value.value).getShort());
-          break;
-        case I32:
-          b.writeAscii(ByteBuffer.wrap(value.value).getInt());
-          break;
-        case I64:
-          long number = ByteBuffer.wrap(value.value).getLong();
-          if (number > MAX_SAFE_INTEGER) b.writeByte('"');
-          b.writeAscii(number);
-          if (number > MAX_SAFE_INTEGER) b.writeByte('"');
-          break;
-        case DOUBLE:
-          double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(value.value).getLong());
-          b.writeAscii(Double.toString(wrapped));
-          break;
-        default:
+      @Override public void write(BinaryAnnotation value, Buffer b) {
+        b.writeAscii("{\"key\":\"").writeUtf8(jsonEscape(value.key));
+        b.writeAscii("\",\"value\":");
+        switch (value.type) {
+          case BOOL:
+            b.writeAscii(value.value[0] == 1 ? "true" : "false");
+            break;
+          case STRING:
+            b.writeByte('"').writeUtf8(jsonEscape(new String(value.value, UTF_8))).writeByte('"');
+            break;
+          case BYTES:
+            b.writeByte('"').writeAscii(writeBase64Url(value.value)).writeByte('"');
+            break;
+          case I16:
+            b.writeAscii(ByteBuffer.wrap(value.value).getShort());
+            break;
+          case I32:
+            b.writeAscii(ByteBuffer.wrap(value.value).getInt());
+            break;
+          case I64:
+            long number = ByteBuffer.wrap(value.value).getLong();
+            if (number > MAX_SAFE_INTEGER) b.writeByte('"');
+            b.writeAscii(number);
+            if (number > MAX_SAFE_INTEGER) b.writeByte('"');
+            break;
+          case DOUBLE:
+            double wrapped = Double.longBitsToDouble(ByteBuffer.wrap(value.value).getLong());
+            b.writeAscii(Double.toString(wrapped));
+            break;
+          default:
+        }
+        if (value.type != BinaryAnnotation.Type.STRING
+          && value.type != BinaryAnnotation.Type.BOOL) {
+          b.writeAscii(",\"type\":\"").writeAscii(value.type.name()).writeByte('"');
+        }
+        if (value.endpoint != null) {
+          b.writeAscii(ENDPOINT_HEADER);
+          ENDPOINT_WRITER.write(value.endpoint, b);
+        }
+        b.writeByte('}');
       }
-      if (value.type != BinaryAnnotation.Type.STRING && value.type != BinaryAnnotation.Type.BOOL) {
-        b.writeAscii(",\"type\":\"").writeAscii(value.type.name()).writeByte('"');
-      }
-      if (value.endpoint != null) {
-        b.writeAscii(ENDPOINT_HEADER);
-        ENDPOINT_WRITER.write(value.endpoint, b);
-      }
-      b.writeByte('}');
-    }
-  };
+    };
 
   static final class SpanReader implements JsonReaderAdapter<Span> {
     Span.Builder builder;
@@ -382,7 +385,7 @@ public final class JsonCodec implements Codec {
       return builder.build();
     }
 
-    @Override public String toString(){
+    @Override public String toString() {
       return "Span";
     }
   }
@@ -505,7 +508,30 @@ public final class JsonCodec implements Codec {
 
   @Override
   public byte[] writeTraces(List<List<Span>> traces) {
-    return writeNestedList(SPAN_WRITER, traces);
+    // Get the encoded size of the nested list so that we don't need to grow the buffer
+    int length = traces.size();
+    int sizeInBytes = 2; // []
+    if (length > 1) sizeInBytes += length - 1; // comma to join elements
+
+    for (int i = 0; i < length; i++) {
+      List<Span> spans = traces.get(i);
+      int jLength = spans.size();
+      sizeInBytes += 2; // []
+      if (jLength > 1) sizeInBytes += jLength - 1; // comma to join elements
+      for (int j = 0; j < jLength; j++) {
+        sizeInBytes += sizeInBytes(spans.get(j));
+      }
+    }
+
+    byte[] out = new byte[sizeInBytes];
+    int pos = 0;
+    out[pos++] = '['; // start list of traces
+    for (int i = 0; i < length; i++) {
+      pos += writeList(SPAN_WRITER, traces.get(i), out, pos);
+      if (i + 1 < length) out[pos++] = ',';
+    }
+    out[pos] = ']'; // stop list of traces
+    return out;
   }
 
   public List<List<Span>> readTraces(byte[] bytes) {
@@ -533,48 +559,50 @@ public final class JsonCodec implements Codec {
     }
   }
 
-  static final JsonReaderAdapter<DependencyLink> DEPENDENCY_LINK_READER = new JsonReaderAdapter<DependencyLink>() {
-    @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
-      DependencyLink.Builder result = DependencyLink.builder();
-      reader.beginObject();
-      while (reader.hasNext()) {
-        String nextName = reader.nextName();
-        if (nextName.equals("parent")) {
-          result.parent(reader.nextString());
-        } else if (nextName.equals("child")) {
-          result.child(reader.nextString());
-        } else if (nextName.equals("callCount")) {
-          result.callCount(reader.nextLong());
-        } else if (nextName.equals("errorCount")) {
-          result.errorCount(reader.nextLong());
-        } else {
-          reader.skipValue();
+  static final JsonReaderAdapter<DependencyLink> DEPENDENCY_LINK_READER =
+    new JsonReaderAdapter<DependencyLink>() {
+      @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
+        DependencyLink.Builder result = DependencyLink.builder();
+        reader.beginObject();
+        while (reader.hasNext()) {
+          String nextName = reader.nextName();
+          if (nextName.equals("parent")) {
+            result.parent(reader.nextString());
+          } else if (nextName.equals("child")) {
+            result.child(reader.nextString());
+          } else if (nextName.equals("callCount")) {
+            result.callCount(reader.nextLong());
+          } else if (nextName.equals("errorCount")) {
+            result.errorCount(reader.nextLong());
+          } else {
+            reader.skipValue();
+          }
         }
+        reader.endObject();
+        return result.build();
       }
-      reader.endObject();
-      return result.build();
-    }
 
-    @Override public String toString() {
-      return "DependencyLink";
-    }
-  };
+      @Override public String toString() {
+        return "DependencyLink";
+      }
+    };
 
-  static final Buffer.Writer<DependencyLink> DEPENDENCY_LINK_WRITER = new Buffer.Writer<DependencyLink>() {
-    @Override public int sizeInBytes(DependencyLink v) {
-      zipkin.internal.v2.DependencyLink value = V2SpanConverter.fromLink(v);
-      return DependencyLinkBytesCodec.JSON.sizeInBytes(value);
-    }
+  static final Buffer.Writer<DependencyLink> DEPENDENCY_LINK_WRITER =
+    new Buffer.Writer<DependencyLink>() {
+      @Override public int sizeInBytes(DependencyLink v) {
+        zipkin2.DependencyLink value = V2SpanConverter.fromLink(v);
+        return DependencyLinkBytesEncoder.JSON_V1.sizeInBytes(value);
+      }
 
-    @Override public void write(DependencyLink v, Buffer b) {
-      zipkin.internal.v2.DependencyLink value = V2SpanConverter.fromLink(v);
-      b.write(DependencyLinkBytesCodec.JSON.encode(value));
-    }
+      @Override public void write(DependencyLink v, Buffer b) {
+        zipkin2.DependencyLink value = V2SpanConverter.fromLink(v);
+        b.write(DependencyLinkBytesEncoder.JSON_V1.encode(value));
+      }
 
-    @Override public String toString() {
-      return "DependencyLink";
-    }
-  };
+      @Override public String toString() {
+        return "DependencyLink";
+      }
+    };
 
   @Override
   public DependencyLink readDependencyLink(byte[] bytes) {
@@ -628,21 +656,38 @@ public final class JsonCodec implements Codec {
     return writeList(STRING_WRITER, value);
   }
 
-  static boolean needsJsonEscaping(byte[] v) {
-    for (int i = 0; i < v.length; i++) {
-      int current = v[i] & 0xFF;
-      if (i >= 2 &&
-        // Is this the end of a u2028 or u2028 UTF-8 codepoint?
-        // 0xE2 0x80 0xA8 == u2028; 0xE2 0x80 0xA9 == u2028
-        (current == 0xA8 || current == 0xA9)
-        && (v[i - 1] & 0xFF) == 0x80
-        && (v[i - 2] & 0xFF) == 0xE2) {
-        return true;
-      } else if (current < 0x80 && REPLACEMENT_CHARS[current] != null) {
-        return true;
-      }
+  public interface JsonReaderAdapter<T> {
+    T fromJson(JsonReader reader) throws IOException;
+  }
+
+  public static <T> T read(JsonReaderAdapter<T> adapter, byte[] bytes) {
+    if (bytes.length == 0) throw new IllegalArgumentException("Empty input reading " + adapter);
+    try {
+      return adapter.fromJson(jsonReader(bytes));
+    } catch (Exception e) {
+      throw exceptionReading(adapter.toString(), bytes, e);
     }
-    return false; // must be a string we don't need to escape.
+  }
+
+  public static <T> List<T> readList(JsonReaderAdapter<T> adapter, byte[] bytes) {
+    if (bytes.length == 0) {
+      throw new IllegalArgumentException("Empty input reading List<" + adapter + ">");
+    }
+    JsonReader reader = jsonReader(bytes);
+    List<T> result;
+    try {
+      reader.beginArray();
+      result = reader.hasNext() ? new LinkedList<>() : Collections.emptyList();
+      while (reader.hasNext()) result.add(adapter.fromJson(reader));
+      reader.endArray();
+      return result;
+    } catch (Exception e) {
+      throw exceptionReading("List<" + adapter + ">", bytes, e);
+    }
+  }
+
+  static JsonReader jsonReader(byte[] bytes) {
+    return new JsonReader(new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
   }
 
   static final byte[] HEX_DIGITS =
@@ -664,20 +709,10 @@ public final class JsonCodec implements Codec {
     writeHexByte(b, (byte) (v & 0xff));
   }
 
-  // copied from JsonEscaper
-  private static final String[] REPLACEMENT_CHARS;
-
-  static {
-    REPLACEMENT_CHARS = new String[128];
-    for (int i = 0; i <= 0x1f; i++) {
-      REPLACEMENT_CHARS[i] = String.format("\\u%04x", (int) i);
-    }
-    REPLACEMENT_CHARS['"'] = "\\\"";
-    REPLACEMENT_CHARS['\\'] = "\\\\";
-    REPLACEMENT_CHARS['\t'] = "\\t";
-    REPLACEMENT_CHARS['\b'] = "\\b";
-    REPLACEMENT_CHARS['\n'] = "\\n";
-    REPLACEMENT_CHARS['\r'] = "\\r";
-    REPLACEMENT_CHARS['\f'] = "\\f";
+  static IllegalArgumentException exceptionReading(String type, byte[] bytes, Exception e) {
+    String cause = e.getMessage() == null ? "Error" : e.getMessage();
+    if (cause.indexOf("malformed") != -1) cause = "Malformed";
+    String message = format("%s reading %s from json: %s", cause, type, new String(bytes, UTF_8));
+    throw new IllegalArgumentException(message, e);
   }
 }

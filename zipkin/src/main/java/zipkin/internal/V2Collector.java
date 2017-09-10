@@ -13,15 +13,17 @@
  */
 package zipkin.internal;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.BytesDecoder;
-import zipkin.internal.v2.storage.StorageComponent;
 import zipkin.storage.Callback;
+import zipkin2.Span;
+import zipkin2.codec.BytesDecoder;
+import zipkin2.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
 
@@ -43,7 +45,9 @@ public final class V2Collector extends Collector<BytesDecoder<Span>, Span> {
   }
 
   @Override protected List<Span> decodeList(BytesDecoder<Span> decoder, byte[] serialized) {
-    return decoder.decodeList(serialized);
+    List<Span> out = new ArrayList<>();
+    if (!decoder.decodeList(serialized, out)) return Collections.emptyList();
+    return out;
   }
 
   @Override protected boolean isSampled(Span span) {

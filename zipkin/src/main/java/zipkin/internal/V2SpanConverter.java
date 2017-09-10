@@ -13,8 +13,6 @@
  */
 package zipkin.internal;
 
-import java.net.Inet6Address;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -24,10 +22,10 @@ import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
-import zipkin.internal.v2.DependencyLink;
-import zipkin.internal.v2.Endpoint;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.Span.Kind;
+import zipkin2.DependencyLink;
+import zipkin2.Endpoint;
+import zipkin2.Span;
+import zipkin2.Span.Kind;
 
 import static zipkin.BinaryAnnotation.Type.BOOL;
 import static zipkin.Constants.CLIENT_ADDR;
@@ -110,7 +108,7 @@ public final class V2SpanConverter {
         if (closeEnough(cs.endpoint, sr.endpoint)) {
           client.kind(Kind.CLIENT);
           // fork a new span for the server side
-          server = newSpanBuilder(source, fromEndpoint(sr.endpoint)).kind(Kind.SERVER);
+          server = newSpanBuilder(source, sr.endpoint.toV2()).kind(Kind.SERVER);
         } else {
           server = forEndpoint(source, sr.endpoint);
         }
@@ -151,7 +149,7 @@ public final class V2SpanConverter {
         if (closeEnough(ms.endpoint, mr.endpoint)) {
           producer.kind(Kind.PRODUCER);
           // fork a new span for the consumer side
-          consumer = newSpanBuilder(source, fromEndpoint(mr.endpoint)).kind(Kind.CONSUMER);
+          consumer = newSpanBuilder(source, mr.endpoint.toV2()).kind(Kind.CONSUMER);
         } else {
           consumer = forEndpoint(source, mr.endpoint);
         }
@@ -234,30 +232,30 @@ public final class V2SpanConverter {
       }
 
       if (cs != null && sa != null && !closeEnough(sa, cs.endpoint)) {
-        forEndpoint(source, cs.endpoint).remoteEndpoint(fromEndpoint(sa));
+        forEndpoint(source, cs.endpoint).remoteEndpoint(sa.toV2());
       }
 
       if (sr != null && ca != null && !closeEnough(ca, sr.endpoint)) {
-        forEndpoint(source, sr.endpoint).remoteEndpoint(fromEndpoint(ca));
+        forEndpoint(source, sr.endpoint).remoteEndpoint(ca.toV2());
       }
 
       if (ms != null && ma != null && !closeEnough(ma, ms.endpoint)) {
-        forEndpoint(source, ms.endpoint).remoteEndpoint(fromEndpoint(ma));
+        forEndpoint(source, ms.endpoint).remoteEndpoint(ma.toV2());
       }
 
       if (mr != null && ma != null && !closeEnough(ma, mr.endpoint)) {
-        forEndpoint(source, mr.endpoint).remoteEndpoint(fromEndpoint(ma));
+        forEndpoint(source, mr.endpoint).remoteEndpoint(ma.toV2());
       }
 
       // special-case when we are missing core annotations, but we have both address annotations
       if ((cs == null && sr == null) && (ca != null && sa != null)) {
-        forEndpoint(source, ca).remoteEndpoint(fromEndpoint(sa));
+        forEndpoint(source, ca).remoteEndpoint(sa.toV2());
       }
     }
 
     Span.Builder forEndpoint(zipkin.Span source, @Nullable zipkin.Endpoint e) {
       if (e == null) return spans.get(0); // allocate missing endpoint data to first span
-      Endpoint converted = fromEndpoint(e);
+      Endpoint converted = e.toV2();
       for (int i = 0, length = spans.size(); i < length; i++) {
         Span.Builder next = spans.get(i);
         Endpoint nextLocalEndpoint = next.localEndpoint();
@@ -332,7 +330,7 @@ public final class V2SpanConverter {
     boolean wroteEndpoint = false;
 
     for (int i = 0, length = in.annotations().size(); i < length; i++) {
-      zipkin.internal.v2.Annotation input = in.annotations().get(i);
+      zipkin2.Annotation input = in.annotations().get(i);
       Annotation a = Annotation.create(input.timestamp(), input.value(), local);
       if (a.value.length() == 2) {
         if (a.value.equals(Constants.CLIENT_SEND)) {
@@ -443,27 +441,6 @@ public final class V2SpanConverter {
     return result.build();
   }
 
-  public static Endpoint fromEndpoint(zipkin.Endpoint input) {
-    Endpoint.Builder result = Endpoint.newBuilder()
-      .serviceName(input.serviceName)
-      .port(input.port != null ? input.port & 0xffff : null);
-    if (input.ipv4 != 0) {
-      result.parseIp(new StringBuilder()
-        .append(input.ipv4 >> 24 & 0xff).append('.')
-        .append(input.ipv4 >> 16 & 0xff).append('.')
-        .append(input.ipv4 >> 8 & 0xff).append('.')
-        .append(input.ipv4 & 0xff).toString());
-    }
-    if (input.ipv6 != null) {
-      try {
-        result.parseIp(Inet6Address.getByAddress(input.ipv6));
-      } catch (UnknownHostException e) {
-        throw new AssertionError(e); // ipv6 is fixed length, so shouldn't happen.
-      }
-    }
-    return result.build();
-  }
-
   public static zipkin.Endpoint toEndpoint(Endpoint input) {
     zipkin.Endpoint.Builder result = zipkin.Endpoint.builder()
       .serviceName(input.serviceName() != null ? input.serviceName() : "")
@@ -477,7 +454,7 @@ public final class V2SpanConverter {
     return result.build();
   }
 
-  static List<zipkin.Span> toSpans(List<zipkin.internal.v2.Span> spans) {
+  static List<zipkin.Span> toSpans(List<Span> spans) {
     if (spans.isEmpty()) return Collections.emptyList();
     int length = spans.size();
     List<zipkin.Span> span1s = new ArrayList<>(length);

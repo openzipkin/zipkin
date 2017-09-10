@@ -21,8 +21,8 @@ import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.Span.Kind;
+import zipkin2.Span;
+import zipkin2.Span.Kind;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.LOCAL_COMPONENT;
@@ -43,8 +43,8 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("get")
       .kind(Kind.CLIENT)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(backend))
+      .localEndpoint(frontend.toV2())
+      .remoteEndpoint(backend.toV2())
       .timestamp(1472470996199000L)
       .duration(207000L)
       .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
@@ -83,7 +83,7 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("get")
       .kind(Kind.CLIENT)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
       .build();
@@ -111,7 +111,7 @@ public class V2SpanConverterTest {
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get")
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(1472470996238000L - 1472470996199000L)
       .addAnnotation(1472470996199000L, Constants.CLIENT_SEND)
@@ -139,8 +139,8 @@ public class V2SpanConverterTest {
       .parentId("6b221d5bc9e6496c")
       .id("5b4185666d50f68b")
       .name("get")
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(backend))
+      .localEndpoint(frontend.toV2())
+      .remoteEndpoint(backend.toV2())
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -170,7 +170,7 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .kind(Kind.CLIENT)
       .name("get")
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -199,8 +199,8 @@ public class V2SpanConverterTest {
       .id("216a2aea45d08fc9")
       .name("get")
       .kind(Kind.SERVER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(backend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(backend.toV2())
+      .remoteEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(207000L)
       .putTag(TraceKeys.HTTP_PATH, "/api")
@@ -284,7 +284,7 @@ public class V2SpanConverterTest {
       .parentId("1")
       .id("2")
       .name("local")
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -335,8 +335,8 @@ public class V2SpanConverterTest {
     // the client side owns timestamp and duration
     Span client = builder.clone()
       .kind(Kind.CLIENT)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(backend))
+      .localEndpoint(frontend.toV2())
+      .remoteEndpoint(backend.toV2())
       .timestamp(1472470996199000L)
       .duration(207000L)
       .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
@@ -349,8 +349,8 @@ public class V2SpanConverterTest {
     Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(V2SpanConverter.fromEndpoint(backend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(backend.toV2())
+      .remoteEndpoint(frontend.toV2())
       .timestamp(1472470996250000L)
       .duration(100000L)
       .putTag(TraceKeys.HTTP_PATH, "/backend")
@@ -383,7 +383,7 @@ public class V2SpanConverterTest {
       .name("get")
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(V2SpanConverter.fromEndpoint(backend))
+      .localEndpoint(backend.toV2())
       .timestamp(1472470996250000L)
       .duration(100000L)
       .build();
@@ -415,7 +415,7 @@ public class V2SpanConverterTest {
 
     Span client = builder.clone()
       .kind(Kind.CLIENT)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(207000L)
       .build();
@@ -423,7 +423,7 @@ public class V2SpanConverterTest {
     Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996250000L)
       .duration(100000L)
       .build();
@@ -451,14 +451,14 @@ public class V2SpanConverterTest {
 
     Span client = builder.clone()
       .kind(Kind.CLIENT)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .build();
 
     Span server = builder.clone()
       .kind(Kind.SERVER)
       .shared(true)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996250000L)
       .build();
 
@@ -482,7 +482,7 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.PRODUCER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .build();
 
@@ -508,9 +508,9 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.PRODUCER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(kafka))
+      .remoteEndpoint(kafka.toV2())
       .build();
 
     assertThat(V2SpanConverter.toSpan(span2))
@@ -538,7 +538,7 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.PRODUCER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(51000L)
       .build();
@@ -566,7 +566,7 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.CONSUMER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .build();
 
@@ -594,8 +594,8 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.CONSUMER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(kafka))
+      .localEndpoint(frontend.toV2())
+      .remoteEndpoint(kafka.toV2())
       .timestamp(1472470996199000L)
       .build();
 
@@ -624,7 +624,7 @@ public class V2SpanConverterTest {
       .id("5b4185666d50f68b")
       .name("send")
       .kind(Kind.CONSUMER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(51000L)
       .build();
@@ -658,8 +658,8 @@ public class V2SpanConverterTest {
 
     Span producer = builder.clone()
       .kind(Kind.PRODUCER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(kafka))
+      .localEndpoint(frontend.toV2())
+      .remoteEndpoint(kafka.toV2())
       .timestamp(1472470996199000L)
       .duration(1472470996238000L - 1472470996199000L)
       .build();
@@ -667,8 +667,8 @@ public class V2SpanConverterTest {
     Span consumer = builder.clone()
       .kind(Kind.CONSUMER)
       .shared(true)
-      .localEndpoint(V2SpanConverter.fromEndpoint(backend))
-      .remoteEndpoint(V2SpanConverter.fromEndpoint(kafka))
+      .localEndpoint(backend.toV2())
+      .remoteEndpoint(kafka.toV2())
       .timestamp(1472470996403000L)
       .duration(1472470996406000L - 1472470996403000L)
       .build();
@@ -699,7 +699,7 @@ public class V2SpanConverterTest {
 
     Span producer = builder.clone()
       .kind(Kind.PRODUCER)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996199000L)
       .duration(1472470996238000L - 1472470996199000L)
       .build();
@@ -707,7 +707,7 @@ public class V2SpanConverterTest {
     Span consumer = builder.clone()
       .kind(Kind.CONSUMER)
       .shared(true)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp(1472470996403000L)
       .duration(1472470996406000L - 1472470996403000L)
       .build();
@@ -737,7 +737,7 @@ public class V2SpanConverterTest {
       .name("missing");
 
     Span first = builder.clone()
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .addAnnotation(1472470996199000L, "foo")
       .addAnnotation(1472470996238000L, "bar")
       .addAnnotation(1472470996403000L, "missing")
@@ -746,7 +746,7 @@ public class V2SpanConverterTest {
       .build();
 
     Span second = builder.clone()
-      .localEndpoint(V2SpanConverter.fromEndpoint(backend))
+      .localEndpoint(backend.toV2())
       .addAnnotation(1472470996250000L, "baz")
       .addAnnotation(1472470996350000L, "qux")
       .putTag("baz", "qux")
@@ -780,7 +780,7 @@ public class V2SpanConverterTest {
       .traceId("1")
       .name("test")
       .id("2")
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .putTag("bool", "true")
       .putTag("short", "20")
       .putTag("int", "32800")

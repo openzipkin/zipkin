@@ -22,10 +22,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin.internal.v2.Endpoint;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.Span.Kind;
-import zipkin.internal.v2.codec.SpanBytesCodec;
+import zipkin2.Endpoint;
+import zipkin2.Span;
+import zipkin2.Span.Kind;
+import zipkin2.codec.SpanBytesDecoder;
+import zipkin2.codec.SpanBytesEncoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -124,7 +125,7 @@ public class ElasticsearchHttpSpanConsumerTest {
       .timestamp(TODAY * 1000).build();
 
     assertThat(
-      SpanBytesCodec.JSON_V2.decode(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
+      SpanBytesDecoder.JSON_V2.decodeOne(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
       .isEqualTo(span); // ignores timestamp_millis field
   }
 
@@ -145,7 +146,7 @@ public class ElasticsearchHttpSpanConsumerTest {
     accept(Span.newBuilder().traceId("1").id("1").name("foo").build());
 
     assertThat(es.takeRequest().getBody().readByteString().utf8())
-      .contains("\n" + new String(SpanBytesCodec.JSON_V2.encode(span), "UTF-8") + "\n");
+      .contains("\n" + new String(SpanBytesEncoder.JSON_V2.encode(span), "UTF-8") + "\n");
   }
 
   @Test public void traceIsSearchableByServerServiceName() throws Exception {

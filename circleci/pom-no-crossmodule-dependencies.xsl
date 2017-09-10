@@ -18,9 +18,10 @@
   <xsl:template match="@*|node()">
     <xsl:copy>
       <xsl:apply-templates select="@*|node()"/>
-    </xsl:copy>  
+    </xsl:copy>
   </xsl:template>
 
   <xsl:template match="pom:dependency[pom:groupId = 'io.zipkin.java']" />
+  <xsl:template match="pom:dependency[pom:groupId = 'io.zipkin.zipkin2']" />
   <xsl:template match="pom:dependency[pom:groupId = '${project.groupId}']" />
 </xsl:stylesheet>

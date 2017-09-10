@@ -21,7 +21,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -29,9 +28,9 @@ import org.springframework.context.annotation.Configuration;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2StorageComponent;
-import zipkin.internal.v2.storage.InMemoryStorage;
 import zipkin.server.brave.TracedStorageComponent;
 import zipkin.storage.StorageComponent;
+import zipkin2.storage.InMemoryStorage;
 
 @Configuration
 public class ZipkinServerConfiguration {
@@ -101,16 +100,6 @@ public class ZipkinServerConfiguration {
 
     @Bean InMemoryStorage v2Storage(V2StorageComponent component) {
       return (InMemoryStorage) component.internalDelegate();
-    }
-  }
-
-  /** This allows zipkin v2 components to be adapted to v1 components */
-  @Configuration
-  @ConditionalOnBean(zipkin.internal.v2.storage.StorageComponent.class)
-  @ConditionalOnMissingBean(StorageComponent.class)
-  static class AdapterConfiguration {
-    @Bean StorageComponent storage(zipkin.internal.v2.storage.StorageComponent in) {
-      return V2StorageComponent.create(in);
     }
   }
 }

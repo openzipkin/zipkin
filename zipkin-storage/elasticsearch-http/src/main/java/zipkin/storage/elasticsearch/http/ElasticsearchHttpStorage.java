@@ -29,9 +29,9 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
 import zipkin.internal.V2StorageComponent;
-import zipkin.internal.v2.internal.Platform;
-import zipkin.internal.v2.storage.SpanConsumer;
-import zipkin.internal.v2.storage.SpanStore;
+import zipkin2.internal.Platform;
+import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.SpanStore;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
@@ -211,7 +211,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
     return this;
   }
 
-  @Override public zipkin.internal.v2.storage.StorageComponent internalDelegate() {
+  @Override public zipkin2.storage.StorageComponent internalDelegate() {
     return new Delegate(this);
   }
 
@@ -219,7 +219,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent
    * This type adapts to the new storage apis, without changing the enclosing hierarchy. This is
    * done for api compat reasons and will be unwrapped in Zipkin v2.
    */
-  static final class Delegate extends zipkin.internal.v2.storage.StorageComponent {
+  static final class Delegate extends zipkin2.storage.StorageComponent {
     final ElasticsearchHttpStorage delegate;
 
     Delegate(ElasticsearchHttpStorage delegate) {

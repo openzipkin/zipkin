@@ -31,23 +31,23 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.V2JsonSpanDecoder;
 import zipkin.internal.V2StorageComponent;
-import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
-import zipkin.internal.v2.codec.SpanBytesCodec;
-import zipkin.internal.v2.internal.Platform;
-import zipkin.internal.v2.storage.StorageComponent;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
+import zipkin2.codec.DependencyLinkBytesEncoder;
+import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.internal.Platform;
+import zipkin2.storage.StorageComponent;
 
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
-import static zipkin.internal.v2.Span.normalizeTraceId;
+import static zipkin2.Span.normalizeTraceId;
 
 final class ZipkinDispatcher extends Dispatcher {
   static final long DEFAULT_LOOKBACK = 86400000L; // 1 day in millis
   static final SpanDecoder JSON2_DECODER = new V2JsonSpanDecoder();
 
   private final SpanStore store;
-  private final zipkin.internal.v2.storage.SpanStore store2;
+  private final zipkin2.storage.SpanStore store2;
   private final Collector consumer;
   private final CollectorMetrics metrics;
   private final MockWebServer server;
@@ -127,20 +127,48 @@ final class ZipkinDispatcher extends Dispatcher {
     } else if (url.encodedPath().equals("/api/v2/dependencies")) {
       Long endTs = maybeLong(url.queryParameter("endTs"));
       Long lookback = maybeLong(url.queryParameter("lookback"));
-      List<zipkin.internal.v2.DependencyLink> result = store2.getDependencies(
+      List<zipkin2.DependencyLink> result = store2.getDependencies(
         endTs != null ? endTs : System.currentTimeMillis(),
         lookback != null ? lookback : DEFAULT_LOOKBACK
       ).execute();
-      return jsonResponse(DependencyLinkBytesCodec.JSON.encodeList(result));
+      return jsonResponse(DependencyLinkBytesEncoder.JSON_V1.encodeList(result));
     } else if (url.encodedPath().equals("/api/v2/traces")) {
-      List<List<zipkin.internal.v2.Span>> traces = store2.getTraces(toQueryRequest2(url)).execute();
-      return jsonResponse(SpanBytesCodec.JSON_V2.encodeNestedList(traces));
+      List<List<zipkin2.Span>> traces = store2.getTraces(toQueryRequest2(url)).execute();
+      return jsonResponse(writeTraces(SpanBytesEncoder.JSON_V2, traces));
     } else if (url.encodedPath().startsWith("/api/v2/trace/")) {
       String traceIdHex = url.encodedPath().replace("/api/v2/trace/", "");
-      List<zipkin.internal.v2.Span> trace = store2.getTrace(normalizeTraceId(traceIdHex)).execute();
-      if (!trace.isEmpty()) return jsonResponse(SpanBytesCodec.JSON_V2.encodeList(trace));
+      List<zipkin2.Span> trace = store2.getTrace(normalizeTraceId(traceIdHex)).execute();
+      if (!trace.isEmpty()) return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));
     }
     return new MockResponse().setResponseCode(404);
+  }
+
+  // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library
+  static byte[] writeTraces(SpanBytesEncoder codec, List<List<zipkin2.Span>> traces) {
+    // Get the encoded size of the nested list so that we don't need to grow the buffer
+    int length = traces.size();
+    int sizeInBytes = 2; // []
+    if (length > 1) sizeInBytes += length - 1; // comma to join elements
+
+    for (int i = 0; i < length; i++) {
+      List<zipkin2.Span> spans = traces.get(i);
+      int jLength = spans.size();
+      sizeInBytes += 2; // []
+      if (jLength > 1) sizeInBytes += jLength - 1; // comma to join elements
+      for (int j = 0; j < jLength; j++) {
+        sizeInBytes += codec.sizeInBytes(spans.get(j));
+      }
+    }
+
+    byte[] out = new byte[sizeInBytes];
+    int pos = 0;
+    out[pos++] = '['; // start list of traces
+    for (int i = 0; i < length; i++) {
+      pos += codec.encodeList(traces.get(i), out, pos);
+      if (i + 1 < length) out[pos++] = ',';
+    }
+    out[pos] = ']'; // stop list of traces
+    return out;
   }
 
   MockResponse acceptSpans(RecordedRequest request, SpanDecoder decoder) {
@@ -184,11 +212,11 @@ final class ZipkinDispatcher extends Dispatcher {
                                  .limit(maybeInteger(url.queryParameter("limit"))).build();
   }
 
-  static zipkin.internal.v2.storage.QueryRequest toQueryRequest2(HttpUrl url) {
+  static zipkin2.storage.QueryRequest toQueryRequest2(HttpUrl url) {
     Long endTs = maybeLong(url.queryParameter("endTs"));
     Long lookback = maybeLong(url.queryParameter("lookback"));
     Integer limit = maybeInteger(url.queryParameter("limit"));
-    return zipkin.internal.v2.storage.QueryRequest.newBuilder()
+    return zipkin2.storage.QueryRequest.newBuilder()
       .serviceName(url.queryParameter("serviceName"))
       .spanName(url.queryParameter("spanName"))
       .parseAnnotationQuery(url.queryParameter("annotationQuery"))

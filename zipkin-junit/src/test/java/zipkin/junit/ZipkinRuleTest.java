@@ -32,7 +32,7 @@ import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.V2SpanConverter;
-import zipkin.internal.v2.codec.SpanBytesCodec;
+import zipkin2.codec.SpanBytesEncoder;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -68,10 +68,7 @@ public class ZipkinRuleTest {
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] message = SpanBytesCodec.JSON_V2.encodeList(asList(
-      V2SpanConverter.fromSpan(spans.get(0)).get(0),
-      V2SpanConverter.fromSpan(spans.get(1)).get(0)
-    ));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(V2SpanConverter.fromSpans(spans));
 
     // write the span to the zipkin using http api v2
     Response response = client.newCall(new Request.Builder()

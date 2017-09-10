@@ -19,11 +19,11 @@ import org.junit.Test;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.V2SpanConverter;
-import zipkin.internal.v2.DependencyLink;
-import zipkin.internal.v2.Endpoint;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
-import zipkin.internal.v2.codec.SpanBytesEncoder;
+import zipkin2.DependencyLink;
+import zipkin2.Endpoint;
+import zipkin2.Span;
+import zipkin2.codec.DependencyLinkBytesEncoder;
+import zipkin2.codec.SpanBytesEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
@@ -236,7 +236,7 @@ public class JsonAdaptersTest {
       .callCount(2).build();
 
     Buffer bytes = new Buffer();
-    bytes.write(DependencyLinkBytesCodec.JSON.encode(link));
+    bytes.write(DependencyLinkBytesEncoder.JSON_V1.encode(link));
     assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
         .isEqualTo(link);
   }
@@ -250,7 +250,7 @@ public class JsonAdaptersTest {
       .errorCount(1).build();
 
     Buffer bytes = new Buffer();
-    bytes.write(DependencyLinkBytesCodec.JSON.encode(link));
+    bytes.write(DependencyLinkBytesEncoder.JSON_V1.encode(link));
     assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes))
       .isEqualTo(link);
   }

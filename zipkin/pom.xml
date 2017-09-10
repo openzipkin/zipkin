@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>parent</artifactId>
-    <version>1.31.4-SNAPSHOT</version>
+    <version>2.0.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin</artifactId>
@@ -34,6 +34,11 @@
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
@@ -113,7 +118,7 @@
           </execution>
         </executions>
       </plugin>
-      <!-- Use of okio and moshi are internal only -->
+      <!-- Use of gson is internal only -->
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
@@ -137,7 +142,7 @@
                 </filter>
                 <filter>
                   <!-- don't include pom files, some are kilobytes -->
-                  <artifact>com*:*</artifact>
+                  <artifact>*:*</artifact>
                   <excludes>
                     <exclude>META-INF/**</exclude>
                   </excludes>
