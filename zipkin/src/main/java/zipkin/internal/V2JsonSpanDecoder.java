@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import zipkin.SpanDecoder;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.SpanBytesCodec;
+import zipkin2.codec.SpanBytesDecoder;
 
 /** Decodes a span from zipkin v2 encoding */
 public final class V2JsonSpanDecoder implements SpanDecoder {
@@ -27,12 +26,10 @@ public final class V2JsonSpanDecoder implements SpanDecoder {
   }
 
   @Override public List<zipkin.Span> readSpans(byte[] span) {
-    List<Span> span2s = SpanBytesCodec.JSON_V2.decodeList(span);
-    if (span2s.isEmpty()) return Collections.emptyList();
-    int length = span2s.size();
-    List<zipkin.Span> result = new ArrayList<>(length);
-    for (int i = 0; i < length; i++) {
-      result.add(V2SpanConverter.toSpan(span2s.get(i)));
+    List result = new ArrayList<>();
+    if (!SpanBytesDecoder.JSON_V2.decodeList(span, result)) return Collections.emptyList();
+    for (int i = 0, length = result.size(); i < length; i++) {
+      result.set(i, V2SpanConverter.toSpan((zipkin2.Span) result.get(i)));
     }
     return result;
   }

@@ -14,7 +14,9 @@
 package zipkin;
 
 import java.io.Serializable;
+import java.net.Inet6Address;
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Locale;
@@ -258,6 +260,28 @@ public final class Endpoint implements Serializable { // for Spark jobs
     public Endpoint build() {
       return new Endpoint(serviceName, ipv4 == null ? 0 : ipv4, ipv6, port);
     }
+  }
+
+  /** Converts to version 2 representation */
+  public zipkin2.Endpoint toV2() {
+    zipkin2.Endpoint.Builder result = zipkin2.Endpoint.newBuilder()
+      .serviceName(serviceName)
+      .port(port != null ? port & 0xffff : null);
+    if (ipv4 != 0) {
+      result.parseIp(new StringBuilder()
+        .append(ipv4 >> 24 & 0xff).append('.')
+        .append(ipv4 >> 16 & 0xff).append('.')
+        .append(ipv4 >> 8 & 0xff).append('.')
+        .append(ipv4 & 0xff).toString());
+    }
+    if (ipv6 != null) {
+      try {
+        result.parseIp(Inet6Address.getByAddress(ipv6));
+      } catch (UnknownHostException e) {
+        throw new AssertionError(e); // ipv6 is fixed length, so shouldn't happen.
+      }
+    }
+    return result.build();
   }
 
   @Override

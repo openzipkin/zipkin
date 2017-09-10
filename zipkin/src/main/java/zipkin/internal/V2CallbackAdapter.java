@@ -16,7 +16,7 @@ package zipkin.internal;
 import javax.annotation.Nullable;
 import zipkin.storage.Callback;
 
-final class V2CallbackAdapter<T> implements zipkin.internal.v2.Callback<T> {
+final class V2CallbackAdapter<T> implements zipkin2.Callback<T> {
   final Callback<T> callback;
 
   V2CallbackAdapter(Callback<T> callback) {

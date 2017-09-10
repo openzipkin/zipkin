@@ -34,7 +34,7 @@ import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
 import zipkin.internal.Util;
-import zipkin.internal.v2.Span;
+import zipkin2.Span;
 
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
@@ -79,11 +79,11 @@ public class SpanBenchmarks {
     .ipv4(192 << 24 | 168 << 16 | 99 << 8 | 101)
     .port(9000)
     .build();
-  static final zipkin.internal.v2.Endpoint frontend2 = zipkin.internal.v2.Endpoint.newBuilder()
+  static final zipkin2.Endpoint frontend2 = zipkin2.Endpoint.newBuilder()
     .serviceName("frontend")
     .ip("127.0.0.1")
     .build();
-  static final zipkin.internal.v2.Endpoint backend2 = zipkin.internal.v2.Endpoint.newBuilder()
+  static final zipkin2.Endpoint backend2 = zipkin2.Endpoint.newBuilder()
     .serviceName("backend")
     .ip("192.168.99.101")
     .port(9000)

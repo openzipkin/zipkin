@@ -24,7 +24,7 @@ import okhttp3.RequestBody;
 import okio.Buffer;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
-import static zipkin.internal.v2.internal.JsonEscaper.jsonEscape;
+import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage.APPLICATION_JSON;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html

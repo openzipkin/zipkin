@@ -28,11 +28,11 @@ import org.mockito.junit.MockitoRule;
 import zipkin.Annotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
-import zipkin.internal.v2.Call;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.storage.SpanStore;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
+import zipkin2.Call;
+import zipkin2.Span;
+import zipkin2.storage.SpanStore;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,14 +60,14 @@ public class V2SpanStoreAdapterTest {
   List<Span> skewedTrace2 = asList(
     builder.clone()
       .kind(Span.Kind.CLIENT)
-      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
+      .localEndpoint(frontend.toV2())
       .timestamp((TODAY + 200) * 1000)
       .duration(120_000L)
       .build(),
     builder.clone()
       .kind(Span.Kind.SERVER)
       .shared(true)
-      .localEndpoint(V2SpanConverter.fromEndpoint(backend))
+      .localEndpoint(backend.toV2())
       .timestamp((TODAY + 100) * 1000) // received before sent!
       .duration(60_000L)
       .build()
@@ -114,7 +114,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTraces_sync_callsExecute() throws IOException {
-    when(spanStore.getTraces(any(zipkin.internal.v2.storage.QueryRequest.class)))
+    when(spanStore.getTraces(any(zipkin2.storage.QueryRequest.class)))
       .thenReturn(call);
     when(call.execute())
       .thenReturn(Collections.emptyList());
@@ -127,7 +127,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test(expected = UncheckedIOException.class)
   public void getTraces_sync_wrapsIOE() throws IOException {
-    when(spanStore.getTraces(any(zipkin.internal.v2.storage.QueryRequest.class)))
+    when(spanStore.getTraces(any(zipkin2.storage.QueryRequest.class)))
       .thenReturn(call);
     when(call.execute())
       .thenThrow(IOException.class);
@@ -136,7 +136,7 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTraces_async_callsEnqueue() {
-    when(spanStore.getTraces(any(zipkin.internal.v2.storage.QueryRequest.class)))
+    when(spanStore.getTraces(any(zipkin2.storage.QueryRequest.class)))
       .thenReturn(call);
     doEnqueue(c -> c.onSuccess(Collections.emptyList()));
 
@@ -147,7 +147,7 @@ public class V2SpanStoreAdapterTest {
 
   @Test public void getTraces_async_doesntWrapIOE() {
     IOException throwable = new IOException();
-    when(spanStore.getTraces(any(zipkin.internal.v2.storage.QueryRequest.class)))
+    when(spanStore.getTraces(any(zipkin2.storage.QueryRequest.class)))
       .thenReturn(call);
     doEnqueue(c -> c.onError(throwable));
 
@@ -436,7 +436,7 @@ public class V2SpanStoreAdapterTest {
       .lookback(60L)
       .limit(100)
       .build()))
-      .isEqualTo(zipkin.internal.v2.storage.QueryRequest.newBuilder()
+      .isEqualTo(zipkin2.storage.QueryRequest.newBuilder()
         .serviceName("service")
         .spanName("span")
         .parseAnnotationQuery("annotation and tag=value")
@@ -448,10 +448,10 @@ public class V2SpanStoreAdapterTest {
         .build());
   }
 
-  void doEnqueue(Consumer<zipkin.internal.v2.Callback> answer) {
+  void doEnqueue(Consumer<zipkin2.Callback> answer) {
     doAnswer(invocation -> {
-      answer.accept((zipkin.internal.v2.Callback) invocation.getArguments()[0]);
+      answer.accept((zipkin2.Callback) invocation.getArguments()[0]);
       return invocation;
-    }).when(call).enqueue(any(zipkin.internal.v2.Callback.class));
+    }).when(call).enqueue(any(zipkin2.Callback.class));
   }
 }

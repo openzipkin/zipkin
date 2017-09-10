@@ -34,7 +34,7 @@ public abstract class V2StorageComponent implements StorageComponent {
     @Nullable AsyncSpanStore legacyAsyncSpanStore();
   }
 
-  public static V2StorageComponent create(zipkin.internal.v2.storage.StorageComponent delegate) {
+  public static V2StorageComponent create(zipkin2.storage.StorageComponent delegate) {
     if (delegate == null) throw new NullPointerException("delegate == null");
     LegacySpanStoreProvider legacyProvider;
     if (delegate instanceof LegacySpanStoreProvider) {
@@ -47,7 +47,7 @@ public abstract class V2StorageComponent implements StorageComponent {
         return legacyProvider;
       }
 
-      @Override public zipkin.internal.v2.storage.StorageComponent internalDelegate() {
+      @Override public zipkin2.storage.StorageComponent delegate() {
         return delegate;
       }
     };
@@ -55,12 +55,7 @@ public abstract class V2StorageComponent implements StorageComponent {
 
   protected abstract LegacySpanStoreProvider legacyProvider();
 
-  /**
-   * This is a public method, but should not be used outside Zipkin internal code. If you need to
-   * use this method, please use shade or another way to protect from api change, as it is declared
-   * on an internal type.
-   */
-  public abstract zipkin.internal.v2.storage.StorageComponent internalDelegate();
+  public abstract zipkin2.storage.StorageComponent delegate();
 
   @Override public zipkin.storage.SpanStore spanStore() {
     AsyncSpanStore legacy =
@@ -68,11 +63,11 @@ public abstract class V2StorageComponent implements StorageComponent {
     if (legacy != null) {
       return StorageAdapters.asyncToBlocking(asyncSpanStore());
     }
-    return new V2SpanStoreAdapter(internalDelegate().spanStore());
+    return new V2SpanStoreAdapter(delegate().spanStore());
   }
 
   @Override public AsyncSpanStore asyncSpanStore() {
-    V2SpanStoreAdapter v2 = new V2SpanStoreAdapter(internalDelegate().spanStore());
+    V2SpanStoreAdapter v2 = new V2SpanStoreAdapter(delegate().spanStore());
     AsyncSpanStore legacy =
       legacyProvider() != null ? legacyProvider().legacyAsyncSpanStore() : null;
     if (legacy == null) return v2;
@@ -81,11 +76,11 @@ public abstract class V2StorageComponent implements StorageComponent {
   }
 
   @Override public final AsyncSpanConsumer asyncSpanConsumer() {
-    return new V2SpanConsumerAdapter(internalDelegate().spanConsumer());
+    return new V2SpanConsumerAdapter(delegate().spanConsumer());
   }
 
   @Override public CheckResult check() {
-    zipkin.internal.v2.CheckResult result = internalDelegate().check();
+    zipkin2.CheckResult result = delegate().check();
     return result.ok() ? CheckResult.OK : CheckResult.failed(
       result.error() instanceof Exception
         ? ((Exception) result.error())
@@ -94,10 +89,10 @@ public abstract class V2StorageComponent implements StorageComponent {
   }
 
   @Override public void close() throws IOException {
-    internalDelegate().close();
+    delegate().close();
   }
 
   @Override public String toString() {
-    return internalDelegate().toString();
+    return delegate().toString();
   }
 }

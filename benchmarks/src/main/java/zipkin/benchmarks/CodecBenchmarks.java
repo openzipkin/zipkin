@@ -40,9 +40,9 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin.Codec;
 import zipkin.Endpoint;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.SpanBytesCodec;
-import zipkin.internal.v2.codec.SpanBytesEncoder;
+import zipkin2.Span;
+import zipkin2.codec.SpanBytesDecoder;
+import zipkin2.codec.SpanBytesEncoder;
 
 /**
  * This compares the speed of the bundled java codec with the approach used in the scala
@@ -157,18 +157,18 @@ public class CodecBenchmarks {
   }
 
   static final byte[] zipkin2Json = read("/zipkin2-client.json");
-  static final Span zipkin2 = SpanBytesCodec.JSON_V2.decode(zipkin2Json);
+  static final Span zipkin2 = SpanBytesDecoder.JSON_V2.decodeOne(zipkin2Json);
   static final List<Span> tenSpan2s = Collections.nCopies(10, zipkin2);
-  static final byte[] tenSpan2sJson = SpanBytesCodec.JSON_V2.encodeList(tenSpan2s);
+  static final byte[] tenSpan2sJson = SpanBytesEncoder.JSON_V2.encodeList(tenSpan2s);
 
   @Benchmark
   public Span readClientSpan_json_zipkin2() {
-    return SpanBytesCodec.JSON_V2.decode(zipkin2Json);
+    return SpanBytesDecoder.JSON_V2.decodeOne(zipkin2Json);
   }
 
   @Benchmark
   public List<Span> readTenClientSpans_json_zipkin2() {
-    return SpanBytesCodec.JSON_V2.decodeList(tenSpan2sJson);
+    return SpanBytesDecoder.JSON_V2.decodeList(tenSpan2sJson);
   }
 
   @Benchmark
@@ -264,7 +264,7 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*")
+        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*readTenClientSpans_json_zipkin2,*")
         .build();
 
     new Runner(opt).run();

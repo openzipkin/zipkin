@@ -21,7 +21,7 @@ import org.junit.Test;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.internal.PeekingIterator;
-import zipkin.internal.v2.Span;
+import zipkin2.Span;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

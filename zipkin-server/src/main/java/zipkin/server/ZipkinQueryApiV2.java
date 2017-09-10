@@ -33,13 +33,13 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import zipkin.internal.V2StorageComponent;
-import zipkin.internal.v2.Call;
-import zipkin.internal.v2.DependencyLink;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
-import zipkin.internal.v2.codec.SpanBytesCodec;
-import zipkin.internal.v2.storage.QueryRequest;
-import zipkin.internal.v2.storage.StorageComponent;
+import zipkin2.Call;
+import zipkin2.DependencyLink;
+import zipkin2.Span;
+import zipkin2.codec.DependencyLinkBytesEncoder;
+import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.storage.QueryRequest;
+import zipkin2.storage.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -83,7 +83,7 @@ public class ZipkinQueryApiV2 {
 
     Call<List<DependencyLink>> call = storage.spanStore()
       .getDependencies(endTs, lookback != null ? lookback : defaultLookback);
-    return DependencyLinkBytesCodec.JSON.encodeList(call.execute());
+    return DependencyLinkBytesEncoder.JSON_V1.encodeList(call.execute());
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
@@ -128,7 +128,7 @@ public class ZipkinQueryApiV2 {
       .limit(limit).build();
 
     List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();
-    return new String(SpanBytesCodec.JSON_V2.encodeNestedList(traces), UTF_8);
+    return new String(writeTraces(SpanBytesEncoder.JSON_V2, traces), UTF_8);
   }
 
   @RequestMapping(value = "/trace/{traceIdHex}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -137,7 +137,7 @@ public class ZipkinQueryApiV2 {
 
     List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
     if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
-    return new String(SpanBytesCodec.JSON_V2.encodeList(trace), UTF_8);
+    return new String(SpanBytesEncoder.JSON_V2.encodeList(trace), UTF_8);
   }
 
   @ExceptionHandler(Version2StorageNotConfigured.class)
@@ -174,5 +174,33 @@ public class ZipkinQueryApiV2 {
       response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
     }
     return response.body(names);
+  }
+
+  // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library
+  static byte[] writeTraces(SpanBytesEncoder codec, List<List<zipkin2.Span>> traces) {
+    // Get the encoded size of the nested list so that we don't need to grow the buffer
+    int length = traces.size();
+    int sizeInBytes = 2; // []
+    if (length > 1) sizeInBytes += length - 1; // comma to join elements
+
+    for (int i = 0; i < length; i++) {
+      List<zipkin2.Span> spans = traces.get(i);
+      int jLength = spans.size();
+      sizeInBytes += 2; // []
+      if (jLength > 1) sizeInBytes += jLength - 1; // comma to join elements
+      for (int j = 0; j < jLength; j++) {
+        sizeInBytes += codec.sizeInBytes(spans.get(j));
+      }
+    }
+
+    byte[] out = new byte[sizeInBytes];
+    int pos = 0;
+    out[pos++] = '['; // start list of traces
+    for (int i = 0; i < length; i++) {
+      pos += codec.encodeList(traces.get(i), out, pos);
+      if (i + 1 < length) out[pos++] = ',';
+    }
+    out[pos] = ']'; // stop list of traces
+    return out;
   }
 }

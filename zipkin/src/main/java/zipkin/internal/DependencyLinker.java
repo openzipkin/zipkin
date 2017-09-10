@@ -18,8 +18,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import zipkin.DependencyLink;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.Span.Kind;
+import zipkin2.Span;
+import zipkin2.Span.Kind;
 
 import static zipkin.internal.V2SpanConverter.fromLinks;
 import static zipkin.internal.V2SpanConverter.toLinks;
@@ -29,15 +29,15 @@ import static zipkin.internal.V2SpanConverter.toLinks;
  *
  * <p>This implementation traverses the tree, and only creates links between {@link Kind#SERVER
  * server} spans. One exception is at the bottom of the trace tree. {@link Kind#CLIENT client} spans
- * that record their {@link zipkin.internal.v2.Span#remoteEndpoint()} are included, as this accounts
- * for uninstrumented services. Spans with {@link zipkin.internal.v2.Span#kind()} unset, but {@link
- * zipkin.internal.v2.Span#remoteEndpoint()} set are treated the same as client spans.
+ * that record their {@link Span#remoteEndpoint()} are included, as this accounts
+ * for uninstrumented services. Spans with {@link Span#kind()} unset, but {@link
+ * Span#remoteEndpoint()} set are treated the same as client spans.
  */
 public final class DependencyLinker {
-  private final zipkin.internal.v2.internal.DependencyLinker delegate;
+  private final zipkin2.internal.DependencyLinker delegate;
 
   public DependencyLinker() {
-    this.delegate = new zipkin.internal.v2.internal.DependencyLinker();
+    this.delegate = new zipkin2.internal.DependencyLinker();
   }
 
   /**
@@ -68,6 +68,6 @@ public final class DependencyLinker {
 
   /** links are merged by mapping to parent/child and summing corresponding links */
   public static List<DependencyLink> merge(Iterable<DependencyLink> in) {
-    return toLinks(zipkin.internal.v2.internal.DependencyLinker.merge(fromLinks(in)));
+    return toLinks(zipkin2.internal.DependencyLinker.merge(fromLinks(in)));
   }
 }

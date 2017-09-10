@@ -24,8 +24,8 @@ import okhttp3.internal.http.HttpHeaders;
 import okio.BufferedSource;
 import okio.GzipSource;
 import okio.Okio;
-import zipkin.internal.v2.Call;
-import zipkin.internal.v2.Callback;
+import zipkin2.Call;
+import zipkin2.Callback;
 
 public final class HttpCall<V> extends Call<V> {
 

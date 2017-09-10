@@ -250,7 +250,7 @@ final class LegacyJsonAdapters {
 
   static final JsonAdapter<DependencyLink> LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
     @Nonnull @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
-      zipkin.internal.v2.DependencyLink result =
+      zipkin2.DependencyLink result =
         JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(reader);
       return V2SpanConverter.toLink(result);
     }

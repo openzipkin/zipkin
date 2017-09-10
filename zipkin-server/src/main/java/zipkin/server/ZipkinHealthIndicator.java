@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,6 +18,7 @@ import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import zipkin.Component;
+import zipkin.internal.V2StorageComponent;
 
 final class ZipkinHealthIndicator extends CompositeHealthIndicator {
 
@@ -26,7 +27,10 @@ final class ZipkinHealthIndicator extends CompositeHealthIndicator {
   }
 
   void addComponent(Component component) {
-    String healthName = component.getClass().getSimpleName();
+    String healthName = component instanceof V2StorageComponent
+      ? ((V2StorageComponent) component).delegate().getClass().getSimpleName()
+      : component.getClass().getSimpleName();
+    healthName = healthName.replace("AutoValue_", "");
     addHealthIndicator(healthName, new ComponentHealthIndicator(component));
   }
 

@@ -43,7 +43,7 @@ import zipkin.Endpoint;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.GroupByTraceId;
 import zipkin.internal.Pair;
-import zipkin.internal.v2.Span;
+import zipkin2.Span;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinAnnotations;

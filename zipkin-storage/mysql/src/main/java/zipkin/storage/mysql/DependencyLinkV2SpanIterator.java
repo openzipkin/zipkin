@@ -20,8 +20,8 @@ import org.jooq.TableField;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
 import zipkin.internal.PeekingIterator;
-import zipkin.internal.v2.Endpoint;
-import zipkin.internal.v2.Span;
+import zipkin2.Endpoint;
+import zipkin2.Span;
 import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
 import static zipkin.Constants.CLIENT_ADDR;

@@ -33,8 +33,8 @@ import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.internal.GroupByTraceId;
 import zipkin.internal.V2SpanConverter;
-import zipkin.internal.v2.internal.Platform;
-import zipkin.internal.v2.storage.InMemoryStorage;
+import zipkin2.internal.Platform;
+import zipkin2.storage.InMemoryStorage;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
@@ -140,11 +140,11 @@ public final class ZipkinRule implements TestRule {
 
   /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
-    List<List<zipkin.internal.v2.Span>> traces = storage.spanStore().getTraces();
+    List<List<zipkin2.Span>> traces = storage.spanStore().getTraces();
     List<List<Span>> result = new ArrayList<>(traces.size());
-    for (List<zipkin.internal.v2.Span> trace2 : traces) {
+    for (List<zipkin2.Span> trace2 : traces) {
       List<Span> sameTraceId = new ArrayList<>();
-      for (zipkin.internal.v2.Span span2 : trace2) {
+      for (zipkin2.Span span2 : trace2) {
         sameTraceId.add(V2SpanConverter.toSpan(span2));
       }
       result.addAll(GroupByTraceId.apply(sameTraceId, false, false));

@@ -15,10 +15,10 @@ package zipkin.junit.v2;
 
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import zipkin.internal.v2.CheckResult;
-import zipkin.internal.v2.storage.SpanConsumer;
-import zipkin.internal.v2.storage.SpanStore;
-import zipkin.internal.v2.storage.StorageComponent;
+import zipkin2.CheckResult;
+import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.SpanStore;
+import zipkin2.storage.StorageComponent;
 
 /**
  * Test storage component that forwards requests to an HTTP endpoint.

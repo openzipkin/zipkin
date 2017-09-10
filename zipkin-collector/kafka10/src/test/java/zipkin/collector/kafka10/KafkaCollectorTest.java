@@ -39,13 +39,12 @@ import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.collector.kafka10.KafkaCollector.Builder;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.V2SpanConverter;
-import zipkin.internal.v2.codec.SpanBytesEncoder;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;
+import zipkin2.codec.SpanBytesEncoder;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.TestObjects.TRACE;
@@ -200,10 +199,7 @@ public class KafkaCollectorTest {
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(
-      V2SpanConverter.fromSpan(spans.get(0)).get(0),
-      V2SpanConverter.fromSpan(spans.get(1)).get(0)
-    ));
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(V2SpanConverter.fromSpans(spans));
 
     produceSpans(message, builder.topic);
 

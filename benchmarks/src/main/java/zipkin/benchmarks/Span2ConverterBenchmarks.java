@@ -34,7 +34,7 @@ import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.v2.Span;
+import zipkin2.Span;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.Util;
 
@@ -95,8 +95,8 @@ public class Span2ConverterBenchmarks {
     .name("get")
     .kind(Span.Kind.SERVER)
     .shared(true)
-    .localEndpoint(V2SpanConverter.fromEndpoint(backend))
-    .remoteEndpoint(V2SpanConverter.fromEndpoint(frontend))
+    .localEndpoint(backend.toV2())
+    .remoteEndpoint(frontend.toV2())
     .timestamp(1472470996250000L)
     .duration(100000L)
     .putTag(TraceKeys.HTTP_PATH, "/backend")

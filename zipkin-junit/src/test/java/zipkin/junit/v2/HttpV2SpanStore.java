@@ -16,19 +16,24 @@ package zipkin.junit.v2;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
+import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import zipkin.internal.v2.Call;
-import zipkin.internal.v2.DependencyLink;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
-import zipkin.internal.v2.codec.SpanBytesCodec;
-import zipkin.internal.v2.storage.QueryRequest;
-import zipkin.internal.v2.storage.SpanStore;
+import zipkin2.Call;
+import zipkin2.DependencyLink;
+import zipkin2.Span;
+import zipkin2.codec.DependencyLinkBytesDecoder;
+import zipkin2.codec.SpanBytesDecoder;
+import zipkin2.internal.JsonCodec;
+import zipkin2.internal.JsonCodec.JsonReader;
+import zipkin2.internal.V2SpanReader;
+import zipkin2.storage.QueryRequest;
+import zipkin2.storage.SpanStore;
 
 /** Implements the span store interface by forwarding requests over http. */
 final class HttpV2SpanStore implements SpanStore {
@@ -52,13 +57,13 @@ final class HttpV2SpanStore implements SpanStore {
     maybeAddQueryParam(url, "lookback", request.lookback());
     maybeAddQueryParam(url, "limit", request.limit());
     return factory.newCall(new Request.Builder().url(url.build()).build(),
-      content -> SpanBytesCodec.JSON_V2.decodeNestedList(content.readByteArray()));
+      content -> JsonCodec.readList(new SpanListReader(), content.readByteArray()));
   }
 
   @Override public Call<List<Span>> getTrace(String traceId) {
     return factory.newCall(new Request.Builder()
       .url(factory.baseUrl.resolve("/api/v2/trace/" + Span.normalizeTraceId(traceId)))
-      .build(), content -> SpanBytesCodec.JSON_V2.decodeList(content.readByteArray()))
+      .build(), content -> SpanBytesDecoder.JSON_V2.decodeList(content.readByteArray()))
       .handleError(((error, callback) -> {
         if (error instanceof HttpException && ((HttpException) error).code == 404) {
           callback.onSuccess(Collections.emptyList());
@@ -85,7 +90,28 @@ final class HttpV2SpanStore implements SpanStore {
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     return factory.newCall(new Request.Builder()
       .url(factory.baseUrl.resolve("/api/v2/dependencies?endTs=" + endTs + "&lookback=" + lookback))
-      .build(), content -> DependencyLinkBytesCodec.JSON.decodeList(content.readByteArray()));
+      .build(), content -> DependencyLinkBytesDecoder.JSON_V1.decodeList(content.readByteArray()));
+  }
+
+  static final class SpanListReader implements JsonCodec.JsonReaderAdapter<List<Span>> {
+    V2SpanReader spanReader;
+
+    @Override public List<Span> fromJson(JsonReader reader) throws IOException {
+      reader.beginArray();
+      if (!reader.hasNext()) {
+        reader.endArray();
+        return Collections.emptyList();
+      }
+      List<Span> result = new LinkedList<>(); // because we don't know how long it will be
+      if (spanReader == null) spanReader = new V2SpanReader();
+      while (reader.hasNext()) result.add(spanReader.fromJson(reader));
+      reader.endArray();
+      return result;
+    }
+
+    @Override public String toString() {
+      return "List<Span>";
+    }
   }
 
   void maybeAddQueryParam(HttpUrl.Builder builder, String name, @Nullable Object value) {

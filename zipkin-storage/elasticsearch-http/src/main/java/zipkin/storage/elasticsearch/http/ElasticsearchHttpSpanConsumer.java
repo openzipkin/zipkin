@@ -23,11 +23,11 @@ import java.util.logging.Logger;
 import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
-import zipkin.internal.v2.Annotation;
-import zipkin.internal.v2.Call;
-import zipkin.internal.v2.Span;
-import zipkin.internal.v2.codec.SpanBytesEncoder;
-import zipkin.internal.v2.storage.SpanConsumer;
+import zipkin2.Annotation;
+import zipkin2.Call;
+import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.storage.SpanConsumer;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
