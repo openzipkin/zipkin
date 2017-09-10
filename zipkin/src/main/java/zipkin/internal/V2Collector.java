@@ -20,23 +20,25 @@ import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.BytesDecoder;
+import zipkin.internal.v2.storage.StorageComponent;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.Util.checkNotNull;
 
 public final class V2Collector extends Collector<BytesDecoder<Span>, Span> {
-  final V2StorageComponent storage;
+  final StorageComponent storage;
   final CollectorSampler sampler;
 
   public V2Collector(Logger logger, @Nullable CollectorMetrics metrics,
-    @Nullable CollectorSampler sampler, V2StorageComponent storage) {
+    @Nullable CollectorSampler sampler, StorageComponent storage) {
     super(logger, metrics);
     this.storage = checkNotNull(storage, "storage");
     this.sampler = sampler == null ? CollectorSampler.ALWAYS_SAMPLE : sampler;
   }
 
   @Override
-  public void acceptSpans(byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
+  public void acceptSpans(byte[] serializedSpans, BytesDecoder<Span> decoder,
+    Callback<Void> callback) {
     super.acceptSpans(serializedSpans, decoder, callback);
   }
 
@@ -49,7 +51,7 @@ public final class V2Collector extends Collector<BytesDecoder<Span>, Span> {
   }
 
   @Override protected void record(List<Span> sampled, Callback<Void> callback) {
-    storage.v2SpanConsumer().accept(sampled).enqueue(new V2CallbackAdapter(callback));
+    storage.spanConsumer().accept(sampled).enqueue(new V2CallbackAdapter<>(callback));
   }
 
   @Override protected String idString(Span span) {

@@ -36,9 +36,9 @@ import org.springframework.web.context.ConfigurableWebApplicationContext;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.internal.ApplyTimestampAndDuration;
-import zipkin.internal.V2InMemoryStorage;
 import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.codec.SpanBytesEncoder;
+import zipkin.internal.v2.storage.InMemoryStorage;
 
 import static java.lang.String.format;
 import static java.util.Arrays.asList;
@@ -67,7 +67,7 @@ public class ZipkinServerIntegrationTest {
   @Autowired
   ConfigurableWebApplicationContext context;
   @Autowired
-  V2InMemoryStorage storage;
+  InMemoryStorage storage;
   @Autowired
   ActuateCollectorMetrics metrics;
   @LocalServerPort

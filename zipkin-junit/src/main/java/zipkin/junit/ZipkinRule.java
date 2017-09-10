@@ -31,10 +31,10 @@ import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
-import zipkin.internal.CallbackCaptor;
 import zipkin.internal.GroupByTraceId;
-import zipkin.internal.V2InMemoryStorage;
 import zipkin.internal.V2SpanConverter;
+import zipkin.internal.v2.internal.Platform;
+import zipkin.internal.v2.storage.InMemoryStorage;
 
 import static okhttp3.mockwebserver.SocketPolicy.KEEP_OPEN;
 import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
@@ -48,7 +48,7 @@ import static zipkin.internal.GroupByTraceId.TRACE_DESCENDING;
  * See http://openzipkin.github.io/zipkin-api/#/
  */
 public final class ZipkinRule implements TestRule {
-  private final V2InMemoryStorage storage = V2InMemoryStorage.newBuilder().build();
+  private final InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   private final InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
   private final MockWebServer server = new MockWebServer();
   private final BlockingQueue<MockResponse> failureQueue = new LinkedBlockingQueue<>();
@@ -114,9 +114,11 @@ public final class ZipkinRule implements TestRule {
    * you'd add the parent here.
    */
   public ZipkinRule storeSpans(List<Span> spans) {
-    CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    storage.asyncSpanConsumer().accept(spans, callback);
-    callback.get();
+    try {
+      storage.accept(V2SpanConverter.fromSpans(spans)).execute();
+    } catch (IOException e) {
+      throw Platform.get().uncheckedIOException(e);
+    }
     return this;
   }
 
@@ -138,7 +140,7 @@ public final class ZipkinRule implements TestRule {
 
   /** Retrieves all traces this zipkin server has received. */
   public List<List<Span>> getTraces() {
-    List<List<zipkin.internal.v2.Span>> traces = storage.v2SpanStore().getTraces();
+    List<List<zipkin.internal.v2.Span>> traces = storage.spanStore().getTraces();
     List<List<Span>> result = new ArrayList<>(traces.size());
     for (List<zipkin.internal.v2.Span> trace2 : traces) {
       List<Span> sameTraceId = new ArrayList<>();

@@ -123,7 +123,8 @@ public class ElasticsearchHttpSpanConsumerTest {
     Span span = Span.newBuilder().traceId("20").id("20").name("get")
       .timestamp(TODAY * 1000).build();
 
-    assertThat(SpanBytesCodec.JSON_V2.decode(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
+    assertThat(
+      SpanBytesCodec.JSON_V2.decode(prefixWithTimestampMillisAndQuery(span, span.timestamp())))
       .isEqualTo(span); // ignores timestamp_millis field
   }
 
@@ -208,6 +209,6 @@ public class ElasticsearchHttpSpanConsumerTest {
   }
 
   void accept(Span... spans) throws Exception {
-    storage.v2SpanConsumer().accept(asList(spans)).execute();
+    storage.internalDelegate().spanConsumer().accept(asList(spans)).execute();
   }
 }

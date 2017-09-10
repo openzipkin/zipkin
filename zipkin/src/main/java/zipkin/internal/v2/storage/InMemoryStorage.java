@@ -14,6 +14,7 @@
 package zipkin.internal.v2.storage;
 
 import com.google.auto.value.AutoValue;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -64,18 +65,18 @@ import zipkin.internal.v2.internal.DependencyLinker;
  *    foo --> ( GET, POST )
  * }</pre>
  */
-public final class InMemoryStorage implements SpanConsumer, SpanStore {
+public final class InMemoryStorage extends StorageComponent implements SpanStore, SpanConsumer {
 
   public static Builder newBuilder() {
     return new Builder();
   }
 
-  public static final class Builder {
+  public static final class Builder extends StorageComponent.Builder {
     boolean strictTraceId = true;
     int maxSpanCount = 500000;
 
     /** {@inheritDoc} */
-    public Builder strictTraceId(boolean strictTraceId) {
+    @Override public Builder strictTraceId(boolean strictTraceId) {
       this.strictTraceId = strictTraceId;
       return this;
     }
@@ -87,7 +88,7 @@ public final class InMemoryStorage implements SpanConsumer, SpanStore {
       return this;
     }
 
-    public InMemoryStorage build() {
+    @Override public InMemoryStorage build() {
       return new InMemoryStorage(this);
     }
   }
@@ -412,6 +413,17 @@ public final class InMemoryStorage implements SpanConsumer, SpanStore {
   }
 
   static String lowTraceId(String traceId) {
-    return traceId.length() == 32 ? traceId.substring(16) :traceId;
+    return traceId.length() == 32 ? traceId.substring(16) : traceId;
+  }
+
+  @Override public InMemoryStorage spanStore() {
+    return this;
+  }
+
+  @Override public SpanConsumer spanConsumer() {
+    return this;
+  }
+
+  @Override public void close() throws IOException {
   }
 }

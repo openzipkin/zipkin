@@ -34,8 +34,7 @@ public class VersionSpecificTemplatesTest {
       .hosts(asList(es.url("").toString()))
       .build();
 
-  VersionSpecificTemplates
-    client = new VersionSpecificTemplates(storage);
+  VersionSpecificTemplates client = new VersionSpecificTemplates(storage);
 
   @After
   public void close() throws IOException {

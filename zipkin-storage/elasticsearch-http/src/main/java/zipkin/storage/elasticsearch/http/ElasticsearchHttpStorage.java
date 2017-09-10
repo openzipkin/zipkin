@@ -33,6 +33,7 @@ import zipkin.internal.v2.internal.Platform;
 import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.internal.v2.storage.SpanStore;
 import zipkin.storage.AsyncSpanStore;
+import zipkin.storage.StorageComponent;
 import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
 
 import static zipkin.moshi.JsonReaders.enterPath;
@@ -40,7 +41,9 @@ import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPEN
 import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.SPAN;
 
 @AutoValue
-public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
+public abstract class ElasticsearchHttpStorage extends V2StorageComponent
+  implements V2StorageComponent.LegacySpanStoreProvider {
+
   /**
    * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
    * Note this value is only read once.
@@ -76,7 +79,7 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
   abstract Builder toBuilder();
 
   @AutoValue.Builder
-  public static abstract class Builder implements zipkin.storage.StorageComponent.Builder {
+  public static abstract class Builder implements StorageComponent.Builder {
     abstract Builder client(OkHttpClient client);
 
     abstract Builder shutdownClientOnClose(boolean shutdownClientOnClose);
@@ -204,22 +207,42 @@ public abstract class ElasticsearchHttpStorage extends V2StorageComponent {
 
   abstract boolean legacyReadsEnabled();
 
-  @Override public SpanStore v2SpanStore() {
-    ensureIndexTemplates();
-    return new ElasticsearchHttpSpanStore(this);
+  @Override protected LegacySpanStoreProvider legacyProvider() {
+    return this;
   }
 
-  @Override @Nullable protected AsyncSpanStore legacyAsyncSpanStore() {
+  @Override public zipkin.internal.v2.storage.StorageComponent internalDelegate() {
+    return new Delegate(this);
+  }
+
+  /**
+   * This type adapts to the new storage apis, without changing the enclosing hierarchy. This is
+   * done for api compat reasons and will be unwrapped in Zipkin v2.
+   */
+  static final class Delegate extends zipkin.internal.v2.storage.StorageComponent {
+    final ElasticsearchHttpStorage delegate;
+
+    Delegate(ElasticsearchHttpStorage delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override public SpanStore spanStore() {
+      delegate.ensureIndexTemplates();
+      return new ElasticsearchHttpSpanStore(delegate);
+    }
+
+    @Override public SpanConsumer spanConsumer() {
+      delegate.ensureIndexTemplates();
+      return new ElasticsearchHttpSpanConsumer(delegate);
+    }
+  }
+
+  @Override @Nullable public AsyncSpanStore legacyAsyncSpanStore() {
     float version = ensureIndexTemplates().version();
     if (version >= 6 /* multi-type (legacy) index isn't possible */ || !legacyReadsEnabled()) {
       return null;
     }
     return new LegacyElasticsearchHttpSpanStore(this);
-  }
-
-  @Override public SpanConsumer v2SpanConsumer() {
-    ensureIndexTemplates();
-    return new ElasticsearchHttpSpanConsumer(this);
   }
 
   /** This is a blocking call, only used in tests. */

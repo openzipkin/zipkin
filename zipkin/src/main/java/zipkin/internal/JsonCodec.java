@@ -85,7 +85,7 @@ public final class JsonCodec implements Codec {
 
   static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
     @Override public int sizeInBytes(Endpoint v) {
-      zipkin.internal.v2.Endpoint value = V2SpanConverter.toEndpoint(v);
+      zipkin.internal.v2.Endpoint value = V2SpanConverter.fromEndpoint(v);
       int sizeInBytes = 17; // {"serviceName":""
       if (value.serviceName() != null) {
         sizeInBytes += jsonEscapedSizeInBytes(value.serviceName());
@@ -109,7 +109,7 @@ public final class JsonCodec implements Codec {
     }
 
     @Override public void write(Endpoint v, Buffer b) {
-      zipkin.internal.v2.Endpoint value = V2SpanConverter.toEndpoint(v);
+      zipkin.internal.v2.Endpoint value = V2SpanConverter.fromEndpoint(v);
       b.writeAscii("{\"serviceName\":\"");
       if (value.serviceName() != null) {
         b.writeUtf8(jsonEscape(value.serviceName()));

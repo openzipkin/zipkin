@@ -14,12 +14,11 @@
 package zipkin.internal.v2.internal;
 
 import java.nio.charset.Charset;
-import javax.annotation.concurrent.Immutable;
 
 public final class Buffer {
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  @Immutable public interface Writer<T> {
+  public interface Writer<T> {
     int sizeInBytes(T value);
 
     void write(T value, Buffer buffer);

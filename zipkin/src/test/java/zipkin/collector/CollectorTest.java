@@ -96,15 +96,13 @@ public class CollectorTest {
    * double-conversion.
    */
   @Test public void routesToSpan2Collector() {
-    abstract class WithSpan2 extends V2StorageComponent implements zipkin.storage.StorageComponent {
-      @Override public abstract SpanConsumer v2SpanConsumer();
-    }
-    WithSpan2 storage = mock(WithSpan2.class);
+    zipkin.internal.v2.storage.StorageComponent storage =
+      mock(zipkin.internal.v2.storage.StorageComponent.class);
     SpanConsumer span2Consumer = mock(SpanConsumer.class);
-    when(storage.v2SpanConsumer()).thenReturn(span2Consumer);
+    when(storage.spanConsumer()).thenReturn(span2Consumer);
 
     collector = spy(Collector.builder(Collector.class)
-      .storage(storage).build());
+      .storage(V2StorageComponent.create(storage)).build());
 
     byte[] bytes = SpanBytesEncoder.JSON_V2.encodeList(asList(span2_1));
     collector.acceptSpans(bytes, SpanDecoder.DETECTING_DECODER, NOOP);

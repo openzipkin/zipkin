@@ -38,7 +38,8 @@ import static zipkin.internal.Util.checkNotNull;
  * before storage is attempted. This ensures that calling threads are disconnected from storage
  * threads.
  */
-public class Collector extends zipkin.internal.Collector<SpanDecoder, zipkin.Span> { // not final for mock
+public class Collector
+  extends zipkin.internal.Collector<SpanDecoder, zipkin.Span> { // not final for mock
 
   /** Needed to scope this to the correct logging category */
   public static Builder builder(Class<?> loggingClass) {
@@ -91,7 +92,7 @@ public class Collector extends zipkin.internal.Collector<SpanDecoder, zipkin.Spa
         builder.logger,
         builder.metrics,
         builder.sampler,
-        (V2StorageComponent) storage
+        ((V2StorageComponent) storage).internalDelegate()
       );
     } else {
       storage2 = null;

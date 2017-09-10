@@ -21,14 +21,15 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.internal.V2InMemoryStorage;
 import zipkin.internal.V2StorageComponent;
+import zipkin.internal.v2.storage.InMemoryStorage;
 import zipkin.server.brave.TracedStorageComponent;
 import zipkin.storage.StorageComponent;
 
@@ -80,6 +81,10 @@ public class ZipkinServerConfiguration {
     }
   }
 
+  /**
+   * This is a special-case configuration if there's no StorageComponent of any kind. In-Mem can
+   * supply both read apis, so we add two beans here.
+   */
   @Configuration
   // "matchIfMissing = true" ensures this is used when there's no configured storage type
   @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mem", matchIfMissing = true)
@@ -88,10 +93,24 @@ public class ZipkinServerConfiguration {
     @Bean StorageComponent storage(
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
       @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
-      return V2InMemoryStorage.newBuilder()
+      return V2StorageComponent.create(InMemoryStorage.newBuilder()
         .strictTraceId(strictTraceId)
         .maxSpanCount(maxSpans)
-        .build();
+        .build());
+    }
+
+    @Bean InMemoryStorage v2Storage(V2StorageComponent component) {
+      return (InMemoryStorage) component.internalDelegate();
+    }
+  }
+
+  /** This allows zipkin v2 components to be adapted to v1 components */
+  @Configuration
+  @ConditionalOnBean(zipkin.internal.v2.storage.StorageComponent.class)
+  @ConditionalOnMissingBean(StorageComponent.class)
+  static class AdapterConfiguration {
+    @Bean StorageComponent storage(zipkin.internal.v2.storage.StorageComponent in) {
+      return V2StorageComponent.create(in);
     }
   }
 }
