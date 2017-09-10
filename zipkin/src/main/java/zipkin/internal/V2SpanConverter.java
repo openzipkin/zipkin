@@ -110,7 +110,7 @@ public final class V2SpanConverter {
         if (closeEnough(cs.endpoint, sr.endpoint)) {
           client.kind(Kind.CLIENT);
           // fork a new span for the server side
-          server = newSpanBuilder(source, toEndpoint(sr.endpoint)).kind(Kind.SERVER);
+          server = newSpanBuilder(source, fromEndpoint(sr.endpoint)).kind(Kind.SERVER);
         } else {
           server = forEndpoint(source, sr.endpoint);
         }
@@ -151,7 +151,7 @@ public final class V2SpanConverter {
         if (closeEnough(ms.endpoint, mr.endpoint)) {
           producer.kind(Kind.PRODUCER);
           // fork a new span for the consumer side
-          consumer = newSpanBuilder(source, toEndpoint(mr.endpoint)).kind(Kind.CONSUMER);
+          consumer = newSpanBuilder(source, fromEndpoint(mr.endpoint)).kind(Kind.CONSUMER);
         } else {
           consumer = forEndpoint(source, mr.endpoint);
         }
@@ -234,30 +234,30 @@ public final class V2SpanConverter {
       }
 
       if (cs != null && sa != null && !closeEnough(sa, cs.endpoint)) {
-        forEndpoint(source, cs.endpoint).remoteEndpoint(toEndpoint(sa));
+        forEndpoint(source, cs.endpoint).remoteEndpoint(fromEndpoint(sa));
       }
 
       if (sr != null && ca != null && !closeEnough(ca, sr.endpoint)) {
-        forEndpoint(source, sr.endpoint).remoteEndpoint(toEndpoint(ca));
+        forEndpoint(source, sr.endpoint).remoteEndpoint(fromEndpoint(ca));
       }
 
       if (ms != null && ma != null && !closeEnough(ma, ms.endpoint)) {
-        forEndpoint(source, ms.endpoint).remoteEndpoint(toEndpoint(ma));
+        forEndpoint(source, ms.endpoint).remoteEndpoint(fromEndpoint(ma));
       }
 
       if (mr != null && ma != null && !closeEnough(ma, mr.endpoint)) {
-        forEndpoint(source, mr.endpoint).remoteEndpoint(toEndpoint(ma));
+        forEndpoint(source, mr.endpoint).remoteEndpoint(fromEndpoint(ma));
       }
 
       // special-case when we are missing core annotations, but we have both address annotations
       if ((cs == null && sr == null) && (ca != null && sa != null)) {
-        forEndpoint(source, ca).remoteEndpoint(toEndpoint(sa));
+        forEndpoint(source, ca).remoteEndpoint(fromEndpoint(sa));
       }
     }
 
     Span.Builder forEndpoint(zipkin.Span source, @Nullable zipkin.Endpoint e) {
       if (e == null) return spans.get(0); // allocate missing endpoint data to first span
-      Endpoint converted = toEndpoint(e);
+      Endpoint converted = fromEndpoint(e);
       for (int i = 0, length = spans.size(); i < length; i++) {
         Span.Builder next = spans.get(i);
         Endpoint nextLocalEndpoint = next.localEndpoint();
@@ -443,7 +443,7 @@ public final class V2SpanConverter {
     return result.build();
   }
 
-  public static Endpoint toEndpoint(zipkin.Endpoint input) {
+  public static Endpoint fromEndpoint(zipkin.Endpoint input) {
     Endpoint.Builder result = Endpoint.newBuilder()
       .serviceName(input.serviceName)
       .port(input.port != null ? input.port & 0xffff : null);
@@ -526,6 +526,14 @@ public final class V2SpanConverter {
         .child(link1.child)
         .callCount(link1.callCount)
         .errorCount(link1.errorCount).build());
+    }
+    return result;
+  }
+
+  public static List<Span> fromSpans(Iterable<zipkin.Span> spans) {
+    List<Span> result = new ArrayList<>();
+    for (zipkin.Span span1 : spans) {
+      result.addAll(fromSpan(span1));
     }
     return result;
   }

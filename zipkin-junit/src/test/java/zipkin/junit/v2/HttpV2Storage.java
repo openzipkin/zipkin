@@ -15,16 +15,17 @@ package zipkin.junit.v2;
 
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
-import zipkin.internal.V2StorageComponent;
+import zipkin.internal.v2.CheckResult;
 import zipkin.internal.v2.storage.SpanConsumer;
 import zipkin.internal.v2.storage.SpanStore;
+import zipkin.internal.v2.storage.StorageComponent;
 
 /**
  * Test storage component that forwards requests to an HTTP endpoint.
  *
  * <p>Note: this inherits the {@link Builder#strictTraceId(boolean)} from the backend.
  */
-final class HttpV2Storage extends V2StorageComponent {
+final class HttpV2Storage extends StorageComponent {
   private final OkHttpClient client;
   private final HttpUrl baseUrl;
   private final HttpV2SpanStore spanStore;
@@ -40,11 +41,11 @@ final class HttpV2Storage extends V2StorageComponent {
     this.spanConsumer = new HttpV2SpanConsumer(this.client, this.baseUrl);
   }
 
-  @Override public SpanStore v2SpanStore() {
+  @Override public SpanStore spanStore() {
     return spanStore;
   }
 
-  @Override public SpanConsumer v2SpanConsumer() {
+  @Override public SpanConsumer spanConsumer() {
     return spanConsumer;
   }
 

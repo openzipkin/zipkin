@@ -13,9 +13,11 @@
  */
 package zipkin.internal.v2.internal;
 
+import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.Map;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.Immutable;
 import zipkin.Constants;
 import zipkin.internal.v2.Annotation;
 import zipkin.internal.v2.Endpoint;
@@ -29,6 +31,7 @@ import static zipkin.internal.v2.internal.V2SpanWriter.endpointSizeInBytes;
 import static zipkin.internal.v2.internal.V2SpanWriter.writeAnnotation;
 import static zipkin.internal.v2.internal.V2SpanWriter.writeEndpoint;
 
+@Immutable
 public final class V1SpanWriter implements Buffer.Writer<Span> {
   @Override public int sizeInBytes(Span value) {
     Parsed parsed = parse(value);
@@ -185,15 +188,17 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
     return "Span";
   }
 
+  static final byte[] EMPTY_SERVICE = "{\"serviceName\":\"\"".getBytes(Charset.forName("UTF-8"));
+
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
     Buffer buffer = new Buffer(endpointSizeInBytes(localEndpoint));
     writeEndpoint(localEndpoint, buffer);
     byte[] endpointBytes = buffer.toByteArray();
     if (localEndpoint.serviceName() != null) return endpointBytes;
-    byte[] newSpanBytes = new byte[17 /* {"serviceName":"" */ + endpointBytes.length];
-    System.arraycopy("{\"serviceName\":\"\"".getBytes(), 0, newSpanBytes, 0, 17);
-    newSpanBytes[17] = ',';
+    byte[] newSpanBytes = new byte[EMPTY_SERVICE.length + endpointBytes.length];
+    System.arraycopy(EMPTY_SERVICE, 0, newSpanBytes, 0, EMPTY_SERVICE.length);
+    newSpanBytes[EMPTY_SERVICE.length] = ',';
     System.arraycopy(endpointBytes, 1, newSpanBytes, 18, endpointBytes.length - 1);
     return newSpanBytes;
   }

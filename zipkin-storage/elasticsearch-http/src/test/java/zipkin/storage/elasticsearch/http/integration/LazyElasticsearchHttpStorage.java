@@ -24,8 +24,8 @@ import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.HttpWaitStrategy;
-import zipkin.Component;
 import zipkin.internal.LazyCloseable;
+import zipkin.internal.v2.CheckResult;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
 
@@ -55,11 +55,11 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
     }
 
     ElasticsearchHttpStorage result = computeStorageBuilder().build();
-    Component.CheckResult check = result.check();
-    if (check.ok) {
+    CheckResult check = result.internalDelegate().check();
+    if (check.ok()) {
       return result;
     } else {
-      throw new AssumptionViolatedException(check.exception.getMessage(), check.exception);
+      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
     }
   }
 

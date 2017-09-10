@@ -425,8 +425,8 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
     if (len == 3) {
       return (c1 = word.charAt(from + 1)) >= '0' &&
         (c2 = word.charAt(from + 2)) >= '0' &&
-        (c0 <= '1' && c1 <= '9' && c2 <= '9' ||
-          c0 == '2' && c1 <= '5' && (c2 <= '5' || c1 < '5' && c2 <= '9'));
+        ((c0 <= '1' && c1 <= '9' && c2 <= '9') ||
+          (c0 == '2' && c1 <= '5' && (c2 <= '5' || (c1 < '5' && c2 <= '9'))));
     }
     return c0 <= '9' && (len == 1 || isValidNumericChar(word.charAt(from + 1)));
   }

@@ -41,7 +41,6 @@ import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static zipkin.TestObjects.TODAY;
-import static zipkin.internal.V2SpanConverter.toEndpoint;
 
 public class V2SpanStoreAdapterTest {
   @Rule public MockitoRule mocks = MockitoJUnit.rule();
@@ -61,14 +60,14 @@ public class V2SpanStoreAdapterTest {
   List<Span> skewedTrace2 = asList(
     builder.clone()
       .kind(Span.Kind.CLIENT)
-      .localEndpoint(toEndpoint(frontend))
+      .localEndpoint(V2SpanConverter.fromEndpoint(frontend))
       .timestamp((TODAY + 200) * 1000)
       .duration(120_000L)
       .build(),
     builder.clone()
       .kind(Span.Kind.SERVER)
       .shared(true)
-      .localEndpoint(toEndpoint(backend))
+      .localEndpoint(V2SpanConverter.fromEndpoint(backend))
       .timestamp((TODAY + 100) * 1000) // received before sent!
       .duration(60_000L)
       .build()

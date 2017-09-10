@@ -39,7 +39,7 @@ import zipkin.internal.v2.Span;
 import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
 import zipkin.internal.v2.codec.SpanBytesCodec;
 import zipkin.internal.v2.storage.QueryRequest;
-import zipkin.storage.StorageComponent;
+import zipkin.internal.v2.storage.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
@@ -51,7 +51,7 @@ public class ZipkinQueryApiV2 {
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
   final String storageType;
-  final V2StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
+  final StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
   final long defaultLookback;
   /** The Cache-Control max-age (seconds) for /api/v2/services and /api/v2/spans */
   final int namesMaxAge;
@@ -59,13 +59,13 @@ public class ZipkinQueryApiV2 {
   volatile int serviceCount; // used as a threshold to start returning cache-control headers
 
   ZipkinQueryApiV2(
-    StorageComponent storage,
+    zipkin.storage.StorageComponent storage,
     @Value("${zipkin.storage.type:mem}") String storageType,
     @Value("${zipkin.query.lookback:86400000}") long defaultLookback, // 1 day in millis
     @Value("${zipkin.query.names-max-age:300}") int namesMaxAge // 5 minutes
   ) {
     if (storage instanceof V2StorageComponent) {
-      this.storage = (V2StorageComponent) storage;
+      this.storage = ((V2StorageComponent) storage).internalDelegate();
     } else {
       this.storage = null;
     }
@@ -81,7 +81,7 @@ public class ZipkinQueryApiV2 {
   ) throws IOException {
     if (storage == null) throw new Version2StorageNotConfigured();
 
-    Call<List<DependencyLink>> call = storage.v2SpanStore()
+    Call<List<DependencyLink>> call = storage.spanStore()
       .getDependencies(endTs, lookback != null ? lookback : defaultLookback);
     return DependencyLinkBytesCodec.JSON.encodeList(call.execute());
   }
@@ -90,7 +90,7 @@ public class ZipkinQueryApiV2 {
   public ResponseEntity<List<String>> getServiceNames() throws IOException {
     if (storage == null) throw new Version2StorageNotConfigured();
 
-    List<String> serviceNames = storage.v2SpanStore().getServiceNames().execute();
+    List<String> serviceNames = storage.spanStore().getServiceNames().execute();
     serviceCount = serviceNames.size();
     return maybeCacheNames(serviceNames);
   }
@@ -101,7 +101,7 @@ public class ZipkinQueryApiV2 {
   ) throws IOException {
     if (storage == null) throw new Version2StorageNotConfigured();
 
-    return maybeCacheNames(storage.v2SpanStore().getSpanNames(serviceName).execute());
+    return maybeCacheNames(storage.spanStore().getSpanNames(serviceName).execute());
   }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
@@ -127,7 +127,7 @@ public class ZipkinQueryApiV2 {
       .lookback(lookback != null ? lookback : defaultLookback)
       .limit(limit).build();
 
-    List<List<Span>> traces = storage.v2SpanStore().getTraces(queryRequest).execute();
+    List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();
     return new String(SpanBytesCodec.JSON_V2.encodeNestedList(traces), UTF_8);
   }
 
@@ -135,7 +135,7 @@ public class ZipkinQueryApiV2 {
   public String getTrace(@PathVariable String traceIdHex, WebRequest request) throws IOException {
     if (storage == null) throw new Version2StorageNotConfigured();
 
-    List<Span> trace = storage.v2SpanStore().getTrace(traceIdHex).execute();
+    List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
     if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
     return new String(SpanBytesCodec.JSON_V2.encodeList(trace), UTF_8);
   }

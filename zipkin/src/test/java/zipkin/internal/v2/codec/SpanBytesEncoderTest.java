@@ -22,11 +22,11 @@ import org.junit.rules.ExpectedException;
 import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.TraceKeys;
-import zipkin.internal.V2SpanConverter;
 import zipkin.internal.v2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.internal.Util.UTF_8;
+import static zipkin.internal.V2SpanConverter.fromEndpoint;
 import static zipkin.internal.V2SpanConverter.toEndpoint;
 
 public class SpanBytesEncoderTest {
@@ -43,8 +43,8 @@ public class SpanBytesEncoderTest {
     .id("5b4185666d50f68b")
     .name("get")
     .kind(Span.Kind.CLIENT)
-    .localEndpoint(toEndpoint(frontend))
-    .remoteEndpoint(toEndpoint(backend))
+    .localEndpoint(fromEndpoint(frontend))
+    .remoteEndpoint(fromEndpoint(backend))
     .timestamp(1472470996199000L)
     .duration(207000L)
     .addAnnotation(1472470996238000L, Constants.WIRE_SEND)
@@ -181,8 +181,7 @@ public class SpanBytesEncoderTest {
       + "  }\n"
       + "}";
 
-    assertThat(
-      V2SpanConverter.toEndpoint(SpanBytesCodec.JSON_V2.decode(json.getBytes(UTF_8)).localEndpoint()))
+    assertThat(toEndpoint(SpanBytesCodec.JSON_V2.decode(json.getBytes(UTF_8)).localEndpoint()))
       .isEqualTo(Endpoint.create("", 127 << 24 | 1));
   }
 
@@ -324,7 +323,8 @@ public class SpanBytesEncoderTest {
 
   @Test public void spanRoundTrip_noRemoteServiceName() throws IOException {
     span = span.toBuilder()
-      .remoteEndpoint(toEndpoint(backend.toBuilder().serviceName("").build())).build();
+      .remoteEndpoint(fromEndpoint(backend.toBuilder().serviceName("").build()))
+      .build();
 
     assertThat(SpanBytesCodec.JSON_V2.decode(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);

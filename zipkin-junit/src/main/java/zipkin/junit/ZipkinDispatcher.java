@@ -34,6 +34,7 @@ import zipkin.internal.V2StorageComponent;
 import zipkin.internal.v2.codec.DependencyLinkBytesCodec;
 import zipkin.internal.v2.codec.SpanBytesCodec;
 import zipkin.internal.v2.internal.Platform;
+import zipkin.internal.v2.storage.StorageComponent;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
@@ -51,10 +52,11 @@ final class ZipkinDispatcher extends Dispatcher {
   private final CollectorMetrics metrics;
   private final MockWebServer server;
 
-  ZipkinDispatcher(V2StorageComponent storage, CollectorMetrics metrics, MockWebServer server) {
-    this.store = storage.spanStore();
-    this.store2 = storage.v2SpanStore();
-    this.consumer = Collector.builder(getClass()).storage(storage).metrics(metrics).build();
+  ZipkinDispatcher(StorageComponent storage, CollectorMetrics metrics, MockWebServer server) {
+    V2StorageComponent adapted = V2StorageComponent.create(storage);
+    this.store = adapted.spanStore();
+    this.store2 = storage.spanStore();
+    this.consumer = Collector.builder(getClass()).storage(adapted).metrics(metrics).build();
     this.metrics = metrics;
     this.server = server;
   }

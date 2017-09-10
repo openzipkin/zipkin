@@ -17,7 +17,9 @@ import java.io.IOException;
 import org.junit.Rule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
+import zipkin.internal.V2StorageComponent;
 import zipkin.junit.ZipkinRule;
+import zipkin.storage.StorageComponent;
 
 @RunWith(Enclosed.class)
 public class ITHttpV2Storage {
@@ -26,8 +28,8 @@ public class ITHttpV2Storage {
     @Rule public ZipkinRule server = new ZipkinRule();
     HttpV2Storage storage = new HttpV2Storage(server.httpUrl());
 
-    @Override protected HttpV2Storage storage() {
-      return storage;
+    @Override protected StorageComponent storage() {
+      return V2StorageComponent.create(storage);
     }
 
     @Override public void clear() {
@@ -39,8 +41,8 @@ public class ITHttpV2Storage {
     @Rule public ZipkinRule server = new ZipkinRule();
     HttpV2Storage storage = new HttpV2Storage(server.httpUrl());
 
-    @Override protected HttpV2Storage storage() {
-      return storage;
+    @Override protected StorageComponent storage() {
+      return V2StorageComponent.create(storage);
     }
 
     @Override public void clear() throws IOException {

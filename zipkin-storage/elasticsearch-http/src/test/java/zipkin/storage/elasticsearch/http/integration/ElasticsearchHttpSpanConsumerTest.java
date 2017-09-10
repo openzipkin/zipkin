@@ -25,12 +25,11 @@ import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.Span;
-import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Util;
+import zipkin.internal.V2SpanConverter;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.Constants.SERVER_RECV;
 import static zipkin.Constants.SERVER_SEND;
@@ -61,24 +60,24 @@ abstract class ElasticsearchHttpSpanConsumerTest {
     long twoDaysAgo = (TODAY - 2 * DAY);
 
     Span span = Span.builder().traceId(20L).id(20L).name("get")
-        .addAnnotation(Annotation.create(twoDaysAgo * 1000, SERVER_RECV, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(TODAY * 1000, SERVER_SEND, WEB_ENDPOINT))
-        .build();
+      .addAnnotation(Annotation.create(twoDaysAgo * 1000, SERVER_RECV, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(TODAY * 1000, SERVER_SEND, WEB_ENDPOINT))
+      .build();
 
     accept(span);
 
     // make sure the span went into an index corresponding to its first annotation timestamp
     assertThat(findSpans(twoDaysAgo, span.traceId))
-        .contains("\"hits\":{\"total\":1");
+      .contains("\"hits\":{\"total\":1");
   }
 
   String findSpans(long endTs, long traceId) throws IOException {
     return new OkHttpClient().newCall(new Request.Builder().url(
-        HttpUrl.parse(baseUrl()).newBuilder()
-            .addPathSegment(INDEX + ":span-" + dateFormat.format(new Date(endTs)))
-            .addPathSegment("_search")
-            .addQueryParameter("q", "traceId:" + Util.toLowerHex(traceId)).build())
-        .get().build()).execute().body().string();
+      HttpUrl.parse(baseUrl()).newBuilder()
+        .addPathSegment(INDEX + ":span-" + dateFormat.format(new Date(endTs)))
+        .addPathSegment("_search")
+        .addQueryParameter("q", "traceId:" + Util.toLowerHex(traceId)).build())
+      .get().build()).execute().body().string();
   }
 
   @Test
@@ -86,13 +85,13 @@ abstract class ElasticsearchHttpSpanConsumerTest {
     long twoDaysAgo = (TODAY - 2 * DAY);
 
     Span span = Span.builder().traceId(20L).id(20L).name("get")
-        .timestamp(twoDaysAgo * 1000).build();
+      .timestamp(twoDaysAgo * 1000).build();
 
     accept(span);
 
     // make sure the span went into an index corresponding to its timestamp, not collection time
     assertThat(findSpans(twoDaysAgo, span.traceId))
-        .contains("\"hits\":{\"total\":1");
+      .contains("\"hits\":{\"total\":1");
   }
 
   @Test
@@ -103,7 +102,7 @@ abstract class ElasticsearchHttpSpanConsumerTest {
 
     // make sure the span went into an index corresponding to collection time
     assertThat(findSpans(TODAY, span.traceId))
-        .contains("\"hits\":{\"total\":1");
+      .contains("\"hits\":{\"total\":1");
   }
 
   @Test
@@ -113,21 +112,19 @@ abstract class ElasticsearchHttpSpanConsumerTest {
     accept(span);
 
     Call searchRequest = new OkHttpClient().newCall(new Request.Builder().url(
-        HttpUrl.parse(baseUrl()).newBuilder()
-            .addPathSegment(INDEX + ":span-*")
-            .addPathSegment("_search")
-            .addQueryParameter("q", "timestamp_millis:" + TODAY).build())
-        .get().tag("search-terms").build());
+      HttpUrl.parse(baseUrl()).newBuilder()
+        .addPathSegment(INDEX + ":span-*")
+        .addPathSegment("_search")
+        .addQueryParameter("q", "timestamp_millis:" + TODAY).build())
+      .get().tag("search-terms").build());
 
     assertThat(searchRequest.execute().body().string())
-        .contains("\"hits\":{\"total\":1");
+      .contains("\"hits\":{\"total\":1");
   }
 
   abstract String baseUrl();
 
   void accept(Span span) throws Exception {
-    CallbackCaptor<Void> callback = new CallbackCaptor<>();
-    storage().asyncSpanConsumer().accept(asList(span), callback);
-    callback.get();
+    storage().internalDelegate().spanConsumer().accept(V2SpanConverter.fromSpan(span)).execute();
   }
 }
