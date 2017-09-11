@@ -28,7 +28,6 @@ import zipkin.BinaryAnnotation;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
-import zipkin.internal.V2SpanConverter;
 
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
@@ -100,7 +99,8 @@ final class LegacyJsonAdapters {
     }
   };
 
-  static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER = new JsonAdapter<BinaryAnnotation>() {
+  static final JsonAdapter<BinaryAnnotation> BINARY_ANNOTATION_ADAPTER =
+    new JsonAdapter<BinaryAnnotation>() {
       @Override @Nullable
       public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
         BinaryAnnotation.Builder result = BinaryAnnotation.builder();
@@ -176,11 +176,11 @@ final class LegacyJsonAdapters {
         return result.value(buffer.readByteArray()).build();
       }
 
-    @Override
-    public void toJson(JsonWriter writer, @Nullable BinaryAnnotation value) throws IOException {
-      throw new UnsupportedOperationException();
-    }
-  };
+      @Override
+      public void toJson(JsonWriter writer, @Nullable BinaryAnnotation value) throws IOException {
+        throw new UnsupportedOperationException();
+      }
+    };
 
   static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
     @Override @Nonnull
@@ -249,13 +249,34 @@ final class LegacyJsonAdapters {
   }.nullSafe();
 
   static final JsonAdapter<DependencyLink> LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
-    @Nonnull @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
-      zipkin2.DependencyLink result =
-        JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(reader);
-      return V2SpanConverter.toLink(result);
+    @Override @Nonnull
+    public DependencyLink fromJson(JsonReader reader) throws IOException {
+      DependencyLink.Builder result = DependencyLink.builder();
+      reader.beginObject();
+      while (reader.hasNext()) {
+        switch (reader.nextName()) {
+          case "parent":
+            result.parent(reader.nextString());
+            break;
+          case "child":
+            result.child(reader.nextString());
+            break;
+          case "callCount":
+            result.callCount(reader.nextLong());
+            break;
+          case "errorCount":
+            result.errorCount(reader.nextLong());
+            break;
+          default:
+            reader.skipValue();
+        }
+      }
+      reader.endObject();
+      return result.build();
     }
 
-    @Override public void toJson(JsonWriter writer, @Nullable DependencyLink value) {
+    @Override
+    public void toJson(JsonWriter writer, @Nullable DependencyLink value) throws IOException {
       throw new UnsupportedOperationException();
     }
   };

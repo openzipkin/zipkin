@@ -150,6 +150,12 @@
       </dependency>
 
       <dependency>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-storage-elasticsearch</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin</artifactId>
         <version>${project.version}</version>

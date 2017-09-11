@@ -25,12 +25,12 @@ import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.HttpWaitStrategy;
 import zipkin.internal.LazyCloseable;
-import zipkin2.CheckResult;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
+import zipkin2.CheckResult;
 
 class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorage>
-    implements TestRule {
+  implements TestRule {
   static final String INDEX = "test_zipkin_http";
 
   final String image;
@@ -43,8 +43,8 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
   @Override protected ElasticsearchHttpStorage compute() {
     try {
       container = new GenericContainer(image)
-          .withExposedPorts(9200)
-          .waitingFor(new HttpWaitStrategy().forPath("/"));
+        .withExposedPorts(9200)
+        .waitingFor(new HttpWaitStrategy().forPath("/"));
       container.start();
       if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
         container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image)));
@@ -55,7 +55,7 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
     }
 
     ElasticsearchHttpStorage result = computeStorageBuilder().build();
-    CheckResult check = result.internalDelegate().check();
+    CheckResult check = result.check();
     if (check.ok()) {
       return result;
     } else {
@@ -65,12 +65,12 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
 
   ElasticsearchHttpStorage.Builder computeStorageBuilder() {
     OkHttpClient ok = Boolean.valueOf(System.getenv("ES_DEBUG"))
-        ? new OkHttpClient.Builder()
-        .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-        .addNetworkInterceptor(chain -> chain.proceed( // logging interceptor doesn't gunzip
-            chain.request().newBuilder().removeHeader("Accept-Encoding").build()))
-        .build()
-        : new OkHttpClient();
+      ? new OkHttpClient.Builder()
+      .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+      .addNetworkInterceptor(chain -> chain.proceed( // logging interceptor doesn't gunzip
+        chain.request().newBuilder().removeHeader("Accept-Encoding").build()))
+      .build()
+      : new OkHttpClient();
     ElasticsearchHttpStorage.Builder builder = ElasticsearchHttpStorage.builder(ok).index(INDEX);
     InternalForTests.flushOnWrites(builder);
     return builder.hosts(Arrays.asList(baseUrl()));
@@ -79,8 +79,8 @@ class LazyElasticsearchHttpStorage extends LazyCloseable<ElasticsearchHttpStorag
   String baseUrl() {
     if (container != null && container.isRunning()) {
       return String.format("http://%s:%d",
-          container.getContainerIpAddress(),
-          container.getMappedPort(9200)
+        container.getContainerIpAddress(),
+        container.getMappedPort(9200)
       );
     } else {
       // Use localhost if we failed to start a container (i.e. Docker is not available)

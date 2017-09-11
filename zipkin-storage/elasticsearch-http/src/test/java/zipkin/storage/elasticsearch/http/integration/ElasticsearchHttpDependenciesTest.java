@@ -18,8 +18,10 @@ import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.MergeById;
+import zipkin.internal.V2StorageComponent;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemoryStorage;
+import zipkin.storage.StorageComponent;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
 
@@ -30,10 +32,14 @@ import static zipkin.internal.Util.midnightUTC;
 
 abstract class ElasticsearchHttpDependenciesTest extends DependenciesTest {
 
-  protected abstract ElasticsearchHttpStorage storage();
+  protected abstract ElasticsearchHttpStorage esStorage();
+
+  @Override protected final StorageComponent storage() {
+    return V2StorageComponent.create(esStorage());
+  }
 
   @Override public void clear() throws IOException {
-    InternalForTests.clear(storage());
+    InternalForTests.clear(esStorage());
   }
 
   /**
@@ -48,6 +54,6 @@ abstract class ElasticsearchHttpDependenciesTest extends DependenciesTest {
     // This gets or derives a timestamp from the spans
     long midnightUTC = midnightUTC(guessTimestamp(MergeById.apply(spans).get(0)) / 1000);
 
-    InternalForTests.writeDependencyLinks(storage(), links, midnightUTC);
+    InternalForTests.writeDependencyLinks(esStorage().delegate, links, midnightUTC);
   }
 }

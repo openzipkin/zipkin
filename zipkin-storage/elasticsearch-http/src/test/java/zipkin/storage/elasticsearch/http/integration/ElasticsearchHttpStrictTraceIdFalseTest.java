@@ -15,32 +15,33 @@ package zipkin.storage.elasticsearch.http.integration;
 
 import java.io.IOException;
 import org.junit.AssumptionViolatedException;
-import zipkin.Component;
+import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
+import zipkin.storage.StrictTraceIdFalseTest;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 import zipkin.storage.elasticsearch.http.InternalForTests;
+import zipkin2.CheckResult;
 
-abstract class ElasticsearchHttpStrictTraceIdFalseTest
-    extends zipkin.storage.StrictTraceIdFalseTest {
+abstract class ElasticsearchHttpStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
 
   final ElasticsearchHttpStorage storage;
 
   ElasticsearchHttpStrictTraceIdFalseTest() {
     storage = storageBuilder()
-        .strictTraceId(false)
-        .index("test_zipkin_http_mixed")
-        .build();
+      .strictTraceId(false)
+      .index("test_zipkin_http_mixed")
+      .build();
 
-    Component.CheckResult check = storage.check();
-    if (!check.ok) {
-      throw new AssumptionViolatedException(check.exception.getMessage(), check.exception);
+    CheckResult check = storage.check();
+    if (!check.ok()) {
+      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
     }
   }
 
   protected abstract ElasticsearchHttpStorage.Builder storageBuilder();
 
-  @Override protected StorageComponent storage() {
-    return storage;
+  @Override protected final StorageComponent storage() {
+    return V2StorageComponent.create(storage);
   }
 
   @Override public void clear() throws IOException {

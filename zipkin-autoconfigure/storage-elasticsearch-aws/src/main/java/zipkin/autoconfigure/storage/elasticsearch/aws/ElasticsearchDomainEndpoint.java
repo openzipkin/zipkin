@@ -26,7 +26,7 @@ import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
-import static zipkin.moshi.JsonReaders.enterPath;
+import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 final class ElasticsearchDomainEndpoint implements ElasticsearchHttpStorage.HostsSupplier {
   static final Logger log = Logger.getLogger(ElasticsearchDomainEndpoint.class.getName());

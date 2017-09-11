@@ -65,7 +65,7 @@ public class ZipkinQueryApiV2 {
     @Value("${zipkin.query.names-max-age:300}") int namesMaxAge // 5 minutes
   ) {
     if (storage instanceof V2StorageComponent) {
-      this.storage = ((V2StorageComponent) storage).internalDelegate();
+      this.storage = ((V2StorageComponent) storage).delegate();
     } else {
       this.storage = null;
     }
