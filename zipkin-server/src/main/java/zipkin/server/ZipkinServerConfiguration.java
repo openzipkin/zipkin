@@ -99,7 +99,7 @@ public class ZipkinServerConfiguration {
     }
 
     @Bean InMemoryStorage v2Storage(V2StorageComponent component) {
-      return (InMemoryStorage) component.internalDelegate();
+      return (InMemoryStorage) component.delegate();
     }
   }
 }

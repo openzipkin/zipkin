@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Lazy;
 
 /** Sets up the Elasticsearch tracing in Brave as an initialization. */
 @ConditionalOnBean(Brave.class)
-@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
+@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "zipkin2/elasticsearch")
 @Configuration
 public class TraceZipkinElasticsearchHttpStorageAutoConfiguration {
   // Lazy to unwind a circular dep: we are tracing the storage used by brave
@@ -45,7 +45,7 @@ public class TraceZipkinElasticsearchHttpStorageAutoConfiguration {
     // have to indirect to unwind a circular dependency
     Interceptor tracingInterceptor = new Interceptor() {
       Interceptor delegate = BraveTracingInterceptor.builder(brave)
-          .serverName("elasticsearch").build();
+          .serverName("zipkin2/elasticsearch").build();
 
       @Override public Response intercept(Chain chain) throws IOException {
         // Only join traces, don't start them. This prevents LocalCollector's thread from amplifying.

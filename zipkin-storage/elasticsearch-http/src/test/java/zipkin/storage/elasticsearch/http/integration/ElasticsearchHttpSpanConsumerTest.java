@@ -125,6 +125,6 @@ abstract class ElasticsearchHttpSpanConsumerTest {
   abstract String baseUrl();
 
   void accept(Span span) throws Exception {
-    storage().internalDelegate().spanConsumer().accept(V2SpanConverter.fromSpan(span)).execute();
+    storage().spanConsumer().accept(V2SpanConverter.fromSpan(span)).execute();
   }
 }

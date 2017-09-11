@@ -27,7 +27,7 @@ import okio.ByteString;
 
 import static java.lang.String.format;
 import static zipkin.internal.Util.checkNotNull;
-import static zipkin.moshi.JsonReaders.enterPath;
+import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 // http://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
 final class AWSSignatureVersion4 implements Interceptor {

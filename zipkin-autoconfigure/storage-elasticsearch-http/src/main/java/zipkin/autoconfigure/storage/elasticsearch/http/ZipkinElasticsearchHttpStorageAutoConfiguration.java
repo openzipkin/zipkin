@@ -28,6 +28,7 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
@@ -43,7 +44,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
   Interceptor loggingInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
     Logger logger = Logger.getLogger(ElasticsearchHttpStorage.class.getName());
     return new HttpLoggingInterceptor(message -> logger.info(message))
-        .setLevel(es.getHttpLogging());
+      .setLevel(es.getHttpLogging());
   }
 
   @Bean
@@ -55,34 +56,38 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
-  StorageComponent storage(ElasticsearchHttpStorage.Builder esHttpBuilder) {
-    return esHttpBuilder.build();
+  V2StorageComponent storage(ElasticsearchHttpStorage.Builder esHttpBuilder) {
+    return V2StorageComponent.create(esHttpBuilder.build());
+  }
+
+  @Bean ElasticsearchHttpStorage v2Storage(V2StorageComponent component) {
+    return (ElasticsearchHttpStorage) component.delegate();
   }
 
   @Bean
   ElasticsearchHttpStorage.Builder esHttpBuilder(
-      ZipkinElasticsearchHttpStorageProperties elasticsearch,
-      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
-      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-      @Value("${zipkin.query.lookback:86400000}") int namesLookback) {
+    ZipkinElasticsearchHttpStorageProperties elasticsearch,
+    @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
+    @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+    @Value("${zipkin.query.lookback:86400000}") int namesLookback) {
     return elasticsearch.toBuilder(client)
-        .strictTraceId(strictTraceId)
-        .namesLookback(namesLookback);
+      .strictTraceId(strictTraceId)
+      .namesLookback(namesLookback);
   }
 
   static final class HttpLoggingSet implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
       return !isEmpty(condition.getEnvironment()
-          .getProperty("zipkin.storage.elasticsearch.http-logging"));
+        .getProperty("zipkin.storage.elasticsearch.http-logging"));
     }
   }
 
   static final class BasicAuthRequired implements Condition {
     @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
       String userName = condition.getEnvironment()
-          .getProperty("zipkin.storage.elasticsearch.username");
+        .getProperty("zipkin.storage.elasticsearch.username");
       String password = condition.getEnvironment()
-          .getProperty("zipkin.storage.elasticsearch.password");
+        .getProperty("zipkin.storage.elasticsearch.password");
       return !isEmpty(userName) && !isEmpty(password);
     }
   }

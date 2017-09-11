@@ -13,6 +13,7 @@
  */
 package zipkin.storage.elasticsearch.http;
 
+import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Iterator;
@@ -21,6 +22,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import javax.annotation.Nullable;
+import okhttp3.Response;
 import okio.BufferedSource;
 import zipkin.DependencyLink;
 import zipkin.Span;
@@ -31,20 +33,28 @@ import zipkin.internal.Util;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
-import zipkin.storage.elasticsearch.http.internal.client.Aggregation;
-import zipkin.storage.elasticsearch.http.internal.client.HttpCall;
-import zipkin.storage.elasticsearch.http.internal.client.HttpCall.BodyConverter;
-import zipkin.storage.elasticsearch.http.internal.client.SearchCallFactory;
-import zipkin.storage.elasticsearch.http.internal.client.SearchRequest;
-import zipkin.storage.elasticsearch.http.internal.client.SearchResultConverter;
+import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.internal.IndexNameFormatter;
+import zipkin2.elasticsearch.internal.client.Aggregation;
+import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
+import zipkin2.elasticsearch.internal.client.SearchCallFactory;
+import zipkin2.elasticsearch.internal.client.SearchRequest;
+import zipkin2.elasticsearch.internal.client.SearchResultConverter;
 
 import static java.util.Arrays.asList;
-import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.EARLIEST_MS;
+import static zipkin.internal.Util.propagateIfFatal;
+import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
+import static zipkin2.elasticsearch.internal.client.HttpCall.parseResponse;
 
 final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   static final String SPAN = "span";
   static final String DEPENDENCY_LINK = "dependencylink";
   static final String SERVICE_SPAN = "servicespan";
+  /** To not produce unnecessarily long queries, we don't look back further than first ES support */
+  static final long EARLIEST_MS = 1456790400000L; // March 2016
+  static final HttpCall.BodyConverter<List<String>>
+    KEYS = b -> collectValuesNamed(JsonReader.of(b), "key");
   static final BodyConverter<List<Span>> SPANS =
     SearchResultConverter.create(LegacyJsonAdapters.SPAN_ADAPTER);
   static final BodyConverter<List<Span>> NULLABLE_SPANS =
@@ -63,7 +73,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   final boolean strictTraceId;
   final int namesLookback;
 
-  LegacyElasticsearchHttpSpanStore(ElasticsearchHttpStorage es) {
+  LegacyElasticsearchHttpSpanStore(ElasticsearchStorage es) {
     this.search = new SearchCallFactory(es.http());
     this.allIndices = new String[] {es.indexNameFormatter().formatType(null)};
     this.indexNameFormatter = es.indexNameFormatter();
@@ -137,7 +147,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     SearchRequest esRequest = SearchRequest.create(indices, SPAN)
       .filters(filters).addAggregation(traceIdTimestamp);
 
-    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
+    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, KEYS);
 
     // When we receive span results, we need to group them by trace ID
     Callback<List<Span>> successCallback = new Callback<List<Span>>() {
@@ -160,14 +170,14 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     };
 
     // Fire off the query to get spans once we have trace ids
-    traceIdsCall.submit(new Callback<List<String>>() {
+    submit(traceIdsCall, new Callback<List<String>>() {
       @Override public void onSuccess(@Nullable List<String> traceIds) {
         if (traceIds == null || traceIds.isEmpty()) {
           callback.onSuccess(Collections.emptyList());
           return;
         }
         SearchRequest request = SearchRequest.create(indices, SPAN).terms("traceId", traceIds);
-        search.newCall(request, SPANS).submit(successCallback);
+        submit(search.newCall(request, SPANS), successCallback);
       }
 
       @Override public void onError(Throwable t) {
@@ -204,7 +214,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     SearchRequest request = SearchRequest.create(asList(allIndices), SPAN)
       .term("traceId", traceIdHex);
 
-    search.newCall(request, NULLABLE_SPANS).submit(callback);
+    submit(search.newCall(request, NULLABLE_SPANS), callback);
   }
 
   @Override public void getServiceNames(Callback<List<String>> callback) {
@@ -220,7 +230,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
     SearchRequest request = SearchRequest.create(indices, SERVICE_SPAN)
       .addAggregation(Aggregation.terms("serviceName", Integer.MAX_VALUE));
 
-    search.newCall(request, BodyConverters.KEYS).submit(new Callback<List<String>>() {
+    submit(search.newCall(request, KEYS), new Callback<List<String>>() {
       @Override public void onSuccess(@Nullable List<String> value) {
         if (!value.isEmpty()) callback.onSuccess(value);
 
@@ -231,7 +241,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
         SearchRequest request = SearchRequest.create(indices, SPAN).filters(filters)
           .addAggregation(Aggregation.nestedTerms("annotations.endpoint.serviceName"))
           .addAggregation(Aggregation.nestedTerms("binaryAnnotations.endpoint.serviceName"));
-        search.newCall(request, BodyConverters.KEYS).submit(callback);
+        submit(search.newCall(request, KEYS), callback);
       }
 
       @Override public void onError(Throwable t) {
@@ -259,7 +269,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
       .term("serviceName", serviceName.toLowerCase(Locale.ROOT))
       .addAggregation(Aggregation.terms("spanName", Integer.MAX_VALUE));
 
-    search.newCall(request, BodyConverters.KEYS).submit(new Callback<List<String>>() {
+    submit(search.newCall(request, KEYS), new Callback<List<String>>() {
       @Override public void onSuccess(@Nullable List<String> value) {
         if (!value.isEmpty()) callback.onSuccess(value);
 
@@ -273,7 +283,7 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
         ), serviceName.toLowerCase(Locale.ROOT));
         SearchRequest request = SearchRequest.create(indices, SPAN).filters(filters)
           .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
-        search.newCall(request, BodyConverters.KEYS).submit(callback);
+        submit(search.newCall(request, KEYS), callback);
       }
 
       @Override public void onError(Throwable t) {
@@ -300,6 +310,34 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   void getDependencies(List<String> indices, Callback<List<DependencyLink>> callback) {
     SearchRequest request = SearchRequest.create(indices, DEPENDENCY_LINK);
 
-    search.newCall(request, DEPENDENCY_LINKS).submit(callback);
+    submit(search.newCall(request, DEPENDENCY_LINKS), callback);
+  }
+
+  static <V> void submit(HttpCall<V> call, Callback<V> delegate) {
+    call.call.enqueue(new CallbackAdapter<V>(call.bodyConverter, delegate));
+  }
+
+  static class CallbackAdapter<V> implements okhttp3.Callback {
+    final HttpCall.BodyConverter<V> bodyConverter;
+    final Callback<V> delegate;
+
+    CallbackAdapter(HttpCall.BodyConverter<V> bodyConverter, Callback<V> delegate) {
+      this.bodyConverter = bodyConverter;
+      this.delegate = delegate;
+    }
+
+    @Override public void onFailure(okhttp3.Call call, IOException e) {
+      delegate.onError(e);
+    }
+
+    /** Note: this runs on the {@link okhttp3.OkHttpClient#dispatcher() dispatcher} thread! */
+    @Override public void onResponse(okhttp3.Call call, Response response) {
+      try {
+        delegate.onSuccess(parseResponse(response, bodyConverter));
+      } catch (Throwable e) {
+        propagateIfFatal(e);
+        delegate.onError(e);
+      }
+    }
   }
 }

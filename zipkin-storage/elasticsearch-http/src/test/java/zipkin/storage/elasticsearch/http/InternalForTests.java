@@ -18,19 +18,20 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-
-import static zipkin.storage.elasticsearch.http.ElasticsearchHttpSpanStore.DEPENDENCY;
+import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 
 /** Package accessor for integration tests */
 public class InternalForTests {
-  public static void writeDependencyLinks(ElasticsearchHttpStorage es, List<DependencyLink> links,
+  public static void writeDependencyLinks(ElasticsearchStorage es, List<DependencyLink> links,
     long midnightUTC) {
     String index =
-      es.indexNameFormatter().formatTypeAndTimestamp(DEPENDENCY, midnightUTC);
+      es.indexNameFormatter().formatTypeAndTimestamp("dependency", midnightUTC);
     HttpBulkIndexer indexer = new HttpBulkIndexer("index-links", es);
     for (DependencyLink link : links) {
       byte[] document = Codec.JSON.writeDependencyLink(link);
-      indexer.add(index, DEPENDENCY, document, link.parent + "|" + link.child); // Unique constraint
+      indexer.add(index, "dependency", document,
+        link.parent + "|" + link.child); // Unique constraint
     }
     try {
       indexer.newCall().execute();

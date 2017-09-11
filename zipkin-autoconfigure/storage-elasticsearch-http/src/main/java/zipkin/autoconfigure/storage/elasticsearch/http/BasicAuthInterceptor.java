@@ -24,7 +24,7 @@ import okhttp3.ResponseBody;
 
 import java.io.IOException;
 
-import static zipkin.moshi.JsonReaders.enterPath;
+import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /*
 adds basic auth username and password to every request per

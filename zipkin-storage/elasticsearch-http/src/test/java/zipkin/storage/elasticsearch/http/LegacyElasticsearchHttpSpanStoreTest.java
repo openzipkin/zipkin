@@ -23,6 +23,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import zipkin.internal.CallbackCaptor;
 import zipkin.internal.Util;
+import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,9 +33,9 @@ import static zipkin.storage.elasticsearch.http.TestResponses.SPAN_NAMES;
 public class LegacyElasticsearchHttpSpanStoreTest {
   @Rule public MockWebServer es = new MockWebServer();
 
-  ElasticsearchHttpStorage storage = ElasticsearchHttpStorage.builder()
+  ElasticsearchStorage storage = ElasticsearchHttpStorage.builder()
     .hosts(asList(es.url("").toString()))
-    .build();
+    .build().delegate;
   LegacyElasticsearchHttpSpanStore spanStore = new LegacyElasticsearchHttpSpanStore(storage);
 
   @After public void close() throws IOException {
