@@ -24,45 +24,48 @@ Once you've started, browse to http://your_host:9411 to find traces!
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
 ## Core Library
-The [core library](zipkin/src/main/java/zipkin) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
+The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
 
-This includes built-in codec for both thrift and json structs. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
+This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
 
 Ex.
 ```java
-// your instrumentation makes a span
-archiver = BinaryAnnotation.create(LOCAL_COMPONENT, "archiver", Endpoint.create("service", 127 << 24 | 1));
-span = Span.builder()
-    .traceId(1L)
+// All data are recorded against the same endpoint, associated with your service graph
+localEndpoint = Endpoint.newBuilder().serviceName("tweetie").ip("192.168.0.1").build()
+span = Span.newBuilder()
+    .traceId("d3d200866a77cc59")
+    .id("d3d200866a77cc59")
     .name("targz")
-    .id(1L)
+    .localEndpoint()
     .timestamp(epochMicros())
     .duration(durationInMicros)
-    .addBinaryAnnotation(archiver);
+    .putTag("compression.level", "9");
 
-// Now, you can encode it as json or thrift
-bytes = Codec.JSON.writeSpan(span);
-bytes = Codec.THRIFT.writeSpan(span);
+// Now, you can encode it as json
+bytes = SpanBytesEncoder.JSON_V2.encode(span);
 ```
 
 ## Storage Component
-Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin/storage/StorageComponent.java), used to store and query spans and dependency links. This is used by the server and those making custom servers, collectors, or span reporters. For this reason, storage components have minimal dependencies; many run on Java 7.
+Zipkin includes a [StorageComponent](zipkin2/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and dependency links. This is used by the server and those making custom servers, collectors, or span reporters. For this reason, storage components have minimal dependencies; many run on Java 7.
 
 Ex.
 ```java
 // this won't create network connections
-storage = CassandraStorage.builder()
-                          .contactPoints("my-cassandra-host").build();
+storage = ElasticsearchStorage.newBuilder()
+                              .hosts(asList("http:/myelastic:9200")).build();
 
-// but this will
-trace = storage.spanStore().getTrace(traceId);
+// prepare a call
+traceCall = storage.spanStore().getTrace("d3d200866a77cc59");
+
+// execute it synchronously or asynchronously
+trace = traceCall.execute();
 
 // clean up any sessions, etc
 storage.close();
 ```
 
 ### In-Memory
-The [InMemoryStorage](zipkin/src/main/java/zipkin/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It is not persistent, nor viable for realistic work loads. Its purpose is for testing, for example starting a server on your laptop without any database needed.
+The [InMemoryStorage](zipkin2/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It is not persistent, nor viable for realistic work loads. Its purpose is for testing, for example starting a server on your laptop without any database needed.
 
 ### MySQL
 The [MySQLStorage](zipkin-storage/mysql) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. For example, it deconstructs spans into columns, so you can perform ad-hoc queries using SQL. However, this component has [known performance issues](https://github.com/openzipkin/zipkin/issues/1233): queries will eventually take seconds to return if you put a lot of data into it.
