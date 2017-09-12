@@ -317,7 +317,7 @@ public class ZipkinServerIntegrationTest {
 
     // Redirect header should be the proxy, not the backed IP/port
     assertThat(response.header("Location"))
-      .isEqualTo("https://zipkin.com:444/zipkin/");
+      .isEqualTo("./zipkin/");
   }
 
   ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {
