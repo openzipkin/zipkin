@@ -36,7 +36,7 @@ span = Span.newBuilder()
     .traceId("d3d200866a77cc59")
     .id("d3d200866a77cc59")
     .name("targz")
-    .localEndpoint()
+    .localEndpoint(localEndpoint)
     .timestamp(epochMicros())
     .duration(durationInMicros)
     .putTag("compression.level", "9");
@@ -44,6 +44,8 @@ span = Span.newBuilder()
 // Now, you can encode it as json
 bytes = SpanBytesEncoder.JSON_V2.encode(span);
 ```
+
+Note: The above is just an example, most likely you'll want to use an existing tracing library like [Brave](https://github.com/openzipkin/brave)
 
 ## Storage Component
 Zipkin includes a [StorageComponent](zipkin2/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and dependency links. This is used by the server and those making custom servers, collectors, or span reporters. For this reason, storage components have minimal dependencies; many run on Java 7.
