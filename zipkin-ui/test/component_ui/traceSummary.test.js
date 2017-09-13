@@ -175,6 +175,23 @@ describe('get service name of a span', () => {
     };
     getServiceName(testSpan).should.equal('localservice');
   });
+
+  it('should get service name from any binary annotation', () => {
+    const testSpan = {
+      binaryAnnotations: [{
+        key: 'user',
+        value: 'grpc-client-example',
+        endpoint: {
+          serviceName: 'echecklist-localdev'
+        }
+      }]
+    };
+    getServiceName(testSpan).should.equal('echecklist-localdev');
+  });
+
+  it('should handle no annotations', () => {
+    expect(getServiceName({})).to.equal(null);
+  });
 });
 
 describe('getTraceErrorType', () => {

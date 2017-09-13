@@ -97,13 +97,15 @@ export function getServiceName(span) {
     return brokerAddressServiceName;
   }
 
-  // Finally is the label of the local component's endpoint
+  // Then is the label of the local component's endpoint
   const localServiceName = findServiceNameForBinaryAnnotation(span, Constants.LOCAL_COMPONENT);
   if (localServiceName) {
     return localServiceName;
   }
 
-  return null;
+  // Finally, anything so that the service name isn't blank!
+  const allServiceNames = getServiceNames(span);
+  return allServiceNames.length === 0 ? null : allServiceNames[0];
 }
 
 function getSpanTimestamps(spans) {
