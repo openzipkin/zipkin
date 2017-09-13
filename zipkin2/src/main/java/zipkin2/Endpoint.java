@@ -177,8 +177,8 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
       }
       Integer port = port();
       if (port != null) {
-        if (port < 0 || port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
-        if (port == 0) port(null);
+        if (port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
+        if (port <= 0) port(null);
       }
       return autoBuild();
     }

@@ -30,6 +30,12 @@ public class EndpointTest {
       .isNull();
   }
 
+  /** Many getPort operations return -1 by default. Leniently coerse to null. */
+  @Test public void newBuilderWithPort_NegativeCoercesToNull() {
+    assertThat(Endpoint.newBuilder().port(-1).build().port())
+      .isNull();
+  }
+
   @Test public void newBuilderWithPort_0CoercesToNull() {
     assertThat(Endpoint.newBuilder().port(0).build().port())
       .isNull();
@@ -173,11 +179,11 @@ public class EndpointTest {
   }
 
   /** The integer arg of port should be a whole number */
-  @Test public void newBuilderWithPort_negativeIsInvalid() {
+  @Test public void newBuilderWithPort_tooLargeIsInvalid() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("invalid port -1");
+    thrown.expectMessage("invalid port 65536");
 
-    assertThat(Endpoint.newBuilder().port(-1).build().port()).isNull();
+    assertThat(Endpoint.newBuilder().port(65536).build().port()).isNull();
   }
 
   /** The integer arg of port should fit in a 16bit unsigned value */
