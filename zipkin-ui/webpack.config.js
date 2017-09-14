@@ -34,7 +34,7 @@ var webpackConfig = {
         path: __dirname + '/target/classes/zipkin-ui/',
         filename: 'app-[hash].min.js'
         // 'publicPath' must not be set here in order to support Zipkin running in any context root.
-        // '__webpack_public_path__' has to be set dynamically as per
+        // '__webpack_public_path__' has to be set dynamically (see './publicPath.js' module file) as per
         // https://webpack.github.io/docs/configuration.html#output-publicpath
     },
     devtool: 'source-map',

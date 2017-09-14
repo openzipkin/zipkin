@@ -1,3 +1,4 @@
+import {contextRoot} from './publicPath';
 import $ from 'jquery';
 
 const defaults = {
@@ -11,8 +12,7 @@ const defaults = {
 };
 
 export default function loadConfig() {
-  // eslint-disable-next-line camelcase, no-undef
-  return $.ajax(`${__webpack_public_path__}config.json`, {
+  return $.ajax(`${contextRoot}config.json`, {
     type: 'GET',
     dataType: 'json'
   }).then(data => function config(key) {

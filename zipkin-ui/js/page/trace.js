@@ -10,6 +10,7 @@ import TraceUI from '../component_ui/trace';
 import FilterLabelUI from '../component_ui/filterLabel';
 import ZoomOut from '../component_ui/zoomOutSpans';
 import {traceTemplate} from '../templates';
+import {contextRoot} from '../publicPath';
 
 const TracePageComponent = component(function TracePage() {
   this.after('initialize', function() {
@@ -21,7 +22,7 @@ const TracePageComponent = component(function TracePage() {
     });
     this.on(document, 'tracePageModelView', function(ev, data) {
       this.$node.html(traceTemplate({
-        contextRoot: __webpack_public_path__, // eslint-disable-line no-undef
+        contextRoot,
         ...data.modelview
       }));
 
@@ -41,8 +42,7 @@ const TracePageComponent = component(function TracePage() {
         this.trigger('uiRequestJsonPanel', {
           title: `Trace ${this.attr.traceId}`,
           obj: data.trace,
-          // eslint-disable-next-line camelcase, no-undef
-          link: `${__webpack_public_path__}api/v1/trace/${this.attr.traceId}`
+          link: `${contextRoot}api/v1/trace/${this.attr.traceId}`
         });
       });
 

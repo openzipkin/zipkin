@@ -1,5 +1,6 @@
 import {component} from 'flightjs';
 import {getError} from '../../js/component_ui/error';
+import {contextRoot} from '../publicPath';
 import $ from 'jquery';
 
 export default component(function spanNames() {
@@ -8,8 +9,7 @@ export default component(function spanNames() {
       this.trigger('dataSpanNames', {spans: []});
       return;
     }
-    // eslint-disable-next-line camelcase, no-undef
-    $.ajax(`${__webpack_public_path__}api/v1/spans?serviceName=${serviceName}`, {
+    $.ajax(`${contextRoot}api/v1/spans?serviceName=${serviceName}`, {
       type: 'GET',
       dataType: 'json'
     }).done(spans => {

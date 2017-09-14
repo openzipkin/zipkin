@@ -1,14 +1,14 @@
 import {component} from 'flightjs';
 import moment from 'moment';
 import $ from 'jquery';
+import {contextRoot} from '../publicPath';
 
 export default component(function dependency() {
   let services = {};
   let dependencies = {};
 
   this.getDependency = function(endTs, lookback) {
-    // eslint-disable-next-line camelcase, no-undef
-    let url = `${__webpack_public_path__}api/v1/dependencies?endTs=${endTs}`;
+    let url = `${contextRoot}api/v1/dependencies?endTs=${endTs}`;
     if (lookback) {
       url += `&lookback=${lookback}`;
     }

@@ -1,7 +1,8 @@
-// read the public path from the <base> tag where it has to be set anyway because of
-// html-webpack-plugin limitations: https://github.com/jantimon/html-webpack-plugin/issues/119
-// otherwise it could be: window.location.pathname.replace(/(.*)\/zipkin\/.*/, '$1/zipkin/')
-__webpack_public_path__ = $('base').attr('href'); // eslint-disable-line camelcase, no-undef
+// The import of 'publicPath' module has to be the first statement in this entry point file
+// so that '__webpack_public_path__' (see https://webpack.github.io/docs/configuration.html#output-publicpath)
+// is set soon enough.
+// In the same time, 'contextRoot' is made available as the context root path reference.
+import {contextRoot} from './publicPath';
 
 import {compose, registry, advice, debug} from 'flightjs';
 import crossroads from 'crossroads';
@@ -18,10 +19,9 @@ loadConfig().then(config => {
 
   CommonUI.attachTo(window.document.body, {config});
 
-  const root = __webpack_public_path__; // eslint-disable-line camelcase, no-undef
-  crossroads.addRoute(root, () => initializeDefault(config));
-  crossroads.addRoute(`${root}traces/{id}`, traceId => initializeTrace(traceId, config));
-  crossroads.addRoute(`${root}dependency`, () => initializeDependency(config));
+  crossroads.addRoute(contextRoot, () => initializeDefault(config));
+  crossroads.addRoute(`${contextRoot}traces/{id}`, traceId => initializeTrace(traceId, config));
+  crossroads.addRoute(`${contextRoot}dependency`, () => initializeDependency(config));
   crossroads.parse(window.location.pathname);
 }, e => {
   // TODO: better error message, but this is better than a blank screen...

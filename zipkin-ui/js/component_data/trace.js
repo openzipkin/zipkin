@@ -2,6 +2,7 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import {getError} from '../../js/component_ui/error';
 import traceToMustache from '../../js/component_ui/traceToMustache';
+import {contextRoot} from '../publicPath';
 
 export function toContextualLogsUrl(logsUrl, traceId) {
   if (logsUrl) {
@@ -14,8 +15,7 @@ export default component(function TraceData() {
   this.after('initialize', function() {
     const traceId = this.attr.traceId;
     const logsUrl = toContextualLogsUrl(this.attr.logsUrl, traceId);
-    // eslint-disable-next-line camelcase, no-undef
-    $.ajax(`${__webpack_public_path__}api/v1/trace/${traceId}`, {
+    $.ajax(`${contextRoot}api/v1/trace/${traceId}`, {
       type: 'GET',
       dataType: 'json'
     }).done(trace => {

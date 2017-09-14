@@ -1,11 +1,11 @@
 import {component} from 'flightjs';
+import {contextRoot} from '../publicPath';
 
 export default component(function goToTrace() {
   this.navigateToTrace = function(evt) {
     evt.preventDefault();
     const traceId = document.getElementById('traceIdQuery').value;
-    // eslint-disable-next-line camelcase, no-undef
-    window.location.href = `${__webpack_public_path__}traces/${traceId}`;
+    window.location.href = `${contextRoot}traces/${traceId}`;
   };
 
   this.after('initialize', function() {

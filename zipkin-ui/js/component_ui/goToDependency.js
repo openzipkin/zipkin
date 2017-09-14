@@ -1,3 +1,4 @@
+import {contextRoot} from '../publicPath';
 import {component} from 'flightjs';
 
 export default component(function goToDependency() {
@@ -5,8 +6,7 @@ export default component(function goToDependency() {
     evt.preventDefault();
     const endTs = document.getElementById('endTs').value;
     const startTs = document.getElementById('startTs').value;
-    // eslint-disable-next-line camelcase, no-undef
-    window.location.href = `${__webpack_public_path__}dependency?endTs=${endTs}&startTs=${startTs}`;
+    window.location.href = `${contextRoot}dependency?endTs=${endTs}&startTs=${startTs}`;
   };
 
   this.after('initialize', function() {
