@@ -47,7 +47,7 @@ By default, zipkin writes log messages to the console at INFO level and above. Y
 For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
 ```bash
-$ java -jar zipkin.jar --logging.level.zipkin=DEBUG
+$ java -jar zipkin.jar --logging.level.zipkin=DEBUG --logging.level.zipkin2=DEBUG
 ```
 
 Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.

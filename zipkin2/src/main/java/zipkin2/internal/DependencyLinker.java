@@ -83,26 +83,33 @@ public final class DependencyLinker {
    */
   public DependencyLinker putTrace(Iterator<Span> spans) {
     if (!spans.hasNext()) return this;
-
     Span first = spans.next();
+    if (logger.isLoggable(FINE)) logger.fine("linking trace " + first.traceId());
+
+    // Build a tree based on spanId and parentId values
     Node.TreeBuilder<Span> builder = new Node.TreeBuilder<>(logger, MERGE_RPC, first.traceId());
     builder.addNode(first.parentId(), first.id(), first);
     while (spans.hasNext()) {
       Span next = spans.next();
       builder.addNode(next.parentId(), next.id(), next);
     }
+
     Node<Span> tree = builder.build();
 
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
     for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext(); ) {
       Node<Span> current = i.next();
-      Span currentSpan = current.value();
-      if (logger.isLoggable(FINE)) {
-        logger.fine("processing " + currentSpan);
-      }
       if (current.isSyntheticRootForPartialTree()) {
         logger.fine("skipping synthetic node for broken span tree");
         continue;
+      }
+      Span currentSpan = current.value();
+      if (currentSpan == null) {
+        logger.fine("skipping null span in " + first.traceId());
+        continue;
+      }
+      if (logger.isLoggable(FINE)) {
+        logger.fine("processing " + currentSpan);
       }
 
       Kind kind = currentSpan.kind();

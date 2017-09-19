@@ -63,6 +63,15 @@ public class DependencyLinkerTest {
     );
   }
 
+  /** In case of a late error, we should know which trace ID is being processed */
+  @Test
+  public void logsTraceId() {
+    new DependencyLinker(logger).putTrace(TRACE.iterator());
+
+    assertThat(messages)
+      .contains("linking trace 000000000000000a");
+  }
+
   @Test
   public void dropsSelfReferencingSpans() {
     List<Span> trace = TRACE.stream()
