@@ -3,7 +3,6 @@ import {errToStr} from '../../js/component_ui/error';
 import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
-import {contextRoot} from '../publicPath';
 
 export function convertToApiQuery(windowLocationSearch) {
   const query = queryString.parse(windowLocationSearch);
@@ -22,7 +21,7 @@ export default component(function DefaultData() {
     const query = convertToApiQuery(window.location.search);
     const serviceName = query.serviceName;
     if (serviceName) {
-      const apiURL = `${contextRoot}api/v1/traces?${queryString.stringify(query)}`;
+      const apiURL = `api/v1/traces?${queryString.stringify(query)}`;
       $.ajax(apiURL, {
         type: 'GET',
         dataType: 'json'

@@ -1,4 +1,3 @@
-import {contextRoot} from './publicPath';
 import $ from 'jquery';
 
 const defaults = {
@@ -12,7 +11,7 @@ const defaults = {
 };
 
 export default function loadConfig() {
-  return $.ajax(`${contextRoot}config.json`, {
+  return $.ajax('config.json', {
     type: 'GET',
     dataType: 'json'
   }).then(data => function config(key) {
