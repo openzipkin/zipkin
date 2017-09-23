@@ -13,18 +13,17 @@
  */
 package zipkin.collector.rabbitmq;
 
+import com.rabbitmq.client.AMQP;
 import com.rabbitmq.client.Address;
+import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
+import com.rabbitmq.client.DefaultConsumer;
+import com.rabbitmq.client.Envelope;
 import java.io.IOException;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
@@ -32,13 +31,14 @@ import zipkin.collector.CollectorSampler;
 import zipkin.internal.LazyCloseable;
 import zipkin.storage.StorageComponent;
 
+import static zipkin.SpanDecoder.DETECTING_DECODER;
 import static zipkin.internal.Util.checkNotNull;
+import static zipkin.storage.Callback.NOOP;
 
 /**
  * This collector consumes encoded binary messages from a RabbitMQ queue.
  */
 public final class RabbitMQCollector implements CollectorComponent {
-  private static final Logger LOG = LoggerFactory.getLogger(RabbitMQCollector.class);
 
   public static Builder builder() {
     return new Builder();
@@ -49,8 +49,8 @@ public final class RabbitMQCollector implements CollectorComponent {
     Collector.Builder delegate = Collector.builder(RabbitMQCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String queue = "zipkin";
-    ConnectionFactory connectionFactory;
-    List<String> addresses;
+    ConnectionFactory connectionFactory = new ConnectionFactory();
+    Address[] addresses;
     int concurrency = 1;
 
     @Override public Builder storage(StorageComponent storage) {
@@ -70,7 +70,7 @@ public final class RabbitMQCollector implements CollectorComponent {
     }
 
     public Builder addresses(List<String> addresses) {
-      this.addresses = addresses;
+      this.addresses = convertAddresses(addresses);
       return this;
     }
 
@@ -97,22 +97,24 @@ public final class RabbitMQCollector implements CollectorComponent {
     }
   }
 
-  private final LazyRabbitWorkers rabbitWorkers;
+  final String queue;
+  final LazyInit connection;
 
   RabbitMQCollector(Builder builder) {
-    this.rabbitWorkers = new LazyRabbitWorkers(builder);
+    this.queue = builder.queue;
+    this.connection = new LazyInit(builder);
   }
 
   @Override
   public RabbitMQCollector start() {
-    this.rabbitWorkers.get();
+    connection.get();
     return this;
   }
 
   @Override
   public CheckResult check() {
     try {
-      CheckResult failure = this.rabbitWorkers.failure.get();
+      CheckResult failure = connection.failure.get();
       if (failure != null) return failure;
       return CheckResult.OK;
     } catch (RuntimeException e) {
@@ -120,80 +122,66 @@ public final class RabbitMQCollector implements CollectorComponent {
     }
   }
 
-  @Override
-  public void close() throws IOException {
-    this.rabbitWorkers.close();
+  @Override public void close() throws IOException {
+    connection.close();
   }
 
-  static final class LazyRabbitWorkers extends LazyCloseable<ExecutorService> {
-
+  /** Lazy creates a connection and a queue before starting consumers */
+  static final class LazyInit extends LazyCloseable<Connection> {
     final Builder builder;
-    final int concurrency;
     final AtomicReference<CheckResult> failure = new AtomicReference<>();
-    private Connection connection;
 
-    LazyRabbitWorkers(Builder builder) {
+    LazyInit(Builder builder) {
       this.builder = builder;
-      this.concurrency = builder.concurrency;
     }
 
     @Override
-    protected ExecutorService compute() {
-      ExecutorService pool = concurrency == 1
-        ? Executors.newSingleThreadExecutor()
-        : Executors.newFixedThreadPool(concurrency);
-
+    protected Connection compute() {
+      Connection connection;
       try {
-        this.connection =
-          this.builder.connectionFactory.newConnection(convertAddresses(this.builder.addresses));
+        connection = builder.connectionFactory.newConnection(builder.addresses);
+        connection.createChannel().queueDeclare(builder.queue, true, false, false, null);
       } catch (IOException | TimeoutException e) {
-        throw new RabbitCollectorStartupException(
-          "Unable to establish connection to RabbitMQ server", e);
+        throw new IllegalStateException("Unable to establish connection to RabbitMQ server", e);
       }
+      Collector collector = builder.delegate.build();
+      CollectorMetrics metrics = builder.metrics;
 
-      for (int i = 0; i < concurrency; i++) {
-        final RabbitMQWorker worker =
-          new RabbitMQWorker(this.builder, this.connection, RabbitMQWorker.class.getName() + i);
-        pool.execute(guardFailures(worker));
-      }
-
-      return pool;
-    }
-
-    Runnable guardFailures(final Runnable delegate) {
-      return () -> {
+      for (int i = 0; i < builder.concurrency; i++) {
+        String name = RabbitMQSpanConsumer.class.getName() + i;
         try {
-          delegate.run();
-        } catch (RuntimeException e) {
-          LOG.error("RabbitMQ collector consumer exited with exception", e);
-          this.failure.set(CheckResult.failed(e));
+          // TODO: Is channel 1-1 with consumer? if not re-use the same channel for each consumer
+          Channel channel = connection.createChannel(); // note: this is dropped
+          RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
+          channel.basicConsume(builder.queue, true, name, consumer);
+        } catch (IOException e) {
+          throw new IllegalStateException("Failed to start RabbitMQ consumer " + name, e);
         }
-      };
+      }
+      return connection;
+    }
+  }
+
+  /**
+   * Consumes spans from messages on a RabbitMQ queue. Malformed messages will be discarded. Errors
+   * in the storage component will similarly be ignored, with no retry of the message.
+   */
+  static class RabbitMQSpanConsumer extends DefaultConsumer {
+    final Collector collector;
+    final CollectorMetrics metrics;
+
+    RabbitMQSpanConsumer(Channel channel, Collector collector, CollectorMetrics metrics) {
+      super(channel);
+      this.collector = collector;
+      this.metrics = metrics;
     }
 
     @Override
-    public void close() {
-      ExecutorService maybeNull = maybeNull();
-      if (maybeNull != null) {
-        maybeNull.shutdownNow();
-        try {
-          maybeNull.awaitTermination(1, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-          // at least we tried
-        } finally {
-          try {
-            this.connection.close();
-          } catch (IOException ignore) {
-            LOG.info("Failed to close RabbitMQ connection when stopping the collector.");
-          }
-        }
-      }
-    }
-
-    static class RabbitCollectorStartupException extends RuntimeException {
-      RabbitCollectorStartupException(String message, Throwable cause) {
-        super(message, cause);
-      }
+    public void handleDelivery(String consumerTag, Envelope envelope,
+      AMQP.BasicProperties properties,
+      byte[] body) throws IOException {
+      metrics.incrementMessages();
+      this.collector.acceptSpans(body, DETECTING_DECODER, NOOP);
     }
   }
 
@@ -205,7 +193,8 @@ public final class RabbitMQCollector implements CollectorComponent {
       Integer port = null;
       try {
         if (splitAddress.length == 2) port = Integer.parseInt(splitAddress[1]);
-      } catch (NumberFormatException ignore) { }
+      } catch (NumberFormatException ignore) {
+      }
       addressArray[i] = (port != null) ? new Address(host, port) : new Address(host);
     }
     return addressArray;
