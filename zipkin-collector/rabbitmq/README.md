@@ -1,6 +1,6 @@
 # collector-rabbitmq
 
-## RabbitMqCollector
+## RabbitMQCollector
 This collector consumes a RabbitMQ queue for messages that contain a list of spans.
 Its only dependencies besides Zipkin core are the `slf4j-api` and the [RabbitMQ Java Client](https://github.com/rabbitmq/rabbitmq-java-client).
 

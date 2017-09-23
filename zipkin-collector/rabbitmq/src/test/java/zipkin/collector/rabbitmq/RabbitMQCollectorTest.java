@@ -29,13 +29,12 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.rules.Timeout;
 import org.testcontainers.containers.GenericContainer;
 import zipkin.Codec;
 import zipkin.Span;
 import zipkin.collector.InMemoryCollectorMetrics;
-import zipkin.collector.rabbitmq.RabbitMqCollector.Builder;
-import zipkin.collector.rabbitmq.RabbitMqCollector.LazyRabbitWorkers.RabbitCollectorStartupException;
+import zipkin.collector.rabbitmq.RabbitMQCollector.Builder;
+import zipkin.collector.rabbitmq.RabbitMQCollector.LazyRabbitWorkers.RabbitCollectorStartupException;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.V2SpanConverter;
 import zipkin.storage.AsyncSpanConsumer;
@@ -47,9 +46,9 @@ import zipkin2.codec.SpanBytesEncoder;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.TestObjects.TRACE;
-import static zipkin.collector.rabbitmq.RabbitMqCollector.convertAddresses;
+import static zipkin.collector.rabbitmq.RabbitMQCollector.convertAddresses;
 
-public class RabbitMqCollectorTest {
+public class RabbitMQCollectorTest {
 
   private static final int RABBIT_PORT = 5672;
   private static final String RABBIT_DOCKER_IMAGE = "rabbitmq:3.6-alpine";
@@ -57,7 +56,6 @@ public class RabbitMqCollectorTest {
   @ClassRule public static GenericContainer rabbitmq =
     new GenericContainer(RABBIT_DOCKER_IMAGE)
       .withExposedPorts(RABBIT_PORT);
-  @ClassRule public static Timeout globalTimeout = Timeout.seconds(180);
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -77,7 +75,7 @@ public class RabbitMqCollectorTest {
 
   @Test
   public void checkPasses() throws Exception {
-    try (RabbitMqCollector collector = builder().build()) {
+    try (RabbitMQCollector collector = builder().build()) {
       assertThat(collector.check().ok).isTrue();
     }
   }
@@ -86,30 +84,12 @@ public class RabbitMqCollectorTest {
   public void startFailsWithInvalidRabbitMqServer() throws Exception {
     // we can be pretty certain RabbitMQ isn't running on localhost port 80
     String notRabbitMqAddress = "localhost:80";
-    try (RabbitMqCollector collector = builder()
+    try (RabbitMQCollector collector = builder()
         .addresses(Collections.singletonList(notRabbitMqAddress)).build()) {
       thrown.expect(RabbitCollectorStartupException.class);
       thrown.expectMessage("Unable to establish connection to RabbitMQ server");
       collector.start();
     }
-  }
-
-  /** Ensures legacy encoding works: a single TBinaryProtocol encoded span */
-  @Test
-  public void messageWithSingleThriftSpan() throws Exception {
-    Builder builder = builder();
-
-    byte[] bytes = Codec.THRIFT.writeSpan(TRACE.get(0));
-    produceSpans(bytes, builder);
-
-    try (RabbitMqCollector collector = builder.build()) {
-      collector.start();
-      assertThat(receivedSpans.take()).containsExactly(TRACE.get(0));
-    }
-
-    assertThat(rabbitMetrics.messages()).isEqualTo(1);
-    assertThat(rabbitMetrics.bytes()).isEqualTo(bytes.length);
-    assertThat(rabbitMetrics.spans()).isEqualTo(1);
   }
 
   /** Ensures list encoding works: a TBinaryProtocol encoded list of spans */
@@ -120,9 +100,9 @@ public class RabbitMqCollectorTest {
     byte[] bytes = Codec.THRIFT.writeSpans(TRACE);
     produceSpans(bytes, builder);
 
-    try (RabbitMqCollector collector = builder.build()) {
+    try (RabbitMQCollector collector = builder.build()) {
       collector.start();
-      assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
+      assertThat(receivedSpans.poll(1, TimeUnit.SECONDS)).containsExactlyElementsOf(TRACE);
     }
 
     assertThat(rabbitMetrics.messages()).isEqualTo(1);
@@ -138,9 +118,9 @@ public class RabbitMqCollectorTest {
     byte[] bytes = Codec.JSON.writeSpans(TRACE);
     produceSpans(bytes, builder);
 
-    try (RabbitMqCollector collector = builder.build()) {
+    try (RabbitMQCollector collector = builder.build()) {
       collector.start();
-      assertThat(receivedSpans.take()).containsExactlyElementsOf(TRACE);
+      assertThat(receivedSpans.poll(1, TimeUnit.SECONDS)).containsExactlyElementsOf(TRACE);
     }
 
     assertThat(rabbitMetrics.messages()).isEqualTo(1);
@@ -162,7 +142,7 @@ public class RabbitMqCollectorTest {
 
     produceSpans(message, builder);
 
-    try (RabbitMqCollector collector = builder.build()) {
+    try (RabbitMQCollector collector = builder.build()) {
       collector.start();
       // don't wait forever if no messages are in the queue
       assertThat(receivedSpans.poll(1, TimeUnit.SECONDS)).containsAll(spans);
@@ -185,7 +165,7 @@ public class RabbitMqCollectorTest {
     produceSpans("malformed".getBytes(), builder);
     produceSpans(Codec.THRIFT.writeSpans(TRACE), builder);
 
-    try (RabbitMqCollector collector = builder.build()) {
+    try (RabbitMQCollector collector = builder.build()) {
       collector.start();
       assertThat(receivedSpans.poll(1, TimeUnit.SECONDS)).containsExactlyElementsOf(TRACE);
       // the only way we could read this is if the malformed spans were skipped.
@@ -213,7 +193,7 @@ public class RabbitMqCollectorTest {
     produceSpans(Codec.THRIFT.writeSpans(TRACE), builder); // tossed on error
     produceSpans(Codec.THRIFT.writeSpans(TRACE), builder);
 
-    try (RabbitMqCollector collector = builder.build()) {
+    try (RabbitMQCollector collector = builder.build()) {
       collector.start();
       assertThat(receivedSpans.poll(1, TimeUnit.SECONDS)).containsExactlyElementsOf(TRACE);
       // the only way we could read this, is if the malformed span was skipped.
@@ -228,7 +208,7 @@ public class RabbitMqCollectorTest {
     Builder builder = builder().concurrency(2);
 
     final byte[] traceBytes = Codec.THRIFT.writeSpans(TRACE);
-    try (RabbitMqCollector collector = builder.build()) {
+    try (RabbitMQCollector collector = builder.build()) {
       collector.start();
       produceSpans(traceBytes, builder);
       assertThat(receivedSpans.poll(1, TimeUnit.SECONDS)).containsExactlyElementsOf(TRACE);

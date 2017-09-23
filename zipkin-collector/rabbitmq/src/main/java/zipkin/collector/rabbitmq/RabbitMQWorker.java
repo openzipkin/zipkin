@@ -22,12 +22,12 @@ import java.io.IOException;
  * queue from which it will consume. Auto-acknowledge is enabled so there will be no retrying of
  * messages.
  */
-class RabbitMqWorker implements Runnable {
+class RabbitMQWorker implements Runnable {
   private final Connection connection;
-  private final RabbitMqCollector.Builder builder;
+  private final RabbitMQCollector.Builder builder;
   private final String name;
 
-  RabbitMqWorker(RabbitMqCollector.Builder builder, Connection connection, String name) {
+  RabbitMQWorker(RabbitMQCollector.Builder builder, Connection connection, String name) {
     this.builder = builder;
     this.connection = connection;
     this.name = name;
@@ -38,7 +38,7 @@ class RabbitMqWorker implements Runnable {
     try {
       Channel channel = this.connection.createChannel();
       channel.queueDeclare(this.builder.queue, true, false, false, null);
-      final RabbitMqSpanConsumer consumer = new RabbitMqSpanConsumer(this.builder, channel);
+      final RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(this.builder, channel);
       channel.basicConsume(this.builder.queue, true, this.name, consumer);
     } catch (IOException e) {
       throw new IllegalStateException("Failed to start RabbitMQ consumer " + this.name, e);

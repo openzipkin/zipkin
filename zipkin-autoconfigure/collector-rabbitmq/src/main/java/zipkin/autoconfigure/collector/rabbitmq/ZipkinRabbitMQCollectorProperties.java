@@ -13,17 +13,16 @@
  */
 package zipkin.autoconfigure.collector.rabbitmq;
 
-import com.rabbitmq.client.Address;
 import com.rabbitmq.client.ConnectionFactory;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin.collector.rabbitmq.RabbitMqCollector;
+import zipkin.collector.rabbitmq.RabbitMQCollector;
 
 /**
- * Properties for configuring and building a {@link RabbitMqCollector}.
+ * Properties for configuring and building a {@link RabbitMQCollector}.
  */
 @ConfigurationProperties("zipkin.collector.rabbitmq")
-public class ZipkinRabbitMqCollectorProperties {
+public class ZipkinRabbitMQCollectorProperties {
 
   /** RabbitMQ server addresses in the form of a (comma-separated) list of host:port pairs */
   private List<String> addresses;
@@ -96,8 +95,8 @@ public class ZipkinRabbitMqCollectorProperties {
     this.virtualHost = virtualHost;
   }
 
-  public RabbitMqCollector.Builder toBuilder() {
-    final RabbitMqCollector.Builder result = RabbitMqCollector.builder();
+  public RabbitMQCollector.Builder toBuilder() {
+    final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
     ConnectionFactory connectionFactory = new ConnectionFactory();
     if (addresses != null) result.addresses(addresses);
     if (concurrency != null) result.concurrency(concurrency);

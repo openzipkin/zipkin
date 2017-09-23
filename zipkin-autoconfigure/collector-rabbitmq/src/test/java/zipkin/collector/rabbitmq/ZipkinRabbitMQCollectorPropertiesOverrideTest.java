@@ -13,11 +13,9 @@
  */
 package zipkin.collector.rabbitmq;
 
-import com.rabbitmq.client.Address;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,14 +24,13 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
-import zipkin.autoconfigure.collector.rabbitmq.ZipkinRabbitMqCollectorProperties;
-import zipkin.collector.rabbitmq.RabbitMqCollector;
+import zipkin.autoconfigure.collector.rabbitmq.ZipkinRabbitMQCollectorProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 @RunWith(Parameterized.class)
-public class ZipkinRabbitMqCollectorPropertiesOverrideTest {
+public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
@@ -44,9 +41,9 @@ public class ZipkinRabbitMqCollectorPropertiesOverrideTest {
 
   @Parameterized.Parameter(0) public String property;
   @Parameterized.Parameter(1) public Object value;
-  @Parameterized.Parameter(2) public Function<ZipkinRabbitMqCollectorProperties, Object>
+  @Parameterized.Parameter(2) public Function<ZipkinRabbitMQCollectorProperties, Object>
       propertiesExtractor;
-  @Parameterized.Parameter(3) public Function<RabbitMqCollector.Builder, Object> builderExtractor;
+  @Parameterized.Parameter(3) public Function<RabbitMQCollector.Builder, Object> builderExtractor;
 
   @Parameterized.Parameters(name = "{0}")
   public static Iterable<Object[]> data() {
@@ -55,30 +52,30 @@ public class ZipkinRabbitMqCollectorPropertiesOverrideTest {
           properties -> convertToStringWithoutListBrackets(properties.getAddresses()),
             builder -> convertToStringWithoutListBrackets(builder.addresses)),
       parameters("concurrency", 2,
-            ZipkinRabbitMqCollectorProperties::getConcurrency,
+            ZipkinRabbitMQCollectorProperties::getConcurrency,
             builder -> builder.concurrency),
         parameters("connectionTimeout", 30_000,
-            ZipkinRabbitMqCollectorProperties::getConnectionTimeout,
+            ZipkinRabbitMQCollectorProperties::getConnectionTimeout,
             builder -> builder.connectionFactory.getConnectionTimeout()),
         parameters("password", "admin",
-            ZipkinRabbitMqCollectorProperties::getPassword,
+            ZipkinRabbitMQCollectorProperties::getPassword,
             builder -> builder.connectionFactory.getPassword()),
         parameters("queue", "zapkin",
-            ZipkinRabbitMqCollectorProperties::getQueue,
+            ZipkinRabbitMQCollectorProperties::getQueue,
             builder -> builder.queue),
         parameters("username", "admin",
-            ZipkinRabbitMqCollectorProperties::getUsername,
+            ZipkinRabbitMQCollectorProperties::getUsername,
             builder -> builder.connectionFactory.getUsername()),
         parameters("virtualHost", "/hello",
-            ZipkinRabbitMqCollectorProperties::getVirtualHost,
+            ZipkinRabbitMQCollectorProperties::getVirtualHost,
             builder -> builder.connectionFactory.getVirtualHost())
     );
   }
 
   /** to allow us to define with a lambda */
   static <T> Object[] parameters(String propertySuffix, T value,
-      Function<ZipkinRabbitMqCollectorProperties, T> propertiesExtractor,
-      Function<RabbitMqCollector.Builder, T> builderExtractor) {
+      Function<ZipkinRabbitMQCollectorProperties, T> propertiesExtractor,
+      Function<RabbitMQCollector.Builder, T> builderExtractor) {
     return new Object[] {"zipkin.collector.rabbitmq." + propertySuffix, value, propertiesExtractor,
         builderExtractor};
   }
@@ -89,11 +86,11 @@ public class ZipkinRabbitMqCollectorPropertiesOverrideTest {
 
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
-        EnableRabbitMqCollectorProperties.class
+        EnableRabbitMQCollectorProperties.class
     );
     context.refresh();
 
-    assertThat(context.getBean(ZipkinRabbitMqCollectorProperties.class))
+    assertThat(context.getBean(ZipkinRabbitMQCollectorProperties.class))
         .extracting(propertiesExtractor)
         .containsExactly(value);
   }
@@ -104,18 +101,18 @@ public class ZipkinRabbitMqCollectorPropertiesOverrideTest {
 
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
-        EnableRabbitMqCollectorProperties.class
+        EnableRabbitMQCollectorProperties.class
     );
     context.refresh();
 
-    assertThat(context.getBean(ZipkinRabbitMqCollectorProperties.class).toBuilder())
+    assertThat(context.getBean(ZipkinRabbitMQCollectorProperties.class).toBuilder())
         .extracting(builderExtractor)
         .containsExactly(value);
   }
 
   @Configuration
-  @EnableConfigurationProperties(ZipkinRabbitMqCollectorProperties.class)
-  static class EnableRabbitMqCollectorProperties {
+  @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
+  static class EnableRabbitMQCollectorProperties {
   }
 
   private static String convertToStringWithoutListBrackets(List<String> list) {

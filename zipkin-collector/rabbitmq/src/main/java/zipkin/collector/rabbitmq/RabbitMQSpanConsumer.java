@@ -18,11 +18,8 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import java.io.IOException;
-import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin.Span;
-import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 
@@ -33,13 +30,13 @@ import static zipkin.storage.Callback.NOOP;
  * Consumes spans from messages on a RabbitMQ queue. Malformed messages will be discarded. Errors in
  * the storage component will similarly be ignored, with no retry of the message.
  */
-class RabbitMqSpanConsumer extends DefaultConsumer {
-  private static final Logger LOG = LoggerFactory.getLogger(RabbitMqSpanConsumer.class);
+class RabbitMQSpanConsumer extends DefaultConsumer {
+  private static final Logger LOG = LoggerFactory.getLogger(RabbitMQSpanConsumer.class);
 
   private final Collector collector;
   private final CollectorMetrics metrics;
 
-  RabbitMqSpanConsumer(RabbitMqCollector.Builder builder, Channel channel) {
+  RabbitMQSpanConsumer(RabbitMQCollector.Builder builder, Channel channel) {
     super(channel);
 
     this.collector = builder.delegate.build();
@@ -51,14 +48,7 @@ class RabbitMqSpanConsumer extends DefaultConsumer {
     byte[] body) throws IOException {
     try {
       this.metrics.incrementMessages();
-      // If we received legacy single-span encoding, decode it into a singleton list
-      if (body[0] <= 16 && body[0] != 12 /* thrift, but not a list */) {
-        this.metrics.incrementBytes(body.length);
-        Span span = SpanDecoder.THRIFT_DECODER.readSpan(body);
-        this.collector.accept(Collections.singletonList(span), NOOP);
-      } else {
-        this.collector.acceptSpans(body, DETECTING_DECODER, NOOP);
-      }
+      this.collector.acceptSpans(body, DETECTING_DECODER, NOOP);
     } catch (RuntimeException e) {
       this.metrics.incrementMessagesDropped();
       LOG.debug("Exception while collecting message from RabbitMQ", e);

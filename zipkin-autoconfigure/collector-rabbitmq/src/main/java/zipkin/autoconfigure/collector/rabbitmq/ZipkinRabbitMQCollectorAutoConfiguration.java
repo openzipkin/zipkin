@@ -22,25 +22,25 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.collector.rabbitmq.RabbitMqCollector;
+import zipkin.collector.rabbitmq.RabbitMQCollector;
 import zipkin.storage.StorageComponent;
 
 /**
- * Auto-configuration for {@link RabbitMqCollector}.
+ * Auto-configuration for {@link RabbitMQCollector}.
  */
 @Configuration
-@Conditional(ZipkinRabbitMqCollectorAutoConfiguration.RabbitMqAddressesSet.class)
-@EnableConfigurationProperties(ZipkinRabbitMqCollectorProperties.class)
-public class ZipkinRabbitMqCollectorAutoConfiguration {
+@Conditional(ZipkinRabbitMQCollectorAutoConfiguration.RabbitMqAddressesSet.class)
+@EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
+public class ZipkinRabbitMQCollectorAutoConfiguration {
 
-  @Bean(initMethod = "start") RabbitMqCollector rabbitMq(
-    ZipkinRabbitMqCollectorProperties properties,
+  @Bean(initMethod = "start") RabbitMQCollector rabbitMq(
+    ZipkinRabbitMQCollectorProperties properties,
     CollectorSampler sampler, CollectorMetrics metrics, StorageComponent storage) {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
   }
 
   /**
-   * This condition passes when {@link ZipkinRabbitMqCollectorProperties#getAddresses()} is set to
+   * This condition passes when {@link ZipkinRabbitMQCollectorProperties#getAddresses()} is set to
    * non-empty.
    *
    * <p>This is here because the yaml defaults this property to empty like this, and Spring Boot

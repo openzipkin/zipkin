@@ -37,8 +37,8 @@ import static zipkin.internal.Util.checkNotNull;
 /**
  * This collector consumes encoded binary messages from a RabbitMQ queue.
  */
-public final class RabbitMqCollector implements CollectorComponent {
-  private static final Logger LOG = LoggerFactory.getLogger(RabbitMqCollector.class);
+public final class RabbitMQCollector implements CollectorComponent {
+  private static final Logger LOG = LoggerFactory.getLogger(RabbitMQCollector.class);
 
   public static Builder builder() {
     return new Builder();
@@ -46,7 +46,7 @@ public final class RabbitMqCollector implements CollectorComponent {
 
   /** Configuration including defaults needed to consume spans from a RabbitMQ queue. */
   public static final class Builder implements CollectorComponent.Builder {
-    Collector.Builder delegate = Collector.builder(RabbitMqCollector.class);
+    Collector.Builder delegate = Collector.builder(RabbitMQCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String queue = "zipkin";
     ConnectionFactory connectionFactory;
@@ -92,19 +92,19 @@ public final class RabbitMqCollector implements CollectorComponent {
       return this;
     }
 
-    @Override public RabbitMqCollector build() {
-      return new RabbitMqCollector(this);
+    @Override public RabbitMQCollector build() {
+      return new RabbitMQCollector(this);
     }
   }
 
   private final LazyRabbitWorkers rabbitWorkers;
 
-  RabbitMqCollector(Builder builder) {
+  RabbitMQCollector(Builder builder) {
     this.rabbitWorkers = new LazyRabbitWorkers(builder);
   }
 
   @Override
-  public RabbitMqCollector start() {
+  public RabbitMQCollector start() {
     this.rabbitWorkers.get();
     return this;
   }
@@ -152,8 +152,8 @@ public final class RabbitMqCollector implements CollectorComponent {
       }
 
       for (int i = 0; i < concurrency; i++) {
-        final RabbitMqWorker worker =
-          new RabbitMqWorker(this.builder, this.connection, RabbitMqWorker.class.getName() + i);
+        final RabbitMQWorker worker =
+          new RabbitMQWorker(this.builder, this.connection, RabbitMQWorker.class.getName() + i);
         pool.execute(guardFailures(worker));
       }
 
