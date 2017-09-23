@@ -31,7 +31,7 @@ import static org.assertj.core.api.Java6Assertions.assertThat;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 import static zipkin.collector.rabbitmq.RabbitMQCollector.builder;
 
-public class RabbitMQCollectorTest {
+public class ITRabbitMQCollector {
   List<Span> spans = Arrays.asList(
     ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]),
     ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])

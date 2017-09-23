@@ -48,10 +48,12 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
   @Parameterized.Parameters(name = "{0}")
   public static Iterable<Object[]> data() {
     return Arrays.asList(
-        parameters("addresses", "localhost:5671,localhost:5673",
-          properties -> convertToStringWithoutListBrackets(properties.getAddresses()),
-            builder -> convertToStringWithoutListBrackets(builder.addresses)),
-      parameters("concurrency", 2,
+        // intentionally punting on comma-separated form of a list of addresses as it doesn't fit
+        // this unit test. Better to make a separate one than force-fit!
+        parameters("addresses", "localhost:5671",
+            properties -> convertToStringWithoutListBrackets(properties.getAddresses()),
+            builder -> builder.addresses[0].toString()),
+        parameters("concurrency", 2,
             ZipkinRabbitMQCollectorProperties::getConcurrency,
             builder -> builder.concurrency),
         parameters("connectionTimeout", 30_000,
