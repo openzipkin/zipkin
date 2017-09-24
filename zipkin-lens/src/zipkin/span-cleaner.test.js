@@ -382,9 +382,8 @@ describe('mergeV2ById', () => {
   });
 
   /*
-   * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.
-   *
-   * See https://github.com/openzipkin/zipkin/pull/1745
+   * This test shows that if a parent ID is stored late (ex because it wasn't propagated), it can be
+   * backfilled during cleanup.
    */
   it('should backfill missing parent id on shared span', () => {
     const spans = mergeV2ById([
