@@ -1,15 +1,15 @@
 /**
  * Copyright 2015-2017 The OpenZipkin Authors
  *
- * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * <p>http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * <p>Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin.collector.rabbitmq;
 
@@ -19,13 +19,15 @@ import java.util.Arrays;
 import java.util.concurrent.TimeoutException;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.ExternalResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.wait.HostPortWaitStrategy;
 import zipkin.Component;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.storage.InMemoryStorage;
 
 class RabbitMQCollectorRule extends ExternalResource {
+  static final Logger LOGGER = LoggerFactory.getLogger(RabbitMQCollectorRule.class);
   static final int RABBIT_PORT = 5672;
 
   final InMemoryStorage storage = new InMemoryStorage();
@@ -43,14 +45,11 @@ class RabbitMQCollectorRule extends ExternalResource {
   @Override
   protected void before() throws Throwable {
     try {
-      container =
-        new GenericContainer(image)
-          .withExposedPorts(RABBIT_PORT)
-          .waitingFor(new HostPortWaitStrategy());
+      LOGGER.info("Starting docker image " + image);
+      container = new GenericContainer(image).withExposedPorts(RABBIT_PORT);
       container.start();
-      System.out.println("Starting docker image " + image);
     } catch (RuntimeException e) {
-      // Ignore
+      LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
     }
 
     RabbitMQCollector result = computeCollectorBuilder().build();
@@ -95,10 +94,10 @@ class RabbitMQCollectorRule extends ExternalResource {
     try {
       if (collector != null) collector.close();
     } catch (IOException e) {
-      System.out.println("error closing collector " + e.getMessage());
+      LOGGER.warn("error closing collector " + e.getMessage(), e);
     } finally {
       if (container != null) {
-        System.out.println("Stopping docker image " + image);
+        LOGGER.info("Stopping docker image " + image);
         container.stop();
       }
     }
