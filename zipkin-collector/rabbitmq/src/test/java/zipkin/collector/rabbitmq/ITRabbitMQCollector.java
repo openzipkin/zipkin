@@ -38,17 +38,17 @@ public class ITRabbitMQCollector {
   );
 
   @ClassRule
-  public static LazyRabbitMQCollector collector = new LazyRabbitMQCollector("rabbitmq:3.6-alpine");
+  public static RabbitMQCollectorRule rabbit = new RabbitMQCollectorRule("rabbitmq:3.6-alpine");
 
   @After public void clear() {
-    collector.metrics.clear();
-    collector.storage.clear();
+    rabbit.metrics.clear();
+    rabbit.storage.clear();
   }
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   @Test public void checkPasses() throws Exception {
-    assertThat(collector.get().check().ok).isTrue();
+    assertThat(rabbit.collector.check().ok).isTrue();
   }
 
   @Test public void startFailsWithInvalidRabbitMqServer() throws Exception {
@@ -66,28 +66,28 @@ public class ITRabbitMQCollector {
   @Test
   public void messageWithMultipleSpans_thrift() throws Exception {
     byte[] message = Codec.THRIFT.writeSpans(spans);
-    collector.publish(message);
+    rabbit.publish(message);
 
     Thread.sleep(1000);
-    assertThat(collector.storage.acceptedSpanCount()).isEqualTo(spans.size());
+    assertThat(rabbit.storage.acceptedSpanCount()).isEqualTo(spans.size());
 
-    assertThat(collector.rabbitmqMetrics.messages()).isEqualTo(1);
-    assertThat(collector.rabbitmqMetrics.bytes()).isEqualTo(message.length);
-    assertThat(collector.rabbitmqMetrics.spans()).isEqualTo(spans.size());
+    assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(1);
+    assertThat(rabbit.rabbitmqMetrics.bytes()).isEqualTo(message.length);
+    assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
   }
 
   /** Ensures list encoding works: a json encoded list of spans */
   @Test
   public void messageWithMultipleSpans_json() throws Exception {
     byte[] message = Codec.JSON.writeSpans(spans);
-    collector.publish(message);
+    rabbit.publish(message);
 
     Thread.sleep(1000);
-    assertThat(collector.storage.acceptedSpanCount()).isEqualTo(spans.size());
+    assertThat(rabbit.storage.acceptedSpanCount()).isEqualTo(spans.size());
 
-    assertThat(collector.rabbitmqMetrics.messages()).isEqualTo(1);
-    assertThat(collector.rabbitmqMetrics.bytes()).isEqualTo(message.length);
-    assertThat(collector.rabbitmqMetrics.spans()).isEqualTo(spans.size());
+    assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(1);
+    assertThat(rabbit.rabbitmqMetrics.bytes()).isEqualTo(message.length);
+    assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
   }
 
   /** Ensures list encoding works: a version 2 json encoded list of spans */
@@ -99,28 +99,28 @@ public class ITRabbitMQCollector {
     );
 
     byte[] message = SpanBytesEncoder.JSON_V2.encodeList(V2SpanConverter.fromSpans(spans));
-    collector.publish(message);
+    rabbit.publish(message);
 
     Thread.sleep(1000);
-    assertThat(collector.storage.acceptedSpanCount()).isEqualTo(spans.size());
+    assertThat(rabbit.storage.acceptedSpanCount()).isEqualTo(spans.size());
 
-    assertThat(collector.rabbitmqMetrics.messages()).isEqualTo(1);
-    assertThat(collector.rabbitmqMetrics.bytes()).isEqualTo(message.length);
-    assertThat(collector.rabbitmqMetrics.spans()).isEqualTo(spans.size());
+    assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(1);
+    assertThat(rabbit.rabbitmqMetrics.bytes()).isEqualTo(message.length);
+    assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
   }
 
   /** Ensures malformed spans don't hang the collector */
   @Test
   public void skipsMalformedData() throws Exception {
-    collector.publish(Codec.THRIFT.writeSpans(spans));
-    collector.publish(new byte[0]);
-    collector.publish("[\"='".getBytes()); // screwed up json
-    collector.publish("malformed".getBytes());
-    collector.publish(Codec.THRIFT.writeSpans(spans));
+    rabbit.publish(Codec.THRIFT.writeSpans(spans));
+    rabbit.publish(new byte[0]);
+    rabbit.publish("[\"='".getBytes()); // screwed up json
+    rabbit.publish("malformed".getBytes());
+    rabbit.publish(Codec.THRIFT.writeSpans(spans));
 
     Thread.sleep(1000);
-    assertThat(collector.rabbitmqMetrics.messages()).isEqualTo(5);
-    assertThat(collector.rabbitmqMetrics.messagesDropped()).isEqualTo(3);
+    assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(5);
+    assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isEqualTo(3);
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */
