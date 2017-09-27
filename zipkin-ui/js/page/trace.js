@@ -40,6 +40,18 @@ const TracePageComponent = component(function TracePage() {
                                             link: `/api/v1/trace/${this.attr.traceId}`});
       });
 
+      this.$node.find('#saveTraceLink').click(e => {
+        e.preventDefault();
+        const traceId = this.attr.traceId;
+
+        $.ajax(`/api/v1/save/trace/${traceId}`).done(result => {
+          alert(`Trace saved : ${result}`);
+        }).fail(error => {
+          alert(`Unable to save trace ${this.attr.traceId}`);
+          console.log(error);
+        });
+      });
+
       $('.annotation:not(.core)').tooltip({placement: 'left'});
     });
   });
