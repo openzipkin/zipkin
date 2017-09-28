@@ -31,6 +31,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
+import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.DependencyLinker;
 
@@ -112,9 +113,9 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
         return new LinkedHashSet<>();
       }
     };
-  /** This is an index of {@link Span#traceId} by {@link zipkin.Endpoint#serviceName service name} */
+  /** This is an index of {@link Span#traceId} by {@link Endpoint#serviceName() service name} */
   private final ServiceNameToTraceIds serviceToTraceIds = new ServiceNameToTraceIds();
-  /** This is an index of {@link Span#name} by {@link zipkin.Endpoint#serviceName service name} */
+  /** This is an index of {@link Span#name} by {@link Endpoint#serviceName() service name} */
   private final SortedMultimap<String, String> serviceToSpanNames =
     new SortedMultimap<String, String>(String::compareTo) {
       @Override Collection<String> valueContainer() {
@@ -154,11 +155,11 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       String spanName = span.name();
       if (span.localServiceName() != null) {
         serviceToTraceIds.put(span.localServiceName(), lowTraceId);
-        serviceToSpanNames.put(span.localServiceName(), spanName);
+        if (spanName != null) serviceToSpanNames.put(span.localServiceName(), spanName);
       }
       if (span.remoteServiceName() != null) {
         serviceToTraceIds.put(span.remoteServiceName(), lowTraceId);
-        serviceToSpanNames.put(span.remoteServiceName(), spanName);
+        if (spanName != null) serviceToSpanNames.put(span.remoteServiceName(), spanName);
       }
     }
     return Call.create(null /* Void == null */);
