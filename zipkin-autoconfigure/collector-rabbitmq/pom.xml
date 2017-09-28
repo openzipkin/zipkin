@@ -19,43 +19,22 @@
 
   <parent>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>zipkin-autoconfigure</artifactId>
     <version>2.0.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-autoconfigure</artifactId>
-  <name>Auto Configuration</name>
-  <packaging>pom</packaging>
+  <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
+  <name>Auto Configuration: RabbitMQ Collector</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
+    <main.basedir>${project.basedir}/../..</main.basedir>
   </properties>
-
-  <modules>
-    <module>ui</module>
-    <module>collector-kafka</module>
-    <module>collector-kafka10</module>
-    <module>collector-rabbitmq</module>
-    <module>collector-scribe</module>
-    <module>storage-cassandra</module>
-    <module>storage-cassandra3</module>
-    <module>storage-elasticsearch-http</module>
-    <module>storage-elasticsearch-aws</module>
-    <module>storage-mysql</module>
-    <module>metrics-prometheus</module>
-  </modules>
 
   <dependencies>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-autoconfigure</artifactId>
-      <version>${spring-boot.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-test</artifactId>
-      <version>${spring-boot.version}</version>
-      <scope>test</scope>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-collector-rabbitmq</artifactId>
     </dependency>
   </dependencies>
+
 </project>
