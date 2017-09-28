@@ -19,6 +19,7 @@ jdk:
 
 services:
   - docker
+  - rabbitmq
 
 before_install:
   # parameters used during a release
