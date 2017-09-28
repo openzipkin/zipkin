@@ -35,9 +35,7 @@ import static zipkin.SpanDecoder.DETECTING_DECODER;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin.storage.Callback.NOOP;
 
-/**
- * This collector consumes encoded binary messages from a RabbitMQ queue.
- */
+/** This collector consumes encoded binary messages from a RabbitMQ queue. */
 public final class RabbitMQCollector implements CollectorComponent {
 
   public static Builder builder() {
@@ -150,8 +148,9 @@ public final class RabbitMQCollector implements CollectorComponent {
       for (int i = 0; i < builder.concurrency; i++) {
         String name = RabbitMQSpanConsumer.class.getName() + i;
         try {
-          // TODO: Is channel 1-1 with consumer? if not re-use the same channel for each consumer
-          Channel channel = connection.createChannel(); // note: this is dropped
+          // this sets up a channel for each consumer thread.
+          // We don't track channels them, as the connection will close its channels implicitly
+          Channel channel = connection.createChannel();
           RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
           channel.basicConsume(builder.queue, true, name, consumer);
         } catch (IOException e) {

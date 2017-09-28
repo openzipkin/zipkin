@@ -54,8 +54,10 @@ class RabbitMQCollectorRule extends ExternalResource {
 
     try {
       this.collector = tryToInitializeCollector();
-    } catch (RuntimeException| Error t) {
-      if (container == null) throw t;
+    } catch (RuntimeException| Error e) {
+      if (container == null) throw e;
+      LOGGER.warn("Couldn't connect to docker image " + image + ": " + e.getMessage(), e);
+      container.stop();
       container = null; // try with local connection instead
       this.collector = tryToInitializeCollector();
     }
