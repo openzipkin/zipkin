@@ -52,6 +52,16 @@ class RabbitMQCollectorRule extends ExternalResource {
       LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
     }
 
+    try {
+      this.collector = tryToInitializeCollector();
+    } catch (RuntimeException| Error t) {
+      if (container == null) throw t;
+      container = null; // try with local connection instead
+      this.collector = tryToInitializeCollector();
+    }
+  }
+
+  RabbitMQCollector tryToInitializeCollector() {
     RabbitMQCollector result = computeCollectorBuilder().build();
     result.start();
 
@@ -59,7 +69,7 @@ class RabbitMQCollectorRule extends ExternalResource {
     if (!check.ok) {
       throw new AssumptionViolatedException(check.exception.getMessage(), check.exception);
     }
-    this.collector = result;
+    return result;
   }
 
   RabbitMQCollector.Builder computeCollectorBuilder() {
