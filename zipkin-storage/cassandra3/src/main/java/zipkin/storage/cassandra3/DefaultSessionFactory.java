@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,10 +14,12 @@
 package zipkin.storage.cassandra3;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.QueryLogger;
+import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.TypeCodec;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
@@ -123,6 +125,13 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
     builder.withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(
         HostDistance.LOCAL, cassandra.maxConnections
     ));
+
+    builder.withQueryOptions(
+                new QueryOptions()
+                        .setConsistencyLevel(
+                                null != cassandra.localDc ? ConsistencyLevel.LOCAL_ONE : ConsistencyLevel.ONE)
+                        .setDefaultIdempotence(true));
+
     if (cassandra.useSsl) {
       builder = builder.withSSL();
     }

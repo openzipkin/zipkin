@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,11 +14,11 @@
 
 package zipkin.storage.cassandra3;
 
-import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.WriteType;
 import com.datastax.driver.core.exceptions.DriverException;
+import com.datastax.driver.core.policies.DefaultRetryPolicy;
 import com.datastax.driver.core.policies.RetryPolicy;
 
 /** This class was copied from org.twitter.zipkin.storage.cassandra.ZipkinRetryPolicy */
@@ -29,37 +29,54 @@ final class ZipkinRetryPolicy implements RetryPolicy {
   private ZipkinRetryPolicy() {
   }
 
-  @Override
-  public RetryDecision onReadTimeout(Statement statement, ConsistencyLevel cl,
-      int requiredResponses, int receivedResponses, boolean dataRetrieved, int nbRetry) {
-    return RetryDecision.retry(ConsistencyLevel.ONE);
-  }
+    @Override
+    public RetryDecision onReadTimeout(
+        Statement stmt,
+        ConsistencyLevel cl,
+        int required,
+        int received,
+        boolean retrieved,
+        int retry) {
 
-  @Override
-  public RetryDecision onWriteTimeout(Statement statement, ConsistencyLevel cl, WriteType writeType,
-      int requiredAcks, int receivedAcks, int nbRetry) {
-    return RetryDecision.retry(ConsistencyLevel.ONE);
-  }
+      if (retry > 1) {
+        try {
+          Thread.sleep(100);
+        } catch (InterruptedException expected) { }
+      }
+      return stmt.isIdempotent()
+          ? retry < 10 ? RetryDecision.retry(cl) : RetryDecision.rethrow()
+          : DefaultRetryPolicy.INSTANCE.onReadTimeout(stmt, cl, required, received, retrieved, retry);
+    }
 
-  @Override
-  public RetryDecision onUnavailable(Statement statement, ConsistencyLevel cl, int requiredReplica,
-      int aliveReplica, int nbRetry) {
-    return RetryDecision.retry(ConsistencyLevel.ONE);
-  }
+    @Override
+    public RetryDecision onWriteTimeout(
+        Statement stmt,
+        ConsistencyLevel cl,
+        WriteType type,
+        int required,
+        int received,
+        int retry) {
 
-  @Override
-  public RetryDecision onRequestError(Statement statement, ConsistencyLevel cl,
-      DriverException e, int nbRetry) {
-    return RetryDecision.tryNextHost(ConsistencyLevel.ONE);
-  }
+      return stmt.isIdempotent()
+          ? RetryDecision.retry(cl)
+          : DefaultRetryPolicy.INSTANCE.onWriteTimeout(stmt, cl, type, required, received, retry);
+    }
 
-  @Override
-  public void init(Cluster cluster) {
-    // nothing to do
-  }
+    @Override
+    public RetryDecision onUnavailable(Statement stmt, ConsistencyLevel cl, int required, int aliveReplica, int retry) {
+      return DefaultRetryPolicy.INSTANCE.onUnavailable(stmt, cl, required, aliveReplica, retry == 1 ? 0 : retry);
+    }
 
-  @Override
-  public void close() {
-    // nothing to do
-  }
+    @Override
+    public RetryDecision onRequestError(Statement stmt, ConsistencyLevel cl, DriverException ex, int nbRetry) {
+      return DefaultRetryPolicy.INSTANCE.onRequestError(stmt, cl, ex, nbRetry);
+    }
+
+    @Override
+    public void init(com.datastax.driver.core.Cluster cluster) {
+    }
+
+    @Override
+    public void close() {
+    }
 }
