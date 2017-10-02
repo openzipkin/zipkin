@@ -94,6 +94,24 @@ public class InMemoryStorageTest {
     );
   }
 
+  @Test public void getSpanNames_skipsNullSpanName() throws IOException {
+    Span span1 = Span.newBuilder().traceId("1").id("1").name("root")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .timestamp(TODAY * 1000)
+      .build();
+
+    Span span2 = Span.newBuilder().traceId("1").parentId("1").id("2")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .timestamp(TODAY * 1000)
+      .build();
+
+    storage.accept(asList(span1, span2));
+
+    assertThat(storage.getSpanNames("app").execute()).containsOnly(
+      "root"
+    );
+  }
+
   static QueryRequest.Builder requestBuilder() {
     return QueryRequest.newBuilder().endTs(TODAY + TestObjects.DAY).lookback(
       TestObjects.DAY * 2).limit(100);
