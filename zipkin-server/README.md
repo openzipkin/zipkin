@@ -119,10 +119,12 @@ zipkin-server is a drop-in replacement for the [scala query service](https://git
     * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra Storage
-Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
+Zipkin's [Cassandra v3 storage component](../zipkin-storage/zipkin2_cassandra)
+supports version 3.9+ and applies when `STORAGE_TYPE` is set to `cassandra2`:
+Zipkin's [Cassandra legacy storage component](../zipkin-storage/cassandra)
 supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
 
-    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin".
+    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin2" when storage type is "cassandra3" or "zipkin" if legacy.
     * `CASSANDRA_CONTACT_POINTS`: Comma separated list of host addresses part of Cassandra cluster. You can also specify a custom port with 'host:port'. Defaults to localhost on port 9042.
     * `CASSANDRA_LOCAL_DC`: Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
     * `CASSANDRA_ENSURE_SCHEMA`: Ensuring cassandra has the latest schema. If enabled tries to execute scripts in the classpath prefixed with `cassandra-schema-cql3`. Defaults to true
@@ -139,8 +141,9 @@ The following are tuning parameters which may not concern all users:
 Example usage:
 
 ```bash
-$ STORAGE_TYPE=cassandra java -jar zipkin.jar --logging.level.com.datastax.driver.core.QueryLogger=trace
+$ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.com.datastax.driver.core.QueryLogger=trace
 ```
+
 ### MySQL Storage
 The following apply when `STORAGE_TYPE` is set to `mysql`:
 

@@ -36,9 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
-import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
 import zipkin.storage.cassandra3.Schema.EndpointUDT;
-import zipkin.storage.cassandra3.Schema.TraceIdUDT;
 import zipkin.storage.cassandra3.Schema.TypeCodecImpl;
 
 import static zipkin.storage.cassandra3.Schema.DEFAULT_KEYSPACE;
@@ -85,24 +83,17 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
 
     // The UDTs are hardcoded against the zipkin keyspace.
     // If a different keyspace is being used the codecs must be re-applied to this different keyspace
-    TypeCodec<TraceIdUDT> traceIdCodec = mapping.udtCodec(TraceIdUDT.class);
     TypeCodec<EndpointUDT> endpointCodec = mapping.udtCodec(EndpointUDT.class);
     TypeCodec<AnnotationUDT> annoCodec = mapping.udtCodec(AnnotationUDT.class);
-    TypeCodec<BinaryAnnotationUDT> bAnnoCodec = mapping.udtCodec(BinaryAnnotationUDT.class);
 
     KeyspaceMetadata keyspace =
         session.getCluster().getMetadata().getKeyspace(session.getLoggedKeyspace());
 
     session.getCluster().getConfiguration().getCodecRegistry()
         .register(
-            new TypeCodecImpl(keyspace.getUserType("trace_id"), TraceIdUDT.class, traceIdCodec))
-        .register(
             new TypeCodecImpl(keyspace.getUserType("endpoint"), EndpointUDT.class, endpointCodec))
         .register(
-            new TypeCodecImpl(keyspace.getUserType("annotation"), AnnotationUDT.class, annoCodec))
-        .register(
-            new TypeCodecImpl(keyspace.getUserType("binary_annotation"), BinaryAnnotationUDT.class,
-                bAnnoCodec));
+            new TypeCodecImpl(keyspace.getUserType("annotation"), AnnotationUDT.class, annoCodec));
   }
 
   // Visible for testing

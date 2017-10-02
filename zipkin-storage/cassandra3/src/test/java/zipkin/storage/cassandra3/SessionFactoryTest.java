@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,20 +37,20 @@ public class SessionFactoryTest {
 
   @Test
   public void contactPoints_defaultsToLocalhost() {
-    assertThat(parseContactPoints(Cassandra3Storage.builder().build()))
+    assertThat(parseContactPoints(Cassandra3Storage.newBuilder().build()))
         .containsExactly(new InetSocketAddress("127.0.0.1", 9042));
   }
 
   @Test
   public void contactPoints_defaultsToPort9042() {
-    assertThat(parseContactPoints(Cassandra3Storage.builder().contactPoints("1.1.1.1").build()))
+    assertThat(parseContactPoints(Cassandra3Storage.newBuilder().contactPoints("1.1.1.1").build()))
         .containsExactly(new InetSocketAddress("1.1.1.1", 9042));
   }
 
   @Test
   public void contactPoints_defaultsToPort9042_multi() {
     assertThat(parseContactPoints(
-        Cassandra3Storage.builder().contactPoints("1.1.1.1:9143,2.2.2.2").build()))
+        Cassandra3Storage.newBuilder().contactPoints("1.1.1.1:9143,2.2.2.2").build()))
         .containsExactly(
             new InetSocketAddress("1.1.1.1", 9143),
             new InetSocketAddress("2.2.2.2", 9042)
@@ -59,13 +59,13 @@ public class SessionFactoryTest {
 
   @Test
   public void contactPoints_hostAndPort() {
-    assertThat(parseContactPoints(Cassandra3Storage.builder().contactPoints("1.1.1.1:9142").build()))
+    assertThat(parseContactPoints(Cassandra3Storage.newBuilder().contactPoints("1.1.1.1:9142").build()))
         .containsExactly(new InetSocketAddress("1.1.1.1", 9142));
   }
 
   @Test
   public void connectPort_singleContactPoint() {
-    assertThat(buildCluster(Cassandra3Storage.builder().contactPoints("1.1.1.1:9142").build())
+    assertThat(buildCluster(Cassandra3Storage.newBuilder().contactPoints("1.1.1.1:9142").build())
         .getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9142);
   }
@@ -73,7 +73,7 @@ public class SessionFactoryTest {
   @Test
   public void connectPort_whenContactPointsHaveSamePort() {
     assertThat(
-        buildCluster(Cassandra3Storage.builder().contactPoints("1.1.1.1:9143,2.2.2.2:9143").build())
+        buildCluster(Cassandra3Storage.newBuilder().contactPoints("1.1.1.1:9143,2.2.2.2:9143").build())
             .getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9143);
   }
@@ -81,7 +81,7 @@ public class SessionFactoryTest {
   @Test
   public void connectPort_whenContactPointsHaveMixedPorts_coercesToDefault() {
     assertThat(
-        buildCluster(Cassandra3Storage.builder().contactPoints("1.1.1.1:9143,2.2.2.2").build())
+        buildCluster(Cassandra3Storage.newBuilder().contactPoints("1.1.1.1:9143,2.2.2.2").build())
             .getConfiguration().getProtocolOptions().getPort())
         .isEqualTo(9042);
   }
@@ -89,7 +89,7 @@ public class SessionFactoryTest {
   @Test
   public void usernamePassword_impliesNullDelimitedUtf8Bytes() {
     Authenticator authenticator =
-        buildCluster(Cassandra3Storage.builder().username("bob").password("secret").build())
+        buildCluster(Cassandra3Storage.newBuilder().username("bob").password("secret").build())
             .getConfiguration().getProtocolOptions().getAuthProvider()
             .newAuthenticator(new InetSocketAddress("localhost", 8080), null);
 
@@ -100,14 +100,14 @@ public class SessionFactoryTest {
 
   @Test
   public void authProvider_defaultsToNone() {
-    assertThat(buildCluster(Cassandra3Storage.builder().build())
+    assertThat(buildCluster(Cassandra3Storage.newBuilder().build())
         .getConfiguration().getProtocolOptions().getAuthProvider())
         .isEqualTo(AuthProvider.NONE);
   }
 
   @Test
   public void loadBalancing_defaultsToRoundRobin() {
-    RoundRobinPolicy policy = toRoundRobinPolicy(Cassandra3Storage.builder().build());
+    RoundRobinPolicy policy = toRoundRobinPolicy(Cassandra3Storage.newBuilder().build());
 
     Host foo = mock(Host.class);
     when(foo.getDatacenter()).thenReturn("foo");
@@ -130,7 +130,7 @@ public class SessionFactoryTest {
   @Test
   public void loadBalancing_settingLocalDcIgnoresOtherDatacenters() {
     DCAwareRoundRobinPolicy policy = toDCAwareRoundRobinPolicy(
-        Cassandra3Storage.builder().localDc("bar").build());
+        Cassandra3Storage.newBuilder().localDc("bar").build());
 
     Host foo = mock(Host.class);
     when(foo.getDatacenter()).thenReturn("foo");
@@ -152,7 +152,7 @@ public class SessionFactoryTest {
 
   @Test
   public void maxConnections_defaultsTo8() {
-    PoolingOptions poolingOptions = buildCluster(Cassandra3Storage.builder().build())
+    PoolingOptions poolingOptions = buildCluster(Cassandra3Storage.newBuilder().build())
         .getConfiguration().getPoolingOptions();
 
     assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(8);
@@ -161,7 +161,7 @@ public class SessionFactoryTest {
   @Test
   public void maxConnections_setsMaxConnectionsPerDatacenterLocalHost() {
     PoolingOptions poolingOptions =
-        buildCluster(Cassandra3Storage.builder().maxConnections(16).build())
+        buildCluster(Cassandra3Storage.newBuilder().maxConnections(16).build())
             .getConfiguration().getPoolingOptions();
 
     assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(16);

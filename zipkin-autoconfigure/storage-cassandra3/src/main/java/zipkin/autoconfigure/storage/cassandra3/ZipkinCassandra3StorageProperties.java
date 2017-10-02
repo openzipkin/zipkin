@@ -18,7 +18,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.cassandra3.Cassandra3Storage;
 
 import static zipkin.storage.cassandra3.Cassandra3Storage.Builder;
-import static zipkin.storage.cassandra3.Cassandra3Storage.builder;
+import static zipkin.storage.cassandra3.Cassandra3Storage.newBuilder;
 
 @ConfigurationProperties("zipkin.storage.cassandra3")
 public class ZipkinCassandra3StorageProperties implements Serializable { // for Spark jobs
@@ -108,7 +108,7 @@ public class ZipkinCassandra3StorageProperties implements Serializable { // for 
   }
 
   public Builder toBuilder() {
-    return builder()
+    return newBuilder()
         .keyspace(keyspace)
         .contactPoints(contactPoints)
         .localDc(localDc)

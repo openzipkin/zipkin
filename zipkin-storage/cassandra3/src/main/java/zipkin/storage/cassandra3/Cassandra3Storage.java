@@ -19,12 +19,15 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import java.io.IOException;
 import zipkin.internal.LazyCloseable;
-import zipkin.internal.Nullable;
-import zipkin.storage.QueryRequest;
-import zipkin.storage.StorageComponent;
-import zipkin.storage.guava.LazyGuavaStorageComponent;
+import zipkin2.CheckResult;
+import zipkin2.internal.Nullable;
+import zipkin2.storage.QueryRequest;
+import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.SpanStore;
+import zipkin2.storage.StorageComponent;
 
 import static zipkin.internal.Util.checkNotNull;
+
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -36,8 +39,7 @@ import static zipkin.internal.Util.checkNotNull;
  */
 // This component is named Cassandra3Storage as it correlates to "cassandra3" storage types, and
 // makes health-checks more obvious. Note: this is the only public type in the package.
-public final class Cassandra3Storage
-    extends LazyGuavaStorageComponent<CassandraSpanStore, CassandraSpanConsumer> {
+public final class Cassandra3Storage extends StorageComponent {
 
   // @FunctionalInterface, except safe for lower language levels
   public interface SessionFactory {
@@ -46,11 +48,11 @@ public final class Cassandra3Storage
     Session create(Cassandra3Storage storage);
   }
 
-  public static Builder builder() {
+  public static Builder newBuilder() {
     return new Builder();
   }
 
-  public static final class Builder implements StorageComponent.Builder {
+  public static final class Builder extends StorageComponent.Builder {
     boolean strictTraceId = true;
     String keyspace = Schema.DEFAULT_KEYSPACE;
     String contactPoints = "localhost";
@@ -205,12 +207,11 @@ public final class Cassandra3Storage
     return session.get();
   }
 
-  @Override protected CassandraSpanStore computeGuavaSpanStore() {
-    return new CassandraSpanStore(session.get(), maxTraceCols, indexFetchMultiplier,
-        strictTraceId);
+  @Override public SpanStore spanStore() {
+    return new CassandraSpanStore(session.get(), maxTraceCols, indexFetchMultiplier, strictTraceId);
   }
 
-  @Override protected CassandraSpanConsumer computeGuavaSpanConsumer() {
+  @Override public SpanConsumer spanConsumer() {
     return new CassandraSpanConsumer(session.get(), strictTraceId);
   }
 

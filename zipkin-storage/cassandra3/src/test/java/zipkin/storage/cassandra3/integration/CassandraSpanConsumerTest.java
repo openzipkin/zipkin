@@ -16,37 +16,34 @@ package zipkin.storage.cassandra3.integration;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.Appender;
+import java.io.IOException;
 import java.util.stream.IntStream;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.slf4j.LoggerFactory;
-import zipkin.Annotation;
-import zipkin.Span;
-import zipkin.TestObjects;
-import zipkin.internal.CallbackCaptor;
-import zipkin.storage.AsyncSpanConsumer;
+import zipkin.internal.Util;
 import zipkin.storage.cassandra3.Cassandra3Storage;
 import zipkin.storage.cassandra3.InternalForTests;
+import zipkin2.Span;
+import zipkin2.TestObjects;
+import zipkin2.storage.SpanConsumer;
 
 import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static zipkin.Constants.CLIENT_RECV;
-import static zipkin.Constants.CLIENT_SEND;
-import static zipkin.TestObjects.APP_ENDPOINT;
+import static zipkin2.TestObjects.FRONTEND;
 
 abstract class CassandraSpanConsumerTest {
 
   private final Appender mockAppender = mock(Appender.class);
 
-  abstract protected Cassandra3Storage storage();
+  protected abstract Cassandra3Storage storage();
 
   @Before
   public void clear() {
@@ -67,27 +64,27 @@ abstract class CassandraSpanConsumerTest {
    * index rows who have no duration.
    */
   @Test
-  public void doesntIndexSpansMissingDuration() {
-    Span span = Span.builder().traceId(1L).id(1L).name("get").duration(0L).build();
+  public void doesntIndexSpansMissingDuration() throws IOException {
+    Span span = Span.newBuilder().traceId("1").id("1").name("get").duration(0L).build();
 
-    accept(storage().asyncSpanConsumer(), span);
+    accept(storage().spanConsumer(), span);
 
     assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage())).isZero();
   }
 
   @Test
-  public void logTimestampMissingOnClientSend() {
-    Span span = Span.builder().traceId(1L).parentId(1L).id(2L).name("query")
-      .addAnnotation(Annotation.create(0L, CLIENT_SEND, APP_ENDPOINT))
-      .addAnnotation(Annotation.create(0L, CLIENT_RECV, APP_ENDPOINT)).build();
-    accept(storage().asyncSpanConsumer(), span);
+  public void logTimestampMissingOnClientSend() throws IOException {
+    Span span = Span.newBuilder().traceId("1").parentId("1").id("2").name("query")
+      .localEndpoint(FRONTEND)
+      .kind(Span.Kind.CLIENT).build();
+    accept(storage().spanConsumer(), span);
     verify(mockAppender).doAppend(considerSwitchStrategyLog());
   }
 
   @Test
-  public void dontLogTimestampMissingOnMidTierServerSpan() {
-    Span span = TestObjects.TRACE.get(0);
-    accept(storage().asyncSpanConsumer(), span);
+  public void dontLogTimestampMissingOnMidTierServerSpan() throws IOException {
+    Span span = TestObjects.CLIENT_SPAN;
+    accept(storage().spanConsumer(), span);
     verify(mockAppender, never()).doAppend(considerSwitchStrategyLog());
   }
 
@@ -107,22 +104,25 @@ abstract class CassandraSpanConsumerTest {
    * the trace as opposed to each individual timestamp.
    */
   @Test
-  public void skipsRedundantIndexingInATrace() {
+  public void skipsRedundantIndexingInATrace() throws IOException {
     Span[] trace = new Span[101];
-    trace[0] = TestObjects.TRACE.get(0);
+    trace[0] = TestObjects.CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).build();
 
     IntStream.range(0, 100).forEach(i -> {
-      Span s = TestObjects.TRACE.get(1);
-      trace[i + 1] = s.toBuilder()
-        .id(s.id + i)
-        .timestamp(s.timestamp + i * 1000) // all peer span timestamps happen a millisecond later
-        .annotations(s.annotations.stream()
-          .map(a -> Annotation.create(a.timestamp + i * 1000, a.value, a.endpoint))
-          .collect(toList()))
+      trace[i + 1] = Span.newBuilder()
+        .traceId(trace[0].traceId())
+        .parentId(trace[0].id())
+        .id(Util.toLowerHex(i))
+        .name("get")
+        .kind(Span.Kind.CLIENT)
+        .localEndpoint(FRONTEND)
+        .timestamp(
+          trace[0].timestamp() + i * 1000) // all peer span timestamps happen a millisecond later
+        .duration(10L)
         .build();
     });
 
-    accept(storage().asyncSpanConsumer(), trace);
+    accept(storage().spanConsumer(), trace);
     assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
       .isGreaterThanOrEqualTo(4L);
     assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
@@ -139,10 +139,7 @@ abstract class CassandraSpanConsumerTest {
       .isGreaterThanOrEqualTo(201L);
   }
 
-  void accept(AsyncSpanConsumer consumer, Span... spans) {
-    // Blocks until the callback completes to allow read-your-writes consistency during tests.
-    CallbackCaptor<Void> captor = new CallbackCaptor<>();
-    consumer.accept(asList(spans), captor);
-    captor.get(); // block on result
+  void accept(SpanConsumer consumer, Span... spans) throws IOException {
+    consumer.accept(asList(spans)).execute();
   }
 }

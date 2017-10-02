@@ -11,7 +11,7 @@
 #    the License.
 #
 ###
-### Stress test for stress_zipkin3.service_span_name_index table
+### Stress test for stress_zipkin2_cassandra3.service_span_index table
 ###
 ### Stress testing is done using the `cassandra-stress` tool
 ###
@@ -23,7 +23,7 @@
 ###  cassandra-stress  user profile=trace_by_service_span-stress.yaml ops\(insert=1,select=1,by_duration=1\)  duration=1m  -rate threads=4 throttle=50/s
 
 # Keyspace Name
-keyspace: stress_zipkin3
+keyspace: stress_zipkin2_cassandra3
 
 # Table name
 table: trace_by_service_span
@@ -32,11 +32,11 @@ table: trace_by_service_span
 ### Column Distribution Specifications ###
 
 columnspec:
-  - name: service_name
+  - name: service
     size: uniform(5..20)
     population: uniform(1..100)
 
-  - name: span_name
+  - name: span
     size: uniform(5..20)
     population: uniform(1..100)
 
@@ -71,8 +71,8 @@ insert:
 #
 queries:
    select:
-    cql: SELECT * FROM trace_by_service_span WHERE service_name = ? AND span_name = ? AND bucket = ? LIMIT 1
+    cql: SELECT * FROM trace_by_service_span WHERE service = ? AND span = ? AND bucket = ? LIMIT 1
     fields: samerow
    by_duration:
-    cql: SELECT * FROM trace_by_service_span WHERE service_name = ? AND span_name = ? AND bucket = ? AND duration < ? LIMIT 1
+    cql: SELECT * FROM trace_by_service_span WHERE service = ? AND span = ? AND bucket = ? AND duration < ? LIMIT 1
     fields: samerow

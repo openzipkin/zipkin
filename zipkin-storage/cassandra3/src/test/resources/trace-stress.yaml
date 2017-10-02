@@ -10,7 +10,7 @@
 #    or implied. See the License for the specific language governing permissions and limitations under
 #    the License.
 #
-### Stress test for stress_zipkin3.traces table
+### Stress test for stress_zipkin2_cassandra3.traces table
 ###
 ### Stress testing is done using the `cassandra-stress` tool
 ###
@@ -22,7 +22,7 @@
 ###  cassandra-stress  user profile=trace-stress.yaml ops\(insert=1,by_trace=1,by_trace_ts_id=1,by_annotation=1\)  duration=1m  -rate threads=4 throttle=50/s
 
 # Keyspace Name
-keyspace: stress_zipkin3
+keyspace: stress_zipkin2_cassandra3
 
 # Table name
 table: traces
@@ -47,7 +47,7 @@ columnspec:
     size: fixed(12)
     population: uniform(1..10k)
 
-  - name: span_name
+  - name: span
     size: uniform(5..20)
     population: uniform(1..100)
 
@@ -55,7 +55,11 @@ columnspec:
     size: fixed(12)
     population: uniform(1..10k)
 
-  - name: all_annotations
+  - name: l_service
+    size: uniform(5..20)
+    population: uniform(1..100)
+
+  - name: annotation_query
     size: gaussian(50..500)
     population: uniform(1..1k)
 
@@ -80,5 +84,5 @@ queries:
     cql: SELECT * FROM traces WHERE trace_id = ? AND ts_uuid = ? AND id = ?
     fields: samerow
    by_annotation:
-    cql: SELECT trace_id, ts, id FROM traces WHERE all_annotations LIKE ?
+    cql: SELECT trace_id, ts, id FROM traces WHERE annotation_query LIKE ?
     fields: samerow

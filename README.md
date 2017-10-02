@@ -72,8 +72,11 @@ The [InMemoryStorage](zipkin2/src/main/java/zipkin2/storage/InMemoryStorage.java
 ### MySQL
 The [MySQLStorage](zipkin-storage/mysql) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. For example, it deconstructs spans into columns, so you can perform ad-hoc queries using SQL. However, this component has [known performance issues](https://github.com/openzipkin/zipkin/issues/1233): queries will eventually take seconds to return if you put a lot of data into it.
 
-### Cassandra
-The [CassandraStorage](zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+### Cassandra v3
+The [Cassandra v3](zipkin-storage/zipkin2_cassandra) component is tested against Cassandra 3.11+. It stores spans using UDTs, such that they appear like the v2 Zipkin model in cqlsh. It is designed for scale. For example, it uses a combination of SASI and manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+
+### Cassandra Legacy
+The [Cassandra Legacy](zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ### Elasticsearch
 The [ElasticsearchHttpStorage](zipkin-storage/elasticsearch-http) component is tested against Elasticsearch 2.x and 5.x. It stores spans as json and has been designed for larger scale. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
