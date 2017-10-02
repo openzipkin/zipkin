@@ -128,8 +128,10 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
 
     builder.withQueryOptions(
       new QueryOptions()
+        // if local_dc isn't defined LOCAL_ONE incorrectly sticks to first seed host that connects
         .setConsistencyLevel(
           null != cassandra.localDc ? ConsistencyLevel.LOCAL_ONE : ConsistencyLevel.ONE)
+        // all zipkin cql writes are idempotent
         .setDefaultIdempotence(true));
 
     if (cassandra.useSsl) {
