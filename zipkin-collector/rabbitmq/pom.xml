@@ -31,10 +31,10 @@
 	<properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <rabbitmq-client.version>4.2.0</rabbitmq-client.version>
+    <amqp-client.version>4.2.2</amqp-client.version>
   </properties>
 
-	<dependencies>
+  <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
@@ -49,7 +49,7 @@
     <dependency>
       <groupId>com.rabbitmq</groupId>
       <artifactId>amqp-client</artifactId>
-      <version>${rabbitmq-client.version}</version>
+      <version>${amqp-client.version}</version>
     </dependency>
 
     <dependency>
