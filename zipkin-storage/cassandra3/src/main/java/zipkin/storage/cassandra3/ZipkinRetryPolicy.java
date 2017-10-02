@@ -29,54 +29,48 @@ final class ZipkinRetryPolicy implements RetryPolicy {
   private ZipkinRetryPolicy() {
   }
 
-    @Override
-    public RetryDecision onReadTimeout(
-        Statement stmt,
-        ConsistencyLevel cl,
-        int required,
-        int received,
-        boolean retrieved,
-        int retry) {
+  @Override
+  public RetryDecision onReadTimeout(Statement stmt, ConsistencyLevel cl, int required,
+    int received, boolean retrieved, int retry) {
 
-      if (retry > 1) {
-        try {
-          Thread.sleep(100);
-        } catch (InterruptedException expected) { }
+    if (retry > 1) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException expected) {
       }
-      return stmt.isIdempotent()
-          ? retry < 10 ? RetryDecision.retry(cl) : RetryDecision.rethrow()
-          : DefaultRetryPolicy.INSTANCE.onReadTimeout(stmt, cl, required, received, retrieved, retry);
     }
+    return stmt.isIdempotent()
+      ? retry < 10 ? RetryDecision.retry(cl) : RetryDecision.rethrow()
+      : DefaultRetryPolicy.INSTANCE.onReadTimeout(stmt, cl, required, received, retrieved, retry);
+  }
 
-    @Override
-    public RetryDecision onWriteTimeout(
-        Statement stmt,
-        ConsistencyLevel cl,
-        WriteType type,
-        int required,
-        int received,
-        int retry) {
+  @Override
+  public RetryDecision onWriteTimeout(Statement stmt, ConsistencyLevel cl, WriteType type,
+    int required, int received, int retry) {
 
-      return stmt.isIdempotent()
-          ? RetryDecision.retry(cl)
-          : DefaultRetryPolicy.INSTANCE.onWriteTimeout(stmt, cl, type, required, received, retry);
-    }
+    return stmt.isIdempotent()
+      ? RetryDecision.retry(cl)
+      : DefaultRetryPolicy.INSTANCE.onWriteTimeout(stmt, cl, type, required, received, retry);
+  }
 
-    @Override
-    public RetryDecision onUnavailable(Statement stmt, ConsistencyLevel cl, int required, int aliveReplica, int retry) {
-      return DefaultRetryPolicy.INSTANCE.onUnavailable(stmt, cl, required, aliveReplica, retry == 1 ? 0 : retry);
-    }
+  @Override
+  public RetryDecision onUnavailable(Statement stmt, ConsistencyLevel cl, int required,
+    int aliveReplica, int retry) {
+    return DefaultRetryPolicy.INSTANCE.onUnavailable(stmt, cl, required, aliveReplica,
+      retry == 1 ? 0 : retry);
+  }
 
-    @Override
-    public RetryDecision onRequestError(Statement stmt, ConsistencyLevel cl, DriverException ex, int nbRetry) {
-      return DefaultRetryPolicy.INSTANCE.onRequestError(stmt, cl, ex, nbRetry);
-    }
+  @Override
+  public RetryDecision onRequestError(Statement stmt, ConsistencyLevel cl, DriverException ex,
+    int nbRetry) {
+    return DefaultRetryPolicy.INSTANCE.onRequestError(stmt, cl, ex, nbRetry);
+  }
 
-    @Override
-    public void init(com.datastax.driver.core.Cluster cluster) {
-    }
+  @Override
+  public void init(com.datastax.driver.core.Cluster cluster) {
+  }
 
-    @Override
-    public void close() {
-    }
+  @Override
+  public void close() {
+  }
 }

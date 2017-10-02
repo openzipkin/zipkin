@@ -127,10 +127,10 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
     ));
 
     builder.withQueryOptions(
-                new QueryOptions()
-                        .setConsistencyLevel(
-                                null != cassandra.localDc ? ConsistencyLevel.LOCAL_ONE : ConsistencyLevel.ONE)
-                        .setDefaultIdempotence(true));
+      new QueryOptions()
+        .setConsistencyLevel(
+          null != cassandra.localDc ? ConsistencyLevel.LOCAL_ONE : ConsistencyLevel.ONE)
+        .setDefaultIdempotence(true));
 
     if (cassandra.useSsl) {
       builder = builder.withSSL();
