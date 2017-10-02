@@ -97,7 +97,6 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private final Function<Row, String> rowToServiceName;
   private final Function<Row, Span> rowToSpan;
   private final Function<List<Map<TraceIdUDT, Long>>, Map<TraceIdUDT, Long>> collapseTraceIdMaps;
-  private final int traceTtl;
   private final int indexTtl;
 
   CassandraSpanStore(Session session, int maxTraceCols, int indexFetchMultiplier,
@@ -212,7 +211,6 @@ final class CassandraSpanStore implements GuavaSpanStore {
     };
 
     KeyspaceMetadata md = Schema.getKeyspaceMetadata(session);
-    this.traceTtl = md.getTable(TABLE_TRACES).getOptions().getDefaultTimeToLive();
     this.indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
   }
 
