@@ -27,15 +27,12 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import zipkin.Annotation;
-import zipkin.BinaryAnnotation;
 import zipkin.Constants;
-import zipkin.Span;
-import zipkin.internal.Nullable;
-import zipkin.storage.QueryRequest;
-import zipkin.storage.cassandra3.Schema.TraceIdUDT;
+import zipkin2.Annotation;
+import zipkin2.Span;
+import zipkin2.internal.Nullable;
+import zipkin2.storage.QueryRequest;
 
-import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.sortedList;
 
@@ -58,60 +55,37 @@ final class CassandraUtil {
   }
 
   /**
-   * Returns keys that concatenate the serviceName associated with an annotation or a binary
-   * annotation.
-   *
-   * <p>Note: Annotations are delimited with colons while Binary Annotations are delimited with
-   * semi-colons. This is because the returned keys are joined on comma and queried with LIKE. For
-   * example, a span with the annotation "foo" and a binary annotation "bar" -> "baz" would end up
-   * in a cell "service:foo,service:bar:baz". A query for the annotation "bar" would satisfy as
-   * "service:bar" is a substring of that cell. This is imprecise. By joining binary annotations on
-   * semicolon, this mismatch cannot happen.
-   *
-   * <p>Note: in the case of binary annotations, only string types are returned, as that's the only
-   * queryable type, per {@link QueryRequest#binaryAnnotations}.
+   * Returns keys that concatenate the serviceName associated with an annotation or a tags.
    *
    * @see QueryRequest#annotations
-   * @see QueryRequest#binaryAnnotations
    */
   static Set<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
-    for (Annotation a : span.annotations) {
+    for (Annotation a : span.annotations()) {
       // don't index core annotations as they aren't queryable
-      if (Constants.CORE_ANNOTATIONS.contains(a.value)) continue;
+      if (Constants.CORE_ANNOTATIONS.contains(a.value())) continue;
 
-      if (a.endpoint != null && !a.endpoint.serviceName.isEmpty()) {
-        annotationKeys.add(a.endpoint.serviceName + ":" + a.value);
-      }
+      annotationKeys.add(a.value());
     }
-    for (BinaryAnnotation b : span.binaryAnnotations) {
-      if (b.type != BinaryAnnotation.Type.STRING
-          || b.endpoint == null
-          || b.endpoint.serviceName.isEmpty()
-          || b.value.length > LONGEST_VALUE_TO_INDEX * 4) { // UTF_8 is up to 4bytes/char
-        continue;
-      }
-      String value = new String(b.value, UTF_8);
-      if (value.length() > LONGEST_VALUE_TO_INDEX) continue;
+    for (Map.Entry<String,String> tag : span.tags().entrySet()) {
+      if (tag.getValue().length() > LONGEST_VALUE_TO_INDEX) continue;
 
       // Using colon to allow allow annotation query search to work on key
-      annotationKeys.add(b.endpoint.serviceName + ":" + b.key);
-      annotationKeys.add(b.endpoint.serviceName + ";" + b.key + ";" + new String(b.value, UTF_8));
+      annotationKeys.add(tag.getKey());
+      annotationKeys.add(tag.getKey() + ":" + tag.getValue());
     }
     return annotationKeys;
   }
 
   static List<String> annotationKeys(QueryRequest request) {
-    if (request.annotations.isEmpty() && request.binaryAnnotations.isEmpty()) {
-      return Collections.emptyList();
-    }
-    checkArgument(request.serviceName != null, "serviceName needed with annotation query");
+    checkArgument(request.serviceName() != null, "serviceName needed with annotation query");
     Set<String> annotationKeys = new LinkedHashSet<>();
-    for (String a : request.annotations) { // doesn't include CORE_ANNOTATIONS
-      annotationKeys.add(request.serviceName + ":" + a);
-    }
-    for (Map.Entry<String, String> b : request.binaryAnnotations.entrySet()) {
-      annotationKeys.add(request.serviceName + ";" + b.getKey() + ";" + b.getValue());
+    for (Map.Entry<String, String> e : request.annotationQuery().entrySet()) {
+      if (e.getValue().isEmpty()) {
+        annotationKeys.add(e.getKey());
+      } else {
+        annotationKeys.add(e.getKey() + ":" + e.getValue());
+      }
     }
     return sortedList(annotationKeys);
   }
@@ -135,11 +109,11 @@ final class CassandraUtil {
     }
   }
 
-  static Function<List<Map<TraceIdUDT, Long>>, Collection<TraceIdUDT>> intersectKeySets() {
+  static Function<List<Map<String, Long>>, Collection<String>> intersectKeySets() {
     return (Function) IntersectKeySets.INSTANCE;
   }
 
-  static Function<Map<TraceIdUDT, Long>, Collection<TraceIdUDT>> traceIdsSortedByDescTimestamp() {
+  static Function<Map<String, Long>, Collection<String>> traceIdsSortedByDescTimestamp() {
     return TraceIdsSortedByDescTimestamp.INSTANCE;
   }
 
@@ -155,20 +129,17 @@ final class CassandraUtil {
     }
   }
 
-  enum TraceIdsSortedByDescTimestamp
-      implements Function<Map<TraceIdUDT, Long>, Collection<TraceIdUDT>> {
+  enum TraceIdsSortedByDescTimestamp implements Function<Map<String, Long>, Collection<String>> {
     INSTANCE;
 
-    @Override public Collection<TraceIdUDT> apply(@Nullable Map<TraceIdUDT, Long> map) {
+    @Override public Collection<String> apply(@Nullable Map<String, Long> map) {
       // timestamps can collide, so we need to add some random digits on end before using them as keys
-      SortedMap<BigInteger, TraceIdUDT> sorted = new TreeMap<>(Collections.reverseOrder());
-      for (Map.Entry<TraceIdUDT, Long> e : map.entrySet()) {
+      SortedMap<BigInteger, String> sorted = new TreeMap<>(Collections.reverseOrder());
+      map.entrySet().forEach(e ->
         sorted.put(
-            BigInteger.valueOf(e.getValue())
-                .multiply(OFFSET)
-                .add(BigInteger.valueOf(RAND.nextInt())),
-            e.getKey());
-      }
+            BigInteger.valueOf(e.getValue()).multiply(OFFSET).add(BigInteger.valueOf(RAND.nextInt())),
+            e.getKey())
+      );
       return sorted.values();
     }
 

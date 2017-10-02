@@ -13,16 +13,13 @@
  */
 package zipkin.storage.cassandra3;
 
-import com.google.common.collect.ImmutableList;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import zipkin.BinaryAnnotation;
-import zipkin.Constants;
-import zipkin.Span;
-import zipkin.TestObjects;
 import zipkin.TraceKeys;
-import zipkin.storage.QueryRequest;
+import zipkin2.Span;
+import zipkin2.TestObjects;
+import zipkin2.storage.QueryRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -33,8 +30,13 @@ public class CassandraUtilTest {
 
   @Test
   public void annotationKeys_emptyRequest() {
-    assertThat(CassandraUtil.annotationKeys(QueryRequest.builder().lookback(86400000L).build()))
-        .isEmpty();
+    assertThat(CassandraUtil.annotationKeys(
+          QueryRequest.newBuilder()
+              .endTs(System.currentTimeMillis())
+              .limit(10)
+              .serviceName("test").lookback(86400000L)
+              .build()))
+          .isEmpty();
   }
 
   @Test
@@ -42,59 +44,55 @@ public class CassandraUtilTest {
     thrown.expect(IllegalArgumentException.class);
 
     CassandraUtil.annotationKeys(
-        QueryRequest.builder().lookback(86400000L).addAnnotation("sr").build());
+        QueryRequest.newBuilder()
+            .endTs(System.currentTimeMillis())
+            .limit(10)
+            .lookback(86400000L)
+            .parseAnnotationQuery("foo")
+            .build());
   }
 
   @Test
   public void annotationKeys() {
-    assertThat(CassandraUtil.annotationKeys(QueryRequest.builder()
-        .lookback(86400000L)
-        .serviceName("service")
-        .addAnnotation(Constants.ERROR)
-        .addBinaryAnnotation(TraceKeys.HTTP_METHOD, "GET").build()))
-        .containsExactly("service:error", "service;http.method;GET");
+    assertThat(CassandraUtil.annotationKeys(
+         QueryRequest.newBuilder()
+            .endTs(System.currentTimeMillis())
+            .limit(10)
+            .lookback(86400000L)
+            .serviceName("service")
+            .parseAnnotationQuery("error and http.method=GET")
+            .build()))
+         .containsExactly("error", "http.method:GET");
   }
 
   @Test
   public void annotationKeys_dedupes() {
-    assertThat(CassandraUtil.annotationKeys(QueryRequest.builder()
-        .lookback(86400000L)
-        .serviceName("service")
-        .addAnnotation(Constants.ERROR)
-        .addAnnotation(Constants.ERROR).build()))
-        .containsExactly("service:error");
+    assertThat(CassandraUtil.annotationKeys(
+        QueryRequest.newBuilder()
+            .endTs(System.currentTimeMillis())
+            .limit(10)
+            .lookback(86400000L)
+            .serviceName("service")
+            .parseAnnotationQuery("error and error")
+            .build()))
+        .containsExactly("error");
   }
 
   @Test
-  public void annotationKeys_skipsCoreAndAddressAnnotations() throws Exception {
-    Span span = TestObjects.TRACE.get(1);
-
-    assertThat(span.annotations)
-        .extracting(a -> a.value)
-        .matches(Constants.CORE_ANNOTATIONS::containsAll);
-
-    assertThat(span.binaryAnnotations)
-        .extracting(b -> b.key)
-        .containsOnly(Constants.SERVER_ADDR, Constants.CLIENT_ADDR);
-
-    assertThat(CassandraUtil.annotationKeys(span))
-        .isEmpty();
-  }
-
-  @Test
-  public void annotationKeys_skipsBinaryAnnotationsLongerThan256chars() throws Exception {
+  public void annotationKeys_skipsTagsLongerThan256chars() throws Exception {
     // example long value
     String arn =
         "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
     // example too long value
     String url =
         "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";
-    Span span = TestObjects.TRACE.get(1).toBuilder().binaryAnnotations(ImmutableList.of(
-        BinaryAnnotation.create("aws.arn", arn, TestObjects.WEB_ENDPOINT),
-        BinaryAnnotation.create(TraceKeys.HTTP_URL, url, TestObjects.WEB_ENDPOINT)
-    )).build();
+
+    Span span = TestObjects.CLIENT_SPAN.toBuilder()
+      .putTag("aws.arn", arn)
+      .putTag(TraceKeys.HTTP_URL, url).build();
 
     assertThat(CassandraUtil.annotationKeys(span))
-        .containsOnly("web:aws.arn", "web;aws.arn;" + arn);
+        .contains("aws.arn", "aws.arn:" + arn)
+        .doesNotContain(TraceKeys.HTTP_URL, TraceKeys.HTTP_URL + ':' + url);
   }
 }

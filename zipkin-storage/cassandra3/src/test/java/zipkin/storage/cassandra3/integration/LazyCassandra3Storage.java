@@ -29,7 +29,7 @@ import org.rnorth.ducttape.unreliables.Unreliables;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.traits.LinkableContainer;
-import zipkin.Component;
+import zipkin2.CheckResult;
 import zipkin.internal.LazyCloseable;
 import zipkin.storage.cassandra3.Cassandra3Storage;
 import zipkin.storage.cassandra3.InternalForTests;
@@ -56,13 +56,13 @@ class LazyCassandra3Storage extends LazyCloseable<Cassandra3Storage> implements 
     }
 
     Cassandra3Storage result = computeStorageBuilder().build();
-    Component.CheckResult check = result.check();
-    if (check.ok) return result;
-    throw new AssumptionViolatedException(check.exception.getMessage(), check.exception);
+    CheckResult check = result.check();
+    if (check.ok()) return result;
+    throw new AssumptionViolatedException(check.error().getMessage(), check.error());
   }
 
   private Cassandra3Storage.Builder computeStorageBuilder() {
-    return Cassandra3Storage.builder()
+    return Cassandra3Storage.newBuilder()
       .contactPoints(contactPoints())
       .ensureSchema(true)
       .maxConnections(2)

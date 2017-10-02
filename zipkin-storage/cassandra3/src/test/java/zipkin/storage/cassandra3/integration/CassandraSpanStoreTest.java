@@ -25,8 +25,10 @@ import zipkin.Span;
 import zipkin.TestObjects;
 import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Util;
+import zipkin.internal.V2StorageComponent;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStoreTest;
+import zipkin.storage.StorageComponent;
 import zipkin.storage.cassandra3.Cassandra3Storage;
 import zipkin.storage.cassandra3.InternalForTests;
 
@@ -36,21 +38,25 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
-  abstract protected Cassandra3Storage storage();
+  protected abstract Cassandra3Storage cassandraStorage();
+
+  @Override protected final StorageComponent storage() {
+    return V2StorageComponent.create(cassandraStorage());
+  }
 
   /** Cassandra indexing is performed separately, allowing the raw span to be stored unaltered. */
   @Test
   public void rawTraceStoredWithoutAdjustments() {
-    Span rawSpan = TestObjects.TRACE.get(0).toBuilder().timestamp(null).duration(null).build();
+    Span rawSpan = TestObjects.TRACE.get(1).toBuilder().timestamp(null).duration(null).build();
     accept(rawSpan);
 
     // At query time, timestamp and duration are added.
     assertThat(store().getTrace(rawSpan.traceIdHigh, rawSpan.traceId))
-        .containsExactly(ApplyTimestampAndDuration.apply(rawSpan));
+      .containsExactly(ApplyTimestampAndDuration.apply(rawSpan));
 
     // Unlike other stores, Cassandra can show that timestamp and duration weren't reported
     assertThat(store().getRawTrace(rawSpan.traceIdHigh, rawSpan.traceId))
-        .containsExactly(rawSpan);
+      .containsExactly(rawSpan);
   }
 
   @Test
@@ -76,7 +82,7 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
     // Index ends up containing more rows than services * trace count, and cannot be de-duped
     // in a server-side query.
-    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
+    assertThat(InternalForTests.rowCountForTraceByServiceSpan(cassandraStorage()))
         .isGreaterThan(traceCount * store().getServiceNames().size());
 
     // Implementation over-fetches on the index to allow the user to receive unsurprising results.
@@ -93,7 +99,7 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
     Endpoint endpoint = TestObjects.LOTS_OF_SPANS[0].annotations.get(0).endpoint;
     BinaryAnnotation ba = BinaryAnnotation.create("host.name", "host1", endpoint);
 
-    int nbTraceFetched = queryLimit * InternalForTests.indexFetchMultiplier(storage());
+    int nbTraceFetched = queryLimit * InternalForTests.indexFetchMultiplier(cassandraStorage());
     IntStream.range(0, nbTraceFetched).forEach(i ->
             accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000)).build())
     );

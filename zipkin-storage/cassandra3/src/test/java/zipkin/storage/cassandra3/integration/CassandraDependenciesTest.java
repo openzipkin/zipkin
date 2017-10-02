@@ -17,8 +17,10 @@ import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.MergeById;
+import zipkin.internal.V2StorageComponent;
 import zipkin.storage.DependenciesTest;
 import zipkin.storage.InMemoryStorage;
+import zipkin.storage.StorageComponent;
 import zipkin.storage.cassandra3.Cassandra3Storage;
 import zipkin.storage.cassandra3.InternalForTests;
 
@@ -28,7 +30,12 @@ import static zipkin.internal.ApplyTimestampAndDuration.guessTimestamp;
 import static zipkin.internal.Util.midnightUTC;
 
 abstract class CassandraDependenciesTest extends DependenciesTest {
-  abstract protected Cassandra3Storage storage();
+
+  protected abstract Cassandra3Storage cassandraStorage();
+
+  @Override protected final StorageComponent storage() {
+    return V2StorageComponent.create(cassandraStorage());
+  }
 
   /**
    * The current implementation does not include dependency aggregation. It includes retrieval of
@@ -45,6 +52,6 @@ abstract class CassandraDependenciesTest extends DependenciesTest {
 
     // This gets or derives a timestamp from the spans
     long midnight = midnightUTC(guessTimestamp(MergeById.apply(spans).get(0)) / 1000);
-    InternalForTests.writeDependencyLinks(storage(), links, midnight);
+    InternalForTests.writeDependencyLinks(cassandraStorage(), links, midnight);
   }
 }

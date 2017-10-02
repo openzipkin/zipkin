@@ -33,6 +33,11 @@
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-storage-cassandra3</artifactId>
     </dependency>
 

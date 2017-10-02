@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 import zipkin.Codec;
 import zipkin.DependencyLink;
-import zipkin.storage.AsyncSpanConsumer;
 
 import static zipkin.storage.guava.GuavaStorageAdapters.guavaToAsync;
 
@@ -54,8 +53,8 @@ public class InternalForTests {
     return rowCount(storage, Schema.TABLE_TRACE_BY_SERVICE_SPAN);
   }
 
-  public static AsyncSpanConsumer withoutStrictTraceId(Cassandra3Storage storage) {
-    return guavaToAsync(new CassandraSpanConsumer(storage.session(), false));
+  public static CassandraSpanConsumer withoutStrictTraceId(Cassandra3Storage storage) {
+    return new CassandraSpanConsumer(storage.session(), false);
   }
 
   public static KeyspaceMetadata ensureExists(String keyspace, Session session) {

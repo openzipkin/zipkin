@@ -11,32 +11,32 @@
 #    the License.
 #
 ###
-### Stress test for stress_zipkin3.service_span_name_index table
+### Stress test for stress_zipkin2_cassandra3.service_span_index table
 ###
 ### Stress testing is done using the `cassandra-stress` tool
 ###
 ### For example
 ###  cqlsh -f cassandra3-test-schema.cql
-###  cassandra-stress  user profile=span_name_by_service-stress.yaml ops\(insert=1\) no-warmup duration=1m  -rate threads=4 throttle=50/s
+###  cassandra-stress  user profile=span_by_service-stress.yaml ops\(insert=1\) no-warmup duration=1m  -rate threads=4 throttle=50/s
 ###
 ### after a benchmark has been run with only writes, a mixed read-write benchmark can be run with
-###  cassandra-stress  user profile=span_name_by_service-stress.yaml ops\(insert=1,select=1,select_span_names=1\)  duration=1m  -rate threads=4 throttle=50/s
+###  cassandra-stress  user profile=span_by_service-stress.yaml ops\(insert=1,select=1,select_spans=1\)  duration=1m  -rate threads=4 throttle=50/s
 
 # Keyspace Name
-keyspace: stress_zipkin3
+keyspace: stress_zipkin2_cassandra3
 
 # Table name
-table: span_name_by_service
+table: span_by_service
 
 
 ### Column Distribution Specifications ###
 
 columnspec:
-  - name: service_name
+  - name: service
     size: uniform(5..20)
     population: uniform(1..100)
 
-  - name: span_name
+  - name: span
     size: uniform(5..20)
     population: uniform(1..100)
 
@@ -54,8 +54,8 @@ insert:
 #
 queries:
    select:
-    cql: SELECT DISTINCT service_name FROM span_name_by_service
+    cql: SELECT DISTINCT service FROM span_by_service
     fields: samerow
-   select_span_names:
-    cql: SELECT span_name FROM span_name_by_service WHERE service_name = ? LIMIT 1000
+   select_spans:
+    cql: SELECT span FROM span_by_service WHERE service = ? LIMIT 1000
     fields: samerow

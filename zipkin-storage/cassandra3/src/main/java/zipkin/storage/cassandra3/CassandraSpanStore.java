@@ -33,52 +33,47 @@ import com.google.common.collect.Range;
 import com.google.common.util.concurrent.AsyncFunction;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import java.nio.ByteBuffer;
+import java.io.IOException;
 import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import zipkin2.internal.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin.Codec;
-import zipkin.DependencyLink;
-import zipkin.Span;
-import zipkin.internal.CorrectForClockSkew;
-import zipkin.internal.DependencyLinker;
-import zipkin.internal.GroupByTraceId;
-import zipkin.internal.MergeById;
-import zipkin.internal.Nullable;
-import zipkin.storage.QueryRequest;
+import zipkin2.Call;
+import zipkin2.DependencyLink;
+import zipkin2.Span;
+import zipkin2.internal.DependencyLinker;
+import zipkin2.storage.SpanStore;
+import zipkin2.storage.QueryRequest;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
-import zipkin.storage.cassandra3.Schema.BinaryAnnotationUDT;
-import zipkin.storage.cassandra3.Schema.TraceIdUDT;
-import zipkin.storage.guava.GuavaSpanStore;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.collect.DiscreteDomain.integers;
 import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
-import static com.google.common.util.concurrent.Futures.transform;
+import static com.google.common.util.concurrent.Futures.transformAsync;
 import static zipkin.internal.Util.getDays;
 import static zipkin.storage.cassandra3.Schema.TABLE_SERVICE_SPANS;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACES;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
+import zipkin2.codec.DependencyLinkBytesDecoder;
 
-final class CassandraSpanStore implements GuavaSpanStore {
+final class CassandraSpanStore implements SpanStore {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
 
-  static final ListenableFuture<List<String>> EMPTY_LIST =
-      immediateFuture(Collections.<String>emptyList());
-  static final Function<List<Span>, List<Span>> OR_NULL = input -> input.isEmpty() ? null : input;
+  static final Call<List<String>> EMPTY_LIST = Call.emptyList();
 
   private final int maxTraceCols;
   private final int indexFetchMultiplier;
@@ -91,24 +86,24 @@ final class CassandraSpanStore implements GuavaSpanStore {
   private final PreparedStatement selectTraceIdsByServiceSpanName;
   private final PreparedStatement selectTraceIdsByServiceSpanNameAndDuration;
   private final PreparedStatement selectTraceIdsByAnnotation;
-  private final Function<Row, Map.Entry<TraceIdUDT, Long>> traceIdToTimestamp;
-  private final Function<Row, Map.Entry<TraceIdUDT, Long>> traceIdToLong;
+  private final Function<Row, Map.Entry<String, Long>> traceIdToTimestamp;
+  private final Function<Row, Map.Entry<String, Long>> traceIdToLong;
   private final Function<Row, String> rowToSpanName;
   private final Function<Row, String> rowToServiceName;
   private final Function<Row, Span> rowToSpan;
-  private final Function<List<Map<TraceIdUDT, Long>>, Map<TraceIdUDT, Long>> collapseTraceIdMaps;
+  private final Function<List<Map<String, Long>>, Map<String, Long>> collapseTraceIdMaps;
   private final int indexTtl;
 
-  CassandraSpanStore(Session session, int maxTraceCols, int indexFetchMultiplier,
-      boolean strictTraceId) {
+  CassandraSpanStore(Session session, int maxTraceCols, int indexFetchMultiplier, boolean strictTraceId) {
     this.session = session;
     this.maxTraceCols = maxTraceCols;
     this.indexFetchMultiplier = indexFetchMultiplier;
     this.strictTraceId = strictTraceId;
 
     selectTraces = session.prepare(
-        QueryBuilder.select("trace_id", "id", "ts", "span_name", "parent_id", "duration",
-            "annotations", "binary_annotations")
+        QueryBuilder.select(
+                "trace_id", "id", "ts", "span", "parent_id",
+                "duration", "l_ep", "r_ep", "annotations", "tags", "shared")
             .from(TABLE_TRACES)
             .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
             .limit(QueryBuilder.bindMarker("limit_")));
@@ -119,21 +114,21 @@ final class CassandraSpanStore implements GuavaSpanStore {
             .where(QueryBuilder.in("day", QueryBuilder.bindMarker("days"))));
 
     selectServiceNames = session.prepare(
-        QueryBuilder.select("service_name")
+        QueryBuilder.select("service")
             .distinct()
             .from(TABLE_SERVICE_SPANS));
 
     selectSpanNames = session.prepare(
-        QueryBuilder.select("span_name")
+        QueryBuilder.select("span")
             .from(TABLE_SERVICE_SPANS)
-            .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+            .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
             .limit(QueryBuilder.bindMarker("limit_")));
 
     selectTraceIdsByServiceSpanName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
             .from(TABLE_TRACE_BY_SERVICE_SPAN)
-            .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
-            .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
+            .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
+            .and(QueryBuilder.eq("span", QueryBuilder.bindMarker("span")))
             .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
             .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
@@ -142,8 +137,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
     selectTraceIdsByServiceSpanNameAndDuration = session.prepare(
         QueryBuilder.select("ts", "trace_id")
             .from(TABLE_TRACE_BY_SERVICE_SPAN)
-            .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
-            .and(QueryBuilder.eq("span_name", QueryBuilder.bindMarker("span_name")))
+            .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
+            .and(QueryBuilder.eq("span", QueryBuilder.bindMarker("span")))
             .and(QueryBuilder.eq("bucket", QueryBuilder.bindMarker("bucket")))
             .and(QueryBuilder.gte("ts", QueryBuilder.bindMarker("start_ts")))
             .and(QueryBuilder.lte("ts", QueryBuilder.bindMarker("end_ts")))
@@ -154,7 +149,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
     selectTraceIdsByAnnotation = session.prepare(
         QueryBuilder.select("ts", "trace_id")
             .from(TABLE_TRACES)
-            .where(QueryBuilder.like("all_annotations", QueryBuilder.bindMarker("annotation")))
+            .where(QueryBuilder.eq("l_service", QueryBuilder.bindMarker("l_service")))
+            .and(QueryBuilder.like("annotation_query", QueryBuilder.bindMarker("annotation_query")))
             .and(QueryBuilder.gte("ts_uuid", QueryBuilder.bindMarker("start_ts")))
             .and(QueryBuilder.lte("ts_uuid", QueryBuilder.bindMarker("end_ts")))
             .limit(QueryBuilder.bindMarker("limit_"))
@@ -162,25 +158,24 @@ final class CassandraSpanStore implements GuavaSpanStore {
 
     traceIdToTimestamp = row ->
       new AbstractMap.SimpleEntry<>(
-          row.get("trace_id", TraceIdUDT.class),
+          row.getString("trace_id"),
           UUIDs.unixTimestamp(row.getUUID("ts")));
 
     traceIdToLong = row ->
         new AbstractMap.SimpleEntry<>(
-            row.get("trace_id", TraceIdUDT.class),
+            row.getString("trace_id"),
             row.getLong("ts"));
 
-    rowToSpanName = row -> row.getString("span_name");
+    rowToSpanName = row -> row.getString("span");
 
-    rowToServiceName = row -> row.getString("service_name");
+    rowToServiceName = row -> row.getString("service");
 
     rowToSpan = row -> {
-      TraceIdUDT traceId = row.get("trace_id", TraceIdUDT.class);
-      Span.Builder builder = Span.builder()
-          .traceIdHigh(traceId.getHigh())
-          .traceId(traceId.getLow())
-          .id(row.getLong("id"))
-          .name(row.getString("span_name"))
+      String traceId = row.getString("trace_id");
+      Span.Builder builder = Span.newBuilder()
+          .traceId(traceId)
+          .id(row.getString("id"))
+          .name(row.getString("span"))
           .duration(row.getLong("duration"));
 
       if (!row.isNull("ts")) {
@@ -190,23 +185,29 @@ final class CassandraSpanStore implements GuavaSpanStore {
         builder = builder.duration(row.getLong("duration"));
       }
       if (!row.isNull("parent_id")) {
-        builder = builder.parentId(row.getLong("parent_id"));
+        builder = builder.parentId(row.getString("parent_id"));
+      }
+      if (!row.isNull("l_ep")) {
+        builder = builder.localEndpoint(row.get("l_ep", Schema.EndpointUDT.class).toEndpoint());
+      }
+      if (!row.isNull("r_ep")) {
+        builder = builder.remoteEndpoint(row.get("r_ep", Schema.EndpointUDT.class).toEndpoint());
+      }
+      if (!row.isNull("shared")) {
+        builder = builder.shared(row.getBool("shared"));
       }
       for (AnnotationUDT udt : row.getList("annotations", AnnotationUDT.class)) {
-        builder = builder.addAnnotation(udt.toAnnotation());
+        builder = builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
       }
-      for (BinaryAnnotationUDT udt : row.getList("binary_annotations",
-          BinaryAnnotationUDT.class)) {
-        builder = builder.addBinaryAnnotation(udt.toBinaryAnnotation());
+      for (Map.Entry<String,String> tag : row.getMap("tags", String.class, String.class).entrySet()) {
+        builder = builder.putTag(tag.getKey(), tag.getValue());
       }
       return builder.build();
     };
 
     collapseTraceIdMaps = input -> {
-      Map<TraceIdUDT, Long> result = new LinkedHashMap<>();
-      for (Map<TraceIdUDT, Long> m : input) {
-        result.putAll(m);
-      }
+      Map<String, Long> result = new LinkedHashMap<>();
+      input.forEach(m -> result.putAll(m));
       return result;
     };
 
@@ -228,111 +229,126 @@ final class CassandraSpanStore implements GuavaSpanStore {
    * <p>See https://github.com/openzipkin/zipkin-java/issues/200
    */
   @Override
-  public ListenableFuture<List<List<Span>>> getTraces(final QueryRequest request) {
+  public Call<List<List<Span>>> getTraces(final QueryRequest request) {
     // Over fetch on indexes as they don't return distinct (trace id, timestamp) rows.
-    final int traceIndexFetchSize = request.limit * indexFetchMultiplier;
-    ListenableFuture<Map<TraceIdUDT, Long>> traceIdToTimestamp = getTraceIdsByServiceNames(request);
+    final int traceIndexFetchSize = request.limit() * indexFetchMultiplier;
+    ListenableFuture<Map<String, Long>> traceIdToTimestamp = getTraceIdsByServiceNames(request);
     List<String> annotationKeys = CassandraUtil.annotationKeys(request);
-    ListenableFuture<Collection<TraceIdUDT>> traceIds;
+    ListenableFuture<Collection<String>> traceIds;
     if (annotationKeys.isEmpty()) {
       // Simplest case is when there is no annotation query. Limit is valid since there's no AND
       // query that could reduce the results returned to less than the limit.
-      traceIds =
-          Futures.transform(traceIdToTimestamp, CassandraUtil.traceIdsSortedByDescTimestamp());
+      traceIds = Futures.transform(traceIdToTimestamp, CassandraUtil.traceIdsSortedByDescTimestamp());
     } else {
       // While a valid port of the scala cassandra span store (from zipkin 1.35), there is a fault.
       // each annotation key is an intersection, meaning we likely return < traceIndexFetchSize.
-      List<ListenableFuture<Map<TraceIdUDT, Long>>> futureKeySetsToIntersect = new ArrayList<>();
-      if (request.spanName != null) {
+      List<ListenableFuture<Map<String, Long>>> futureKeySetsToIntersect = new ArrayList<>();
+      if (request.spanName() != null) {
         futureKeySetsToIntersect.add(traceIdToTimestamp);
       }
       for (String annotationKey : annotationKeys) {
         futureKeySetsToIntersect
-            .add(getTraceIdsByAnnotation(annotationKey, request.endTs, request.lookback, traceIndexFetchSize));
+            .add(getTraceIdsByAnnotation(request, annotationKey, request.endTs(), traceIndexFetchSize));
       }
       // We achieve the AND goal, by intersecting each of the key sets.
-      traceIds =
-          Futures.transform(allAsList(futureKeySetsToIntersect), CassandraUtil.intersectKeySets());
+      traceIds = Futures.transform(allAsList(futureKeySetsToIntersect), CassandraUtil.intersectKeySets());
       // @xxx the sorting by timestamp desc is broken here^
     }
-    return transform(traceIds, new AsyncFunction<Collection<TraceIdUDT>, List<List<Span>>>() {
-      @Override
-      public ListenableFuture<List<List<Span>>> apply(@Nullable Collection<TraceIdUDT> traceIds) {
-        ImmutableSet<TraceIdUDT> set =
-            ImmutableSet.copyOf(Iterators.limit(traceIds.iterator(), request.limit));
-        return transform(getSpansByTraceIds(set, maxTraceCols),
-            new Function<List<Span>, List<List<Span>>>() {
-              @Override public List<List<Span>> apply(@Nullable List<Span> input) {
-                return GroupByTraceId.apply(input, strictTraceId, true);
-              }
-            });
+
+    return new ListenableFutureCall<List<List<Span>>>() {
+      @Override protected ListenableFuture<List<List<Span>>> newFuture() {
+        return transformAsync(traceIds, new AsyncFunction<Collection<String>, List<List<Span>>>() {
+          @Override
+          public ListenableFuture<List<List<Span>>> apply(Collection<String> traceIds) {
+            ImmutableSet<String> set =
+              ImmutableSet.copyOf(Iterators.limit(traceIds.iterator(), request.limit()));
+
+            return Futures.transform(
+                    getSpansByTraceIds(set, maxTraceCols),
+                    (List<Span> input) -> {
+
+                List<List<Span>> traces = groupByTraceId(input, strictTraceId);
+                // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
+                for (Iterator<List<Span>> trace = traces.iterator(); trace.hasNext(); ) {
+                  List<Span> next = trace.next();
+                  if (next.get(0).traceId().length() > 16 && !request.test(next)) {
+                    trace.remove();
+                  }
+                }
+                return traces;
+              });
+          }
+
+          @Override public String toString() {
+            return "getSpansByTraceIds";
+          }
+        });
       }
+    };
+  }
 
-      @Override public String toString() {
-        return "getSpansByTraceIds";
+  @Override public Call<List<Span>> getTrace(String traceId) {
+    return new ListenableFutureCall<List<Span>>() {
+      @Override protected ListenableFuture<List<Span>> newFuture() {
+        return getSpansByTraceIds(Collections.singleton(traceId), maxTraceCols);
       }
-    });
+    };
   }
 
-  @Override public ListenableFuture<List<Span>> getRawTrace(long traceId) {
-    return getRawTrace(0L, traceId);
-  }
-
-  @Override public ListenableFuture<List<Span>> getRawTrace(long traceIdHigh, long traceIdLow) {
-    TraceIdUDT traceIdUDT = new TraceIdUDT(strictTraceId ? 0L : traceIdHigh, traceIdLow);
-    return transform(getSpansByTraceIds(Collections.singleton(traceIdUDT), maxTraceCols), OR_NULL);
-  }
-
-  @Override public ListenableFuture<List<Span>> getTrace(long traceId) {
-    return getTrace(0L, traceId);
-  }
-
-  @Override public ListenableFuture<List<Span>> getTrace(long traceIdHigh, long traceIdLow) {
-    return transform(getRawTrace(traceIdHigh, traceIdLow), AdjustTrace.INSTANCE);
-  }
-
-  enum AdjustTrace implements Function<Collection<Span>, List<Span>> {
-    INSTANCE;
-
-    @Override public List<Span> apply(@Nullable Collection<Span> input) {
-      List<Span> result = CorrectForClockSkew.apply(MergeById.apply(input));
-      return result.isEmpty() ? null : result;
-    }
-  }
-
-  @Override public ListenableFuture<List<String>> getServiceNames() {
+  @Override public Call<List<String>> getServiceNames() {
     try {
       BoundStatement bound = CassandraUtil.bindWithName(selectServiceNames, "select-service-names");
-      return transform(session.executeAsync(bound), readResultAsOrderedSet(Collections.emptyList(), rowToServiceName));
+
+      return new ListenableFutureCall<List<String>>() {
+        @Override protected ListenableFuture<List<String>> newFuture() {
+          return transformAsync(
+                  session.executeAsync(bound),
+                  readResultAsOrderedSet(Collections.emptyList(), rowToServiceName));
+        }
+      };
     } catch (RuntimeException ex) {
-      return immediateFailedFuture(ex);
+      return FailedCall.create(ex);
     }
   }
 
-  @Override public ListenableFuture<List<String>> getSpanNames(String serviceName) {
+  @Override public Call<List<String>> getSpanNames(String serviceName) {
     if (serviceName == null || serviceName.isEmpty()) return EMPTY_LIST;
     serviceName = checkNotNull(serviceName, "serviceName").toLowerCase();
     try {
       BoundStatement bound = CassandraUtil.bindWithName(selectSpanNames, "select-span-names")
-          .setString("service_name", serviceName)
+          .setString("service", serviceName)
           // no one is ever going to browse so many span names
           .setInt("limit_", 1000);
 
-      return transform(session.executeAsync(bound), readResultAsOrderedSet(Collections.emptyList(), rowToSpanName));
+      return new ListenableFutureCall<List<String>>() {
+        @Override protected ListenableFuture<List<String>> newFuture() {
+          return transformAsync(
+                  session.executeAsync(bound),
+                  readResultAsOrderedSet(Collections.emptyList(), rowToSpanName));
+        }
+      };
     } catch (RuntimeException ex) {
-      return immediateFailedFuture(ex);
+      return FailedCall.create(ex);
     }
   }
 
-  @Override public ListenableFuture<List<DependencyLink>> getDependencies(long endTs,
-      @Nullable Long lookback) {
+  @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
+    // TODO: lets encode differently, not using thrift. maybe using json, or a UDT
     List<Date> days = getDays(endTs, lookback);
     try {
-      BoundStatement bound = CassandraUtil.bindWithName(selectDependencies, "select-dependencies")
-          .setList("days", days);
-      return transform(session.executeAsync(bound), ConvertDependenciesResponse.INSTANCE);
+      BoundStatement bound = CassandraUtil
+              .bindWithName(selectDependencies, "select-dependencies")
+              .setList("days", days);
+
+      return new ListenableFutureCall<List<DependencyLink>>() {
+        @Override protected ListenableFuture<List<DependencyLink>> newFuture() {
+          return Futures.transform(
+                  session.executeAsync(bound),
+                  ConvertDependenciesResponse.INSTANCE);
+        }
+      };
     } catch (RuntimeException ex) {
-      return immediateFailedFuture(ex);
+      return FailedCall.create(ex);
     }
   }
 
@@ -342,8 +358,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
     @Override public List<DependencyLink> apply(@Nullable ResultSet rs) {
       ImmutableList.Builder<DependencyLink> unmerged = ImmutableList.builder();
       for (Row row : rs) {
-        ByteBuffer encodedDayOfDependencies = row.getBytes("links");
-        for (DependencyLink link : Codec.THRIFT.readDependencyLinks(encodedDayOfDependencies)) {
+        byte[] encodedDayOfDependencies = row.getBytes("links").array();
+        for (DependencyLink link : DependencyLinkBytesDecoder.JSON_V1.decodeList(encodedDayOfDependencies)) {
           unmerged.add(link);
         }
       }
@@ -357,7 +373,7 @@ final class CassandraSpanStore implements GuavaSpanStore {
    * The return list will contain only spans that have been found, thus the return list may not
    * match the provided list of ids.
    */
-  ListenableFuture<List<Span>> getSpansByTraceIds(Set<TraceIdUDT> traceIds, int limit) {
+  ListenableFuture<List<Span>> getSpansByTraceIds(Set<String> traceIds, int limit) {
     checkNotNull(traceIds, "traceIds");
     if (traceIds.isEmpty()) {
       return immediateFuture(Collections.<Span>emptyList());
@@ -368,25 +384,25 @@ final class CassandraSpanStore implements GuavaSpanStore {
           .setSet("trace_id", traceIds)
           .setInt("limit_", limit);
 
-      return transform(session.executeAsync(bound), readResults(Collections.emptyList(), rowToSpan));
+      return transformAsync(session.executeAsync(bound), readResults(Collections.emptyList(), rowToSpan));
     } catch (RuntimeException ex) {
       return immediateFailedFuture(ex);
     }
   }
 
-  ListenableFuture<Map<TraceIdUDT, Long>> getTraceIdsByServiceNames(QueryRequest request) {
+  ListenableFuture<Map<String, Long>> getTraceIdsByServiceNames(QueryRequest request) {
     long oldestData = Math.max(System.currentTimeMillis() - indexTtl * 1000, 0); // >= 1970
-    long startTsMillis = Math.max((request.endTs - request.lookback), oldestData);
-    long endTsMillis = Math.max(request.endTs, oldestData);
+    long startTsMillis = Math.max((request.endTs() - request.lookback()), oldestData);
+    long endTsMillis = Math.max(request.endTs(), oldestData);
 
     try {
       Set<String> serviceNames;
-      if (null != request.serviceName) {
-        serviceNames = Collections.singleton(request.serviceName);
+      if (null != request.serviceName()) {
+        serviceNames = Collections.singleton(request.serviceName());
       } else {
-        serviceNames = new LinkedHashSet<>(getServiceNames().get());
+        serviceNames = new LinkedHashSet<>(getServiceNames().execute());
         if (serviceNames.isEmpty()) {
-          return immediateFuture(Collections.<TraceIdUDT, Long>emptyMap());
+          return immediateFuture(Collections.<String, Long>emptyMap());
         }
       }
 
@@ -397,8 +413,8 @@ final class CassandraSpanStore implements GuavaSpanStore {
             "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
       }
       Set<Integer> buckets = ContiguousSet.create(Range.closed(startBucket, endBucket), integers());
-      boolean withDuration = null != request.minDuration || null != request.maxDuration;
-      List<ListenableFuture<Map<TraceIdUDT, Long>>> futures = new ArrayList<>();
+      boolean withDuration = null != request.minDuration() || null != request.maxDuration();
+      List<ListenableFuture<Map<String, Long>>> futures = new ArrayList<>();
 
       if (200 < serviceNames.size() * buckets.size()) {
         LOG.warn("read against " + TABLE_TRACE_BY_SERVICE_SPAN
@@ -410,38 +426,43 @@ final class CassandraSpanStore implements GuavaSpanStore {
         for (Integer bucket : buckets) {
           BoundStatement bound = CassandraUtil
               .bindWithName(
-                  withDuration ? selectTraceIdsByServiceSpanNameAndDuration
+                  withDuration
+                      ? selectTraceIdsByServiceSpanNameAndDuration
                       : selectTraceIdsByServiceSpanName,
                   "select-trace-ids-by-service-name")
-              .setString("service_name", serviceName)
-              .setString("span_name", null != request.spanName ? request.spanName : "")
+              .setString("service", serviceName)
+              .setString("span", null != request.spanName() ? request.spanName() : "")
               .setInt("bucket", bucket)
               .setUUID("start_ts", UUIDs.startOf(startTsMillis))
               .setUUID("end_ts", UUIDs.endOf(endTsMillis))
-              .setInt("limit_", request.limit);
+              .setInt("limit_", request.limit());
 
           if (withDuration) {
             bound = bound
-                .setLong("start_duration", null != request.minDuration ? request.minDuration : 0)
-                .setLong("end_duration",
-                    null != request.maxDuration ? request.maxDuration : Long.MAX_VALUE);
+                .setLong("start_duration", null != request.minDuration() ? request.minDuration() : 0)
+                .setLong("end_duration", null != request.maxDuration() ? request.maxDuration() : Long.MAX_VALUE);
           }
-          bound.setFetchSize(request.limit);
-          futures.add(transform(session.executeAsync(bound), readResultsAsMap(Collections.emptyMap(), traceIdToTimestamp)));
+          bound.setFetchSize(request.limit());
+
+          futures.add(transformAsync(
+                  session.executeAsync(bound),
+                  readResultsAsMap(Collections.emptyMap(), traceIdToTimestamp)));
         }
       }
 
-      return transform(allAsList(futures), collapseTraceIdMaps);
-    } catch (RuntimeException | InterruptedException | ExecutionException ex) {
+      return Futures.transform(allAsList(futures), collapseTraceIdMaps);
+    } catch (IOException ex) {
       return immediateFailedFuture(ex);
     }
   }
 
-  ListenableFuture<Map<TraceIdUDT, Long>> getTraceIdsByAnnotation(
+  ListenableFuture<Map<String, Long>> getTraceIdsByAnnotation(
+      QueryRequest request,
       String annotationKey,
       long endTsMillis,
-      long lookbackMillis,
       int limit) {
+
+    long lookbackMillis = request.lookback();
     long oldestData = Math.max(System.currentTimeMillis() - indexTtl * 1000, 0); // >= 1970
     long startTsMillis = Math.max((endTsMillis - lookbackMillis), oldestData);
     endTsMillis = Math.max(endTsMillis, oldestData);
@@ -449,106 +470,110 @@ final class CassandraSpanStore implements GuavaSpanStore {
     try {
       BoundStatement bound =
           CassandraUtil.bindWithName(selectTraceIdsByAnnotation, "select-trace-ids-by-annotation")
-              .setString("annotation", "%" + annotationKey + "%")
+              .setString("local_service", request.serviceName())
+              .setString("annotation_query", "%" + annotationKey + "%")
               .setUUID("start_ts", UUIDs.startOf(startTsMillis))
               .setUUID("end_ts", UUIDs.endOf(endTsMillis))
               .setInt("limit_", limit);
 
-      return transform(session.executeAsync(bound), readResultsAsMap(Collections.emptyMap(), traceIdToLong));
+      return transformAsync(session.executeAsync(bound), readResultsAsMap(Collections.emptyMap(), traceIdToLong));
     } catch (RuntimeException ex) {
       return immediateFailedFuture(ex);
     }
   }
 
-  private static <K, T> AsyncFunction<ResultSet, Map<K, T>> readResultsAsMap(final Map<K, T> results,
+  private static <K, T> AsyncFunction<ResultSet, Map<K, T>> readResultsAsMap(
+      Map<K, T> results,
       Function<Row, Map.Entry<K, T>> rowMapper) {
-    return new AsyncFunction<ResultSet, Map<K, T>>() {
-      @Override public ListenableFuture<Map<K, T>> apply(@Nullable ResultSet rs) throws Exception {
-        // How far we can go without triggering the blocking fetch:
-        int remainingInPage = rs.getAvailableWithoutFetching();
 
-        Map<K, T> newResults = new HashMap<>(results);
-
-        for (Row row : rs) {
-          Map.Entry<K, T> entry = rowMapper.apply(row);
-          newResults.put(entry.getKey(), entry.getValue());
-          if (--remainingInPage == 0) break;
-        }
-
-        boolean wasLastPage = rs.getExecutionInfo().getPagingState() == null;
-
-        Map<K, T> finalResults = ImmutableMap.copyOf(newResults);
-
-        if (wasLastPage) {
-          return Futures.immediateFuture(finalResults);
-        } else {
-          ListenableFuture<ResultSet> future = rs.fetchMoreResults();
-          return Futures.transform(future, readResultsAsMap(finalResults, rowMapper));
-        }
+    return (rs) -> {
+      if (!rs.isFullyFetched()) rs.fetchMoreResults();
+      Map<K, T> newResults = new HashMap<>(results);
+      for (Row row : rs) {
+        Map.Entry<K, T> entry = rowMapper.apply(row);
+        newResults.put(entry.getKey(), entry.getValue());
+        if (2000 == rs.getAvailableWithoutFetching() && !rs.isFullyFetched()) rs.fetchMoreResults();
+        if (0 == rs.getAvailableWithoutFetching()) break;
       }
+
+      Map<K, T> finalResults = ImmutableMap.copyOf(newResults);
+      return rs.getExecutionInfo().getPagingState() == null
+            ? immediateFuture(finalResults)
+            : transformAsync(rs.fetchMoreResults(), readResultsAsMap(finalResults, rowMapper));
     };
   }
 
   private static <T extends Comparable> AsyncFunction<ResultSet, List<T>> readResultAsOrderedSet(
-      final List<T> results, Function<Row, T> rowMapper) {
-    return new AsyncFunction<ResultSet, List<T>>() {
-      @Override
-      public ListenableFuture<List<T>> apply(@Nullable ResultSet rs) throws Exception {
+      List<T> results,
+      Function<Row, T> rowMapper) {
 
-        // How far we can go without triggering the blocking fetch:
-        int remainingInPage = rs.getAvailableWithoutFetching();
-
-        ImmutableSet.Builder<T> builder = ImmutableSet.builder();
-        builder.addAll(results);
-
+    return (rs) -> {
+        if (!rs.isFullyFetched()) rs.fetchMoreResults();
+        ImmutableSet.Builder<T> builder = ImmutableSet.<T>builder().addAll(results);
         for (Row row : rs) {
           builder.add(rowMapper.apply(row));
-          if (--remainingInPage == 0) break;
+          if (2000 == rs.getAvailableWithoutFetching() && !rs.isFullyFetched()) rs.fetchMoreResults();
+          if (0 == rs.getAvailableWithoutFetching()) break;
         }
+        List<T> finalSet = ImmutableList.copyOf(Ordering.natural().sortedCopy(builder.build()));
 
-        boolean wasLastPage = rs.getExecutionInfo().getPagingState() == null;
-
-        List<T> orderedResults = Ordering.natural().sortedCopy(builder.build());
-        List<T> finalSet = ImmutableList.copyOf(orderedResults);
-
-        if (wasLastPage) {
-          return Futures.immediateFuture(finalSet);
-        } else {
-          ListenableFuture<ResultSet> future = rs.fetchMoreResults();
-          return Futures.transform(future, readResultAsOrderedSet(finalSet, rowMapper));
-        }
-      }
+        return rs.getExecutionInfo().getPagingState() == null
+              ? immediateFuture(finalSet)
+              : transformAsync(rs.fetchMoreResults(), readResultAsOrderedSet(finalSet, rowMapper));
     };
   }
 
-  private static <T> AsyncFunction<ResultSet, List<T>> readResults(final List<T> results,
+  private static <T> AsyncFunction<ResultSet, List<T>> readResults(
+      Iterable<T> results,
       Function<Row, T> rowMapper) {
-    return new AsyncFunction<ResultSet, List<T>>() {
-      @Override
-      public ListenableFuture<List<T>> apply(@Nullable ResultSet rs) throws Exception {
 
-        // How far we can go without triggering the blocking fetch:
-        int remainingInPage = rs.getAvailableWithoutFetching();
-
-        ImmutableList.Builder<T> builder = ImmutableList.builder();
-        builder.addAll(results);
-
+    return (rs) -> {
+        if (!rs.isFullyFetched()) rs.fetchMoreResults();
+        ImmutableList.Builder<T> builder = ImmutableList.<T>builder().addAll(results);
         for (Row row : rs) {
           builder.add(rowMapper.apply(row));
-          if (--remainingInPage == 0) break;
+          if (2000 == rs.getAvailableWithoutFetching() && !rs.isFullyFetched()) rs.fetchMoreResults();
+          if (0 == rs.getAvailableWithoutFetching()) break;
         }
-
-        boolean wasLastPage = rs.getExecutionInfo().getPagingState() == null;
-
         List<T> finalResults = builder.build();
 
-        if (wasLastPage) {
-          return Futures.immediateFuture(finalResults);
-        } else {
-          ListenableFuture<ResultSet> future = rs.fetchMoreResults();
-          return Futures.transform(future, readResults(finalResults, rowMapper));
-        }
-      }
+        return rs.getExecutionInfo().getPagingState() == null
+              ? immediateFuture(finalResults)
+              : transformAsync(rs.fetchMoreResults(), readResults(finalResults, rowMapper));
     };
+  }
+
+  // TODO(adriancole): at some later point we can refactor this out
+  static List<List<Span>> groupByTraceId(Collection<Span> input, boolean strictTraceId) {
+    if (input.isEmpty()) return Collections.emptyList();
+
+    Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
+    for (Span span : input) {
+      String traceId = strictTraceId || span.traceId().length() == 16
+        ? span.traceId()
+        : span.traceId().substring(16);
+      if (!groupedByTraceId.containsKey(traceId)) {
+        groupedByTraceId.put(traceId, new LinkedList<>());
+      }
+      groupedByTraceId.get(traceId).add(span);
+    }
+    return new ArrayList<>(groupedByTraceId.values());
+  }
+
+  private static class FailedCall<V> extends ListenableFutureCall<V> {
+
+    private final RuntimeException ex;
+
+    private FailedCall(RuntimeException ex) {
+      this.ex = ex;
+    }
+
+    public static FailedCall create(RuntimeException ex) {
+      return new FailedCall(ex);
+    }
+
+    @Override protected ListenableFuture<V> newFuture() {
+      return immediateFailedFuture(ex);
+    }
   }
 }

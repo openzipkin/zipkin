@@ -28,11 +28,15 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
+
+    <!-- Cassandra-3 requires Java8, so let's presume running a Java8 zipkin server is ok as well -->
+    <main.java.version>1.8</main.java.version>
+    <main.signature.artifact>java18</main.signature.artifact>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin</artifactId>
     </dependency>
 
@@ -54,7 +58,14 @@
     </dependency>
 
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin</artifactId>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
