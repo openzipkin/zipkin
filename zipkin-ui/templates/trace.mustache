@@ -7,7 +7,9 @@
     {{#logsUrl}}
     <li class='navbar-right'><a href='{{ logsUrl }}' id='traceLogsLink'><span class='btn btn-primary btn-xs badge'>Logs</span></a></li>
     {{/logsUrl}}
-    <li class='navbar-right'><a href='/api/v1/trace/{{ traceId }}' id='traceJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a></li>
+      <li class='navbar-right'><a href='/api/v1/trace/{{ traceId }}' id='traceJsonLink'><span class='btn btn-primary btn-xs badge'>{{ archiveEndpoint }} archiveEndpoint {{ traceId }} </span></a></li>
+      <li class='navbar-right'><a href='/api/v1/trace/{{ traceId }}' id='traceJsonLink'><span class='btn btn-primary btn-xs badge'>{{ archiveReadEndpoint }} archiveReadEndpoint {{ traceId }} </span></a></li>
+      <li class='navbar-right'><a href='/api/v1/trace/{{ traceId }}' id='traceJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a></li>
     <li class='navbar-right'><a href='/api/v1/save/trace/{{ traceId }}' id='saveTraceLink'><span class='btn btn-primary btn-xs badge'>Save</span></a></li>
   </ul>
 

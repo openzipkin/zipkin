@@ -17,7 +17,9 @@ const TracePageComponent = component(function TracePage() {
 
     TraceData.attachTo(document, {
       traceId: this.attr.traceId,
-      logsUrl: this.attr.config('logsUrl')
+      logsUrl: this.attr.config('logsUrl'),
+      archiveEndpoint: this.attr.config('archiveEndpoint'),
+      archiveReadEndpoint: this.attr.config('archiveReadEndpoint')
     });
     this.on(document, 'tracePageModelView', function(ev, data) {
       this.$node.html(traceTemplate(data.modelview));

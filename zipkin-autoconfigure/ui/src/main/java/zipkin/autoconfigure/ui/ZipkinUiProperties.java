@@ -24,6 +24,10 @@ public class ZipkinUiProperties {
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
   private String logsUrl = null;
+
+  private String archiveEndpoint = null;
+  private String archiveReadEndpoint = null;
+
   private Dependency dependency = new Dependency();
 
   public int getDefaultLookback() {
@@ -67,6 +71,31 @@ public class ZipkinUiProperties {
       this.logsUrl = logsUrl;
     }
   }
+
+  public String getArchiveEndpoint() {
+    System.out.println("####################################### 1");
+    return archiveEndpoint;
+  }
+
+  public void setArchiveEndpoint(String archiveEndpoint) {
+    System.out.println("####################################### 2 " + archiveEndpoint);
+    if (!StringUtils.isEmpty(archiveEndpoint)) {
+      this.archiveEndpoint = archiveEndpoint;
+    }
+  }
+
+  public String getArchiveReadEndpoint() {
+    System.out.println("####################################### 3");
+    return archiveReadEndpoint;
+  }
+
+  public void setArchiveReadEndpoint(String archiveReadEndpoint) {
+    System.out.println("####################################### 4 " + archiveReadEndpoint);
+    if (!StringUtils.isEmpty(archiveReadEndpoint)) {
+      this.archiveReadEndpoint = archiveReadEndpoint;
+    }
+  }
+
 
   public Dependency getDependency() {
     return dependency;
