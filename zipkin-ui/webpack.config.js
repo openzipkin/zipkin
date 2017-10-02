@@ -3,6 +3,7 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CopyWebpackPlugin = require('copy-webpack-plugin');
 
+var isDevServer = process.argv.find(v => v.includes('webpack-dev-server'));
 var proxyURL = process.env.proxy || "http://localhost:8080/";
 console.log("API requests are forwarded to " + proxyURL);
 
@@ -45,7 +46,8 @@ var webpackConfig = {
         }),
         new ExtractTextPlugin("app-[hash].min.css", {allChunks: true}),
         new HtmlWebpackPlugin({
-          template: __dirname + '/index.ejs'
+          template: __dirname + '/index.ejs',
+          contextRoot: isDevServer ? '/' : '/zipkin/'
         }),
         new CopyWebpackPlugin([
             { from: 'static' }

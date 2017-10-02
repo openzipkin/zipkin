@@ -34,7 +34,7 @@ program that can extract zip files.
 ## How do I run against a proxy zipkin-backend?
 
 By specifying the `proxy` environment variable, you can point the zipkin-ui to a different backend, allowing you to access real data while developing locally.
-An example to run with npm would be `proxy=http://myzipkininstance.com:9411 npm run dev`. (note that prefixing with http:// and suffixing the port is mandatory)
+An example to run with npm would be `proxy=http://myzipkininstance.com:9411/zipkin/ npm run dev`. (note that prefixing with http:// and suffixing the port is mandatory)
 
 ## What's the easiest way to develop against this locally?
 
@@ -57,7 +57,7 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```bash
 # Do this in another terminal!
 $ cd zipkin-ui
-$ proxy=http://localhost:9411 ./npm.sh run dev
+$ proxy=http://localhost:9411/zipkin/ ./npm.sh run dev
 ```
 
 This runs an NPM development server, which will automatically rebuild the webapp
@@ -103,3 +103,49 @@ Ex. To make lines yellow when there's a 10% error rate, set:
 `ZIPKIN_UI_DEPENDENCY_LOW_ERROR_RATE=0.1`
 
 To disable coloring of lines, set both rates to a number higher than 1.
+
+## Running behind a reverse proxy
+Starting with Zipkin `1.31.2`, Zipkin UI supports running under an arbitrary _context root_. As a result, it can be proxied
+under a different path than `/zipkin/` such as `/proxy/foo/bar/zipkin/`. 
+
+> Note that Zipkin requires the last path segment to be `zipkin`.
+
+> Also note that due to `html-webpack-plugin` limitations, Zipkin UI relies on a 
+[`base` tag](https://www.w3schools.com/TAgs/tag_base.asp) and its `href` attribute to be set in the `index.html` file. 
+By default its value is `/zipkin/` and as such the reverse proxy must rewrite the value to an alternate _context root_.
+
+### Apache HTTP as a Zipkin reverse proxy
+To configure Apache HTTP as a reverse proxy, following minimal configuration is required.
+
+```
+LoadModule proxy_module libexec/apache2/mod_proxy.so
+LoadModule proxy_html_module libexec/apache2/mod_proxy_html.so
+LoadModule proxy_http_module libexec/apache2/mod_proxy_http.so
+
+ProxyPass /proxy/foo/bar/ http://localhost:9411/
+SetOutputFilter proxy-html
+ProxyHTMLURLMap /zipkin/ /proxy/foo/bar/zipkin/
+ProxyHTMLLinks  base        href
+``` 
+
+To access Zipkin UI behind the reverse proxy, execute:
+```bash
+$ curl http://localhost/proxy/foo/bar/zipkin/
+<html><head><!--
+      add 'base' tag to work around the fact that 'html-webpack-plugin' does not work
+      with '__webpack_public_path__' being set as reported at https://github.com/jantimon/html-webpack-plugin/issues/119
+    --><base href="/proxy/foo/bar/zipkin/"><link rel="icon" type="image/x-icon" href="favicon.ico"><meta charset="UTF-8"><title>Webpack App</title><link href="app-94a6ee84dc608c5f9e66.min.css" rel="stylesheet"></head><body>
+  <script type="text/javascript" src="app-94a6ee84dc608c5f9e66.min.js"></script></body></html>
+```
+As you would see, the attribute `href` of the `base` tag is rewritten which is the way to get around the 
+`html-webpack-plugin` limitations.
+
+Uploading the span is easy as
+```bash
+$ curl -H "Content-Type: application/json" --data-binary "[$(cat ../benchmarks/src/main/resources/span-local.json)]" http://localhost/proxy/foo/bar/api/v1/spans
+```
+
+And then it's observable in the UI:
+```bash
+$ open http://localhost/proxy/foo/bar/zipkin/?serviceName=zipkin-server&startTs=1378193040000&endTs=1505463856013 
+```
