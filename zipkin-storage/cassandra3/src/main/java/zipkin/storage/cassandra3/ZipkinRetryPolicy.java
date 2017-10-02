@@ -14,6 +14,7 @@
 
 package zipkin.storage.cassandra3;
 
+import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.Statement;
 import com.datastax.driver.core.WriteType;
@@ -67,7 +68,7 @@ final class ZipkinRetryPolicy implements RetryPolicy {
   }
 
   @Override
-  public void init(com.datastax.driver.core.Cluster cluster) {
+  public void init(Cluster cluster) {
   }
 
   @Override
