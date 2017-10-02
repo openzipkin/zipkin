@@ -1,4 +1,4 @@
-#    Copyright 2015-2016 The OpenZipkin Authors
+#    Copyright 2015-2017 The OpenZipkin Authors
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 #    in compliance with the License. You may obtain a copy of the License at
@@ -11,18 +11,19 @@
 #    the License.
 #
 ###
-### Stress test for zipkin3 service_span_name_index table
+### Stress test for stress_zipkin3.service_span_name_index table
 ###
 ### Stress testing is done using the `cassandra-stress` tool
 ###
 ### For example
-###  cassandra-stress  user profile=trace_by_service_span-stress.yaml ops\(insert=1\)  duration=1m  -rate threads=4 throttle=50/s
+###  cqlsh -f cassandra3-test-schema.cql
+###  cassandra-stress  user profile=trace_by_service_span-stress.yaml ops\(insert=1\) no-warmup duration=1m  -rate threads=4 throttle=50/s
 ###
 ### after a benchmark has been run with only writes, a mixed read-write benchmark can be run with
 ###  cassandra-stress  user profile=trace_by_service_span-stress.yaml ops\(insert=1,select=1,by_duration=1\)  duration=1m  -rate threads=4 throttle=50/s
 
 # Keyspace Name
-keyspace: zipkin3
+keyspace: stress_zipkin3
 
 # Table name
 table: trace_by_service_span
