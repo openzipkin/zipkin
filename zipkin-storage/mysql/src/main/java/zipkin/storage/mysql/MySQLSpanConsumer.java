@@ -70,6 +70,9 @@ final class MySQLSpanConsumer implements StorageAdapters.SpanConsumer {
         if (span.duration != null) {
           updateFields.put(ZIPKIN_SPANS.DURATION, span.duration);
         }
+        if (span.parentId != null) {
+          updateFields.put(ZIPKIN_SPANS.PARENT_ID, span.parentId);
+        }
 
         InsertSetMoreStep<Record> insertSpan = create.insertInto(ZIPKIN_SPANS)
             .set(ZIPKIN_SPANS.TRACE_ID, span.traceId)
