@@ -63,6 +63,13 @@ public class SpanTest {
     );
   }
 
+  @Test public void builder_canUnsetParent() {
+    Span withParent = base.toBuilder().parentId("3").build();
+
+    assertThat(withParent.toBuilder().parentId(null).build().parentId())
+      .isNull();
+  }
+
   @Test public void clone_differentCollections() {
     Span.Builder builder = base.toBuilder()
       .addAnnotation(1L, "foo")
