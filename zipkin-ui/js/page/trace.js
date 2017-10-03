@@ -10,6 +10,7 @@ import TraceUI from '../component_ui/trace';
 import FilterLabelUI from '../component_ui/filterLabel';
 import ZoomOut from '../component_ui/zoomOutSpans';
 import {traceTemplate} from '../templates';
+import {contextRoot} from '../publicPath';
 
 const TracePageComponent = component(function TracePage() {
   this.after('initialize', function() {
@@ -20,7 +21,10 @@ const TracePageComponent = component(function TracePage() {
       logsUrl: this.attr.config('logsUrl')
     });
     this.on(document, 'tracePageModelView', function(ev, data) {
-      this.$node.html(traceTemplate(data.modelview));
+      this.$node.html(traceTemplate({
+        contextRoot,
+        ...data.modelview
+      }));
 
       FilterAllServicesUI.attachTo('#filterAllServices', {
         totalServices: $('.trace-details.services span').length
@@ -35,9 +39,11 @@ const TracePageComponent = component(function TracePage() {
 
       this.$node.find('#traceJsonLink').click(e => {
         e.preventDefault();
-        this.trigger('uiRequestJsonPanel', {title: `Trace ${this.attr.traceId}`,
-                                            obj: data.trace,
-                                            link: `/api/v1/trace/${this.attr.traceId}`});
+        this.trigger('uiRequestJsonPanel', {
+          title: `Trace ${this.attr.traceId}`,
+          obj: data.trace,
+          link: `${contextRoot}api/v1/trace/${this.attr.traceId}`
+        });
       });
 
       $('.annotation:not(.core)').tooltip({placement: 'left'});

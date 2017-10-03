@@ -7,7 +7,7 @@ export default component(function dependency() {
   let dependencies = {};
 
   this.getDependency = function(endTs, lookback) {
-    let url = `/zipkin/api/v1/dependencies?endTs=${endTs}`;
+    let url = `api/v1/dependencies?endTs=${endTs}`;
     if (lookback) {
       url += `&lookback=${lookback}`;
     }

@@ -15,6 +15,7 @@ import TracesUI from '../component_ui/traces';
 import TimeStampUI from '../component_ui/timeStamp';
 import BackToTop from '../component_ui/backToTop';
 import {defaultTemplate} from '../templates';
+import {contextRoot} from '../publicPath';
 
 const DefaultPageComponent = component(function DefaultPage() {
   const sortOptions = [
@@ -58,6 +59,7 @@ const DefaultPageComponent = component(function DefaultPage() {
         serviceName,
         annotationQuery,
         queryWasPerformed,
+        contextRoot,
         count: modelView.traces.length,
         sortOrderOptions: sortOptions,
         sortOrderSelected: sortSelected(sortOrder),

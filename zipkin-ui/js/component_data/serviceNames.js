@@ -4,7 +4,7 @@ import $ from 'jquery';
 
 export default component(function serviceNames() {
   this.updateServiceNames = function(ev, lastServiceName) {
-    $.ajax('/zipkin/api/v1/services', {
+    $.ajax('api/v1/services', {
       type: 'GET',
       dataType: 'json'
     }).done(names => {
