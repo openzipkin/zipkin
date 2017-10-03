@@ -61,7 +61,8 @@ const TracePageComponent = component(function TracePage() {
             contentType: 'application/json; charset=utf-8'
           }).done(result => {
             console.log(result);
-            alert(`Trace Archived : ${archiveReadEndpoint}/${traceId}`);
+            window.prompt('Trace archived. Copy link to clipboard: Cmd+C, Enter',
+              `${archiveReadEndpoint}/${traceId}`);
           }).fail(error => {
             console.log(error);
             alert(`Unable to save trace ${this.attr.traceId}`);

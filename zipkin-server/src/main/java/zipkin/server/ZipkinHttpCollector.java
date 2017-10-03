@@ -45,7 +45,7 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
 public class ZipkinHttpCollector {
-  static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().build();
+  static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().body("\"accepted\"");
   static final String APPLICATION_THRIFT = "application/x-thrift";
   static final SpanDecoder JSON2_DECODER = new V2JsonSpanDecoder();
 
