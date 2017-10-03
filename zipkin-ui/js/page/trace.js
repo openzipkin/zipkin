@@ -52,7 +52,6 @@ const TracePageComponent = component(function TracePage() {
           type: 'GET',
           dataType: 'json'
         }).done(trace => {
-          console.log(trace);
           $.ajax(`${archiveEndpoint}`, {
             type: 'POST',
             dataType: 'json',
@@ -61,8 +60,12 @@ const TracePageComponent = component(function TracePage() {
             contentType: 'application/json; charset=utf-8'
           }).done(result => {
             console.log(result);
-            window.prompt('Trace archived. Copy link to clipboard: Cmd+C, Enter',
-              `${archiveReadEndpoint}/${traceId}`);
+            if (archiveReadEndpoint) {
+              window.prompt('Trace archived. Copy link to clipboard: Cmd+C, Enter',
+                `${archiveReadEndpoint}/${traceId}`);
+            } else {
+              alert('Trace archived');
+            }
           }).fail(error => {
             console.log(error);
             alert(`Unable to save trace ${this.attr.traceId}`);

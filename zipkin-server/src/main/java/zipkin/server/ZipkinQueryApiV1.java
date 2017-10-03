@@ -16,11 +16,6 @@ package zipkin.server;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -42,7 +37,6 @@ import zipkin.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-import static org.springframework.http.MediaType.TEXT_PLAIN_VALUE;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
@@ -56,10 +50,6 @@ import static zipkin.internal.Util.lowerHexToUnsignedLong;
 @CrossOrigin("${zipkin.query.allowed-origins:*}")
 @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
 public class ZipkinQueryApiV1 {
-
-  @Autowired
-  @Value("${zipkin.permanent.store:http://localhost:9412}")
-  String permanentStore = "http://localhost:9412";
 
   @Autowired
   @Value("${zipkin.query.lookback:86400000}")
@@ -133,34 +123,6 @@ public class ZipkinQueryApiV1 {
     return new String(Codec.JSON.writeSpans(trace), UTF_8);
   }
 
-  @RequestMapping(value = "/save/trace/{traceIdHex}", method = RequestMethod.GET, produces = TEXT_PLAIN_VALUE)
-  public String saveTrace(@PathVariable String traceIdHex, WebRequest request) {
-    long traceIdHigh = traceIdHex.length() == 32 ? lowerHexToUnsignedLong(traceIdHex, 0) : 0L;
-    long traceIdLow = lowerHexToUnsignedLong(traceIdHex);
-    List<Span> trace = storage.spanStore().getRawTrace(traceIdHigh, traceIdLow);
-    if (trace == null) {
-      throw new TraceNotFoundException(traceIdHex, traceIdHigh, traceIdLow);
-    }
-    String spansInJson = new String(Codec.JSON.writeSpans(trace), UTF_8);
-    // post to permanent store
-    try {
-      OkHttpClient client = new OkHttpClient();
-      Response response = client.newCall(new Request.Builder()
-        .url(permanentStore + "/api/v1/spans")
-        .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build())
-        .execute();
-      if (response.isSuccessful()) {
-        return "OK";
-      }
-      else {
-       throw new TraceSaveException("Save server returned " + response.code());
-      }
-    } catch (Exception e) {
-      e.printStackTrace();
-      throw new TraceSaveException(e.getMessage());
-    }
-  }
-
   @ExceptionHandler(TraceNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
   public void notFound() {
@@ -170,12 +132,6 @@ public class ZipkinQueryApiV1 {
     public TraceNotFoundException(String traceIdHex, Long traceIdHigh, long traceId) {
       super(String.format("Cannot find trace for id=%s,  parsed value=%s", traceIdHex,
           traceIdHigh != null ? traceIdHigh + "," + traceId : traceId));
-    }
-  }
-
-  static class TraceSaveException extends RuntimeException {
-    public TraceSaveException(String rootCause) {
-      super(String.format("Unable to save trace. " + rootCause));
     }
   }
 
