@@ -42,15 +42,33 @@ const TracePageComponent = component(function TracePage() {
                                             link: `/api/v1/trace/${this.attr.traceId}`});
       });
 
-      this.$node.find('#saveTraceLink').click(e => {
+      this.$node.find('#archiveTraceLink').click(e => {
         e.preventDefault();
         const traceId = this.attr.traceId;
+        const archiveEndpoint = this.attr.config('archiveEndpoint');
+        const archiveReadEndpoint = this.attr.config('archiveReadEndpoint');
 
-        $.ajax(`/api/v1/save/trace/${traceId}`).done(result => {
-          alert(`Trace saved : ${result}`);
-        }).fail(error => {
+        $.ajax(`/zipkin/api/v1/trace/${traceId}`, {
+          type: 'GET',
+          dataType: 'json'
+        }).done(trace => {
+          console.log(trace);
+          $.ajax(`${archiveEndpoint}`, {
+            type: 'POST',
+            dataType: 'json',
+            crossDomain: true,
+            data: JSON.stringify(trace),
+            contentType: 'application/json; charset=utf-8'
+          }).done(result => {
+            console.log(result);
+            alert(`Trace Archived : ${archiveReadEndpoint}/${traceId}`);
+          }).fail(error => {
+            console.log(error);
+            alert(`Unable to save trace ${this.attr.traceId}`);
+          });
+        }).fail(error2 => {
+          console.log(error2);
           alert(`Unable to save trace ${this.attr.traceId}`);
-          console.log(error);
         });
       });
 
