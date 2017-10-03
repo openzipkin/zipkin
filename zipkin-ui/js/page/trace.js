@@ -48,7 +48,7 @@ const TracePageComponent = component(function TracePage() {
         const archiveEndpoint = this.attr.config('archiveEndpoint');
         const archiveReadEndpoint = this.attr.config('archiveReadEndpoint');
 
-        $.ajax(`/zipkin/api/v1/trace/${traceId}`, {
+        $.ajax(`/api/v2/trace/${traceId}`, {
           type: 'GET',
           dataType: 'json'
         }).done(trace => {
