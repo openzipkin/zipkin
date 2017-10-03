@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <!--
+      add 'base' tag to work around the fact that 'html-webpack-plugin' does not work
+      with '__webpack_public_path__' being set as reported at https://github.com/jantimon/html-webpack-plugin/issues/119
+    -->
+    <base href="<%= htmlWebpackPlugin.options.contextRoot %>">
+
+    <link rel="icon" type="image/x-icon" href="favicon.ico">
+
+    <meta charset="UTF-8">
+    <title><%= htmlWebpackPlugin.options.title %></title>
+  </head>
+  <body>
+  </body>
+</html>

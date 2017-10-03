@@ -16,7 +16,7 @@ export default component(function TraceData() {
     const logsUrl = toContextualLogsUrl(this.attr.logsUrl, traceId);
     const archiveEndpoint = this.attr.archiveEndpoint;
     const archiveReadEndpoint = this.attr.archiveReadEndpoint;
-    $.ajax(`/zipkin/api/v1/trace/${traceId}`, {
+    $.ajax(`api/v1/trace/${traceId}`, {
       type: 'GET',
       dataType: 'json'
     }).done(trace => {
