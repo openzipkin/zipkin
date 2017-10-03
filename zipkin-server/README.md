@@ -41,17 +41,13 @@ ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 ```
 ### Archiving Traces
 
-Most Zipkin setups enforce some kind of TTL policy for their data stores. Archive trace feature allows Zipkin users to save a trace for time periods longer than the standard trace retention policy.
+Most Zipkin setups enforce some kind of TTL policy for their data stores. Archive trace feature allows Zipkin users to save a trace for time periods longer than the standard data retention policy.
 
-Archiving traces can be achieved by setting up two separate Zipkin server instances, one regular and one with longer TTL, backed by data stores with different eviction policies. Regular server will use `zipkin.ui.archive-endpoint` and `zipkin.ui.archive-read-endpoint` properties to specify endpoints of archive server. [UI configuration](#configuration-for-the-ui) section has more details for these properties.
+This can be achieved by setting up two separate Zipkin server instances, one regular and one with longer TTL, backed by separate data stores with different eviction policies.
 
-Archive server needs to set `ZIPKIN_QUERY_ALLOWED_ORIGINS` environment variable, to allow CORS from regular server.
+Regular server should use `zipkin.ui.archive-endpoint` and `zipkin.ui.archive-read-endpoint` properties to specify archive server endpoints. [UI configuration](#configuration-for-the-ui) section has more details for these properties.
 
-For example, if regular server is running at `http://zipkin.com`, archive server should set following environment variable:
-
-```
-ZIPKIN_QUERY_ALLOWED_ORIGINS=http://zipkin.com
-```
+Archive server should set `ZIPKIN_QUERY_ALLOWED_ORIGINS` environment variable, to allow CORS from regular server. For example, if regular server is running at `http://zipkin.com`, archive server should set `ZIPKIN_QUERY_ALLOWED_ORIGINS=http://zipkin.com`.
 
 ## Logging
 
@@ -117,7 +113,7 @@ logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a b
 dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 archiveEndpoint | zipkin.ui.archive-endpoint | Endpoint for archiving traces. e.g. `http://archive.zipkin.com/api/v2/spans`. If specified, a button will appear on the trace page to archive the trace. Not required.
-archiveReadEndpoint | zipkin.ui.archive-read-endpoint | Endpoint for reading archived traces. e.g. `http://archive.zipkin.com/zipkin/traces`. If specified, this link to archived trace will be displayed after a trace is archived. Not required.
+archiveReadEndpoint | zipkin.ui.archive-read-endpoint | Endpoint for reading archived traces. e.g. `http://archive.zipkin.com/zipkin/traces`. If specified, a link to archived trace will be displayed after a trace is archived. Not required.
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
