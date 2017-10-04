@@ -67,7 +67,7 @@ describe('traceToMustache', () => {
   it('should show archiveReadEndpoint', () => {
     const archiveReadEndpoint = 'http/url.com/archive/read';
     const modelview = traceToMustache(trace, undefined, undefined, archiveReadEndpoint);
-    modelview.archiveEndpoint.should.equal(archiveReadEndpoint);
+    modelview.archiveReadEndpoint.should.equal(archiveReadEndpoint);
   });
 
   it('should show service counts', () => {
