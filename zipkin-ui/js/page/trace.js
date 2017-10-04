@@ -74,11 +74,11 @@ const TracePageComponent = component(function TracePage() {
             }
           }).fail(error => {
             console.log(error);
-            alert(`Unable to save trace ${this.attr.traceId}`);
+            alert(`Unable to archive trace ${this.attr.traceId}`);
           });
         }).fail(error2 => {
           console.log(error2);
-          alert(`Unable to save trace ${this.attr.traceId}`);
+          alert(`Unable to archive trace ${this.attr.traceId}`);
         });
       });
 
