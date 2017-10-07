@@ -61,7 +61,7 @@ import static zipkin.internal.Util.UTF_8;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT
 )
 @RunWith(SpringJUnit4ClassRunner.class)
-@TestPropertySource(properties = {"zipkin.store.type=mem", "spring.config.name=zipkin-server"})
+@TestPropertySource(properties = "spring.config.name=zipkin-server")
 public class ZipkinServerIntegrationTest {
 
   @Autowired

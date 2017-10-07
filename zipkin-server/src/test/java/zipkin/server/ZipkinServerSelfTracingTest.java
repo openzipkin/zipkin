@@ -26,7 +26,6 @@ import zipkin.storage.StorageComponent;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = ZipkinServer.class, properties = {
-    "zipkin.storage.type=mem",
     "spring.config.name=zipkin-server",
     "zipkin.self-tracing.enabled=true"
 })

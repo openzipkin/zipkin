@@ -32,7 +32,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * associated assets 404 vs throw exceptions.
  */
 @SpringBootTest(classes = ZipkinServer.class, properties = {
-    "zipkin.storage.type=mem",
     "spring.config.name=zipkin-server",
     "zipkin.query.enabled=false",
     "zipkin.ui.enabled=false"

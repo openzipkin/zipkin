@@ -24,7 +24,11 @@ import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2StorageComponent;
@@ -85,8 +89,7 @@ public class ZipkinServerConfiguration {
    * supply both read apis, so we add two beans here.
    */
   @Configuration
-  // "matchIfMissing = true" ensures this is used when there's no configured storage type
-  @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mem", matchIfMissing = true)
+  @Conditional(StorageTypeMemAbsentOrEmpty.class)
   @ConditionalOnMissingBean(StorageComponent.class)
   static class InMemoryConfiguration {
     @Bean StorageComponent storage(
@@ -100,6 +103,16 @@ public class ZipkinServerConfiguration {
 
     @Bean InMemoryStorage v2Storage(V2StorageComponent component) {
       return (InMemoryStorage) component.delegate();
+    }
+  }
+
+  static final class StorageTypeMemAbsentOrEmpty implements Condition {
+    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
+      String storageType = condition.getEnvironment().getProperty("zipkin.storage.type");
+      if (storageType == null) return true;
+      storageType  = storageType.trim();
+      if (storageType.isEmpty()) return true;
+      return storageType.equals("mem");
     }
   }
 }

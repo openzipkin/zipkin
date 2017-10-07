@@ -41,7 +41,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(classes = ZipkinServer.class)
 @RunWith(SpringJUnit4ClassRunner.class)
 @WebAppConfiguration
-@TestPropertySource(properties = {"zipkin.storage.type=mem", "spring.config.name=zipkin-server", "zipkin.query.allowed-origins=foo.example.com"})
+@TestPropertySource(properties = {"spring.config.name=zipkin-server", "zipkin.query.allowed-origins=foo.example.com"})
 public class ZipkinServerCORSTest {
 
   @Autowired
