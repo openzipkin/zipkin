@@ -27,6 +27,7 @@ public class ZipkinUiProperties {
 
   private String archiveEndpoint = null;
   private String archiveReadEndpoint = null;
+  private String archiveHome = null;
 
   private Dependency dependency = new Dependency();
 
@@ -92,6 +93,13 @@ public class ZipkinUiProperties {
     }
   }
 
+  public String getArchiveHome() {
+    return archiveHome;
+  }
+
+  public void setArchiveHome(String archiveHome) {
+    this.archiveHome = archiveHome;
+  }
 
   public Dependency getDependency() {
     return dependency;

@@ -114,6 +114,7 @@ dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of erro
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 archiveEndpoint | zipkin.ui.archive-endpoint | Endpoint for archiving traces. e.g. `http://archive.zipkin.com/api/v2/spans`. If specified, a button will appear on the trace page to archive the trace. Not required.
 archiveReadEndpoint | zipkin.ui.archive-read-endpoint | Endpoint for reading archived traces. e.g. `http://archive.zipkin.com/zipkin/traces`. If specified, a link to archived trace will be displayed after a trace is archived. Not required.
+archiveHome | zipkin.ui.archive-home | URL to archive server. e.g. `http://archive.zipkin.com`. If specified, a link to archived server will be displayed on top menu bar.
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 

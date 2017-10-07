@@ -8,7 +8,7 @@ import {contextRoot} from '../publicPath';
 
 export default component(function CommonUI() {
   this.after('initialize', function() {
-    this.$node.html(layoutTemplate({contextRoot}));
+    this.$node.html(layoutTemplate({contextRoot, archiveHome: this.attr.config('archiveHome')}));
     NavbarUI.attachTo('#navbar');
     ErrorUI.attachTo('#errorPanel');
     EnvironmentUI.attachTo('#environment', {config: this.attr.config});

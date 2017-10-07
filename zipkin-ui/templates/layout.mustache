@@ -9,6 +9,9 @@
           <ul class="nav navbar-nav">
             <li data-route="index"><a href="{{contextRoot}}">Find a trace</a></li>
             <li data-route="dependency"><a href="{{contextRoot}}dependency/">Dependencies</a></li>
+            {{#archiveHome}}
+            <li><a href="{{archiveHome}}">Archived Traces</a></li>
+            {{/archiveHome}}
           </ul>
         </div>
         <div class="navbar-right" style="width: 50%">
