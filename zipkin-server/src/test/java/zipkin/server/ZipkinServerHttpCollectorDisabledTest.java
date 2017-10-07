@@ -32,7 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * associated assets 404 instead of allowing creation of spans.
  */
 @SpringBootTest(classes = ZipkinServer.class, properties = {
-  "zipkin.storage.type=mem",
+  "zipkin.storage.type=", // cheat and test empty storage type
   "spring.config.name=zipkin-server",
   "zipkin.collector.http.enabled=false"
 })
