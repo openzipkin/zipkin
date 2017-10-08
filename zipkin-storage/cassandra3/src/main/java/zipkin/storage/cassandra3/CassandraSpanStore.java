@@ -68,7 +68,6 @@ import static zipkin.internal.Util.getDays;
 import static zipkin.storage.cassandra3.Schema.TABLE_SERVICE_SPANS;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACES;
 import static zipkin.storage.cassandra3.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
-import zipkin2.codec.DependencyLinkBytesDecoder;
 
 final class CassandraSpanStore implements SpanStore {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
@@ -109,7 +108,7 @@ final class CassandraSpanStore implements SpanStore {
             .limit(QueryBuilder.bindMarker("limit_")));
 
     selectDependencies = session.prepare(
-        QueryBuilder.select("links")
+        QueryBuilder.select("parent", "child", "errors", "calls")
             .from(Schema.TABLE_DEPENDENCIES)
             .where(QueryBuilder.in("day", QueryBuilder.bindMarker("days"))));
 
@@ -333,7 +332,6 @@ final class CassandraSpanStore implements SpanStore {
   }
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
-    // TODO: lets encode differently, not using thrift. maybe using json, or a UDT
     List<Date> days = getDays(endTs, lookback);
     try {
       BoundStatement bound = CassandraUtil
@@ -358,10 +356,13 @@ final class CassandraSpanStore implements SpanStore {
     @Override public List<DependencyLink> apply(@Nullable ResultSet rs) {
       ImmutableList.Builder<DependencyLink> unmerged = ImmutableList.builder();
       for (Row row : rs) {
-        byte[] encodedDayOfDependencies = row.getBytes("links").array();
-        for (DependencyLink link : DependencyLinkBytesDecoder.JSON_V1.decodeList(encodedDayOfDependencies)) {
-          unmerged.add(link);
-        }
+        unmerged.add(
+                DependencyLink.newBuilder()
+                .parent(row.getString("parent"))
+                .child(row.getString("child"))
+                .errorCount(row.getLong("errors"))
+                .callCount(row.getLong("calls"))
+                .build());
       }
       return DependencyLinker.merge(unmerged.build());
     }
