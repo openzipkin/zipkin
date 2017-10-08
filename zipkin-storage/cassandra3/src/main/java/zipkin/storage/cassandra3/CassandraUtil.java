@@ -27,8 +27,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import zipkin.Constants;
-import zipkin2.Annotation;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
@@ -61,12 +59,8 @@ final class CassandraUtil {
    */
   static Set<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
-    for (Annotation a : span.annotations()) {
-      // don't index core annotations as they aren't queryable
-      if (Constants.CORE_ANNOTATIONS.contains(a.value())) continue;
+    span.annotations().forEach((a) -> annotationKeys.add(a.value()));
 
-      annotationKeys.add(a.value());
-    }
     for (Map.Entry<String,String> tag : span.tags().entrySet()) {
       if (tag.getValue().length() > LONGEST_VALUE_TO_INDEX) continue;
 

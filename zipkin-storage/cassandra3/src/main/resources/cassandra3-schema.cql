@@ -74,9 +74,13 @@ CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2_cassandra3.trace_by_service_span (d
 
 
 CREATE TABLE IF NOT EXISTS zipkin2_cassandra3.dependencies (
-    day          timestamp,
-    links        text,
-    PRIMARY KEY (day)
+    day          date,
+    parent       text,
+    child        text,
+    errors       bigint,
+    calls        bigint,
+    PRIMARY KEY (day, parent, child)
 )
     WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
-    AND default_time_to_live =  259200;
+    AND default_time_to_live =  259200
+    AND comment = 'Holder for each days generation of zipkin2.DependencyLink';

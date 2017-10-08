@@ -55,11 +55,3 @@ CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2_cassandra3.traces (l_service) USING
 CREATE CUSTOM INDEX IF NOT EXISTS ON stress_zipkin2_cassandra3.trace_by_service_span (duration) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};
 
-
-CREATE TABLE IF NOT EXISTS stress_zipkin2_cassandra3.dependencies (
-    day          timestamp,
-    links        blob,
-    PRIMARY KEY (day)
-)
-    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
-    AND default_time_to_live =  259200;
