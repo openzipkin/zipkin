@@ -15,12 +15,12 @@ package zipkin.autoconfigure.storage.cassandra3;
 
 import java.io.Serializable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin.storage.cassandra3.Cassandra3Storage;
+import zipkin2.storage.cassandra.CassandraStorage;
 
-import static zipkin.storage.cassandra3.Cassandra3Storage.Builder;
-import static zipkin.storage.cassandra3.Cassandra3Storage.newBuilder;
+import static zipkin2.storage.cassandra.CassandraStorage.Builder;
+import static zipkin2.storage.cassandra.CassandraStorage.newBuilder;
 
-@ConfigurationProperties("zipkin.storage.cassandra3")
+@ConfigurationProperties("zipkin2.storage.cassandra3")
 public class ZipkinCassandra3StorageProperties implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
@@ -32,7 +32,7 @@ public class ZipkinCassandra3StorageProperties implements Serializable { // for 
   private boolean useSsl = false;
   private String username;
   private String password;
-  /** See {@link Cassandra3Storage.Builder#indexFetchMultiplier(int)} */
+  /** See {@link CassandraStorage.Builder#indexFetchMultiplier(int)} */
   private int indexFetchMultiplier = 3;
 
   public String getKeyspace() {

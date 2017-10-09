@@ -200,8 +200,8 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-storage-cassandra3</artifactId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-storage-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
 

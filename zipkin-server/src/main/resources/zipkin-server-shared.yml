@@ -91,7 +91,7 @@ zipkin:
       keyspace: ${CASSANDRA3_KEYSPACE:zipkin3}
       # Max pooled connections per datacenter-local host.
       max-connections: ${CASSANDRA3_MAX_CONNECTIONS:8}
-      # Ensuring that schema exists, if enabled tries to execute script /cassandra3-schema.cql
+      # Ensuring that schema exists, if enabled tries to execute script /zipkin2_cassandra-schema.cql
       ensure-schema: ${CASSANDRA3_ENSURE_SCHEMA:true}
       # how many more index rows to fetch than the user-supplied query limit
       index-fetch-multiplier: ${CASSANDRA3_INDEX_FETCH_MULTIPLIER:3}

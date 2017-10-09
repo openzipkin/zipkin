@@ -23,8 +23,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
-import zipkin.storage.cassandra3.Cassandra3Storage;
-import zipkin.storage.cassandra3.Cassandra3Storage.SessionFactory;
+import zipkin2.storage.cassandra.CassandraStorage;
 
 /**
  * This storage accepts Cassandra logs in a specified category. Each log entry is expected to contain
@@ -41,20 +40,20 @@ public class ZipkinCassandra3StorageAutoConfiguration {
 
   @Autowired(required = false)
   @Qualifier("tracingSessionFactory")
-  SessionFactory tracingSessionFactory;
+  CassandraStorage.SessionFactory tracingSessionFactory;
 
   @Bean
   @ConditionalOnMissingBean
   V2StorageComponent storage(ZipkinCassandra3StorageProperties properties,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
-    Cassandra3Storage.Builder builder = properties.toBuilder().strictTraceId(strictTraceId);
-    Cassandra3Storage result = tracingSessionFactory == null
+    CassandraStorage.Builder builder = properties.toBuilder().strictTraceId(strictTraceId);
+    CassandraStorage result = tracingSessionFactory == null
       ? builder.build()
       : builder.sessionFactory(tracingSessionFactory).build();
     return V2StorageComponent.create(result);
   }
 
-  @Bean Cassandra3Storage v2Storage(V2StorageComponent component) {
-    return (Cassandra3Storage) component.delegate();
+  @Bean CassandraStorage v2Storage(V2StorageComponent component) {
+    return (CassandraStorage) component.delegate();
   }
 }
