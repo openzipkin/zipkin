@@ -37,15 +37,8 @@
     </dependency>
 
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-storage-cassandra3</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-core</artifactId>
-      <version>${brave.version}</version>
-      <optional>true</optional>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-storage-cassandra</artifactId>
     </dependency>
   </dependencies>
 </project>

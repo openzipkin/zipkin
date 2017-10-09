@@ -33,7 +33,7 @@
 
   <modules>
     <module>cassandra</module>
-    <module>cassandra3</module>
+    <module>zipkin2_cassandra</module>
     <module>mysql</module>
     <module>elasticsearch</module>
     <module>elasticsearch-http</module>
