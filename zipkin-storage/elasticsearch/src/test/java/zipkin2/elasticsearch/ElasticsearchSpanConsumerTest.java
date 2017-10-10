@@ -14,7 +14,9 @@
 package zipkin2.elasticsearch;
 
 import java.io.IOException;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import javax.annotation.Nullable;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -22,6 +24,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import zipkin2.Callback;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
@@ -187,6 +190,35 @@ public class ElasticsearchSpanConsumerTest {
     RecordedRequest request = es.takeRequest();
     assertThat(request.getPath())
       .isEqualTo("/_bulk?pipeline=zipkin");
+  }
+
+  @Test public void dropsWhenBacklog() throws Exception {
+    close();
+
+    storage = ElasticsearchStorage.newBuilder()
+      .hosts(asList(es.url("").toString()))
+      .maxRequests(1)
+      .build();
+    ensureIndexTemplate();
+    es.enqueue(new MockResponse().setBodyDelay(1, TimeUnit.SECONDS));
+
+    final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
+    Callback<Void> callback = new Callback<Void>() {
+      @Override public void onSuccess(@Nullable Void value) {
+        q.add("success");
+      }
+
+      @Override public void onError(Throwable t) {
+        q.add(t);
+      }
+    };
+    // one request is delayed
+    storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).enqueue(callback);
+    // this request is dropped
+    storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).enqueue(callback);
+
+    assertThat(q.take())
+      .isInstanceOf(IllegalStateException.class);
   }
 
   @Test public void choosesTypeSpecificIndex() throws Exception {

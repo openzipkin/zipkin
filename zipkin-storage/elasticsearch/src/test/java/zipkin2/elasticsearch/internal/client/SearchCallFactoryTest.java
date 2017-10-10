@@ -29,7 +29,7 @@ public class SearchCallFactoryTest {
   public MockWebServer es = new MockWebServer();
 
   SearchCallFactory client =
-      new SearchCallFactory(new HttpCall.Factory(new OkHttpClient(), es.url("")));
+    new SearchCallFactory(new HttpCall.Factory(new OkHttpClient(), 1, es.url("")));
 
   @After
   public void close() throws IOException {
