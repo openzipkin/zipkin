@@ -165,12 +165,18 @@ logging:
   level:
     # Silence Invalid method name: '__can__finagle__trace__v3__'
     com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
-#     # investigate /api/v1/dependencies
-#     zipkin.internal.DependencyLinker: 'DEBUG'
+#     # investigate /api/v1/dependencies or /api/v2/dependencies
+#     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)
 #     com.datastax.driver.core.QueryLogger: 'TRACE'
 #     # log cassandra trace propagation
 #     com.datastax.driver.core.Message: 'TRACE'
+#     # log reason behind http collector dropped messages
+#     zipkin.server.ZipkinHttpCollector: 'DEBUG'
+#     zipkin.collector.kafka.KafkaCollector: 'DEBUG'
+#     zipkin.collector.kafka10.KafkaCollector: 'DEBUG'
+#     zipkin.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
+#     zipkin.collector.scribe.ScribeCollector: 'DEBUG'
 
 management:
   security:

@@ -58,7 +58,11 @@ public class CollectorTest {
         return "1";
       }
 
-      @Override void warn(String message) {
+      @Override boolean shouldWarn() {
+        return true;
+      }
+
+      @Override void warn(String message, Throwable e) {
       }
     });
   }
@@ -84,7 +88,7 @@ public class CollectorTest {
     RuntimeException exception = new RuntimeException();
     callback.onError(exception);
 
-    verify(collector).warn("Cannot store spans [1] due to RuntimeException()");
+    verify(collector).warn("Cannot store spans [1] due to RuntimeException()", exception);
   }
 
   @Test
@@ -94,7 +98,7 @@ public class CollectorTest {
     callback.onError(exception);
 
     verify(collector)
-      .warn("Cannot store spans [1] due to IllegalArgumentException(no beer)");
+      .warn("Cannot store spans [1] due to IllegalArgumentException(no beer)", exception);
   }
 
   @Test

@@ -22,7 +22,7 @@ import zipkin.collector.CollectorMetrics;
 import zipkin.storage.Callback;
 
 import static java.lang.String.format;
-import static java.util.logging.Level.WARNING;
+import static java.util.logging.Level.FINE;
 import static zipkin.internal.Util.checkNotNull;
 
 public abstract class Collector<D, S> {
@@ -43,8 +43,12 @@ public abstract class Collector<D, S> {
 
   protected abstract String idString(S span);
 
-  void warn(String message) {
-    logger.log(WARNING, message);
+  boolean shouldWarn() {
+    return logger.isLoggable(FINE);
+  }
+
+  void warn(String message, Throwable e) {
+    logger.log(FINE, message, e);
   }
 
   protected void acceptSpans(byte[] serializedSpans, D decoder, Callback<Void> callback) {
@@ -129,13 +133,15 @@ public abstract class Collector<D, S> {
   }
 
   RuntimeException doError(String message, Throwable e) {
-    String exceptionMessage = e.getMessage() != null ? e.getMessage() : "";
-    if (e instanceof RuntimeException && exceptionMessage.startsWith("Malformed")) {
-      warn(exceptionMessage);
+    String error = e.getMessage() != null ? e.getMessage() : "";
+    if (e instanceof RuntimeException && error.startsWith("Malformed")) {
+      if (shouldWarn()) warn(error, e);
       return (RuntimeException) e;
     } else {
-      message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(), exceptionMessage);
-      warn(message);
+      if (shouldWarn()) {
+        message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(), error);
+        warn(message, e);
+      }
       return new RuntimeException(message, e);
     }
   }

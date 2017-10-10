@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -121,7 +121,7 @@ public class ScribeSpanConsumerTest {
     entry.message = encodedSpan;
 
     thrown.expect(ExecutionException.class); // from dereferenced future
-    thrown.expectMessage("Cannot store spans [f66529c8cc356aa0.f66529c8cc356aa0<:f66529c8cc356aa0] due to NullPointerException()");
+    thrown.expectMessage("Cannot store spans [f66529c8cc356aa0.f66529c8cc356aa0<:f66529c8cc356aa0]");
 
     scribe.log(asList(entry)).get();
   }
