@@ -107,7 +107,13 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public abstract Builder hostsSupplier(HostsSupplier hosts);
 
-    /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 */
+    /**
+     * Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64
+     *
+     * <p>A backlog is not permitted. Once this number of requests are in-flight, future requests
+     * will drop until we are under maxRequests again. This allows the server to remain up during a
+     * traffic surge.
+     */
     public abstract Builder maxRequests(int maxRequests);
 
     /**
@@ -296,7 +302,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .build();
     ok.dispatcher().setMaxRequests(maxRequests());
     ok.dispatcher().setMaxRequestsPerHost(maxRequests());
-    return new HttpCall.Factory(ok, HttpUrl.parse(hosts.get(0)));
+    return new HttpCall.Factory(ok, maxRequests(), HttpUrl.parse(hosts.get(0)));
   }
 
   @Override public void close() {

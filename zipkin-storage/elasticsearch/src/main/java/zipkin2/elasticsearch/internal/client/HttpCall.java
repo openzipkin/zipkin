@@ -15,6 +15,7 @@ package zipkin2.elasticsearch.internal.client;
 
 import java.io.Closeable;
 import java.io.IOException;
+import okhttp3.Dispatcher;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -35,10 +36,12 @@ public final class HttpCall<V> extends Call<V> {
 
   public static class Factory implements Closeable {
     final OkHttpClient ok;
+    final int maxRequests;
     public final HttpUrl baseUrl;
 
-    public Factory(OkHttpClient ok, HttpUrl baseUrl) {
+    public Factory(OkHttpClient ok, int maxRequests, HttpUrl baseUrl) {
       this.ok = ok;
+      this.maxRequests = maxRequests;
       this.baseUrl = baseUrl;
     }
 
@@ -53,13 +56,23 @@ public final class HttpCall<V> extends Call<V> {
 
   public final okhttp3.Call call;
   public final BodyConverter<V> bodyConverter;
+  final Dispatcher dispatcher;
+  final int maxRequests;
 
   HttpCall(Factory factory, Request request, BodyConverter<V> bodyConverter) {
-    this(factory.ok.newCall(request), bodyConverter);
+    this(
+      factory.ok.newCall(request),
+      factory.ok.dispatcher(),
+      factory.maxRequests,
+      bodyConverter
+    );
   }
 
-  HttpCall(okhttp3.Call call, BodyConverter<V> bodyConverter) {
+  HttpCall(okhttp3.Call call, Dispatcher dispatcher, int maxRequests,
+    BodyConverter<V> bodyConverter) {
     this.call = call;
+    this.dispatcher = dispatcher;
+    this.maxRequests = maxRequests;
     this.bodyConverter = bodyConverter;
   }
 
@@ -68,6 +81,10 @@ public final class HttpCall<V> extends Call<V> {
   }
 
   @Override public void enqueue(Callback<V> delegate) {
+    if (dispatcher.runningCallsCount() == maxRequests) {
+      delegate.onError(new IllegalStateException("over capacity"));
+      return;
+    }
     call.enqueue(new V2CallbackAdapter<>(bodyConverter, delegate));
   }
 
@@ -80,7 +97,7 @@ public final class HttpCall<V> extends Call<V> {
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<V>(call.clone(), bodyConverter);
+    return new HttpCall<V>(call.clone(), dispatcher, maxRequests, bodyConverter);
   }
 
   static class V2CallbackAdapter<V> implements okhttp3.Callback {
@@ -107,7 +124,8 @@ public final class HttpCall<V> extends Call<V> {
     }
   }
 
-  public static <V> V parseResponse(Response response, BodyConverter<V> bodyConverter) throws IOException {
+  public static <V> V parseResponse(Response response, BodyConverter<V> bodyConverter)
+    throws IOException {
     if (!HttpHeaders.hasBody(response)) {
       if (response.isSuccessful()) {
         return null;
