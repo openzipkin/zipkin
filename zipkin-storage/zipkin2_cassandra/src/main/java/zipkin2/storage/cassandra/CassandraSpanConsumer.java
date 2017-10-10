@@ -39,11 +39,15 @@ import static zipkin2.storage.cassandra.CassandraUtil.durationIndexBucket;
 final class CassandraSpanConsumer implements SpanConsumer {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanConsumer.class);
 
+  private static final long WRITTEN_NAMES_TTL
+      = Long.getLong("zipkin2.storage.cassandra.internal.writtenNamesTtl", 60 * 60 * 1000);
+
   private final Session session;
   private final boolean strictTraceId;
   private final PreparedStatement insertSpan;
   private final PreparedStatement insertTraceServiceSpanName;
   private final PreparedStatement insertServiceSpanName;
+  private final DeduplicatingExecutor deduplicatingExecutor;
 
   CassandraSpanConsumer(CassandraStorage storage) {
     session = storage.session();
@@ -83,6 +87,8 @@ final class CassandraSpanConsumer implements SpanConsumer {
             .insertInto(Schema.TABLE_SERVICE_SPANS)
             .value("service", QueryBuilder.bindMarker("service"))
             .value("span", QueryBuilder.bindMarker("span")));
+
+    deduplicatingExecutor = new DeduplicatingExecutor(session, WRITTEN_NAMES_TTL);
   }
 
   /**
@@ -200,7 +206,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
           .setString("service", serviceName)
           .setString("span", spanName);
 
-      session.executeAsync(bound);
+      deduplicatingExecutor.maybeExecuteAsync(bound, serviceName + '෴' + spanName);
     } catch (RuntimeException ignore) {
       LOG.error(ignore.getMessage(), ignore);
     }
