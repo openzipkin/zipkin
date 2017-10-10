@@ -117,7 +117,7 @@ public final class KafkaCollector implements CollectorComponent {
      *
      * @see org.apache.kafka.clients.consumer.ConsumerConfig
      */
-    public final Builder overrides(Map<String, String> overrides) {
+    public final Builder overrides(Map<String, ?> overrides) {
       properties.putAll(checkNotNull(overrides, "overrides"));
       return this;
     }
