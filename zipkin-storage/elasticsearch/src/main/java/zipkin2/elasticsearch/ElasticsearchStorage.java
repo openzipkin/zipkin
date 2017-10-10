@@ -302,7 +302,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .build();
     ok.dispatcher().setMaxRequests(maxRequests());
     ok.dispatcher().setMaxRequestsPerHost(maxRequests());
-    return new HttpCall.Factory(ok, maxRequests(), HttpUrl.parse(hosts.get(0)));
+    return new HttpCall.Factory(ok, HttpUrl.parse(hosts.get(0)));
   }
 
   @Override public void close() {

@@ -36,7 +36,7 @@ public class HttpCallTest {
   @Rule
   public MockWebServer mws = new MockWebServer();
 
-  HttpCall.Factory http = new HttpCall.Factory(new OkHttpClient(), 1, mws.url(""));
+  HttpCall.Factory http = new HttpCall.Factory(new OkHttpClient(), mws.url(""));
   Request request = new Request.Builder().url(http.baseUrl).build();
 
   @After

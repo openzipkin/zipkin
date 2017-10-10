@@ -33,6 +33,7 @@ import zipkin2.codec.SpanBytesEncoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.elasticsearch.ElasticsearchSpanConsumer.prefixWithTimestampMillisAndQuery;
 
 public class ElasticsearchSpanConsumerTest {
@@ -214,7 +215,15 @@ public class ElasticsearchSpanConsumerTest {
     };
     // one request is delayed
     storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).enqueue(callback);
-    // this request is dropped
+
+    // synchronous requests fail on backlog
+    try {
+      storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).execute();
+      failBecauseExceptionWasNotThrown(IllegalStateException.class);
+    } catch (IllegalStateException e) {
+    }
+
+    // asynchronous requests fail on backlog
     storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).enqueue(callback);
 
     assertThat(q.take())
