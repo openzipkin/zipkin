@@ -43,8 +43,8 @@ public abstract class Collector<D, S> {
 
   protected abstract String idString(S span);
 
-  void warn(String message, Throwable e) {
-    logger.log(WARNING, message, e);
+  void warn(String message) {
+    logger.log(WARNING, message);
   }
 
   protected void acceptSpans(byte[] serializedSpans, D decoder, Callback<Void> callback) {
@@ -131,21 +131,25 @@ public abstract class Collector<D, S> {
   RuntimeException doError(String message, Throwable e) {
     String exceptionMessage = e.getMessage() != null ? e.getMessage() : "";
     if (e instanceof RuntimeException && exceptionMessage.startsWith("Malformed")) {
-      warn(exceptionMessage, e);
+      warn(exceptionMessage);
       return (RuntimeException) e;
     } else {
       message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(), exceptionMessage);
-      warn(message, e);
+      warn(message);
       return new RuntimeException(message, e);
     }
   }
 
   StringBuilder appendSpanIds(List<S> spans, StringBuilder message) {
     message.append("[");
-    for (Iterator<S> iterator = spans.iterator(); iterator.hasNext(); ) {
+    int i = 0;
+    Iterator<S> iterator = spans.iterator();
+    while (iterator.hasNext() && i++ < 3) {
       message.append(idString(iterator.next()));
       if (iterator.hasNext()) message.append(", ");
     }
+    if (iterator.hasNext()) message.append("...");
+
     return message.append("]");
   }
 }

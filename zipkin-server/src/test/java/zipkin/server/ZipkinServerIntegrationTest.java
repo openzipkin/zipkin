@@ -143,7 +143,7 @@ public class ZipkinServerIntegrationTest {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
     performAsync(post("/api/v1/spans").content(body))
         .andExpect(status().isBadRequest())
-        .andExpect(content().string(startsWith("Malformed reading List<Span> from json: hello")));
+        .andExpect(content().string(startsWith("Malformed reading List<Span> from json")));
   }
 
   @Test

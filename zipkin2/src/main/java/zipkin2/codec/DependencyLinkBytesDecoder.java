@@ -31,7 +31,7 @@ public enum DependencyLinkBytesDecoder implements BytesDecoder<DependencyLink> {
       return JsonCodec.read(READER, link, out);
     }
 
-    @Nullable public DependencyLink decodeOne(byte[] link) {
+    @Override @Nullable public DependencyLink decodeOne(byte[] link) {
       return JsonCodec.readOne(READER, link);
     }
 

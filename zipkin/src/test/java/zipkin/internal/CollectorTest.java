@@ -58,7 +58,7 @@ public class CollectorTest {
         return "1";
       }
 
-      @Override void warn(String message, Throwable e) {
+      @Override void warn(String message) {
       }
     });
   }
@@ -72,13 +72,19 @@ public class CollectorTest {
   }
 
   @Test
+  public void acceptSpansCallback_toStringIncludesSpanIds_noMoreThan3() {
+    assertThat(collector.acceptSpansCallback(asList(span1, span1, span1, span1)))
+      .hasToString("AcceptSpans([1, 1, 1, ...])");
+  }
+
+  @Test
   public void acceptSpansCallback_onErrorWithNullMessage() {
     Callback<Void> callback = collector.acceptSpansCallback(asList(span1));
 
     RuntimeException exception = new RuntimeException();
     callback.onError(exception);
 
-    verify(collector).warn("Cannot store spans [1] due to RuntimeException()", exception);
+    verify(collector).warn("Cannot store spans [1] due to RuntimeException()");
   }
 
   @Test
@@ -88,7 +94,7 @@ public class CollectorTest {
     callback.onError(exception);
 
     verify(collector)
-      .warn("Cannot store spans [1] due to IllegalArgumentException(no beer)", exception);
+      .warn("Cannot store spans [1] due to IllegalArgumentException(no beer)");
   }
 
   @Test

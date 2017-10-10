@@ -38,12 +38,12 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     /** Visible for testing. This returns the first span parsed from the serialized object or null */
-    @Nullable public Span decodeOne(byte[] span) {
+    @Override @Nullable public Span decodeOne(byte[] span) {
       return JsonCodec.readOne(new V2SpanReader(), span);
     }
 
     /** Convenience method for {@link #decode(byte[], Collection)} */
-    public List<Span> decodeList(byte[] spans) {
+    @Override public List<Span> decodeList(byte[] spans) {
       return JsonCodec.readList(new V2SpanReader(), spans);
     }
   }

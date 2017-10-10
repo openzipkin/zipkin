@@ -665,7 +665,7 @@ public final class JsonCodec implements Codec {
     try {
       return adapter.fromJson(jsonReader(bytes));
     } catch (Exception e) {
-      throw exceptionReading(adapter.toString(), bytes, e);
+      throw exceptionReading(adapter.toString(), e);
     }
   }
 
@@ -682,7 +682,7 @@ public final class JsonCodec implements Codec {
       reader.endArray();
       return result;
     } catch (Exception e) {
-      throw exceptionReading("List<" + adapter + ">", bytes, e);
+      throw exceptionReading("List<" + adapter + ">", e);
     }
   }
 
@@ -709,10 +709,10 @@ public final class JsonCodec implements Codec {
     writeHexByte(b, (byte) (v & 0xff));
   }
 
-  static IllegalArgumentException exceptionReading(String type, byte[] bytes, Exception e) {
+  static IllegalArgumentException exceptionReading(String type, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
     if (cause.indexOf("malformed") != -1) cause = "Malformed";
-    String message = format("%s reading %s from json: %s", cause, type, new String(bytes, UTF_8));
+    String message = format("%s reading %s from json", cause, type);
     throw new IllegalArgumentException(message, e);
   }
 }
