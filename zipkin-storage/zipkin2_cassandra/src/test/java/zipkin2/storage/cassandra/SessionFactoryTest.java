@@ -151,14 +151,6 @@ public class SessionFactoryTest {
   }
 
   @Test
-  public void maxConnections_defaultsTo8() {
-    PoolingOptions poolingOptions = buildCluster(CassandraStorage.newBuilder().build())
-        .getConfiguration().getPoolingOptions();
-
-    assertThat(poolingOptions.getMaxConnectionsPerHost(HostDistance.LOCAL)).isEqualTo(8);
-  }
-
-  @Test
   public void maxConnections_setsMaxConnectionsPerDatacenterLocalHost() {
     PoolingOptions poolingOptions =
         buildCluster(CassandraStorage.newBuilder().maxConnections(16).build())

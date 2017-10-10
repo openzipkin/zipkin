@@ -1,4 +1,6 @@
-CREATE KEYSPACE IF NOT EXISTS zipkin2_cassandra WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
+CREATE KEYSPACE IF NOT EXISTS zipkin2_cassandra
+  WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}
+  AND durable_writes = false;
 
 CREATE TYPE IF NOT EXISTS zipkin2_cassandra.endpoint (
     service      text,
@@ -32,6 +34,10 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span (
     WITH CLUSTERING ORDER BY (ts_uuid DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
     AND default_time_to_live =  604800
+    AND gc_grace_seconds = 3600
+    AND read_repair_chance = 0
+    AND dclocal_read_repair_chance = 0.0
+    AND speculative_retry = '95percentile'
     AND comment = 'Primary table for holding trace data. annotation_query column is a comma separated string (instead of a set) to permit SASI (CASSANDRA-11182)';
 
 
@@ -47,6 +53,10 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.trace_by_service_span (
    WITH CLUSTERING ORDER BY (ts DESC)
     AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
     AND default_time_to_live =  259200
+    AND gc_grace_seconds = 3600
+    AND read_repair_chance = 0
+    AND dclocal_read_repair_chance = 0
+    AND speculative_retry = '95percentile'
     AND comment = 'Secondary table for looking up a trace by a service, or service and span. span column may be blank (when only looking up by service). bucket column adds time bucketing to the partition key, values are microseconds rounded to a pre-configured interval (typically one day)';
 
 CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span_by_service (
@@ -55,7 +65,12 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span_by_service (
     PRIMARY KEY (service, span)
 )
     WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
+    AND caching = {'rows_per_partition': 'ALL'}
     AND default_time_to_live =  259200
+    AND gc_grace_seconds = 3600
+    AND read_repair_chance = 0
+    AND dclocal_read_repair_chance = 0
+    AND speculative_retry = '95percentile'
     AND comment = 'Secondary table for looking up span names by a service name.';
 
 CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2_cassandra.span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
@@ -84,4 +99,7 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.dependency (
 )
     WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
     AND default_time_to_live =  259200
+    AND gc_grace_seconds = 3600
+    AND read_repair_chance = 0
+    AND dclocal_read_repair_chance = 0
     AND comment = 'Holder for each days generation of zipkin2.DependencyLink';

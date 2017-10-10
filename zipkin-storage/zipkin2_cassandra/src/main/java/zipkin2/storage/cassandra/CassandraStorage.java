@@ -21,12 +21,12 @@ import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import javax.annotation.Nullable;
 import zipkin2.CheckResult;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.internal.Nullable;
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -51,7 +51,8 @@ public abstract class CassandraStorage extends StorageComponent {
       .strictTraceId(true)
       .keyspace(Schema.DEFAULT_KEYSPACE)
       .contactPoints("localhost")
-      .maxConnections(8)
+      // Zipkin collectors can create out a lot of async requests in bursts
+      .poolingOptions(new PoolingOptions().setMaxQueueSize(40960).setPoolTimeoutMillis(60000))
       .ensureSchema(true)
       .useSsl(false)
       .maxTraceCols(100000)
