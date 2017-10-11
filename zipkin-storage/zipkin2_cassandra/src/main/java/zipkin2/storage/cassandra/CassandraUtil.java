@@ -52,7 +52,7 @@ final class CassandraUtil {
 
   public static int durationIndexBucket(long ts_micro) {
     // if the window constant has microsecond precision, the division produces negative values
-    return (int) ((ts_micro / DURATION_INDEX_BUCKET_WINDOW_SECONDS) / 1000000);
+    return (int) (ts_micro / (DURATION_INDEX_BUCKET_WINDOW_SECONDS * 1_000_000));
   }
 
   /**

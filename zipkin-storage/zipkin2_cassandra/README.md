@@ -66,6 +66,13 @@ Note: annotations with values longer than 256 characters
 are not written to the `annotation_query` SASI, as they aren't intended
 for use in user queries.
 
+The `trace_by_service_span` index is only used by query apis, and notably supports millisecond
+resolution duration. In other words, query inputs are rounded up to the next millisecond. For
+example, a call to GET /api/v2/traces?minDuration=12345 will returns traces who include a span that
+has at least 13 millisecond duration. This resolution only affects the query: original duration data
+remains at microsecond granularity. Meanwhile, write performance is dramatically better than writing
+discrete values, via fewer distinct writes.
+
 ### Time-To_live
 Time-To-Live is default now at the table level. It can not be overridden in write requests.
 
