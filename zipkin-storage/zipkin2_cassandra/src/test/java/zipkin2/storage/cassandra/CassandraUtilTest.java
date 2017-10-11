@@ -13,6 +13,7 @@
  */
 package zipkin2.storage.cassandra;
 
+import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -22,6 +23,7 @@ import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.TODAY;
 
 public class CassandraUtilTest {
 
@@ -81,5 +83,15 @@ public class CassandraUtilTest {
     assertThat(CassandraUtil.annotationKeys(span))
         .contains("aws.arn", "aws.arn:" + arn)
         .doesNotContain(TraceKeys.HTTP_URL, TraceKeys.HTTP_URL + ':' + url);
+  }
+
+  /** Sanity checks our bucketing scheme for numeric overflow */
+  @Test public void durationIndexBucket_notNegative() {
+    // today isn't negative
+    assertThat(CassandraUtil.durationIndexBucket(TODAY * 1000L))
+      .isNotNegative();
+    // neither is 10 years from now
+    assertThat(CassandraUtil.durationIndexBucket((TODAY + TimeUnit.DAYS.toMillis(3654)) * 1000L))
+      .isNotNegative();
   }
 }

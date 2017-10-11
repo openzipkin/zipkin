@@ -47,7 +47,7 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.trace_by_service_span (
     bucket        int,              //-- time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
     ts            timeuuid,         //-- start timestamp of the span, truncated to millisecond precision
     trace_id      text,             //-- trace ID
-    duration      bigint,           //-- span duration, in microseconds
+    duration      bigint,           //-- span duration, in milliseconds
     PRIMARY KEY ((service, span, bucket), ts)
 )
    WITH CLUSTERING ORDER BY (ts DESC)
@@ -57,7 +57,7 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.trace_by_service_span (
     AND read_repair_chance = 0
     AND dclocal_read_repair_chance = 0
     AND speculative_retry = '95percentile'
-    AND comment = 'Secondary table for looking up a trace by a service, or service and span. span column may be blank (when only looking up by service). bucket column adds time bucketing to the partition key, values are microseconds rounded to a pre-configured interval (typically one day)';
+    AND comment = 'Secondary table for looking up a trace by a service, or service and span. span column may be blank (when only looking up by service). bucket column adds time bucketing to the partition key, values are microseconds rounded to a pre-configured interval (typically one day). ts column is start timestamp of the span as time-uuid, truncated to millisecond precision. duration column is span duration, rounded up to tens of milliseconds (or hundredths of seconds)';
 
 CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span_by_service (
     service text,

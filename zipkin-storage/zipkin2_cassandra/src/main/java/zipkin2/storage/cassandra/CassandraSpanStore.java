@@ -63,6 +63,7 @@ import static com.google.common.util.concurrent.Futures.allAsList;
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.Futures.transformAsync;
+import java.util.concurrent.TimeUnit;
 import static zipkin2.storage.cassandra.Schema.TABLE_DEPENDENCY;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
@@ -438,9 +439,13 @@ final class CassandraSpanStore implements SpanStore {
               .setInt("limit_", request.limit());
 
           if (withDuration) {
-            bound = bound
-                .setLong("start_duration", null != request.minDuration() ? request.minDuration() : 0)
-                .setLong("end_duration", null != request.maxDuration() ? request.maxDuration() : Long.MAX_VALUE);
+            long minDuration = TimeUnit.MICROSECONDS
+                    .toMillis(null != request.minDuration() ? request.minDuration() : 0);
+
+            long maxDuration = TimeUnit.MICROSECONDS
+                    .toMillis(null != request.maxDuration() ? request.maxDuration() : Long.MAX_VALUE);
+            
+            bound = bound.setLong("start_duration", minDuration).setLong("end_duration", maxDuration);
           }
           bound.setFetchSize(request.limit());
 
