@@ -98,14 +98,18 @@ final class CassandraSpanConsumer implements SpanConsumer {
 
       // Contract for Repository.storeTraceServiceSpanName is to store the span twice, once with
       // the span name and another with empty string.
-      storeTraceServiceSpanName(s.localServiceName(), s.name(), timestamp, s.duration(), s.traceId());
-      storeTraceServiceSpanName(s.remoteServiceName(), s.name(), timestamp, s.duration(), s.traceId());
-      if (null != s.name()) { // If span.name is null, this would be redundant
-        storeTraceServiceSpanName(s.localServiceName(), "", timestamp, s.duration(), s.traceId());
-        storeTraceServiceSpanName(s.remoteServiceName(), "", timestamp, s.duration(), s.traceId());
+      String localServiceName = s.localServiceName();
+      String spanName = null != s.name() ? s.name() : "";
+      if (null != localServiceName) {
+        storeTraceServiceSpanName(localServiceName, spanName, timestamp, s.duration(), s.traceId());
+        if (!spanName.isEmpty()) { // Allows lookup without the span name
+          storeTraceServiceSpanName(localServiceName, "", timestamp, s.duration(), s.traceId());
+        }
+        storeServiceSpanName(localServiceName, spanName);
       }
-      storeServiceSpanName(s.localServiceName(), s.name());
-      storeServiceSpanName(s.remoteServiceName(), s.name());
+      if (null != s.remoteServiceName()) { // allows getServices to return remote service names
+        storeServiceSpanName(s.remoteServiceName(), spanName);
+      }
     }
     return Call.create(null /* Void == null */);
   }
