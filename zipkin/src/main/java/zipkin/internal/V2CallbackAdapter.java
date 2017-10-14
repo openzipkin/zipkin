@@ -13,7 +13,6 @@
  */
 package zipkin.internal;
 
-import javax.annotation.Nullable;
 import zipkin.storage.Callback;
 
 final class V2CallbackAdapter<T> implements zipkin2.Callback<T> {

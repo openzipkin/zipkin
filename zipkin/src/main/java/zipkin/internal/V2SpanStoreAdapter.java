@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;

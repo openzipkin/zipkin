@@ -14,8 +14,8 @@
 package zipkin;
 
 import java.io.Serializable;
-import javax.annotation.Nullable;
 import zipkin.internal.JsonCodec;
+import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;

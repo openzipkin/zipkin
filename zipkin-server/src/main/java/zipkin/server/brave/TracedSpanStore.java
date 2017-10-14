@@ -15,9 +15,9 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.LocalTracer;
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;

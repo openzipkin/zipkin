@@ -18,7 +18,6 @@ import com.google.common.util.concurrent.UncheckedTimeoutException;
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.mockwebserver.MockResponse;
@@ -28,6 +27,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;

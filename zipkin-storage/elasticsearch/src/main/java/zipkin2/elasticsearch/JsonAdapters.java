@@ -17,12 +17,11 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import zipkin2.Annotation;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
 
 /**
  * Read-only json adapters resurrected from before we switched to Java 6 as storage components can
@@ -30,8 +29,7 @@ import zipkin2.Span;
  */
 final class JsonAdapters {
   static final JsonAdapter<Span> SPAN_ADAPTER = new JsonAdapter<Span>() {
-    @Override @Nonnull
-    public Span fromJson(JsonReader reader) throws IOException {
+    @Override public Span fromJson(JsonReader reader) throws IOException {
       Span.Builder result = Span.newBuilder();
       reader.beginObject();
       while (reader.hasNext()) {
@@ -104,7 +102,7 @@ final class JsonAdapters {
   };
 
   static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
-    @Override @Nonnull public Annotation fromJson(JsonReader reader) throws IOException {
+    @Override public Annotation fromJson(JsonReader reader) throws IOException {
       reader.beginObject();
       Long timestamp = null;
       String value = null;
@@ -134,7 +132,7 @@ final class JsonAdapters {
   };
 
   static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
-    @Override @Nonnull public Endpoint fromJson(JsonReader reader) throws IOException {
+    @Override public Endpoint fromJson(JsonReader reader) throws IOException {
       reader.beginObject();
       String serviceName = null, ipv4 = null, ipv6 = null;
       Integer port = null;
@@ -175,8 +173,7 @@ final class JsonAdapters {
   }.nullSafe();
 
   static final JsonAdapter<DependencyLink> DEPENDENCY_LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
-    @Override @Nonnull
-    public DependencyLink fromJson(JsonReader reader) throws IOException {
+    @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
       DependencyLink.Builder result = DependencyLink.newBuilder();
       reader.beginObject();
       while (reader.hasNext()) {

@@ -18,7 +18,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.storage.AsyncSpanStore;

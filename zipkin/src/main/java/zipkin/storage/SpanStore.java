@@ -14,10 +14,10 @@
 package zipkin.storage;
 
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 
 public interface SpanStore {
 

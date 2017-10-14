@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nullable;
+import zipkin2.internal.Nullable;
 
 public final class JsonReaders {
 

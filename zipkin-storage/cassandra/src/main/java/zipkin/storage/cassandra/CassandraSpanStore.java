@@ -43,7 +43,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Codec;
@@ -54,6 +53,7 @@ import zipkin.internal.Dependencies;
 import zipkin.internal.DependencyLinker;
 import zipkin.internal.GroupByTraceId;
 import zipkin.internal.MergeById;
+import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.guava.GuavaSpanStore;
 

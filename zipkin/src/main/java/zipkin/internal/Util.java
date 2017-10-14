@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 
 public final class Util {
   public static final Charset UTF_8 = Charset.forName("UTF-8");

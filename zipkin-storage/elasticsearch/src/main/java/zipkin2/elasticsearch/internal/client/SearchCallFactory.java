@@ -16,11 +16,11 @@ package zipkin2.elasticsearch.internal.client;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import java.util.List;
-import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import zipkin2.internal.Nullable;
 
 public class SearchCallFactory {
   static final MediaType APPLICATION_JSON = MediaType.parse("application/json");

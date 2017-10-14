@@ -15,8 +15,8 @@ package zipkin.storage.elasticsearch.http;
 
 import java.io.IOException;
 import java.util.List;
-import javax.annotation.Nullable;
 import okhttp3.OkHttpClient;
+import zipkin.internal.Nullable;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.AsyncSpanStore;
 import zipkin2.elasticsearch.ElasticsearchStorage;

@@ -15,7 +15,6 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.util.List;
-import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -29,6 +28,7 @@ import zipkin.Span;
 import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
+import zipkin.internal.Nullable;
 import zipkin.internal.V2JsonSpanDecoder;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.Callback;

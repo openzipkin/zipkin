@@ -14,15 +14,15 @@
 package zipkin.storage.mysql;
 
 import java.util.Iterator;
-import javax.annotation.Nullable;
 import org.jooq.Record;
 import org.jooq.TableField;
 import zipkin.BinaryAnnotation.Type;
 import zipkin.Constants;
+import zipkin.internal.Nullable;
 import zipkin.internal.PeekingIterator;
+import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin.storage.mysql.internal.generated.tables.ZipkinSpans;
 
 import static zipkin.Constants.CLIENT_ADDR;
 import static zipkin.Constants.CLIENT_SEND;

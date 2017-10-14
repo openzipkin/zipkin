@@ -15,8 +15,8 @@ package zipkin.server.brave;
 
 import com.github.kristofa.brave.Brave;
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 

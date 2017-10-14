@@ -15,7 +15,7 @@ package zipkin2.codec;
 
 import java.util.Collection;
 import java.util.List;
-import javax.annotation.Nullable;
+import zipkin2.internal.Nullable;
 
 /**
  * This type accepts a collection that receives decoded elements.

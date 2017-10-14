@@ -13,7 +13,7 @@
  */
 package zipkin.storage;
 
-import javax.annotation.Nullable;
+import zipkin.internal.Nullable;
 
 /**
  * A callback of a single result or error.

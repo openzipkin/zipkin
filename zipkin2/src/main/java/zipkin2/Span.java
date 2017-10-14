@@ -24,8 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
+import zipkin2.internal.Nullable;
 import zipkin2.codec.SpanBytesEncoder;
 
 /**
@@ -49,7 +48,7 @@ import zipkin2.codec.SpanBytesEncoder;
  * and smaller data.
  */
 @AutoValue
-@Immutable
+//@Immutable
 public abstract class Span implements Serializable { // for Spark jobs
   static final Charset UTF_8 = Charset.forName("UTF-8");
 

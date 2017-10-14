@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
-import javax.annotation.Nullable;
+import zipkin2.internal.Nullable;
 
 @AutoValue
 public abstract class IndexNameFormatter {

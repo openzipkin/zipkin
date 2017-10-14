@@ -17,7 +17,6 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.Request;
@@ -25,6 +24,7 @@ import okhttp3.RequestBody;
 import okio.Buffer;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.internal.Nullable;
 
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 

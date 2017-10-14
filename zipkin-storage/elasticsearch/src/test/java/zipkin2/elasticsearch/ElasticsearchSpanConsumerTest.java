@@ -16,7 +16,6 @@ package zipkin2.elasticsearch;
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import javax.annotation.Nullable;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
@@ -30,6 +29,7 @@ import zipkin2.Span;
 import zipkin2.Span.Kind;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.internal.Nullable;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
