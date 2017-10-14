@@ -19,8 +19,6 @@ import com.squareup.moshi.JsonReader;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.nio.charset.Charset;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
 import zipkin.Annotation;
@@ -28,6 +26,7 @@ import zipkin.BinaryAnnotation;
 import zipkin.DependencyLink;
 import zipkin.Endpoint;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.lowerHexToUnsignedLong;
 
@@ -183,8 +182,7 @@ final class LegacyJsonAdapters {
     };
 
   static final JsonAdapter<Annotation> ANNOTATION_ADAPTER = new JsonAdapter<Annotation>() {
-    @Override @Nonnull
-    public Annotation fromJson(JsonReader reader) throws IOException {
+    @Override  public Annotation fromJson(JsonReader reader) throws IOException {
       Annotation.Builder result = Annotation.builder();
       reader.beginObject();
       while (reader.hasNext()) {
@@ -213,8 +211,7 @@ final class LegacyJsonAdapters {
   };
 
   static final JsonAdapter<Endpoint> ENDPOINT_ADAPTER = new JsonAdapter<Endpoint>() {
-    @Override @Nonnull
-    public Endpoint fromJson(JsonReader reader) throws IOException {
+    @Override public Endpoint fromJson(JsonReader reader) throws IOException {
       Endpoint.Builder result = Endpoint.builder().serviceName("");
       reader.beginObject();
       while (reader.hasNext()) {
@@ -249,8 +246,7 @@ final class LegacyJsonAdapters {
   }.nullSafe();
 
   static final JsonAdapter<DependencyLink> LINK_ADAPTER = new JsonAdapter<DependencyLink>() {
-    @Override @Nonnull
-    public DependencyLink fromJson(JsonReader reader) throws IOException {
+    @Override public DependencyLink fromJson(JsonReader reader) throws IOException {
       DependencyLink.Builder result = DependencyLink.builder();
       reader.beginObject();
       while (reader.hasNext()) {

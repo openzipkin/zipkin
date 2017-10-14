@@ -15,7 +15,6 @@ package zipkin.junit;
 
 import java.io.IOException;
 import java.util.List;
-import javax.annotation.Nullable;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -23,6 +22,7 @@ import okhttp3.Response;
 import zipkin.Codec;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;

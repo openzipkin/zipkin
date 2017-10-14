@@ -27,11 +27,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.cassandra3.Schema.TraceIdUDT;
 

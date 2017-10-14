@@ -14,7 +14,7 @@
 package zipkin.storage.guava;
 
 import com.google.common.util.concurrent.FutureCallback;
-import javax.annotation.Nullable;
+import zipkin.internal.Nullable;
 import zipkin.storage.Callback;
 
 import static zipkin.internal.Util.checkNotNull;

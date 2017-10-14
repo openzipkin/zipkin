@@ -13,7 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.aws;
 
-import javax.annotation.Nullable;
+import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;
 

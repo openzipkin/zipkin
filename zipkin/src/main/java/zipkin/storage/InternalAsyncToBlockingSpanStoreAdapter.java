@@ -14,10 +14,10 @@
 package zipkin.storage;
 
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
 import zipkin.internal.CallbackCaptor;
+import zipkin.internal.Nullable;
 
 final class InternalAsyncToBlockingSpanStoreAdapter implements SpanStore {
   final AsyncSpanStore delegate;

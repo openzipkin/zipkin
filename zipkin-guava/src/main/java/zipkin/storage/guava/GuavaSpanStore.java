@@ -15,9 +15,9 @@ package zipkin.storage.guava;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 

@@ -15,9 +15,9 @@ package zipkin2.codec;
 
 import java.util.Collection;
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin2.Span;
 import zipkin2.internal.JsonCodec;
+import zipkin2.internal.Nullable;
 import zipkin2.internal.V2SpanReader;
 
 /** This is separate from {@link SpanBytesEncoder}, as it isn't needed for instrumentation */

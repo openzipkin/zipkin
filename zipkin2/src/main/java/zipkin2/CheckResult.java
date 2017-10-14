@@ -14,8 +14,7 @@
 package zipkin2;
 
 import com.google.auto.value.AutoValue;
-import javax.annotation.Nullable;
-import jdk.nashorn.internal.ir.annotations.Immutable;
+import zipkin2.internal.Nullable;
 
 /**
  * Answers the question: Are operations on this component likely to succeed?
@@ -26,8 +25,8 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
  *
  * @see CheckResult#OK
  */
-@Immutable
 @AutoValue
+//@Immutable
 public abstract class CheckResult {
   public static final CheckResult OK = new AutoValue_CheckResult(true, null);
 

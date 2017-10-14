@@ -17,11 +17,10 @@ import com.google.auto.value.AutoValue;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.Locale;
-import javax.annotation.concurrent.Immutable;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 
-@Immutable
 @AutoValue
+//@Immutable
 public abstract class DependencyLink implements Serializable { // for Spark jobs
   static final Charset UTF_8 = Charset.forName("UTF-8");
 

@@ -15,7 +15,6 @@ package zipkin.internal;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.Nullable;
 import zipkin.storage.Callback;
 
 public final class CallbackCaptor<V> implements Callback<V> {

@@ -14,8 +14,8 @@
 package zipkin;
 
 import java.util.Arrays;
-import javax.annotation.Nullable;
 import zipkin.internal.JsonCodec;
+import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;

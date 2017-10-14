@@ -17,7 +17,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import javax.annotation.Nullable;
+import zipkin2.internal.Nullable;
 
 /**
  * This captures a (usually remote) request and can be used once, either {@link #execute()

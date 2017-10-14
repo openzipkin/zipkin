@@ -20,9 +20,9 @@ import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Locale;
-import javax.annotation.Nullable;
 import zipkin.internal.InetAddresses;
 import zipkin.internal.JsonCodec;
+import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.UTF_8;

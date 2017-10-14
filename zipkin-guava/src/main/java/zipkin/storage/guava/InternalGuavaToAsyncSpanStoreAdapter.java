@@ -14,9 +14,9 @@
 package zipkin.storage.guava;
 
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;

@@ -15,7 +15,6 @@ package zipkin2;
 
 import com.google.auto.value.AutoValue;
 import java.io.Serializable;
-import javax.annotation.concurrent.Immutable;
 
 /**
  * Associates an event that explains latency with a timestamp.
@@ -23,7 +22,7 @@ import javax.annotation.concurrent.Immutable;
  * <p>Unlike log statements, annotations are often codes: Ex. {@link "cache.miss"}.
  */
 @AutoValue
-@Immutable
+//@Immutable
 public abstract class Annotation implements Comparable<Annotation>, Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 

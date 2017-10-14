@@ -26,11 +26,11 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.Nullable;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
 import zipkin.Constants;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.storage.QueryRequest;
 
 import static zipkin.internal.Util.UTF_8;

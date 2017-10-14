@@ -15,7 +15,6 @@ package zipkin.internal;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 import zipkin.storage.Callback;
 
 /** Callback that succeeds if at least one value does. The first error is logged. */

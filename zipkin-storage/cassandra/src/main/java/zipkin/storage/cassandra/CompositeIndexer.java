@@ -21,8 +21,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nullable;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 
 final class CompositeIndexer {

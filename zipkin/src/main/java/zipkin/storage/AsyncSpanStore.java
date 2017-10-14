@@ -14,9 +14,9 @@
 package zipkin.storage;
 
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 
 /**
  * An interface that is equivalent to {@link SpanStore} but accepts callbacks to allow

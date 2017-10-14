@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import javax.annotation.Nullable;
 import okhttp3.Dns;
 import okhttp3.HttpUrl;
+import zipkin2.internal.Nullable;
 
 /**
  * This returns a Dns provider that combines the IPv4 or IPv6 addresses from a supplied list of

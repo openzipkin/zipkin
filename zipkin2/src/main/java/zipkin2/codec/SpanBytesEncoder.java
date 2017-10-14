@@ -14,7 +14,6 @@
 package zipkin2.codec;
 
 import java.util.List;
-import javax.annotation.concurrent.Immutable;
 import zipkin2.Span;
 import zipkin2.internal.Buffer;
 import zipkin2.internal.JsonCodec;
@@ -22,7 +21,7 @@ import zipkin2.internal.V1SpanWriter;
 import zipkin2.internal.V2SpanWriter;
 
 /** Limited interface needed by those writing span reporters */
-@Immutable
+//@Immutable
 public enum SpanBytesEncoder implements BytesEncoder<Span> {
   /** Corresponds to the Zipkin v1 json format (with tags as binary annotations) */
   JSON_V1 {

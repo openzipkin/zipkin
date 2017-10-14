@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Nullable;
 import okio.Buffer;
 import okio.ByteString;
 import zipkin2.Annotation;
@@ -30,6 +29,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing

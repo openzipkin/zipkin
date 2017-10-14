@@ -20,12 +20,11 @@ import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Locale;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
+import zipkin2.internal.Nullable;
 
 /** The network context of a node in the service graph. */
 @AutoValue
-@Immutable
+//@Immutable
 public abstract class Endpoint implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 

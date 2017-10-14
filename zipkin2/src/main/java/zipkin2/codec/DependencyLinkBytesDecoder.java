@@ -16,10 +16,10 @@ package zipkin2.codec;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin2.DependencyLink;
 import zipkin2.internal.JsonCodec;
 import zipkin2.internal.JsonCodec.JsonReader;
+import zipkin2.internal.Nullable;
 
 public enum DependencyLinkBytesDecoder implements BytesDecoder<DependencyLink> {
   JSON_V1 {

@@ -15,9 +15,9 @@ package zipkin.storage;
 
 import java.util.List;
 import java.util.concurrent.Executor;
-import javax.annotation.Nullable;
 import zipkin.DependencyLink;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.internal.Util;
 
 import static zipkin.internal.Util.checkNotNull;

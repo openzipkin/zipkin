@@ -27,10 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import javax.annotation.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.internal.Pair;
 import zipkin.storage.QueryRequest;
 

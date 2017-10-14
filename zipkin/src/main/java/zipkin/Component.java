@@ -15,7 +15,7 @@ package zipkin;
 
 import java.io.Closeable;
 import java.io.IOException;
-import javax.annotation.Nullable;
+import zipkin.internal.Nullable;
 
 import static zipkin.internal.Util.checkNotNull;
 

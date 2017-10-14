@@ -16,8 +16,8 @@ package zipkin.storage.guava;
 import com.google.common.util.concurrent.AbstractFuture;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.List;
-import javax.annotation.Nullable;
 import zipkin.Span;
+import zipkin.internal.Nullable;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 

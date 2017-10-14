@@ -15,8 +15,6 @@ package zipkin2.internal;
 
 import java.util.Iterator;
 import java.util.Map;
-import javax.annotation.Nullable;
-import javax.annotation.concurrent.Immutable;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -25,7 +23,7 @@ import static zipkin2.internal.Buffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
-@Immutable
+//@Immutable
 public final class V2SpanWriter implements Buffer.Writer<Span> {
   @Override public int sizeInBytes(Span value) {
     int sizeInBytes = 13; // {"traceId":""
