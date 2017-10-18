@@ -32,6 +32,7 @@ import java.util.SortedMap;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import zipkin2.Annotation;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
@@ -40,8 +41,8 @@ final class CassandraUtil {
   static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
   /**
-   * Zipkin's {@link QueryRequest#annotationQuery()} are equals match. Not all tag keys are lookup
-   * keys. For example, {@code sql.query} isn't something that is likely to be looked up by value and
+   * Zipkin's {@link QueryRequest#annotationQuery()} are equals match. Not all tag serviceSpanKeys are lookup
+   * serviceSpanKeys. For example, {@code sql.query} isn't something that is likely to be looked up by value and
    * indexing that could add a potentially kilobyte partition key on {@link Schema#TABLE_SPAN}
    */
   static final int LONGEST_VALUE_TO_INDEX = 256;
@@ -56,22 +57,32 @@ final class CassandraUtil {
   }
 
   /**
-   * Returns keys that concatenate the serviceName associated with an annotation or a tags.
+   * Returns a set of annotation values and tags joined on equals.
    *
    * @see QueryRequest#annotationQuery()
    */
   static Set<String> annotationKeys(Span span) {
-    Set<String> annotationKeys = new LinkedHashSet<>();
-    span.annotations().forEach((a) -> annotationKeys.add(a.value()));
+    if (span.annotations().isEmpty() && span.tags().isEmpty()) return Collections.emptySet();
+
+    Set<String> result = null;
+    for (Annotation a : span.annotations()) {
+      if (a.value().length() > LONGEST_VALUE_TO_INDEX) continue;
+
+      if (result == null) result = new LinkedHashSet<>();
+
+      result.add(a.value());
+    }
 
     for (Map.Entry<String,String> tag : span.tags().entrySet()) {
       if (tag.getValue().length() > LONGEST_VALUE_TO_INDEX) continue;
 
+      if (result == null) result = new LinkedHashSet<>();
+
+      result.add(tag.getKey());
       // Using colon to allow allow annotation query search to work on key
-      annotationKeys.add(tag.getKey());
-      annotationKeys.add(tag.getKey() + ":" + tag.getValue());
+      result.add(tag.getKey() + ":" + tag.getValue());
     }
-    return annotationKeys;
+    return result != null ? result : Collections.emptySet();
   }
 
   static List<String> annotationKeys(QueryRequest request) {
@@ -129,7 +140,7 @@ final class CassandraUtil {
     INSTANCE;
 
     @Override public Collection<String> apply(@Nullable Map<String, Long> map) {
-      // timestamps can collide, so we need to add some random digits on end before using them as keys
+      // timestamps can collide, so we need to add some random digits on end before using them as serviceSpanKeys
       SortedMap<BigInteger, String> sorted = new TreeMap<>(Collections.reverseOrder());
       map.entrySet().forEach(e ->
         sorted.put(

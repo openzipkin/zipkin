@@ -13,8 +13,12 @@
  */
 package zipkin2.storage.cassandra.integration;
 
+import com.datastax.driver.core.Host;
+import com.datastax.driver.core.Session;
+import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.junit.AssumptionViolatedException;
 import org.junit.Test;
@@ -23,7 +27,6 @@ import zipkin.BinaryAnnotation;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.TestObjects;
-import zipkin.internal.ApplyTimestampAndDuration;
 import zipkin.internal.Util;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.QueryRequest;
@@ -42,21 +45,6 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
   @Override protected final StorageComponent storage() {
     return V2StorageComponent.create(v2Storage());
-  }
-
-  /** Cassandra indexing is performed separately, allowing the raw span to be stored unaltered. */
-  @Test
-  public void rawTraceStoredWithoutAdjustments() {
-    Span rawSpan = TestObjects.TRACE.get(1).toBuilder().timestamp(null).duration(null).build();
-    accept(rawSpan);
-
-    // At query time, timestamp and duration are added.
-    assertThat(store().getTrace(rawSpan.traceIdHigh, rawSpan.traceId))
-      .containsExactly(ApplyTimestampAndDuration.apply(rawSpan));
-
-    // Unlike other stores, Cassandra can show that timestamp and duration weren't reported
-    assertThat(store().getRawTrace(rawSpan.traceIdHigh, rawSpan.traceId))
-      .containsExactly(rawSpan);
   }
 
   @Test
@@ -156,5 +144,21 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
       }
     }
     super.accept(page.toArray(new Span[0]));
+
+    // Now, block until writes complete, notably so we can read them.
+    Session.State state = session().getState();
+    refresh:
+    while (true) {
+      for (Host host : state.getConnectedHosts()) {
+        if (state.getInFlightQueries(host) > 0) {
+          Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+          state = session().getState();
+          continue refresh;
+        }
+      }
+      break;
+    }
   }
+
+  abstract Session session();
 }

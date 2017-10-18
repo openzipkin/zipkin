@@ -15,12 +15,14 @@ CREATE TYPE IF NOT EXISTS zipkin2_cassandra.annotation (
 );
 
 CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span (
-    trace_id            text,
+    trace_id            text, // when strictTraceId=false, only contains right-most 16 chars
     ts_uuid             timeuuid,
     id                  text,
-    ts                  bigint,
-    span                text,
+    trace_id_high       text, // when strictTraceId=false, contains left-most 16 chars if present
     parent_id           text,
+    kind                text,
+    span                text, // span.name
+    ts                  bigint,
     duration            bigint,
     l_ep                Endpoint,
     l_service           text,
@@ -28,6 +30,7 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span (
     annotations         list<frozen<annotation>>,
     tags                map<text,text>,
     shared              boolean,
+    debug               boolean,
     annotation_query    text, //-- can't do SASI on set<text>: comma-joined until CASSANDRA-11182
     PRIMARY KEY (trace_id, ts_uuid, id)
 )

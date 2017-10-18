@@ -101,8 +101,8 @@ final class CassandraSpanStore implements SpanStore {
 
     selectTraces = session.prepare(
         QueryBuilder.select(
-                "trace_id", "id", "ts", "span", "parent_id",
-                "duration", "l_ep", "r_ep", "annotations", "tags", "shared")
+                "trace_id_high", "trace_id", "parent_id", "id", "kind", "span", "ts",
+                "duration", "l_ep", "r_ep", "annotations", "tags", "shared", "debug")
             .from(TABLE_SPAN)
             .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
             .limit(QueryBuilder.bindMarker("limit_")));
@@ -171,20 +171,25 @@ final class CassandraSpanStore implements SpanStore {
 
     rowToSpan = row -> {
       String traceId = row.getString("trace_id");
+      if (!strictTraceId) {
+        String traceIdHigh = row.getString("trace_id_high");
+        if (traceIdHigh != null) traceId = traceIdHigh + traceId;
+      }
       Span.Builder builder = Span.newBuilder()
           .traceId(traceId)
+          .parentId(row.getString("parent_id"))
           .id(row.getString("id"))
           .name(row.getString("span"))
-          .duration(row.getLong("duration"));
+          .timestamp(row.getLong("ts"));
 
-      if (!row.isNull("ts")) {
-        builder = builder.timestamp(row.getLong("ts"));
-      }
       if (!row.isNull("duration")) {
-        builder = builder.duration(row.getLong("duration"));
+        builder.duration(row.getLong("duration"));
       }
-      if (!row.isNull("parent_id")) {
-        builder = builder.parentId(row.getString("parent_id"));
+      if (!row.isNull("kind")) {
+        try {
+          builder.kind(Span.Kind.valueOf(row.getString("kind")));
+        } catch (IllegalArgumentException ignored) {
+        }
       }
       if (!row.isNull("l_ep")) {
         builder = builder.localEndpoint(row.get("l_ep", Schema.EndpointUDT.class).toEndpoint());
@@ -194,6 +199,9 @@ final class CassandraSpanStore implements SpanStore {
       }
       if (!row.isNull("shared")) {
         builder = builder.shared(row.getBool("shared"));
+      }
+      if (!row.isNull("debug")) {
+        builder = builder.shared(row.getBool("debug"));
       }
       for (AnnotationUDT udt : row.getList("annotations", AnnotationUDT.class)) {
         builder = builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
@@ -287,9 +295,16 @@ final class CassandraSpanStore implements SpanStore {
   }
 
   @Override public Call<List<Span>> getTrace(String traceId) {
+    // make sure we have a 16 or 32 character trace ID
+    traceId = Span.normalizeTraceId(traceId);
+
+    // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+    if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
+
+    Set<String> traceIds = Collections.singleton(traceId);
     return new ListenableFutureCall<List<Span>>() {
       @Override protected ListenableFuture<List<Span>> newFuture() {
-        return getSpansByTraceIds(Collections.singleton(traceId), maxTraceCols);
+        return getSpansByTraceIds(traceIds, maxTraceCols);
       }
     };
   }
@@ -444,7 +459,7 @@ final class CassandraSpanStore implements SpanStore {
 
             long maxDuration = TimeUnit.MICROSECONDS
                     .toMillis(null != request.maxDuration() ? request.maxDuration() : Long.MAX_VALUE);
-            
+
             bound = bound.setLong("start_duration", minDuration).setLong("end_duration", maxDuration);
           }
           bound.setFetchSize(request.limit());

@@ -20,7 +20,7 @@ import zipkin2.storage.cassandra.CassandraStorage;
 import static zipkin2.storage.cassandra.CassandraStorage.Builder;
 import static zipkin2.storage.cassandra.CassandraStorage.newBuilder;
 
-@ConfigurationProperties("zipkin2.storage.cassandra3")
+@ConfigurationProperties("zipkin.storage.cassandra3")
 public class ZipkinCassandra3StorageProperties implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
