@@ -13,52 +13,32 @@
  */
 package zipkin2.storage.cassandra.integration;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.junit.Test;
-import zipkin.Span;
-import zipkin.TestObjects;
+import org.junit.AssumptionViolatedException;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.StrictTraceIdFalseTest;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import zipkin2.CheckResult;
+import zipkin2.storage.cassandra.CassandraStorage;
 
 abstract class CassandraStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
 
-  protected abstract zipkin2.storage.StorageComponent v2Storage();
+  final CassandraStorage storage;
+
+  CassandraStrictTraceIdFalseTest() {
+    storage = storageBuilder()
+      .strictTraceId(false)
+      .keyspace("test_zipkin_http_mixed")
+      .build();
+
+    CheckResult check = storage.check();
+    if (!check.ok()) {
+      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+    }
+  }
+
+  protected abstract CassandraStorage.Builder storageBuilder();
 
   @Override protected final StorageComponent storage() {
-    return V2StorageComponent.create(v2Storage());
-  }
-
-  public CassandraStrictTraceIdFalseTest() {
-    // check everything is ok
-    storage().check();
-  }
-
-  /**
-   * When {@link StorageComponent.Builder#strictTraceId(boolean)} is true and {@link
-   * Span#traceIdHigh} is not zero, the span is stored a second time, with {@link Span#traceId}
-   * zero. This allows spans to be looked up by the low bits of the trace ID at the cost of extra
-   * storage. When spans are retrieved by {@link Span#traceIdHigh} as zero, they are returned as
-   * {@link Span#traceIdHigh} zero because unlike the old schema, the original structs are not
-   * persisted.
-   */
-  @Test
-  @Override
-  public void getTrace_retrieves128bitTraceIdByLower64Bits_mixed() {
-    List<Span> trace = new ArrayList<>(TestObjects.TRACE);
-    trace.set(0, trace.get(0).toBuilder().traceIdHigh(1).build());
-    // pretend the others downgraded to 64-bit trace IDs
-
-    accept(trace.toArray(new Span[0]));
-
-    // Implicitly in both cases, we are looking up by traceIdHigh=0, so the traces returned also
-    // have traceIdHigh == 0
-    assertThat(store().getTrace(0L, trace.get(0).traceId))
-        .containsExactlyElementsOf(TestObjects.TRACE);
-    assertThat(store().getTrace(trace.get(0).traceIdHigh, trace.get(0).traceId))
-        .containsExactlyElementsOf(TestObjects.TRACE);
+    return V2StorageComponent.create(storage);
   }
 }

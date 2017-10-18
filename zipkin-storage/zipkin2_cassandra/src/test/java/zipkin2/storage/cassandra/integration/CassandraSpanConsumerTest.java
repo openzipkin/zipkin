@@ -13,17 +13,10 @@
  */
 package zipkin2.storage.cassandra.integration;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.LoggingEvent;
-import ch.qos.logback.core.Appender;
 import java.io.IOException;
 import java.util.stream.IntStream;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.slf4j.LoggerFactory;
-import zipkin.internal.Util;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.storage.SpanConsumer;
@@ -32,33 +25,13 @@ import zipkin2.storage.cassandra.InternalForTests;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import static zipkin2.TestObjects.FRONTEND;
 
 abstract class CassandraSpanConsumerTest {
 
-  private final Appender mockAppender = mock(Appender.class);
-
   protected abstract CassandraStorage storage();
 
   @Before public abstract void clear();
-
-  @Before
-  public void setup() {
-    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    when(mockAppender.getName()).thenReturn(CassandraSpanConsumerTest.class.getName());
-    root.addAppender(mockAppender);
-  }
-
-  @After
-  public void tearDown() {
-    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    root.detachAppender(mockAppender);
-  }
 
   /**
    * {@link Span#duration} == 0 is likely to be a mistake, and coerces to null. It is not helpful to
@@ -71,32 +44,6 @@ abstract class CassandraSpanConsumerTest {
     accept(storage().spanConsumer(), span);
 
     assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage())).isZero();
-  }
-
-  @Test
-  public void logTimestampMissingOnClientSend() throws IOException {
-    Span span = Span.newBuilder().traceId("1").parentId("1").id("2").name("query")
-      .localEndpoint(FRONTEND)
-      .kind(Span.Kind.CLIENT).build();
-    accept(storage().spanConsumer(), span);
-    verify(mockAppender).doAppend(considerSwitchStrategyLog());
-  }
-
-  @Test
-  public void dontLogTimestampMissingOnMidTierServerSpan() throws IOException {
-    Span span = TestObjects.CLIENT_SPAN;
-    accept(storage().spanConsumer(), span);
-    verify(mockAppender, never()).doAppend(considerSwitchStrategyLog());
-  }
-
-  private static Object considerSwitchStrategyLog() {
-    return argThat(new ArgumentMatcher<LoggingEvent>() {
-      @Override public boolean matches(Object argument) {
-        return ((LoggingEvent) argument).getFormattedMessage()
-          .contains(
-            "If this happens a lot consider switching back to SizeTieredCompactionStrategy");
-      }
-    });
   }
 
   /**
@@ -113,7 +60,7 @@ abstract class CassandraSpanConsumerTest {
       trace[i + 1] = Span.newBuilder()
         .traceId(trace[0].traceId())
         .parentId(trace[0].id())
-        .id(Util.toLowerHex(i))
+        .id(Long.toHexString(i))
         .name("get")
         .kind(Span.Kind.CLIENT)
         .localEndpoint(FRONTEND)
@@ -135,9 +82,9 @@ abstract class CassandraSpanConsumerTest {
     accept(InternalForTests.withoutStrictTraceId(storage()), trace);
 
     assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
-      .isGreaterThanOrEqualTo(201L);
+      .isGreaterThanOrEqualTo(120L); // TODO: magic number
     assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
-      .isGreaterThanOrEqualTo(201L);
+      .isGreaterThanOrEqualTo(120L);
   }
 
   void accept(SpanConsumer consumer, Span... spans) throws IOException {

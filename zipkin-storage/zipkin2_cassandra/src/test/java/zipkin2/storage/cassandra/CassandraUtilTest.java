@@ -13,11 +13,11 @@
  */
 package zipkin2.storage.cassandra;
 
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import zipkin.TraceKeys;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
@@ -33,56 +33,93 @@ public class CassandraUtilTest {
   @Test
   public void annotationKeys_emptyRequest() {
     assertThat(CassandraUtil.annotationKeys(
-          QueryRequest.newBuilder()
-              .endTs(System.currentTimeMillis())
-              .limit(10)
-              .serviceName("test").lookback(86400000L)
-              .build()))
-          .isEmpty();
+      QueryRequest.newBuilder()
+        .endTs(System.currentTimeMillis())
+        .limit(10)
+        .serviceName("test").lookback(86400000L)
+        .build()))
+      .isEmpty();
   }
 
   @Test
   public void annotationKeys() {
     assertThat(CassandraUtil.annotationKeys(
-         QueryRequest.newBuilder()
-            .endTs(System.currentTimeMillis())
-            .limit(10)
-            .lookback(86400000L)
-            .serviceName("service")
-            .parseAnnotationQuery("error and http.method=GET")
-            .build()))
-         .containsExactly("error", "http.method:GET");
+      QueryRequest.newBuilder()
+        .endTs(System.currentTimeMillis())
+        .limit(10)
+        .lookback(86400000L)
+        .serviceName("service")
+        .parseAnnotationQuery("error and http.method=GET")
+        .build()))
+      .containsExactly("error", "http.method:GET");
   }
 
   @Test
   public void annotationKeys_dedupes() {
     assertThat(CassandraUtil.annotationKeys(
-        QueryRequest.newBuilder()
-            .endTs(System.currentTimeMillis())
-            .limit(10)
-            .lookback(86400000L)
-            .serviceName("service")
-            .parseAnnotationQuery("error and error")
-            .build()))
-        .containsExactly("error");
+      QueryRequest.newBuilder()
+        .endTs(System.currentTimeMillis())
+        .limit(10)
+        .lookback(86400000L)
+        .serviceName("service")
+        .parseAnnotationQuery("error and error")
+        .build()))
+      .containsExactly("error");
   }
 
   @Test
   public void annotationKeys_skipsTagsLongerThan256chars() throws Exception {
     // example long value
     String arn =
-        "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
+      "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
     // example too long value
     String url =
-        "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";
+      "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";
 
     Span span = TestObjects.CLIENT_SPAN.toBuilder()
       .putTag("aws.arn", arn)
-      .putTag(TraceKeys.HTTP_URL, url).build();
+      .putTag("http.url", url).build();
 
     assertThat(CassandraUtil.annotationKeys(span))
-        .contains("aws.arn", "aws.arn:" + arn)
-        .doesNotContain(TraceKeys.HTTP_URL, TraceKeys.HTTP_URL + ':' + url);
+      .contains("aws.arn", "aws.arn:" + arn)
+      .doesNotContain("http.url", "http.url:" + url);
+  }
+
+  @Test
+  public void annotationKeys_skipsAnnotationsLongerThan256chars() throws Exception {
+    // example long value
+    String arn =
+      "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
+    // example too long value
+    String url =
+      "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";
+
+    Span span = TestObjects.CLIENT_SPAN.toBuilder()
+      .addAnnotation(1L, arn)
+      .addAnnotation(1L, url).build();
+
+    assertThat(CassandraUtil.annotationKeys(span))
+      .contains(arn)
+      .doesNotContain(url);
+  }
+
+  @Test
+  public void annotationKeys_skipsAllocationWhenNoValidInput() throws Exception {
+    // example too long value
+    String url =
+      "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";
+
+    Span span = Span.newBuilder().traceId("1").id("1").build();
+
+    assertThat(CassandraUtil.annotationKeys(span))
+      .isSameAs(Collections.emptySet());
+
+    span = span.toBuilder()
+      .addAnnotation(1L, url)
+      .putTag("http.url", url).build();
+
+    assertThat(CassandraUtil.annotationKeys(span))
+      .isSameAs(Collections.emptySet());
   }
 
   /** Sanity checks our bucketing scheme for numeric overflow */

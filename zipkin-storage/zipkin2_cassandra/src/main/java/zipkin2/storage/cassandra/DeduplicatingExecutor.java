@@ -95,14 +95,12 @@ class DeduplicatingExecutor { // not final for testing
    *
    * <p>The results of failed statements are forgotten based on the supplied key.
    *
-   * @param statement what to conditionally execute
-   * @param key determines equivalence of the bound statement
+   * @param cacheKey determines equivalence of the bound statement
    * @return future of work initiated by this or a previous request
    */
-  ListenableFuture<Void> maybeExecuteAsync(BoundStatement statement, Object key) {
-    BoundStatementKey cacheKey = new BoundStatementKey(statement, key);
+  ListenableFuture<Void> maybeExecuteAsync(BoundStatementKey cacheKey) {
     try {
-      ListenableFuture<Void> result = cache.get(new BoundStatementKey(statement, key));
+      ListenableFuture<Void> result = cache.get(cacheKey);
       // A future could be constructed directly (i.e. immediate future), get the value to
       // see if it was exceptional. If so, the catch block will invalidate that key.
       if (result.isDone()) result.get();
@@ -134,6 +132,10 @@ class DeduplicatingExecutor { // not final for testing
     final BoundStatement statement;
     final Object key;
 
+    /**
+     * @param statement what to conditionally execute
+     * @param key determines equivalence of the bound statement
+     */
     BoundStatementKey(BoundStatement statement, Object key) {
       this.statement = checkNotNull(statement, "statement");
       this.key = checkNotNull(key, "key");

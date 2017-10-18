@@ -56,8 +56,4 @@ public class InternalForTests {
   private static long rowCount(CassandraStorage storage, String table) {
     return storage.session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
   }
-
-  public static Session session(CassandraStorage storage) {
-    return storage.session();
-  }
 }

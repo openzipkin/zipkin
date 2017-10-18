@@ -68,7 +68,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
         "zipkin.storage.type:cassandra3",
-        "zipkin2.storage.cassandra3.contact-points:host1,host2" // note snake-case supported
+        "zipkin.storage.cassandra3.contact-points:host1,host2" // note snake-case supported
     );
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinCassandra3StorageAutoConfiguration.class);

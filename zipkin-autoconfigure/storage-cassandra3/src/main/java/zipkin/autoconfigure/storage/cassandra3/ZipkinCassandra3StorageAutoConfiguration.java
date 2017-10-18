@@ -22,7 +22,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin.internal.V2StorageComponent;
-import zipkin.storage.StorageComponent;
+import zipkin2.storage.StorageComponent;
 import zipkin2.storage.cassandra.CassandraStorage;
 
 /**

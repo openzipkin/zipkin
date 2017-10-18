@@ -26,9 +26,6 @@ abstract class ListenableFutureCall<V> extends Call<V> {
   boolean executed;
   volatile ListenableFuture<V> future;
 
-  protected ListenableFutureCall() {
-  }
-
   @Override public final V execute() throws IOException {
     synchronized (this) {
       if (executed) throw new IllegalStateException("Already Executed");
@@ -73,6 +70,7 @@ abstract class ListenableFutureCall<V> extends Call<V> {
     ListenableFuture<V> maybeFuture = future;
     return maybeFuture != null && maybeFuture.isCancelled();
   }
+
   @Override public Call<V> clone() {
     throw new UnsupportedOperationException("one-shot deal");
   }

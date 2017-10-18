@@ -47,20 +47,20 @@ public class DeduplicatingExecutorTest {
   public void expiresWhenTtlPasses() throws Exception {
     executor.nanoTime = 0;
 
-    ListenableFuture<Void> firstFoo = executor.maybeExecuteAsync(first, "foo");
+    ListenableFuture<Void> firstFoo = maybeExecuteAsync(executor, first, "foo");
 
     // same result for the key foo
-    assertThat(executor.maybeExecuteAsync(next, "foo"))
+    assertThat(maybeExecuteAsync(executor, next, "foo"))
         .isEqualTo(firstFoo);
 
     executor.nanoTime = TimeUnit.MILLISECONDS.toNanos(500);
 
     // still, same result for the foo
-    assertThat(executor.maybeExecuteAsync(next, "foo"))
+    assertThat(maybeExecuteAsync(executor, next, "foo"))
         .isEqualTo(firstFoo);
 
     // add a key for the element that happened after "foo"
-    ListenableFuture<Void> firstBar = executor.maybeExecuteAsync(first, "bar");
+    ListenableFuture<Void> firstBar = maybeExecuteAsync(executor, first, "bar");
     assertThat(firstBar)
         .isNotEqualTo(firstFoo);
 
@@ -68,11 +68,11 @@ public class DeduplicatingExecutorTest {
     executor.nanoTime = TimeUnit.SECONDS.toNanos(1);
 
     // first key refreshes
-    assertThat(executor.maybeExecuteAsync(next, "foo"))
+    assertThat(maybeExecuteAsync(executor, next, "foo"))
         .isNotEqualTo(firstFoo);
 
     // second key still caching
-    assertThat(executor.maybeExecuteAsync(first, "bar"))
+    assertThat(maybeExecuteAsync(executor, first, "bar"))
         .isEqualTo(firstBar);
   }
 
@@ -118,12 +118,12 @@ public class DeduplicatingExecutorTest {
 
     // Intentionally not dereferencing the future. We need to ensure that dropped failed
     // futures still purge!
-    ListenableFuture<?> firstFoo = executor.maybeExecuteAsync(first, "foo");
+    ListenableFuture<?> firstFoo = maybeExecuteAsync(executor, first, "foo");
 
     Thread.sleep(100); // wait a bit for the future to execute and cache to purge the entry
 
     // doesn't cache exception
-    assertThat(executor.maybeExecuteAsync(next, "foo"))
+    assertThat(maybeExecuteAsync(executor, next, "foo"))
         .isNotEqualTo(firstFoo);
 
     // sanity check the first future actually failed
@@ -154,8 +154,8 @@ public class DeduplicatingExecutorTest {
     Collection<ListenableFuture<?>> futures = new ConcurrentLinkedDeque<>();
     for (int i = 0; i < loopCount; i++) {
       exec.execute(() -> {
-        futures.add(executor.maybeExecuteAsync(statement, "foo"));
-        futures.add(executor.maybeExecuteAsync(statement, "bar"));
+        futures.add(maybeExecuteAsync(executor, statement, "foo"));
+        futures.add(maybeExecuteAsync(executor, statement, "bar"));
         latch.countDown();
       });
     }
@@ -169,9 +169,9 @@ public class DeduplicatingExecutorTest {
     Thread.sleep(1000L);
 
     // Sanity check: we don't memoize after we should have expired.
-    assertThat(executor.maybeExecuteAsync(statement, "foo"))
+    assertThat(maybeExecuteAsync(executor, statement, "foo"))
         .isNotIn(distinctFutures);
-    assertThat(executor.maybeExecuteAsync(statement, "bar"))
+    assertThat(maybeExecuteAsync(executor, statement, "bar"))
         .isNotIn(distinctFutures);
   }
 
@@ -179,14 +179,14 @@ public class DeduplicatingExecutorTest {
   public void expiresWhenTtlPasses_initiallyNegative() throws Exception {
     executor.nanoTime = -TimeUnit.SECONDS.toNanos(1);
 
-    ListenableFuture<Void> firstFuture = executor.maybeExecuteAsync(first, "foo");
-    assertThat(executor.maybeExecuteAsync(next, "foo"))
+    ListenableFuture<Void> firstFuture = maybeExecuteAsync(executor, first, "foo");
+    assertThat(maybeExecuteAsync(executor, next, "foo"))
         .isEqualTo(firstFuture);
 
     // A second after the first call, we should try again
     executor.nanoTime = 0;
 
-    assertThat(executor.maybeExecuteAsync(next, "foo"))
+    assertThat(maybeExecuteAsync(executor, next, "foo"))
         .isNotEqualTo(firstFuture);
   }
 
@@ -210,6 +210,11 @@ public class DeduplicatingExecutorTest {
     @Override ListenableFuture<?> executeAsync(BoundStatement statement) {
       return delegate.apply(statement);
     }
+  }
+
+  ListenableFuture<Void> maybeExecuteAsync(DeduplicatingExecutor executor, BoundStatement statement,
+    Object key) {
+    return executor.maybeExecuteAsync(new DeduplicatingExecutor.BoundStatementKey(statement, key));
   }
 
   static Session fakeSession(final Function<BoundStatement, ListenableFuture<?>> delegate) {
