@@ -383,13 +383,13 @@ public abstract class SpanStoreTest {
     BinaryAnnotation archiver3 = component.endpoint(service3).build();
 
     Span targz = Span.builder().traceId(1L).id(1L)
-        .name("targz").timestamp(TODAY * 1000 + 100L).duration(200L).addBinaryAnnotation(archiver1).build();
+        .name("targz").timestamp(TODAY * 1000 + 100L).duration(200_000L).addBinaryAnnotation(archiver1).build();
     Span tar = Span.builder().traceId(1L).id(2L).parentId(1L)
-        .name("tar").timestamp(TODAY * 1000 + 200L).duration(150L).addBinaryAnnotation(archiver2).build();
+        .name("tar").timestamp(TODAY * 1000 + 200L).duration(150_000L).addBinaryAnnotation(archiver2).build();
     Span gz = Span.builder().traceId(1L).id(3L).parentId(1L)
-        .name("gz").timestamp(TODAY * 1000 + 250L).duration(50L).addBinaryAnnotation(archiver3).build();
+        .name("gz").timestamp(TODAY * 1000 + 250L).duration(50_000L).addBinaryAnnotation(archiver3).build();
     Span zip = Span.builder().traceId(3L).id(3L)
-        .name("zip").timestamp(TODAY * 1000 + 130L).duration(50L).addBinaryAnnotation(archiver2).build();
+        .name("zip").timestamp(TODAY * 1000 + 130L).duration(50_000L).addBinaryAnnotation(archiver2).build();
 
     List<Span> trace1 = asList(targz, tar, gz);
     List<Span> trace2 = asList(
