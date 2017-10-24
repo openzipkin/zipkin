@@ -54,9 +54,9 @@ public class CassandraStorageRule extends ExternalResource {
   @Override
   protected void before() throws Throwable {
     try {
-      //LOGGER.info("Starting docker image " + image);
-      //container = new CassandraContainer(image).withExposedPorts(CASSANDRA_PORT);
-      //container.start();
+      LOGGER.info("Starting docker image " + image);
+      container = new CassandraContainer(image).withExposedPorts(CASSANDRA_PORT);
+      container.start();
     } catch (RuntimeException e) {
       LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
     }

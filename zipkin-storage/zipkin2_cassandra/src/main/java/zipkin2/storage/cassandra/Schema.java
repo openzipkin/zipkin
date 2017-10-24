@@ -48,8 +48,8 @@ final class Schema {
   static final String TABLE_SERVICE_SPANS = "span_by_service";
   static final String TABLE_DEPENDENCY = "dependency";
 
-  static final String DEFAULT_KEYSPACE = "zipkin2_cassandra";
-  private static final String SCHEMA_RESOURCE = "/zipkin2_cassandra-schema.cql";
+  static final String DEFAULT_KEYSPACE = "zipkin2";
+  private static final String SCHEMA_RESOURCE = "/zipkin2-schema.cql";
 
   private Schema() {
   }
