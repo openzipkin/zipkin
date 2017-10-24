@@ -10,19 +10,19 @@
 #    or implied. See the License for the specific language governing permissions and limitations under
 #    the License.
 #
-### Stress test for stress_zipkin2_cassandra.span table
+### Stress test for stress_zipkin2.span table
 ###
 ### Stress testing is done using the `cassandra-stress` tool
 ###
 ### For example
-###  cqlsh -f zipkin2_cassandra-test-schema.cql
+###  cqlsh -f zipkin2-test-schema.cql
 ###  cassandra-stress  user profile=span-stress.yaml ops\(insert=1\) no-warmup duration=1m  -rate threads=4 throttle=50/s
 ###
 ### after a benchmark has been run with only writes, a mixed read-write benchmark can be run with
 ###  cassandra-stress  user profile=span-stress.yaml ops\(insert=1,by_trace=1,by_trace_ts_id=1,by_annotation=1\)  duration=1m  -rate threads=4 throttle=50/s
 
 # Keyspace Name
-keyspace: stress_zipkin2_cassandra
+keyspace: stress_zipkin2
 
 # Table name
 table: span
@@ -88,5 +88,5 @@ queries:
     cql: SELECT * FROM span WHERE trace_id = ? AND ts_uuid = ? AND id = ?
     fields: samerow
    by_annotation:
-    cql: SELECT trace_id, ts, id FROM span WHERE annotation_query LIKE ?
+    cql: SELECT trace_id, ts, id FROM span WHERE l_service = ? AND annotation_query LIKE ? ALLOW FILTERING
     fields: samerow

@@ -74,8 +74,10 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
         .isGreaterThan(traceCount * store().getServiceNames().size());
 
     // Implementation over-fetches on the index to allow the user to receive unsurprising results.
-    assertThat(
-        store().getTraces(QueryRequest.builder().lookback(86400000L).limit(traceCount).build()))
+
+    // Ensure we use serviceName query so that trace_by_service_span is used
+    QueryRequest request = QueryRequest.builder().serviceName("web").limit(traceCount).build();
+    assertThat(store().getTraces(request))
         .hasSize(traceCount);
   }
 

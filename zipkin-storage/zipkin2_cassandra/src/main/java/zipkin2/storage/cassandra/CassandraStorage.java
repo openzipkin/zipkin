@@ -34,7 +34,7 @@ import zipkin2.internal.Nullable;
  * <p>Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace
  * is enabled via SLF4J. Trace level includes bound values.
  *
- * <p>Schema is installed by default from "/zipkin2_cassandra-schema.cql"
+ * <p>Schema is installed by default from "/zipkin2-schema.cql"
  */
 @AutoValue
 public abstract class CassandraStorage extends StorageComponent {

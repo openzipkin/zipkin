@@ -1,20 +1,20 @@
-CREATE KEYSPACE IF NOT EXISTS zipkin2_cassandra
+CREATE KEYSPACE IF NOT EXISTS zipkin2
   WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'}
   AND durable_writes = false;
 
-CREATE TYPE IF NOT EXISTS zipkin2_cassandra.endpoint (
+CREATE TYPE IF NOT EXISTS zipkin2.endpoint (
     service      text,
     ipv4         inet,
     ipv6         inet,
     port         int,
 );
 
-CREATE TYPE IF NOT EXISTS zipkin2_cassandra.annotation (
+CREATE TYPE IF NOT EXISTS zipkin2.annotation (
     ts bigint,
     v  text,
 );
 
-CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span (
+CREATE TABLE IF NOT EXISTS zipkin2.span (
     trace_id            text, // when strictTraceId=false, only contains right-most 16 chars
     ts_uuid             timeuuid,
     id                  text,
@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span (
     AND comment = 'Primary table for holding trace data. annotation_query column is a comma separated string (instead of a set) to permit SASI (CASSANDRA-11182)';
 
 
-CREATE TABLE IF NOT EXISTS zipkin2_cassandra.trace_by_service_span (
+CREATE TABLE IF NOT EXISTS zipkin2.trace_by_service_span (
     service       text,             //-- service name
     span          text,             //-- span name, or blank for queries without span name
     bucket        int,              //-- time bucket, calculated as ts/interval (in microseconds), for some pre-configured interval like 1 day.
@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.trace_by_service_span (
     AND speculative_retry = '95percentile'
     AND comment = 'Secondary table for looking up a trace by a service, or service and span. span column may be blank (when only looking up by service). bucket column adds time bucketing to the partition key, values are microseconds rounded to a pre-configured interval (typically one day). ts column is start timestamp of the span as time-uuid, truncated to millisecond precision. duration column is span duration, rounded up to tens of milliseconds (or hundredths of seconds)';
 
-CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span_by_service (
+CREATE TABLE IF NOT EXISTS zipkin2.span_by_service (
     service text,
     span    text,
     PRIMARY KEY (service, span)
@@ -76,7 +76,7 @@ CREATE TABLE IF NOT EXISTS zipkin2_cassandra.span_by_service (
     AND speculative_retry = '95percentile'
     AND comment = 'Secondary table for looking up span names by a service name.';
 
-CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2_cassandra.span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2.span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {
     'mode': 'CONTAINS',
     'analyzed': 'true',
@@ -85,14 +85,14 @@ CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2_cassandra.span (annotation_query) U
    };
 
 
-CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2_cassandra.span (l_service) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2.span (l_service) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};
 
-CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2_cassandra.trace_by_service_span (duration) USING 'org.apache.cassandra.index.sasi.SASIIndex'
+CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2.trace_by_service_span (duration) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};
 
 
-CREATE TABLE IF NOT EXISTS zipkin2_cassandra.dependency (
+CREATE TABLE IF NOT EXISTS zipkin2.dependency (
     day          date,
     parent       text,
     child        text,
