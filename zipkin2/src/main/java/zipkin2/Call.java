@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
-import zipkin2.internal.Nullable;
 
 /**
  * This captures a (usually remote) request and can be used once, either {@link #execute()
@@ -191,16 +190,37 @@ public abstract class Call<V> implements Cloneable {
       this.v = v;
     }
 
-    @Override V doExecute() throws IOException {
+    @Override protected V doExecute() throws IOException {
       return v;
     }
 
-    @Override void doEnqueue(Callback<V> callback) {
+    @Override protected void doEnqueue(Callback<V> callback) {
       callback.onSuccess(v);
     }
 
     @Override public Call<V> clone() {
       return new Constant<>(v);
+    }
+
+    @Override public String toString() {
+      return "ConstantCall{value=" + v + "}";
+    }
+
+    @Override public boolean equals(Object o) {
+      if (o == this) return true;
+      if (o instanceof Constant) {
+        Constant that = (Constant) o;
+        return ((this.v == null) ? (that.v == null) : this.v.equals(that.v));
+      }
+      return false;
+    }
+
+    @Override
+    public int hashCode() {
+      int h = 1;
+      h *= 1000003;
+      h ^= (v == null) ? 0 : v.hashCode();
+      return h;
     }
   }
 
@@ -213,11 +233,11 @@ public abstract class Call<V> implements Cloneable {
       this.delegate = delegate;
     }
 
-    @Override public R doExecute() throws IOException {
+    @Override protected R doExecute() throws IOException {
       return mapper.map(delegate.execute());
     }
 
-    @Override public void doEnqueue(final Callback<R> callback) {
+    @Override protected void doEnqueue(final Callback<R> callback) {
       delegate.enqueue(new Callback<V>() {
         @Override public void onSuccess(V value) {
           try {
@@ -231,6 +251,10 @@ public abstract class Call<V> implements Cloneable {
           callback.onError(t);
         }
       });
+    }
+
+    @Override public String toString() {
+      return "Mapping{call=" + delegate + ", mapper=" + mapper + "}";
     }
 
     @Override public Call<R> clone() {
@@ -248,11 +272,11 @@ public abstract class Call<V> implements Cloneable {
       this.delegate = delegate;
     }
 
-    @Override public R doExecute() throws IOException {
+    @Override protected R doExecute() throws IOException {
       return (mapped = flatMapper.map(delegate.execute())).execute();
     }
 
-    @Override public void doEnqueue(final Callback<R> callback) {
+    @Override protected void doEnqueue(final Callback<R> callback) {
       delegate.enqueue(new Callback<V>() {
         @Override public void onSuccess(V value) {
           try {
@@ -268,14 +292,13 @@ public abstract class Call<V> implements Cloneable {
       });
     }
 
-    @Override public void cancel() {
-      super.cancel();
+    @Override protected void doCancel() {
       delegate.cancel();
       if (mapped != null) mapped.cancel();
     }
 
-    @Override public boolean isCanceled() {
-      return super.isCanceled() || delegate.isCanceled() || (mapped != null && mapped.isCanceled());
+    @Override public String toString() {
+      return "FlatMapping{call=" + delegate + ", flatMapper=" + flatMapper + "}";
     }
 
     @Override public Call<R> clone() {
@@ -293,13 +316,13 @@ public abstract class Call<V> implements Cloneable {
       this.delegate = delegate;
     }
 
-    @Override public V doExecute() throws IOException {
+    @Override protected V doExecute() throws IOException {
       try {
         return delegate.execute();
       } catch (IOException | RuntimeException | Error e) {
         final AtomicReference ref = new AtomicReference(SENTINEL);
         errorHandler.onErrorReturn(e, new Callback<V>() {
-          @Override public void onSuccess(@Nullable V value) {
+          @Override public void onSuccess(V value) {
             ref.set(value);
           }
 
@@ -312,7 +335,7 @@ public abstract class Call<V> implements Cloneable {
       }
     }
 
-    @Override public void doEnqueue(final Callback<V> callback) {
+    @Override protected void doEnqueue(final Callback<V> callback) {
       delegate.enqueue(new Callback<V>() {
         @Override public void onSuccess(V value) {
           callback.onSuccess(value);
@@ -324,12 +347,12 @@ public abstract class Call<V> implements Cloneable {
       });
     }
 
-    @Override public void cancel() {
+    @Override protected void doCancel() {
       delegate.cancel();
     }
 
-    @Override public boolean isCanceled() {
-      return delegate.isCanceled();
+    @Override public String toString() {
+      return "ErrorHandling{call=" + delegate + ", errorHandler=" + errorHandler + "}";
     }
 
     @Override public Call<V> clone() {
@@ -337,41 +360,57 @@ public abstract class Call<V> implements Cloneable {
     }
   }
 
-  static abstract class Base<V> extends Call<V> {
+  public static abstract class Base<V> extends Call<V> {
     volatile boolean canceled;
-    boolean executed; // guarded by this
+    boolean executed;
 
-    @Override public V execute() throws IOException {
-      synchronized (this) {
-        if (executed) throw new IllegalStateException("Already Executed");
-        executed = true;
-      }
-      if (canceled) throw new IOException("Canceled");
-      return doExecute();
+    protected Base() {
     }
 
-    abstract V doExecute() throws IOException;
-
-    @Override public void enqueue(Callback<V> callback) {
+    @Override public final V execute() throws IOException {
       synchronized (this) {
-        if (executed) throw new IllegalStateException("Already Executed");
-        executed = true;
+        if (this.executed) throw new IllegalStateException("Already Executed");
+        this.executed = true;
       }
-      if (canceled) {
+
+      if (isCanceled()) {
+        throw new IOException("Canceled");
+      } else {
+        return this.doExecute();
+      }
+    }
+
+    protected abstract V doExecute() throws IOException;
+
+    @Override public final void enqueue(Callback<V> callback) {
+      synchronized (this) {
+        if (this.executed) throw new IllegalStateException("Already Executed");
+        this.executed = true;
+      }
+
+      if (isCanceled()) {
         callback.onError(new IOException("Canceled"));
       } else {
-        doEnqueue(callback);
+        this.doEnqueue(callback);
       }
     }
 
-    abstract void doEnqueue(Callback<V> callback);
+    protected abstract void doEnqueue(Callback<V> callback);
 
-    @Override public void cancel() {
-      canceled = true;
+    @Override public final void cancel() {
+      this.canceled = true;
+      doCancel();
     }
 
-    @Override public boolean isCanceled() {
-      return canceled;
+    protected void doCancel() {
+    }
+
+    @Override public final boolean isCanceled() {
+      return this.canceled || doIsCanceled();
+    }
+
+    protected boolean doIsCanceled() {
+      return false;
     }
   }
 }

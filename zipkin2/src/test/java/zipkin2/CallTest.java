@@ -139,6 +139,11 @@ public class CallTest {
     assertThat(executeOrSubmit.get()).isEqualTo(1);
   }
 
+  @Test public void constantEqualsConstant() throws Exception {
+    assertThat(Call.create(null))
+      .isEqualTo(Call.create(null));
+  }
+
   @Test public void emptyList() throws Exception {
     Call<List<String>> call = Call.emptyList();
 
@@ -324,11 +329,11 @@ public class CallTest {
 
   static <T> Call<T> errorCall(RuntimeException error) {
     return new Call.Base<T>() {
-      @Override T doExecute() throws IOException {
+      @Override protected T doExecute() throws IOException {
         throw error;
       }
 
-      @Override void doEnqueue(Callback<T> callback) {
+      @Override protected void doEnqueue(Callback<T> callback) {
         callback.onError(error);
       }
 
