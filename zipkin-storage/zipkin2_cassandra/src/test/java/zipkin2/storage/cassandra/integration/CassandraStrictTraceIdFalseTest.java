@@ -13,27 +13,20 @@
  */
 package zipkin2.storage.cassandra.integration;
 
-import org.junit.AssumptionViolatedException;
+import org.junit.Before;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.StrictTraceIdFalseTest;
-import zipkin2.CheckResult;
 import zipkin2.storage.cassandra.CassandraStorage;
 
 abstract class CassandraStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
 
-  final CassandraStorage storage;
+  abstract protected String keyspace();
 
-  CassandraStrictTraceIdFalseTest() {
-    storage = storageBuilder()
-      .strictTraceId(false)
-      .keyspace("test_zipkin_http_mixed")
-      .build();
+  private CassandraStorage storage;
 
-    CheckResult check = storage.check();
-    if (!check.ok()) {
-      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
-    }
+  @Before public void connect() {
+    storage = storageBuilder().strictTraceId(false).keyspace(keyspace()).build();
   }
 
   protected abstract CassandraStorage.Builder storageBuilder();

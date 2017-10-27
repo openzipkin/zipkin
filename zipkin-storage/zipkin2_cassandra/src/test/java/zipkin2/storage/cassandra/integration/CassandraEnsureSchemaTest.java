@@ -15,42 +15,31 @@ package zipkin2.storage.cassandra.integration;
 
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
-import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.TestName;
 import zipkin2.storage.cassandra.InternalForTests;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 abstract class CassandraEnsureSchemaTest {
 
-  abstract protected TestName name();
+  abstract protected String keyspace();
 
   abstract protected Session session();
 
-  private String keyspace;
-
-  @Before
-  public void connectAndDropKeyspace() {
-    keyspace = name().getMethodName().toLowerCase();
-    session().execute("DROP KEYSPACE IF EXISTS " + keyspace);
-    assertThat(session().getCluster().getMetadata().getKeyspace(keyspace)).isNull();
-  }
-
   @Test public void installsKeyspaceWhenMissing() {
-    InternalForTests.ensureExists(keyspace, session());
+    InternalForTests.ensureExists(keyspace(), session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace);
+    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
     assertThat(metadata).isNotNull();
   }
 
   @Test public void installsTablesWhenMissing() {
-    session().execute("CREATE KEYSPACE " + keyspace
+    session().execute("CREATE KEYSPACE " + keyspace()
       + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};");
 
-    InternalForTests.ensureExists(keyspace, session());
+    InternalForTests.ensureExists(keyspace(), session());
 
-    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace);
+    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
     assertThat(metadata).isNotNull();
   }
 }

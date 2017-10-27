@@ -28,10 +28,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.FRONTEND;
 
 abstract class CassandraSpanConsumerTest {
+  abstract protected String keyspace();
 
-  protected abstract CassandraStorage storage();
+  private CassandraStorage storage;
 
-  @Before public abstract void clear();
+  @Before public void connect() {
+    storage = storageBuilder().keyspace(keyspace()).build();
+  }
+
+  abstract CassandraStorage.Builder storageBuilder();
 
   /**
    * {@link Span#duration} == 0 is likely to be a mistake, and coerces to null. It is not helpful to
@@ -41,9 +46,9 @@ abstract class CassandraSpanConsumerTest {
   public void doesntIndexSpansMissingDuration() throws IOException {
     Span span = Span.newBuilder().traceId("1").id("1").name("get").duration(0L).build();
 
-    accept(storage().spanConsumer(), span);
+    accept(storage.spanConsumer(), span);
 
-    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage())).isZero();
+    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage)).isZero();
   }
 
   /**
@@ -56,34 +61,31 @@ abstract class CassandraSpanConsumerTest {
     Span[] trace = new Span[101];
     trace[0] = TestObjects.CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).build();
 
-    IntStream.range(0, 100).forEach(i -> {
-      trace[i + 1] = Span.newBuilder()
-        .traceId(trace[0].traceId())
-        .parentId(trace[0].id())
-        .id(Long.toHexString(i))
-        .name("get")
-        .kind(Span.Kind.CLIENT)
-        .localEndpoint(FRONTEND)
-        .timestamp(
-          trace[0].timestamp() + i * 1000) // all peer span timestamps happen a millisecond later
-        .duration(10L)
-        .build();
-    });
+    IntStream.range(0, 100).forEach(i -> trace[i + 1] = Span.newBuilder()
+      .traceId(trace[0].traceId())
+      .parentId(trace[0].id())
+      .id(Long.toHexString(i))
+      .name("get")
+      .kind(Span.Kind.CLIENT)
+      .localEndpoint(FRONTEND)
+      .timestamp(
+        trace[0].timestamp() + i * 1000) // all peer span timestamps happen a millisecond later
+      .duration(10L)
+      .build());
 
-    accept(storage().spanConsumer(), trace);
-    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
+    accept(storage.spanConsumer(), trace);
+    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(4L);
-    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
+    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(4L);
 
     // sanity check base case
-    clear();
 
-    accept(InternalForTests.withoutStrictTraceId(storage()), trace);
+    accept(InternalForTests.withoutStrictTraceId(storage), trace);
 
-    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
+    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(120L); // TODO: magic number
-    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage()))
+    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(120L);
   }
 

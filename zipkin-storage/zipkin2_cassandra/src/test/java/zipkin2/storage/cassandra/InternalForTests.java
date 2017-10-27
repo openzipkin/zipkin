@@ -13,14 +13,18 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.Host;
 import com.datastax.driver.core.LocalDate;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import zipkin.DependencyLink;
 import zipkin2.storage.SpanConsumer;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class InternalForTests {
 
@@ -28,11 +32,11 @@ public class InternalForTests {
     long midnightUTC) {
     for (DependencyLink link : links) {
       Insert statement = QueryBuilder.insertInto(Schema.TABLE_DEPENDENCY)
-          .value("day", LocalDate.fromMillisSinceEpoch(midnightUTC))
-          .value("parent", link.parent)
-          .value("child", link.child)
-          .value("calls", link.callCount)
-          .value("errors", link.errorCount);
+        .value("day", LocalDate.fromMillisSinceEpoch(midnightUTC))
+        .value("parent", link.parent)
+        .value("child", link.child)
+        .value("calls", link.callCount)
+        .value("errors", link.errorCount);
       storage.session().execute(statement);
     }
   }
@@ -42,18 +46,36 @@ public class InternalForTests {
   }
 
   public static long rowCountForTraceByServiceSpan(CassandraStorage storage) {
-    return rowCount(storage, Schema.TABLE_TRACE_BY_SERVICE_SPAN);
+    return storage.session()
+      .execute("SELECT COUNT(*) from " + Schema.TABLE_TRACE_BY_SERVICE_SPAN).one().getLong(0);
   }
 
   public static SpanConsumer withoutStrictTraceId(CassandraStorage storage) {
     return storage.toBuilder().strictTraceId(false).build().spanConsumer();
   }
 
-  public static KeyspaceMetadata ensureExists(String keyspace, Session session) {
-    return Schema.ensureExists(keyspace, session);
+  public static void ensureExists(String keyspace, Session session) {
+    Schema.ensureExists(keyspace, session);
   }
 
-  private static long rowCount(CassandraStorage storage, String table) {
-    return storage.session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
+  public static void blockWhileInFlight(CassandraStorage storage) {
+    // Now, block until writes complete, notably so we can read them.
+    Session.State state = storage.session().getState();
+    refresh:
+    while (true) {
+      for (Host host : state.getConnectedHosts()) {
+        if (state.getInFlightQueries(host) > 0) {
+          Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+          state = storage.session().getState();
+          continue refresh;
+        }
+      }
+      break;
+    }
+  }
+
+  public static void dropKeyspace(Session session, String keyspace) {
+    session.execute("DROP KEYSPACE IF EXISTS " + keyspace);
+    assertThat(session.getCluster().getMetadata().getKeyspace(keyspace)).isNull();
   }
 }

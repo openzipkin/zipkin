@@ -25,11 +25,7 @@ import zipkin2.storage.cassandra.CassandraSpanConsumer.StoreSpansCall;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
@@ -56,17 +52,20 @@ public class CassandraSpanConsumerTest {
       .traceId("77fcac3d4c5be8d2a037812820c65f28").build();
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
-    verify(call.statements.get(0)).setString("trace_id", span.traceId());
-    verify(call.statements.get(0), never()).setString(eq("trace_id_high"), any());
+    assertThat(call.calls.get(0))
+      .isInstanceOf(InsertSpan.class)
+      .extracting("input.trace_id_high", "input.trace_id")
+      .containsExactly(null, span.traceId());
   }
 
   @Test public void doesntSetTraceIdHigh_64() {
     Span span = spanWithoutAnnotationsOrTags;
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-    assertThat(call.statements).hasSize(3);
 
-    verify(call.statements.get(0)).setString("trace_id", span.traceId());
-    verify(call.statements.get(0), never()).setString(eq("trace_id_high"), any());
+    assertThat(call.calls.get(0))
+      .isInstanceOf(InsertSpan.class)
+      .extracting("input.trace_id_high", "input.trace_id")
+      .containsExactly(null, span.traceId());
   }
 
   @Test public void strictTraceIdFalse_setsTraceIdHigh() {
@@ -76,50 +75,62 @@ public class CassandraSpanConsumerTest {
       .traceId("77fcac3d4c5be8d2a037812820c65f28").build();
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
-    verify(call.statements.get(0)).setString("trace_id", "a037812820c65f28");
-    verify(call.statements.get(0)).setString("id", span.id());
-    verify(call.statements.get(0)).setString("trace_id_high", "77fcac3d4c5be8d2");
+    assertThat(call.calls.get(0))
+      .isInstanceOf(InsertSpan.class)
+      .extracting("input.trace_id_high", "input.trace_id")
+      .containsExactly("77fcac3d4c5be8d2", "a037812820c65f28");
   }
 
   @Test public void serviceSpanKeys() {
     Span span = spanWithoutAnnotationsOrTags;
 
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-    assertThat(call.serviceSpanKeys).extracting(b -> b.key)
-      .containsExactlyInAnyOrder("frontend෴get");
+
+    assertThat(call.calls)
+      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .hasSize(1)
+      .flatExtracting("input.service", "input.span")
+      .containsExactly("frontend", "get");
   }
 
   @Test public void serviceSpanKeys_addsRemoteServiceName() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().remoteEndpoint(BACKEND).build();
 
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-    assertThat(call.serviceSpanKeys).extracting(b -> b.key)
-      .containsExactlyInAnyOrder("frontend෴get", "backend෴get");
+
+    assertThat(call.calls)
+      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .hasSize(2)
+      .flatExtracting("input.service", "input.span")
+      .containsExactly("backend", "get", "frontend", "get");
   }
 
   @Test public void serviceSpanKeys_appendsEmptyWhenNoName() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().name(null).build();
 
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-    assertThat(call.serviceSpanKeys).extracting(b -> b.key)
-      .containsExactlyInAnyOrder("frontend෴");
+    assertThat(call.calls)
+      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .hasSize(1)
+      .flatExtracting("input.service", "input.span")
+      .containsExactly("frontend", "");
   }
 
   @Test public void serviceSpanKeys_emptyWhenNoEndpoints() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().localEndpoint(null).build();
 
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-    assertThat(call.serviceSpanKeys).isEmpty(); // no services to index
+    assertThat(call.calls)
+      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .isEmpty();
   }
 
   static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {
     return new CassandraSpanConsumer(
       builder.sessionFactory(mock(CassandraStorage.SessionFactory.class, Mockito.RETURNS_MOCKS))
         .build()) {
-      @Override BoundStatement bindWithName(PreparedStatement prepared,
-        String name) { // overridable for tests
+      @Override BoundStatement bind(PreparedStatement prepared) { // overridable for tests
         return mock(BoundStatement.class, withSettings()
-          .name(name)
           .defaultAnswer(InvocationOnMock::getMock)); // for chaining
       }
     };

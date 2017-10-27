@@ -13,14 +13,11 @@
  */
 package zipkin2.storage.cassandra.integration;
 
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.Session;
-import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 import org.junit.AssumptionViolatedException;
+import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
@@ -38,13 +35,22 @@ import zipkin2.storage.cassandra.InternalForTests;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static zipkin2.TestObjects.DAY;
 
 abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
-  protected abstract CassandraStorage v2Storage();
+  abstract protected String keyspace();
+
+  private CassandraStorage storage;
+
+  @Before public void connect() {
+    storage = storageBuilder().keyspace(keyspace()).build();
+  }
+
+  protected abstract CassandraStorage.Builder storageBuilder();
 
   @Override protected final StorageComponent storage() {
-    return V2StorageComponent.create(v2Storage());
+    return V2StorageComponent.create(storage);
   }
 
   @Test
@@ -56,13 +62,13 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
       final long delta = i * 1000; // all timestamps happen a millisecond later
       for (Span s : TestObjects.TRACE) {
         spans.add(TestObjects.TRACE.get(0).toBuilder()
-            .traceId(s.traceId + i * 10)
-            .id(s.id + i * 10)
-            .timestamp(s.timestamp + delta)
-            .annotations(s.annotations.stream()
-                .map(a -> Annotation.create(a.timestamp + delta, a.value, a.endpoint))
-                .collect(toList()))
-            .build());
+          .traceId(s.traceId + i * 10)
+          .id(s.id + i * 10)
+          .timestamp(s.timestamp + delta)
+          .annotations(s.annotations.stream()
+            .map(a -> Annotation.create(a.timestamp + delta, a.value, a.endpoint))
+            .collect(toList()))
+          .build());
       }
     }
 
@@ -70,15 +76,15 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
     // Index ends up containing more rows than services * trace count, and cannot be de-duped
     // in a server-side query.
-    assertThat(InternalForTests.rowCountForTraceByServiceSpan(v2Storage()))
-        .isGreaterThan(traceCount * store().getServiceNames().size());
+    assertThat(InternalForTests.rowCountForTraceByServiceSpan(storage))
+      .isGreaterThan(traceCount * store().getServiceNames().size());
 
     // Implementation over-fetches on the index to allow the user to receive unsurprising results.
-
-    // Ensure we use serviceName query so that trace_by_service_span is used
-    QueryRequest request = QueryRequest.builder().serviceName("web").limit(traceCount).build();
+    QueryRequest request = QueryRequest.builder()
+      .serviceName("web") // Ensure we use serviceName query so that trace_by_service_span is used
+      .lookback(DAY).limit(traceCount).build();
     assertThat(store().getTraces(request))
-        .hasSize(traceCount);
+      .hasSize(traceCount);
   }
 
   @Test
@@ -89,32 +95,24 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
     Endpoint endpoint = TestObjects.LOTS_OF_SPANS[0].annotations.get(0).endpoint;
     BinaryAnnotation ba = BinaryAnnotation.create("host.name", "host1", endpoint);
 
-    int nbTraceFetched = queryLimit * InternalForTests.indexFetchMultiplier(v2Storage());
+    int nbTraceFetched = queryLimit * InternalForTests.indexFetchMultiplier(storage);
     IntStream.range(0, nbTraceFetched).forEach(i ->
-            accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000)).build())
+      accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000)).build())
     );
     // Add two traces with the binary annotation we're looking for
     IntStream.range(nbTraceFetched, nbTraceFetched + 2).forEach(i ->
-            accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000))
-                    .addBinaryAnnotation(ba)
-                    .build())
+      accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp(now - (i * 1000))
+        .addBinaryAnnotation(ba)
+        .build())
     );
     QueryRequest queryRequest =
-            QueryRequest.builder()
-                    .addBinaryAnnotation(ba.key, new String(ba.value, Util.UTF_8))
-                    .serviceName(endpoint.serviceName)
-                    .limit(queryLimit)
-                    .build();
+      QueryRequest.builder()
+        .addBinaryAnnotation(ba.key, new String(ba.value, Util.UTF_8))
+        .serviceName(endpoint.serviceName)
+        .limit(queryLimit)
+        .build();
+    // TODO: this test is flakey, figure out why
     assertThat(store().getTraces(queryRequest)).hasSize(queryLimit);
-  }
-
-  @Override public void getTraces_duration_allServices() {
-    try {
-      super.getTraces_duration_allServices();
-      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-    } catch (IllegalArgumentException e) {
-      throw new AssumptionViolatedException("duration queries across all services is unsupported");
-    }
   }
 
   @Override public void getTraces_exactMatch() {
@@ -129,38 +127,17 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
   @Override public void getTraces_exactMatch_allServices() {
     try {
       super.getTraces_exactMatch_allServices();
-      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-    } catch (IllegalArgumentException e) {
-      throw new AssumptionViolatedException("duration queries across all services is unsupported");
+      failBecauseExceptionWasNotThrown(AssertionError.class);
+    } catch (AssertionError e) {
+      throw new AssumptionViolatedException("exact match is unsupported");
     }
   }
 
   /** Makes sure the test cluster doesn't fall over on BusyPoolException */
   @Override protected void accept(Span... spans) {
-    List<Span> page = new ArrayList<>();
-    for (int i = 0; i < spans.length; i++) {
-      page.add(spans[i]);
-      if (page.size() == 10) {
-        super.accept(page.toArray(new Span[0]));
-        page.clear();
-      }
-    }
-    super.accept(page.toArray(new Span[0]));
+    super.accept(spans);
 
     // Now, block until writes complete, notably so we can read them.
-    Session.State state = session().getState();
-    refresh:
-    while (true) {
-      for (Host host : state.getConnectedHosts()) {
-        if (state.getInFlightQueries(host) > 0) {
-          Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
-          state = session().getState();
-          continue refresh;
-        }
-      }
-      break;
-    }
+    InternalForTests.blockWhileInFlight(storage);
   }
-
-  abstract Session session();
 }

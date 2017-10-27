@@ -88,10 +88,10 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
         session.getCluster().getMetadata().getKeyspace(session.getLoggedKeyspace());
 
     session.getCluster().getConfiguration().getCodecRegistry()
-        .register(
-            new TypeCodecImpl(keyspace.getUserType("endpoint"), EndpointUDT.class, endpointCodec))
-        .register(
-            new TypeCodecImpl(keyspace.getUserType("annotation"), AnnotationUDT.class, annoCodec));
+      .register(
+        new TypeCodecImpl<>(keyspace.getUserType("endpoint"), EndpointUDT.class, endpointCodec))
+      .register(
+        new TypeCodecImpl<>(keyspace.getUserType("annotation"), AnnotationUDT.class, annoCodec));
   }
 
   // Visible for testing
