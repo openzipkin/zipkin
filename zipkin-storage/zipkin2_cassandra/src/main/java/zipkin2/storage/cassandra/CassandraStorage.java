@@ -19,14 +19,12 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.ImmutableList;
 import zipkin2.CheckResult;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
-import zipkin2.internal.Nullable;
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -183,22 +181,6 @@ public abstract class CassandraStorage extends StorageComponent {
   }
 
   abstract Builder toBuilder(); // initially visible for testing. we might promote it later
-
-  /** Truncates all the column families, or throws on any failure. */
-  @VisibleForTesting void clear() {
-    if (provisioned) {
-      ((CassandraSpanConsumer) spanConsumer()).clear();
-    }
-
-    for (String cf : ImmutableList.of(
-      Schema.TABLE_SPAN,
-      Schema.TABLE_TRACE_BY_SERVICE_SPAN,
-      Schema.TABLE_SERVICE_SPANS,
-      Schema.TABLE_DEPENDENCY
-    )) {
-      session().execute("TRUNCATE " + cf);
-    }
-  }
 
   CassandraStorage() {
   }

@@ -20,9 +20,9 @@ import org.junit.Rule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
-import zipkin2.storage.StorageComponent;
 import zipkin2.storage.cassandra.CassandraStorage;
 import zipkin2.storage.cassandra.CassandraStorageRule;
+import zipkin2.storage.cassandra.InternalForTests;
 
 @RunWith(Enclosed.class)
 public class ITCassandraStorage {
@@ -33,50 +33,65 @@ public class ITCassandraStorage {
 
   public static class DependenciesTest extends CassandraDependenciesTest {
     @ClassRule public static CassandraStorageRule storage = classRule();
+    @Rule public TestName testName = new TestName();
 
-    @Override protected StorageComponent v2Storage() {
-      return storage.get();
+    @Override protected String keyspace() {
+      return ITCassandraStorage.keyspace(testName);
     }
 
-    @Override public void clear() {
-      storage.clear();
+    @Before @Override public void clear() {
+      InternalForTests.dropKeyspace(storage.session(), keyspace());
+    }
+
+    @Override protected CassandraStorage.Builder storageBuilder() {
+      return storage.computeStorageBuilder();
     }
   }
 
   public static class SpanStoreTest extends CassandraSpanStoreTest {
     @ClassRule public static CassandraStorageRule storage = classRule();
+    @Rule public TestName testName = new TestName();
 
-    @Override protected CassandraStorage v2Storage() {
-      return storage.get();
-    }
-
-    @Override Session session() {
-      return storage.session();
+    @Override protected String keyspace() {
+      return ITCassandraStorage.keyspace(testName);
     }
 
     @Before @Override public void clear() {
-      storage.clear();
+      InternalForTests.dropKeyspace(storage.session(), keyspace());
+    }
+
+    @Override protected CassandraStorage.Builder storageBuilder() {
+      return storage.computeStorageBuilder();
     }
   }
 
   public static class SpanConsumerTest extends CassandraSpanConsumerTest {
     @ClassRule public static CassandraStorageRule storage = classRule();
+    @Rule public TestName testName = new TestName();
 
-    @Override protected CassandraStorage storage() {
-      return storage.get();
+    @Override protected String keyspace() {
+      return ITCassandraStorage.keyspace(testName);
     }
 
-    @Before @Override public void clear() {
-      storage.clear();
+    @Before public void clear() {
+      InternalForTests.dropKeyspace(storage.session(), keyspace());
+    }
+
+    @Override protected CassandraStorage.Builder storageBuilder() {
+      return storage.computeStorageBuilder();
     }
   }
 
   public static class EnsureSchemaTest extends CassandraEnsureSchemaTest {
     @ClassRule public static CassandraStorageRule storage = classRule();
-    @Rule public TestName name = new TestName();
+    @Rule public TestName testName = new TestName();
 
-    @Override protected TestName name() {
-      return name;
+    @Override protected String keyspace() {
+      return ITCassandraStorage.keyspace(testName);
+    }
+
+    @Before public void clear() {
+      InternalForTests.dropKeyspace(storage.session(), keyspace());
     }
 
     @Override protected Session session() {
@@ -86,13 +101,23 @@ public class ITCassandraStorage {
 
   public static class StrictTraceIdFalseTest extends CassandraStrictTraceIdFalseTest {
     @ClassRule public static CassandraStorageRule storage = classRule();
+    @Rule public TestName testName = new TestName();
+
+    @Override protected String keyspace() {
+      return ITCassandraStorage.keyspace(testName);
+    }
 
     @Before @Override public void clear() {
-      storage.clear();
+      InternalForTests.dropKeyspace(storage.session(), keyspace());
     }
 
     @Override protected CassandraStorage.Builder storageBuilder() {
       return storage.computeStorageBuilder();
     }
+  }
+
+  static String keyspace(TestName testName){
+    String result = testName.getMethodName().toLowerCase();
+    return result.length() <= 48 ? result : result.substring(result.length() - 48);
   }
 }
