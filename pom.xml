@@ -192,6 +192,18 @@
 
       <dependency>
         <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-storage-influxdb</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-influxdb</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-storage-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
