@@ -171,6 +171,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- InfluxDB HTTP backend -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-storage-influxdb</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Kafka Collector -->
     <dependency>
       <groupId>${project.groupId}</groupId>

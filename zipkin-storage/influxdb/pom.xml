@@ -14,29 +14,35 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
+    <artifactId>zipkin-storage</artifactId>
     <groupId>io.zipkin.java</groupId>
-    <artifactId>parent</artifactId>
-    <version>2.4.2-SNAPSHOT</version>
+    <version>2.3.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>zipkin-storage</artifactId>
-  <name>Storage</name>
-  <packaging>pom</packaging>
+  <artifactId>zipkin-storage-influxdb</artifactId>
+  <name>Storage: InfluxDB</name>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
+    <main.basedir>${project.basedir}/../..</main.basedir>
   </properties>
 
-  <modules>
-    <module>cassandra</module>
-    <module>zipkin2_cassandra</module>
-    <module>mysql</module>
-    <module>elasticsearch</module>
-    <module>elasticsearch-http</module>
-    <module>influxdb</module>
-  </modules>
+  <dependencies>
+    <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>org.influxdb</groupId>
+      <artifactId>influxdb-java</artifactId>
+      <version>2.7</version>
+    </dependency>
+
+  </dependencies>
 </project>
