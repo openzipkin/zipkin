@@ -186,6 +186,7 @@ public final class CassandraSpanStore implements GuavaSpanStore {
    */
   @Override
   public ListenableFuture<List<List<Span>>> getTraces(final QueryRequest request) {
+    checkArgument(request.minDuration == null, "getTraces with duration is unsupported");
     // Over fetch on indexes as they don't return distinct (trace id, timestamp) rows.
     final int traceIndexFetchSize = request.limit * indexFetchMultiplier;
     ListenableFuture<Map<Long, Long>> traceIdToTimestamp;

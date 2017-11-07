@@ -32,6 +32,7 @@ import zipkin.storage.SpanStoreTest;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
@@ -128,10 +129,22 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
     return storage().session().execute("SELECT COUNT(*) from " + table).one().getLong(0);
   }
 
-  @Test
-  @Override
-  public void getTraces_duration() {
-    throw new AssumptionViolatedException("Upgrade to cassandra3 if you want duration queries");
+  @Override public void getTraces_duration() {
+    try {
+      super.getTraces_duration();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      throw new AssumptionViolatedException("Upgrade to cassandra3 if you want duration queries");
+    }
+  }
+
+  @Override public void getTraces_duration_allServices() {
+    try {
+      super.getTraces_duration_allServices();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      throw new AssumptionViolatedException("Upgrade to cassandra3 if you want duration queries");
+    }
   }
 
   @Override protected void accept(Span... spans) {

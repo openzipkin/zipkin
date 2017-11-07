@@ -16,6 +16,7 @@ package zipkin.storage.cassandra3.integration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+import org.junit.AssumptionViolatedException;
 import org.junit.Test;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
@@ -31,6 +32,7 @@ import zipkin.storage.cassandra3.InternalForTests;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 abstract class CassandraSpanStoreTest extends SpanStoreTest {
 
@@ -108,6 +110,15 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
                     .limit(queryLimit)
                     .build();
     assertThat(store().getTraces(queryRequest)).hasSize(queryLimit);
+  }
+
+  @Override public void getTraces_duration_allServices() {
+    try {
+      super.getTraces_duration_allServices();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      throw new AssumptionViolatedException("duration queries across all services is unsupported");
+    }
   }
 
   /** Makes sure the test cluster doesn't fall over on BusyPoolException */
