@@ -264,7 +264,7 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*readTenClientSpans_json_zipkin2,*")
+        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*readClientSpan_json_zipkin2")
         .build();
 
     new Runner(opt).run();

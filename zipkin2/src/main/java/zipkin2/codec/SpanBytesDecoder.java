@@ -21,6 +21,7 @@ import zipkin2.internal.Nullable;
 import zipkin2.internal.V2SpanReader;
 
 /** This is separate from {@link SpanBytesEncoder}, as it isn't needed for instrumentation */
+@SuppressWarnings("ImmutableEnumChecker") // because span is immutable
 public enum SpanBytesDecoder implements BytesDecoder<Span> {
   /** Corresponds to the Zipkin v2 json format */
   JSON_V2 {

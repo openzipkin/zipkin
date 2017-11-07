@@ -51,8 +51,8 @@
     <cassandra-driver-core.version>3.3.0</cassandra-driver-core.version>
     <okio.version>1.13.0</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
-    <jooq.version>3.9.5</jooq.version>
-    <spring-boot.version>1.5.7.RELEASE</spring-boot.version>
+    <jooq.version>3.9.6</jooq.version>
+    <spring-boot.version>1.5.8.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
@@ -61,9 +61,9 @@
     <!-- Version 2.x might conflict w/ Spring Boot's version -->
     <mariadb-java-client.version>1.6.5</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
-    <HikariCP.version>2.7.1</HikariCP.version>
+    <HikariCP.version>2.7.2</HikariCP.version>
     <slf4j.version>1.7.25</slf4j.version>
-    <logback.version>1.2.2</logback.version>
+    <logback.version>1.2.3</logback.version>
     <!-- Be careful to set this as a provided dep, so that it doesn't interfere with dependencies
          from other projects. For example, cassandra and spring boot set guava versions -->
     <guava.version>19.0</guava.version>
@@ -73,7 +73,7 @@
     <assertj.version>3.8.0</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
     <okhttp.version>3.9.0</okhttp.version>
-    <testcontainers.version>1.4.2</testcontainers.version>
+    <testcontainers.version>1.4.3</testcontainers.version>
 
     <animal-sniffer-maven-plugin.version>1.16</animal-sniffer-maven-plugin.version>
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
@@ -88,7 +88,7 @@
 
     <!-- Catch common Java mistakes as compile-time errors -->
     <plexus-compiler-javac-errorprone.version>2.8.2</plexus-compiler-javac-errorprone.version>
-    <errorprone.version>2.1.1</errorprone.version>
+    <errorprone.version>2.1.2</errorprone.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -334,7 +334,7 @@
       <dependency>
         <groupId>com.github.jnr</groupId>
         <artifactId>jnr-posix</artifactId>
-        <version>3.0.41</version>
+        <version>3.0.42</version>
       </dependency>
 
       <dependency>
@@ -364,7 +364,7 @@
       <dependency>
         <groupId>com.google.auto.value</groupId>
         <artifactId>auto-value</artifactId>
-        <version>1.5</version>
+        <version>1.5.2</version>
       </dependency>
 
       <dependency>
@@ -454,7 +454,7 @@
         <plugin>
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>
-          <version>0.4.1</version>
+          <version>0.5.0</version>
         </plugin>
 
         <plugin>

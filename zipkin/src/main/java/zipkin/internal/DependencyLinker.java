@@ -13,9 +13,9 @@
  */
 package zipkin.internal;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin2.Span;
@@ -46,7 +46,7 @@ public final class DependencyLinker {
   public DependencyLinker putTrace(Collection<zipkin.Span> spans) {
     if (spans.isEmpty()) return this;
 
-    List<Span> linkSpans = new LinkedList<>();
+    List<Span> linkSpans = new ArrayList<>();
     for (zipkin.Span s : MergeById.apply(spans)) {
       linkSpans.addAll(V2SpanConverter.fromSpan(s));
     }

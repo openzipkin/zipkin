@@ -16,7 +16,6 @@ package zipkin.internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import zipkin.Span;
@@ -31,7 +30,7 @@ public final class MergeById {
     Map<Long, List<Span>> spanIdToSpans = new LinkedHashMap<>();
     for (Span span : spans) {
       if (!spanIdToSpans.containsKey(span.id)) {
-        spanIdToSpans.put(span.id, new LinkedList<>());
+        spanIdToSpans.put(span.id, new ArrayList<>());
       }
       spanIdToSpans.get(span.id).add(span);
     }

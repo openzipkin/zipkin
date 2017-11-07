@@ -32,7 +32,7 @@ import com.google.common.io.Closer;
 import com.google.common.net.HostAndPort;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import zipkin.storage.cassandra3.Schema.AnnotationUDT;
@@ -142,7 +142,7 @@ final class DefaultSessionFactory implements Cassandra3Storage.SessionFactory {
   }
 
   static List<InetSocketAddress> parseContactPoints(Cassandra3Storage cassandra) {
-    List<InetSocketAddress> result = new LinkedList<>();
+    List<InetSocketAddress> result = new ArrayList<>();
     for (String contactPoint : cassandra.contactPoints.split(",")) {
       HostAndPort parsed = HostAndPort.fromString(contactPoint);
       result.add(

@@ -22,7 +22,6 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -102,7 +101,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   private final SortedMultimap<TraceIdTimestamp, Span> spansByTraceIdTimeStamp =
     new SortedMultimap(TIMESTAMP_DESCENDING) {
       @Override Collection<Span> valueContainer() {
-        return new LinkedList<>();
+        return new ArrayList<>();
       }
     };
 
@@ -237,7 +236,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     for (Span span : next) {
       String traceId = span.traceId();
       if (!groupedByTraceId.containsKey(traceId)) {
-        groupedByTraceId.put(traceId, new LinkedList<>());
+        groupedByTraceId.put(traceId, new ArrayList<>());
       }
       groupedByTraceId.get(traceId).add(span);
     }

@@ -21,7 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.io.IOException;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import zipkin.internal.Nullable;
@@ -308,7 +308,7 @@ public final class CassandraStorage
   /** Truncates all the column families, or throws on any failure. */
   @VisibleForTesting void clear() {
     guavaSpanConsumer().clear();
-    List<ListenableFuture<?>> futures = new LinkedList<>();
+    List<ListenableFuture<?>> futures = new ArrayList<>();
     for (String cf : ImmutableList.of(
         "traces",
         "dependencies",

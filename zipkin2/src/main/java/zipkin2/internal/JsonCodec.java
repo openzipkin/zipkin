@@ -20,7 +20,6 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 import static java.lang.String.format;
@@ -124,9 +123,9 @@ public final class JsonCodec {
   }
 
   public static @Nullable <T> T readOne(JsonReaderAdapter<T> adapter, byte[] bytes) {
-    Collection<T> out = new LinkedList<>();
+    List<T> out = new ArrayList<>(1); // TODO: could make single-element list w/o array
     if (!read(adapter, bytes, out)) return null;
-    return out.iterator().next();
+    return out.get(0);
   }
 
   public static <T> boolean readList(JsonReaderAdapter<T> adapter, byte[] bytes,

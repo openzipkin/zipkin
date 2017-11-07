@@ -21,7 +21,7 @@ import zipkin2.internal.V1SpanWriter;
 import zipkin2.internal.V2SpanWriter;
 
 /** Limited interface needed by those writing span reporters */
-//@Immutable
+@SuppressWarnings("ImmutableEnumChecker") // because span is immutable
 public enum SpanBytesEncoder implements BytesEncoder<Span> {
   /** Corresponds to the Zipkin v1 json format (with tags as binary annotations) */
   JSON_V1 {

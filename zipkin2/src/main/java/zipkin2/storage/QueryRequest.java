@@ -41,7 +41,7 @@ import zipkin2.Span;
 public abstract class QueryRequest {
 
   /**
-   * When present, corresponds to {@link zipkin.Endpoint#serviceName} and constrains all other
+   * When present, corresponds to {@link zipkin2.Endpoint#serviceName} and constrains all other
    * parameters.
    */
   @Nullable public abstract String serviceName();
