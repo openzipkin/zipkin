@@ -14,11 +14,11 @@
 package zipkin2.internal;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -63,7 +63,7 @@ public final class Node<V> {
   public Node<V> addChild(Node<V> child) {
     if (child == this) throw new IllegalArgumentException("circular dependency on " + this);
     child.parent = this;
-    if (children.equals(Collections.emptyList())) children = new LinkedList<>();
+    if (children.equals(Collections.emptyList())) children = new ArrayList<>();
     children.add(child);
     return this;
   }

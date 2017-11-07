@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,7 +27,7 @@ import com.google.common.io.Closer;
 import com.google.common.net.HostAndPort;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -94,7 +94,7 @@ public interface SessionFactory {
     }
 
     static List<InetSocketAddress> parseContactPoints(CassandraStorage cassandra) {
-      List<InetSocketAddress> result = new LinkedList<>();
+      List<InetSocketAddress> result = new ArrayList<>();
       for (String contactPoint : cassandra.contactPoints.split(",")) {
         HostAndPort parsed = HostAndPort.fromString(contactPoint);
         result.add(

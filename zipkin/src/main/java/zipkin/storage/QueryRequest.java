@@ -13,10 +13,10 @@
  */
 package zipkin.storage;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -181,7 +181,7 @@ public final class QueryRequest {
   public static final class Builder {
     private String serviceName;
     private String spanName;
-    private List<String> annotations = new LinkedList<>();
+    private List<String> annotations = new ArrayList<>();
     private Map<String, String> binaryAnnotations = new LinkedHashMap<>();
     private Long minDuration;
     private Long maxDuration;

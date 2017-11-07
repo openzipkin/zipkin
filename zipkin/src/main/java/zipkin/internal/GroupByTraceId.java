@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import zipkin.Span;
@@ -36,7 +35,7 @@ public final class GroupByTraceId {
     for (Span span : input) {
       Pair<Long> traceId = Pair.create(strictTraceId ? span.traceIdHigh : 0L, span.traceId);
       if (!groupedByTraceId.containsKey(traceId)) {
-        groupedByTraceId.put(traceId, new LinkedList<>());
+        groupedByTraceId.put(traceId, new ArrayList<>());
       }
       groupedByTraceId.get(traceId).add(span);
     }

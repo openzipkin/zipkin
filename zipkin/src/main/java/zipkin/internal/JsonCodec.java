@@ -20,8 +20,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
@@ -547,7 +547,7 @@ public final class JsonCodec implements Codec {
         reader.endArray();
         return Collections.emptyList();
       }
-      List<Span> result = new LinkedList<>(); // because we don't know how long it will be
+      List<Span> result = new ArrayList<>(); // to make error-prone happy (it hates LinkedList)
       if (spanReader == null) spanReader = new SpanReader();
       while (reader.hasNext()) result.add(spanReader.fromJson(reader));
       reader.endArray();
@@ -677,7 +677,7 @@ public final class JsonCodec implements Codec {
     List<T> result;
     try {
       reader.beginArray();
-      result = reader.hasNext() ? new LinkedList<>() : Collections.emptyList();
+      result = reader.hasNext() ? new ArrayList<>() : Collections.emptyList();
       while (reader.hasNext()) result.add(adapter.fromJson(reader));
       reader.endArray();
       return result;
