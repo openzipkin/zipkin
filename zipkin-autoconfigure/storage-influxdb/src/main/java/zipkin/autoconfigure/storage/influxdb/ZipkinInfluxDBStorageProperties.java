@@ -16,7 +16,7 @@ package zipkin.autoconfigure.storage.influxdb;
 import zipkin.storage.influxdb.InfluxDBStorage;
 
 public class ZipkinInfluxDBStorageProperties {
-  private String address = "http://localhost:8086";
+  private String url = "http://localhost:8086";
   private String password = "";
   private String username = "root";
   private String retentionPolicy = "default";
@@ -64,16 +64,16 @@ public class ZipkinInfluxDBStorageProperties {
   }
 
   public String getAddress() {
-    return address;
+    return url;
   }
 
-  public void setAddress(String address) {
-    this.address = address;
+  public void setAddress(String url) {
+    this.url = url;
   }
 
   public InfluxDBStorage.Builder toBuilder() {
     return InfluxDBStorage.newBuilder()
-      .address(address)
+      .url(url)
       .database(database)
       .username(username)
       .password(password)
