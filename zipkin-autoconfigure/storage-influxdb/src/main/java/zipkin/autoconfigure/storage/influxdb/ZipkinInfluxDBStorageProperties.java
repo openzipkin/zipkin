@@ -14,7 +14,10 @@
 package zipkin.autoconfigure.storage.influxdb;
 
 import zipkin2.storage.influxdb.InfluxDBStorage;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 
+
+@ConfigurationProperties("zipkin.storage.influxdb")
 public class ZipkinInfluxDBStorageProperties {
   private String url = "http://localhost:8086";
   private String password = "";
