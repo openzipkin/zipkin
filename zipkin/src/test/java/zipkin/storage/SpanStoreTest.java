@@ -405,6 +405,77 @@ public abstract class SpanStoreTest {
   }
 
   @Test
+  public void getTraces_exactMatch() {
+    exactMatch(ep.serviceName);
+  }
+
+  @Test
+  public void getTraces_exactMatch_allServices() {
+    exactMatch(null);
+  }
+
+  void exactMatch(String serviceName) {
+    Span span = Span.builder()
+      .traceId(123)
+      .name("method")
+      .id(123)
+      .timestamp(TODAY * 1000)
+      .addAnnotation(Annotation.create(TODAY * 1000, "retry", ep))
+      .addBinaryAnnotation(BinaryAnnotation.create("http.path", "/a", ep)).build();
+    accept(span);
+
+    QueryRequest query;
+
+    // Exact match
+    query = QueryRequest.builder().lookback(DAY).serviceName(serviceName)
+      .spanName("method")
+      .addAnnotation("retry")
+      .addBinaryAnnotation("http.path", "/a")
+      .build();
+    assertThat(store().getTraces(query)).hasSize(1);
+
+    // substring spanName
+    query = QueryRequest.builder().lookback(DAY).serviceName(serviceName).spanName("thod").build();
+    assertThat(store().getTraces(query)).isEmpty();
+    query = QueryRequest.builder().lookback(DAY).serviceName(serviceName).spanName("meth").build();
+    assertThat(store().getTraces(query)).isEmpty();
+
+    // substring annotation
+    query =
+      QueryRequest.builder().lookback(DAY).serviceName(serviceName).addAnnotation("retr").build();
+    assertThat(store().getTraces(query)).isEmpty();
+    query =
+      QueryRequest.builder().lookback(DAY).serviceName(serviceName).addAnnotation("etry").build();
+    assertThat(store().getTraces(query)).isEmpty();
+
+    // substring tag
+    query = QueryRequest.builder()
+      .lookback(DAY)
+      .serviceName(serviceName)
+      .addBinaryAnnotation("http", "/a")
+      .build();
+    assertThat(store().getTraces(query)).isEmpty();
+    query = QueryRequest.builder()
+      .lookback(DAY)
+      .serviceName(serviceName)
+      .addBinaryAnnotation("path", "/a")
+      .build();
+    assertThat(store().getTraces(query)).isEmpty();
+    query = QueryRequest.builder()
+      .lookback(DAY)
+      .serviceName(serviceName)
+      .addBinaryAnnotation("http.path", "a")
+      .build();
+    assertThat(store().getTraces(query)).isEmpty();
+    query = QueryRequest.builder()
+      .lookback(DAY)
+      .serviceName(serviceName)
+      .addBinaryAnnotation("http.path", "/")
+      .build();
+    assertThat(store().getTraces(query)).isEmpty();
+  }
+
+  @Test
   public void getTraces_duration_allServices() {
     setupDurationData();
 
