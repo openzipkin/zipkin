@@ -121,6 +121,24 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
     }
   }
 
+  @Override public void getTraces_exactMatch() {
+    try {
+      super.getTraces_exactMatch();
+      failBecauseExceptionWasNotThrown(AssertionError.class);
+    } catch (AssertionError e) {
+      throw new AssumptionViolatedException("exact match is unsupported");
+    }
+  }
+
+  @Override public void getTraces_exactMatch_allServices() {
+    try {
+      super.getTraces_exactMatch_allServices();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      throw new AssumptionViolatedException("duration queries across all services is unsupported");
+    }
+  }
+
   /** Makes sure the test cluster doesn't fall over on BusyPoolException */
   @Override protected void accept(Span... spans) {
     List<Span> page = new ArrayList<>();

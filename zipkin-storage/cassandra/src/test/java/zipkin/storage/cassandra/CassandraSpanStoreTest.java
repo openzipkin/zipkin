@@ -143,7 +143,16 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
       super.getTraces_duration_allServices();
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
-      throw new AssumptionViolatedException("Upgrade to cassandra3 if you want duration queries");
+      throw new AssumptionViolatedException("Upgrade to cassandra3 to search all services");
+    }
+  }
+
+  @Override public void getTraces_exactMatch_allServices() {
+    try {
+      super.getTraces_exactMatch_allServices();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      throw new AssumptionViolatedException("Upgrade to cassandra3 to search all services");
     }
   }
 
