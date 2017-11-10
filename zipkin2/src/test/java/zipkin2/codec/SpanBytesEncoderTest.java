@@ -14,6 +14,7 @@
 package zipkin2.codec;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -24,9 +25,10 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.TestObjects.UTF_8;
 
 public class SpanBytesEncoderTest {
+  final Charset UTF_8 = Charset.forName("UTF-8");
+
   Endpoint frontend = Endpoint.newBuilder()
     .serviceName("frontend")
     .ip("127.0.0.1").build();
@@ -59,6 +61,12 @@ public class SpanBytesEncoderTest {
       .isEqualTo(span);
   }
 
+  @Test public void span_V1() throws IOException {
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"annotations\":[{\"timestamp\":1472470996199000,\"value\":\"cs\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996238000,\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996403000,\"value\":\"bar\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996406000,\"value\":\"cr\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}}],\"binaryAnnotations\":[{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"http.path\",\"value\":\"/api\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"sa\",\"value\":true,\"endpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000}}]}");
+  }
+
   @Test public void spanRoundTrip_64bitTraceId() throws IOException {
     span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
@@ -66,30 +74,55 @@ public class SpanBytesEncoderTest {
       .isEqualTo(span);
   }
 
+  @Test public void span_64bitTraceId_V1() throws IOException {
+    span = span.toBuilder().traceId(span.traceId().substring(16)).build();
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"annotations\":[{\"timestamp\":1472470996199000,\"value\":\"cs\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996238000,\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996403000,\"value\":\"bar\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996406000,\"value\":\"cr\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}}],\"binaryAnnotations\":[{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"http.path\",\"value\":\"/api\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"sa\",\"value\":true,\"endpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000}}]}");
+  }
+
   @Test public void spanRoundTrip_shared() throws IOException {
-    span = span.toBuilder().shared(true).build();
+    span = span.toBuilder().kind(Span.Kind.SERVER).shared(true).build();
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
   }
+
+  @Test public void span_shared_V1() throws IOException {
+    span = span.toBuilder().kind(Span.Kind.SERVER).shared(true).build();
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"name\":\"get\",\"annotations\":[{\"timestamp\":1472470996199000,\"value\":\"sr\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996238000,\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996403000,\"value\":\"bar\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996406000,\"value\":\"ss\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}}],\"binaryAnnotations\":[{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"http.path\",\"value\":\"/api\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"ca\",\"value\":true,\"endpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000}}]}");
+  }
+
+  // service name is surrounded by control characters
+  Span worstSpanInTheWorld = Span.newBuilder().traceId("1").id("1")
+    // name is terrible
+    .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
+    // annotation value includes some json newline characters
+    .addAnnotation(1L, "\u2028 and \u2029")
+    // tag key includes a quote and value newlines
+    .putTag("\"foo", "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
+    .build();
 
   /**
    * This isn't a test of what we "should" accept as a span, rather that characters that trip-up
    * json don't fail in codec.
    */
   @Test public void specialCharsInJson() throws IOException {
-    // service name is surrounded by control characters
-    Span worstSpanInTheWorld = Span.newBuilder().traceId("1").id("1")
-      // name is terrible
-      .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
-      // annotation value includes some json newline characters
-      .addAnnotation(1L, "\u2028 and \u2029")
-      // tag key includes a quote and value newlines
-      .putTag("\"foo", "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
-      .build();
-
-    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld)))
+    assertThat(
+      SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld)))
       .isEqualTo(worstSpanInTheWorld);
+  }
+
+  @Test public void specialCharsInJson_v1() throws IOException {
+    span = worstSpanInTheWorld;
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"0000000000000001\",\"id\":\"0000000000000001\",\"name\":\"\\\"\\\\\\t\\b\\n\\r\\f\",\"annotations\":[{\"timestamp\":1,\"value\":\"\\u2028 and \\u2029\"}],\"binaryAnnotations\":[{\"key\":\"\\\"foo\",\"value\":\"Database error: ORA-00942:\\u2028 and \\u2029 table or view does not exist\\n\"}]}");
   }
 
   @Test public void niceErrorOnUppercase_traceId() {
@@ -325,5 +358,97 @@ public class SpanBytesEncoderTest {
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);
+  }
+
+  @Test public void span_minimum_v1() throws IOException {
+    span = Span.newBuilder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .id("5b4185666d50f68b")
+      .build();
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"id\":\"5b4185666d50f68b\",\"name\":\"\"}");
+  }
+
+  @Test public void span_noLocalServiceName_v1() throws IOException {
+    span = span.toBuilder()
+      .localEndpoint(frontend.toBuilder().serviceName(null).build())
+      .build();
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"annotations\":[{\"timestamp\":1472470996199000,\"value\":\"cs\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996238000,\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996403000,\"value\":\"bar\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996406000,\"value\":\"cr\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}}],\"binaryAnnotations\":[{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"http.path\",\"value\":\"/api\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"sa\",\"value\":true,\"endpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000}}]}");
+  }
+
+  @Test public void span_noRemoteServiceName_v1() throws IOException {
+    span = span.toBuilder()
+      .remoteEndpoint(backend.toBuilder().serviceName(null).build())
+      .build();
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"annotations\":[{\"timestamp\":1472470996199000,\"value\":\"cs\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996238000,\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996403000,\"value\":\"bar\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"timestamp\":1472470996406000,\"value\":\"cr\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}}],\"binaryAnnotations\":[{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"http.path\",\"value\":\"/api\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},{\"key\":\"sa\",\"value\":true,\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"192.168.99.101\",\"port\":9000}}]}");
+  }
+
+  Span noAnnotations_rootServerSpan = Span.newBuilder()
+    .traceId("dc955a1d4768875d")
+    .id("dc955a1d4768875d")
+    .name("get")
+    .timestamp(1510256710021866L)
+    .duration(1117L)
+    .kind(Span.Kind.SERVER)
+    .localEndpoint(Endpoint.newBuilder()
+      .serviceName("isao01")
+      .ip("10.23.14.72")
+      .build())
+    .putTag("http.path", "/rs/A")
+    .putTag("location", "T67792")
+    .putTag("other", "A")
+    .build();
+
+  @Test public void spanRoundTrip_noAnnotations_rootServerSpan() throws IOException {
+    span = noAnnotations_rootServerSpan;
+
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
+      .isEqualTo(span);
+  }
+
+  @Test public void noAnnotations_rootServerSpan_v1() throws IOException {
+    span = noAnnotations_rootServerSpan;
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"name\":\"get\",\"timestamp\":1510256710021866,\"duration\":1117,\"annotations\":[{\"timestamp\":1510256710021866,\"value\":\"sr\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"timestamp\":1510256710022983,\"value\":\"ss\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}],\"binaryAnnotations\":[{\"key\":\"http.path\",\"value\":\"/rs/A\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"key\":\"location\",\"value\":\"T67792\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"key\":\"other\",\"value\":\"A\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}]}");
+  }
+
+  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_incomplete() throws IOException {
+    span = noAnnotations_rootServerSpan.toBuilder().duration(null).build();
+
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
+      .isEqualTo(span);
+  }
+
+  @Test public void noAnnotations_rootServerSpan_v1_incomplete() throws IOException {
+    span = noAnnotations_rootServerSpan.toBuilder().duration(null).build();
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"name\":\"get\",\"timestamp\":1510256710021866,\"annotations\":[{\"timestamp\":1510256710021866,\"value\":\"sr\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}],\"binaryAnnotations\":[{\"key\":\"http.path\",\"value\":\"/rs/A\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"key\":\"location\",\"value\":\"T67792\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"key\":\"other\",\"value\":\"A\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}]}");
+  }
+
+  @Test public void spanRoundTrip_noAnnotations_rootServerSpan_shared() throws IOException {
+    span = noAnnotations_rootServerSpan.toBuilder().shared(true).build();
+
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
+      .isEqualTo(span);
+  }
+
+  @Test public void noAnnotations_rootServerSpan_v1_shared() throws IOException {
+    span = noAnnotations_rootServerSpan.toBuilder().shared(true).build();
+
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(span), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"name\":\"get\",\"annotations\":[{\"timestamp\":1510256710021866,\"value\":\"sr\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"timestamp\":1510256710022983,\"value\":\"ss\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}],\"binaryAnnotations\":[{\"key\":\"http.path\",\"value\":\"/rs/A\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"key\":\"location\",\"value\":\"T67792\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}},{\"key\":\"other\",\"value\":\"A\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}]}");
   }
 }

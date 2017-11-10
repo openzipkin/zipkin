@@ -87,7 +87,7 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
       binaryAnnotationCount++;
       sizeInBytes += 37; // {"key":"NN","value":true,"endpoint":}
       sizeInBytes += V2SpanWriter.endpointSizeInBytes(value.remoteEndpoint());
-      if (value.localServiceName() == null) {
+      if (value.remoteServiceName() == null) {
         sizeInBytes += 17; // "serviceName":"",
       }
     }
@@ -133,7 +133,7 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
     int annotationCount = value.annotations().size();
     boolean beginAnnotation = parsed.startTs != null && parsed.begin != null;
     boolean endAnnotation = parsed.endTs != null && parsed.end != null;
-    if (annotationCount > 0) {
+    if (annotationCount > 0 || beginAnnotation || endAnnotation) {
       int length = value.annotations().size();
       b.writeAscii(",\"annotations\":[");
       if (beginAnnotation) {
@@ -145,7 +145,7 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
         if (i < length) b.writeByte(',');
       }
       if (endAnnotation) {
-        if (length > 0) b.writeByte(',');
+        b.writeByte(',');
         V2SpanWriter.writeAnnotation(Annotation.create(parsed.endTs, parsed.end), endpointBytes, b);
       }
       b.writeByte(']');
