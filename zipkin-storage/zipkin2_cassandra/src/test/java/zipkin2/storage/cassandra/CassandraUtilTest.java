@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.cassandra;
 
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
 import org.junit.Test;
@@ -51,7 +50,7 @@ public class CassandraUtilTest {
         .serviceName("service")
         .parseAnnotationQuery("error and http.method=GET")
         .build()))
-      .containsExactly("error", "http.method:GET");
+      .containsExactly("error", "http.method=GET");
   }
 
   @Test
@@ -80,9 +79,9 @@ public class CassandraUtilTest {
       .putTag("aws.arn", arn)
       .putTag("http.url", url).build();
 
-    assertThat(CassandraUtil.annotationKeys(span))
-      .contains("aws.arn", "aws.arn:" + arn)
-      .doesNotContain("http.url", "http.url:" + url);
+    assertThat(CassandraUtil.annotationQuery(span))
+      .contains("aws.arn", "aws.arn=" + arn)
+      .doesNotContain("http.url").doesNotContain("http.url=" + url);
   }
 
   @Test
@@ -98,7 +97,7 @@ public class CassandraUtilTest {
       .addAnnotation(1L, arn)
       .addAnnotation(1L, url).build();
 
-    assertThat(CassandraUtil.annotationKeys(span))
+    assertThat(CassandraUtil.annotationQuery(span))
       .contains(arn)
       .doesNotContain(url);
   }
@@ -111,15 +110,15 @@ public class CassandraUtilTest {
 
     Span span = Span.newBuilder().traceId("1").id("1").build();
 
-    assertThat(CassandraUtil.annotationKeys(span))
-      .isSameAs(Collections.emptySet());
+    assertThat(CassandraUtil.annotationQuery(span))
+      .isNull();
 
     span = span.toBuilder()
       .addAnnotation(1L, url)
       .putTag("http.url", url).build();
 
-    assertThat(CassandraUtil.annotationKeys(span))
-      .isSameAs(Collections.emptySet());
+    assertThat(CassandraUtil.annotationQuery(span))
+      .isNull();
   }
 
   /** Sanity checks our bucketing scheme for numeric overflow */

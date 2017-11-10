@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra.integration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
@@ -34,7 +33,6 @@ import zipkin2.storage.cassandra.InternalForTests;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.DAY;
 
 abstract class CassandraSpanStoreTest extends SpanStoreTest {
@@ -113,24 +111,6 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
         .build();
     // TODO: this test is flakey, figure out why
     assertThat(store().getTraces(queryRequest)).hasSize(queryLimit);
-  }
-
-  @Override public void getTraces_exactMatch() {
-    try {
-      super.getTraces_exactMatch();
-      failBecauseExceptionWasNotThrown(AssertionError.class);
-    } catch (AssertionError e) {
-      throw new AssumptionViolatedException("exact match is unsupported");
-    }
-  }
-
-  @Override public void getTraces_exactMatch_allServices() {
-    try {
-      super.getTraces_exactMatch_allServices();
-      failBecauseExceptionWasNotThrown(AssertionError.class);
-    } catch (AssertionError e) {
-      throw new AssumptionViolatedException("exact match is unsupported");
-    }
   }
 
   /** Makes sure the test cluster doesn't fall over on BusyPoolException */

@@ -56,14 +56,16 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
 
     Factory(Session session) {
       this.session = session;
-      // separate to avoid: InvalidQueryException: LIKE value can't be empty
+      // separate to avoid: "InvalidQueryException: LIKE value can't be empty" maybe SASI related
+      // TODO: revisit on next driver update
       this.all = session.prepare(
         QueryBuilder.select("ts", "trace_id").from(TABLE_SPAN)
           .where(QueryBuilder.gte("ts_uuid", bindMarker("start_ts")))
           .and(QueryBuilder.lte("ts_uuid", bindMarker("end_ts")))
           .limit(bindMarker("limit_"))
           .allowFiltering());
-      // separate to avoid: Unsupported unset value for column duration
+      // separate to avoid: "Unsupported unset value for column duration" maybe SASI related
+      // TODO: revisit on next driver update
       this.withAnnotationQuery = session.prepare(
         QueryBuilder.select("ts", "trace_id").from(TABLE_SPAN)
           .where(QueryBuilder.like("annotation_query", bindMarker("annotation_query")))
@@ -103,7 +105,8 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
     ) {
       Input input = new AutoValue_SelectTraceIdsFromSpan_Input(
         serviceName,
-        "%" + annotationKey + "%",
+        // % for like, bracing with ░ to ensure no accidental substring match
+        "%░" + annotationKey + "░%",
         timestampRange.startUUID,
         timestampRange.endUUID,
         limit

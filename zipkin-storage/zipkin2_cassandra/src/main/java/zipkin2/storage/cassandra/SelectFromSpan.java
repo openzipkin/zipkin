@@ -49,6 +49,7 @@ final class SelectFromSpan extends ResultSetFutureCall {
         "trace_id_high", "trace_id", "parent_id", "id", "kind", "span", "ts",
         "duration", "l_ep", "r_ep", "annotations", "tags", "shared", "debug")
         .from(TABLE_SPAN)
+        // when reading on the partition key, clustering keys are optional
         .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
         .limit(QueryBuilder.bindMarker("limit_"))
       );

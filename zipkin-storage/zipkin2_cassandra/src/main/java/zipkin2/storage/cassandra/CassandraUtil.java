@@ -54,32 +54,28 @@ final class CassandraUtil {
   }
 
   /**
-   * Returns a set of annotation values and tags joined on equals.
+   * Returns a set of annotation values and tags joined on equals, delimited by ░
    *
    * @see QueryRequest#annotationQuery()
    */
-  static Set<String> annotationKeys(Span span) {
-    if (span.annotations().isEmpty() && span.tags().isEmpty()) return Collections.emptySet();
+  static @Nullable String annotationQuery(Span span) {
+    if (span.annotations().isEmpty() && span.tags().isEmpty()) return null;
 
-    Set<String> result = null;
+    char delimiter = '░'; // as very unlikely to be in the query
+    StringBuilder result = new StringBuilder().append(delimiter);
     for (Annotation a : span.annotations()) {
       if (a.value().length() > LONGEST_VALUE_TO_INDEX) continue;
 
-      if (result == null) result = new LinkedHashSet<>();
-
-      result.add(a.value());
+      result.append(a.value()).append(delimiter);
     }
 
     for (Map.Entry<String, String> tag : span.tags().entrySet()) {
       if (tag.getValue().length() > LONGEST_VALUE_TO_INDEX) continue;
 
-      if (result == null) result = new LinkedHashSet<>();
-
-      result.add(tag.getKey());
-      // Using colon to allow allow annotation query search to work on key
-      result.add(tag.getKey() + ":" + tag.getValue());
+      result.append(tag.getKey()).append(delimiter); // search is possible by key alone
+      result.append(tag.getKey() + "=" + tag.getValue()).append(delimiter);
     }
-    return result != null ? result : Collections.emptySet();
+    return result.length() == 1 ? null : result.toString();
   }
 
   static List<String> annotationKeys(QueryRequest request) {
@@ -88,7 +84,7 @@ final class CassandraUtil {
       if (e.getValue().isEmpty()) {
         annotationKeys.add(e.getKey());
       } else {
-        annotationKeys.add(e.getKey() + ":" + e.getValue());
+        annotationKeys.add(e.getKey() + "=" + e.getValue());
       }
     }
     return new ArrayList<>(annotationKeys);

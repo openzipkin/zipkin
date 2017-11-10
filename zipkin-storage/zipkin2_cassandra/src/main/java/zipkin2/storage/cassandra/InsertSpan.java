@@ -20,11 +20,9 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Joiner;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import zipkin2.Call;
@@ -36,8 +34,6 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class InsertSpan extends ResultSetFutureCall {
-  static final Joiner COMMA_JOINER = Joiner.on(',');
-
   @AutoValue static abstract class Input {
     abstract UUID ts_uuid();
 
@@ -110,11 +106,7 @@ final class InsertSpan extends ResultSetFutureCall {
       } else {
         annotations = Collections.emptyList();
       }
-      String annotation_query = null;
-      Set<String> annotationQuery = CassandraUtil.annotationKeys(span);
-      if (!annotationQuery.isEmpty()) {
-        annotation_query = COMMA_JOINER.join(annotationQuery);
-      }
+      String annotation_query = CassandraUtil.annotationQuery(span);
       return new AutoValue_InsertSpan_Input(
         ts_uuid,
         traceIdHigh ? span.traceId().substring(0, 16) : null,
@@ -148,6 +140,30 @@ final class InsertSpan extends ResultSetFutureCall {
     this.input = input;
   }
 
+  /**
+   * TLDR: we are guarding against setting null, as doing so implies tombstones. We are dodging setX
+   * to keep code simpler than other alternatives described below.
+   *
+   * <p>If there's consistently 8 tombstones (nulls) per row, then we'll only need 125 spans in a
+   * trace (rows in a partition) to trigger the `tombstone_warn_threshold warnings being logged in
+   * the C* nodes. And if we go to 12500 spans in a trace then that whole trace partition would
+   * become unreadable. Cassandra warns at a 1000 tombstones in any query, and fails on 100000
+   * tombstones.
+   *
+   * <p>There's also a small question about disk usage efficiency. Each tombstone is a cell name and
+   * basically empty cell value entry stored on disk. Given that the cells are, apart from tags and
+   * annotations, generally very small then this could be proportionally an unnecessary waste of
+   * disk.
+   *
+   * <p>To avoid this relying upon a number of variant prepared statements for inserting a span is
+   * the normal practice.
+   *
+   * <p>Another popular practice is to insert those potentially null columns as separate statements
+   * (and optionally put them together into UNLOGGED batches). This works as multiple writes to the
+   * same partition has little overhead, and here we're not worried about lack of isolation between
+   * those writes, as the write is asynchronous anyway. An example of this approach is in the
+   * cassandra-reaper project here: https://github.com/thelastpickle/cassandra-reaper/blob/master/src/server/src/main/java/io/cassandrareaper/storage/CassandraStorage.java#L622-L642
+   */
   @Override protected ResultSetFuture newFuture() {
     BoundStatement bound = factory.preparedStatement.bind()
       .setUUID("ts_uuid", input.ts_uuid())
