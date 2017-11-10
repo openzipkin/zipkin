@@ -58,20 +58,45 @@ Other amplification happens internally to C*, visible in the increase
 write latency (although write latency remains performant at single digit
 milliseconds).
 
-* A SASI index on its `annotation_query` column permits full-text searches against annotations.
-* A SASI index on the `duration` column.
-* A SASI index on the `l_service` column (the local_service name), which is used in conjunction with annotation_query searches.
+#### `span` indexing
+When queries only include a time range, trace ids are returned from a `ts_uuid`
+range. This means no indexes are used when `GET /api/v2/traces` includes no
+parameters or only `endTs` or `lookback`.
 
-Note: annotations with values longer than 256 characters
-are not written to the `annotation_query` SASI, as they aren't intended
-for use in user queries.
+Two secondary (SASI) indexes support `annotationQuery` with `serviceName`:
+* `annotation_query` supports LIKE (substring match) in `░error░error=500░`
+* `l_service` in used in conjunction with annotation_query searches.
 
-The `trace_by_service_span` index is only used by query apis, and notably supports millisecond
-resolution duration. In other words, query inputs are rounded up to the next millisecond. For
-example, a call to GET /api/v2/traces?minDuration=12345 will returns traces who include a span that
-has at least 13 millisecond duration. This resolution only affects the query: original duration data
-remains at microsecond granularity. Meanwhile, write performance is dramatically better than writing
-discrete values, via fewer distinct writes.
+Ex, `GET /api/v2/traces?serviceName=tweetiebird&annotationQuery=error` results
+in a single trace ID query against the above two indexes.
+
+Note: annotations with values longer than 256 characters are not written to the
+`annotation_query` SASI, as they aren't intended for use in user queries.
+
+#### `trace_by_service_span` indexing
+
+`trace_by_service_span` rows represent a shard of a user query. For example, a
+span in trace ID 1 named "get" created by "service1", taking 20 milliseconds
+results in the following rows:
+
+1. `service=service1, span=targz, trace_id=1, duration=200`
+2. `service=, span=targz, trace_id=1, duration=200`
+3. `service=, span=, trace_id=1, duration=200`
+
+Here are corresponding queries that relate to the above rows:
+1. `GET /api/v2/traces?serviceName=service1&spanName=targz`
+1. `GET /api/v2/traces?serviceName=service1&spanName=targz&minDuration=200000`
+2. `GET /api/v2/traces?spanName=targz`
+3. `GET /api/v2/traces?duration=199500`
+
+As you'll notice, the duration component is optional, and stored in
+millisecond resolution as opposed to microsecond (which the query represents).
+The final query shows that the input is rounded up to the nearest millisecond.
+
+The reason we can query on `duration` is due to a SASI index. Eventhough the
+search granularity is millisecond, original duration data remains microsecond
+granularity. Meanwhile, write performance is dramatically better than writing
+discrete values, due to fewer distinct writes.
 
 ### Time-To_live
 Time-To-Live is default now at the table level. It can not be overridden in write requests.

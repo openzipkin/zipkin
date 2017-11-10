@@ -62,7 +62,8 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
 
     Factory(Session session) {
       this.session = session;
-      // separate to avoid: Unsupported unset value for column duration
+      // separate to avoid: "Unsupported unset value for column duration" maybe SASI related
+      // TODO: revisit on next driver update
       this.selectTraceIdsByServiceSpanName = session.prepare(
         QueryBuilder.select("ts", "trace_id")
           .from(TABLE_TRACE_BY_SERVICE_SPAN)

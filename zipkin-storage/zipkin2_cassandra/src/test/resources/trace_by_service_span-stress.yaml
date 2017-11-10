@@ -76,3 +76,7 @@ queries:
    by_duration:
     cql: SELECT * FROM trace_by_service_span WHERE service = ? AND span = ? AND bucket = ? AND duration < ? LIMIT 1
     fields: samerow
+
+# TODO: adrian doesn't know how to make a timestamp range query from test data
+# search by timestamp range,
+# search by timestamp range and duration
