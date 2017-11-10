@@ -19,6 +19,7 @@ import okhttp3.OkHttpClient;
 import zipkin.internal.Nullable;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.AsyncSpanStore;
+import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
@@ -149,6 +150,10 @@ public final class ElasticsearchHttpStorage extends StorageComponent
       return null;
     }
     return new LegacyElasticsearchHttpSpanStore(delegate);
+  }
+
+  @Override public CheckResult check() {
+    return delegate.check();
   }
 
   /** This is a blocking call, only used in tests. */
