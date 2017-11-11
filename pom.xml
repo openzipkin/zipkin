@@ -312,17 +312,6 @@
         <version>${project.version}</version>
       </dependency>
 
-      <!-- Needs to be defined here or else spring-boot-dependencies will override it -->
-      <dependency>
-        <groupId>com.datastax.cassandra</groupId>
-        <artifactId>cassandra-driver-core</artifactId>
-        <version>${cassandra-driver-core.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.datastax.cassandra</groupId>
-        <artifactId>cassandra-driver-mapping</artifactId>
-        <version>${cassandra-driver-core.version}</version>
-      </dependency>
       <dependency>
         <groupId>org.jooq</groupId>
         <artifactId>jooq</artifactId>
@@ -450,7 +439,7 @@
   <build>
     <pluginManagement>
       <plugins>
-        <!-- mvn -N io.takari:maven:wrapper -Dmaven=3.5.0 -->
+        <!-- mvn -N io.takari:maven:wrapper -Dmaven=3.5.2 -->
         <plugin>
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>

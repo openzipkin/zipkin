@@ -53,6 +53,11 @@
           <groupId>io.airlift</groupId>
           <artifactId>configuration</artifactId>
         </exclusion>
+        <exclusion>
+          <!-- interferes with netty-tcnative-boringssl-static versions -->
+          <groupId>com.facebook.nifty</groupId>
+          <artifactId>nifty-ssl</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
