@@ -2,6 +2,17 @@ import {convertToApiQuery} from '../../js/component_data/default';
 
 describe('convertToApiQuery', () => {
   const should = require('chai').should();
+  it('should clear spanName all', () => {
+    const parsed = convertToApiQuery('?spanName=all&endTs=1459169770000');
+
+    should.not.exist(parsed.spanName);
+  });
+
+  it('should clear serviceName all', () => {
+    const parsed = convertToApiQuery('?serviceName=all&endTs=1459169770000');
+
+    should.not.exist(parsed.spanName);
+  });
 
   it('should not require startTs', () => {
     const parsed = convertToApiQuery('?endTs=1459169770000');

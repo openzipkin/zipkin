@@ -16,6 +16,8 @@ export default component(function serviceName() {
 
   this.updateServiceNameDropdown = function(ev, data) {
     $('#serviceName').empty();
+    this.$node.append($($.parseHTML('<option value="all">all</option>')));
+
     $.each(data.names, (i, item) => {
       $('<option>').val(item).text(item).appendTo('#serviceName');
     });
