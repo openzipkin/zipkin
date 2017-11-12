@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS zipkin2.span (
     tags                map<text,text>,
     shared              boolean,
     debug               boolean,
-    annotation_query    text, //-- can't do SASI on set<text>: comma-joined until CASSANDRA-11182
+    annotation_query    text, //-- can't do SASI on set<text>: ░-joined until CASSANDRA-11182
     PRIMARY KEY (trace_id, ts_uuid, id)
 )
     WITH CLUSTERING ORDER BY (ts_uuid DESC)
