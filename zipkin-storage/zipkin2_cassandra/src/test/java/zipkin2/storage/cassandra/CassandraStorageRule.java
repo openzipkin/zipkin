@@ -92,7 +92,7 @@ public class CassandraStorageRule extends ExternalResource {
 
   private InetSocketAddress contactPoint() {
     if (container != null && container.isRunning()) {
-      return InetSocketAddress.createUnresolved(
+      return new InetSocketAddress(
         container.getContainerIpAddress(), container.getMappedPort(CASSANDRA_PORT)
       );
     } else {
