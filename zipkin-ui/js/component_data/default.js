@@ -13,21 +13,27 @@ export function convertToApiQuery(windowLocationSearch) {
     }
     delete query.startTs;
   }
+  if (query.serviceName === 'all') {
+    delete query.serviceName;
+  }
+  if (query.spanName === 'all') {
+    delete query.spanName;
+  }
   return query;
 }
 
 export default component(function DefaultData() {
   this.after('initialize', function() {
     const query = convertToApiQuery(window.location.search);
-    const serviceName = query.serviceName;
-    if (serviceName) {
+    const endTs = query.endTs;
+    if (endTs) {
       const apiURL = `api/v1/traces?${queryString.stringify(query)}`;
       $.ajax(apiURL, {
         type: 'GET',
         dataType: 'json'
       }).done(traces => {
         const modelview = {
-          traces: traceSummariesToMustache(serviceName, traces.map(traceSummary)),
+          traces: traceSummariesToMustache(query.serviceName, traces.map(traceSummary)),
           apiURL,
           rawResponse: traces
         };
