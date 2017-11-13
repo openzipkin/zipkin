@@ -1,8 +1,6 @@
 # storage-cassandra
 
-*This module is experimental. Please help test this, but do not use it in production.*
-
-This CQL-based Cassandra 3.9+ storage component, built upon the Zipkin2 API.
+This CQL-based Cassandra 3.9+ storage component, built upon the [Zipkin v2 api and model](http://zipkin.io/zipkin-api/#/default/post_spans).
 
 `CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies)).
 
