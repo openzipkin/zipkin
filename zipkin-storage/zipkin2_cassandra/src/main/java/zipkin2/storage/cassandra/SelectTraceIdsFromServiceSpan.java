@@ -22,7 +22,9 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.utils.UUIDs;
 import com.google.auto.value.AutoValue;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
@@ -32,6 +34,7 @@ import zipkin2.Call;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.cassandra.CassandraSpanStore.TimestampRange;
 import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
+import zipkin2.storage.cassandra.internal.call.AggregateIntoSet;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
@@ -53,6 +56,19 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
     abstract UUID end_ts();
 
     abstract int limit_();
+
+    Input withService(String service) {
+      return new AutoValue_SelectTraceIdsFromServiceSpan_Input(
+        service,
+        span(),
+        bucket(),
+        start_duration(),
+        end_duration(),
+        start_ts(),
+        end_ts(),
+        limit_()
+      );
+    }
   }
 
   static class Factory {
@@ -88,7 +104,7 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
       );
     }
 
-    Call<Set<Entry<String, Long>>> newCall(
+    Input newInput(
       String serviceName,
       String spanName,
       int bucket,
@@ -101,8 +117,7 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
         start_duration = minDurationMicros / 1000L;
         end_duration = maxDurationMicros != null ? maxDurationMicros / 1000L : Long.MAX_VALUE;
       }
-
-      Input input = new AutoValue_SelectTraceIdsFromServiceSpan_Input(
+      return new AutoValue_SelectTraceIdsFromServiceSpan_Input(
         serviceName,
         spanName,
         bucket,
@@ -112,13 +127,58 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
         timestampRange.endUUID,
         limit
       );
+    }
+
+    Call<Set<Entry<String, Long>>> newCall(List<Input> inputs) {
+      if (inputs.size() == 1) return newCall(inputs.get(0));
+
+      List<Call<Set<Entry<String, Long>>>> bucketedTraceIdCalls = new ArrayList<>();
+      for (SelectTraceIdsFromServiceSpan.Input input : inputs) {
+        bucketedTraceIdCalls.add(newCall(input));
+      }
+      return new AggregateIntoSet<>(bucketedTraceIdCalls);
+    }
+
+    /** Applies all deferred service names to all input templates */
+    FlatMapper<List<String>, Set<Entry<String, Long>>> newFlatMapper(List<Input> inputTemplates) {
+      return new FlatMapServicesToInputs(inputTemplates);
+    }
+
+    Call<Set<Entry<String, Long>>> newCall(Input input) {
       return new SelectTraceIdsFromServiceSpan(
         this,
-        minDurationMicros != null
+        input.start_duration() != null
           ? selectTraceIdsByServiceSpanNameAndDuration
           : selectTraceIdsByServiceSpanName,
         input
       ).flatMap(new AccumulateTraceIdTsUuid());
+    }
+
+    class FlatMapServicesToInputs implements FlatMapper<List<String>, Set<Entry<String, Long>>> {
+      final List<SelectTraceIdsFromServiceSpan.Input> inputTemplates;
+
+      FlatMapServicesToInputs(List<SelectTraceIdsFromServiceSpan.Input> inputTemplates) {
+        this.inputTemplates = inputTemplates;
+      }
+
+      @Override public Call<Set<Entry<String, Long>>> map(List<String> serviceNames) {
+        List<Call<Set<Entry<String, Long>>>> bucketedTraceIdCalls = new ArrayList<>();
+
+        for (String service : serviceNames) { // fan out every input for each service name
+          List<SelectTraceIdsFromServiceSpan.Input> scopedInputs = new ArrayList<>();
+          for (SelectTraceIdsFromServiceSpan.Input input : inputTemplates) {
+            scopedInputs.add(input.withService(service));
+          }
+          bucketedTraceIdCalls.add(newCall(scopedInputs));
+        }
+
+        if (bucketedTraceIdCalls.size() == 1) return bucketedTraceIdCalls.get(0);
+        return new AggregateIntoSet<>(bucketedTraceIdCalls);
+      }
+
+      @Override public String toString() {
+        return "FlatMapServicesToInputs{" + inputTemplates + "}";
+      }
     }
   }
 

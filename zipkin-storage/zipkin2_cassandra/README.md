@@ -78,14 +78,14 @@ span in trace ID 1 named "get" created by "service1", taking 20 milliseconds
 results in the following rows:
 
 1. `service=service1, span=targz, trace_id=1, duration=200`
-2. `service=, span=targz, trace_id=1, duration=200`
-3. `service=, span=, trace_id=1, duration=200`
+2. `service=service1, span=, trace_id=1, duration=200`
 
 Here are corresponding queries that relate to the above rows:
 1. `GET /api/v2/traces?serviceName=service1&spanName=targz`
 1. `GET /api/v2/traces?serviceName=service1&spanName=targz&minDuration=200000`
+1. `GET /api/v2/traces?serviceName=service1&minDuration=200000`
 2. `GET /api/v2/traces?spanName=targz`
-3. `GET /api/v2/traces?duration=199500`
+2. `GET /api/v2/traces?duration=199500`
 
 As you'll notice, the duration component is optional, and stored in
 millisecond resolution as opposed to microsecond (which the query represents).
@@ -95,6 +95,10 @@ The reason we can query on `duration` is due to a SASI index. Eventhough the
 search granularity is millisecond, original duration data remains microsecond
 granularity. Meanwhile, write performance is dramatically better than writing
 discrete values, due to fewer distinct writes.
+
+You might wonder how the last two queries work, considering they don't know
+the service name associated with index rows. When needed, this implementation
+performs a service name fetch, resulting in a fan-out composition over row 2.
 
 ### Time-To_live
 Time-To-Live is default now at the table level. It can not be overridden in write requests.

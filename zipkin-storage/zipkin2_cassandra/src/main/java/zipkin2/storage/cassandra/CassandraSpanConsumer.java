@@ -18,7 +18,6 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.utils.UUIDs;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -82,16 +81,16 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
 
       // Empty values allow for api queries with blank service or span name
       String service = s.localServiceName() != null ? s.localServiceName() : "";
-      String span = null != s.name() ? s.name() : "";
+      String span = null != s.name() ? s.name() : "";  // Empty value allows for api queries without span name
 
       // service span index is refreshed regardless of timestamp
       if (null != s.remoteServiceName()) { // allows getServices to return remote service names
+        // TODO: this is busy-work as there's no query by remote service name!
         serviceSpans.add(insertServiceSpanName.newInput(s.remoteServiceName(), span));
       }
+      if (null == s.localServiceName()) continue; // don't index further w/o a service name
 
-      if (!service.equals("")) {
-        serviceSpans.add(insertServiceSpanName.newInput(service, span));
-      }
+      serviceSpans.add(insertServiceSpanName.newInput(service, span));
 
       if (ts_micro == 0L) continue; // search is only valid with a timestamp, don't index w/o it!
       int bucket = durationIndexBucket(ts_micro); // duration index is milliseconds not microseconds
@@ -99,20 +98,10 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       traceByServiceSpans.add(
         insertTraceServiceSpanName.newInput(service, span, bucket, ts_uuid, s.traceId(), duration)
       );
-      if (!service.isEmpty()) {
-        traceByServiceSpans.add( // Allows lookup without the service name
-          insertTraceServiceSpanName.newInput("", span, bucket, ts_uuid, s.traceId(), duration)
-        );
-      }
       if (span.isEmpty()) continue;
       traceByServiceSpans.add( // Allows lookup without the span name
         insertTraceServiceSpanName.newInput(service, "", bucket, ts_uuid, s.traceId(), duration)
       );
-      if (!service.isEmpty()) {
-        traceByServiceSpans.add( // Allows lookup without the service name
-          insertTraceServiceSpanName.newInput("", "", bucket, ts_uuid, s.traceId(), duration)
-        );
-      }
     }
     List<Call<ResultSet>> calls = new ArrayList<>();
     for (InsertSpan.Input span : spans) {

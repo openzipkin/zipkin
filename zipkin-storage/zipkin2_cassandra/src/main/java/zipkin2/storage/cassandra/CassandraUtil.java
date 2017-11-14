@@ -44,7 +44,10 @@ final class CassandraUtil {
    */
   static final int LONGEST_VALUE_TO_INDEX = 256;
 
-  // Time window covered by a single bucket of the Span Duration Index, in seconds. Default: 1 day
+  /**
+   * Time window covered by a single bucket of the {@link Schema#TABLE_TRACE_BY_SERVICE_SPAN}, in
+   * seconds. Default: 1 day
+   */
   private static final long DURATION_INDEX_BUCKET_WINDOW_SECONDS
     = Long.getLong("zipkin.store.cassandra.internal.durationIndexBucket", 24 * 60 * 60);
 
@@ -100,9 +103,12 @@ final class CassandraUtil {
     @Override public Set<String> map(Map<String, Long> map) {
       // timestamps can collide, so we need to add some random digits on end before using them as serviceSpanKeys
       SortedMap<BigInteger, String> sorted = new TreeMap<>(Collections.reverseOrder());
-      map.forEach((key, value) -> sorted.put(
-        BigInteger.valueOf(value).multiply(OFFSET).add(BigInteger.valueOf(RAND.nextInt())), key)
-      );
+      for (Map.Entry<String, Long> entry : map.entrySet()) {
+        BigInteger uncollided = BigInteger.valueOf(entry.getValue())
+          .multiply(OFFSET)
+          .add(BigInteger.valueOf(RAND.nextInt()));
+        sorted.put(uncollided, entry.getKey());
+      }
       return new LinkedHashSet<>(sorted.values());
     }
 

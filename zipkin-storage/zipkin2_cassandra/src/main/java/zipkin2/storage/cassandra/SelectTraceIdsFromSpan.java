@@ -19,6 +19,7 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.querybuilder.Select;
 import com.google.auto.value.AutoValue;
 import java.util.AbstractMap;
 import java.util.LinkedHashSet;
@@ -36,7 +37,20 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import static com.datastax.driver.core.querybuilder.QueryBuilder.bindMarker;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
-/** Selects from the {@link Schema#TABLE_SPAN} using data in the partition key or SASI indexes */
+/**
+ * Selects from the {@link Schema#TABLE_SPAN} using data in the partition key or SASI indexes.
+ *
+ * <p>Note: While queries here use {@link Select#allowFiltering()}, they do so within a SASI clause,
+ * and only return (traceId, timestamp) tuples. This means the entire spans table is not scanned,
+ * unless the time range implies that.
+ *
+ * <p>The spans table is sorted descending by timestamp.  When a query includes only a time range,
+ * the first N rows are already in the correct order. However, the cardinality of rows is a function
+ * of span count, not trace count. This implies an over-fetch function based on average span count
+ * per trace in order to achieve N distinct trace IDs. For example if there are 3 spans per trace,
+ * and over-fetch function of 3 * intended limit will work. See {@link
+ * CassandraStorage#indexFetchMultiplier()} for an associated parameter.
+ */
 final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
   @AutoValue static abstract class Input {
     @Nullable abstract String l_service();
@@ -52,18 +66,10 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
 
   static class Factory {
     final Session session;
-    final PreparedStatement all, withAnnotationQuery, withServiceAndAnnotationQuery;
+    final PreparedStatement withAnnotationQuery, withServiceAndAnnotationQuery;
 
     Factory(Session session) {
       this.session = session;
-      // separate to avoid: "InvalidQueryException: LIKE value can't be empty" maybe SASI related
-      // TODO: revisit on next driver update
-      this.all = session.prepare(
-        QueryBuilder.select("ts", "trace_id").from(TABLE_SPAN)
-          .where(QueryBuilder.gte("ts_uuid", bindMarker("start_ts")))
-          .and(QueryBuilder.lte("ts_uuid", bindMarker("end_ts")))
-          .limit(bindMarker("limit_"))
-          .allowFiltering());
       // separate to avoid: "Unsupported unset value for column duration" maybe SASI related
       // TODO: revisit on next driver update
       this.withAnnotationQuery = session.prepare(
@@ -81,20 +87,6 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
           .and(QueryBuilder.lte("ts_uuid", bindMarker("end_ts")))
           .limit(bindMarker("limit_"))
           .allowFiltering());
-    }
-
-    Call<Set<Entry<String, Long>>> newCall(TimestampRange timestampRange, int limit) {
-      Input input = new AutoValue_SelectTraceIdsFromSpan_Input(
-        null, null,
-        timestampRange.startUUID,
-        timestampRange.endUUID,
-        limit
-      );
-      return new SelectTraceIdsFromSpan(
-        this,
-        all,
-        input
-      ).flatMap(new AccumulateTraceIdTsLong());
     }
 
     Call<Set<Entry<String, Long>>> newCall(
