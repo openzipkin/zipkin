@@ -106,7 +106,7 @@ final class CassandraUtil {
       for (Map.Entry<String, Long> entry : map.entrySet()) {
         BigInteger uncollided = BigInteger.valueOf(entry.getValue())
           .multiply(OFFSET)
-          .add(BigInteger.valueOf(RAND.nextInt()));
+          .add(BigInteger.valueOf(RAND.nextInt() & Integer.MAX_VALUE));
         sorted.put(uncollided, entry.getKey());
       }
       return new LinkedHashSet<>(sorted.values());
