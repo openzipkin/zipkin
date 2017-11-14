@@ -70,45 +70,77 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
   family.forEach(id => hideSpan(spans[id]));
 }
 
+function spanChildren($span) {
+  const children = ($span.attr('data-children') || '').toString().split(',');
+  if (children.length === 1 && children[0] === '') {
+    $span.find('.expander').hide();
+    return [];
+  } else {
+    return children;
+  }
+}
+
+function initSpan($span) {
+  const id = $span.data('id');
+  $span.id = id;
+  $span.expanded = false;
+  $span.$expander = $span.find('.expander');
+  $span.inFilters = 0;
+  $span.openChildren = 0;
+  $span.openParents = 0;
+
+  const parentId = $span.data('parentId');
+  $span.parentId = parentId;
+  $span.isRoot = !(parentId !== undefined && parentId !== '');
+  return $span;
+}
+
+export function initSpans($node) {
+  const spans = {};
+  const children = {};
+  const parents = {};
+  const spansByService = {};
+
+  $node.find('.span:not(#timeLabel)').each(function() {
+    const span = initSpan($(this));
+    const id = span.id;
+    const parentId = span.parentId;
+
+    spans[id] = span;
+    children[id] = spanChildren(span);
+    parents[id] = !span.isRoot ? [parentId] : [];
+    $.merge(parents[id], parents[parentId] || []);
+
+    $.each((span.attr('data-service-names') || '').split(','), (i, sn) => {
+      const current = spansByService[sn] || [];
+      current.push(id);
+      spansByService[sn] = current;
+    });
+  });
+
+  return {
+    spans,
+    children,
+    parents,
+    spansByService
+  };
+}
+
 export default component(function trace() {
-  this.spans = {};
-  this.parents = {};
-  this.children = {};
-  this.spansByService = {};
+  /*
+   * Next variables are setting up after initilization.
+   * see initSpans
+   *
+   * this.spans = {};
+   * this.parents = {};
+   * this.children = {};
+   * this.spansByService = {};
+   */
   this.spansBackup = {};
+
   /* this is for a temporary rectangle which is shown on
    * user's mouse move over span view.*/
   this.rectElement = $('<div>').addClass('rect-element');
-
-  this.setupSpan = function($span) {
-    const id = $span.data('id');
-
-    $span.id = id;
-    $span.expanded = false;
-    $span.$expander = $span.find('.expander');
-    $span.inFilters = 0;
-    $span.openChildren = 0;
-    $span.openParents = 0;
-    this.spans[id] = $span;
-
-    let children = ($span.data('children') || '').toString().split(',');
-    if (children.length === 1 && children[0] === '') {
-      $span.find('.expander').hide();
-      children = [];
-    }
-    this.children[id] = children;
-
-    const parentId = $span.data('parentId');
-    $span.isRoot = !(parentId !== undefined && parentId !== '');
-    this.parents[id] = !$span.isRoot ? [parentId] : [];
-    $.merge(this.parents[id], this.parents[parentId] || []);
-
-    $.each(($span.data('serviceNames') || '').split(','), (i, sn) => {
-      const spans = this.spansByService[sn] || [];
-      spans.push(id);
-      this.spansByService[sn] = spans;
-    });
-  };
 
   /* This method stores original span details for later use.
    * When span view is zoomed in and zoomed out these details help to
@@ -444,7 +476,12 @@ export default component(function trace() {
     this.on(document, 'uiZoomOutSpans', this.zoomOutSpans);
 
     const self = this;
-    self.$node.find('.span:not(#timeLabel)').each(function() { self.setupSpan($(this)); });
+    const initData = initSpans(self.$node);
+    this.spans = initData.spans;
+    this.parents = initData.parents;
+    this.children = initData.children;
+    this.spansByService = initData.spansByService;
+
     /* get spans from trace-container-backup*/
     $('#trace-container-backup .span:not(#timeLabel-backup)').each(function() {
       self.setupSpansBackup($(this));
