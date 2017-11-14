@@ -13,6 +13,8 @@
  */
 package zipkin2.storage.cassandra;
 
+import com.google.common.collect.ImmutableMap;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
 import org.junit.Test;
@@ -129,5 +131,19 @@ public class CassandraUtilTest {
     // neither is 10 years from now
     assertThat(CassandraUtil.durationIndexBucket((TODAY + TimeUnit.DAYS.toMillis(3654)) * 1000L))
       .isNotNegative();
+  }
+
+  @Test public void traceIdsSortedByDescTimestamp_doesntCollideOnSameTimestamp() {
+    Set<String> sortedTraceIds = CassandraUtil.traceIdsSortedByDescTimestamp().map(ImmutableMap.of(
+      "a", 1L,
+      "b", 1L,
+      "c", 2L
+    ));
+
+    try {
+      assertThat(sortedTraceIds).containsExactly("c", "b", "a");
+    } catch (AssertionError e) {
+      assertThat(sortedTraceIds).containsExactly("c", "a", "b");
+    }
   }
 }

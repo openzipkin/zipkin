@@ -30,7 +30,6 @@ import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
-import zipkin2.storage.cassandra.internal.call.AggregateIntoSet;
 import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
 
 import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimestamp;
@@ -70,17 +69,15 @@ final class CassandraSpanStore implements SpanStore {
   }
 
   /**
-   * This fans out into a number of requests. The returned future will fail if any of the inputs
-   * fail.
+   * This fans out into a number of requests corresponding to query input. In simplest case, there
+   * is less than a day of data queried, and only one expression. This implies one call to fetch
+   * trace IDs and another to retrieve the span details.
    *
-   * <p>When {@link QueryRequest#serviceName service name} is unset, service names will be fetched
-   * eagerly, implying an additional query.
-   *
-   * <p>The duration query is the most expensive query in cassandra, as it turns into 1 request per
-   * hour of {@link QueryRequest#lookback lookback}. Because many times lookback is set to a day,
-   * this means 24 requests to the backend!
-   *
-   * <p>See https://github.com/openzipkin/zipkin-java/issues/200
+   * <p>The amount of backend calls increase in dimensions of query complexity, days of data, and
+   * limit of traces requested. For example, a query like "http.path=/foo and error" will be two
+   * select statements for the expression, possibly follow-up calls for pagination (when over 5K
+   * rows match). Once IDs are parsed, there's one call for each 5K rows of span data. This means
+   * "http.path=/foo and error" is minimally 3 network calls, the first two in parallel.
    */
   @Override
   public Call<List<List<Span>>> getTraces(QueryRequest request) {
@@ -97,20 +94,6 @@ final class CassandraSpanStore implements SpanStore {
     // If we have to make multiple queries, over fetch on indexes as they don't return distinct
     // (trace id, timestamp) rows. This mitigates intersection resulting in < limit traces
     final int traceIndexFetchSize = request.limit() * indexFetchMultiplier;
-
-    // Allows GET /api/v2/traces
-    if (request.serviceName() == null && request.minDuration() == null
-      && request.spanName() == null && request.annotationQuery().isEmpty()) {
-      // NOTE: When we scan the span table, we can't shortcut this and just return spans that match.
-      // If we did, we'd only return pieces of the trace as opposed to the entire trace.
-      return spanTable.newCall(timestampRange, traceIndexFetchSize)
-        .map(collapseToMap)
-        .map(traceIdsSortedByDescTimestamp())
-        .flatMap(spans.newFlatMapper(request.limit()));
-    }
-
-    // While a valid port of the scala cassandra span store (from zipkin 1.35), there is a fault.
-    // each annotation key is an intersection, meaning we likely return < traceIndexFetchSize.
     List<Call<Map<String, Long>>> callsToIntersect = new ArrayList<>();
 
     List<String> annotationKeys = CassandraUtil.annotationKeys(request);
@@ -123,39 +106,13 @@ final class CassandraSpanStore implements SpanStore {
       ).map(collapseToMap));
     }
 
-    // trace_by_service_span adds special empty-string keys in order to search by all
-    String serviceName = null != request.serviceName() ? request.serviceName() : "";
-    String spanName = null != request.spanName() ? request.spanName() : "";
-    Long minDuration = request.minDuration(), maxDuration = request.maxDuration();
-    int startBucket = CassandraUtil.durationIndexBucket(timestampRange.startMillis * 1000);
-    int endBucket = CassandraUtil.durationIndexBucket(timestampRange.endMillis * 1000);
-    if (startBucket > endBucket) {
-      throw new IllegalArgumentException(
-        "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
+    // Bucketed calls can be expensive when service name isn't specified. This guards against abuse.
+    if (request.spanName() != null || request.minDuration() != null || callsToIntersect.isEmpty()) {
+      Call<Set<Entry<String, Long>>> bucketedTraceIdCall =
+        newBucketedTraceIdCall(request, timestampRange, traceIndexFetchSize);
+      callsToIntersect.add(bucketedTraceIdCall.map(collapseToMap));
     }
 
-    // TODO: ideally, the buckets are traversed backwards, only spawning queries for older buckets
-    // if younger buckets are empty. This will be an async continuation, punted for now.
-
-    List<Call<Set<Entry<String, Long>>>> bucketedTraceIdCalls = new ArrayList<>();
-    for (int bucket = endBucket; bucket >= startBucket; bucket--) {
-      bucketedTraceIdCalls.add(traceIdsFromServiceSpan.newCall(
-        serviceName,
-        spanName,
-        bucket,
-        minDuration,
-        maxDuration,
-        timestampRange,
-        traceIndexFetchSize)
-      );
-    }
-    // Unlikely, but we could have a single bucket
-    callsToIntersect.add((bucketedTraceIdCalls.size() == 1
-      ? bucketedTraceIdCalls.get(0)
-      : new AggregateIntoSet<>(bucketedTraceIdCalls)
-    ).map(collapseToMap));
-
-    assert !callsToIntersect.isEmpty() : request + " resulted in no trace ID calls";
     if (callsToIntersect.size() == 1) {
       return callsToIntersect.get(0)
         .map(traceIdsSortedByDescTimestamp())
@@ -166,6 +123,59 @@ final class CassandraSpanStore implements SpanStore {
     IntersectKeySets intersectedTraceIds = new IntersectKeySets(callsToIntersect);
     // @xxx the sorting by timestamp desc is broken here^
     return intersectedTraceIds.flatMap(spans.newFlatMapper(request.limit()));
+  }
+
+  /**
+   * Creates a call representing one or more queries against {@link Schema#TABLE_TRACE_BY_SERVICE_SPAN}.
+   * The result will be an aggregate if the input requests's serviceName is null or there's more
+   * than one day of data in the timestamp range.
+   *
+   * <p>Note that when {@link QueryRequest#serviceName()} is null, the returned query composes over
+   * {@link #getServiceNames()}. This means that if you have 1000 service names, you will end up
+   * with a composition of at least 1000 calls.
+   */
+  // TODO: smartly handle when serviceName is null. For example, rank recently written serviceNames
+  // and speculatively query those first.
+  Call<Set<Entry<String, Long>>> newBucketedTraceIdCall(QueryRequest request,
+    TimestampRange timestampRange, int traceIndexFetchSize) {
+    // trace_by_service_span adds special empty-string span name in order to search by all
+    String spanName = null != request.spanName() ? request.spanName() : "";
+    Long minDuration = request.minDuration(), maxDuration = request.maxDuration();
+    int startBucket = CassandraUtil.durationIndexBucket(timestampRange.startMillis * 1000);
+    int endBucket = CassandraUtil.durationIndexBucket(timestampRange.endMillis * 1000);
+    if (startBucket > endBucket) {
+      throw new IllegalArgumentException(
+        "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
+    }
+
+    // template input with an empty service name, potentially revisiting later
+    String serviceName = null != request.serviceName() ? request.serviceName() : "";
+
+    // TODO: ideally, the buckets are traversed backwards, only spawning queries for older buckets
+    // if younger buckets are empty. This will be an async continuation, punted for now.
+    List<SelectTraceIdsFromServiceSpan.Input> bucketedTraceIdInputs = new ArrayList<>();
+    for (int bucket = endBucket; bucket >= startBucket; bucket--) {
+      bucketedTraceIdInputs.add(traceIdsFromServiceSpan.newInput(
+        serviceName,
+        spanName,
+        bucket,
+        minDuration,
+        maxDuration,
+        timestampRange,
+        traceIndexFetchSize)
+      );
+    }
+
+    Call<Set<Entry<String, Long>>> bucketedTraceIdCall;
+    if ("".equals(serviceName)) {
+      // If we have no service name, we have to lookup service names before running trace ID queries
+      bucketedTraceIdCall = getServiceNames().flatMap(
+        traceIdsFromServiceSpan.newFlatMapper(bucketedTraceIdInputs)
+      );
+    } else {
+      bucketedTraceIdCall = traceIdsFromServiceSpan.newCall(bucketedTraceIdInputs);
+    }
+    return bucketedTraceIdCall;
   }
 
   @Override public Call<List<Span>> getTrace(String traceId) {
