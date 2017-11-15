@@ -14,6 +14,8 @@
 package zipkin2.storage.cassandra.internal.call;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,11 +28,12 @@ import zipkin2.internal.Nullable;
 
 public abstract class AggregateCall<I, O> extends Call.Base<O> {
   final Logger log = Logger.getLogger(getClass().getName());
-  public final List<Call<I>> calls;
+  final List<Call<I>> calls;
 
   protected AggregateCall(List<Call<I>> calls) {
+    assert !calls.isEmpty() : "do not create single-element aggregates";
     this.calls = calls;
-  }  // TODO: one day we could make this cancelable
+  }
 
   protected abstract O newOutput();
 
@@ -51,6 +54,10 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
       @Override public void onError(Throwable t) {
         result.set(t);
         countDown.countDown();
+      }
+
+      @Override public String toString() {
+        return "AwaitSuccessOrError";
       }
     });
 
@@ -80,10 +87,18 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   }
 
   @Override protected void doEnqueue(Callback<O> callback) {
-    AtomicInteger remaining = new AtomicInteger(calls.size());
+    int length = calls.size();
+    AtomicInteger remaining = new AtomicInteger(length);
     O result = newOutput();
-    for (Call<I> call : calls) {
+    for (int i = 0; i < length; i++) {
+      Call<I> call = calls.get(i);
       call.enqueue(new CountdownCallback(call, remaining, result, callback));
+    }
+  }
+
+  @Override protected void doCancel() {
+    for (int i = 0, length = calls.size(); i < length; i++) {
+      calls.get(i).cancel();
     }
   }
 
@@ -125,5 +140,15 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
         }
       }
     }
+  }
+
+  protected List<Call<I>> cloneCalls() {
+    int length = calls.size();
+    if (length == 1) return Collections.singletonList(calls.get(0).clone());
+    List<Call<I>> result = new ArrayList<>(length);
+    for (int i = 0; i < length; i++) {
+      result.add(calls.get(i).clone());
+    }
+    return result;
   }
 }

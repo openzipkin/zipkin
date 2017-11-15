@@ -44,7 +44,7 @@ public final class IntersectKeySets extends AggregateCall<Map<String, Long>, Set
     return output.isEmpty();
   }
 
-  @Override public Call<Set<String>> clone() {
-    return new IntersectKeySets(calls); // TODO: clone calls
+  @Override public IntersectKeySets clone() {
+    return new IntersectKeySets(cloneCalls());
   }
 }

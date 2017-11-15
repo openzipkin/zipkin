@@ -112,6 +112,10 @@ final class CassandraUtil {
       return new LinkedHashSet<>(sorted.values());
     }
 
+    @Override public String toString() {
+      return "TraceIdsSortedByDescTimestamp{}";
+    }
+
     private static final Random RAND = new Random(System.nanoTime());
     private static final BigInteger OFFSET = BigInteger.valueOf(Integer.MAX_VALUE);
   }

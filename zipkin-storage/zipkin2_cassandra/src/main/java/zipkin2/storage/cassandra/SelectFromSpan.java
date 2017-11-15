@@ -19,7 +19,12 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
@@ -30,7 +35,6 @@ import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static com.google.common.base.Preconditions.checkNotNull;
-import static zipkin2.storage.cassandra.CassandraSpanStore.groupByTraceId;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
 final class SelectFromSpan extends ResultSetFutureCall {
@@ -39,6 +43,7 @@ final class SelectFromSpan extends ResultSetFutureCall {
     final Session session;
     final PreparedStatement preparedStatement;
     final AccumulateSpansAllResults accumulateSpans;
+    final Call.Mapper<List<Span>, List<List<Span>>> groupByTraceId;
     final boolean strictTraceId;
     final int maxTraceCols;
 
@@ -55,31 +60,57 @@ final class SelectFromSpan extends ResultSetFutureCall {
       );
       this.strictTraceId = strictTraceId;
       this.maxTraceCols = maxTraceCols;
+      this.groupByTraceId = new GroupByTraceId(strictTraceId);
     }
 
-    Call<List<Span>> newCall(List<String> traceIds, int limit) {
-      checkNotNull(traceIds, "traceIds");
-      if (traceIds.isEmpty()) return Call.emptyList();
-      if (traceIds.size() > limit) {
-        traceIds = traceIds.subList(0, limit);
-      }
+    Call<List<Span>> newCall(String traceId) {
+      checkNotNull(traceId, "traceId");
       return new SelectFromSpan(this,
-        traceIds,
+        Collections.singleton(traceId),
         maxTraceCols // amount of spans per trace is almost always larger than trace IDs
       ).flatMap(accumulateSpans);
     }
 
     FlatMapper<Set<String>, List<List<Span>>> newFlatMapper(int limit) {
-      return traceIds -> newCall(new ArrayList<>(traceIds), limit)
-        .map(spans -> groupByTraceId(spans, strictTraceId));
+      return new FlatMapTraceIdsToSelectFromSpans(limit);
+    }
+
+    class FlatMapTraceIdsToSelectFromSpans implements FlatMapper<Set<String>, List<List<Span>>> {
+      final int limit;
+
+      FlatMapTraceIdsToSelectFromSpans(int limit) {
+        this.limit = limit;
+      }
+
+      @Override public String toString() {
+        return "FlatMapTraceIdsToSelectFromSpans{limit=" + limit + "}";
+      }
+
+      @Override public Call<List<List<Span>>> map(Set<String> input) {
+        if (input.isEmpty()) return Call.emptyList();
+        Set<String> traceIds;
+        if (input.size() > limit) {
+          traceIds = new LinkedHashSet<>();
+          Iterator<String> iterator = input.iterator();
+          for (int i = 0; i < limit; i++) {
+            traceIds.add(iterator.next());
+          }
+        } else {
+          traceIds = input;
+        }
+        return new SelectFromSpan(Factory.this,
+          traceIds,
+          maxTraceCols // amount of spans per trace is almost always larger than trace IDs
+        ).flatMap(accumulateSpans).map(groupByTraceId);
+      }
     }
   }
 
   final Factory factory;
-  final List<String> trace_id;
+  final Set<String> trace_id;
   final int limit_;
 
-  SelectFromSpan(Factory factory, List<String> trace_id, int limit_) {
+  SelectFromSpan(Factory factory, Set<String> trace_id, int limit_) {
     this.factory = factory;
     this.trace_id = trace_id;
     this.limit_ = limit_;
@@ -87,7 +118,7 @@ final class SelectFromSpan extends ResultSetFutureCall {
 
   @Override protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(factory.preparedStatement.bind()
-      .setList("trace_id", trace_id)
+      .setSet("trace_id", trace_id)
       .setInt("limit_", limit_));
   }
 
@@ -159,6 +190,35 @@ final class SelectFromSpan extends ResultSetFutureCall {
 
     @Override public String toString() {
       return "AccumulateSpansAllResults{}";
+    }
+  }
+
+  // TODO(adriancole): at some later point we can refactor this out
+  static class GroupByTraceId implements Call.Mapper<List<Span>, List<List<Span>>> {
+    final boolean strictTraceId;
+
+    GroupByTraceId(boolean strictTraceId) {
+      this.strictTraceId = strictTraceId;
+    }
+
+    @Override public List<List<Span>> map(List<Span> input) {
+      if (input.isEmpty()) return Collections.emptyList();
+
+      Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
+      for (Span span : input) {
+        String traceId = strictTraceId || span.traceId().length() == 16
+          ? span.traceId()
+          : span.traceId().substring(16);
+        if (!groupedByTraceId.containsKey(traceId)) {
+          groupedByTraceId.put(traceId, new ArrayList<>());
+        }
+        groupedByTraceId.get(traceId).add(span);
+      }
+      return new ArrayList<>(groupedByTraceId.values());
+    }
+
+    @Override public String toString() {
+      return "GroupByTraceId{strictTraceId=" + strictTraceId + "}";
     }
   }
 }

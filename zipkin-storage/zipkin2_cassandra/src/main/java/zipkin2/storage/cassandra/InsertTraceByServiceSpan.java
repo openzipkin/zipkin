@@ -58,6 +58,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
         .value("duration", QueryBuilder.bindMarker("duration")));
     }
 
+    /** Zero duration is permitted, as it implies the span took less than 1 millisecond. */
     Input newInput(
       String service,
       String span,
