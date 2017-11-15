@@ -22,9 +22,9 @@ import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okio.Buffer;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
-import static zipkin.internal.Util.checkArgument;
 import static zipkin.internal.Util.checkNotNull;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
@@ -37,19 +37,29 @@ final class ElasticsearchDomainEndpoint implements ElasticsearchHttpStorage.Host
   ElasticsearchDomainEndpoint(OkHttpClient client, HttpUrl baseUrl, String domain) {
     this.client = checkNotNull(client, "client");
     this.describeElasticsearchDomain = new Request.Builder().url(checkNotNull(baseUrl, "baseUrl")
-        .newBuilder("2015-01-01/es/domain")
-        .addPathSegment(checkNotNull(domain, "domain")).build()).build();
+      .newBuilder("2015-01-01/es/domain")
+      .addPathSegment(checkNotNull(domain, "domain")).build()).build();
   }
 
   @Override public List<String> get() {
     try (Response response = client.newCall(describeElasticsearchDomain).execute()) {
+      String body = response.body().string();
       if (!response.isSuccessful()) {
-        throw new IllegalStateException(response.body().string());
+        String message = describeElasticsearchDomain.url().encodedPath()
+          + " failed with status " + response.code();
+        if (!body.isEmpty()) message += ": " + body;
+        throw new IllegalStateException(message);
       }
 
       JsonReader endpointReader =
-          enterPath(JsonReader.of(response.body().source()), "DomainStatus", "Endpoint");
-      checkArgument(endpointReader != null, "DomainStatus.Endpoint wasn't present in response");
+        enterPath(JsonReader.of(new Buffer().writeUtf8(body)), "DomainStatus", "Endpoint");
+
+      if (endpointReader == null) {
+        throw new IllegalStateException(
+          "DomainStatus.Endpoint wasn't present in response: " + body);
+      }
+
+      // TODO: DomainStatus.Endpoints which could also be present
 
       String endpoint = endpointReader.nextString();
       if (!endpoint.startsWith("https://")) {
