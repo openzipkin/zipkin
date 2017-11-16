@@ -68,34 +68,30 @@ final class InfluxDBSpanStore implements SpanStore {
       q += result.toString();
     }
 
-    q += String.format(" AND \"duration\" >= %d ", request.minDuration());
-    q += String.format(" AND \"duration\" <= %d ", request.maxDuration());
+    //q += String.format(" AND \"duration\" >= %d ", request.minDuration());
+    //q += String.format(" AND \"duration\" <= %d ", request.maxDuration());
     q += " GROUP BY \"trace_id\" ";
     q += String.format(" SLIMIT %d ORDER BY time DESC", request.limit());
 
     Query query = new Query(q, this.storage.database());
-    QueryResult qresult = this.storage.get().query(query);
-    throw new UnsupportedOperationException();
+    QueryResult response = this.storage.get().query(query);
+    if (response.hasError()){
+      throw new RuntimeException(response.getError());
+    }
+
+    List<List<Span>> results = new ArrayList<>();
+    List<QueryResult.Series> series = response.getResults().get(0).getSeries();
+    // TODO: check error
+    for (QueryResult.Series s : series){
+      List<Span> spans = spanResults(s);
+      results.add(spans);
+    }
+
+    return Call.create(results);
   }
 
-  @Override public Call<List<Span>> getTrace(String traceId) {
-    // make sure we have a 16 or 32 character trace ID
-    traceId = Span.normalizeTraceId(traceId);
-
-    // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
-    if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
-
-    String q =
-      String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s'",
-        this.storage.measurement(),
-        traceId);
-    Query query = new Query(q, this.storage.database());
-    QueryResult result = this.storage.get().query(query);
-    if (result.hasError()){
-      throw new RuntimeException(result.getError());
-    }
+  private List<Span> spanResults(QueryResult.Series series) {
     List<Span> spans = new ArrayList<>();
-    QueryResult.Series series = result.getResults().get(0).getSeries().get(0);
     List<List<Object>> values = series.getValues();
     if (values != null) {
       List<String> cols = series.getColumns();
@@ -165,7 +161,27 @@ final class InfluxDBSpanStore implements SpanStore {
         spans.add(span);
       }
     }
+    return spans;
+  }
 
+  @Override public Call<List<Span>> getTrace(String traceId) {
+    // make sure we have a 16 or 32 character trace ID
+    traceId = Span.normalizeTraceId(traceId);
+
+    // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+    if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
+
+    String q =
+      String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s'",
+        this.storage.measurement(),
+        traceId);
+    Query query = new Query(q, this.storage.database());
+    QueryResult result = this.storage.get().query(query);
+    if (result.hasError()){
+      throw new RuntimeException(result.getError());
+    }
+    QueryResult.Series series = result.getResults().get(0).getSeries().get(0);
+    List<Span> spans = spanResults(series);
     return Call.create(spans);
   }
 
