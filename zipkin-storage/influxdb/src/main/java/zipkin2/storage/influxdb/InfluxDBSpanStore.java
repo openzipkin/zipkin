@@ -13,9 +13,11 @@
  */
 package zipkin2.storage.influxdb;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import zipkin2.Call;
@@ -84,7 +86,8 @@ final class InfluxDBSpanStore implements SpanStore {
     if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
 
     String q =
-      String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s'", this.storage.measurement(),
+      String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s'",
+        this.storage.measurement(),
         traceId);
     Query query = new Query(q, this.storage.database());
     QueryResult result = this.storage.get().query(query);
@@ -92,27 +95,51 @@ final class InfluxDBSpanStore implements SpanStore {
   }
 
   @Override public Call<List<String>> getServiceNames() {
-    String queryStr = String.format("SHOW TAG VALUES FROM \"%s\" WITH KEY = \"service_name\"",
+    String q =
+      String.format("SHOW TAG VALUES FROM \"%s\" WITH KEY = \"service_name\"",
       this.storage.measurement());
-    Query query = new Query(queryStr, this.storage.measurement());
+    Query query = new Query(Query.encode(q), this.storage.database());
     QueryResult result = this.storage.get().query(query);
-    throw new UnsupportedOperationException();
+    if (result.hasError()){
+      throw new RuntimeException(result.getError());
+    }
+
+    List<List<Object>> serviceNames =
+      result.getResults().get(0).getSeries().get(0).getValues();
+    List<String> services = new ArrayList<>();
+    if (serviceNames != null) {
+      for (List<Object> service : serviceNames) {
+        services.add(service.get(0).toString());
+      }
+    }
+    return Call.create(services);
   }
 
   @Override public Call<List<String>> getSpanNames(String serviceName) {
     if ("".equals(serviceName)) return Call.emptyList();
     String q =
       String.format("SHOW TAG VALUES FROM \"%s\" with key=\"name\" WHERE \"service_name\" = '%s'",
-        this.storage.measurement(), serviceName);
-    Query query = new Query(q, this.storage.database());
+      this.storage.measurement(), serviceName);
+    Query query = new Query(Query.encode(q), this.storage.database());
     QueryResult result = this.storage.get().query(query);
-    List<List<Object>> retentionPolicies =
+    if (result.hasError()){
+      throw new RuntimeException(result.getError());
+    }
+
+    List<List<Object>> serviceNames =
       result.getResults().get(0).getSeries().get(0).getValues();
-    throw new UnsupportedOperationException();
+    List<String> services = new ArrayList<>();
+    if (serviceNames != null) {
+      for (List<Object> service : serviceNames) {
+        services.add(service.get(0).toString());
+      }
+    }
+    return Call.create(services);
   }
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
-    String q = String.format("SELECT COUNT(\"duration\") FROM \"%s\"", this.storage.measurement());
+    String q =
+      String.format("SELECT COUNT(\"duration\") FROM \"%s\"", this.storage.measurement());
     q += String.format(" WHERE time < %dms", endTs);
     q += String.format(" AND time > %dms ", endTs - lookback);
     q += "GROUP BY \"id\",\"parent_id\",time(1d)";
