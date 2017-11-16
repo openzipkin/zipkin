@@ -25,7 +25,7 @@ import zipkin2.storage.influxdb.InfluxDBStorage;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinInfluxDBStorageProperties.class)
-@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "influxdb-http")
+@ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "influxdb")
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinInfluxDBStorageAutoConfiguration {
 
