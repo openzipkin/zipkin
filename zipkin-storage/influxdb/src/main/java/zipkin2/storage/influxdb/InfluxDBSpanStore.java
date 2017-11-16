@@ -17,9 +17,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
+import org.influxdb.impl.TimeUtil;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
@@ -70,21 +72,21 @@ final class InfluxDBSpanStore implements SpanStore {
 
     //q += String.format(" AND \"duration\" >= %d ", request.minDuration());
     //q += String.format(" AND \"duration\" <= %d ", request.maxDuration());
-    q += " GROUP BY \"trace_id\" ";
-    q += String.format(" SLIMIT %d ORDER BY time DESC", request.limit());
+    q += " GROUP BY \"trace_id\", \"id\" ";
+    q += String.format(" ORDER BY time DESC SLIMIT %d", request.limit());
 
     Query query = new Query(q, this.storage.database());
-    QueryResult response = this.storage.get().query(query);
+    QueryResult response = this.storage.get().query(query, TimeUnit.MILLISECONDS);
     if (response.hasError()){
       throw new RuntimeException(response.getError());
     }
 
     List<List<Span>> results = new ArrayList<>();
-    List<QueryResult.Series> series = response.getResults().get(0).getSeries();
-    // TODO: check error
-    for (QueryResult.Series s : series){
-      List<Span> spans = spanResults(s);
-      results.add(spans);
+    for (QueryResult.Result queryResult: response.getResults()){
+      for (QueryResult.Series traceSeries : queryResult.getSeries()){
+        List<Span> spans = spanResults(traceSeries);
+        results.add(spans);
+      }
     }
 
     return Call.create(results);
@@ -93,73 +95,90 @@ final class InfluxDBSpanStore implements SpanStore {
   private List<Span> spanResults(QueryResult.Series series) {
     List<Span> spans = new ArrayList<>();
     List<List<Object>> values = series.getValues();
+    Map<String, String> tags = series.getTags();
     if (values != null) {
       List<String> cols = series.getColumns();
       int columnSize = cols.size();
-      for (int i = 0; i < columnSize; i++) {
-        String col = cols.get(i);
-        Span.Builder builder = Span.newBuilder();
-        Object value = values.get(i);
-        String anno = "";
-        Long time = -1L;
-        Long duration = -1L;
-        String annoKey = "";
-        String endPoint = "";
-        String serviceName = "";
-
-        switch (col) {
-          case "id":
-            builder.id(value.toString());
-            break;
-          case "parent_id":
-            builder.parentId(value.toString());
-            break;
-          case "name":
-            builder.name(value.toString());
-            break;
-          case "service_name":
-            serviceName = value.toString();
-            break;
-          case "annotation":
-            anno = value.toString();
-            break;
-          case "annotation_key":
-            annoKey = value.toString();
-            break;
-          case "endpoint_host":
-            endPoint = value.toString();
-            break;
-          case "duration_ns":
-            duration = ((Double)values.get(i).get(0)).longValue() / 1000000;
-            break;
-          case "time":
-            time =  ((Double)values.get(i).get(0)).longValue() / 1000000;
-            break;
+      Span.Builder builder = Span.newBuilder();
+      String traceId = "";
+      String id = "";
+      String anno = "";
+      Long time = -1L;
+      Long duration = -1L;
+      String annoKey = "";
+      String endPoint = "";
+      String serviceName = "";
+      for (Object value: values) {
+        for (int i = 0; i < columnSize; i++) {
+          String col = cols.get(i);
+          switch (col) {
+            case "trace_id":
+              traceId = value.toString()
+              ;
+              break;
+            case "id":
+              id = value.toString();
+              break;
+            case "parent_id":
+              builder.parentId(value.toString());
+              break;
+            case "name":
+              builder.name(value.toString());
+              break;
+            case "service_name":
+              serviceName = value.toString();
+              break;
+            case "annotation":
+              anno = value.toString();
+              break;
+            case "annotation_key":
+              annoKey = value.toString();
+              break;
+            case "endpoint_host":
+              endPoint = value.toString();
+              break;
+            case "duration_ns":
+              duration = ((Double) values.get(i).get(0)).longValue();
+              break;
+            case "time":
+              time = ((Double) values.get(i).get(0)).longValue();
+              break;
+          }
         }
-
-        if (!endPoint.isEmpty() && !serviceName.isEmpty()) {
-          builder.localEndpoint(
-            Endpoint
-              .newBuilder()
-              .ip(endPoint)
-              .serviceName(serviceName)
-              .build());
-        }
-
-        if (!annoKey.isEmpty() && !anno.isEmpty()){
-          builder.putTag(annoKey, anno);
-        } else if (!anno.isEmpty()) {
-          builder.addAnnotation(time, anno);
-        }
-
-        if (duration >= 0) {
-          builder.duration(duration);
-        }
-
-        builder.timestamp(time);
-        Span span = builder.build();
-        spans.add(span);
       }
+      if (id.isEmpty()) {
+        id = tags.get("id");
+      }
+      builder.id(id);
+
+      if (traceId.isEmpty()){
+        traceId = tags.get("trace_id");
+      }
+      builder.traceId(traceId);
+
+      if (!endPoint.isEmpty() && !serviceName.isEmpty()) {
+        builder.localEndpoint(
+          Endpoint
+            .newBuilder()
+            .ip(endPoint)
+            .serviceName(serviceName)
+            .build());
+      }
+
+      if (!annoKey.isEmpty() && !anno.isEmpty()){
+        builder.putTag(annoKey, anno);
+      } else if (!anno.isEmpty()) {
+        builder.addAnnotation(time, anno);
+      }
+
+      if (duration >= 0) {
+        builder.duration(duration);
+      }
+
+      builder.timestamp(time);
+      Span span = builder.build();
+
+      spans.add(span);
     }
     return spans;
   }
