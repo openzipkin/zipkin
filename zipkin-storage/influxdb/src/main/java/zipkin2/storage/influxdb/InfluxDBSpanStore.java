@@ -22,6 +22,7 @@ import org.influxdb.dto.Query;
 import org.influxdb.dto.QueryResult;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
+import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
@@ -74,7 +75,6 @@ final class InfluxDBSpanStore implements SpanStore {
 
     Query query = new Query(q, this.storage.database());
     QueryResult qresult = this.storage.get().query(query);
-
     throw new UnsupportedOperationException();
   }
 
@@ -91,7 +91,82 @@ final class InfluxDBSpanStore implements SpanStore {
         traceId);
     Query query = new Query(q, this.storage.database());
     QueryResult result = this.storage.get().query(query);
-    throw new UnsupportedOperationException();
+    if (result.hasError()){
+      throw new RuntimeException(result.getError());
+    }
+    List<Span> spans = new ArrayList<>();
+    QueryResult.Series series = result.getResults().get(0).getSeries().get(0);
+    List<List<Object>> values = series.getValues();
+    if (values != null) {
+      List<String> cols = series.getColumns();
+      int columnSize = cols.size();
+      for (int i = 0; i < columnSize; i++) {
+        String col = cols.get(i);
+        Span.Builder builder = Span.newBuilder();
+        Object value = values.get(i);
+        String anno = "";
+        Long time = -1L;
+        Long duration = -1L;
+        String annoKey = "";
+        String endPoint = "";
+        String serviceName = "";
+
+        switch (col) {
+          case "id":
+            builder.id(value.toString());
+            break;
+          case "parent_id":
+            builder.parentId(value.toString());
+            break;
+          case "name":
+            builder.name(value.toString());
+            break;
+          case "service_name":
+            serviceName = value.toString();
+            break;
+          case "annotation":
+            anno = value.toString();
+            break;
+          case "annotation_key":
+            annoKey = value.toString();
+            break;
+          case "endpoint_host":
+            endPoint = value.toString();
+            break;
+          case "duration_ns":
+            duration = ((Double)values.get(i).get(0)).longValue() / 1000000;
+            break;
+          case "time":
+            time =  ((Double)values.get(i).get(0)).longValue() / 1000000;
+            break;
+        }
+
+        if (!endPoint.isEmpty() && !serviceName.isEmpty()) {
+          builder.localEndpoint(
+            Endpoint
+              .newBuilder()
+              .ip(endPoint)
+              .serviceName(serviceName)
+              .build());
+        }
+
+        if (!annoKey.isEmpty() && !anno.isEmpty()){
+          builder.putTag(annoKey, anno);
+        } else if (!anno.isEmpty()) {
+          builder.addAnnotation(time, anno);
+        }
+
+        if (duration >= 0) {
+          builder.duration(duration);
+        }
+
+        builder.timestamp(time);
+        Span span = builder.build();
+        spans.add(span);
+      }
+    }
+
+    return Call.create(spans);
   }
 
   @Override public Call<List<String>> getServiceNames() {
