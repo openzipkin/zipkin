@@ -13,8 +13,6 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.utils.UUIDs;
@@ -40,7 +38,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   private final Session session;
   private final boolean strictTraceId;
   private final InsertSpan.Factory insertSpan;
-  private final InsertTraceByServiceSpan.Factory insertTraceServiceSpanName;
+  private final InsertTraceByServiceSpan.Factory insertTraceByServiceSpan;
   private final InsertServiceSpan.Factory insertServiceSpanName;
 
   CassandraSpanConsumer(CassandraStorage storage) {
@@ -51,7 +49,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     Schema.readMetadata(session);
 
     insertSpan = new InsertSpan.Factory(session, strictTraceId);
-    insertTraceServiceSpanName = new InsertTraceByServiceSpan.Factory(session);
+    insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session);
     insertServiceSpanName = new InsertServiceSpan.Factory(session, WRITTEN_NAMES_TTL);
   }
 
@@ -81,7 +79,8 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
 
       // Empty values allow for api queries with blank service or span name
       String service = s.localServiceName() != null ? s.localServiceName() : "";
-      String span = null != s.name() ? s.name() : "";  // Empty value allows for api queries without span name
+      String span =
+        null != s.name() ? s.name() : "";  // Empty value allows for api queries without span name
 
       // service span index is refreshed regardless of timestamp
       if (null != s.remoteServiceName()) { // allows getServices to return remote service names
@@ -96,11 +95,11 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       int bucket = durationIndexBucket(ts_micro); // duration index is milliseconds not microseconds
       Long duration = null != s.duration() ? TimeUnit.MICROSECONDS.toMillis(s.duration()) : null;
       traceByServiceSpans.add(
-        insertTraceServiceSpanName.newInput(service, span, bucket, ts_uuid, s.traceId(), duration)
+        insertTraceByServiceSpan.newInput(service, span, bucket, ts_uuid, s.traceId(), duration)
       );
       if (span.isEmpty()) continue;
       traceByServiceSpans.add( // Allows lookup without the span name
-        insertTraceServiceSpanName.newInput(service, "", bucket, ts_uuid, s.traceId(), duration)
+        insertTraceByServiceSpan.newInput(service, "", bucket, ts_uuid, s.traceId(), duration)
       );
     }
     List<Call<ResultSet>> calls = new ArrayList<>();
@@ -111,7 +110,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       calls.add(insertServiceSpanName.create(serviceSpan));
     }
     for (InsertTraceByServiceSpan.Input serviceSpan : traceByServiceSpans) {
-      calls.add(insertTraceServiceSpanName.create(serviceSpan));
+      calls.add(insertTraceByServiceSpan.create(serviceSpan));
     }
     return new StoreSpansCall(calls);
   }
@@ -147,11 +146,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     }
 
     @Override public StoreSpansCall clone() {
-      return new StoreSpansCall(calls); // TODO: clone the calls
+      return new StoreSpansCall(cloneCalls());
     }
-  }
-
-  BoundStatement bind(PreparedStatement prepared) { // overridable for tests
-    return prepared.bind();
   }
 }

@@ -17,8 +17,6 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.utils.UUIDs;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +33,7 @@ import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
 import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimestamp;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-final class CassandraSpanStore implements SpanStore {
+class CassandraSpanStore implements SpanStore { // not final for testing
   private final int maxTraceCols;
   private final int indexFetchMultiplier;
   private final boolean strictTraceId;
@@ -46,11 +44,6 @@ final class CassandraSpanStore implements SpanStore {
   private final int indexTtl;
   private final SelectTraceIdsFromSpan.Factory spanTable;
   private final SelectTraceIdsFromServiceSpan.Factory traceIdsFromServiceSpan;
-  private final Call.Mapper<Set<Entry<String, Long>>, Map<String, Long>> collapseToMap = input -> {
-    Map<String, Long> result = new LinkedHashMap<>();
-    input.forEach(m -> result.put(m.getKey(), m.getValue()));
-    return result;
-  };
 
   CassandraSpanStore(CassandraStorage storage) {
     Session session = storage.session();
@@ -82,11 +75,7 @@ final class CassandraSpanStore implements SpanStore {
   @Override
   public Call<List<List<Span>>> getTraces(QueryRequest request) {
     return strictTraceId ? doGetTraces(request) :
-      doGetTraces(request).map(input -> {
-        // Due to tokenization of the trace ID, our matches are imprecise on span.trace_id_high
-        input.removeIf(next -> next.get(0).traceId().length() > 16 && !request.test(next));
-        return input;
-      });
+      doGetTraces(request).map(new FilterTraces(request));
   }
 
   Call<List<List<Span>>> doGetTraces(QueryRequest request) {
@@ -103,14 +92,14 @@ final class CassandraSpanStore implements SpanStore {
         annotationKey,
         timestampRange,
         traceIndexFetchSize
-      ).map(collapseToMap));
+      ).map(CollapseToMap.INSTANCE));
     }
 
     // Bucketed calls can be expensive when service name isn't specified. This guards against abuse.
     if (request.spanName() != null || request.minDuration() != null || callsToIntersect.isEmpty()) {
       Call<Set<Entry<String, Long>>> bucketedTraceIdCall =
         newBucketedTraceIdCall(request, timestampRange, traceIndexFetchSize);
-      callsToIntersect.add(bucketedTraceIdCall.map(collapseToMap));
+      callsToIntersect.add(bucketedTraceIdCall.map(CollapseToMap.INSTANCE));
     }
 
     if (callsToIntersect.size() == 1) {
@@ -185,8 +174,7 @@ final class CassandraSpanStore implements SpanStore {
     // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
     if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
 
-    List<String> traceIds = Collections.singletonList(traceId);
-    return spans.newCall(traceIds, maxTraceCols);
+    return spans.newCall(traceId);
   }
 
   @Override public Call<List<String>> getServiceNames() {
@@ -199,23 +187,6 @@ final class CassandraSpanStore implements SpanStore {
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     return dependencies.create(endTs, lookback);
-  }
-
-  // TODO(adriancole): at some later point we can refactor this out
-  static List<List<Span>> groupByTraceId(Collection<Span> input, boolean strictTraceId) {
-    if (input.isEmpty()) return Collections.emptyList();
-
-    Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
-    for (Span span : input) {
-      String traceId = strictTraceId || span.traceId().length() == 16
-        ? span.traceId()
-        : span.traceId().substring(16);
-      if (!groupedByTraceId.containsKey(traceId)) {
-        groupedByTraceId.put(traceId, new ArrayList<>());
-      }
-      groupedByTraceId.get(traceId).add(span);
-    }
-    return new ArrayList<>(groupedByTraceId.values());
   }
 
   static final class TimestampRange {
@@ -233,5 +204,37 @@ final class CassandraSpanStore implements SpanStore {
     result.endMillis = Math.max(request.endTs(), oldestData);
     result.endUUID = UUIDs.endOf(result.endMillis);
     return result;
+  }
+
+  enum CollapseToMap implements Call.Mapper<Set<Entry<String, Long>>, Map<String, Long>> {
+    INSTANCE;
+
+    @Override public Map<String, Long> map(Set<Entry<String, Long>> input) {
+      Map<String, Long> result = new LinkedHashMap<>();
+      input.forEach(m -> result.put(m.getKey(), m.getValue()));
+      return result;
+    }
+
+    @Override public String toString() {
+      return "CollapseToMap{}";
+    }
+  }
+
+  // Due to tokenization of the trace ID, our matches are imprecise on span.trace_id_high
+  static class FilterTraces implements Call.Mapper<List<List<Span>>, List<List<Span>>> {
+    final QueryRequest request;
+
+    FilterTraces(QueryRequest request) {
+      this.request = request;
+    }
+
+    @Override public List<List<Span>> map(List<List<Span>> input) {
+      input.removeIf(next -> next.get(0).traceId().length() > 16 && !request.test(next));
+      return input;
+    }
+
+    @Override public String toString() {
+      return "FilterTraces{" + request + "}";
+    }
   }
 }

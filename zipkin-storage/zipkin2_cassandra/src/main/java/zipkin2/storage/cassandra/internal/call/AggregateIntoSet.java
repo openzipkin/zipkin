@@ -36,6 +36,6 @@ public final class AggregateIntoSet<T> extends AggregateCall<Set<T>, Set<T>> {
   }
 
   @Override public AggregateIntoSet<T> clone() {
-    return new AggregateIntoSet<>(calls); // TODO: clone the calls
+    return new AggregateIntoSet<>(cloneCalls());
   }
 }
