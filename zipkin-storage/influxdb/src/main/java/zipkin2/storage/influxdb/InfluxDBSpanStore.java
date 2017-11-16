@@ -183,13 +183,10 @@ final class InfluxDBSpanStore implements SpanStore {
     for (QueryResult.Result result: response.getResults()){
       for (QueryResult.Series series : result.getSeries()){
         for (List<Object> values: series.getValues()) {
-          for (Object value: values){
-            services.add(value.toString());
-          }
+          services.add(values.get(1).toString());
         }
       }
     }
-
     return Call.create(services);
   }
 
@@ -208,9 +205,7 @@ final class InfluxDBSpanStore implements SpanStore {
     for (QueryResult.Result result: response.getResults()){
       for (QueryResult.Series series : result.getSeries()){
         for (List<Object> values: series.getValues()) {
-          for (Object value: values){
-            spans.add(value.toString());
-          }
+          spans.add(values.get(1).toString());
         }
       }
     }
