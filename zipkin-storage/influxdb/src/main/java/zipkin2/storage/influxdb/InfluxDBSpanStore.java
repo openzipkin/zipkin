@@ -201,15 +201,15 @@ final class InfluxDBSpanStore implements SpanStore {
       throw new RuntimeException(result.getError());
     }
 
-    List<List<Object>> serviceNames =
+    List<List<Object>> spanNames =
       result.getResults().get(0).getSeries().get(0).getValues();
-    List<String> services = new ArrayList<>();
-    if (serviceNames != null) {
-      for (List<Object> service : serviceNames) {
-        services.add(service.get(0).toString());
+    List<String> spans = new ArrayList<>();
+    if (spanNames != null) {
+      for (List<Object> span : spanNames) {
+        spans.add(span.get(0).toString());
       }
     }
-    return Call.create(services);
+    return Call.create(spans);
   }
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
