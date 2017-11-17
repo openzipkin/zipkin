@@ -2,6 +2,7 @@
 import {component} from 'flightjs';
 import queryString from 'query-string';
 import $ from 'jquery';
+import {i18n_init} from '../component_ui/i18n';
 
 // extracted for testing. this code mutates spans and selectedSpans
 export function showSpans(spans, parents, children, selectedSpans) {
@@ -456,5 +457,7 @@ export default component(function trace() {
     } else {
       this.trigger(document, 'uiExpandAllSpans');
     }
+
+    i18n_init('trace');
   });
 });

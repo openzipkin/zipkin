@@ -2,13 +2,13 @@
       <div class='container'>
         <div class='navbar-header'>
           <a class='navbar-brand' href='{{contextRoot}}'>
-            Zipkin<span class='muted' style='font-size: .75em; padding-left: 10px;'>Investigate system behavior</span>
+            Zipkin<span class='muted' style='font-size: .75em; padding-left: 10px;' data-i18n="nav.inves">Investigate system behavior</span>
           </a>
         </div>
         <div class="navbar-left">
           <ul class="nav navbar-nav">
-            <li data-route="index"><a href="{{contextRoot}}">Find a trace</a></li>
-            <li data-route="dependency"><a href="{{contextRoot}}dependency/">Dependencies</a></li>
+            <li data-route="index"><a href="{{contextRoot}}" data-i18n="nav.find">Find a trace</a></li>
+            <li data-route="dependency"><a href="{{contextRoot}}dependency/" data-i18n="nav.dep">Dependencies</a></li>
           </ul>
         </div>
         <div class="navbar-right" style="width: 50%">
@@ -18,7 +18,7 @@
           <form id="traceIdQueryForm" class="form-inline" role="form">
             <div class="navbar-right" style="width: 25%; float: right">
               <div class="row well-sm clearfix">
-                  <input type="text" class="form-control input-sm" id="traceIdQuery" name="traceIdQuery" style="width: 100%" placeholder='Go to trace'>
+                  <input type="text" class="form-control input-sm" id="traceIdQuery" name="traceIdQuery" style="width: 100%" placeholder='Go to trace' data-i18n='nav.search'>
               </div>
             </div>
           </form>

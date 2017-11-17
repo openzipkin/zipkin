@@ -11,30 +11,30 @@
     </div>
 
     <div id="start-ts" class="form-group">
-      <label for="timeStamp">Start time</label>
+      <label for="timeStamp" data-i18n="traces.stime">Start time</label>
       <input class="form-control input-sm date-input" type="text">
       <input class="form-control input-sm time-input" type="text">
       <input class="timestamp-value" id="startTs" name="startTs" type="hidden" value="{{startTs}}">
     </div>
 
     <div id="end-ts" class="form-group">
-      <label for="timeStamp">End time</label>
+      <label for="timeStamp" data-i18n="traces.etime">End time</label>
       <input class="form-control input-sm date-input" type="text">
       <input class="form-control input-sm time-input" type="text">
       <input class="timestamp-value" id="endTs" name="endTs" type="hidden" value="{{endTs}}">
     </div>
 
     <div class="form-group">
-      <label for="minDuration">Duration (μs) >=</label>
+      <label for="minDuration" data-i18n="traces.duration">Duration (μs) >=</label>
       <input class="form-control input-sm" id="minDuration" name="minDuration" type="text" value="{{minDuration}}">
     </div>
 
     <div class="form-group">
-      <label for="limit">Limit</label>
+      <label for="limit" data-i18n="traces.limit">Limit</label>
       <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limit}}">
     </div>
 
-    <button type="submit" class="btn btn-default btn-sm">Find Traces</button>
+    <button type="submit" class="btn btn-default btn-sm" data-i18n="traces.findBtn">Find Traces</button>
     <button type="button" class="btn btn-default btn-sm info-request">
       <span class="glyphicon glyphicon-question-sign"></span>
     </button>
@@ -50,9 +50,9 @@
       </span>
     </div>
     <div class="pull-right">
-      <span class="selector">Sort:
+      <span class="selector"><span data-i18n="traces.sort">Sort</span>:
         <select class="sort-order js-sort-order" form="submitForm" name="sortOrder">
-          {{#sortOrderOptions}}<option value="{{value}}" {{sortOrderSelected}}>{{text}}</option>{{/sortOrderOptions}}
+          {{#sortOrderOptions}}<option value="{{value}}" {{sortOrderSelected}} data-i18n="{{value}}">{{text}}</option>{{/sortOrderOptions}}
         </select>
       </span>
     </div>
@@ -76,7 +76,7 @@
 {{/queryError}}
 {{^queryWasPerformed}}
   <div class="alert alert-info" id="help-msg">
-    <p>Please select the criteria for your trace lookup.</p>
+    <p data-i18n="traces.des">Please select the criteria for your trace lookup.</p>
   </div>
 {{/queryWasPerformed}}
 {{#queryWasPerformed}}
@@ -114,25 +114,25 @@
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
-        <h4 class="modal-title">How to find a trace</h4>
+        <h4 class="modal-title" data-i18n="modal.title">How to find a trace</h4>
       </div>
       <div class="modal-body">
-        <p>So you want to find some traces, huh? You've come to the right place!</p>
+        <p data-i18n="modal.p1">So you want to find some traces, huh? You've come to the right place!</p>
 
-        <h4>Service names</h4>
-        <p>First off you have select a service to lookup by. All traces are indexed by service names.</p>
-        <p>Once that is done you have three options to pick from. See notes on each below.</p>
+        <h4 data-i18n="modal.title2">Service names</h4>
+        <p data-i18n="modal.p2">First off you have select a service to lookup by. All traces are indexed by service names.</p>
+        <p data-i18n="modal.p3">Once that is done you have three options to pick from. See notes on each below.</p>
 
-        <h4>1. Lookups by span name</h4>
-        <p>Span names are generally thrift method names or Rails endpoints. This allows you to look up traces
+        <h4 data-i18n="modal.title3">1. Lookups by span name</h4>
+        <p data-i18n="modal.p4">Span names are generally thrift method names or Rails endpoints. This allows you to look up traces
           that accessed a particular part of the service.</p>
 
-        <h4>2. Lookups by annotation</h4>
-        <p>An annotation is a point in time in the trace. It is assigned a string value, this is what you can look up
+        <h4 data-i18n="modal.title4">2. Lookups by annotation</h4>
+        <p data-i18n="modal.p5">An annotation is a point in time in the trace. It is assigned a string value, this is what you can look up
           by in this field. Could be things like <strong>finagle.timeout</strong></p>
 
-        <h4>3. Lookups by key/value</h4>
-        <p>Key / value annotations are just extra metadata attached to a trace. This could be things like the url hit,
+        <h4 data-i18n="modal.title5">3. Lookups by key/value</h4>
+        <p data-i18n="modal.p6">Key / value annotations are just extra metadata attached to a trace. This could be things like the url hit,
           response codes or exceptions. See below for a few examples.</p>
         <table class="table table-bordered">
           <thead>
@@ -150,8 +150,8 @@
           </tbody>
         </table>
 
-        <h4>Dates and limits</h4>
-        <p>Zipkin allows you to pick a point in time to help us guide the selection of traces. When doing a lookup
+        <h4 data-i18n="modal.title6">Dates and limits</h4>
+        <p data-i18n="modal.p7">Zipkin allows you to pick a point in time to help us guide the selection of traces. When doing a lookup
           we return traces before that point in time up until the limit number of results.</p>
       </div>
     </div>
