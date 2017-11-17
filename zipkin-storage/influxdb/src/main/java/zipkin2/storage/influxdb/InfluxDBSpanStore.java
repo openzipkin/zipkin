@@ -108,34 +108,58 @@ final class InfluxDBSpanStore implements SpanStore {
       String annoKey = "";
       String endPoint = "";
       String serviceName = "";
+      String v = "";
       for (Object value: values) {
         for (int i = 0; i < columnSize; i++) {
           String col = cols.get(i);
           switch (col) {
             case "trace_id":
-              traceId = value.toString()
-              ;
+              v = value.toString();
+              if (!v.isEmpty()) {
+                traceId = v ;
+              }
               break;
             case "id":
-              id = value.toString();
+              v = value.toString();
+              if (!v.isEmpty()) {
+                id = v ;
+              }
               break;
             case "parent_id":
-              builder.parentId(value.toString());
+              v = value.toString();
+              if (!v.isEmpty()) {
+                builder.parentId(v);
+              }
               break;
             case "name":
-              builder.name(value.toString());
+              v = value.toString();
+              if (!v.isEmpty()) {
+                builder.name(v);
+              }
               break;
             case "service_name":
-              serviceName = value.toString();
+              v = value.toString();
+              if (!v.isEmpty()) {
+                serviceName = v ;
+              }
               break;
             case "annotation":
-              anno = value.toString();
+              v = value.toString();
+              if (!v.isEmpty()) {
+                anno = v ;
+              }
               break;
             case "annotation_key":
-              annoKey = value.toString();
+              v = value.toString();
+              if (!v.isEmpty()) {
+                annoKey = v ;
+              }
               break;
             case "endpoint_host":
-              endPoint = value.toString();
+              v = value.toString();
+              if (!v.isEmpty()) {
+                endPoint = v ;
+              }
               break;
             case "duration_ns":
               duration = ((Double) values.get(i).get(0)).longValue();
