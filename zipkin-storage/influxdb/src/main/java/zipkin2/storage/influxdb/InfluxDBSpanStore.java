@@ -13,10 +13,7 @@
  */
 package zipkin2.storage.influxdb;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 import org.influxdb.dto.Query;
@@ -76,117 +73,114 @@ final class InfluxDBSpanStore implements SpanStore {
     q += String.format(" ORDER BY time DESC SLIMIT %d", request.limit());
 
     Query query = new Query(q, this.storage.database());
-    QueryResult response = this.storage.get().query(query, TimeUnit.MILLISECONDS);
+    QueryResult response = this.storage.get().query(query, TimeUnit.MICROSECONDS);
     if (response.hasError()){
       throw new RuntimeException(response.getError());
     }
 
-    List<List<Span>> results = new ArrayList<>();
+    Map<String,List<Span>> traces = new HashMap<String, List<Span>>();
     for (QueryResult.Result queryResult: response.getResults()){
       if (queryResult == null || queryResult.getSeries() == null) {
         continue;
       }
+
       for (QueryResult.Series traceSeries : queryResult.getSeries()){
         if (traceSeries == null) {
           continue;
         }
-        List<Span> spans = spanResults(traceSeries);
-        results.add(spans);
+        Span span = spanResults(traceSeries);
+        if (span != null) {
+          if (!traces.containsKey(span.traceId())) {
+            traces.put(span.traceId(), new ArrayList<>());
+          }
+          List<Span> spans = traces.get(span.traceId());
+          spans.add(span);
+          traces.put(span.traceId(), spans);
+        }
       }
     }
 
+    List<List<Span>> results = new ArrayList<>();
+    for (List<Span> trace: traces.values()) {
+      results.add(trace);
+    }
     return Call.create(results);
   }
 
-  private List<Span> spanResults(QueryResult.Series series) {
-    List<Span> spans = new ArrayList<>();
+  private Span spanResults(QueryResult.Series series) {
     List<List<Object>> values = series.getValues();
+
+    if (values == null) {
+      return null;
+    }
     Map<String, String> tags = series.getTags();
-    if (values != null) {
-      List<String> cols = series.getColumns();
-      int columnSize = cols.size();
-      Span.Builder builder = Span.newBuilder();
-      String traceId = "";
-      String id = "";
+    List<String> cols = series.getColumns();
+    int columnSize = cols.size();
+    Span.Builder builder = Span.newBuilder();
+
+    String id = Long.toHexString(Long.parseLong(tags.get("id")));
+    builder.id(id);
+    builder.traceId(tags.get("trace_id"));
+
+    for (List<Object> value: values) {
+
       String anno = "";
       Long time = -1L;
-      Long duration = -1L;
       String annoKey = "";
       String endPoint = "";
       String serviceName = "";
       Object v = null;
-      for (List<Object> value: values) {
-        for (int i = 0; i < columnSize; i++) {
-          String col = cols.get(i);
-          switch (col) {
-            case "trace_id":
-              v = value.get(i);
-              if (v != null) {
-                traceId = v.toString();
+
+      for (int i = 0; i < columnSize; i++) {
+        String col = cols.get(i);
+        switch (col) {
+          case "parent_id":
+            v = value.get(i);
+            if (v != null) {
+              String parent = Long.toHexString(Long.parseLong(v.toString()));
+              if (!parent.equals(id)) {
+                builder.parentId(parent);
               }
-              break;
-            case "id":
-              v = value.get(i);
-              if (v != null) {
-                id = v.toString();
-                id = Long.toHexString(Long.parseLong(id));
-              }
-              break;
-            case "parent_id":
-              v = value.get(i);
-              if (v != null) {
-                builder.parentId(Long.toHexString(Long.parseLong(v.toString())));
-              }
-              break;
-            case "name":
-              v = value.get(i);
-              if (v != null) {
-                builder.name(v.toString());
-              }
-              break;
-            case "service_name":
-              v = value.get(i);
-              if (v != null) {
-                serviceName = v.toString() ;
-              }
-              break;
-            case "annotation":
-              v = value.get(i);
-              if (v != null) {
-                anno = v.toString() ;
-              }
-              break;
-            case "annotation_key":
-              v = value.get(i);
-              if (v != null) {
-                annoKey = v.toString() ;
-              }
-              break;
-            case "endpoint_host":
-              v = value.get(i);
-              if (v != null) {
-                endPoint = v.toString() ;
-              }
-              break;
-            case "duration_ns":
-              duration = ((Double)(value.get(i))).longValue();
-              break;
-            case "time":
-              time = ((Double)(value.get(i))).longValue();
-              break;
-          }
+            }
+            break;
+          case "name":
+            v = value.get(i);
+            if (v != null) {
+              builder.name(v.toString());
+            }
+            break;
+          case "service_name":
+            v = value.get(i);
+            if (v != null) {
+              serviceName = v.toString() ;
+            }
+            break;
+          case "annotation":
+            v = value.get(i);
+            if (v != null) {
+              anno = v.toString() ;
+            }
+            break;
+          case "annotation_key":
+            v = value.get(i);
+            if (v != null) {
+              annoKey = v.toString() ;
+            }
+            break;
+          case "endpoint_host":
+            v = value.get(i);
+            if (v != null) {
+              endPoint = v.toString() ;
+            }
+            break;
+          case "duration_ns":
+            builder.duration(((Double)(value.get(i))).longValue() / 1000);
+            break;
+          case "time":
+            time = ((Double)(value.get(i))).longValue();
+            break;
         }
       }
-      if (id.isEmpty()) {
-        id = Long.toHexString(Long.parseLong(tags.get("id")));
-      }
-      builder.id(id);
-
-      if (traceId.isEmpty()){
-        traceId = tags.get("trace_id");
-      }
-      builder.traceId(traceId);
-
       if (!endPoint.isEmpty() && !serviceName.isEmpty()) {
         builder.localEndpoint(
           Endpoint
@@ -200,48 +194,53 @@ final class InfluxDBSpanStore implements SpanStore {
         builder.putTag(annoKey, anno);
       } else if (!anno.isEmpty()) {
         builder.addAnnotation(time, anno);
+      } else {
+        builder.timestamp(time);
       }
-
-      if (duration >= 0) {
-        builder.duration(duration);
-      }
-
-      builder.timestamp(time);
-      Span span = builder.build();
-
-      spans.add(span);
     }
-    return spans;
+
+    Span span = builder.build();
+    return span;
   }
+
+
+
+  private String trimLeadingZeroes(String str){
+    final Long trimZeroes = Long.parseLong(str, 16);
+    return Long.toHexString(trimZeroes);
+  }
+
 
   @Override public Call<List<Span>> getTrace(String traceId) {
     // make sure we have a 16 or 32 character trace ID
-    traceId = Span.normalizeTraceId(traceId);
-    long tid = Long.parseLong(traceId, 16);
-    traceId = Long.toString(tid);
+    //traceId = Span.normalizeTraceId(traceId);
+    //long tid = Long.parseLong(traceId, 16);
+    //traceId = Long.toString(tid);
 
     // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
-    if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
+    //if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
 
+    traceId = trimLeadingZeroes(traceId);
     String q =
-      String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s'",
+      String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s' GROUP BY \"trace_id\", \"id\" ORDER BY time DESC ",
         this.storage.measurement(),
         traceId);
     Query query = new Query(q, this.storage.database());
-    QueryResult response = this.storage.get().query(query, TimeUnit.MILLISECONDS);
+    QueryResult response = this.storage.get().query(query, TimeUnit.MICROSECONDS);
     if (response.hasError()){
       throw new RuntimeException(response.getError());
     }
     List<QueryResult.Result> results = response.getResults();
+    List<Span> spans = new ArrayList<>();
     if (results != null && results.get(0) != null) {
       QueryResult.Result result = results.get(0);
-      if (result.getSeries() != null && result.getSeries().get(0) != null) {
-        QueryResult.Series series = result.getSeries().get(0);
-        List<Span> spans = spanResults(series);
-        return Call.create(spans);
+      if (result.getSeries() != null) {
+        for (QueryResult.Series series : result.getSeries()){
+          Span span = spanResults(series);
+          spans.add(span);
+        }
       }
     }
-    List<Span> spans = new ArrayList<>();
     return Call.create(spans);
   }
 
