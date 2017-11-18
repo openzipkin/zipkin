@@ -75,6 +75,7 @@ final class InfluxDBSpanStore implements SpanStore {
     q += " GROUP BY \"trace_id\", \"id\" ";
     q += String.format(" ORDER BY time DESC SLIMIT %d", request.limit());
 
+    System.out.println(q);
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query, TimeUnit.MILLISECONDS);
     if (response.hasError()){
@@ -83,7 +84,13 @@ final class InfluxDBSpanStore implements SpanStore {
 
     List<List<Span>> results = new ArrayList<>();
     for (QueryResult.Result queryResult: response.getResults()){
+      if (queryResult == null || queryResult.getSeries() == null) {
+        continue;
+      }
       for (QueryResult.Series traceSeries : queryResult.getSeries()){
+        if (traceSeries == null) {
+          continue;
+        }
         List<Span> spans = spanResults(traceSeries);
         results.add(spans);
       }
