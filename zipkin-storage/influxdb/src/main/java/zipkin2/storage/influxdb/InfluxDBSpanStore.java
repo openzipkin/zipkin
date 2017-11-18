@@ -75,7 +75,6 @@ final class InfluxDBSpanStore implements SpanStore {
     q += " GROUP BY \"trace_id\", \"id\" ";
     q += String.format(" ORDER BY time DESC SLIMIT %d", request.limit());
 
-    System.out.println(q);
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query, TimeUnit.MILLISECONDS);
     if (response.hasError()){
@@ -115,70 +114,71 @@ final class InfluxDBSpanStore implements SpanStore {
       String annoKey = "";
       String endPoint = "";
       String serviceName = "";
-      String v = "";
-      for (Object value: values) {
+      Object v = null;
+      for (List<Object> value: values) {
         for (int i = 0; i < columnSize; i++) {
           String col = cols.get(i);
           switch (col) {
             case "trace_id":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                traceId = v ;
+              v = value.get(i);
+              if (v != null) {
+                traceId = v.toString();
               }
               break;
             case "id":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                id = v ;
+              v = value.get(i);
+              if (v != null) {
+                id = v.toString();
+                id = Long.toHexString(Long.parseLong(id));
               }
               break;
             case "parent_id":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                builder.parentId(v);
+              v = value.get(i);
+              if (v != null) {
+                builder.parentId(Long.toHexString(Long.parseLong(v.toString())));
               }
               break;
             case "name":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                builder.name(v);
+              v = value.get(i);
+              if (v != null) {
+                builder.name(v.toString());
               }
               break;
             case "service_name":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                serviceName = v ;
+              v = value.get(i);
+              if (v != null) {
+                serviceName = v.toString() ;
               }
               break;
             case "annotation":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                anno = v ;
+              v = value.get(i);
+              if (v != null) {
+                anno = v.toString() ;
               }
               break;
             case "annotation_key":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                annoKey = v ;
+              v = value.get(i);
+              if (v != null) {
+                annoKey = v.toString() ;
               }
               break;
             case "endpoint_host":
-              v = value.toString();
-              if (!v.isEmpty()) {
-                endPoint = v ;
+              v = value.get(i);
+              if (v != null) {
+                endPoint = v.toString() ;
               }
               break;
             case "duration_ns":
-              duration = ((Double) values.get(i).get(0)).longValue();
+              duration = ((Double)(value.get(i))).longValue();
               break;
             case "time":
-              time = ((Double) values.get(i).get(0)).longValue();
+              time = ((Double)(value.get(i))).longValue();
               break;
           }
         }
       }
       if (id.isEmpty()) {
-        id = tags.get("id");
+        id = Long.toHexString(Long.parseLong(tags.get("id")));
       }
       builder.id(id);
 
@@ -217,6 +217,8 @@ final class InfluxDBSpanStore implements SpanStore {
   @Override public Call<List<Span>> getTrace(String traceId) {
     // make sure we have a 16 or 32 character trace ID
     traceId = Span.normalizeTraceId(traceId);
+    long tid = Long.parseLong(traceId, 16);
+    traceId = Long.toString(tid);
 
     // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
     if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
@@ -226,12 +228,20 @@ final class InfluxDBSpanStore implements SpanStore {
         this.storage.measurement(),
         traceId);
     Query query = new Query(q, this.storage.database());
-    QueryResult result = this.storage.get().query(query);
-    if (result.hasError()){
-      throw new RuntimeException(result.getError());
+    QueryResult response = this.storage.get().query(query, TimeUnit.MILLISECONDS);
+    if (response.hasError()){
+      throw new RuntimeException(response.getError());
     }
-    QueryResult.Series series = result.getResults().get(0).getSeries().get(0);
-    List<Span> spans = spanResults(series);
+    List<QueryResult.Result> results = response.getResults();
+    if (results != null && results.get(0) != null) {
+      QueryResult.Result result = results.get(0);
+      if (result.getSeries() != null && result.getSeries().get(0) != null) {
+        QueryResult.Series series = result.getSeries().get(0);
+        List<Span> spans = spanResults(series);
+        return Call.create(spans);
+      }
+    }
+    List<Span> spans = new ArrayList<>();
     return Call.create(spans);
   }
 
