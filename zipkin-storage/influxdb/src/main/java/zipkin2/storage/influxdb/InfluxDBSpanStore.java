@@ -290,12 +290,61 @@ final class InfluxDBSpanStore implements SpanStore {
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     String q =
-      String.format("SELECT COUNT(\"duration\") FROM \"%s\"", this.storage.measurement());
+      String.format("SELECT COUNT(\"duration_ns\") FROM \"%s\"", this.storage.measurement());
     q += String.format(" WHERE time < %dms", endTs);
     q += String.format(" AND time > %dms ", endTs - lookback);
-    q += "GROUP BY \"id\",\"parent_id\",time(1d)";
+    q += String.format(" AND annotation='' GROUP BY \"id\",\"parent_id\",\"service_name\",time(%dms)", lookback);
     Query query = new Query(q, this.storage.database());
-    QueryResult result = this.storage.get().query(query);
-    throw new UnsupportedOperationException();
+    QueryResult response = this.storage.get().query(query);
+    if (response.hasError()){
+      throw new RuntimeException(response.getError());
+    }
+
+    Map<String, String> services = new HashMap<String, String>();
+    for (QueryResult.Result result: response.getResults()){
+      if (result == null) {
+        continue;
+      }
+      for (QueryResult.Series series : result.getSeries()){
+        if (series == null) {
+          continue;
+        }
+        Map<String, String> tags = series.getTags();
+        String serviceName = tags.get("service_name");
+        String id = tags.get("id");
+        services.put(id, serviceName);
+      }
+    }
+
+    List<DependencyLink> links = new ArrayList<>();
+    for (QueryResult.Result result: response.getResults()){
+      if (result == null) {
+        continue;
+      }
+      for (QueryResult.Series series : result.getSeries()){
+        if (series == null) {
+          continue;
+        }
+
+        Map<String, String> tags = series.getTags();
+        String child = tags.get("service_name");
+        String parentID = tags.get("parent_id");
+        String parent = services.get(parentID);
+        long count = 0;
+        for (List<Object> values : series.getValues()) {
+          Object value = values.get(1);
+          count += ((Double)(value)).longValue();
+        }
+        DependencyLink link = DependencyLink
+          .newBuilder()
+          .parent(parent)
+          .child(child)
+          .callCount(count)
+          .build();
+
+        links.add(link);
+      }
+    }
+    return Call.create(links);
   }
 }
