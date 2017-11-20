@@ -37,4 +37,8 @@ public class ZipkinInfluxDBStorageAutoConfiguration {
     InfluxDBStorage storage = properties.toBuilder().strictTraceId(strictTraceId).build();
     return V2StorageComponent.create(storage);
   }
+
+  @Bean InfluxDBStorage v2Storage(V2StorageComponent component) {
+    return (InfluxDBStorage) component.delegate();
+  }
 }
