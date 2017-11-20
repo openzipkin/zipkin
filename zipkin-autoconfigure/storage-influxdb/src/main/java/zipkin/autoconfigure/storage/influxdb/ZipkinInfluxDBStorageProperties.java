@@ -21,7 +21,7 @@ public class ZipkinInfluxDBStorageProperties {
   private String url = "http://localhost:8086";
   private String password = "";
   private String username = "root";
-  private String retentionPolicy = "default";
+  private String retentionPolicy = "autogen";
   private String database = "zipkin";
   private String measurement = "zipkin";
 

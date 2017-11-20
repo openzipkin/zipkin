@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.influxdb.InfluxDBException;
 import org.influxdb.dto.Point;
 import zipkin2.Annotation;
 import zipkin2.Call;
@@ -30,12 +31,15 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
 
   InfluxDBSpanConsumer(InfluxDBStorage influxDB) {
     this.storage = influxDB;
+    try {
+      storage.get().createDatabase(storage.database());
+    } catch(InfluxDBException e){}
   }
 
   @Override
   public Call<Void> accept(List<Span> spans) {
     if (spans.isEmpty()) return Call.create(null);
-    
+
     BatchPoints batch = BatchPoints
       .database(storage.database())
       .retentionPolicy(storage.retentionPolicy())

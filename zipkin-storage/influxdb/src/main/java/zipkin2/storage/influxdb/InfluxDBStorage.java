@@ -32,7 +32,7 @@ public abstract class InfluxDBStorage extends StorageComponent {
       .measurement("zipkin")
       .username("root")
       .password("")
-      .retentionPolicy("zipkin")
+      .retentionPolicy("autogen")
       .strictTraceId(true);
   }
 
