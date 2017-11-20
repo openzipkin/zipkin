@@ -127,7 +127,7 @@ zipkin:
       url: ${INFLUXDB_URL:http://localhost:8086}
       database: ${INFLUXDB_DB:zipkin}
       measurement: ${INFLUXDB_MEASUREMENT:zipkin}
-      retentionPolicy: ${INFLUXDB_RETETION_POLICY:default}
+      retentionPolicy: ${INFLUXDB_RETETION_POLICY:autogen}
       username: ${INFLUXDB_USERNAME:root}
       password: ${INFLUXDB_PASSWORD:}
   ui:

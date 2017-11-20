@@ -118,7 +118,7 @@ final class InfluxDBSpanStore implements SpanStore {
     int columnSize = cols.size();
     Span.Builder builder = Span.newBuilder();
 
-    String id = Long.toHexString(Long.parseLong(tags.get("id")));
+    String id = tags.get("id");
     builder.id(id);
     builder.traceId(tags.get("trace_id"));
 
@@ -137,7 +137,7 @@ final class InfluxDBSpanStore implements SpanStore {
           case "parent_id":
             v = value.get(i);
             if (v != null) {
-              String parent = Long.toHexString(Long.parseLong(v.toString()));
+              String parent = v.toString();
               if (!parent.equals(id)) {
                 builder.parentId(parent);
               }
