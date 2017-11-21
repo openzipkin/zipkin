@@ -14,55 +14,57 @@
 package zipkin.server;
 
 import io.prometheus.client.CollectorRegistry;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.ConfigurableWebApplicationContext;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Query-only builds should be able to disable the HTTP collector, so that
- * associated assets 404 instead of allowing creation of spans.
+ * Query-only builds should be able to disable the HTTP collector, so that associated assets 404
+ * instead of allowing creation of spans.
  */
-@SpringBootTest(classes = ZipkinServer.class, properties = {
-  "zipkin.storage.type=", // cheat and test empty storage type
-  "spring.config.name=zipkin-server",
-  "zipkin.collector.http.enabled=false"
-})
+@SpringBootTest(
+  classes = ZipkinServer.class,
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties = {
+    "zipkin.storage.type=", // cheat and test empty storage type
+    "spring.config.name=zipkin-server",
+    "zipkin.collector.http.enabled=false"
+  })
 @RunWith(SpringRunner.class)
 public class ZipkinServerHttpCollectorDisabledTest {
 
-  @Autowired ConfigurableWebApplicationContext context;
+  @LocalServerPort int zipkinPort;
+  OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Before
-  public void init() {
+  @Before public void init() {
     // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
     CollectorRegistry.defaultRegistry.clear();
   }
 
-  @Test(expected = NoSuchBeanDefinitionException.class)
-  public void disabledHttpCollectorBean() throws Exception {
-    context.getBean(ZipkinHttpCollector.class);
-  }
-
   @Test public void httpCollectorEndpointReturns405() throws Exception {
-    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
-    mockMvc.perform(post("/api/v1/spans"))
-      .andExpect(status().isMethodNotAllowed());
+    Response response = client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/spans")
+      .post(RequestBody.create(null, "[]"))
+      .build()).execute();
+
+    assertThat(response.code()).isEqualTo(405);
   }
 
+  /** Shows the same http path still works for GET */
   @Test public void getOnSpansEndpointReturnsOK() throws Exception {
-    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
-    mockMvc.perform(get("/api/v1/spans?serviceName=unknown"))
-      .andExpect(status().isOk());
+    Response response = client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/spans?serviceName=unknown")
+      .build()).execute();
+
+    assertThat(response.isSuccessful()).isTrue();
   }
 }

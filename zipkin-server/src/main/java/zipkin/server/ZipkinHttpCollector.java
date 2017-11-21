@@ -22,7 +22,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -42,7 +41,6 @@ import static org.springframework.web.bind.annotation.RequestMethod.POST;
  * Implements the POST /api/v1/spans endpoint used by instrumentation.
  */
 @RestController
-@CrossOrigin("${zipkin.query.allowed-origins:*}")
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
 public class ZipkinHttpCollector {
   static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().build();

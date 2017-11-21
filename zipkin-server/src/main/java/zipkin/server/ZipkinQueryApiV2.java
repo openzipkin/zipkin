@@ -22,7 +22,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,7 +44,6 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
 @RequestMapping("/api/v2")
-@CrossOrigin("${zipkin.query.allowed-origins:*}")
 @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
 public class ZipkinQueryApiV2 {
   static final Charset UTF_8 = Charset.forName("UTF-8");
