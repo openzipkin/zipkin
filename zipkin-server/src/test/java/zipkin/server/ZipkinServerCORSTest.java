@@ -14,76 +14,81 @@
 package zipkin.server;
 
 import io.prometheus.client.CollectorRegistry;
+import java.io.IOException;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpHeaders;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.ConfigurableWebApplicationContext;
+import org.springframework.test.context.junit4.SpringRunner;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Integration test suite for CORS configuration.
  *
  * Verifies that allowed-origins can be configured via properties (zipkin.query.allowed-origins).
  */
-@SpringBootTest(classes = ZipkinServer.class)
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
-@TestPropertySource(properties = {"spring.config.name=zipkin-server", "zipkin.query.allowed-origins=foo.example.com"})
+@SpringBootTest(
+  classes = ZipkinServer.class,
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties = {
+    "spring.config.name=zipkin-server",
+    "zipkin.query.allowed-origins=" + ZipkinServerCORSTest.ALLOWED_ORIGIN
+  }
+)
+@RunWith(SpringRunner.class)
 public class ZipkinServerCORSTest {
+  static final String ALLOWED_ORIGIN = "http://foo.example.com";
+  static final String DISALLOWED_ORIGIN = "http://bar.example.com";
 
-  @Autowired
-  ConfigurableWebApplicationContext context;
+  @LocalServerPort int zipkinPort;
+  OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  MockMvc mockMvc;
-
-  @Before
-  public void init() {
+  @Before public void init() throws IOException {
     // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
     CollectorRegistry.defaultRegistry.clear();
-    mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
+    shouldAllowConfiguredOrigin(getTracesFromOrigin(ALLOWED_ORIGIN));
+    shouldAllowConfiguredOrigin(postSpansFromOrigin(ALLOWED_ORIGIN));
   }
 
-  @Test
-  public void shouldAllowConfiguredOrigin() throws Exception {
-    mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
-    mockMvc.perform(get("/api/v1/traces")
-        .header(HttpHeaders.ORIGIN, "foo.example.com"))
-           .andExpect(status().isOk());
-
-    performAsync(post("/api/v1/spans")
-        .content("[]")
-        .header(HttpHeaders.ORIGIN, "foo.example.com"))
-          .andExpect(status().isAccepted());
+  static void shouldAllowConfiguredOrigin(Response response) {
+    assertThat(response.isSuccessful()).isTrue();
+    assertThat(response.header("vary")).contains("Origin");
+    assertThat(response.header("access-control-allow-credentials")).isNull();
+    assertThat(response.header("access-control-allow-origin")).contains(ALLOWED_ORIGIN);
   }
 
-  @Test
-  public void shouldDisallowOrigin() throws Exception {
-    mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
-    mockMvc.perform(get("/api/v1/traces")
-        .header(HttpHeaders.ORIGIN, "bar.example.com"))
-           .andExpect(status().isForbidden());
-
-    mockMvc.perform(post("/api/v1/spans")
-        .content("[]")
-        .header(HttpHeaders.ORIGIN, "bar.example.com"))
-         .andExpect(status().isForbidden());
+  @Test public void shouldDisallowOrigin() throws Exception {
+    shouldDisallowOrigin(getTracesFromOrigin(DISALLOWED_ORIGIN));
+    shouldDisallowOrigin(postSpansFromOrigin(DISALLOWED_ORIGIN));
   }
 
-  ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {
-    return mockMvc.perform(asyncDispatch(mockMvc.perform(request).andReturn()));
+  static void shouldDisallowOrigin(Response response) {
+    assertThat(response.code()).isEqualTo(403);
+    // spring default, but debatable as seems others vary on 403
+    // https://github.com/rs/cors/blob/master/cors_test.go
+    assertThat(response.header("vary")).isNull();
+    assertThat(response.header("access-control-allow-credentials")).isNull();
+    assertThat(response.header("access-control-allow-origin")).isNull();
+  }
+
+  private Response getTracesFromOrigin(String origin) throws IOException {
+    return client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/traces")
+      .header("Origin", origin)
+      .build()).execute();
+  }
+
+  private Response postSpansFromOrigin(String origin) throws IOException {
+    return client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/spans")
+      .header("Origin", origin)
+      .post(RequestBody.create(null, "[]"))
+      .build()).execute();
   }
 }

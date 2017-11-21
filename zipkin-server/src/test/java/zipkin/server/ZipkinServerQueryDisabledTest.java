@@ -14,63 +14,54 @@
 package zipkin.server;
 
 import io.prometheus.client.CollectorRegistry;
+import java.io.IOException;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.ConfigurableWebApplicationContext;
-import zipkin.autoconfigure.ui.ZipkinUiAutoConfiguration;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Collector-only builds should be able to disable the query (and indirectly the UI), so that
  * associated assets 404 vs throw exceptions.
  */
-@SpringBootTest(classes = ZipkinServer.class, properties = {
+@SpringBootTest(
+  classes = ZipkinServer.class,
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties = {
     "spring.config.name=zipkin-server",
     "zipkin.query.enabled=false",
     "zipkin.ui.enabled=false"
-})
+  }
+)
 @RunWith(SpringRunner.class)
 public class ZipkinServerQueryDisabledTest {
+  @LocalServerPort int zipkinPort;
+  OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Autowired ConfigurableWebApplicationContext context;
-
-  @Before
-  public void init() {
+  @Before public void init() {
     // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
     CollectorRegistry.defaultRegistry.clear();
   }
 
-  @Test(expected = NoSuchBeanDefinitionException.class)
-  public void disabledQueryBean() throws Exception {
-    context.getBean(ZipkinQueryApiV1.class);
-    context.getBean(ZipkinQueryApiV2.class);
-  }
-
-  @Test(expected = NoSuchBeanDefinitionException.class)
-  public void disabledUiBean() throws Exception {
-    context.getBean(ZipkinUiAutoConfiguration.class);
-  }
-
   @Test public void queryRelatedEndpoints404() throws Exception {
-    MockMvc mockMvc = MockMvcBuilders.webAppContextSetup(this.context).build();
-    mockMvc.perform(get("/api/v1/traces"))
-        .andExpect(status().isNotFound());
-    mockMvc.perform(get("/api/v2/traces"))
-      .andExpect(status().isNotFound());
-    mockMvc.perform(get("/index.html"))
-        .andExpect(status().isNotFound());
+    assertThat(get("/api/v1/traces").code()).isEqualTo(404);
+    assertThat(get("/api/v2/traces").code()).isEqualTo(404);
+    assertThat(get("/index.html").code()).isEqualTo(404);
 
     // but other endpoints are ok
-    mockMvc.perform(get("/health"))
-        .andExpect(status().isOk());
+    assertThat(get("/health").isSuccessful()).isTrue();
+  }
+
+  private Response get(String path) throws IOException {
+    return client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + path)
+      .build()).execute();
   }
 }

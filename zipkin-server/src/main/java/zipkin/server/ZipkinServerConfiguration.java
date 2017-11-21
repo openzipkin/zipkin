@@ -14,6 +14,7 @@
 package zipkin.server;
 
 import com.github.kristofa.brave.Brave;
+import java.util.Arrays;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,12 +29,17 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.filter.CorsFilter;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2StorageComponent;
 import zipkin.server.brave.TracedStorageComponent;
 import zipkin.storage.StorageComponent;
 import zipkin2.storage.InMemoryStorage;
+
+import static java.util.Arrays.asList;
 
 @Configuration
 public class ZipkinServerConfiguration {
@@ -81,6 +87,19 @@ public class ZipkinServerConfiguration {
       }
       return bean;
     }
+  }
+
+  @Bean
+  @ConditionalOnMissingBean(CorsFilter.class)
+  CorsFilter corsFilter(@Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
+    CorsConfiguration configuration = new CorsConfiguration();
+    configuration.setAllowedOrigins(asList(allowedOrigins.split(",")));
+    configuration.setAllowedMethods(asList("GET", "POST"));
+    configuration.setAllowCredentials(false);
+    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    source.registerCorsConfiguration("/api/**", configuration);
+    source.registerCorsConfiguration("/zipkin/api/**", configuration);
+    return new CorsFilter(source);
   }
 
   /**

@@ -13,19 +13,17 @@
  */
 package zipkin.minimal;
 
+import java.io.IOException;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.ConfigurableWebApplicationContext;
+import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.Annotation;
 import zipkin.Codec;
 import zipkin.Endpoint;
@@ -33,49 +31,49 @@ import zipkin.Span;
 import zipkin.server.ZipkinServer;
 
 import static java.util.Arrays.asList;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.asyncDispatch;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import static zipkin.Constants.SERVER_RECV;
+import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(classes = ZipkinServer.class)
-@RunWith(SpringJUnit4ClassRunner.class)
-@WebAppConfiguration
-@TestPropertySource(properties = "spring.config.name=zipkin-server")
+@SpringBootTest(
+  classes = ZipkinServer.class,
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties = "spring.config.name=zipkin-server"
+)
+@RunWith(SpringRunner.class)
 public class ZipkinServerTest {
 
-  @Autowired
-  ConfigurableWebApplicationContext context;
-  MockMvc mockMvc;
+  @LocalServerPort int zipkinPort;
+  OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Before
-  public void init() {
-    mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
-  }
-
-  @Test
-  public void readsBackSpanName() throws Exception {
+  @Test public void readsBackSpanName() throws Exception {
     String service = "web";
     Endpoint endpoint = Endpoint.create(service, 127 << 24 | 1, 80);
-    Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, SERVER_RECV, endpoint);
+    Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, "sr", endpoint);
     Span span = Span.builder().id(1L).traceId(1L).name("get").addAnnotation(ann).build();
 
     // write the span to the server
-    performAsync(post("/api/v1/spans").content(Codec.JSON.writeSpans(asList(span))))
-        .andExpect(status().isAccepted());
+    Response post = post("/api/v1/spans", Codec.JSON.writeSpans(asList(span)));
+    assertThat(post.isSuccessful()).isTrue();
 
     // sleep as the the storage operation is async
     Thread.sleep(1000);
 
     // read back the span name, given its service
-    mockMvc.perform(get("/api/v1/spans?serviceName=" + service))
-        .andExpect(status().isOk())
-        .andExpect(content().string("[\"" + span.name + "\"]"));
+    Response get = get("/api/v1/spans?serviceName=" + service);
+    assertThat(get.isSuccessful()).isTrue();
+    assertThat(get.body().string())
+      .isEqualTo("[\"" + span.name + "\"]");
   }
 
-  ResultActions performAsync(MockHttpServletRequestBuilder request) throws Exception {
-    return mockMvc.perform(asyncDispatch(mockMvc.perform(request).andReturn()));
+  private Response get(String path) throws IOException {
+    return client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + path)
+      .build()).execute();
+  }
+
+  private Response post(String path, byte[] body) throws IOException {
+    return client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + path)
+      .post(RequestBody.create(null, body))
+      .build()).execute();
   }
 }
