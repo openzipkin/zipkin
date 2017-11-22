@@ -699,7 +699,7 @@ public final class ThriftCodec implements Codec {
 
   static byte[] checkByteArrayLength(byte[] bytes, int limit) {
     if (bytes.length > limit) {
-      throw new IllegalStateException(bytes.length + " > " + limit + ": byte array too long");
+      throw new IllegalArgumentException(bytes.length + " > " + limit + ": byte array too long");
     }
 
     return bytes;
@@ -708,7 +708,7 @@ public final class ThriftCodec implements Codec {
   static String checkStringLength(String string, int limit) {
     int length = Buffer.utf8SizeInBytes(string);
     if (length > limit) {
-      throw new IllegalStateException(length + " > " + limit + ": string too long");
+      throw new IllegalArgumentException(length + " > " + limit + ": string too long");
     }
     return string;
   }
