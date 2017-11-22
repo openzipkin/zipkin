@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import io.prometheus.client.CollectorRegistry;
 import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -77,6 +78,8 @@ public class ZipkinServerIntegrationTest {
 
   @Before
   public void init() {
+    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
+    CollectorRegistry.defaultRegistry.clear();
     mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
     storage.clear();
     metrics.forTransport("http").reset();

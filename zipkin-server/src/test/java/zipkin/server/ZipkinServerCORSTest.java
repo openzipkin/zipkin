@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import io.prometheus.client.CollectorRegistry;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -51,6 +52,8 @@ public class ZipkinServerCORSTest {
 
   @Before
   public void init() {
+    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
+    CollectorRegistry.defaultRegistry.clear();
     mockMvc = MockMvcBuilders.webAppContextSetup(context).build();
   }
 
