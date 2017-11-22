@@ -16,7 +16,10 @@ package zipkin.internal;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.stream.IntStream;
+
 import org.junit.Test;
+import zipkin.BinaryAnnotation;
 import zipkin.CodecTest;
 import zipkin.DependencyLink;
 import zipkin.Span;
@@ -74,5 +77,37 @@ public final class ThriftCodecTest extends CodecTest {
     byte[] bytes = codec().writeDependencyLinks(links);
     assertThat(codec().readDependencyLinks(ByteBuffer.wrap(bytes)))
         .isEqualTo(links);
+  }
+
+  @Test
+  public void writeLargeAnnotations() {
+    Span span = TestObjects.LOTS_OF_SPANS[0].toBuilder().binaryAnnotations(asList(
+      BinaryAnnotation.builder()
+        .key("Large.value")
+        .type(BinaryAnnotation.Type.BYTES)
+        .value(new byte[ThriftCodec.STRING_LENGTH_LIMIT + 1])
+        .build()
+    )).build();
+
+    thrown.expect(AssertionError.class);
+    thrown.expectMessage("Could not write");
+    codec().writeSpan(span);
+  }
+
+  @Test
+  public void writeLargeSpanName() {
+    StringBuilder sb = new StringBuilder();
+    IntStream.range(0, ThriftCodec.STRING_LENGTH_LIMIT + 1).forEach((i) -> sb.append("."));
+
+    Span span = Span.builder()
+      .traceId(0L)
+      .parentId(0L)
+      .id(0L)
+      .name(sb.toString())
+      .build();
+
+    thrown.expect(AssertionError.class);
+    thrown.expectMessage("Could not write");
+    codec().writeSpan(span);
   }
 }

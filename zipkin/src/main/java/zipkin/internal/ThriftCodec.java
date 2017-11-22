@@ -171,7 +171,7 @@ public final class ThriftCodec implements Codec {
       buffer.writeShort(value.port == null ? 0 : value.port);
 
       SERVICE_NAME.write(buffer);
-      buffer.writeLengthPrefixed(value.serviceName);
+      buffer.writeLengthPrefixed(checkStringLength(value.serviceName, STRING_LENGTH_LIMIT));
 
       if (value.ipv6 != null) {
         IPV6.write(buffer);
@@ -226,7 +226,7 @@ public final class ThriftCodec implements Codec {
       buffer.writeLong(value.timestamp);
 
       VALUE.write(buffer);
-      buffer.writeLengthPrefixed(value.value);
+      buffer.writeLengthPrefixed(checkStringLength(value.value, STRING_LENGTH_LIMIT));
 
       if (value.endpoint != null) {
         ENDPOINT.write(buffer);
@@ -279,11 +279,11 @@ public final class ThriftCodec implements Codec {
     @Override
     public void write(BinaryAnnotation value, Buffer buffer) {
       KEY.write(buffer);
-      buffer.writeLengthPrefixed(value.key);
+      buffer.writeLengthPrefixed(checkStringLength(value.key, STRING_LENGTH_LIMIT));
 
       VALUE.write(buffer);
       buffer.writeInt(value.value.length);
-      buffer.write(value.value);
+      buffer.write(checkByteArrayLength(value.value, STRING_LENGTH_LIMIT));
 
       TYPE.write(buffer);
       buffer.writeInt(value.type.value);
@@ -388,7 +388,7 @@ public final class ThriftCodec implements Codec {
       buffer.writeLong(value.traceId);
 
       SpanReader.NAME.write(buffer);
-      buffer.writeLengthPrefixed(value.name);
+      buffer.writeLengthPrefixed(checkStringLength(value.name, STRING_LENGTH_LIMIT));
 
       SpanReader.ID.write(buffer);
       buffer.writeLong(value.id);
@@ -695,6 +695,22 @@ public final class ThriftCodec implements Codec {
       throw new IllegalStateException(length + " > " + limit + ": possibly malformed thrift");
     }
     return length;
+  }
+
+  static byte[] checkByteArrayLength(byte[] bytes, int limit) {
+    if (bytes.length > limit) {
+      throw new IllegalArgumentException(bytes.length + " > " + limit + ": byte array too long");
+    }
+
+    return bytes;
+  }
+
+  static String checkStringLength(String string, int limit) {
+    int length = Buffer.utf8SizeInBytes(string);
+    if (length > limit) {
+      throw new IllegalArgumentException(length + " > " + limit + ": string too long");
+    }
+    return string;
   }
 
   static void writeListBegin(Buffer buffer, int size) {
