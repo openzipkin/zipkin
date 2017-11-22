@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import io.prometheus.client.CollectorRegistry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -41,6 +42,8 @@ public class ZipkinServerConfigurationTest
   public void init()
   {
     context = new AnnotationConfigApplicationContext();
+    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
+    CollectorRegistry.defaultRegistry.clear();
   }
 
   @After

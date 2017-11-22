@@ -13,6 +13,8 @@
  */
 package zipkin.server;
 
+import io.prometheus.client.CollectorRegistry;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,6 +36,12 @@ public class ZipkinServerSelfTracingTest {
 
   @Autowired
   ConfigurableWebApplicationContext context;
+
+  @Before
+  public void init() {
+    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
+    CollectorRegistry.defaultRegistry.clear();
+  }
 
   @Test
   @Ignore // TODO: be able to self-trace V2StorageComponent

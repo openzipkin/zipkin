@@ -13,6 +13,8 @@
  */
 package zipkin.server;
 
+import io.prometheus.client.CollectorRegistry;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -40,6 +42,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ZipkinServerHttpCollectorDisabledTest {
 
   @Autowired ConfigurableWebApplicationContext context;
+
+  @Before
+  public void init() {
+    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
+    CollectorRegistry.defaultRegistry.clear();
+  }
 
   @Test(expected = NoSuchBeanDefinitionException.class)
   public void disabledHttpCollectorBean() throws Exception {
