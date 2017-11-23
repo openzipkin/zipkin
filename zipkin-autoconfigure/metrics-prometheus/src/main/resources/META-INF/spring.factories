@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-zipkin.autoconfigure.metrics.PrometheusMetricsAutoConfiguration
+zipkin.autoconfigure.prometheus.ZipkinPrometheusMetricsAutoConfiguration

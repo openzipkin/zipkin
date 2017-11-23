@@ -22,6 +22,7 @@ import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -44,6 +45,9 @@ public class ZipkinServerConfiguration {
     return new ZipkinHealthIndicator(healthAggregator);
   }
 
+  @Autowired(required = false)
+  UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer;
+
   @Bean public UndertowEmbeddedServletContainerFactory embeddedServletContainerFactory(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins
   ) {
@@ -52,6 +56,9 @@ public class ZipkinServerConfiguration {
     factory.addDeploymentInfoCustomizers(
       info -> info.addInitialHandlerChainWrapper(cors)
     );
+    if (httpRequestDurationCustomizer != null) {
+      factory.addDeploymentInfoCustomizers(httpRequestDurationCustomizer);
+    }
     return factory;
   }
 

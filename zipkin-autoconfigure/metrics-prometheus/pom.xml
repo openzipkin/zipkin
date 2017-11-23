@@ -31,14 +31,6 @@
   </properties>
 
   <dependencies>
-    <!-- prometheusMetricsFilter is a servlet filter -->
-    <dependency>
-      <groupId>javax.servlet</groupId>
-      <artifactId>javax.servlet-api</artifactId>
-      <version>3.0.1</version>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Prometheus client -->
     <dependency>
       <groupId>io.prometheus</groupId>
@@ -51,17 +43,16 @@
       <artifactId>simpleclient_hotspot</artifactId>
       <version>${prometheus_simpleclient.version}</version>
     </dependency>
-    <!-- Expose request times -->
-    <dependency>
-      <groupId>io.prometheus</groupId>
-      <artifactId>simpleclient_servlet</artifactId>
-      <version>${prometheus_simpleclient.version}</version>
-    </dependency>
     <!-- Prometheus Spring Boot integration -->
     <dependency>
       <groupId>io.prometheus</groupId>
       <artifactId>simpleclient_spring_boot</artifactId>
       <version>${prometheus_simpleclient.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-undertow</artifactId>
+      <version>${spring-boot.version}</version>
     </dependency>
   </dependencies>
 </project>
