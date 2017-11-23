@@ -13,12 +13,10 @@
  */
 package zipkin.server;
 
-import io.prometheus.client.CollectorRegistry;
 import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.context.embedded.LocalServerPort;
@@ -44,11 +42,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class ZipkinServerQueryDisabledTest {
   @LocalServerPort int zipkinPort;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
-
-  @Before public void init() {
-    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
-    CollectorRegistry.defaultRegistry.clear();
-  }
 
   @Test public void queryRelatedEndpoints404() throws Exception {
     assertThat(get("/api/v1/traces").code()).isEqualTo(404);
