@@ -47,14 +47,27 @@ public class ZipkinServerCORSTest {
   @LocalServerPort int zipkinPort;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Test public void shouldAllowConfiguredOrigin() throws IOException {
+  /** Notably, javascript makes pre-flight requests, and won't POST spans if disallowed! */
+  @Test public void shouldAllowConfiguredOrigin_preflight() throws Exception {
+    shouldPermitPreflight(optionsForOrigin("/api/v2/traces", ALLOWED_ORIGIN));
+    shouldPermitPreflight(optionsForOrigin("/api/v2/spans", ALLOWED_ORIGIN));
+  }
+
+  static void shouldPermitPreflight(Response response) {
+    assertThat(response.isSuccessful()).isTrue();
+    assertThat(response.header("vary")).contains("origin");
+    assertThat(response.header("access-control-allow-credentials")).isNull();
+    assertThat(response.header("access-control-allow-origin")).contains(ALLOWED_ORIGIN);
+  }
+
+  @Test public void shouldAllowConfiguredOrigin() throws Exception {
     shouldAllowConfiguredOrigin(getTracesFromOrigin(ALLOWED_ORIGIN));
     shouldAllowConfiguredOrigin(postSpansFromOrigin(ALLOWED_ORIGIN));
   }
 
   static void shouldAllowConfiguredOrigin(Response response) {
     assertThat(response.isSuccessful()).isTrue();
-    assertThat(response.header("vary")).contains("Origin");
+    assertThat(response.header("vary")).contains("origin");
     assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).contains(ALLOWED_ORIGIN);
   }
@@ -66,11 +79,17 @@ public class ZipkinServerCORSTest {
 
   static void shouldDisallowOrigin(Response response) {
     assertThat(response.code()).isEqualTo(403);
-    // spring default, but debatable as seems others vary on 403
-    // https://github.com/rs/cors/blob/master/cors_test.go
-    assertThat(response.header("vary")).isNull();
+    assertThat(response.header("vary")).isEqualTo("origin");
     assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).isNull();
+  }
+
+  private Response optionsForOrigin(String path, String origin) throws IOException {
+    return client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + path)
+      .header("Origin", origin)
+      .method("OPTIONS", null)
+      .build()).execute();
   }
 
   private Response getTracesFromOrigin(String origin) throws IOException {
