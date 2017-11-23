@@ -14,6 +14,7 @@
 package zipkin.server;
 
 import com.jayway.jsonpath.JsonPath;
+import io.prometheus.client.Histogram;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.MediaType;
@@ -53,17 +54,16 @@ import static zipkin.internal.Util.UTF_8;
 @RunWith(SpringRunner.class)
 public class ZipkinServerIntegrationTest {
 
-  @Autowired
-  InMemoryStorage storage;
-  @Autowired
-  ActuateCollectorMetrics metrics;
-  @LocalServerPort
-  int zipkinPort;
+  @Autowired InMemoryStorage storage;
+  @Autowired ActuateCollectorMetrics metrics;
+  @Autowired Histogram duration;
+  @LocalServerPort int zipkinPort;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Before public void init() {
     storage.clear();
+    duration.clear();
     metrics.forTransport("http").reset();
   }
 
@@ -115,6 +115,21 @@ public class ZipkinServerIntegrationTest {
       .isEqualTo(spans.size() * 2);
     assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
       .isEqualTo(spans.size());
+  }
+
+  /** Makes sure the prometheus filter doesn't count twice */
+  @Test public void writeSpans_updatesPrometheusMetrics() throws Exception {
+    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
+    byte[] body = Codec.JSON.writeSpans(spans);
+    post("/api/v1/spans", body);
+    post("/api/v1/spans", body);
+
+    Response response = get("/prometheus");
+    assertThat(response.isSuccessful()).isTrue();
+    String prometheus = response.body().string();
+
+    assertThat(prometheus)
+      .contains("http_request_duration_seconds_count{path=\"/api/v1/spans\",method=\"POST\",} 2.0");
   }
 
   @Test public void tracesQueryRequiresNoParameters() throws Exception {
