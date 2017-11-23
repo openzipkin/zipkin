@@ -175,6 +175,8 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   files, or ec2 profiles) to sign outbound requests to the cluster.
     * `ES_PIPELINE`: Only valid when the destination is Elasticsearch 5.x. Indicates the ingest
                      pipeline used before spans are indexed. No default.
+    * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
+                    Elasticsearch Api. Defaults to 10000 (10 seconds)
     * `ES_MAX_REQUESTS`: Only valid when the transport is http. Sets maximum in-flight requests from
                          this process to any Elasticsearch host. Defaults to 64.
     * `ES_AWS_DOMAIN`: The name of the AWS-hosted elasticsearch domain to use. Supercedes any set

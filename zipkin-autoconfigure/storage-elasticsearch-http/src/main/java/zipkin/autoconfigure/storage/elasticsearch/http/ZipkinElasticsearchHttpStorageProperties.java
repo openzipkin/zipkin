@@ -52,6 +52,11 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
   private HttpLoggingInterceptor.Level httpLogging;
   /** When true, Redundantly queries indexes made with pre v1.31 collectors. Defaults to true. */
   private boolean legacyReadsEnabled = true;
+  /**
+   * Controls the connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api
+   * requests. Defaults to 10000 (10 seconds)
+   */
+  private int timeout = 10_000;
 
   public String getPipeline() {
     return pipeline;
@@ -159,6 +164,14 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
 
   public void setLegacyReadsEnabled(boolean legacyReadsEnabled) {
     this.legacyReadsEnabled = legacyReadsEnabled;
+  }
+
+  public int getTimeout() {
+    return timeout;
+  }
+
+  public void setTimeout(int timeout) {
+    this.timeout = timeout;
   }
 
   public ElasticsearchHttpStorage.Builder toBuilder(OkHttpClient client) {
