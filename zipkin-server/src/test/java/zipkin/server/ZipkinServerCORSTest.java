@@ -13,13 +13,11 @@
  */
 package zipkin.server;
 
-import io.prometheus.client.CollectorRegistry;
 import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.boot.context.embedded.LocalServerPort;
@@ -49,9 +47,7 @@ public class ZipkinServerCORSTest {
   @LocalServerPort int zipkinPort;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Before public void init() throws IOException {
-    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
-    CollectorRegistry.defaultRegistry.clear();
+  @Test public void shouldAllowConfiguredOrigin() throws IOException {
     shouldAllowConfiguredOrigin(getTracesFromOrigin(ALLOWED_ORIGIN));
     shouldAllowConfiguredOrigin(postSpansFromOrigin(ALLOWED_ORIGIN));
   }

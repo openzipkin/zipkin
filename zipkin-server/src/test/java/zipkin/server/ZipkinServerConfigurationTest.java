@@ -14,9 +14,7 @@
 package zipkin.server;
 
 import com.github.kristofa.brave.Brave;
-import io.prometheus.client.CollectorRegistry;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.actuate.health.HealthAggregator;
@@ -38,11 +36,6 @@ import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnviron
 
 public class ZipkinServerConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-
-  @Before public void init() {
-    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
-    CollectorRegistry.defaultRegistry.clear();
-  }
 
   @After public void close() {
     context.close();

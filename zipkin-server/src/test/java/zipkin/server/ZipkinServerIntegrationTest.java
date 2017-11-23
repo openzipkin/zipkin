@@ -14,7 +14,6 @@
 package zipkin.server;
 
 import com.jayway.jsonpath.JsonPath;
-import io.prometheus.client.CollectorRegistry;
 import java.io.IOException;
 import java.util.List;
 import okhttp3.MediaType;
@@ -64,8 +63,6 @@ public class ZipkinServerIntegrationTest {
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Before public void init() {
-    // prevent "brian's bomb" https://github.com/openzipkin/zipkin/issues/1811
-    CollectorRegistry.defaultRegistry.clear();
     storage.clear();
     metrics.forTransport("http").reset();
   }
