@@ -312,7 +312,7 @@ public class ZipkinServerIntegrationTest {
       .build()).execute();
 
     assertThat(response.isSuccessful()).isTrue();
-    assertThat(response.header("vary")).contains("Origin");
+    assertThat(response.header("vary")).contains("origin");
     assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).contains("*");
   }
