@@ -13,101 +13,136 @@
  */
 package zipkin.server;
 
+import io.undertow.io.Receiver;
+import io.undertow.server.HandlerWrapper;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HttpString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.ResponseEntity;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.SettableListenableFuture;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.context.annotation.Configuration;
 import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
-import zipkin.internal.Nullable;
 import zipkin.internal.V2JsonSpanDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
-import static org.springframework.web.bind.annotation.RequestMethod.POST;
+import static zipkin.SpanDecoder.JSON_DECODER;
+import static zipkin.SpanDecoder.THRIFT_DECODER;
 
 /**
- * Implements the POST /api/v1/spans endpoint used by instrumentation.
+ * Implements the POST /api/v1/spans and /api/v2/spans endpoints used by instrumentation.
  */
-@RestController
+@Configuration
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
-public class ZipkinHttpCollector {
-  static final ResponseEntity<?> SUCCESS = ResponseEntity.accepted().build();
-  static final String APPLICATION_THRIFT = "application/x-thrift";
-  static final SpanDecoder JSON2_DECODER = new V2JsonSpanDecoder();
+class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
+
+  static final HttpString
+    POST = HttpString.tryFromString("POST"),
+    CONTENT_TYPE = HttpString.tryFromString("Content-Type"),
+    CONTENT_ENCODING = HttpString.tryFromString("Content-Encoding");
 
   final CollectorMetrics metrics;
   final Collector collector;
+  final HttpCollector JSON_V2, JSON_V1, THRIFT;
+  final Receiver.ErrorCallback errorCallback;
+  private HttpHandler next;
 
   @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
-      CollectorMetrics metrics) {
+    CollectorMetrics metrics) {
     this.metrics = metrics.forTransport("http");
     this.collector = Collector.builder(getClass())
-        .storage(storage).sampler(sampler).metrics(this.metrics).build();
-  }
-
-  @RequestMapping(value = "/api/v2/spans", method = POST)
-  public ListenableFuture<ResponseEntity<?>> uploadSpansJson2(
-    @RequestHeader(value = "Content-Encoding", required = false) String encoding,
-    @RequestBody byte[] body
-  ) {
-    return validateAndStoreSpans(encoding, JSON2_DECODER, body);
-  }
-
-  @RequestMapping(value = "/api/v1/spans", method = POST)
-  public ListenableFuture<ResponseEntity<?>> uploadSpansJson(
-      @RequestHeader(value = "Content-Encoding", required = false) String encoding,
-      @RequestBody byte[] body
-  ) {
-    return validateAndStoreSpans(encoding, SpanDecoder.JSON_DECODER, body);
-  }
-
-  @RequestMapping(value = "/api/v1/spans", method = POST, consumes = APPLICATION_THRIFT)
-  public ListenableFuture<ResponseEntity<?>> uploadSpansThrift(
-      @RequestHeader(value = "Content-Encoding", required = false) String encoding,
-      @RequestBody byte[] body
-  ) {
-    return validateAndStoreSpans(encoding, SpanDecoder.THRIFT_DECODER, body);
-  }
-
-  ListenableFuture<ResponseEntity<?>> validateAndStoreSpans(String encoding, SpanDecoder decoder,
-      byte[] body) {
-    SettableListenableFuture<ResponseEntity<?>> result = new SettableListenableFuture<>();
-    metrics.incrementMessages();
-    if (encoding != null && encoding.contains("gzip")) {
-      try {
-        body = gunzip(body);
-      } catch (IOException e) {
-        metrics.incrementMessagesDropped();
-        result.set(ResponseEntity.badRequest().body("Cannot gunzip spans: " + e.getMessage() + "\n"));
+      .storage(storage).sampler(sampler).metrics(this.metrics).build();
+    this.JSON_V2 = new HttpCollector(new V2JsonSpanDecoder());
+    this.JSON_V1 = new HttpCollector(JSON_DECODER);
+    this.THRIFT = new HttpCollector(THRIFT_DECODER);
+    this.errorCallback = new Receiver.ErrorCallback() {
+      @Override public void error(HttpServerExchange exchange, IOException e) {
+        ZipkinHttpCollector.this.metrics.incrementMessagesDropped();
+        ZipkinHttpCollector.error(exchange, e);
       }
+    };
+  }
+
+  @Override public void handleRequest(HttpServerExchange exchange) throws Exception {
+    boolean v2 = exchange.getRelativePath().equals("/api/v2/spans");
+    boolean v1 = !v2 && exchange.getRelativePath().equals("/api/v1/spans");
+    if (!v2 && !v1) {
+      next.handleRequest(exchange);
+      return;
     }
-    collector.acceptSpans(body, decoder, new Callback<Void>() {
-      @Override public void onSuccess(@Nullable Void value) {
-        result.set(SUCCESS);
-      }
 
-      @Override public void onError(Throwable t) {
-        String message = t.getMessage() == null ? t.getClass().getSimpleName() : t.getMessage();
-        result.set(t.getMessage() == null || message.startsWith("Cannot store")
-            ? ResponseEntity.status(500).body(message + "\n")
-            : ResponseEntity.status(400).body(message + "\n"));
-      }
-    });
-    return result;
+    if (!POST.equals(exchange.getRequestMethod())) {
+      next.handleRequest(exchange);
+      return;
+    }
+
+    String contentTypeValue = exchange.getRequestHeaders().getFirst(CONTENT_TYPE);
+    boolean json = contentTypeValue == null || contentTypeValue.startsWith("application/json");
+    boolean thrift = !json && contentTypeValue.startsWith("application/x-thrift");
+    if (!json && !thrift) {
+      exchange.setStatusCode(400)
+        .getResponseSender()
+        .send("unsupported content type " + contentTypeValue + "\n");
+      return;
+    }
+
+    HttpCollector collector = v2 ? JSON_V2 : thrift ? THRIFT : JSON_V1;
+    metrics.incrementMessages();
+    exchange.getRequestReceiver().receiveFullBytes(collector, errorCallback);
   }
 
+  @Override public HttpHandler wrap(HttpHandler handler) {
+    this.next = handler;
+    return this;
+  }
+
+  final class HttpCollector implements Receiver.FullBytesCallback {
+    final SpanDecoder decoder;
+
+    HttpCollector(SpanDecoder decoder) {
+      this.decoder = decoder;
+    }
+
+    @Override public void handle(HttpServerExchange exchange, byte[] body) {
+      String encoding = exchange.getRequestHeaders().getFirst(CONTENT_ENCODING);
+
+      if (encoding != null && encoding.contains("gzip")) {
+        try {
+          body = gunzip(body);
+        } catch (IOException e) {
+          metrics.incrementMessagesDropped();
+          exchange.setStatusCode(400)
+            .getResponseSender().send("Cannot gunzip spans: " + e.getMessage() + "\n");
+          return;
+        }
+      }
+      collector.acceptSpans(body, decoder, new Callback<Void>() {
+        @Override public void onSuccess(Void value) {
+          exchange.setStatusCode(202).getResponseSender().close();
+        }
+
+        @Override public void onError(Throwable t) {
+          error(exchange, t);
+        }
+      });
+    }
+  }
+
+  static void error(HttpServerExchange exchange, Throwable e) {
+    String message = e.getMessage();
+    int code = message == null || message.startsWith("Cannot store") ? 500 : 400;
+    if (message == null) message = e.getClass().getSimpleName();
+    exchange.setStatusCode(code).getResponseSender().send(message);
+  }
+
+  // TODO: there's gotta be an N/IO way to gunzip
   private static final ThreadLocal<byte[]> GZIP_BUFFER = new ThreadLocal<byte[]>() {
     @Override protected byte[] initialValue() {
       return new byte[1024];
