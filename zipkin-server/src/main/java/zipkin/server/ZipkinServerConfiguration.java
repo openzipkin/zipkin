@@ -47,12 +47,19 @@ public class ZipkinServerConfiguration {
 
   @Autowired(required = false)
   UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer;
+  @Autowired(required = false)
+  ZipkinHttpCollector httpCollector;
 
   @Bean public UndertowEmbeddedServletContainerFactory embeddedServletContainerFactory(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins
   ) {
     UndertowEmbeddedServletContainerFactory factory = new UndertowEmbeddedServletContainerFactory();
     CorsHandler cors = new CorsHandler(allowedOrigins);
+    if (httpCollector != null) {
+      factory.addDeploymentInfoCustomizers(
+        info -> info.addInitialHandlerChainWrapper(httpCollector)
+      );
+    }
     factory.addDeploymentInfoCustomizers(
       info -> info.addInitialHandlerChainWrapper(cors)
     );
