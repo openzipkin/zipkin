@@ -39,6 +39,15 @@ For example, to allow CORS requests from `http://foo.bar.com`:
 ```
 ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 ```
+### Archiving Traces
+
+Most Zipkin setups enforce some kind of TTL policy for their data stores. Archive trace feature allows Zipkin users to save a trace for time periods longer than the standard data retention policy.
+
+This can be achieved by setting up two separate Zipkin server instances, one regular and one with longer TTL, backed by separate data stores with different eviction policies.
+
+Regular server should use `zipkin.ui.archive-endpoint` and `zipkin.ui.archive-read-endpoint` properties to specify archive server endpoints. [UI configuration](#configuration-for-the-ui) section has more details for these properties.
+
+Archive server should set `ZIPKIN_QUERY_ALLOWED_ORIGINS` environment variable, to allow CORS from regular server. For example, if regular server is running at `http://zipkin.com`, archive server should set `ZIPKIN_QUERY_ALLOWED_ORIGINS=http://zipkin.com`.
 
 ## Logging
 
@@ -103,6 +112,9 @@ instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex
 logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a button will appear on the trace page and will replace {traceId} in the url by the traceId. Not required.
 dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
+archiveEndpoint | zipkin.ui.archive-endpoint | Endpoint for archiving traces. e.g. `http://archive.zipkin.com/api/v2/spans`. If specified, a button will appear on the trace page to archive the trace. Not required.
+archiveReadEndpoint | zipkin.ui.archive-read-endpoint | Endpoint for reading archived traces. e.g. `http://archive.zipkin.com/zipkin/traces`. If specified, a link to archived trace will be displayed after a trace is archived. Not required.
+archiveHome | zipkin.ui.archive-home | URL to archive server. e.g. `http://archive.zipkin.com`. If specified, a link to archived server will be displayed on top menu bar.
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 

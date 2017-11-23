@@ -18,7 +18,9 @@ const TracePageComponent = component(function TracePage() {
 
     TraceData.attachTo(document, {
       traceId: this.attr.traceId,
-      logsUrl: this.attr.config('logsUrl')
+      logsUrl: this.attr.config('logsUrl'),
+      archiveEndpoint: this.attr.config('archiveEndpoint'),
+      archiveReadEndpoint: this.attr.config('archiveReadEndpoint')
     });
     this.on(document, 'tracePageModelView', function(ev, data) {
       this.$node.html(traceTemplate({
@@ -43,6 +45,40 @@ const TracePageComponent = component(function TracePage() {
           title: `Trace ${this.attr.traceId}`,
           obj: data.trace,
           link: `${contextRoot}api/v1/trace/${this.attr.traceId}`
+        });
+      });
+
+      this.$node.find('#archiveTraceLink').click(e => {
+        e.preventDefault();
+        const traceId = this.attr.traceId;
+        const archiveEndpoint = this.attr.config('archiveEndpoint');
+        const archiveReadEndpoint = this.attr.config('archiveReadEndpoint');
+
+        $.ajax(`/api/v2/trace/${traceId}`, {
+          type: 'GET',
+          dataType: 'json'
+        }).done(trace => {
+          $.ajax(`${archiveEndpoint}`, {
+            type: 'POST',
+            dataType: 'json',
+            crossDomain: true,
+            data: JSON.stringify(trace),
+            contentType: 'application/json; charset=utf-8'
+          }).done(result => {
+            console.log(result);
+            if (archiveReadEndpoint) {
+              window.prompt('Trace archived. Copy link to clipboard: Cmd+C, Enter',
+                `${archiveReadEndpoint}/${traceId}`);
+            } else {
+              alert('Trace archived');
+            }
+          }).fail(error => {
+            console.log(error);
+            alert(`Unable to archive trace ${this.attr.traceId}`);
+          });
+        }).fail(error2 => {
+          console.log(error2);
+          alert(`Unable to archive trace ${this.attr.traceId}`);
         });
       });
 

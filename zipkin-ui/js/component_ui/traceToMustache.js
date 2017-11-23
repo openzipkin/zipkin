@@ -92,7 +92,8 @@ export function formatEndpoint({ipv4, ipv6, port = 0, serviceName = ''}) {
   return `${ipv4}:${port}`;
 }
 
-export default function traceToMustache(trace, logsUrl = undefined) {
+export default function traceToMustache(trace, logsUrl = undefined,
+    archiveEndpoint = undefined, archiveReadEndpoint = undefined) {
   const summary = traceSummary(trace);
   const traceId = summary.traceId;
   const duration = mkDurationStr(summary.duration);
@@ -193,6 +194,8 @@ export default function traceToMustache(trace, logsUrl = undefined) {
     timeMarkersBackup,
     spans,
     spansBackup,
-    logsUrl
+    logsUrl,
+    archiveEndpoint,
+    archiveReadEndpoint
   };
 }

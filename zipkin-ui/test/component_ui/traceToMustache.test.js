@@ -58,6 +58,18 @@ describe('traceToMustache', () => {
     modelview.logsUrl.should.equal(logsUrl);
   });
 
+  it('should show archiveEndpoint', () => {
+    const archiveEndpoint = 'http/url.com/archive';
+    const modelview = traceToMustache(trace, undefined, archiveEndpoint);
+    modelview.archiveEndpoint.should.equal(archiveEndpoint);
+  });
+
+  it('should show archiveReadEndpoint', () => {
+    const archiveReadEndpoint = 'http/url.com/archive/read';
+    const modelview = traceToMustache(trace, undefined, undefined, archiveReadEndpoint);
+    modelview.archiveReadEndpoint.should.equal(archiveReadEndpoint);
+  });
+
   it('should show service counts', () => {
     const modelview = traceToMustache(trace);
     modelview.serviceCounts.should.eql([{

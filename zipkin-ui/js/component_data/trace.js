@@ -14,11 +14,14 @@ export default component(function TraceData() {
   this.after('initialize', function() {
     const traceId = this.attr.traceId;
     const logsUrl = toContextualLogsUrl(this.attr.logsUrl, traceId);
+    const archiveEndpoint = this.attr.archiveEndpoint;
+    const archiveReadEndpoint = this.attr.archiveReadEndpoint;
     $.ajax(`api/v1/trace/${traceId}`, {
       type: 'GET',
       dataType: 'json'
     }).done(trace => {
-      const modelview = traceToMustache(trace, logsUrl);
+      const modelview = traceToMustache(trace, logsUrl, archiveEndpoint,
+        archiveReadEndpoint);
       this.trigger('tracePageModelView', {modelview, trace});
     }).fail(e => {
       this.trigger('uiServerError',
