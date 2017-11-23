@@ -15,10 +15,12 @@ package zipkin.autoconfigure.storage.elasticsearch.http;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -53,7 +55,9 @@ public class ZipkinElasticsearchOkHttpAutoConfiguration {
   @Bean
   @Qualifier("zipkinElasticsearchHttp")
   @ConditionalOnMissingBean
-  OkHttpClient elasticsearchOkHttpClient() {
+  OkHttpClient elasticsearchOkHttpClient(
+    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout
+  ) {
     OkHttpClient.Builder builder = elasticsearchOkHttpClientBuilder != null
         ? elasticsearchOkHttpClientBuilder
         : new OkHttpClient.Builder();
@@ -61,6 +65,9 @@ public class ZipkinElasticsearchOkHttpAutoConfiguration {
     for (Interceptor interceptor : networkInterceptors) {
       builder.addNetworkInterceptor(interceptor);
     }
+    builder.connectTimeout(timeout, TimeUnit.MILLISECONDS);
+    builder.readTimeout(timeout, TimeUnit.MILLISECONDS);
+    builder.writeTimeout(timeout, TimeUnit.MILLISECONDS);
     return builder.build();
   }
 }

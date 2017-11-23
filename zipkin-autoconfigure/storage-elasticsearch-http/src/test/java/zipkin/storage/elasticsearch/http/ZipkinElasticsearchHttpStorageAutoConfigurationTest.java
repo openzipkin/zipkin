@@ -208,6 +208,50 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
   }
 
   @Test
+  public void timeout_defaultsTo10Seconds() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:http://host1:9200"
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchOkHttpAutoConfiguration.class,
+      InterceptorConfiguration.class);
+    context.refresh();
+
+    OkHttpClient client = context.getBean(OkHttpClient.class);
+    assertThat(client.connectTimeoutMillis())
+      .isEqualTo(10_000);
+    assertThat(client.readTimeoutMillis())
+      .isEqualTo(10_000);
+    assertThat(client.writeTimeoutMillis())
+      .isEqualTo(10_000);
+  }
+
+  @Test
+  public void timeout_override() {
+    context = new AnnotationConfigApplicationContext();
+    int timeout = 30_000;
+    addEnvironment(context,
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+      "zipkin.storage.elasticsearch.timeout:" + timeout
+    );
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchOkHttpAutoConfiguration.class,
+      InterceptorConfiguration.class);
+    context.refresh();
+
+    OkHttpClient client = context.getBean(OkHttpClient.class);
+    assertThat(client.connectTimeoutMillis())
+      .isEqualTo(timeout);
+    assertThat(client.readTimeoutMillis())
+      .isEqualTo(timeout);
+    assertThat(client.writeTimeoutMillis())
+      .isEqualTo(timeout);
+  }
+
+  @Test
   public void strictTraceId_defaultsToTrue() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
