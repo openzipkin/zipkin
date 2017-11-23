@@ -14,6 +14,7 @@
 package zipkin.server;
 
 import com.github.kristofa.brave.Brave;
+import io.prometheus.client.Histogram;
 import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -27,6 +28,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import zipkin.autoconfigure.metrics.PrometheusMetricsAutoConfiguration;
 import zipkin.autoconfigure.ui.ZipkinUiAutoConfiguration;
 import zipkin.server.brave.BraveConfiguration;
 
@@ -65,6 +67,18 @@ public class ZipkinServerConfigurationTest {
     context.refresh();
 
     context.getBean(ZipkinHttpCollector.class);
+  }
+
+  @Test public void prometheusHistogram() {
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinServerConfigurationTest.Config.class,
+      ZipkinServerConfiguration.class,
+      PrometheusMetricsAutoConfiguration.class
+    );
+    context.refresh();
+
+    assertThat(context.getBean("http_request_duration_seconds", Histogram.class)).isNotNull();
   }
 
   @Test public void query_enabledByDefault() {
