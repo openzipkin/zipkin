@@ -24,11 +24,12 @@ import org.springframework.boot.actuate.metrics.Metric;
 import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
 import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
-import zipkin.autoconfigure.metrics.PrometheusMetricsAutoConfiguration;
+import zipkin.autoconfigure.prometheus.ZipkinPrometheusMetricsAutoConfiguration;
 import zipkin.autoconfigure.ui.ZipkinUiAutoConfiguration;
 import zipkin.server.brave.BraveConfiguration;
 
@@ -69,18 +70,6 @@ public class ZipkinServerConfigurationTest {
     context.getBean(ZipkinHttpCollector.class);
   }
 
-  @Test public void prometheusHistogram() {
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinServerConfigurationTest.Config.class,
-      ZipkinServerConfiguration.class,
-      PrometheusMetricsAutoConfiguration.class
-    );
-    context.refresh();
-
-    assertThat(context.getBean("http_request_duration_seconds", Histogram.class)).isNotNull();
-  }
-
   @Test public void query_enabledByDefault() {
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
@@ -117,6 +106,30 @@ public class ZipkinServerConfigurationTest {
       failBecauseExceptionWasNotThrown(NoSuchBeanDefinitionException.class);
     } catch (NoSuchBeanDefinitionException e) {
     }
+  }
+
+  @Test public void providesHttpRequestDurationHistogram() {
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinServerConfigurationTest.Config.class,
+      ZipkinServerConfiguration.class,
+      ZipkinPrometheusMetricsAutoConfiguration.class
+    );
+    context.refresh();
+
+    context.getBean(Histogram.class);
+  }
+
+  @Test public void providesHttpRequestDurationCustomizer() {
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinServerConfigurationTest.Config.class,
+      ZipkinServerConfiguration.class,
+      ZipkinPrometheusMetricsAutoConfiguration.class
+    );
+    context.refresh();
+
+    context.getBean(UndertowDeploymentInfoCustomizer.class);
   }
 
   @Test public void ui_enabledByDefault() {
