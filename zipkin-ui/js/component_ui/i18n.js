@@ -1,10 +1,11 @@
 import 'jquery-i18n-properties';
 import $ from 'jquery';
+import {contextRoot} from '../publicPath';
 
 export function i18nInit(file) {
   $.i18n.properties({
     name: file,
-    path: '',
+    path: contextRoot,
     mode: 'map',
     callback: () => {
       $('[data-i18n]').each((index, item) => {
