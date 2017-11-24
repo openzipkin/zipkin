@@ -135,7 +135,7 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   }
 
   /** The UI looks for the api relative to where it is mounted, under /zipkin */
-  @RequestMapping(value = "/zipkin/api/v1/**", method = GET)
+  @RequestMapping(value = "/zipkin/api/**", method = GET)
   public ModelAndView forwardApi(HttpServletRequest request) {
     String path = (String) request.getAttribute(PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
     return new ModelAndView("forward:" + path.replaceFirst("/zipkin", ""));

@@ -318,8 +318,8 @@ public class ZipkinServerIntegrationTest {
   }
 
   @Test public void forwardsApiForUi() throws Exception {
-    Response response = get("/zipkin/api/v1/traces");
-    assertThat(response.isSuccessful()).isTrue();
+    assertThat(get("/zipkin/api/v1/traces").isSuccessful()).isTrue();
+    assertThat(get("/zipkin/api/v2/traces").isSuccessful()).isTrue();
   }
 
   /** Simulate a proxy which forwards / to zipkin as opposed to resolving / -> /zipkin first */
