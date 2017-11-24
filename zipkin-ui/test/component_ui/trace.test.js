@@ -1,5 +1,8 @@
-import {showSpans, hideSpans} from '../../js/component_ui/trace';
+import $ from 'jquery';
+import {showSpans, hideSpans, initSpans} from '../../js/component_ui/trace';
 import {traceDetailSpan} from './traceTestHelpers';
+import traceToMustache from '../../js/component_ui/traceToMustache';
+import {traceTemplate} from '../../js/templates';
 
 describe('showSpans', () => {
   it('expands and highlights span to show', () => {
@@ -179,5 +182,54 @@ describe('hideSpans', () => {
     span.hidden.should.equal(true);
     span.openParents.should.equal(0);
     span.openChildren.should.equal(0);
+  });
+});
+
+function renderTrace(trace) {
+  const view = traceToMustache(trace);
+  const container = $('<div/>');
+  const x = {contextRoot: '/zipkin/', ...view};
+  container.html(traceTemplate(x));
+  return container.find('#trace-container');
+}
+
+describe('initSpans', () => {
+  it('should return initial data from rendered trace', () => {
+    const testTrace = [{
+      traceId: '2480ccca8df0fca5',
+      name: 'get',
+      id: '2480ccca8df0fca5',
+      timestamp: 1457186385375000,
+      duration: 333000,
+      annotations: [{
+        timestamp: 1457186385375000,
+        value: 'sr',
+        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
+      }, {
+        timestamp: 1457186385708000,
+        value: 'ss',
+        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
+      }],
+      binaryAnnotations: [{
+        key: 'sa',
+        value: true,
+        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
+      }, {
+        key: 'literally-false',
+        value: 'false',
+        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
+      }]
+    }];
+
+    const $trace = renderTrace(testTrace);
+    const data = initSpans($trace);
+
+    const span = data.spans['2480ccca8df0fca5'];
+    span.id.should.equal('2480ccca8df0fca5');
+    span.expanded.should.equal(false);
+    span.isRoot.should.equal(true);
+
+    data.spansByService['111'].length.should.equal(1);
+    data.spansByService['111'][0].should.equal('2480ccca8df0fca5');
   });
 });
