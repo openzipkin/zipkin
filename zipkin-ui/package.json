@@ -45,6 +45,7 @@
     "extract-text-webpack-plugin": "^1.0.1",
     "file-loader": "^0.8.5",
     "html-webpack-plugin": "^2.10.0",
+    "jquery-i18n-properties": "^1.2.7",
     "karma": "^0.13.21",
     "karma-babel-preprocessor": "^6.0.1",
     "karma-chai": "^0.1.0",

@@ -1,9 +1,9 @@
 <div id='trace-controls' class='row well well-sm'>
   <ul class='nav nav-pills'>
-    <li class=''><a href='#'><strong>Duration:</strong> <span class='badge'>{{duration}}</span></a></li>
-    <li class=''><a href='#'><strong>Services:</strong> <span class='badge'>{{services}}</span></a></li>
-    <li class=''><a href='#'><strong>Depth:</strong> <span class='badge'>{{depth}}</span></a></li>
-    <li class=''><a href='#'><strong>Total Spans:</strong> <span class='badge'>{{totalSpans}}</span></a></li>
+    <li class=''><a href='#'><strong data-i18n="trace.duration">Duration:</strong> <span class='badge'>{{duration}}</span></a></li>
+    <li class=''><a href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge'>{{services}}</span></a></li>
+    <li class=''><a href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge'>{{depth}}</span></a></li>
+    <li class=''><a href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge'>{{totalSpans}}</span></a></li>
     {{#logsUrl}}
     <li class='navbar-right'><a href='{{ logsUrl }}' id='traceLogsLink'><span class='btn btn-primary btn-xs badge'>Logs</span></a></li>
     {{/logsUrl}}
@@ -12,8 +12,8 @@
 
   <form class='form-inline' role='form'>
     <div class='btn-group btn-group-sm' id='filterAllServices'>
-      <button type='button' class='btn btn-default active' value='uiExpandAllSpans'>Expand All</button>
-      <button type='button' class='btn btn-default' value='uiCollapseAllSpans'>Collapse All</button>
+      <button type='button' class='btn btn-default active' value='uiExpandAllSpans' data-i18n="trace.expand">Expand All</button>
+      <button type='button' class='btn btn-default' value='uiCollapseAllSpans' data-i18n="trace.coollapse">Collapse All</button>
     </div>
     <select data-placeholder='Filter Service Search' class='form-control input-sm' name='serviceFilterSearch' id='serviceFilterSearch'>
       <option value=''></option>
@@ -137,7 +137,7 @@
         </table>
 
         <button class="btn btn-info btn-xs pull-right" type="button" data-toggle="collapse"
-                data-target="#moreInfo" aria-expanded="false" aria-controls="moreInfo">More Info</button>
+                data-target="#moreInfo" aria-expanded="false" aria-controls="moreInfo" data-i18n="trace.more">More Info</button>
         <hr/>
         <table id='moreInfo' class='table table-striped collapse'>
           <tbody>

@@ -8,6 +8,7 @@ import ServiceDataModal from '../component_ui/serviceDataModal';
 import TimeStampUI from '../component_ui/timeStamp';
 import GoToDependencyUI from '../component_ui/goToDependency';
 import {dependenciesTemplate} from '../templates';
+import {i18nInit} from '../component_ui/i18n';
 
 const DependencyPageComponent = component(function DependencyPage() {
   this.after('initialize', function() {
@@ -27,6 +28,7 @@ const DependencyPageComponent = component(function DependencyPage() {
     TimeStampUI.attachTo('#end-ts');
     TimeStampUI.attachTo('#start-ts');
     GoToDependencyUI.attachTo('#dependency-query-form');
+    i18nInit('dep');
   });
 });
 

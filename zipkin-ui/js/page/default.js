@@ -16,6 +16,7 @@ import TimeStampUI from '../component_ui/timeStamp';
 import BackToTop from '../component_ui/backToTop';
 import {defaultTemplate} from '../templates';
 import {contextRoot} from '../publicPath';
+import {i18nInit} from '../component_ui/i18n';
 
 const DefaultPageComponent = component(function DefaultPage() {
   const sortOptions = [
@@ -79,6 +80,7 @@ const DefaultPageComponent = component(function DefaultPage() {
       TimeStampUI.attachTo('#end-ts');
       TimeStampUI.attachTo('#start-ts');
       BackToTop.attachTo('#backToTop');
+      i18nInit('traces');
 
       $('.timeago').timeago();
 
