@@ -58,6 +58,40 @@
           <groupId>com.facebook.nifty</groupId>
           <artifactId>nifty-ssl</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.facebook.nifty</groupId>
+          <artifactId>nifty-client</artifactId>
+        </exclusion>
+        <exclusion>
+          <!-- huge and unused -->
+          <groupId>org.weakref</groupId>
+          <artifactId>jmxutils</artifactId>
+        </exclusion>
+        <!-- trying to reduce size -->
+        <exclusion>
+          <groupId>io.airlift</groupId>
+          <artifactId>stats</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.code.findbugs</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>javax.inject</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.inject.extensions</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.inject</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
 
