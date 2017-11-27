@@ -78,6 +78,7 @@
     <animal-sniffer-maven-plugin.version>1.16</animal-sniffer-maven-plugin.version>
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
+    <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
     <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
     <license-maven-plugin.version>3.0</license-maven-plugin.version>
@@ -624,12 +625,22 @@
         </executions>
       </plugin>
 
-      <!-- Ensures checksums are added to published jars -->
+      <!-- Checksums are added after all other plugins -->
       <plugin>
         <artifactId>maven-install-plugin</artifactId>
         <version>${maven-install-plugin.version}</version>
         <configuration>
           <createChecksum>true</createChecksum>
+          <installAtEnd>true</installAtEnd>
+        </configuration>
+      </plugin>
+
+      <!-- Uploads occur as a last step -->
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+        <configuration>
+          <deployAtEnd>true</deployAtEnd>
         </configuration>
       </plugin>
 
