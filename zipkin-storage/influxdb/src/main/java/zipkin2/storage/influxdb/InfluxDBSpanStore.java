@@ -292,50 +292,51 @@ final class InfluxDBSpanStore implements SpanStore {
     if (response.hasError()){
       throw new RuntimeException(response.getError());
     }
-
-    Map<String, String> services = new HashMap<String, String>();
-    for (QueryResult.Result result: response.getResults()){
-      if (result == null) {
-        continue;
-      }
-      for (QueryResult.Series series : result.getSeries()){
-        if (series == null) {
-          continue;
-        }
-        Map<String, String> tags = series.getTags();
-        String serviceName = tags.get("service_name");
-        String id = tags.get("id");
-        services.put(id, serviceName);
-      }
-    }
-
     List<DependencyLink> links = new ArrayList<>();
-    for (QueryResult.Result result: response.getResults()){
-      if (result == null) {
-        continue;
-      }
-      for (QueryResult.Series series : result.getSeries()){
-        if (series == null) {
+    if (response.getResults() != null) {
+      Map<String, String> services = new HashMap<String, String>();
+      for (QueryResult.Result result : response.getResults()) {
+        if (result == null) {
           continue;
         }
-
-        Map<String, String> tags = series.getTags();
-        String child = tags.get("service_name");
-        String parentID = tags.get("parent_id");
-        String parent = services.get(parentID);
-        long count = 0;
-        for (List<Object> values : series.getValues()) {
-          Object value = values.get(1);
-          count += ((Double)(value)).longValue();
+        for (QueryResult.Series series : result.getSeries()) {
+          if (series == null) {
+            continue;
+          }
+          Map<String, String> tags = series.getTags();
+          String serviceName = tags.get("service_name");
+          String id = tags.get("id");
+          services.put(id, serviceName);
         }
-        DependencyLink link = DependencyLink
-          .newBuilder()
-          .parent(parent)
-          .child(child)
-          .callCount(count)
-          .build();
+      }
 
-        links.add(link);
+      for (QueryResult.Result result : response.getResults()) {
+        if (result == null) {
+          continue;
+        }
+        for (QueryResult.Series series : result.getSeries()) {
+          if (series == null) {
+            continue;
+          }
+
+          Map<String, String> tags = series.getTags();
+          String child = tags.get("service_name");
+          String parentID = tags.get("parent_id");
+          String parent = services.get(parentID);
+          long count = 0;
+          for (List<Object> values : series.getValues()) {
+            Object value = values.get(1);
+            count += ((Double) (value)).longValue();
+          }
+          DependencyLink link = DependencyLink
+            .newBuilder()
+            .parent(parent)
+            .child(child)
+            .callCount(count)
+            .build();
+
+          links.add(link);
+        }
       }
     }
     return Call.create(links);
