@@ -255,10 +255,15 @@ final class InfluxDBSpanStore implements SpanStore {
     }
 
     List<String> services = new ArrayList<>();
-    for (QueryResult.Result result: response.getResults()){
-      for (QueryResult.Series series : result.getSeries()){
-        for (List<Object> values: series.getValues()) {
-          services.add(values.get(1).toString());
+    List<QueryResult.Result> results = response.getResults();
+    if (results != null) {
+      for (QueryResult.Result result : results) {
+        if (result != null && result.getSeries() != null) {
+          for (QueryResult.Series series : result.getSeries()) {
+            for (List<Object> values : series.getValues()) {
+              services.add(values.get(1).toString());
+            }
+          }
         }
       }
     }
@@ -277,10 +282,15 @@ final class InfluxDBSpanStore implements SpanStore {
     }
 
     List<String> spans = new ArrayList<>();
-    for (QueryResult.Result result: response.getResults()){
-      for (QueryResult.Series series : result.getSeries()){
-        for (List<Object> values: series.getValues()) {
-          spans.add(values.get(1).toString());
+    List<QueryResult.Result> results = response.getResults();
+    if (results != null) {
+      for (QueryResult.Result result : results) {
+        if (result != null && result.getSeries() != null) {
+          for (QueryResult.Series series : result.getSeries()) {
+            for (List<Object> values : series.getValues()) {
+              spans.add(values.get(1).toString());
+            }
+          }
         }
       }
     }
