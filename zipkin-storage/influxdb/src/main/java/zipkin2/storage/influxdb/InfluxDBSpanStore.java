@@ -203,24 +203,7 @@ final class InfluxDBSpanStore implements SpanStore {
     return span;
   }
 
-
-
-  private String trimLeadingZeroes(String str){
-    final Long trimZeroes = Long.parseLong(str, 16);
-    return Long.toHexString(trimZeroes);
-  }
-
-
   @Override public Call<List<Span>> getTrace(String traceId) {
-    // make sure we have a 16 or 32 character trace ID
-    //traceId = Span.normalizeTraceId(traceId);
-    //long tid = Long.parseLong(traceId, 16);
-    //traceId = Long.toString(tid);
-
-    // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
-    //if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
-
-    traceId = trimLeadingZeroes(traceId);
     String q =
       String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s' GROUP BY \"trace_id\", \"id\" ORDER BY time DESC ",
         this.storage.measurement(),
