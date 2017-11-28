@@ -37,15 +37,19 @@ final class InfluxDBSpanStore implements SpanStore {
   }
 
   @Override public Call<List<List<Span>>> getTraces(QueryRequest request) {
-    // TODO: spanName is optional
-    String q = String.format(
-      "SELECT * FROM \"%s\" WHERE \"service_name\" = '%s' AND \"name\" = '%s' AND time < %dms AND time > %dms",
+    String q = String.format("SELECT * FROM \"%s\" WHERE time < %dms AND time > %dms",
       this.storage.measurement(),
-      request.serviceName(),
-      request.spanName(),
       request.endTs(),
-      request.endTs() - request.lookback()
-    );
+      request.endTs() - request.lookback());
+
+    if (request.spanName() != null && !request.serviceName().isEmpty()) {
+        q = String.format("%s AND \"service_name\" = '%s'", q, request.serviceName());
+    }
+
+    if (request.spanName() != null && !request.spanName().isEmpty()) {
+        q = String.format("%s AND \"name\" = '%s'", q, request.spanName());
+    }
+
     StringBuilder result = new StringBuilder();
 
     for (Iterator<Map.Entry<String, String>> i = request.annotationQuery().entrySet().iterator();
