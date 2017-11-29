@@ -71,8 +71,12 @@ final class InfluxDBSpanStore implements SpanStore {
       q += result.toString();
     }
 
-    //q += String.format(" AND \"duration\" >= %d ", request.minDuration());
-    //q += String.format(" AND \"duration\" <= %d ", request.maxDuration());
+    if (request.minDuration() != null) {
+      q += String.format(" AND \"duration_ns\" >= %d ", request.minDuration());
+    }
+    if (request.maxDuration() != null) {
+      q += String.format(" AND \"duration_ns\" <= %d ", request.maxDuration());
+    }
     q += " GROUP BY \"trace_id\", \"id\" ";
     q += String.format(" ORDER BY time DESC SLIMIT %d", request.limit());
 
