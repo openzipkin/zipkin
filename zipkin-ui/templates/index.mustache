@@ -1,12 +1,16 @@
 <div class="row well well-sm">
   <form class="form-inline" role="form" id="submitForm">
     <div class="form-group">
-      <select data-placeholder="Service Name" class="form-control input-sm" style="width: 234px;" name="serviceName" id="serviceName">
+      <label for="timeStamp" data-i18n="traces.servicename">Service Name</label>
+      <select data-placeholder="Service Name" class="form-control input-sm" style="width: 234px;" name="serviceName"
+              id="serviceName">
       </select>
     </div>
 
     <div class="form-group">
-      <select data-placeholder="Span Name" class="form-control input-sm" style="width: 180px;" name="spanName" id="spanName">
+      <label for="timeStamp" data-i18n="traces.spanname">Span Name</label>
+      <select data-placeholder="Span Name" class="form-control input-sm" style="width: 180px;" name="spanName"
+              id="spanName">
       </select>
     </div>
 
@@ -40,7 +44,9 @@
     </button>
 
     <div class="clearfix"></div>
-    <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery" value="{{annotationQuery}}" style="width: 100%" placeholder='Annotations Query (e.g. "finagle.timeout", "error", "http.path=/foo/bar/ and cluster=foo and cache.miss")'>
+    <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery"
+           value="{{annotationQuery}}" style="width: 100%"
+           placeholder='Annotations Query (e.g. "finagle.timeout", "error", "http.path=/foo/bar/ and cluster=foo and cache.miss")'>
   </form>
   <div id="trace-filters">
     <div class="pull-left">
@@ -52,7 +58,8 @@
     <div class="pull-right">
       <span class="selector"><span data-i18n="traces.sort">Sort</span>:
         <select class="sort-order js-sort-order" form="submitForm" name="sortOrder">
-          {{#sortOrderOptions}}<option value="{{value}}" {{sortOrderSelected}} data-i18n="{{value}}">{{text}}</option>{{/sortOrderOptions}}
+          {{#sortOrderOptions}}
+            <option value="{{value}}" {{sortOrderSelected}} data-i18n="{{value}}">{{text}}</option>{{/sortOrderOptions}}
         </select>
       </span>
     </div>
@@ -63,49 +70,51 @@
       <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
     </div>
     <div class="pull-right">
-        <a href='{{apiURL}}' id='rawResultsJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a>
+      <a href='{{apiURL}}' id='rawResultsJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a>
     </div>
   </div>
 </div>
 
 <div class="row">
-{{#queryError}}
-  <div class="alert alert-danger" id="query-error-msg">
-    <p>Error executing query: {{ queryError }}</p>
-  </div>
-{{/queryError}}
-{{^queryWasPerformed}}
-  <div class="alert alert-info" id="help-msg">
-    <p data-i18n="traces.des">Please select the criteria for your trace lookup.</p>
-  </div>
-{{/queryWasPerformed}}
-{{#queryWasPerformed}}
-  <ul id="traces">
-  {{#traces}}
-    <li class="trace {{infoClass}}" data-traceId="{{traceId}}" data-duration="{{duration}}" data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
-      <a href="{{contextRoot}}traces/{{traceId}}">
-        <div class="bar-block">
-          <span class="bar-graphic" style="width:{{width}}%;"></span>
-          <span class="bar-label">{{durationStr}}</span>
-          <span class="bar-label">{{totalSpans}} spans</span>
-        </div>
-        <div class="bar-block">
-          <span class="bar-graphic" style="width:{{servicePercentage}}%;"></span>
-          <span class="bar-label">{{serviceName}} {{servicePercentage}}%</span>
-        </div>
-      </a>
-      <div class="trace-details services">
-      {{#serviceDurations}}
-        <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}} x{{count}} {{max}}ms</span>
-      {{/serviceDurations}}
-      </div>
-      <div class="trace-details timestamp pull-right">
-        <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>
-      </div>
-    </li>
-  {{/traces}}
-  </ul>
-{{/queryWasPerformed}}
+  {{#queryError}}
+    <div class="alert alert-danger" id="query-error-msg">
+      <p>Error executing query: {{ queryError }}</p>
+    </div>
+  {{/queryError}}
+  {{^queryWasPerformed}}
+    <div class="alert alert-info" id="help-msg">
+      <p data-i18n="traces.des">Please select the criteria for your trace lookup.</p>
+    </div>
+  {{/queryWasPerformed}}
+  {{#queryWasPerformed}}
+    <ul id="traces">
+      {{#traces}}
+        <li class="trace {{infoClass}}" data-traceId="{{traceId}}" data-duration="{{duration}}"
+            data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
+          <a href="{{contextRoot}}traces/{{traceId}}">
+            <div class="bar-block">
+              <span class="bar-graphic" style="width:{{width}}%;"></span>
+              <span class="bar-label">{{durationStr}}</span>
+              <span class="bar-label">{{totalSpans}} spans</span>
+            </div>
+            <div class="bar-block">
+              <span class="bar-graphic" style="width:{{servicePercentage}}%;"></span>
+              <span class="bar-label">{{serviceName}} {{servicePercentage}}%</span>
+            </div>
+          </a>
+          <div class="trace-details services">
+            {{#serviceDurations}}
+              <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}}
+                x{{count}} {{max}}ms</span>
+            {{/serviceDurations}}
+          </div>
+          <div class="trace-details timestamp pull-right">
+            <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>
+          </div>
+        </li>
+      {{/traces}}
+    </ul>
+  {{/queryWasPerformed}}
 </div>
 
 <!-- help panel for different lookup options -->
@@ -120,38 +129,46 @@
         <p data-i18n="modal.p1">So you want to find some traces, huh? You've come to the right place!</p>
 
         <h4 data-i18n="modal.title2">Service names</h4>
-        <p data-i18n="modal.p2">First off you have select a service to lookup by. All traces are indexed by service names.</p>
+        <p data-i18n="modal.p2">First off you have select a service to lookup by. All traces are indexed by service
+          names.</p>
         <p data-i18n="modal.p3">Once that is done you have three options to pick from. See notes on each below.</p>
 
         <h4 data-i18n="modal.title3">1. Lookups by span name</h4>
-        <p data-i18n="modal.p4">Span names are generally thrift method names or Rails endpoints. This allows you to look up traces
+        <p data-i18n="modal.p4">Span names are generally thrift method names or Rails endpoints. This allows you to look
+          up traces
           that accessed a particular part of the service.</p>
 
         <h4 data-i18n="modal.title4">2. Lookups by annotation</h4>
-        <p data-i18n="modal.p5">An annotation is a point in time in the trace. It is assigned a string value, this is what you can look up
-          by in this field. Could be things like <strong>finagle.timeout</strong></p>
+        <p data-i18n="modal.p5">An annotation is a point in time in the trace. It is assigned a string value, this is
+          what you can look up
+          by in this field. Could be things like</p> <strong>finagle.timeout</strong>
 
         <h4 data-i18n="modal.title5">3. Lookups by key/value</h4>
-        <p data-i18n="modal.p6">Key / value annotations are just extra metadata attached to a trace. This could be things like the url hit,
+        <p data-i18n="modal.p6">Key / value annotations are just extra metadata attached to a trace. This could be
+          things like the url hit,
           response codes or exceptions. See below for a few examples.</p>
         <table class="table table-bordered">
           <thead>
-            <tr>
-              <td><strong>Key</strong></td><td><strong>Value</strong></td>
-            </tr>
+          <tr>
+            <td><strong>Key</strong></td>
+            <td><strong>Value</strong></td>
+          </tr>
           </thead>
           <tbody>
-            <tr>
-              <td>tfe.uri</td><td>/1/trends/available.json?lang=en</td>
-            </tr>
-            <tr>
-              <td>http.responsecode</td><td>500 Internal Server Error</td>
-            </tr>
+          <tr>
+            <td>tfe.uri</td>
+            <td>/1/trends/available.json?lang=en</td>
+          </tr>
+          <tr>
+            <td>http.responsecode</td>
+            <td>500 Internal Server Error</td>
+          </tr>
           </tbody>
         </table>
 
         <h4 data-i18n="modal.title6">Dates and limits</h4>
-        <p data-i18n="modal.p7">Zipkin allows you to pick a point in time to help us guide the selection of traces. When doing a lookup
+        <p data-i18n="modal.p7">Zipkin allows you to pick a point in time to help us guide the selection of traces. When
+          doing a lookup
           we return traces before that point in time up until the limit number of results.</p>
       </div>
     </div>
@@ -159,16 +176,16 @@
 </div>
 
 <div class='modal fade' id='jsonPanel' tabindex='-1'>
-    <div class='modal-dialog modal-lg'>
-        <div class='modal-content'>
-            <div class='modal-header'>
-                <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-                <a href='#' class='save'><span class='glyphicon glyphicon-save' aria-hidden='true' aria-label='save'></span></a>
-                <h4 class='modal-title'></h4>
-            </div>
-            <div class='modal-body'>
-                <pre></pre>
-            </div>
-        </div>
+  <div class='modal-dialog modal-lg'>
+    <div class='modal-content'>
+      <div class='modal-header'>
+        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
+        <a href='#' class='save'><span class='glyphicon glyphicon-save' aria-hidden='true' aria-label='save'></span></a>
+        <h4 class='modal-title'></h4>
+      </div>
+      <div class='modal-body'>
+        <pre></pre>
+      </div>
     </div>
+  </div>
 </div>
