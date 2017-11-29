@@ -209,7 +209,8 @@ final class InfluxDBSpanStore implements SpanStore {
 
   @Override public Call<List<Span>> getTrace(String traceId) {
     String q =
-      String.format("SELECT * FROM \"%s\" WHERE \"trace_id\" = '%s' GROUP BY \"trace_id\", \"id\" ORDER BY time DESC ",
+      String.format("SELECT * FROM \"%s\".\"%s\" WHERE \"trace_id\" = '%s' GROUP BY \"trace_id\", \"id\" ORDER BY time DESC ",
+        this.storage.retentionPolicy(),
         this.storage.measurement(),
         traceId);
     Query query = new Query(q, this.storage.database());
@@ -233,7 +234,8 @@ final class InfluxDBSpanStore implements SpanStore {
 
   @Override public Call<List<String>> getServiceNames() {
     String q =
-      String.format("SHOW TAG VALUES FROM \"%s\" WITH KEY = \"service_name\"",
+      String.format("SHOW TAG VALUES FROM \"%s\".\"%s\" WITH KEY = \"service_name\"",
+      this.storage.retentionPolicy(),
       this.storage.measurement());
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query);
@@ -260,7 +262,8 @@ final class InfluxDBSpanStore implements SpanStore {
   @Override public Call<List<String>> getSpanNames(String serviceName) {
     if ("".equals(serviceName)) return Call.emptyList();
     String q =
-      String.format("SHOW TAG VALUES FROM \"%s\" with key=\"name\" WHERE \"service_name\" = '%s'",
+      String.format("SHOW TAG VALUES FROM \"%s\".\"%s\" with key=\"name\" WHERE \"service_name\" = '%s'",
+      this.storage.retentionPolicy(),
       this.storage.measurement(), serviceName);
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query);
@@ -287,7 +290,7 @@ final class InfluxDBSpanStore implements SpanStore {
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     String q =
-      String.format("SELECT COUNT(\"duration_ns\") FROM \"%s\"", this.storage.measurement());
+      String.format("SELECT COUNT(\"duration_ns\") FROM \"%s\".\"%s\"", this.storage.retentionPolicy(), this.storage.measurement());
     q += String.format(" WHERE time < %dms", endTs);
     q += String.format(" AND time > %dms ", endTs - lookback);
     q += String.format(" AND annotation='' GROUP BY \"id\",\"parent_id\",\"service_name\",time(%dms)", lookback);
