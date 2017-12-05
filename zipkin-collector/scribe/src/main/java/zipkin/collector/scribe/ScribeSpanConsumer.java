@@ -32,7 +32,7 @@ final class ScribeSpanConsumer implements Scribe {
   final CollectorMetrics metrics;
   final String category;
 
-  public ScribeSpanConsumer(ScribeCollector.Builder builder) {
+  ScribeSpanConsumer(ScribeCollector.Builder builder) {
     this.collector = builder.delegate.build();
     this.metrics = builder.metrics;
     this.category = builder.category;

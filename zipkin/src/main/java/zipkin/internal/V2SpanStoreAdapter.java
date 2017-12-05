@@ -54,7 +54,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
   }
 
   Call<List<List<zipkin.Span>>> getTracesCall(zipkin.storage.QueryRequest v1Request) {
-    return delegate.getTraces(convertRequest(v1Request)).map(getTracesMapper);
+    return delegate.getTraces(convertRequest(v1Request)).map(GetTracesMapper.INSTANCE);
   }
 
   @Nullable @Override public List<zipkin.Span> getTrace(long traceIdHigh, long traceIdLow) {
@@ -71,7 +71,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
   }
 
   Call<List<zipkin.Span>> getTraceCall(long traceIdHigh, long traceIdLow) {
-    return delegate.getTrace(toLowerHex(traceIdHigh, traceIdLow)).map(getTraceMapper);
+    return delegate.getTrace(toLowerHex(traceIdHigh, traceIdLow)).map(GetTraceMapper.INSTANCE);
   }
 
   @Nullable @Override public List<zipkin.Span> getRawTrace(long traceIdHigh, long traceIdLow) {
@@ -89,7 +89,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
   }
 
   Call<List<zipkin.Span>> getRawTraceCall(long traceIdHigh, long traceIdLow) {
-    return delegate.getTrace(toLowerHex(traceIdHigh, traceIdLow)).map(getRawTraceMapper);
+    return delegate.getTrace(toLowerHex(traceIdHigh, traceIdLow)).map(GetRawTraceMapper.INSTANCE);
   }
 
   @Override public List<String> getServiceNames() {
@@ -131,7 +131,19 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
 
   Call<List<DependencyLink>> getDependenciesCall(long endTs, @Nullable Long lookback) {
     return delegate.getDependencies(endTs, lookback != null ? lookback : endTs)
-      .map(V2SpanConverter::toLinks);
+      .map(ToLinks.INSTANCE);
+  }
+
+  enum ToLinks implements Call.Mapper<List<zipkin2.DependencyLink>, List<DependencyLink>> {
+    INSTANCE;
+
+    @Override public List<DependencyLink> map(List<zipkin2.DependencyLink> input) {
+      return V2SpanConverter.toLinks(input);
+    }
+
+    @Override public String toString() {
+      return "V2SpanConverter::toLinks";
+    }
   }
 
   @Nullable @Override public List<zipkin.Span> getTrace(long traceId) {
@@ -150,26 +162,50 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
     getRawTrace(0L, traceId, callback);
   }
 
-  static final Mapper<List<List<Span>>, List<List<zipkin.Span>>> getTracesMapper = (trace2s) -> {
-    if (trace2s.isEmpty()) return Collections.emptyList();
-    int length = trace2s.size();
-    List<List<zipkin.Span>> trace1s = new ArrayList<>(length);
-    for (int i = 0; i < length; i++) {
-      trace1s.add(CorrectForClockSkew.apply(MergeById.apply(toSpans(trace2s.get(i)))));
+  enum GetTracesMapper implements Mapper<List<List<Span>>, List<List<zipkin.Span>>> {
+    INSTANCE;
+
+    @Override public List<List<zipkin.Span>> map(List<List<Span>> trace2s) {
+      if (trace2s.isEmpty()) return Collections.emptyList();
+      int length = trace2s.size();
+      List<List<zipkin.Span>> trace1s = new ArrayList<>(length);
+      for (int i = 0; i < length; i++) {
+        trace1s.add(CorrectForClockSkew.apply(MergeById.apply(toSpans(trace2s.get(i)))));
+      }
+      Collections.sort(trace1s, TRACE_DESCENDING);
+      return trace1s;
     }
-    Collections.sort(trace1s, TRACE_DESCENDING);
-    return trace1s;
-  };
 
-  static final Mapper<List<Span>, List<zipkin.Span>> getTraceMapper = (spans) -> {
-    List<zipkin.Span> span1s = CorrectForClockSkew.apply(MergeById.apply(toSpans(spans)));
-    return (span1s.isEmpty()) ? null : span1s;
-  };
+    @Override public String toString() {
+      return "GetTraces";
+    }
+  }
 
-  static final Mapper<List<Span>, List<zipkin.Span>> getRawTraceMapper = (spans) -> {
-    List<zipkin.Span> span1s = toSpans(spans);
-    return (span1s.isEmpty()) ? null : span1s;
-  };
+  enum GetTraceMapper implements Mapper<List<Span>, List<zipkin.Span>> {
+    INSTANCE;
+
+    @Override public List<zipkin.Span> map(List<Span> spans) {
+      List<zipkin.Span> span1s = CorrectForClockSkew.apply(MergeById.apply(toSpans(spans)));
+      return (span1s.isEmpty()) ? null : span1s;
+    }
+
+    @Override public String toString() {
+      return "GetTrace";
+    }
+  }
+
+  enum GetRawTraceMapper implements Mapper<List<Span>, List<zipkin.Span>> {
+    INSTANCE;
+
+    @Override public List<zipkin.Span> map(List<Span> spans) {
+      List<zipkin.Span> span1s = toSpans(spans);
+      return (span1s.isEmpty()) ? null : span1s;
+    }
+
+    @Override public String toString() {
+      return "V2SpanConverter::toSpans";
+    }
+  }
 
   static QueryRequest convertRequest(zipkin.storage.QueryRequest v1Request) {
     return QueryRequest.newBuilder()

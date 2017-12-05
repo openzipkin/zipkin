@@ -392,12 +392,12 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTracesMapper_adjustsTraces() {
-    assertThat(V2SpanStoreAdapter.getTracesMapper.map(asList(skewedTrace2)))
+    assertThat(V2SpanStoreAdapter.GetTracesMapper.INSTANCE.map(asList(skewedTrace2)))
       .containsOnly(adjustedTrace); // merged and clock-skew corrected
   }
 
   @Test public void getTracesMapper_descendingOrder() {
-    assertThat(V2SpanStoreAdapter.getTracesMapper.map(asList(
+    assertThat(V2SpanStoreAdapter.GetTracesMapper.INSTANCE.map(asList(
       asList(builder.traceId("1").timestamp((TODAY + 1) * 1000).build()),
       asList(builder.traceId("2").timestamp((TODAY + 2) * 1000).build())
     ))).flatExtracting(s -> s)
@@ -406,22 +406,22 @@ public class V2SpanStoreAdapterTest {
   }
 
   @Test public void getTraceMapper_adjustsTrace() {
-    assertThat(V2SpanStoreAdapter.getTraceMapper.map(skewedTrace2))
+    assertThat(V2SpanStoreAdapter.GetTraceMapper.INSTANCE.map(skewedTrace2))
       .isEqualTo(adjustedTrace); // merged and clock-skew corrected
   }
 
   @Test public void getTraceMapper_emptyToNull() {
-    assertThat(V2SpanStoreAdapter.getTraceMapper.map(Collections.emptyList()))
+    assertThat(V2SpanStoreAdapter.GetTraceMapper.INSTANCE.map(Collections.emptyList()))
       .isNull();
   }
 
   @Test public void getRawTraceMapper_doesntAdjustTrace() {
-    assertThat(V2SpanStoreAdapter.getRawTraceMapper.map(skewedTrace2))
+    assertThat(V2SpanStoreAdapter.GetRawTraceMapper.INSTANCE.map(skewedTrace2))
       .isEqualTo(rawSkewedTrace); // merged and clock-skew corrected
   }
 
   @Test public void getRawTraceMapper_emptyToNull() {
-    assertThat(V2SpanStoreAdapter.getRawTraceMapper.map(Collections.emptyList()))
+    assertThat(V2SpanStoreAdapter.GetRawTraceMapper.INSTANCE.map(Collections.emptyList()))
       .isNull();
   }
 

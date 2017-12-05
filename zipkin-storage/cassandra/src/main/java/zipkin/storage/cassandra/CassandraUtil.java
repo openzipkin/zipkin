@@ -122,6 +122,10 @@ final class CassandraUtil {
     @Override public Set<Object> apply(@Nullable Map<Object, ?> input) {
       return input.keySet();
     }
+
+    @Override public String toString(){
+      return "Map::keySet";
+    }
   }
 
   static Function<List<Map<Long, Long>>, Set<Long>> intersectKeySets() {
@@ -137,6 +141,10 @@ final class CassandraUtil {
         traceIds.retainAll(input.get(i).keySet());
       }
       return traceIds;
+    }
+
+    @Override public String toString(){
+      return "IntersectKeySets";
     }
   }
 }

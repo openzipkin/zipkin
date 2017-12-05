@@ -82,12 +82,12 @@ public final class InMemorySpanStore implements SpanStore {
 
   /** This supports span lookup by {@link zipkin.Span#traceId lower 64-bits of the trace ID} */
   private final SortedMultimap<Long, Pair<Long>> traceIdToTraceIdTimeStamps =
-      new LinkedHashSetSortedMultimap<>(Long::compareTo);
+      new LinkedHashSetSortedMultimap<>(LONG_COMPARATOR);
   /** This is an index of {@link Span#traceId} by {@link zipkin.Endpoint#serviceName service name} */
   private final ServiceNameToTraceIds serviceToTraceIds = new ServiceNameToTraceIds();
   /** This is an index of {@link Span#name} by {@link zipkin.Endpoint#serviceName service name} */
   private final SortedMultimap<String, String> serviceToSpanNames =
-      new LinkedHashSetSortedMultimap<>(String::compareTo);
+      new LinkedHashSetSortedMultimap<>(STRING_COMPARATOR);
 
   private final boolean strictTraceId;
   final int maxSpanCount;
@@ -304,15 +304,43 @@ public final class InMemorySpanStore implements SpanStore {
     }
   }
 
-  static final Comparator<Pair<Long>> VALUE_2_DESCENDING = (left, right) -> {
-    int result = right._2.compareTo(left._2);
-    if (result != 0) return result;
-    return right._1.compareTo(left._1);
+  static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
+    @Override public int compare(String left, String right) {
+      if (left == null) return -1;
+      return left.compareTo(right);
+    }
+
+    @Override public String toString() {
+      return "String::compareTo";
+    }
+  };
+
+  static final Comparator<Long> LONG_COMPARATOR = new Comparator<Long>() {
+    @Override public int compare(Long x, Long y) {
+      if (x == null) return -1;
+      return (x < y) ? -1 : ((x.equals(y)) ? 0 : 1);
+    }
+
+    @Override public String toString() {
+      return "Long::compareTo"; // Long.compareTo is JRE 7+
+    }
+  };
+
+  static final Comparator<Pair<Long>> VALUE_2_DESCENDING = new Comparator<Pair<Long>>() {
+    @Override public int compare(Pair<Long> left, Pair<Long> right) {
+      long x = left._2, y = right._2;
+      int result = (x < y) ? -1 : ((x == y) ? 0 : 1); // Long.compareTo is JRE 7+
+      return -result; // use negative as we are descending
+    }
+
+    @Override public String toString() {
+      return "Value2Descending{}";
+    }
   };
 
   static final class ServiceNameToTraceIds extends SortedMultimap<String, Long> {
     ServiceNameToTraceIds() {
-      super(String::compareTo);
+      super(STRING_COMPARATOR);
     }
 
     @Override Set<Long> valueContainer() {

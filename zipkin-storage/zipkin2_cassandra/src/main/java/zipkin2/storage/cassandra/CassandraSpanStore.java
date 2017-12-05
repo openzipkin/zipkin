@@ -216,7 +216,7 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     }
 
     @Override public String toString() {
-      return "CollapseToMap{}";
+      return "CollapseToMap";
     }
   }
 

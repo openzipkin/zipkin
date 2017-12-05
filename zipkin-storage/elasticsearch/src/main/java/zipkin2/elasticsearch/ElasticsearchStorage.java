@@ -27,6 +27,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
+import okio.BufferedSource;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
@@ -234,7 +235,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       .url(http().baseUrl.newBuilder().addPathSegment(index).build())
       .delete().tag("delete-index").build();
 
-    http().newCall(deleteRequest, b -> null).execute();
+    http().newCall(deleteRequest, BodyConverters.NULL).execute();
 
     flush(http(), index);
   }
@@ -246,7 +247,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       .post(RequestBody.create(APPLICATION_JSON, ""))
       .tag("flush-index").build();
 
-    factory.newCall(flushRequest, b -> null).execute();
+    factory.newCall(flushRequest, BodyConverters.NULL).execute();
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
@@ -259,20 +260,30 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       .tag("get-cluster-health").build();
 
     try {
-      return http().newCall(request, b -> {
-        b.request(Long.MAX_VALUE); // Buffer the entire body.
-        Buffer body = b.buffer();
-        JsonReader status = enterPath(JsonReader.of(body.clone()), "status");
-        if (status == null) {
-          throw new IllegalStateException("Health status couldn't be read " + body.readUtf8());
-        }
-        if ("RED".equalsIgnoreCase(status.nextString())) {
-          throw new IllegalStateException("Health status is RED");
-        }
-        return CheckResult.OK;
-      }).execute();
+      return http().newCall(request, ReadStatus.INSTANCE).execute();
     } catch (IOException | RuntimeException e) {
       return CheckResult.failed(e);
+    }
+  }
+
+  enum ReadStatus implements HttpCall.BodyConverter<CheckResult> {
+    INSTANCE;
+
+    @Override public CheckResult convert(BufferedSource b) throws IOException {
+      b.request(Long.MAX_VALUE); // Buffer the entire body.
+      Buffer body = b.buffer();
+      JsonReader status = enterPath(JsonReader.of(body.clone()), "status");
+      if (status == null) {
+        throw new IllegalStateException("Health status couldn't be read " + body.readUtf8());
+      }
+      if ("RED".equalsIgnoreCase(status.nextString())) {
+        throw new IllegalStateException("Health status is RED");
+      }
+      return CheckResult.OK;
+    }
+
+    @Override public String toString(){
+      return "ReadStatus";
     }
   }
 

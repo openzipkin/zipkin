@@ -17,6 +17,7 @@ import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.util.logging.Logger;
 import okhttp3.Request;
+import okio.BufferedSource;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
@@ -135,8 +136,14 @@ final class VersionSpecificTemplates {
 
   static float getVersion(HttpCall.Factory callFactory) throws IOException {
     Request getNode = new Request.Builder().url(callFactory.baseUrl).tag("get-node").build();
-    return callFactory.newCall(getNode, b -> {
-      JsonReader version = enterPath(JsonReader.of(b), "version", "number");
+    return callFactory.newCall(getNode, ReadVersionNumber.INSTANCE).execute();
+  }
+
+  enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
+    INSTANCE;
+
+    @Override public Float convert(BufferedSource content) throws IOException {
+      JsonReader version = enterPath(JsonReader.of(content), "version", "number");
       if (version == null) throw new IllegalStateException(".version.number not in response");
       String versionString = version.nextString();
       float result = Float.valueOf(versionString.substring(0, 3));
@@ -144,7 +151,11 @@ final class VersionSpecificTemplates {
         LOG.warning("Please upgrade to Elasticsearch 2 or later. version=" + versionString);
       }
       return result;
-    }).execute();
+    }
+
+    @Override public String toString(){
+      return "GetVersion";
+    }
   }
 
   private String versionSpecificSpanIndexTemplate(float version) {

@@ -113,7 +113,7 @@ final class CassandraUtil {
     }
 
     @Override public String toString() {
-      return "TraceIdsSortedByDescTimestamp{}";
+      return "TraceIdsSortedByDescTimestamp";
     }
 
     private static final Random RAND = new Random(System.nanoTime());

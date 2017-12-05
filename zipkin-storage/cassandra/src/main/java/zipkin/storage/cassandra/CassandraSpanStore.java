@@ -21,6 +21,7 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.base.Function;
+import com.google.common.base.Predicate;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
@@ -168,12 +169,14 @@ public final class CassandraSpanStore implements GuavaSpanStore {
               .orderBy(QueryBuilder.desc("ts")));
     }
 
-    traceIdToTimestamp = input -> {
-      Map<Long, Long> result = new LinkedHashMap<>();
-      for (Row row : input) {
-        result.put(row.getLong("trace_id"), timestampCodec.deserialize(row, "ts"));
+    traceIdToTimestamp = new Function<ResultSet, Map<Long, Long>>() {
+      @Override public Map<Long, Long> apply(ResultSet input) {
+        Map<Long, Long> result = new LinkedHashMap<>();
+        for (Row row : input) {
+          result.put(row.getLong("trace_id"), timestampCodec.deserialize(row, "ts"));
+        }
+        return result;
       }
-      return result;
     };
   }
 
@@ -239,7 +242,11 @@ public final class CassandraSpanStore implements GuavaSpanStore {
               @Override public List<List<Span>> apply(@Nullable List<Span> input) {
                 // Indexes only contain Span.traceId, so our matches are imprecise on Span.traceIdHigh
                 return FluentIterable.from(GroupByTraceId.apply(input, strictTraceId, true))
-                    .filter(trace -> trace.get(0).traceIdHigh == 0 || request.test(trace))
+                    .filter(new Predicate<List<Span>>() {
+                      @Override public boolean apply(List<Span> trace) {
+                        return trace.get(0).traceIdHigh == 0 || request.test(trace);
+                      }
+                    })
                     .toList();
               }
             });
@@ -291,6 +298,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
     @Override public List<Span> apply(@Nullable Collection<Span> input) {
       List<Span> result = CorrectForClockSkew.apply(MergeById.apply(input));
       return result.isEmpty() ? null : result;
+    }
+
+    @Override public String toString(){
+      return "AdjustTrace";
     }
   }
 
@@ -362,6 +373,10 @@ public final class CassandraSpanStore implements GuavaSpanStore {
         }
       }
       return DependencyLinker.merge(unmerged.build());
+    }
+
+    @Override public String toString(){
+      return "MergeDependencies";
     }
   }
 

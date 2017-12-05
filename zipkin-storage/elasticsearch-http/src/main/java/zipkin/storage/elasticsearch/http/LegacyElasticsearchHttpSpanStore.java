@@ -53,8 +53,11 @@ final class LegacyElasticsearchHttpSpanStore implements AsyncSpanStore {
   static final String SERVICE_SPAN = "servicespan";
   /** To not produce unnecessarily long queries, we don't look back further than first ES support */
   static final long EARLIEST_MS = 1456790400000L; // March 2016
-  static final HttpCall.BodyConverter<List<String>>
-    KEYS = b -> collectValuesNamed(JsonReader.of(b), "key");
+  static final HttpCall.BodyConverter<List<String>> KEYS = new BodyConverter<List<String>>() {
+    @Override public List<String> convert(BufferedSource b) throws IOException {
+      return collectValuesNamed(JsonReader.of(b), "key");
+    }
+  };
   static final BodyConverter<List<Span>> SPANS =
     SearchResultConverter.create(LegacyJsonAdapters.SPAN_ADAPTER);
   static final BodyConverter<List<Span>> NULLABLE_SPANS =
