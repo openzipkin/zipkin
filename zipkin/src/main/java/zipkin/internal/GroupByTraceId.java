@@ -24,8 +24,11 @@ import zipkin.Span;
 
 public final class GroupByTraceId {
 
-  public static final Comparator<List<Span>> TRACE_DESCENDING =
-      (left, right) -> right.get(0).compareTo(left.get(0));
+  public static final Comparator<List<Span>> TRACE_DESCENDING = new Comparator<List<Span>>() {
+    @Override public int compare(List<Span> left, List<Span> right) {
+      return right.get(0).compareTo(left.get(0));
+    }
+  };
 
   public static List<List<Span>> apply(Collection<Span> input, boolean strictTraceId,
       boolean adjust) {

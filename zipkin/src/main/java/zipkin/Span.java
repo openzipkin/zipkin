@@ -442,7 +442,7 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
     if (this == that) return 0;
     long x = this.timestamp == null ? Long.MIN_VALUE : this.timestamp;
     long y = that.timestamp == null ? Long.MIN_VALUE : that.timestamp;
-    int byTimestamp = x < y ? -1 : x == y ? 0 : 1;
+    int byTimestamp = x < y ? -1 : x == y ? 0 : 1;  // Long.compareTo is JRE 7+
     if (byTimestamp != 0) return byTimestamp;
     return this.name.compareTo(that.name);
   }

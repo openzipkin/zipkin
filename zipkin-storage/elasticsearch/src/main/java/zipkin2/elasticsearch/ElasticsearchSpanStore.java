@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -22,12 +23,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import okio.BufferedSource;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.Aggregation;
 import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
 import zipkin2.elasticsearch.internal.client.SearchCallFactory;
 import zipkin2.elasticsearch.internal.client.SearchRequest;
 import zipkin2.storage.QueryRequest;
@@ -102,25 +105,29 @@ final class ElasticsearchSpanStore implements SpanStore {
     HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
 
     // When we receive span results, we need to group them by trace ID
-    HttpCall.BodyConverter<List<List<Span>>> converter = content -> {
-      HttpCall.BodyConverter<List<Span>> input = BodyConverters.SPANS;
-      List<List<Span>> traces = groupByTraceId(input.convert(content), strictTraceId);
+    BodyConverter<List<List<Span>>> converter = new BodyConverter<List<List<Span>>>() {
+        @Override public List<List<Span>> convert(BufferedSource content) throws IOException {
+          List<Span> input = BodyConverters.SPANS.convert(content);
+          List<List<Span>> traces = groupByTraceId(input, strictTraceId);
 
-      // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
-      for (Iterator<List<Span>> trace = traces.iterator(); trace.hasNext(); ) {
-        List<Span> next = trace.next();
-        if (next.get(0).traceId().length() > 16 && !request.test(next)) {
-          trace.remove();
+          // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
+          for (Iterator<List<Span>> trace = traces.iterator(); trace.hasNext(); ) {
+            List<Span> next = trace.next();
+            if (next.get(0).traceId().length() > 16 && !request.test(next)) {
+              trace.remove();
+            }
+          }
+          return traces;
         }
+      };
+
+    return traceIdsCall.flatMap(new Call.FlatMapper<List<String>, List<List<Span>>>() {
+      @Override public Call<List<List<Span>>> map(List<String> input) {
+        if (input.isEmpty()) return Call.emptyList();
+
+        SearchRequest getTraces = SearchRequest.create(indices).terms("traceId", input);
+        return search.newCall(getTraces, converter);
       }
-      return traces;
-    };
-
-    return traceIdsCall.flatMap(input -> {
-      if (input.isEmpty()) return Call.emptyList();
-
-      SearchRequest getTraces = SearchRequest.create(indices).terms("traceId", input);
-      return search.newCall(getTraces, converter);
     });
   }
 

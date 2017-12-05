@@ -64,23 +64,25 @@ public final class JsonCodec implements Codec {
   static final long MAX_SAFE_INTEGER = 9007199254740991L;  // 53 bits
   static final String ENDPOINT_HEADER = ",\"endpoint\":";
 
-  static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = reader -> {
-    Endpoint.Builder result = Endpoint.builder();
-    reader.beginObject();
-    while (reader.hasNext()) {
-      String nextName = reader.nextName();
-      if (nextName.equals("serviceName")) {
-        result.serviceName(reader.nextString());
-      } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
-        result.parseIp(reader.nextString());
-      } else if (nextName.equals("port")) {
-        result.port(reader.nextInt());
-      } else {
-        reader.skipValue();
+  static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = new JsonReaderAdapter<Endpoint>() {
+    @Override public Endpoint fromJson(JsonReader reader) throws IOException {
+      Endpoint.Builder result = Endpoint.builder();
+      reader.beginObject();
+      while (reader.hasNext()) {
+        String nextName = reader.nextName();
+        if (nextName.equals("serviceName")) {
+          result.serviceName(reader.nextString());
+        } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
+          result.parseIp(reader.nextString());
+        } else if (nextName.equals("port")) {
+          result.port(reader.nextInt());
+        } else {
+          reader.skipValue();
+        }
       }
+      reader.endObject();
+      return result.build();
     }
-    reader.endObject();
-    return result.build();
   };
 
   static final Buffer.Writer<Endpoint> ENDPOINT_WRITER = new Buffer.Writer<Endpoint>() {
@@ -130,24 +132,27 @@ public final class JsonCodec implements Codec {
     }
   };
 
-  static final JsonReaderAdapter<Annotation> ANNOTATION_READER = reader -> {
-    Annotation.Builder result = Annotation.builder();
-    reader.beginObject();
-    while (reader.hasNext()) {
-      String nextName = reader.nextName();
-      if (nextName.equals("timestamp")) {
-        result.timestamp(reader.nextLong());
-      } else if (nextName.equals("value")) {
-        result.value(reader.nextString());
-      } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
-        result.endpoint(ENDPOINT_READER.fromJson(reader));
-      } else {
-        reader.skipValue();
+  static final JsonReaderAdapter<Annotation> ANNOTATION_READER =
+    new JsonReaderAdapter<Annotation>() {
+      @Override public Annotation fromJson(JsonReader reader) throws IOException {
+        Annotation.Builder result = Annotation.builder();
+        reader.beginObject();
+        while (reader.hasNext()) {
+          String nextName = reader.nextName();
+          if (nextName.equals("timestamp")) {
+            result.timestamp(reader.nextLong());
+          } else if (nextName.equals("value")) {
+            result.value(reader.nextString());
+          } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
+            result.endpoint(ENDPOINT_READER.fromJson(reader));
+          } else {
+            reader.skipValue();
+          }
+        }
+        reader.endObject();
+        return result.build();
       }
-    }
-    reader.endObject();
-    return result.build();
-  };
+    };
 
   static final Buffer.Writer<Annotation> ANNOTATION_WRITER = new Buffer.Writer<Annotation>() {
     @Override public int sizeInBytes(Annotation value) {
@@ -171,80 +176,83 @@ public final class JsonCodec implements Codec {
     }
   };
 
-  static final JsonReaderAdapter<BinaryAnnotation> BINARY_ANNOTATION_READER = reader -> {
-    BinaryAnnotation.Builder result = BinaryAnnotation.builder();
-    String key = null;
-    Type type = Type.STRING;
-    boolean valueSet = false;
-    String number = null;
-    String string = null;
+  static final JsonReaderAdapter<BinaryAnnotation> BINARY_ANNOTATION_READER =
+    new JsonReaderAdapter<BinaryAnnotation>() {
+      @Override public BinaryAnnotation fromJson(JsonReader reader) throws IOException {
+        BinaryAnnotation.Builder result = BinaryAnnotation.builder();
+        String key = null;
+        Type type = Type.STRING;
+        boolean valueSet = false;
+        String number = null;
+        String string = null;
 
-    reader.beginObject();
-    while (reader.hasNext()) {
-      String nextName = reader.nextName();
-      if (nextName.equals("key")) {
-        result.key(key = reader.nextString());
-      } else if (nextName.equals("value")) {
-        valueSet = true;
-        switch (reader.peek()) {
-          case BOOLEAN:
-            type = Type.BOOL;
-            result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
-            break;
-          case STRING:
-            string = reader.nextString();
-            break;
-          case NUMBER:
-            number = reader.nextString();
-            break;
-          default:
-            throw new MalformedJsonException(
-              "Expected value to be a boolean, string or number but was " + reader.peek()
-                + " at path " + reader.getPath());
+        reader.beginObject();
+        while (reader.hasNext()) {
+          String nextName = reader.nextName();
+          if (nextName.equals("key")) {
+            result.key(key = reader.nextString());
+          } else if (nextName.equals("value")) {
+            valueSet = true;
+            switch (reader.peek()) {
+              case BOOLEAN:
+                type = Type.BOOL;
+                result.value(reader.nextBoolean() ? new byte[] {1} : new byte[] {0});
+                break;
+              case STRING:
+                string = reader.nextString();
+                break;
+              case NUMBER:
+                number = reader.nextString();
+                break;
+              default:
+                throw new MalformedJsonException(
+                  "Expected value to be a boolean, string or number but was " + reader.peek()
+                    + " at path " + reader.getPath());
+            }
+          } else if (nextName.equals("type")) {
+            type = Type.valueOf(reader.nextString());
+          } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
+            result.endpoint(ENDPOINT_READER.fromJson(reader));
+          } else {
+            reader.skipValue();
+          }
         }
-      } else if (nextName.equals("type")) {
-        type = Type.valueOf(reader.nextString());
-      } else if (nextName.equals("endpoint") && reader.peek() != JsonToken.NULL) {
-        result.endpoint(ENDPOINT_READER.fromJson(reader));
-      } else {
-        reader.skipValue();
+        if (key == null) {
+          throw new MalformedJsonException("No key at " + reader.getPath());
+        } else if (!valueSet) {
+          throw new MalformedJsonException("No value for key " + key + " at " + reader.getPath());
+        }
+        reader.endObject();
+        result.type(type);
+        switch (type) {
+          case BOOL:
+            return result.build();
+          case STRING:
+            return result.value(string.getBytes(UTF_8)).build();
+          case BYTES:
+            return result.value(Base64.decode(string)).build();
+          default:
+            break;
+        }
+        final byte[] value;
+        if (type == Type.I16) {
+          short v = Short.parseShort(number);
+          value = ByteBuffer.allocate(2).putShort(0, v).array();
+        } else if (type == Type.I32) {
+          int v = Integer.parseInt(number);
+          value = ByteBuffer.allocate(4).putInt(0, v).array();
+        } else if (type == Type.I64 || type == Type.DOUBLE) {
+          if (number == null) number = string;
+          long v = type == Type.I64
+            ? Long.parseLong(number)
+            : doubleToRawLongBits(Double.parseDouble(number));
+          value = ByteBuffer.allocate(8).putLong(0, v).array();
+        } else {
+          throw new AssertionError("BinaryAnnotationType " + type + " was added, but not handled");
+        }
+        return result.value(value).build();
       }
-    }
-    if (key == null) {
-      throw new MalformedJsonException("No key at " + reader.getPath());
-    } else if (!valueSet) {
-      throw new MalformedJsonException("No value for key " + key + " at " + reader.getPath());
-    }
-    reader.endObject();
-    result.type(type);
-    switch (type) {
-      case BOOL:
-        return result.build();
-      case STRING:
-        return result.value(string.getBytes(UTF_8)).build();
-      case BYTES:
-        return result.value(Base64.decode(string)).build();
-      default:
-        break;
-    }
-    final byte[] value;
-    if (type == Type.I16) {
-      short v = Short.parseShort(number);
-      value = ByteBuffer.allocate(2).putShort(0, v).array();
-    } else if (type == Type.I32) {
-      int v = Integer.parseInt(number);
-      value = ByteBuffer.allocate(4).putInt(0, v).array();
-    } else if (type == Type.I64 || type == Type.DOUBLE) {
-      if (number == null) number = string;
-      long v = type == Type.I64
-        ? Long.parseLong(number)
-        : doubleToRawLongBits(Double.parseDouble(number));
-      value = ByteBuffer.allocate(8).putLong(0, v).array();
-    } else {
-      throw new AssertionError("BinaryAnnotationType " + type + " was added, but not handled");
-    }
-    return result.value(value).build();
-  };
+    };
 
   static final Buffer.Writer<BinaryAnnotation> BINARY_ANNOTATION_WRITER =
     new Buffer.Writer<BinaryAnnotation>() {

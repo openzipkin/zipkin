@@ -17,8 +17,9 @@ import java.io.IOException;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.JsonCodec.JsonReader;
+import zipkin2.internal.JsonCodec.JsonReaderAdapter;
 
-public final class V2SpanReader implements JsonCodec.JsonReaderAdapter<Span> {
+public final class V2SpanReader implements JsonReaderAdapter<Span> {
   Span.Builder builder;
 
   @Override public Span fromJson(JsonReader reader) throws IOException {
@@ -105,31 +106,37 @@ public final class V2SpanReader implements JsonCodec.JsonReaderAdapter<Span> {
     return "Span";
   }
 
-  static final JsonCodec.JsonReaderAdapter<Endpoint> ENDPOINT_READER = reader -> {
-    Endpoint.Builder result = Endpoint.newBuilder();
-    reader.beginObject();
-    boolean readField = false;
-    while (reader.hasNext()) {
-      String nextName = reader.nextName();
-      if (reader.peekNull()) {
-        reader.skipValue();
-        continue;
+  static final JsonReaderAdapter<Endpoint> ENDPOINT_READER = new JsonReaderAdapter<Endpoint>() {
+    @Override public Endpoint fromJson(JsonReader reader) throws IOException {
+      Endpoint.Builder result = Endpoint.newBuilder();
+      reader.beginObject();
+      boolean readField = false;
+      while (reader.hasNext()) {
+        String nextName = reader.nextName();
+        if (reader.peekNull()) {
+          reader.skipValue();
+          continue;
+        }
+        if (nextName.equals("serviceName")) {
+          result.serviceName(reader.nextString());
+          readField = true;
+        } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
+          result.parseIp(reader.nextString());
+          readField = true;
+        } else if (nextName.equals("port")) {
+          result.port(reader.nextInt());
+          readField = true;
+        } else {
+          reader.skipValue();
+        }
       }
-      if (nextName.equals("serviceName")) {
-        result.serviceName(reader.nextString());
-        readField = true;
-      } else if (nextName.equals("ipv4") || nextName.equals("ipv6")) {
-        result.parseIp(reader.nextString());
-        readField = true;
-      } else if (nextName.equals("port")) {
-        result.port(reader.nextInt());
-        readField = true;
-      } else {
-        reader.skipValue();
-      }
+      reader.endObject();
+      if (!readField) throw new IllegalArgumentException("Empty endpoint at " + reader.getPath());
+      return result.build();
     }
-    reader.endObject();
-    if (!readField) throw new IllegalArgumentException("Empty endpoint at " + reader.getPath());
-    return result.build();
+
+    @Override public String toString() {
+      return "Endpoint";
+    }
   };
 }

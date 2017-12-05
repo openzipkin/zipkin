@@ -31,13 +31,18 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.6</main.java.version>
     <main.signature.artifact>java16</main.signature.artifact>
-    <powermock.version>1.7.1</powermock.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
+      <scope>provided</scope>
+    </dependency>
+    <!-- generated code includes Generated annotations! -->
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
       <scope>provided</scope>
     </dependency>
 
@@ -61,13 +66,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
-      <version>${mockito.version}</version>
-      <scope>test</scope>
-    </dependency>
-
     <!-- to mock Platform calls -->
     <dependency>
       <groupId>org.powermock</groupId>
@@ -77,16 +75,8 @@
     </dependency>
     <dependency>
       <groupId>org.powermock</groupId>
-      <artifactId>powermock-api-mockito</artifactId>
+      <artifactId>powermock-api-mockito2</artifactId>
       <version>${powermock.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- To avoid java.lang.NoClassDefFoundError: StacktracePrintingMatcher -->
-    <dependency>
-      <groupId>org.hamcrest</groupId>
-      <artifactId>hamcrest-core</artifactId>
-      <version>${hamcrest.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

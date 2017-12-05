@@ -70,6 +70,7 @@
     <junit.version>4.12</junit.version>
     <!-- to match powermock and spring testing -->
     <mockito.version>1.10.19</mockito.version>
+    <powermock.version>2.0.0-beta.5</powermock.version>
     <assertj.version>3.8.0</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
     <okhttp.version>3.9.0</okhttp.version>
@@ -86,7 +87,7 @@
     <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
     <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>2.20.1</maven-failsafe-plugin.version>
-    <maven-enforcer-plugin.version>1.4.1</maven-enforcer-plugin.version>
+    <maven-enforcer-plugin.version>3.0.0-M1</maven-enforcer-plugin.version>
 
     <!-- Catch common Java mistakes as compile-time errors -->
     <plexus-compiler-javac-errorprone.version>2.8.2</plexus-compiler-javac-errorprone.version>
@@ -322,6 +323,12 @@
       </dependency>
 
       <dependency>
+        <groupId>javax.annotation</groupId>
+        <artifactId>javax.annotation-api</artifactId>
+        <version>1.3.1</version>
+      </dependency>
+
+      <dependency>
         <groupId>org.jooq</groupId>
         <artifactId>jooq</artifactId>
         <version>${jooq.version}</version>
@@ -497,7 +504,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <versionRange>[3.3,)</versionRange>
+                    <versionRange>[3.7,)</versionRange>
                     <goals>
                       <goal>compile</goal>
                       <goal>testCompile</goal>
@@ -542,6 +549,8 @@
           <!-- Retrolambda will rewrite lambdas as Java 6 bytecode -->
           <source>1.8</source>
           <target>1.8</target>
+          <!-- or die! com.sun.tools.javac.api.JavacTool -->
+          <fork>true</fork>
         </configuration>
         <executions>
           <execution>
@@ -721,7 +730,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.8,9)</version>
+                  <version>[1.8,10)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>

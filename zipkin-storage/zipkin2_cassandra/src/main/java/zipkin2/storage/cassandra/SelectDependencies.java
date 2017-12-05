@@ -85,5 +85,9 @@ final class SelectDependencies extends ResultSetFutureCall {
       }
       return DependencyLinker.merge(unmerged);
     }
+
+    @Override public String toString() {
+      return "MergeDependencies";
+    }
   }
 }

@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -22,6 +23,7 @@ import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
+import okio.BufferedSource;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
@@ -40,13 +42,42 @@ public final class HttpBulkIndexer {
 
   // Mutated for each call to add
   final Buffer body = new Buffer();
-  final Set<String> indices = new LinkedHashSet<>();
+  final Set<String> indices;
+  final HttpCall.BodyConverter<Void> maybeFlush;
 
   public HttpBulkIndexer(String tag, ElasticsearchStorage es) {
     this.tag = tag;
     http = es.http();
     pipeline = es.pipeline();
     flushOnWrites = es.flushOnWrites();
+    if (flushOnWrites) {
+      indices = new LinkedHashSet<>();
+      maybeFlush = new HttpCall.BodyConverter<Void>() {
+        @Override public Void convert(BufferedSource b) throws IOException {
+          CheckForErrors.INSTANCE.convert(b);
+          if (indices.isEmpty()) return null;
+          ElasticsearchStorage.flush(http, join(indices));
+          return null;
+        }
+      };
+    } else {
+      indices = null;
+      maybeFlush = CheckForErrors.INSTANCE;
+    }
+  }
+
+  enum CheckForErrors implements HttpCall.BodyConverter<Void> {
+    INSTANCE;
+
+    @Override public Void convert(BufferedSource b) throws IOException {
+      String content = b.readUtf8();
+      if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
+      return null;
+    }
+
+    @Override public String toString() {
+      return "CheckForErrors";
+    }
   }
 
   public void add(String index, String typeName, byte[] document, @Nullable String id) {
@@ -81,15 +112,7 @@ public final class HttpBulkIndexer {
       .post(RequestBody.create(APPLICATION_JSON, body.readByteString()))
       .build();
 
-    return http.newCall(request, b -> {
-      String content = b.readUtf8();
-      if (content.indexOf("\"errors\":true") != -1) {
-        throw new IllegalStateException(content);
-      }
-      if (indices.isEmpty()) return null;
-      ElasticsearchStorage.flush(http, join(indices));
-      return null;
-    });
+    return http.newCall(request, maybeFlush);
   }
 
   static String join(Collection<String> parts) {

@@ -13,6 +13,8 @@
  */
 package zipkin.storage;
 
+import java.util.concurrent.Executor;
+
 import static zipkin.internal.Util.checkArgument;
 import static zipkin.storage.StorageAdapters.blockingToAsync;
 
@@ -59,8 +61,8 @@ public final class InMemoryStorage implements StorageComponent {
 
   InMemoryStorage(Builder builder) {
     spanStore = new InMemorySpanStore(builder);
-    asyncSpanStore = blockingToAsync(spanStore, Runnable::run);
-    asyncConsumer = blockingToAsync(spanStore.spanConsumer, Runnable::run);
+    asyncSpanStore = blockingToAsync(spanStore, DirectExecutor.INSTANCE);
+    asyncConsumer = blockingToAsync(spanStore.spanConsumer, DirectExecutor.INSTANCE);
   }
 
   @Override public InMemorySpanStore spanStore() {
@@ -93,5 +95,18 @@ public final class InMemoryStorage implements StorageComponent {
   }
 
   @Override public void close() {
+  }
+
+  /** Same as {@code MoreExecutors.directExecutor()} except without a guava 18 dep */
+  enum DirectExecutor implements Executor {
+    INSTANCE;
+
+    @Override public void execute(Runnable command) {
+      command.run();
+    }
+
+    @Override public String toString() {
+      return "DirectExecutor";
+    }
   }
 }

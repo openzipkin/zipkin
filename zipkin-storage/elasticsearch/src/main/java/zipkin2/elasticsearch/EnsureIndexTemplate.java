@@ -31,13 +31,13 @@ final class EnsureIndexTemplate {
     HttpUrl templateUrl = callFactory.baseUrl.newBuilder("_template").addPathSegment(name).build();
     Request getTemplate = new Request.Builder().url(templateUrl).tag("get-template").build();
     try {
-      callFactory.newCall(getTemplate, b -> null).execute();
+      callFactory.newCall(getTemplate, BodyConverters.NULL).execute();
     } catch (IllegalStateException e) { // TODO: handle 404 slightly more nicely
       Request updateTemplate = new Request.Builder()
         .url(templateUrl)
         .put(RequestBody.create(ElasticsearchStorage.APPLICATION_JSON, indexTemplate))
         .tag("update-template").build();
-      callFactory.newCall(updateTemplate, b -> null).execute();
+      callFactory.newCall(updateTemplate, BodyConverters.NULL).execute();
     }
   }
 }

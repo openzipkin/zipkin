@@ -107,7 +107,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
 
   /** This supports span lookup by {@link Span#traceId lower 64-bits of the trace ID} */
   private final SortedMultimap<String, TraceIdTimestamp> traceIdToTraceIdTimeStamps =
-    new SortedMultimap<String, TraceIdTimestamp>(String::compareTo) {
+    new SortedMultimap<String, TraceIdTimestamp>(STRING_COMPARATOR) {
       @Override Collection<TraceIdTimestamp> valueContainer() {
         return new LinkedHashSet<>();
       }
@@ -116,7 +116,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   private final ServiceNameToTraceIds serviceToTraceIds = new ServiceNameToTraceIds();
   /** This is an index of {@link Span#name} by {@link Endpoint#serviceName() service name} */
   private final SortedMultimap<String, String> serviceToSpanNames =
-    new SortedMultimap<String, String>(String::compareTo) {
+    new SortedMultimap<String, String>(STRING_COMPARATOR) {
       @Override Collection<String> valueContainer() {
         return new LinkedHashSet<>();
       }
@@ -311,26 +311,54 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     // We don't have a query parameter for strictTraceId when fetching dependency links, so we
     // ignore traceIdHigh. Otherwise, a single trace can appear as two, doubling callCount.
     Call<List<List<Span>>> getTracesCall = getTraces(request, false);
-    return getTracesCall.map(traces -> {
+    return getTracesCall.map(LinkDependencies.INSTANCE);
+  }
+
+  enum LinkDependencies implements Call.Mapper<List<List<Span>>, List<DependencyLink>> {
+    INSTANCE;
+
+    @Override public List<DependencyLink> map(List<List<Span>> traces) {
       DependencyLinker linksBuilder = new DependencyLinker();
       for (Collection<Span> trace : traces) {
         // use a hash set to dedupe any redundantly accepted spans
         linksBuilder.putTrace(new LinkedHashSet<>(trace).iterator());
       }
       return linksBuilder.link();
-    });
+    }
+
+    @Override public String toString() {
+      return "LinkDependencies";
+    }
   }
 
-  static final Comparator<TraceIdTimestamp> TIMESTAMP_DESCENDING = (left, right) -> {
-    long x = left.timestamp(), y = right.timestamp();
-    int result = (x < y) ? -1 : ((x == y) ? 0 : 1);
-    if (result != 0) return -result; // use negative as we are descending
-    return right.lowTraceId().compareTo(left.lowTraceId());
+  static final Comparator<String> STRING_COMPARATOR = new Comparator<String>() {
+    @Override public int compare(String left, String right) {
+      if (left == null) return -1;
+      return left.compareTo(right);
+    }
+
+    @Override public String toString() {
+      return "String::compareTo";
+    }
   };
+
+  static final Comparator<TraceIdTimestamp> TIMESTAMP_DESCENDING =
+    new Comparator<TraceIdTimestamp>() {
+      @Override public int compare(TraceIdTimestamp left, TraceIdTimestamp right) {
+        long x = left.timestamp(), y = right.timestamp();
+        int result = (x < y) ? -1 : ((x == y) ? 0 : 1); // Long.compareTo is JRE 7+
+        if (result != 0) return -result; // use negative as we are descending
+        return right.lowTraceId().compareTo(left.lowTraceId());
+      }
+
+      @Override public String toString() {
+        return "TimestampDescending{}";
+      }
+    };
 
   static final class ServiceNameToTraceIds extends SortedMultimap<String, String> {
     ServiceNameToTraceIds() {
-      super(String::compareTo);
+      super(STRING_COMPARATOR);
     }
 
     @Override Set<String> valueContainer() {

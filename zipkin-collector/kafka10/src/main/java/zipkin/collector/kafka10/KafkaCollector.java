@@ -190,15 +190,18 @@ public final class KafkaCollector implements CollectorComponent {
     }
 
     Runnable guardFailures(final Runnable delegate) {
-      return () -> {
-        try {
-          delegate.run();
-        } catch (InterruptException e) {
-          LOG.info("Kafka collector worker was interrupted. This is expected during shutdown.", e);
-          failure.set(CheckResult.failed(e));
-        } catch(RuntimeException e) {
-          LOG.error("Kafka collector worker exited with exception.", e);
-          failure.set(CheckResult.failed(e));
+      return new Runnable() {
+        @Override public void run() {
+          try {
+            delegate.run();
+          } catch (InterruptException e) {
+            LOG.info("Kafka collector worker was interrupted. This is expected during shutdown.",
+              e);
+            failure.set(CheckResult.failed(e));
+          } catch (RuntimeException e) {
+            LOG.error("Kafka collector worker exited with exception.", e);
+            failure.set(CheckResult.failed(e));
+          }
         }
       };
     }

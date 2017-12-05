@@ -217,11 +217,13 @@ public final class KafkaCollector implements CollectorComponent {
     }
 
     Runnable guardFailures(final Runnable delegate) {
-      return () -> {
-        try {
-          delegate.run();
-        } catch (RuntimeException e) {
-          failure.set(CheckResult.failed(e));
+      return new Runnable() {
+        @Override public void run() {
+          try {
+            delegate.run();
+          } catch (RuntimeException e) {
+            failure.set(CheckResult.failed(e));
+          }
         }
       };
     }
