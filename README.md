@@ -9,13 +9,13 @@ This project includes a dependency-free library and a [spring-boot](http://proje
 
 The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
 
-```
-wget -O zipkin.jar 'https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec'
+```bash
+curl -sSL https://zipkin.io/quickstart.sh | bash -s
 java -jar zipkin.jar
 ```
 
 You can also start Zipkin via Docker.
-```
+```bash
 docker run -d -p 9411:9411 openzipkin/zipkin
 ```
 
