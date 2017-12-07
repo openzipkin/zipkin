@@ -14,6 +14,8 @@
 package zipkin.autoconfigure.collector.rabbitmq;
 
 import com.rabbitmq.client.ConnectionFactory;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.collector.rabbitmq.RabbitMQCollector;
@@ -38,6 +40,8 @@ public class ZipkinRabbitMQCollectorProperties {
   private String username;
   /** RabbitMQ virtual host */
   private String virtualHost;
+  /** Flag to use SSL */
+  private Boolean useSsl;
 
   public List<String> getAddresses() {
     return addresses;
@@ -95,7 +99,16 @@ public class ZipkinRabbitMQCollectorProperties {
     this.virtualHost = virtualHost;
   }
 
-  public RabbitMQCollector.Builder toBuilder() {
+  public Boolean getUseSsl() {
+    return useSsl;
+  }
+
+  public void setUseSsl(Boolean useSsl) {
+    this.useSsl = useSsl;
+  }
+
+  public RabbitMQCollector.Builder toBuilder()
+    throws KeyManagementException, NoSuchAlgorithmException {
     final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
     ConnectionFactory connectionFactory = new ConnectionFactory();
     if (addresses != null) result.addresses(addresses);
@@ -105,8 +118,8 @@ public class ZipkinRabbitMQCollectorProperties {
     if (queue != null) result.queue(queue);
     if (username != null) connectionFactory.setUsername(username);
     if (virtualHost != null) connectionFactory.setVirtualHost(virtualHost);
+    if (useSsl != null && useSsl) connectionFactory.useSslProtocol();
     result.connectionFactory(connectionFactory);
     return result;
   }
-
 }

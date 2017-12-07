@@ -13,6 +13,8 @@
  */
 package zipkin.autoconfigure.collector.rabbitmq;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -35,7 +37,8 @@ public class ZipkinRabbitMQCollectorAutoConfiguration {
 
   @Bean(initMethod = "start") RabbitMQCollector rabbitMq(
     ZipkinRabbitMQCollectorProperties properties,
-    CollectorSampler sampler, CollectorMetrics metrics, StorageComponent storage) {
+    CollectorSampler sampler, CollectorMetrics metrics, StorageComponent storage)
+    throws NoSuchAlgorithmException, KeyManagementException {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
   }
 

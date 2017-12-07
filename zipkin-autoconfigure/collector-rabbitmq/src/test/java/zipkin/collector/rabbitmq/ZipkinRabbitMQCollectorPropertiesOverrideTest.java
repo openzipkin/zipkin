@@ -13,6 +13,8 @@
  */
 package zipkin.collector.rabbitmq;
 
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
@@ -70,7 +72,10 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
             builder -> builder.connectionFactory.getUsername()),
         parameters("virtualHost", "/hello",
             ZipkinRabbitMQCollectorProperties::getVirtualHost,
-            builder -> builder.connectionFactory.getVirtualHost())
+            builder -> builder.connectionFactory.getVirtualHost()),
+        parameters("useSsl", true,
+          ZipkinRabbitMQCollectorProperties::getUseSsl,
+          builder -> builder.connectionFactory.isSSL())
     );
   }
 
@@ -98,7 +103,8 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
   }
 
   @Test
-  public void propertyTransferredToCollectorBuilder() {
+  public void propertyTransferredToCollectorBuilder()
+    throws NoSuchAlgorithmException, KeyManagementException {
     addEnvironment(context, property + ":" + value);
 
     context.register(
