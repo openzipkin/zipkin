@@ -30,9 +30,13 @@ public class EncodingTest {
 
   @Test public void singletonList_json() throws IOException {
     List<byte[]> encoded = Arrays.asList(new byte[10]);
+
+    assertThat(Encoding.JSON.listSizeInBytes(encoded.get(0).length))
+      .isEqualTo(2 /* [] */ + 10);
     assertThat(Encoding.JSON.listSizeInBytes(encoded))
       .isEqualTo(2 /* [] */ + 10);
   }
+
 
   @Test public void multiItemList_json() throws IOException {
     List<byte[]> encoded = Arrays.asList(new byte[3], new byte[4], new byte[5]);
