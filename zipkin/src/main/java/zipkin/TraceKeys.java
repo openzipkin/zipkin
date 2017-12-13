@@ -69,7 +69,7 @@ public final class TraceKeys {
 
   /**
    * The entire URL, including the scheme, host and query parameters if available. Ex.
-   * "https://mybucket.s3.amazonaws.com/objects/abcd-ff?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Algorithm=AWS4-HMAC-SHA256..."
+   * "https://mybucket.s3.amazonaws.com/objects/abcd-ff?X-Amz-Algorithm=AWS4-HMAC-SHA256..."
    *
    * <p>Combined with {@linkplain #HTTP_METHOD}, you can understand the fully-qualified request
    * line.

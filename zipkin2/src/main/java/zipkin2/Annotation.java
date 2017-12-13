@@ -19,7 +19,7 @@ import java.io.Serializable;
 /**
  * Associates an event that explains latency with a timestamp.
  *
- * <p>Unlike log statements, annotations are often codes: Ex. {@link "cache.miss"}.
+ * <p>Unlike log statements, annotations are often codes: Ex. {@code cache.miss}.
  */
 @AutoValue
 //@Immutable

@@ -45,8 +45,6 @@
         <configuration>
           <installDirectory>target</installDirectory>
           <nodeVersion>v6.9.2</nodeVersion>
-          <npmVersion>3.10.9</npmVersion>
-          <failOnError>true</failOnError>
         </configuration>
         <executions>
           <execution>

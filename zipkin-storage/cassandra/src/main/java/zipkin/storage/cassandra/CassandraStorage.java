@@ -222,7 +222,7 @@ public final class CassandraStorage
      *
      * <p>Indexing in cassandra will usually have more rows than trace identifiers due to factors
      * including table design and collection implementation. As there's no way to DISTINCT out
-     * duplicates server-side, this over-fetches client-side when {@code indexFetchMultiplier} > 1.
+     * duplicates server-side, this over-fetches client-side when {@code indexFetchMultiplier} &gt; 1.
      */
     public Builder indexFetchMultiplier(int indexFetchMultiplier) {
       this.indexFetchMultiplier = indexFetchMultiplier;

@@ -74,14 +74,14 @@
     <assertj.version>3.8.0</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
     <okhttp.version>3.9.0</okhttp.version>
-    <testcontainers.version>1.4.3</testcontainers.version>
+    <testcontainers.version>1.5.0</testcontainers.version>
 
     <animal-sniffer-maven-plugin.version>1.16</animal-sniffer-maven-plugin.version>
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
     <maven-install-plugin.version>2.5.2</maven-install-plugin.version>
     <maven-deploy-plugin.version>2.8.2</maven-deploy-plugin.version>
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-    <maven-javadoc-plugin.version>2.10.4</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.0.0</maven-javadoc-plugin.version>
     <license-maven-plugin.version>3.0</license-maven-plugin.version>
     <maven-jar-plugin.version>3.0.2</maven-jar-plugin.version>
     <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
@@ -91,7 +91,7 @@
 
     <!-- Catch common Java mistakes as compile-time errors -->
     <plexus-compiler-javac-errorprone.version>2.8.2</plexus-compiler-javac-errorprone.version>
-    <errorprone.version>2.1.2</errorprone.version>
+    <errorprone.version>2.1.3</errorprone.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -778,7 +778,7 @@
               <failOnError>false</failOnError>
               <excludePackageNames>zipkin.internal,zipkin.internal.*</excludePackageNames>
               <!-- hush pedantic warnings: we don't put param and return on everything! -->
-              <additionalparam>-Xdoclint:none</additionalparam>
+              <doclint>none</doclint>
             </configuration>
             <executions>
               <execution>

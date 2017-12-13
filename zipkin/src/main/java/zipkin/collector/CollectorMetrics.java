@@ -21,7 +21,7 @@ import zipkin.storage.Callback;
 /**
  * Instrumented applications report spans over a transport such as Kafka. Zipkin collectors receive
  * these messages, {@link Codec#readSpans(byte[]) decoding them into spans},
- * {@link CollectorSampler# isSampled(long, Boolean) apply sampling}, and
+ * {@link CollectorSampler#isSampled(long, Boolean) apply sampling}, and
  * {@link AsyncSpanConsumer#accept(List, Callback) queues them for storage}.
  *
  * <p>Callbacks on this type are invoked by zipkin collectors to improve the visibility of the
@@ -30,9 +30,9 @@ import zipkin.storage.Callback;
  *
  * <h3>Spans Collected vs Queryable Spans</h3>
  *
- * <p>A span in the context of collection is <= span in the context of query. While it is advised
- * that instrumentation report complete spans, Instrumentation often patch the same span twice, ex
- * adding annotations. Also, RPC spans include at least 2 messages due to the client and the server
+ * <p>A span queried may be comprised of multiple spans collected. While instrumentation should
+ * report complete spans, Instrumentation often patch the same span twice, ex adding annotations.
+ * Also, RPC spans include at least 2 messages due to the client and the server
  * reporting separately. Finally, some storage components merge patches at ingest. For these
  * reasons, you should be cautious to alert on queryable spans vs stored spans, unless you control
  * the instrumentation in such a way that queryable spans/message is reliable.
@@ -45,7 +45,7 @@ import zipkin.storage.Callback;
  * <li>Successful Messages = {@link #incrementMessages() Accepted messages} -
  * {@link #incrementMessagesDropped() Dropped messages}. Alert when this is less than amount of
  * messages sent from instrumentation.</li>
- * <li>Stored spans <= {@link #incrementSpans(int) Accepted spans} - {@link
+ * <li>Stored spans &lt;= {@link #incrementSpans(int) Accepted spans} - {@link
  * #incrementSpansDropped(int) Dropped spans}. Alert when this drops below the
  * {@link CollectorSampler#isSampled(long, Boolean) collection-tier sample rate}.
  * </li>
