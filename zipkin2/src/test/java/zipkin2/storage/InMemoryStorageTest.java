@@ -16,6 +16,7 @@ package zipkin2.storage;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.Test;
@@ -27,6 +28,7 @@ import zipkin2.TestObjects;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
 
 public class InMemoryStorageTest {
@@ -75,6 +77,15 @@ public class InMemoryStorageTest {
     assertThat(storage.getTraces(requestBuilder()
       .endTs(TODAY).build()).execute())
       .containsExactly(earlyTraces);
+  }
+
+  /** Ensures we don't overload a partition due to key equality being conflated with order */
+  @Test public void differentiatesOnTraceIdWhenTimestampEqual() {
+    storage.accept(asList(CLIENT_SPAN));
+    storage.accept(asList(CLIENT_SPAN.toBuilder().traceId("333").build()));
+
+    assertThat(storage).extracting("spansByTraceIdTimeStamp.delegate")
+      .allSatisfy(map -> assertThat((Map) map).hasSize(2));
   }
 
   /** It should be safe to run dependency link jobs twice */

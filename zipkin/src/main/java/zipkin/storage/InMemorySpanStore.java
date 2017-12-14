@@ -330,7 +330,11 @@ public final class InMemorySpanStore implements SpanStore {
     @Override public int compare(Pair<Long> left, Pair<Long> right) {
       long x = left._2, y = right._2;
       int result = (x < y) ? -1 : ((x == y) ? 0 : 1); // Long.compareTo is JRE 7+
-      return -result; // use negative as we are descending
+      if (result != 0) return -result; // use negative as we are descending
+      // secondary compare as TreeMap is in use
+      x = left._1;
+      y = right._1;
+      return (x < y) ? -1 : ((x == y) ? 0 : 1);
     }
 
     @Override public String toString() {
