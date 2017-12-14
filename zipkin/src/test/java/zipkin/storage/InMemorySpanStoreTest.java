@@ -13,6 +13,7 @@
  */
 package zipkin.storage;
 
+import java.util.Map;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin.Annotation;
@@ -24,7 +25,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin.TestObjects.TODAY;
 
-public class InMemorySpanStoreEvictionTest {
+public class InMemorySpanStoreTest {
   InMemoryStorage storage = new InMemoryStorage.Builder().maxSpanCount(1000).build();
   InMemorySpanStore store = storage.spanStore();
   StorageAdapters.SpanConsumer consumer = store.spanConsumer;
@@ -77,6 +78,16 @@ public class InMemorySpanStoreEvictionTest {
     .duration(ann8.timestamp - ann7.timestamp)
     .id(0x654)
     .annotations(asList(ann7, ann8)).build();
+
+  /** Ensures we don't overload a partition due to key equality being conflated with order */
+  @Test
+  public void differentiatesOnTraceIdWhenTimestampEqual() {
+    consumer.accept(asList(span1));
+    consumer.accept(asList(span1.toBuilder().traceId(333L).build()));
+
+    assertThat(store).extracting("spansByTraceIdTimeStamp.delegate")
+      .allSatisfy(map -> assertThat((Map) map).hasSize(2));
+  }
 
   @Test
   public void dropsLargerThanMax() {
