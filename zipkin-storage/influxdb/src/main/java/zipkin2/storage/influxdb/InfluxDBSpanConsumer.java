@@ -16,15 +16,14 @@ package zipkin2.storage.influxdb;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-
 import org.influxdb.InfluxDBException;
+import org.influxdb.dto.BatchPoints;
 import org.influxdb.dto.Point;
 import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.storage.SpanConsumer;
-import org.influxdb.dto.BatchPoints;
 
 final class InfluxDBSpanConsumer implements SpanConsumer {
   final InfluxDBStorage storage;
@@ -44,52 +43,36 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
       .database(storage.database())
       .retentionPolicy(storage.retentionPolicy())
       .build();
+
     for (Span span : spans) {
-      Point point = Point
+      Point.Builder point = Point
         .measurement(storage.measurement())
         .tag("trace_id", span.traceId())
-        .tag("id", span.id())
-        .tag("parent_id", span.parentId() == null ? span.id() : span.parentId())
-        .tag("name", span.name())
-        .tag("service_name", serviceName(span))
-        .addField("duration_ns", span.duration() * 1000)
-        .time(span.timestamp(), TimeUnit.MICROSECONDS)
-        .build();
-      batch.point(point);
+        .tag("id", span.id());
 
-      for (Annotation anno : span.annotations()) {
-        Point annoPoint = Point
-          .measurement(storage.measurement())
-          .tag("trace_id", span.traceId())
-          .tag("id", span.id())
-          .tag("parent_id", span.parentId() == null ? span.id() : span.parentId())
-          .tag("name", span.name())
-          .tag("service_name", serviceName(span))
-          .tag("endpoint_host", host(span))
-          .tag("annotation", anno.value())
-          .addField("duration_ns", span.duration() * 1000)
-          .time(span.timestamp(), TimeUnit.MICROSECONDS)
+      if (span.parentId() != null) point.tag("parent_id", span.parentId());
+      if (span.name() != null) point.tag("name", span.name());
+      String serviceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
+      if (serviceName != null) point.tag("service_name", serviceName);
+      if (span.timestamp() != null) point.time(span.timestamp(), TimeUnit.MICROSECONDS);
+      // one field is mandatory, so initialize to zero if there's no duration
+      point.addField("duration_us", span.duration() == null ? 0 : span.duration());
+      batch.point(point.build());
+
+      // add points for tags first, as they inherit the span's timestamp
+      for (Map.Entry<String, String> tag : span.tags().entrySet()) {
+        Point taggedPoint = point
+          .tag("annotation_key", tag.getKey())
+          .tag("annotation", tag.getValue())
+          .tag("endpoint_host", host(span)) // TODO: what is this for?
           .build();
-        batch.point(annoPoint);
+        batch.point(taggedPoint);
       }
 
-      if (span.tags() != null) {
-        for (Map.Entry<String, String> tag : span.tags().entrySet()) {
-          Point taggedPoint = Point
-            .measurement(storage.measurement())
-            .tag("trace_id", span.traceId())
-            .tag("id", span.id())
-            .tag("parent_id", span.parentId() == null ? span.id() : span.parentId())
-            .tag("name", span.name())
-            .tag("service_name", serviceName(span))
-            .tag("annotation_key", tag.getKey())
-            .tag("annotation", tag.getValue())
-            .tag("endpoint_host", host(span))
-            .addField("duration_ns", span.duration() * 1000)
-            .time(span.timestamp(), TimeUnit.MICROSECONDS)
-            .build();
-          batch.point(taggedPoint);
-        }
+      for (Annotation anno : span.annotations()) {
+        batch.point(point.tag("annotation", anno.value())
+          .time(anno.timestamp(), TimeUnit.MICROSECONDS)
+          .build());
       }
     }
     storage.get().write(batch);
@@ -108,11 +91,8 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
 
   private String host(Span span) {
     String addr = "0.0.0.0";
-    Endpoint ep = span.remoteEndpoint() == null ?
-      span.localEndpoint() == null
-        ? null
-        : span.localEndpoint()
-      : span.remoteEndpoint();
+    // TODO: this is dangerous to conflate local and remote. add rationale or change
+    Endpoint ep = span.localEndpoint() != null ? span.localEndpoint() : span.remoteEndpoint();
 
     if (ep == null) {
       return addr;

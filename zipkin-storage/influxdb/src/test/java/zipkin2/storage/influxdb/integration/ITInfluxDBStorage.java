@@ -67,7 +67,6 @@ public class ITInfluxDBStorage {
     }
   }
 
-  @Ignore("Ignored as we know all tests will fail")
   public static class SpanStoreTest extends InfluxDBSpanStoreTest {
     @ClassRule public static InfluxDBStorageRule influxdb = classRule();
     @Rule public TestName testName = new TestName();

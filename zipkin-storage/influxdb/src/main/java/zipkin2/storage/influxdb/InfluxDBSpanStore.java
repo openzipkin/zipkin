@@ -52,8 +52,9 @@ final class InfluxDBSpanStore implements SpanStore {
 
     StringBuilder result = new StringBuilder();
 
-    for (Iterator<Map.Entry<String, String>> i = request.annotationQuery().entrySet().iterator();
-      i.hasNext(); ) {
+    Iterator<Map.Entry<String, String>> i = request.annotationQuery().entrySet().iterator();
+    if (i.hasNext()) result.append(" AND ");
+    while (i.hasNext()) {
       Map.Entry<String, String> next = i.next();
       String k = next.getKey();
       String v = next.getValue();
@@ -61,10 +62,10 @@ final class InfluxDBSpanStore implements SpanStore {
         result.append(String.format("\"annotation_key\" = '%s'", k));
       } else {
         result.append(
-          String.format("(\"annotation_key\" = '%s' AND \"annotation_value\" = '%s'", k, v));
+          String.format("(\"annotation_key\" = '%s' AND \"annotation_value\" = '%s')", k, v));
       }
       if (i.hasNext()) {
-        result.append(" and ");
+        result.append(" AND ");
       }
     }
     if (result.length() > 0) {
@@ -72,10 +73,10 @@ final class InfluxDBSpanStore implements SpanStore {
     }
 
     if (request.minDuration() != null) {
-      q += String.format(" AND \"duration_ns\" >= %d ", request.minDuration());
+      q += String.format(" AND \"duration_us\" >= %d ", request.minDuration());
     }
     if (request.maxDuration() != null) {
-      q += String.format(" AND \"duration_ns\" <= %d ", request.maxDuration());
+      q += String.format(" AND \"duration_us\" <= %d ", request.maxDuration());
     }
     q += " GROUP BY \"trace_id\", \"id\" ";
     q += String.format(" ORDER BY time DESC SLIMIT %d", request.limit());
@@ -181,8 +182,9 @@ final class InfluxDBSpanStore implements SpanStore {
               endPoint = v.toString() ;
             }
             break;
-          case "duration_ns":
-            builder.duration(((Double)(value.get(i))).longValue() / 1000);
+          case "duration_us":
+            long duration = ((Double) (value.get(i))).longValue();
+            if (duration > 0) builder.duration(duration);
             break;
           case "time":
             time = ((Double)(value.get(i))).longValue();
@@ -193,7 +195,7 @@ final class InfluxDBSpanStore implements SpanStore {
         builder.localEndpoint(
           Endpoint
             .newBuilder()
-            .ip(endPoint)
+            .ip(endPoint) // TODO: missing port
             .serviceName(serviceName)
             .build());
       }
@@ -294,7 +296,7 @@ final class InfluxDBSpanStore implements SpanStore {
 
   @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     String q =
-      String.format("SELECT COUNT(\"duration_ns\") FROM \"%s\".\"%s\"", this.storage.retentionPolicy(), this.storage.measurement());
+      String.format("SELECT COUNT(\"duration_us\") FROM \"%s\".\"%s\"", this.storage.retentionPolicy(), this.storage.measurement());
     q += String.format(" WHERE time < %dms", endTs);
     q += String.format(" AND time > %dms ", endTs - lookback);
     q += String.format(" AND annotation='' GROUP BY \"id\",\"parent_id\",\"service_name\",time(%dms)", lookback);
