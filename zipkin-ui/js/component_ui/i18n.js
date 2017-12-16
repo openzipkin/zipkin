@@ -7,6 +7,8 @@ export function i18nInit(file) {
     name: file,
     path: contextRoot,
     mode: 'map',
+    cache: true,
+    async: true,
     callback: () => {
       $('[data-i18n]').each((index, item) => {
         if (item.tagName === 'INPUT' || item.tagName === 'SELECT') {
