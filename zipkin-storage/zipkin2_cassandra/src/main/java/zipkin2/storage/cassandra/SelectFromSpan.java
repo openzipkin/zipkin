@@ -93,7 +93,8 @@ final class SelectFromSpan extends ResultSetFutureCall {
           traceIds = new LinkedHashSet<>();
           Iterator<String> iterator = input.iterator();
           for (int i = 0; i < limit; i++) {
-            traceIds.add(iterator.next());
+            String traceId = iterator.next();
+            traceIds.add(Factory.this.strictTraceId || traceId.length() <= 16 ? traceId : traceId.substring(16));
           }
         } else {
           traceIds = input;
