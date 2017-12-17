@@ -33,6 +33,10 @@ import zipkin2.storage.StorageComponent;
  * is enabled via SLF4J. Trace level includes bound values.
  *
  * <p>Schema is installed by default from "/zipkin2-schema.cql"
+ *
+ * <p>When {@link StorageComponent.Builder#strictTraceId(boolean)} is disabled, span and index data
+ * are uniformly written with 64-bit trace ID length. When retrieving data, an extra "trace_id_high"
+ * field clarifies if a 128-bit trace ID was sent.
  */
 @AutoValue
 public abstract class CassandraStorage extends StorageComponent {

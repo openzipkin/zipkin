@@ -23,6 +23,7 @@ import com.google.auto.value.AutoValue;
 import java.util.UUID;
 import zipkin2.Call;
 import zipkin2.internal.Nullable;
+import zipkin2.storage.StorageComponent;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
@@ -46,8 +47,9 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
+    final boolean strictTraceId;
 
-    Factory(Session session) {
+    Factory(Session session, boolean strictTraceId) {
       this.session = session;
       this.preparedStatement = session.prepare(QueryBuilder.insertInto(TABLE_TRACE_BY_SERVICE_SPAN)
         .value("service", QueryBuilder.bindMarker("service"))
@@ -56,9 +58,13 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
         .value("ts", QueryBuilder.bindMarker("ts"))
         .value("trace_id", QueryBuilder.bindMarker("trace_id"))
         .value("duration", QueryBuilder.bindMarker("duration")));
+      this.strictTraceId = strictTraceId;
     }
 
-    /** Zero duration is permitted, as it implies the span took less than 1 millisecond. */
+    /**
+     * While {@link zipkin2.Span#duration} cannot be zero, zero duration in milliseconds is
+     * permitted, as it implies the span took less than 1 millisecond (1-999us).
+     */
     Input newInput(
       String service,
       String span,
@@ -72,7 +78,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
         span,
         bucket,
         ts,
-        trace_id,
+        !strictTraceId && trace_id.length() == 32 ? trace_id.substring(16) : trace_id,
         durationMillis
       );
     }

@@ -13,25 +13,45 @@
  */
 package zipkin2.storage.cassandra.integration;
 
+import java.util.List;
 import org.junit.Before;
+import org.junit.Test;
+import zipkin.Span;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.StrictTraceIdFalseTest;
 import zipkin2.storage.cassandra.CassandraStorage;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 abstract class CassandraStrictTraceIdFalseTest extends StrictTraceIdFalseTest {
 
   abstract protected String keyspace();
 
   private CassandraStorage storage;
+  private V2StorageComponent storageBeforeSwitch;
 
   @Before public void connect() {
     storage = storageBuilder().strictTraceId(false).keyspace(keyspace()).build();
+    storageBeforeSwitch = V2StorageComponent.create(storageBuilder().keyspace(keyspace()).build());
   }
 
   protected abstract CassandraStorage.Builder storageBuilder();
 
   @Override protected final StorageComponent storage() {
     return V2StorageComponent.create(storage);
+  }
+
+  /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
+  @Test public void getTraces_128BitTraceId() {
+    getTraces_128BitTraceId(accept128BitTrace(storageBeforeSwitch));
+  }
+
+  /** Ensures data written before strict trace ID was enabled can be read */
+  @Test public void getTrace_retrievesBy128BitTraceId_afterSwitch() {
+    List<Span> trace = accept128BitTrace(storageBeforeSwitch);
+
+    assertThat(store().getRawTrace(trace.get(0).traceIdHigh, trace.get(0).traceId))
+      .containsOnlyElementsOf(trace);
   }
 }

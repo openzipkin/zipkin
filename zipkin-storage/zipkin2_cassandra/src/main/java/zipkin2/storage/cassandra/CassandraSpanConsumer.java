@@ -49,7 +49,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     Schema.readMetadata(session);
 
     insertSpan = new InsertSpan.Factory(session, strictTraceId);
-    insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session);
+    insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
     insertServiceSpanName = new InsertServiceSpan.Factory(session, WRITTEN_NAMES_TTL);
   }
 
