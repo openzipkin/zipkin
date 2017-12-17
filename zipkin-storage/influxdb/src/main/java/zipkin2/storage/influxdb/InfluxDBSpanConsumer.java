@@ -50,7 +50,9 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
         .tag("trace_id", span.traceId())
         .tag("id", span.id());
 
-      if (span.parentId() != null) point.tag("parent_id", span.parentId());
+      // When it is a root parent we set the parent_id to id to allow
+      // a single query to retrieve all dependencies.
+      point.tag("parent_id", span.parentId() == null ? span.id() : span.parentId());
       if (span.name() != null) point.tag("name", span.name());
       String serviceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
       if (serviceName != null) point.tag("service_name", serviceName);
