@@ -147,9 +147,7 @@ final class InfluxDBSpanStore implements SpanStore {
             v = value.get(i);
             if (v != null) {
               String parent = v.toString();
-              if (!parent.equals(id)) {
-                builder.parentId(parent);
-              }
+              if (!parent.equals(id)) builder.parentId(parent);
             }
             break;
           case "name":
@@ -335,20 +333,19 @@ final class InfluxDBSpanStore implements SpanStore {
           Map<String, String> tags = series.getTags();
           String child = tags.get("service_name");
           String parentID = tags.get("parent_id");
+          String id = tags.get("id");
           String parent = services.get(parentID);
           long count = 0;
           for (List<Object> values : series.getValues()) {
             Object value = values.get(1);
             count += ((Double) (value)).longValue();
           }
-          DependencyLink link = DependencyLink
+          DependencyLink.Builder linkBuilder = DependencyLink
             .newBuilder()
-            .parent(parent)
             .child(child)
-            .callCount(count)
-            .build();
-
-          links.add(link);
+            .callCount(count);
+          if (!parent.equals(id)) linkBuilder.parent(parent);
+          links.add(linkBuilder.build());
         }
       }
     }
