@@ -20,7 +20,6 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -65,8 +64,18 @@ final class SelectFromSpan extends ResultSetFutureCall {
 
     Call<List<Span>> newCall(String traceId) {
       checkNotNull(traceId, "traceId");
+      // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+      Set<String> traceIds;
+      if (!strictTraceId && traceId.length() == 32) {
+        traceIds = new LinkedHashSet<>();
+        traceIds.add(traceId);
+        traceIds.add(traceId.substring(16));
+      } else {
+        traceIds = Collections.singleton(traceId);
+      }
+
       return new SelectFromSpan(this,
-        Collections.singleton(traceId),
+        traceIds,
         maxTraceCols // amount of spans per trace is almost always larger than trace IDs
       ).flatMap(accumulateSpans);
     }
@@ -88,21 +97,23 @@ final class SelectFromSpan extends ResultSetFutureCall {
 
       @Override public Call<List<List<Span>>> map(Set<String> input) {
         if (input.isEmpty()) return Call.emptyList();
-        Set<String> traceIds;
-        if (input.size() > limit) {
-          traceIds = new LinkedHashSet<>();
-          Iterator<String> iterator = input.iterator();
-          for (int i = 0; i < limit; i++) {
-            String traceId = iterator.next();
-            traceIds.add(Factory.this.strictTraceId || traceId.length() <= 16 ? traceId : traceId.substring(16));
-          }
-        } else {
-          traceIds = input;
-        }
+        Set<String> traceIds = limitedCopy(input);
         return new SelectFromSpan(Factory.this,
           traceIds,
           maxTraceCols // amount of spans per trace is almost always larger than trace IDs
         ).flatMap(accumulateSpans).map(groupByTraceId);
+      }
+
+      Set<String> limitedCopy(Set<String> traceIds) {
+        if (strictTraceId && traceIds.size() <= limit) return traceIds;
+        Set<String> copy = new LinkedHashSet<>();
+        int i = 0;
+        for (String traceId : traceIds) {
+          copy.add(traceId);
+          if (!strictTraceId && traceId.length() == 32) copy.add(traceId.substring(16));
+          if (++i == limit) break;
+        }
+        return copy;
       }
     }
   }
