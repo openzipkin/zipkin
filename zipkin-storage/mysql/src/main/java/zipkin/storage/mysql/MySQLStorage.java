@@ -92,12 +92,12 @@ public final class MySQLStorage implements StorageComponent {
     this.datasource = checkNotNull(builder.datasource, "datasource");
     this.executor = checkNotNull(builder.executor, "executor");
     this.context = new DSLContexts(builder.settings, builder.listenerProvider);
+    this.strictTraceId = builder.strictTraceId;
     this.schema = new Lazy<Schema>() {
       @Override protected Schema compute() {
-        return new Schema(datasource, context);
+        return new Schema(datasource, context, strictTraceId);
       }
     };
-    this.strictTraceId = builder.strictTraceId;
   }
 
   /** Returns the session in use by this storage component. */
