@@ -278,6 +278,110 @@ public class V2SpanConverterTest {
       .containsExactly(span2);
   }
 
+  /** Late flushed data on a server span */
+  @Test public void lateRemoteEndpoint_ss() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.SERVER)
+      .localEndpoint(backend.toV2())
+      .remoteEndpoint(frontend.toV2())
+      .addAnnotation(1472470996199000L, "ss")
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addAnnotation(Annotation.create(1472470996199000L, "ss", backend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, frontend))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  /** Late flushed data on a server span */
+  @Test public void lateRemoteEndpoint_ca() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.SERVER)
+      .remoteEndpoint(frontend.toV2())
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, frontend))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void lateRemoteEndpoint_cr() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.CLIENT)
+      .localEndpoint(frontend.toV2())
+      .remoteEndpoint(backend.toV2())
+      .addAnnotation(1472470996199000L, "cr")
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addAnnotation(Annotation.create(1472470996199000L, "cr", frontend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void lateRemoteEndpoint_sa() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.CLIENT)
+      .remoteEndpoint(backend.toV2())
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
   @Test public void localSpan_emptyComponent() {
     Span simpleLocal = Span.newBuilder()
       .traceId("1")
