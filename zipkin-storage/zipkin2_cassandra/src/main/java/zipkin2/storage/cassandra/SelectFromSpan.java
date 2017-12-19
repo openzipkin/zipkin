@@ -20,6 +20,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -97,23 +98,20 @@ final class SelectFromSpan extends ResultSetFutureCall {
 
       @Override public Call<List<List<Span>>> map(Set<String> input) {
         if (input.isEmpty()) return Call.emptyList();
-        Set<String> traceIds = limitedCopy(input);
+        Set<String> traceIds;
+        if (input.size() > limit) {
+          traceIds = new LinkedHashSet<>();
+          Iterator<String> iterator = input.iterator();
+          for (int i = 0; i < limit; i++) {
+            traceIds.add(iterator.next());
+          }
+        } else {
+          traceIds = input;
+        }
         return new SelectFromSpan(Factory.this,
           traceIds,
           maxTraceCols // amount of spans per trace is almost always larger than trace IDs
         ).flatMap(accumulateSpans).map(groupByTraceId);
-      }
-
-      Set<String> limitedCopy(Set<String> traceIds) {
-        if (strictTraceId && traceIds.size() <= limit) return traceIds;
-        Set<String> copy = new LinkedHashSet<>();
-        int i = 0;
-        for (String traceId : traceIds) {
-          copy.add(traceId);
-          if (!strictTraceId && traceId.length() == 32) copy.add(traceId.substring(16));
-          if (++i == limit) break;
-        }
-        return copy;
       }
     }
   }
