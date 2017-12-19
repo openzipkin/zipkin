@@ -87,22 +87,11 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <!-- Travis cannot resolve 3.3.0-->
-        <version>3.2.0</version>
         <configuration>
-          <obrRepository>NONE</obrRepository>
           <instructions>
             <_include>-bnd.bnd</_include>
           </instructions>
         </configuration>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>manifest</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <!-- Use of gson is internal only -->
       <plugin>
@@ -125,13 +114,6 @@
                     <include>com/google/gson/stream/MalformedJsonException.class</include>
                     <include>com/google/gson/internal/JsonReaderInternalAccess.class</include>
                   </includes>
-                </filter>
-                <filter>
-                  <!-- don't include pom files, some are kilobytes -->
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/**</exclude>
-                  </excludes>
                 </filter>
               </filters>
               <relocations>
