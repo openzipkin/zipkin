@@ -493,6 +493,28 @@
           <version>${maven-shade-plugin.version}</version>
         </plugin>
 
+        <!-- Need to block import of shaded packages in bnd.bnd as maven bundle plugin analyzes the unshaded jar -->
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <!-- Travis cannot resolve 3.3.0-->
+          <version>3.2.0</version>
+          <configuration>
+            <obrRepository>NONE</obrRepository>
+            <instructions>
+              <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+            </instructions>
+          </configuration>
+          <executions>
+            <execution>
+              <phase>process-classes</phase>
+              <goals>
+                <goal>manifest</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
