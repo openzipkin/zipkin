@@ -22,8 +22,12 @@ import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 
+import java.util.concurrent.TimeUnit;
+
 @AutoValue
 public abstract class InfluxDBStorage extends StorageComponent {
+  public static final int BATCH_SIZE = 100; // flush every 100 points
+  public static final int FLUSH_DURATION_MS = 500; // ... or flush every 500 milliseconds
 
   public static Builder newBuilder() {
     return new $AutoValue_InfluxDBStorage.Builder()
@@ -96,7 +100,9 @@ public abstract class InfluxDBStorage extends StorageComponent {
   }
 
   @Memoized InfluxDB get() {
-    InfluxDB result = InfluxDBFactory.connect(url(), username(), password());
+    InfluxDB result = InfluxDBFactory
+      .connect(url(), username(), password())
+      .enableBatch(BATCH_SIZE, FLUSH_DURATION_MS, TimeUnit.MILLISECONDS);
     provisioned = true;
     return result;
   }

@@ -45,61 +45,53 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
       .build();
 
     for (Span span : spans) {
-      Point.Builder point = Point
-        .measurement(storage.measurement())
-        .tag("trace_id", span.traceId())
-        .tag("id", span.id());
-
-      // When it is a root parent we set the parent_id to id to allow
-      // a single query to retrieve all dependencies.
-      point.tag("parent_id", span.parentId() == null ? span.id() : span.parentId());
-      if (span.name() != null) point.tag("name", span.name());
-      String serviceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
-      if (serviceName != null) point.tag("service_name", serviceName);
-      if (span.timestamp() != null) point.time(span.timestamp(), TimeUnit.MICROSECONDS);
-      // one field is mandatory, so initialize to zero if there's no duration
-      point.addField("duration_us", span.duration() == null ? 0 : span.duration());
-      batch.point(point.build());
+      batch.point(spanPoint(span).build());
 
       // add points for tags first, as they inherit the span's timestamp
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
-        Point.Builder taggedPoint = Point
-          .measurement(storage.measurement())
-          .tag("trace_id", span.traceId())
-          .tag("id", span.id());
-
-        if (span.parentId() != null) taggedPoint.tag("parent_id", span.parentId());
-        if (span.name() != null) taggedPoint.tag("name", span.name());
-        String taggedServiceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
-        if (serviceName != null) taggedPoint.tag("service_name", taggedServiceName);
-        if (span.timestamp() != null) taggedPoint.time(span.timestamp(), TimeUnit.MICROSECONDS);
-        // one field is mandatory, so initialize to zero if there's no duration
-        taggedPoint.addField("duration_us", span.duration() == null ? 0 : span.duration())
-          .tag("annotation_key", tag.getKey())
-          .tag("annotation", tag.getValue())
-          .tag("endpoint_host", host(span)); // TODO: what is this for?
-        batch.point(taggedPoint.build());
+        batch.point(taggedPoint(tag.getKey(), tag.getValue(), span).build());
       }
 
+      // annotations take the annotation's timestamp rather than the spans
       for (Annotation anno : span.annotations()) {
-        Point.Builder annotatedPoint = Point
-          .measurement(storage.measurement())
-          .tag("trace_id", span.traceId())
-          .tag("id", span.id());
-
-        if (span.parentId() != null) annotatedPoint.tag("parent_id", span.parentId());
-        if (span.name() != null) annotatedPoint.tag("name", span.name());
-        String annoServiceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
-        if (serviceName != null) annotatedPoint.tag("service_name", annoServiceName);
-        if (span.timestamp() != null) annotatedPoint.time(span.timestamp(), TimeUnit.MICROSECONDS);
-        // one field is mandatory, so initialize to zero if there's no duration
-        annotatedPoint.addField("duration_us", span.duration() == null ? 0 : span.duration());
-        annotatedPoint.tag("annotation", anno.value());
-        batch.point(annotatedPoint.build());
+        batch.point(annotatedPoint(anno.value(), anno.timestamp(), span).build());
       }
     }
     storage.get().write(batch);
     return Call.create(null);
+  }
+
+  private Point.Builder spanPoint(Span span) {
+    Point.Builder point = Point
+     .measurement(storage.measurement())
+     .tag("trace_id", span.traceId())
+     .tag("id", span.id());
+
+    // When it is a root parent we set the parent_id to id to allow
+    // a single query to retrieve all dependencies.
+    point.tag("parent_id", span.parentId() == null ? span.id() : span.parentId());
+    String serviceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
+    if (serviceName != null) point.tag("service_name", serviceName);
+    if (span.timestamp() != null) point.time(span.timestamp(), TimeUnit.MICROSECONDS);
+
+    // one field is mandatory, so initialize to zero if there's no duration
+    point.addField("duration_us", span.duration() == null ? 0 : span.duration());
+    return point;
+  }
+
+  private Point.Builder taggedPoint(String key, String value, Span span) {
+    // tagged points inherit the span's timestamp
+    return spanPoint(span)
+      .tag("annotation_key", key)
+      .tag("annotation", value)
+      .tag("endpoint_host", host(span));
+  }
+
+  private Point.Builder annotatedPoint(String value, long timestamp, Span span) {
+    return spanPoint(span)
+      .tag("endpoint_host", host(span))
+      .tag("annotation", value)
+      .time(timestamp, TimeUnit.MICROSECONDS); // Use the annotation's timestamp rather than the span's timestamp
   }
 
   private String serviceName(Span span) {
