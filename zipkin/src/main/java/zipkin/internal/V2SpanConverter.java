@@ -97,6 +97,14 @@ public final class V2SpanConverter {
         }
       }
 
+      // When bridging between event and span model, you can end up missing a start annotation
+      if (cs == null && endTimestampReflectsSpanDuration(cr, source)) {
+        cs = Annotation.create(source.timestamp, "cs", cr.endpoint);
+      }
+      if (sr == null && endTimestampReflectsSpanDuration(ss, source)) {
+        sr = Annotation.create(source.timestamp, "sr", ss.endpoint);
+      }
+
       if (cs != null && sr != null) {
         // in a shared span, the client side owns span duration by annotations or explicit timestamp
         maybeTimestampDuration(source, cs, cr);
@@ -175,6 +183,13 @@ public final class V2SpanConverter {
         if (ws != null) forEndpoint(source, ws.endpoint).addAnnotation(ws.timestamp, ws.value);
         if (wr != null) forEndpoint(source, wr.endpoint).addAnnotation(wr.timestamp, wr.value);
       }
+    }
+
+    static boolean endTimestampReflectsSpanDuration(Annotation end, zipkin.Span source) {
+      return end != null
+        && source.timestamp != null
+        && source.duration != null
+        && source.timestamp + source.duration == end.timestamp;
     }
 
     void maybeTimestampDuration(zipkin.Span source, Annotation begin, @Nullable Annotation end) {
@@ -471,6 +486,13 @@ public final class V2SpanConverter {
       result.parseIp(input.ipv4());
     }
     return result.build();
+  }
+
+  static boolean endTimestampReflectsSpanDuration(Annotation end, zipkin.Span source) {
+    return end != null
+      && source.timestamp != null
+      && source.duration != null
+      && source.timestamp + source.duration == end.timestamp;
   }
 
   static List<zipkin.Span> toSpans(List<Span> spans) {
