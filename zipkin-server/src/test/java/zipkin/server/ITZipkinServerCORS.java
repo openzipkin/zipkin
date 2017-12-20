@@ -36,11 +36,11 @@ import static org.assertj.core.api.Assertions.assertThat;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
     "spring.config.name=zipkin-server",
-    "zipkin.query.allowed-origins=" + ZipkinServerCORSTest.ALLOWED_ORIGIN
+    "zipkin.query.allowed-origins=" + ITZipkinServerCORS.ALLOWED_ORIGIN
   }
 )
 @RunWith(SpringRunner.class)
-public class ZipkinServerCORSTest {
+public class ITZipkinServerCORS {
   static final String ALLOWED_ORIGIN = "http://foo.example.com";
   static final String DISALLOWED_ORIGIN = "http://bar.example.com";
 
