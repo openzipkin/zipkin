@@ -227,6 +227,57 @@ public class V2SpanConverterTest {
       .containsExactly(simpleServer);
   }
 
+  /** Fix a span reported half in new style and half in old style, ex via a bridge */
+  @Test public void client_missingCs() {
+    Span span2 = Span.newBuilder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .id("216a2aea45d08fc9")
+      .name("get")
+      .kind(Kind.CLIENT)
+      .localEndpoint(frontend.toV2())
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .id(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .name("get")
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .addAnnotation(Annotation.create(1472470996406000L, Constants.CLIENT_SEND, frontend))
+      .build();
+
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void server_missingSr() {
+    Span span2 = Span.newBuilder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .id("216a2aea45d08fc9")
+      .name("get")
+      .kind(Kind.SERVER)
+      .localEndpoint(backend.toV2())
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .id(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .name("get")
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .addAnnotation(Annotation.create(1472470996406000L, Constants.SERVER_SEND, backend))
+      .build();
+
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
   /** Buggy instrumentation can send data with missing endpoints. Make sure we can record it. */
   @Test public void missingEndpoints() {
     Span span2 = Span.newBuilder()
