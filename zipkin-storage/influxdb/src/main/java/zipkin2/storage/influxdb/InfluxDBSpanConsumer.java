@@ -61,18 +61,39 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
 
       // add points for tags first, as they inherit the span's timestamp
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
-        Point taggedPoint = point
+        Point.Builder taggedPoint = Point
+          .measurement(storage.measurement())
+          .tag("trace_id", span.traceId())
+          .tag("id", span.id());
+
+        if (span.parentId() != null) taggedPoint.tag("parent_id", span.parentId());
+        if (span.name() != null) taggedPoint.tag("name", span.name());
+        String taggedServiceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
+        if (serviceName != null) taggedPoint.tag("service_name", taggedServiceName);
+        if (span.timestamp() != null) taggedPoint.time(span.timestamp(), TimeUnit.MICROSECONDS);
+        // one field is mandatory, so initialize to zero if there's no duration
+        taggedPoint.addField("duration_us", span.duration() == null ? 0 : span.duration())
           .tag("annotation_key", tag.getKey())
           .tag("annotation", tag.getValue())
-          .tag("endpoint_host", host(span)) // TODO: what is this for?
-          .build();
-        batch.point(taggedPoint);
+          .tag("endpoint_host", host(span)); // TODO: what is this for?
+        batch.point(taggedPoint.build());
       }
 
       for (Annotation anno : span.annotations()) {
-        batch.point(point.tag("annotation", anno.value())
-          .time(anno.timestamp(), TimeUnit.MICROSECONDS)
-          .build());
+        Point.Builder annotatedPoint = Point
+          .measurement(storage.measurement())
+          .tag("trace_id", span.traceId())
+          .tag("id", span.id());
+
+        if (span.parentId() != null) annotatedPoint.tag("parent_id", span.parentId());
+        if (span.name() != null) annotatedPoint.tag("name", span.name());
+        String annoServiceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
+        if (serviceName != null) annotatedPoint.tag("service_name", annoServiceName);
+        if (span.timestamp() != null) annotatedPoint.time(span.timestamp(), TimeUnit.MICROSECONDS);
+        // one field is mandatory, so initialize to zero if there's no duration
+        annotatedPoint.addField("duration_us", span.duration() == null ? 0 : span.duration());
+        annotatedPoint.tag("annotation", anno.value());
+        batch.point(annotatedPoint.build());
       }
     }
     storage.get().write(batch);
