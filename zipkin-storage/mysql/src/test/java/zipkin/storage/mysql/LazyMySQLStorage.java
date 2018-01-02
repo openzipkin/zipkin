@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2017 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,14 +22,13 @@ import zipkin.internal.LazyCloseable;
 import static org.junit.Assume.assumeTrue;
 import static zipkin.internal.Util.envOr;
 
-public class LazyMySQLStorage extends LazyCloseable<MySQLStorage>
-    implements TestRule {
+public class LazyMySQLStorage extends LazyCloseable<MySQLStorage> implements TestRule {
 
   final String version;
 
   ZipkinMySQLContainer container;
 
-  public LazyMySQLStorage(String version) {
+  LazyMySQLStorage(String version) {
     this.version = version;
   }
 

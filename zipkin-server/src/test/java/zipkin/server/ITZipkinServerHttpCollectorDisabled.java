@@ -13,9 +13,9 @@
  */
 package zipkin.server;
 
-import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -26,35 +26,38 @@ import org.springframework.test.context.junit4.SpringRunner;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * Collector-only builds should be able to disable the query (and indirectly the UI), so that
- * associated assets 404 vs throw exceptions.
+ * Query-only builds should be able to disable the HTTP collector, so that associated assets 404
+ * instead of allowing creation of spans.
  */
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
+    "zipkin.storage.type=", // cheat and test empty storage type
     "spring.config.name=zipkin-server",
-    "zipkin.query.enabled=false",
-    "zipkin.ui.enabled=false"
-  }
-)
+    "zipkin.collector.http.enabled=false"
+  })
 @RunWith(SpringRunner.class)
-public class ZipkinServerQueryDisabledTest {
+public class ITZipkinServerHttpCollectorDisabled {
+
   @LocalServerPort int zipkinPort;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Test public void queryRelatedEndpoints404() throws Exception {
-    assertThat(get("/api/v1/traces").code()).isEqualTo(404);
-    assertThat(get("/api/v2/traces").code()).isEqualTo(404);
-    assertThat(get("/index.html").code()).isEqualTo(404);
+  @Test public void httpCollectorEndpointReturns405() throws Exception {
+    Response response = client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/spans")
+      .post(RequestBody.create(null, "[]"))
+      .build()).execute();
 
-    // but other endpoints are ok
-    assertThat(get("/health").isSuccessful()).isTrue();
+    assertThat(response.code()).isEqualTo(405);
   }
 
-  private Response get(String path) throws IOException {
-    return client.newCall(new Request.Builder()
-      .url("http://localhost:" + zipkinPort + path)
+  /** Shows the same http path still works for GET */
+  @Test public void getOnSpansEndpointReturnsOK() throws Exception {
+    Response response = client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/spans?serviceName=unknown")
       .build()).execute();
+
+    assertThat(response.isSuccessful()).isTrue();
   }
 }

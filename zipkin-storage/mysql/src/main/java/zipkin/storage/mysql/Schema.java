@@ -43,12 +43,14 @@ final class Schema {
   final boolean hasPreAggregatedDependencies;
   final boolean hasIpv6;
   final boolean hasErrorCount;
+  final boolean strictTraceId;
 
-  Schema(DataSource datasource, DSLContexts context) {
+  Schema(DataSource datasource, DSLContexts context, boolean strictTraceId) {
     hasTraceIdHigh = HasTraceIdHigh.test(datasource, context);
     hasPreAggregatedDependencies = HasPreAggregatedDependencies.test(datasource, context);
     hasIpv6 = HasIpv6.test(datasource, context);
     hasErrorCount = HasErrorCount.test(datasource, context);
+    this.strictTraceId = strictTraceId;
 
     spanIdFields = list(ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID);
     spanFields = list(ZIPKIN_SPANS.fields());
@@ -93,7 +95,7 @@ final class Schema {
   }
 
   Condition spanTraceIdCondition(SelectOffsetStep<? extends Record> traceIdQuery) {
-    if (hasTraceIdHigh) {
+    if (hasTraceIdHigh && strictTraceId) {
       Result<? extends Record> result = traceIdQuery.fetch();
       List<Row2<Long, Long>> traceIds = new ArrayList<>(result.size());
       for (Record r : result) {
@@ -120,7 +122,7 @@ final class Schema {
         break;
       }
     }
-    if (hasTraceIdHigh) {
+    if (hasTraceIdHigh && strictTraceId) {
       Row2[] result = new Row2[traceIds.size()];
       int i = 0;
       for (Pair<Long> traceId128 : traceIds) {

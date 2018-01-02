@@ -52,7 +52,7 @@ import static zipkin.internal.Util.UTF_8;
   properties = "spring.config.name=zipkin-server"
 )
 @RunWith(SpringRunner.class)
-public class ZipkinServerIntegrationTest {
+public class ITZipkinServer {
 
   @Autowired InMemoryStorage storage;
   @Autowired ActuateCollectorMetrics metrics;

@@ -4,5 +4,5 @@ Import-Package: \
 Export-Package: \
 	zipkin,\
 	zipkin.collector,\
-	zipkin.internal,\
-	zipkin.storage
+	zipkin.storage,\
+	zipkin.internal;zipkininternal=true;mandatory:=zipkininternal

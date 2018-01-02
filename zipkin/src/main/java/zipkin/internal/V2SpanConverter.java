@@ -97,6 +97,14 @@ public final class V2SpanConverter {
         }
       }
 
+      // When bridging between event and span model, you can end up missing a start annotation
+      if (cs == null && endTimestampReflectsSpanDuration(cr, source)) {
+        cs = Annotation.create(source.timestamp, "cs", cr.endpoint);
+      }
+      if (sr == null && endTimestampReflectsSpanDuration(ss, source)) {
+        sr = Annotation.create(source.timestamp, "sr", ss.endpoint);
+      }
+
       if (cs != null && sr != null) {
         // in a shared span, the client side owns span duration by annotations or explicit timestamp
         maybeTimestampDuration(source, cs, cr);
@@ -124,8 +132,10 @@ public final class V2SpanConverter {
         for (Span.Builder next : spans) {
           if (Kind.CLIENT.equals(next.kind())) {
             if (cs != null) next.timestamp(cs.timestamp);
+            if (cr != null) next.addAnnotation(cr.timestamp, cr.value);
           } else if (Kind.SERVER.equals(next.kind())) {
             if (sr != null) next.timestamp(sr.timestamp);
+            if (ss != null) next.addAnnotation(ss.timestamp, ss.value);
           }
         }
 
@@ -173,6 +183,13 @@ public final class V2SpanConverter {
         if (ws != null) forEndpoint(source, ws.endpoint).addAnnotation(ws.timestamp, ws.value);
         if (wr != null) forEndpoint(source, wr.endpoint).addAnnotation(wr.timestamp, wr.value);
       }
+    }
+
+    static boolean endTimestampReflectsSpanDuration(Annotation end, zipkin.Span source) {
+      return end != null
+        && source.timestamp != null
+        && source.duration != null
+        && source.timestamp + source.duration == end.timestamp;
     }
 
     void maybeTimestampDuration(zipkin.Span source, Annotation begin, @Nullable Annotation end) {
@@ -230,25 +247,43 @@ public final class V2SpanConverter {
         }
       }
 
-      if (cs != null && sa != null && !closeEnough(sa, cs.endpoint)) {
-        forEndpoint(source, cs.endpoint).remoteEndpoint(sa.toV2());
-      }
-
-      if (sr != null && ca != null && !closeEnough(ca, sr.endpoint)) {
-        forEndpoint(source, sr.endpoint).remoteEndpoint(ca.toV2());
-      }
-
-      if (ms != null && ma != null && !closeEnough(ma, ms.endpoint)) {
-        forEndpoint(source, ms.endpoint).remoteEndpoint(ma.toV2());
-      }
-
-      if (mr != null && ma != null && !closeEnough(ma, mr.endpoint)) {
-        forEndpoint(source, mr.endpoint).remoteEndpoint(ma.toV2());
-      }
-
       // special-case when we are missing core annotations, but we have both address annotations
       if ((cs == null && sr == null) && (ca != null && sa != null)) {
         forEndpoint(source, ca).remoteEndpoint(sa.toV2());
+        return;
+      }
+
+      if (sa != null) {
+        if (cs != null && !closeEnough(sa, cs.endpoint)) {
+          forEndpoint(source, cs.endpoint).remoteEndpoint(sa.toV2());
+        } else if (cr != null && !closeEnough(sa, cr.endpoint)) {
+          forEndpoint(source, cr.endpoint).remoteEndpoint(sa.toV2());
+        } else if (cs == null && cr == null && sr == null && ss == null) { // no core annotations
+          forEndpoint(source, null)
+            .kind(Kind.CLIENT)
+            .remoteEndpoint(sa.toV2());
+        }
+      }
+
+      if (ca != null) {
+        if (sr != null && !closeEnough(ca, sr.endpoint)) {
+          forEndpoint(source, sr.endpoint).remoteEndpoint(ca.toV2());
+        } if (ss != null && !closeEnough(ca, ss.endpoint)) {
+          forEndpoint(source, ss.endpoint).remoteEndpoint(ca.toV2());
+        } else if (cs == null && cr == null && sr == null && ss == null) { // no core annotations
+          forEndpoint(source, null)
+            .kind(Kind.SERVER)
+            .remoteEndpoint(ca.toV2());
+        }
+      }
+
+      if (ma != null){
+        if (ms != null && !closeEnough(ma, ms.endpoint)) {
+          forEndpoint(source, ms.endpoint).remoteEndpoint(ma.toV2());
+        }
+        if (mr != null && !closeEnough(ma, mr.endpoint)) {
+          forEndpoint(source, mr.endpoint).remoteEndpoint(ma.toV2());
+        }
       }
     }
 
@@ -451,6 +486,13 @@ public final class V2SpanConverter {
       result.parseIp(input.ipv4());
     }
     return result.build();
+  }
+
+  static boolean endTimestampReflectsSpanDuration(Annotation end, zipkin.Span source) {
+    return end != null
+      && source.timestamp != null
+      && source.duration != null
+      && source.timestamp + source.duration == end.timestamp;
   }
 
   static List<zipkin.Span> toSpans(List<Span> spans) {

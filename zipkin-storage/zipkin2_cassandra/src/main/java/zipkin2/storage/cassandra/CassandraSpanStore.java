@@ -169,12 +169,8 @@ class CassandraSpanStore implements SpanStore { // not final for testing
 
   @Override public Call<List<Span>> getTrace(String traceId) {
     // make sure we have a 16 or 32 character trace ID
-    traceId = Span.normalizeTraceId(traceId);
-
-    // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
-    if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
-
-    return spans.newCall(traceId);
+    String normalizedTraceId = Span.normalizeTraceId(traceId);
+    return spans.newCall(normalizedTraceId);
   }
 
   @Override public Call<List<String>> getServiceNames() {

@@ -39,6 +39,24 @@ To run a single integration test, use the following syntax:
 $ ./mvnw -Dit.test='ITCassandraStorage$SpanStoreTest#getTraces_duration' -pl zipkin-storage/zipkin2_cassandra clean verify
 ```
 
+## Strict trace ID
+By default, trace identifiers are written at the length received to indexes and span tables. This
+means if instrumentation downgraded a 128-bit trace ID to 64-bit, it will appear in a search as two
+traces. This situation is possible when using unmaintained or out-of-date trace instrumentation.
+
+By setting strict trace ID to false, indexes only consider the right-most 16 chars, allowing mixed
+trace length lookup at a slight collision risk. Retrieval of the 32-character trace ID is retained
+by concatenating two columns in the span table like so:
+
+```
+trace_id            text, // when strictTraceId=false, only contains right-most 16 chars
+trace_id_high       text, // when strictTraceId=false, contains left-most 16 chars if present
+```
+
+It is important to only set strict trace ID false during a transition and revert once complete, as
+data written during this period is less intuitive for those using CQL, and contains a small
+collision risk.
+
 ## Tuning
 This component is tuned to help reduce the size of indexes needed to
 perform query operations. The most important aspects are described below.

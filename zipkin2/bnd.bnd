@@ -4,5 +4,5 @@ Import-Package: \
 Export-Package: \
 	zipkin2,\
 	zipkin2.codec,\
-	zipkin2.internal,\
-	zipkin2.storage
+	zipkin2.storage,\
+	zipkin2.internal;zipkin2internal=true;mandatory:=zipkin2internal

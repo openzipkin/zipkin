@@ -13,5 +13,19 @@
     <title><%= htmlWebpackPlugin.options.title %></title>
   </head>
   <body>
+
+    <!-- we include a reduced header on page load, as this makes the page load feel much smoother -->
+
+    <div class='navbar navbar-inverse' role='navigation'>
+      <div class='container'>
+        <div class='navbar-header'>
+          <a class='navbar-brand' href='#'>
+            Zipkin<span class='muted' style='font-size: .75em; padding-left: 10px;' data-i18n="nav.inves">Investigate system behavior</span>
+          </a>
+        </div>
+        </div><!--/.nav-collapse -->
+      </div>
+    </div>
+
   </body>
 </html>
