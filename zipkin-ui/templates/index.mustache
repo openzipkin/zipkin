@@ -83,6 +83,7 @@
 
     <div id="trace-filters" class="row">
       <div class="col-md-3">
+        {{#queryWasPerformed}}
         <div>
           Showing:  <span class="filter-current">{{count}}</span>
           of <span class="filter-total">{{count}}</span>
@@ -92,6 +93,7 @@
           Services:
           <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
         </div>
+        {{/queryWasPerformed}}
       </div>
 
       <div class="pull-right">
