@@ -31,6 +31,12 @@ $icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
   cursor: pointer;
 }
 
+.json-badge-container {
+  float: right;
+  margin-top: 10px;
+  margin-right: 20px;
+}
+
 #errorPanel {
   display: none;
 }
