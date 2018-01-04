@@ -7,6 +7,11 @@
   padding-right: 0;
 }
 
+.date-input, .time-input {
+  width: 49%;
+  display: inline-block;
+}
+
 .service-filter-remove {
   cursor: pointer;
   border-radius: 0;
