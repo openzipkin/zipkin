@@ -2,7 +2,8 @@ import {Constants} from '../../js/component_ui/traceConstants';
 import {
   maybeMarkTransientError,
   formatAnnotationValue,
-  formatBinaryAnnotationValue
+  formatBinaryAnnotationValue,
+  isDupeBinaryAnnotation
 } from '../../js/component_ui/spanPanel';
 import {endpoint, annotation} from './traceTestHelpers';
 
@@ -119,5 +120,21 @@ describe('formatBinaryAnnotationValue', () => {
     formatBinaryAnnotationValue('<script>alert(1)</script>').should.equal(
       '&lt;script&gt;alert(1)&lt;&#x2F;script&gt;'
     );
+  });
+});
+
+describe('isDupeBinaryAnnotation', () => {
+  const tagMap = {};
+
+  it('should return false on new key', () => {
+    isDupeBinaryAnnotation(tagMap, {key: 'key-1', value: 'value-1'}).should.equal(false);
+  });
+
+  it('should return true on dupe key with exact matched value', () => {
+    isDupeBinaryAnnotation(tagMap, {key: 'key-1', value: 'value-1'}).should.equal(true);
+  });
+
+  it('should return false on dupe key with different value', () => {
+    isDupeBinaryAnnotation(tagMap, {key: 'key-1', value: 'value-2'}).should.equal(false);
   });
 });
