@@ -90,7 +90,13 @@ export default component(function spanPanel() {
     });
 
     const $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
+    var tagMap = {}
     $.each((span.binaryAnnotations || []), (i, anno) => {
+      if (!tagMap[anno.key]) {
+        tagMap[anno.key] = anno.value
+      } else if (tagMap[anno.key] == anno.value) {
+        return
+      }
       const $row = self.$binaryAnnotationTemplate.clone();
       if (anno.key === Constants.ERROR) {
         $row.addClass('anno-error-critical');
