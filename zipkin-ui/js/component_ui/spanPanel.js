@@ -19,11 +19,11 @@ function escapeHtml(string) {
 
 export function isDupeBinaryAnnotation(tagMap, anno) {
   if (!tagMap[anno.key]) {
-    tagMap[anno.key] = anno.value
+    tagMap[anno.key] = anno.value; // eslint-disable-line no-param-reassign
   } else if (tagMap[anno.key] === anno.value) {
-    return true
+    return true;
   }
-  return false
+  return false;
 }
 
 // Annotation values that contain the word "error" hint of a transient error.
@@ -70,7 +70,8 @@ export default component(function spanPanel() {
   this.$moreInfoTemplate = null;
 
   this.show = function(e, span) {
-    const self = this, tagMap = {};
+    const self = this;
+    const tagMap = {};
 
     this.$node.find('.modal-title').text(
       `${span.serviceName}.${span.spanName}: ${span.durationStr}`);
@@ -100,9 +101,7 @@ export default component(function spanPanel() {
 
     const $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
     $.each((span.binaryAnnotations || []), (i, anno) => {
-      if (isDupeBinaryAnnotation(tagMap, anno)) {
-        return
-      }
+      if (isDupeBinaryAnnotation(tagMap, anno)) return;
       const $row = self.$binaryAnnotationTemplate.clone();
       if (anno.key === Constants.ERROR) {
         $row.addClass('anno-error-critical');

@@ -124,17 +124,17 @@ describe('formatBinaryAnnotationValue', () => {
 });
 
 describe('isDupeBinaryAnnotation', () => {
-  var tagMap = {}
+  const tagMap = {};
 
   it('should return false on new key', () => {
-    isDupeBinaryAnnotation(tagMap, {key: "key-1", value: "value-1"}).should.equal(false)
+    isDupeBinaryAnnotation(tagMap, {key: 'key-1', value: 'value-1'}).should.equal(false);
   });
 
   it('should return true on dupe key with exact matched value', () => {
-    isDupeBinaryAnnotation(tagMap, {key: "key-1", value: "value-1"}).should.equal(true)
+    isDupeBinaryAnnotation(tagMap, {key: 'key-1', value: 'value-1'}).should.equal(true);
   });
 
   it('should return false on dupe key with different value', () => {
-    isDupeBinaryAnnotation(tagMap, {key: "key-1", value: "value-2"}).should.equal(false)
+    isDupeBinaryAnnotation(tagMap, {key: 'key-1', value: 'value-2'}).should.equal(false);
   });
 });
