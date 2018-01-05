@@ -24,12 +24,12 @@
   </parent>
 
   <artifactId>zipkin-collector-kafka10</artifactId>
-  <name>Collector: Kafka 0.10</name>
+  <name>Collector: Kafka 0.10+</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
     <!-- when changing this, a change to the version of kafka-junit is likely needed, too -->
-    <kafka.version>0.11.0.1</kafka.version>
+    <kafka.version>1.0.0</kafka.version>
   </properties>
 
   <dependencies>
@@ -70,7 +70,7 @@
       <artifactId>kafka-junit</artifactId>
       <!-- This version is tightly coupled to the version of kafka-clients being used.
        https://github.com/charithe/kafka-junit -->
-      <version>3.1.1</version>
+      <version>4.0.0</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
