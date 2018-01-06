@@ -40,6 +40,8 @@ export default component(function serviceName() {
     this.triggerChange(name);
 
     this.$node.chosen({search_contains: true});
+    this.$node.next('.chosen-container').css('width', '100%');
+
     this.on('change', this.onChange);
     this.on(document, 'dataServiceNames', this.updateServiceNameDropdown);
   });
