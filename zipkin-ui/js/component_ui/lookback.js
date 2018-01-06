@@ -4,7 +4,7 @@ import $ from 'jquery';
 import queryString from 'query-string';
 
 export default component(function lookback() {
-  this.onChange = function () {
+  this.onChange = function() {
     if (this.$node.val() === 'custom') {
       $('#custom-lookback').show();
     } else {
@@ -12,17 +12,17 @@ export default component(function lookback() {
     }
   };
 
-  this.render = function () {
+  this.render = function() {
     const selectedLookback = queryString.parse(window.location.search).lookback;
     this.$node.find('option').each((i, option) => {
       const $option = $(option);
-      if ($option.val() == selectedLookback) {
+      if ($option.val() === selectedLookback) {
         $option.prop('selected', true);
       }
     });
   };
 
-  this.after('initialize', function () {
+  this.after('initialize', function() {
     this.render();
 
     this.on('change', this.onChange);
