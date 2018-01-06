@@ -17,6 +17,26 @@
         </div>
       </div>
 
+      <div class="form-group col-md-6">
+        <label for="lookback" data-i18n="traces.lookback">Lookback</label>
+        <div class="clearfix">
+          <select class="form-control input-sm" name="lookback" id="lookback">
+            <option value="3600000" data-i18n="traces.lookback.1hour">1 hour</option>
+            <option value="10800000" data-i18n="traces.lookback.3hours">3 hours</option>
+            <option value="21600000" data-i18n="traces.lookback.6hours">6 hours</option>
+            <option value="43200000" data-i18n="traces.lookback.12hours">12 hours</option>
+            <option value="86400000" data-i18n="traces.lookback.1day">1 day</option>
+            <option value="172800000" data-i18n="traces.lookback.2days">2 days</option>
+            <option value="604800000" data-i18n="traces.lookback.7days">7 days</option>
+            <option value="custom" data-i18n="traces.lookback.custom">Custom</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" id="custom-lookback" style="display: none;">
+      <div class="col-md-6"></div>
+
       <div id="start-ts" class="form-group col-md-3">
         <label for="timeStamp" data-i18n="traces.stime">Start time</label>
         <div>
