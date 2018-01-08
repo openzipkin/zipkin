@@ -21,12 +21,16 @@ Once you've started, browse to http://your_host:9411 to find traces!
 The following endpoints are defined under the base url http://your_host:9411
 * / - [UI](../zipkin-ui)
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
-* /api/v1 - [Api](http://zipkin.io/zipkin-api/#/)
+* /api/v2 - [Api](https://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
 * /metrics - Includes collector metrics broken down by transport type
 
 There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
+
+The [legacy /api/v1 Api](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
+HTTP api via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
+`https://zipkin.io/zipkin-api/zipkin-api.yaml` into the explore box of the Swagger UI to view the old definition
 
 ### CORS (Cross-origin Resource Sharing)
 
@@ -227,15 +231,15 @@ $ STORAGE_TYPE=elasticsearch ES_AWS_DOMAIN=mydomain ES_AWS_REGION=ap-southeast-1
 ```
 
 #### Service and Span names query
-The [Zipkin query api v1](http://zipkin.io/zipkin-api/#/paths/%252Fservices) does not include
+The [Zipkin Api](https://zipkin.io/zipkin-api/#/default/get_services) does not include
 a parameter for how far back to look for service or span names. In order
 to prevent excessive load, service and span name queries are limited by
 `QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
 today and one for yesterday)
 
 ### HTTP Collector
-The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans`. The HTTP
-collector supports the following configuration:
+The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans` and `POST /api/v2/spans`.
+The HTTP collector supports the following configuration:
 
 Property | Environment Variable | Description
 --- | --- | ---
