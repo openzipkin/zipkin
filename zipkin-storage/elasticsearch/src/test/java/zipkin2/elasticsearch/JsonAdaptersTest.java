@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ import zipkin2.codec.SpanBytesEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
+import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.elasticsearch.JsonAdapters.SPAN_ADAPTER;
 
 public class JsonAdaptersTest {
@@ -119,11 +120,10 @@ public class JsonAdaptersTest {
   }
 
   @Test public void span_roundTrip() throws IOException {
-    Span span2 = TestObjects.CLIENT_SPAN;
     Buffer bytes = new Buffer();
-    bytes.write(SpanBytesEncoder.JSON_V2.encode(span2));
+    bytes.write(SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN));
     assertThat(SPAN_ADAPTER.fromJson(bytes))
-      .isEqualTo(span2);
+      .isEqualTo(CLIENT_SPAN);
   }
 
   /**

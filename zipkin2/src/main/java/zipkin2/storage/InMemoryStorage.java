@@ -72,12 +72,17 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   }
 
   public static final class Builder extends StorageComponent.Builder {
-    boolean strictTraceId = true;
+    boolean strictTraceId = true, searchEnabled = true;
     int maxSpanCount = 500000;
 
     /** {@inheritDoc} */
     @Override public Builder strictTraceId(boolean strictTraceId) {
       this.strictTraceId = strictTraceId;
+      return this;
+    }
+
+    @Override public Builder searchEnabled(boolean searchEnabled) {
+      this.searchEnabled = searchEnabled;
       return this;
     }
 
@@ -122,12 +127,13 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       }
     };
 
-  final boolean strictTraceId;
+  final boolean strictTraceId, searchEnabled;
   final int maxSpanCount;
   volatile int acceptedSpanCount;
 
   InMemoryStorage(Builder builder) {
     this.strictTraceId = builder.strictTraceId;
+    this.searchEnabled = builder.searchEnabled;
     this.maxSpanCount = builder.maxSpanCount;
   }
 
@@ -151,6 +157,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       traceIdToTraceIdTimeStamps.put(lowTraceId, traceIdTimeStamp);
       acceptedSpanCount++;
 
+      if (!searchEnabled) continue;
       String spanName = span.name();
       if (span.localServiceName() != null) {
         serviceToTraceIds.put(span.localServiceName(), lowTraceId);
@@ -197,8 +204,10 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       Collection<Span> spans = spansByTraceIdTimeStamp.remove(traceIdTimeStamp);
       spansEvicted += spans.size();
     }
-    for (String orphanedService : serviceToTraceIds.removeServiceIfTraceId(lowTraceId)) {
-      serviceToSpanNames.remove(orphanedService);
+    if (searchEnabled) {
+      for (String orphanedService : serviceToTraceIds.removeServiceIfTraceId(lowTraceId)) {
+        serviceToSpanNames.remove(orphanedService);
+      }
     }
     return spansEvicted;
   }
@@ -258,6 +267,8 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   }
 
   Set<String> traceIdsDescendingByTimestamp(QueryRequest request) {
+    if (!searchEnabled) return Collections.emptySet();
+
     Collection<TraceIdTimestamp> traceIdTimestamps = request.serviceName() != null
       ? traceIdTimestampsByServiceName(request.serviceName())
       : spansByTraceIdTimeStamp.keySet();
@@ -292,11 +303,12 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   }
 
   @Override public synchronized Call<List<String>> getServiceNames() {
+    if (!searchEnabled) return Call.emptyList();
     return Call.create(new ArrayList<>(serviceToTraceIds.keySet()));
   }
 
   @Override public synchronized Call<List<String>> getSpanNames(String service) {
-    if (service.isEmpty()) return Call.emptyList();
+    if (service.isEmpty() || !searchEnabled) return Call.emptyList();
     service = service.toLowerCase(Locale.ROOT); // service names are always lowercase!
     return Call.create(new ArrayList<>(serviceToSpanNames.get(service)));
   }

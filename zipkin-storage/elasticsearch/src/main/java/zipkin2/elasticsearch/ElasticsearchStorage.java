@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -60,6 +60,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       .hosts(Collections.singletonList("http://localhost:9200"))
       .maxRequests(64)
       .strictTraceId(true)
+      .searchEnabled(true)
       .index("zipkin")
       .dateSeparator('-')
       .indexShards(5)
@@ -177,6 +178,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     @Override public abstract Builder strictTraceId(boolean strictTraceId);
 
+    @Override public abstract Builder searchEnabled(boolean searchEnabled);
+
     @Override public abstract ElasticsearchStorage build();
 
     abstract IndexNameFormatter.Builder indexNameFormatterBuilder();
@@ -198,6 +201,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public abstract int maxRequests();
 
   public abstract boolean strictTraceId();
+
+  abstract boolean searchEnabled();
 
   abstract int indexShards();
 

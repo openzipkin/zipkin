@@ -29,7 +29,6 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
-import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
@@ -37,10 +36,12 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
 
   final ElasticsearchStorage es;
   final IndexNameFormatter indexNameFormatter;
+  final boolean searchEnabled;
 
   ElasticsearchSpanConsumer(ElasticsearchStorage es) {
     this.es = es;
     this.indexNameFormatter = es.indexNameFormatter();
+    this.searchEnabled = es.searchEnabled();
   }
 
   @Override public Call<Void> accept(List<Span> spans) {
@@ -72,15 +73,19 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
   static final class BulkSpanIndexer {
     final HttpBulkIndexer indexer;
     final IndexNameFormatter indexNameFormatter;
+    final boolean searchEnabled;
 
     BulkSpanIndexer(ElasticsearchStorage es) {
       this.indexer = new HttpBulkIndexer("index-span", es);
       this.indexNameFormatter = es.indexNameFormatter();
+      this.searchEnabled = es.searchEnabled();
     }
 
     void add(long indexTimestamp, Span span, long timestampMillis) {
       String index = indexNameFormatter.formatTypeAndTimestamp(ElasticsearchSpanStore.SPAN, indexTimestamp);
-      byte[] document = prefixWithTimestampMillisAndQuery(span, timestampMillis);
+      byte[] document = searchEnabled
+        ? prefixWithTimestampMillisAndQuery(span, timestampMillis)
+        : SpanBytesEncoder.JSON_V2.encode(span);
       indexer.add(index, ElasticsearchSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
     }
 

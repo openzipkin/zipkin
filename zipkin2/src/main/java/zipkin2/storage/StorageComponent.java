@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -72,6 +72,18 @@ public abstract class StorageComponent extends Component {
      * source libraries on 128-bit trace identifiers.
      */
     public abstract Builder strictTraceId(boolean strictTraceId);
+
+    /**
+     * False is an attempt to disable indexing, leaving only {@link SpanStore#getTrace(String)}
+     * supported. For example, query requests will be disabled.
+     *
+     * The use case is typically to support 100% sampled data, or when traces are searched using
+     * alternative means such as a logging index.
+     *
+     * <p>Refer to implementation docs for the impact of this parameter. Operations that use indexes
+     * should return empty as opposed to throwing an exception.
+     */
+    public abstract Builder searchEnabled(boolean searchEnabled);
 
     public abstract StorageComponent build();
   }

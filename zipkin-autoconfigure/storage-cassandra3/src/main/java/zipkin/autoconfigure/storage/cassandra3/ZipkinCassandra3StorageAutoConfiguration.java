@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,8 +45,11 @@ public class ZipkinCassandra3StorageAutoConfiguration {
   @Bean
   @ConditionalOnMissingBean
   V2StorageComponent storage(ZipkinCassandra3StorageProperties properties,
-    @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
-    CassandraStorage.Builder builder = properties.toBuilder().strictTraceId(strictTraceId);
+    @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+    @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled) {
+    CassandraStorage.Builder builder = properties.toBuilder()
+      .strictTraceId(strictTraceId)
+      .searchEnabled(searchEnabled);
     CassandraStorage result = tracingSessionFactory == null
       ? builder.build()
       : builder.sessionFactory(tracingSessionFactory).build();

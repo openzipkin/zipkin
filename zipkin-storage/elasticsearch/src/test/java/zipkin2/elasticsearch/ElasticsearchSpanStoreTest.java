@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,9 +21,12 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+import zipkin2.TestObjects;
+import zipkin2.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.TODAY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 
 public class ElasticsearchSpanStoreTest {
@@ -69,6 +72,24 @@ public class ElasticsearchSpanStoreTest {
     spanStore.getSpanNames("foo").execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
+  }
+
+  @Test public void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
+    try (ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
+      .hosts(this.storage.hostsSupplier().get())
+      .searchEnabled(false).build()) {
+
+      // skip template check
+      ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
+
+      assertThat(spanStore.getTraces(
+        QueryRequest.newBuilder().endTs(TODAY).lookback(10000L).limit(10).build()
+      ).execute()).isEmpty();
+      assertThat(spanStore.getServiceNames().execute()).isEmpty();
+      assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
+
+      assertThat(es.getRequestCount()).isZero();
+    }
   }
 
   private void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {

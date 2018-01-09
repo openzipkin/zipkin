@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import zipkin2.internal.Nullable;
@@ -54,7 +53,7 @@ public final class SearchRequest {
     this.type = type;
   }
 
-  public static class Filters extends LinkedList<Object> {
+  public static class Filters extends ArrayList<Object> {
     public Filters addRange(String field, long from, Long to) {
       add(new Range(field, from, to));
       return this;
