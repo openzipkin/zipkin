@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -134,6 +134,8 @@ abstract class CassandraSpanStoreTest extends SpanStoreTest {
       super.getTraces_duration();
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
+      assertThat(e.getMessage())
+        .isEqualTo("getTraces with duration is unsupported. Upgrade to the new cassandra3 schema.");
       throw new AssumptionViolatedException("Upgrade to cassandra3 if you want duration queries");
     }
   }
