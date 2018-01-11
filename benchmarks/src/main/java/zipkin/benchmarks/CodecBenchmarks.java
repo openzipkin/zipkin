@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,10 @@
  */
 package zipkin.benchmarks;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import com.google.common.io.ByteStreams;
 import com.twitter.zipkin.thriftjava.Annotation;
 import com.twitter.zipkin.thriftjava.BinaryAnnotation;
@@ -160,6 +164,29 @@ public class CodecBenchmarks {
   static final Span zipkin2 = SpanBytesDecoder.JSON_V2.decodeOne(zipkin2Json);
   static final List<Span> tenSpan2s = Collections.nCopies(10, zipkin2);
   static final byte[] tenSpan2sJson = SpanBytesEncoder.JSON_V2.encodeList(tenSpan2s);
+  static final Kryo kryo = new Kryo();
+  static final byte[] zipkin2Serialized;
+  static {
+    kryo.register(Span.class, new JavaSerializer());
+    Output output = new Output(4096);
+    kryo.writeObject(output, zipkin2);
+    output.flush();
+    zipkin2Serialized = output.getBuffer();
+  }
+
+  /** manually implemented with json so not as slow as normal java */
+  @Benchmark
+  public Span readClientSpan_java_zipkin2() {
+    return kryo.readObject(new Input(zipkin2Serialized), Span.class);
+  }
+
+  @Benchmark
+  public byte[] writeClientSpan_java_zipkin2() {
+    Output output = new Output(zipkin2Serialized.length);
+    kryo.writeObject(output, zipkin2);
+    output.flush();
+    return output.getBuffer();
+  }
 
   @Benchmark
   public Span readClientSpan_json_zipkin2() {
@@ -264,7 +291,7 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*readClientSpan_json_zipkin2")
+        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*kryo_zipkin2")
         .build();
 
     new Runner(opt).run();
