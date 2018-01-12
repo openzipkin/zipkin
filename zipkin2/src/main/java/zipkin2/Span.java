@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,9 @@
  */
 package zipkin2;
 
-import com.google.auto.value.AutoValue;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,8 +25,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import zipkin2.internal.Nullable;
+import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.internal.Nullable;
 
 /**
  * A trace is a series of spans (often RPC calls) which form a latency tree.
@@ -47,9 +49,8 @@ import zipkin2.codec.SpanBytesEncoder;
  * not need to repeat endpoints on each data like {@code zipkin.Span} does. This results in simpler
  * and smaller data.
  */
-@AutoValue
 //@Immutable
-public abstract class Span implements Serializable { // for Spark jobs
+public final class Span implements Serializable { // for Spark and Flink jobs
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
   private static final long serialVersionUID = 0L;
@@ -63,14 +64,18 @@ public abstract class Span implements Serializable { // for Spark jobs
    * <p>Some systems downgrade trace identifiers to 64bit by dropping the left-most 16 characters.
    * For example, {@code 4e441824ec2b6a44ffdc9bb9a6453df3} becomes {@code ffdc9bb9a6453df3}.
    */
-  public abstract String traceId();
+  public String traceId() {
+    return traceId;
+  }
 
   /**
    * The parent's {@link #id} or null if this the root span in a trace.
    *
    * <p>This is the same encoding as {@link #id}. For example {@code ffdc9bb9a6453df3}
    */
-  @Nullable public abstract String parentId();
+  @Nullable public String parentId() {
+    return parentId;
+  }
 
   /**
    * Unique 64bit identifier for this operation within the trace.
@@ -79,7 +84,9 @@ public abstract class Span implements Serializable { // for Spark jobs
    *
    * <p>A span is uniquely identified in storage by ({@linkplain #traceId}, {@linkplain #id()}).
    */
-  public abstract String id();
+  public String id() {
+    return id;
+  }
 
   /** Indicates the primary span type. */
   public enum Kind {
@@ -106,14 +113,18 @@ public abstract class Span implements Serializable { // for Spark jobs
   }
 
   /** When present, used to interpret {@link #remoteEndpoint} */
-  @Nullable public abstract Kind kind();
+  @Nullable public Kind kind() {
+    return kind;
+  }
 
   /**
    * Span name in lowercase, rpc method for example.
    *
    * <p>Conventionally, when the span name isn't known, name = "unknown".
    */
-  @Nullable public abstract String name();
+  @Nullable public String name() {
+    return name;
+  }
 
   /**
    * Epoch microseconds of the start of this span, possibly absent if this an incomplete span.
@@ -131,7 +142,9 @@ public abstract class Span implements Serializable { // for Spark jobs
    *
    * @see #duration()
    */
-  @Nullable public abstract Long timestamp();
+  @Nullable public Long timestamp() {
+    return timestamp;
+  }
 
   /**
    * Measurement in microseconds of the critical path, if known. Durations of less than one
@@ -147,7 +160,9 @@ public abstract class Span implements Serializable { // for Spark jobs
    *
    * <p>This field is i64 vs i32 to support spans longer than 35 minutes.
    */
-  @Nullable public abstract Long duration();
+  @Nullable public Long duration() {
+    return duration;
+  }
 
   /**
    * The host that recorded this span, primarily for query by service name.
@@ -156,7 +171,9 @@ public abstract class Span implements Serializable { // for Spark jobs
    * name as it is used in search. This is nullable for legacy reasons.
    */
   // Nullable for data conversion especially late arriving data which might not have an annotation
-  @Nullable public abstract Endpoint localEndpoint();
+  @Nullable public Endpoint localEndpoint() {
+    return localEndpoint;
+  }
 
   /**
    * When an RPC (or messaging) span, indicates the other side of the connection.
@@ -165,24 +182,32 @@ public abstract class Span implements Serializable { // for Spark jobs
    * is not tracing. For example,For example, you can record the IP from the {@code X-Forwarded-For}
    * header or or the service name and socket of a remote peer.
    */
-  @Nullable public abstract Endpoint remoteEndpoint();
+  @Nullable public Endpoint remoteEndpoint() {
+    return remoteEndpoint;
+  }
 
   /**
    * Events that explain latency with a timestamp. Unlike log statements, annotations are often
    * short or contain codes: for example "brave.flush". Annotations are sorted ascending by
    * timestamp.
    */
-  public abstract List<Annotation> annotations();
+  public List<Annotation> annotations() {
+    return annotations;
+  }
 
   /**
    * Tags a span with context, usually to support query or aggregation.
    *
    * <p>For example, a tag key could be {@code "http.path"}.
    */
-  public abstract Map<String, String> tags();
+  public Map<String, String> tags() {
+    return tags;
+  }
 
   /** True is a request to store this span even if it overrides sampling policy. */
-  @Nullable public abstract Boolean debug();
+  @Nullable public Boolean debug(){
+    return debug;
+  }
 
   /**
    * True if we are contributing to a span started by another tracer (ex on a different host).
@@ -192,7 +217,9 @@ public abstract class Span implements Serializable { // for Spark jobs
    * the server side. However, the server shouldn't set span.timestamp or duration since it didn't
    * start the span.
    */
-  @Nullable public abstract Boolean shared();
+  @Nullable public Boolean shared() {
+    return shared;
+  }
 
   @Nullable public String localServiceName() {
     Endpoint localEndpoint = localEndpoint();
@@ -213,19 +240,14 @@ public abstract class Span implements Serializable { // for Spark jobs
   }
 
   public static final class Builder {
-    String traceId;
-    String parentId;
-    String id;
+    String traceId, parentId, id;
     Kind kind;
     String name;
-    Long timestamp;
-    Long duration;
-    Endpoint localEndpoint;
-    Endpoint remoteEndpoint;
+    Long timestamp, duration;
+    Endpoint localEndpoint, remoteEndpoint;
     ArrayList<Annotation> annotations;
     TreeMap<String, String> tags;
-    Boolean debug;
-    Boolean shared;
+    Boolean debug, shared;
 
     public Builder clear() {
       traceId = null;
@@ -267,25 +289,25 @@ public abstract class Span implements Serializable { // for Spark jobs
     }
 
     Builder(Span source) {
-      traceId = source.traceId();
-      parentId = source.parentId();
-      id = source.id();
-      kind = source.kind();
-      name = source.name();
-      timestamp = source.timestamp();
-      duration = source.duration();
-      localEndpoint = source.localEndpoint();
-      remoteEndpoint = source.remoteEndpoint();
-      if (!source.annotations().isEmpty()) {
-        annotations = new ArrayList<>(source.annotations().size());
-        annotations.addAll(source.annotations());
+      traceId = source.traceId;
+      parentId = source.parentId;
+      id = source.id;
+      kind = source.kind;
+      name = source.name;
+      timestamp = source.timestamp;
+      duration = source.duration;
+      localEndpoint = source.localEndpoint;
+      remoteEndpoint = source.remoteEndpoint;
+      if (!source.annotations.isEmpty()) {
+        annotations = new ArrayList<>(source.annotations.size());
+        annotations.addAll(source.annotations);
       }
-      if (!source.tags().isEmpty()) {
+      if (!source.tags.isEmpty()) {
         tags = new TreeMap<>();
-        tags.putAll(source.tags());
+        tags.putAll(source.tags);
       }
-      debug = source.debug();
-      shared = source.shared();
+      debug = source.debug;
+      shared = source.shared;
     }
 
     @Nullable public Kind kind() {
@@ -401,21 +423,11 @@ public abstract class Span implements Serializable { // for Spark jobs
     }
 
     public Span build() {
-      return new AutoValue_Span(
-        traceId,
-        parentId,
-        id,
-        kind,
-        name,
-        timestamp,
-        duration,
-        localEndpoint,
-        remoteEndpoint,
-        sortedList(annotations),
-        tags == null ? Collections.emptyMap() : new LinkedHashMap<>(tags),
-        debug,
-        shared
-      );
+      String missing = "";
+      if (traceId == null) missing += " traceId";
+      if (id == null) missing += " id";
+      if (!"".equals(missing)) throw new IllegalStateException("Missing :" + missing);
+      return new Span(this);
     }
 
     Builder() {
@@ -470,5 +482,107 @@ public abstract class Span implements Serializable { // for Spark jobs
     Arrays.sort(array);
     List result = Arrays.asList(array);
     return Collections.unmodifiableList(result);
+  }
+
+  // clutter below mainly due to difficulty working with Kryo which cannot handle AutoValue subclass
+  // See https://github.com/openzipkin/zipkin/issues/1879
+  final String traceId, parentId, id;
+  final Kind kind;
+  final String name;
+  final Long timestamp, duration;
+  final Endpoint localEndpoint, remoteEndpoint;
+  final List<Annotation> annotations;
+  final Map<String, String> tags;
+  final Boolean debug, shared;
+
+  Span(Builder builder) {
+    traceId = builder.traceId;
+    parentId = builder.parentId;
+    id = builder.id;
+    kind = builder.kind;
+    name = builder.name;
+    timestamp = builder.timestamp;
+    duration = builder.duration;
+    localEndpoint = builder.localEndpoint;
+    remoteEndpoint = builder.remoteEndpoint;
+    annotations = sortedList(builder.annotations);
+    tags = builder.tags == null ? Collections.emptyMap() : new LinkedHashMap<>(builder.tags);
+    debug = builder.debug;
+    shared = builder.shared;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (o == this) return true;
+    if (!(o instanceof Span)) return false;
+    Span that = (Span) o;
+    return (traceId.equals(that.traceId))
+      && ((parentId == null) ? (that.parentId == null) : parentId.equals(that.parentId))
+      && (id.equals(that.id))
+      && ((kind == null) ? (that.kind == null) : kind.equals(that.kind))
+      && ((name == null) ? (that.name == null) : name.equals(that.name))
+      && ((timestamp == null) ? (that.timestamp == null) : timestamp.equals(that.timestamp))
+      && ((duration == null) ? (that.duration == null) : duration.equals(that.duration))
+      && ((localEndpoint == null)
+      ? (that.localEndpoint == null) : localEndpoint.equals(that.localEndpoint))
+      && ((remoteEndpoint == null)
+      ? (that.remoteEndpoint == null) : remoteEndpoint.equals(that.remoteEndpoint))
+      && (annotations.equals(that.annotations))
+      && (tags.equals(that.tags))
+      && ((debug == null) ? (that.debug == null) : debug.equals(that.debug))
+      && ((shared == null) ? (that.shared == null) : shared.equals(that.shared));
+  }
+
+  @Override public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= traceId.hashCode();
+    h *= 1000003;
+    h ^= (parentId == null) ? 0 : parentId.hashCode();
+    h *= 1000003;
+    h ^= id.hashCode();
+    h *= 1000003;
+    h ^= (kind == null) ? 0 : kind.hashCode();
+    h *= 1000003;
+    h ^= (name == null) ? 0 : name.hashCode();
+    h *= 1000003;
+    h ^= (timestamp == null) ? 0 : timestamp.hashCode();
+    h *= 1000003;
+    h ^= (duration == null) ? 0 : duration.hashCode();
+    h *= 1000003;
+    h ^= (localEndpoint == null) ? 0 : localEndpoint.hashCode();
+    h *= 1000003;
+    h ^= (remoteEndpoint == null) ? 0 : remoteEndpoint.hashCode();
+    h *= 1000003;
+    h ^= annotations.hashCode();
+    h *= 1000003;
+    h ^= tags.hashCode();
+    h *= 1000003;
+    h ^= (debug == null) ? 0 : debug.hashCode();
+    h *= 1000003;
+    h ^= (shared == null) ? 0 : shared.hashCode();
+    return h;
+  }
+
+  // This is an immutable object, and our encoder is faster than java's: use a serialization proxy.
+  final Object writeReplace() throws ObjectStreamException {
+    return new SerializedForm(SpanBytesEncoder.JSON_V2.encode(this));
+  }
+
+  private static final class SerializedForm implements Serializable {
+    private static final long serialVersionUID = 0L;
+
+    final byte[] bytes;
+
+    SerializedForm(byte[] bytes) {
+      this.bytes = bytes;
+    }
+
+    Object readResolve() throws ObjectStreamException {
+      try {
+        return SpanBytesDecoder.JSON_V2.decodeOne(bytes);
+      } catch (IllegalArgumentException e) {
+        throw new StreamCorruptedException(e.getMessage());
+      }
+    }
   }
 }

@@ -79,6 +79,11 @@
       <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.esotericsoftware.kryo</groupId>
+      <artifactId>kryo</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
