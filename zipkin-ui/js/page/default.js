@@ -7,6 +7,7 @@ import SpanNamesData from '../component_data/spanNames';
 import ServiceNamesData from '../component_data/serviceNames';
 import ServiceNameUI from '../component_ui/serviceName';
 import SpanNameUI from '../component_ui/spanName';
+import LookbackUI from '../component_ui/lookback';
 import InfoPanelUI from '../component_ui/infoPanel';
 import InfoButtonUI from '../component_ui/infoButton';
 import JsonPanelUI from '../component_ui/jsonPanel';
@@ -72,6 +73,7 @@ const DefaultPageComponent = component(function DefaultPage() {
       ServiceNamesData.attachTo(document);
       ServiceNameUI.attachTo('#serviceName');
       SpanNameUI.attachTo('#spanName');
+      LookbackUI.attachTo('#lookback');
       InfoPanelUI.attachTo('#infoPanel');
       InfoButtonUI.attachTo('button.info-request');
       JsonPanelUI.attachTo('#jsonPanel');
