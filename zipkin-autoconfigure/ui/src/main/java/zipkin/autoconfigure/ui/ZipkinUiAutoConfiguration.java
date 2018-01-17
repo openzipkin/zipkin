@@ -129,7 +129,7 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   // If the path is a a file w/an extension, treat normally.
   // Otherwise instead of returning 404, forward to the index.
   // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-  @RequestMapping(value = {"/zipkin/", "/zipkin/traces/{id}", "/zipkin/dependency"}, method = GET)
+  @RequestMapping(value = {"/zipkin/", "/zipkin/traces/{id}", "/zipkin/dependency", "/zipkin/traceViewer"}, method = GET)
   public ModelAndView forwardUiEndpoints() {
     return new ModelAndView("forward:/zipkin/index.html");
   }

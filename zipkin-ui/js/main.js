@@ -8,6 +8,7 @@ import {compose, registry, advice, debug} from 'flightjs';
 import crossroads from 'crossroads';
 import initializeDefault from './page/default';
 import initializeTrace from './page/trace';
+import initializeTraceViewer from './page/traceViewer';
 import initializeDependency from './page/dependency';
 import CommonUI from './page/common';
 import loadConfig from './config';
@@ -21,6 +22,7 @@ loadConfig().then(config => {
 
   crossroads.addRoute(contextRoot, () => initializeDefault(config));
   crossroads.addRoute(`${contextRoot}traces/{id}`, traceId => initializeTrace(traceId, config));
+  crossroads.addRoute(`${contextRoot}traceViewer`, () => initializeTraceViewer(config));
   crossroads.addRoute(`${contextRoot}dependency`, () => initializeDependency(config));
   crossroads.parse(window.location.pathname);
 }, e => {
