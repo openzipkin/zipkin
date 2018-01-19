@@ -48,7 +48,7 @@
     <main.basedir>${project.basedir}</main.basedir>
 
     <brave.version>4.8.0</brave.version>
-    <cassandra-driver-core.version>3.3.2</cassandra-driver-core.version>
+    <cassandra-driver-core.version>3.4.0</cassandra-driver-core.version>
     <okio.version>1.13.0</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
     <jooq.version>3.9.6</jooq.version>
