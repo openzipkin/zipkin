@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,7 +41,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
 
     abstract String trace_id();
 
-    @Nullable abstract Long duration();
+    abstract long duration();
   }
 
   static class Factory {
@@ -71,7 +71,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
       int bucket,
       UUID ts,
       String trace_id,
-      @Nullable Long durationMillis
+      long durationMillis
     ) {
       return new AutoValue_InsertTraceByServiceSpan_Input(
         service,
@@ -104,7 +104,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
       .setUUID("ts", input.ts())
       .setString("trace_id", input.trace_id());
 
-    if (null != input.duration()) {
+    if (0L != input.duration()) {
       bound.setLong("duration", input.duration());
     }
     return factory.session.executeAsync(bound);

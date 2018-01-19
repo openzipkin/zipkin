@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,7 +22,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
@@ -67,7 +66,8 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
 
     for (Span s : input) {
       // indexing occurs by timestamp, so derive one if not present.
-      long ts_micro = s.timestamp() != null ? s.timestamp() : guessTimestamp(s);
+      long ts_micro = s.timestampAsLong();
+      if (ts_micro == 0L) ts_micro = guessTimestamp(s);
 
       // fallback to current time on the ts_uuid for span data, so we know when it was inserted
       UUID ts_uuid = new UUID(
@@ -93,7 +93,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
 
       if (ts_micro == 0L) continue; // search is only valid with a timestamp, don't index w/o it!
       int bucket = durationIndexBucket(ts_micro); // duration index is milliseconds not microseconds
-      Long duration = null != s.duration() ? TimeUnit.MICROSECONDS.toMillis(s.duration()) : null;
+      long duration = s.durationAsLong() / 1000L;
       traceByServiceSpans.add(
         insertTraceByServiceSpan.newInput(service, span, bucket, ts_uuid, s.traceId(), duration)
       );
@@ -116,7 +116,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   }
 
   private static long guessTimestamp(Span span) {
-    Preconditions.checkState(null == span.timestamp(),
+    Preconditions.checkState(0L == span.timestampAsLong(),
       "method only for when span has no timestamp");
     for (Annotation annotation : span.annotations()) {
       if (0L < annotation.timestamp()) {

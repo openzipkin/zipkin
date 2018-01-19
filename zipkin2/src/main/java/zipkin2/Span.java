@@ -148,9 +148,19 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    * <p>Note: timestamps at or before epoch (0L == 1970) are invalid
    *
    * @see #duration()
+   * @see #timestampAsLong()
    */
   @Nullable public Long timestamp() {
     return timestamp > 0 ? timestamp : null;
+  }
+
+  /**
+   * Like {@link #timestamp()} except returns a primitive where zero implies absent.
+   *
+   * <p>Using this method will avoid allocation, so is encouraged when copying data.
+   */
+  public long timestampAsLong() {
+    return timestamp;
   }
 
   /**
@@ -166,9 +176,20 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    * implementation-specific.
    *
    * <p>This field is i64 vs i32 to support spans longer than 35 minutes.
+   *
+   * @see #durationAsLong()
    */
   @Nullable public Long duration() {
     return duration > 0 ? duration : null;
+  }
+
+  /**
+   * Like {@link #duration()} except returns a primitive where zero implies absent.
+   *
+   * <p>Using this method will avoid allocation, so is encouraged when copying data.
+   */
+  public long durationAsLong() {
+    return duration;
   }
 
   /**
@@ -376,26 +397,28 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /** @see Span#timestamp */
+    /** @see Span#timestampAsLong() */
     public Builder timestamp(long timestamp) {
+      if (timestamp < 0L) timestamp = 0L;
       this.timestamp = timestamp;
       return this;
     }
 
-    /** @see Span#timestamp */
+    /** @see Span#timestamp() */
     public Builder timestamp(@Nullable Long timestamp) {
       if (timestamp == null || timestamp == 0L) timestamp = 0L;
       this.timestamp = timestamp;
       return this;
     }
 
-    /** @see Span#duration */
+    /** @see Span#durationAsLong() */
     public Builder duration(long duration) {
+      if (duration < 0L) duration = 0L;
       this.duration = duration;
       return this;
     }
 
-    /** @see Span#duration */
+    /** @see Span#duration() */
     public Builder duration(@Nullable Long duration) {
       if (duration == null || duration == 0L) duration = 0L;
       this.duration = duration;
