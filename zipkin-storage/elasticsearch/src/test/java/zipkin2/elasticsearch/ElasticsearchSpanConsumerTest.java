@@ -81,7 +81,7 @@ public class ElasticsearchSpanConsumerTest {
       .kind(Kind.CLIENT)
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
 
     assertThat(new String(result, "UTF-8"))
       .startsWith("{\"traceId\":\"");
@@ -93,7 +93,7 @@ public class ElasticsearchSpanConsumerTest {
       .kind(Kind.CLIENT)
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
 
     assertThat(new String(result, "UTF-8"))
       .startsWith("{\"timestamp_millis\":1,\"traceId\":");
@@ -105,7 +105,7 @@ public class ElasticsearchSpanConsumerTest {
       .addAnnotation(1L, "\"foo")
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
 
     assertThat(new String(result, "UTF-8"))
       .startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
@@ -117,7 +117,7 @@ public class ElasticsearchSpanConsumerTest {
       .putTag("\"foo", "\"bar")
       .build();
 
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestamp());
+    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
 
     assertThat(new String(result, "UTF-8"))
       .startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
