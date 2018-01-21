@@ -49,9 +49,9 @@ final class InsertSpan extends ResultSetFutureCall {
 
     @Nullable abstract String span();
 
-    @Nullable abstract long ts();
+    abstract long ts();
 
-    @Nullable abstract long duration();
+    abstract long duration();
 
     @Nullable abstract EndpointUDT l_ep();
 
