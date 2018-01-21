@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -49,9 +49,9 @@ final class InsertSpan extends ResultSetFutureCall {
 
     @Nullable abstract String span();
 
-    @Nullable abstract Long ts();
+    abstract long ts();
 
-    @Nullable abstract Long duration();
+    abstract long duration();
 
     @Nullable abstract EndpointUDT l_ep();
 
@@ -115,8 +115,8 @@ final class InsertSpan extends ResultSetFutureCall {
         span.id(),
         span.kind() != null ? span.kind().name() : null,
         span.name(),
-        span.timestamp(),
-        span.duration(),
+        span.timestampAsLong(),
+        span.durationAsLong(),
         span.localEndpoint() != null ? new EndpointUDT(span.localEndpoint()) : null,
         span.remoteEndpoint() != null ? new EndpointUDT(span.remoteEndpoint()) : null,
         annotations,
@@ -175,8 +175,8 @@ final class InsertSpan extends ResultSetFutureCall {
     if (null != input.parent_id()) bound.setString("parent_id", input.parent_id());
     if (null != input.kind()) bound.setString("kind", input.kind());
     if (null != input.span()) bound.setString("span", input.span());
-    if (null != input.ts()) bound.setLong("ts", input.ts());
-    if (null != input.duration()) bound.setLong("duration", input.duration());
+    if (0L != input.ts()) bound.setLong("ts", input.ts());
+    if (0L != input.duration()) bound.setLong("duration", input.duration());
     if (null != input.l_ep()) bound.set("l_ep", input.l_ep(), EndpointUDT.class);
     if (null != input.l_ep()) bound.setString("l_service", input.l_ep().getService());
     if (null != input.r_ep()) bound.set("r_ep", input.r_ep(), EndpointUDT.class);

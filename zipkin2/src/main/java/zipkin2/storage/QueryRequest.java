@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -212,18 +212,18 @@ public abstract class QueryRequest {
    */
   public boolean test(List<Span> spans) {
     // v2 returns raw spans in any order, get the root's timestamp or the first timestamp
-    Long timestamp = null;
+    long timestamp = 0L;
     for (Span span : spans) {
-      if (span.timestamp() == null) continue;
+      if (span.timestampAsLong() == 0L) continue;
       if (span.parentId() == null) {
-        timestamp = span.timestamp();
+        timestamp = span.timestampAsLong();
         break;
       }
-      if (timestamp == null || timestamp > span.timestamp()) {
-        timestamp = span.timestamp();
+      if (timestamp == 0L || timestamp > span.timestampAsLong()) {
+        timestamp = span.timestampAsLong();
       }
     }
-    if (timestamp == null ||
+    if (timestamp == 0L ||
       timestamp < (endTs() - lookback()) * 1000 ||
       timestamp > endTs() * 1000) {
       return false;
@@ -259,9 +259,9 @@ public abstract class QueryRequest {
 
       if ((serviceName() == null || serviceName().equals(localServiceName)) && !testedDuration) {
         if (minDuration() != null && maxDuration() != null) {
-          testedDuration = span.duration() >= minDuration() && span.duration() <= maxDuration();
+          testedDuration = span.durationAsLong() >= minDuration() && span.durationAsLong() <= maxDuration();
         } else if (minDuration() != null) {
-          testedDuration = span.duration() >= minDuration();
+          testedDuration = span.durationAsLong() >= minDuration();
         }
       }
     }

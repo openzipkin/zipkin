@@ -53,6 +53,11 @@ import zipkin2.internal.Nullable;
 public final class Span implements Serializable { // for Spark and Flink jobs
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
+  static final int FLAG_DEBUG = 1 << 1;
+  static final int FLAG_DEBUG_SET = 1 << 2;
+  static final int FLAG_SHARED = 1 << 3;
+  static final int FLAG_SHARED_SET = 1 << 4;
+
   private static final long serialVersionUID = 0L;
 
   /**
@@ -140,9 +145,21 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    * <li>Data about a completed span (ex tags) were sent after the fact</li>
    * </pre><ul>
    *
+   * <p>Note: timestamps at or before epoch (0L == 1970) are invalid
+   *
    * @see #duration()
+   * @see #timestampAsLong()
    */
   @Nullable public Long timestamp() {
+    return timestamp > 0 ? timestamp : null;
+  }
+
+  /**
+   * Like {@link #timestamp()} except returns a primitive where zero implies absent.
+   *
+   * <p>Using this method will avoid allocation, so is encouraged when copying data.
+   */
+  public long timestampAsLong() {
     return timestamp;
   }
 
@@ -159,8 +176,19 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    * implementation-specific.
    *
    * <p>This field is i64 vs i32 to support spans longer than 35 minutes.
+   *
+   * @see #durationAsLong()
    */
   @Nullable public Long duration() {
+    return duration > 0 ? duration : null;
+  }
+
+  /**
+   * Like {@link #duration()} except returns a primitive where zero implies absent.
+   *
+   * <p>Using this method will avoid allocation, so is encouraged when copying data.
+   */
+  public long durationAsLong() {
     return duration;
   }
 
@@ -205,8 +233,10 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   }
 
   /** True is a request to store this span even if it overrides sampling policy. */
-  @Nullable public Boolean debug(){
-    return debug;
+  @Nullable public Boolean debug() {
+    return (flags & FLAG_DEBUG_SET) == FLAG_DEBUG_SET
+      ? (flags & FLAG_DEBUG) == FLAG_DEBUG
+      : null;
   }
 
   /**
@@ -218,7 +248,9 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    * start the span.
    */
   @Nullable public Boolean shared() {
-    return shared;
+    return (flags & FLAG_SHARED_SET) == FLAG_SHARED_SET
+      ? (flags & FLAG_SHARED) == FLAG_SHARED
+      : null;
   }
 
   @Nullable public String localServiceName() {
@@ -243,11 +275,11 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     String traceId, parentId, id;
     Kind kind;
     String name;
-    Long timestamp, duration;
+    long timestamp, duration; // zero means null
     Endpoint localEndpoint, remoteEndpoint;
     ArrayList<Annotation> annotations;
     TreeMap<String, String> tags;
-    Boolean debug, shared;
+    int flags = 0; // bit field for timestamp and duration
 
     public Builder clear() {
       traceId = null;
@@ -255,14 +287,13 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       id = null;
       kind = null;
       name = null;
-      timestamp = null;
-      duration = null;
+      timestamp = 0L;
+      duration = 0L;
       localEndpoint = null;
       remoteEndpoint = null;
       if (annotations != null) annotations.clear();
       if (tags != null) tags.clear();
-      debug = null;
-      shared = null;
+      flags = 0;
       return this;
     }
 
@@ -283,8 +314,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       if (tags != null) {
         result.tags = (TreeMap) tags.clone();
       }
-      result.debug = debug;
-      result.shared = shared;
+      result.flags = flags;
       return result;
     }
 
@@ -306,8 +336,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
         tags = new TreeMap<>();
         tags.putAll(source.tags);
       }
-      debug = source.debug;
-      shared = source.shared;
+      flags = source.flags;
     }
 
     @Nullable public Kind kind() {
@@ -368,16 +397,30 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       return this;
     }
 
-    /** @see Span#timestamp */
-    public Builder timestamp(@Nullable Long timestamp) {
-      if (timestamp != null && timestamp == 0L) timestamp = null;
+    /** @see Span#timestampAsLong() */
+    public Builder timestamp(long timestamp) {
+      if (timestamp < 0L) timestamp = 0L;
       this.timestamp = timestamp;
       return this;
     }
 
-    /** @see Span#duration */
+    /** @see Span#timestamp() */
+    public Builder timestamp(@Nullable Long timestamp) {
+      if (timestamp == null || timestamp == 0L) timestamp = 0L;
+      this.timestamp = timestamp;
+      return this;
+    }
+
+    /** @see Span#durationAsLong() */
+    public Builder duration(long duration) {
+      if (duration < 0L) duration = 0L;
+      this.duration = duration;
+      return this;
+    }
+
+    /** @see Span#duration() */
     public Builder duration(@Nullable Long duration) {
-      if (duration != null && duration == 0L) duration = null;
+      if (duration == null || duration == 0L) duration = 0L;
       this.duration = duration;
       return this;
     }
@@ -411,14 +454,38 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     }
 
     /** @see Span#debug */
+    public Builder debug(boolean debug) {
+      flags |= FLAG_DEBUG_SET;
+      if (debug) {
+        flags |= FLAG_DEBUG;
+      } else {
+        flags &= ~FLAG_DEBUG;
+      }
+      return this;
+    }
+
+    /** @see Span#debug */
     public Builder debug(@Nullable Boolean debug) {
-      this.debug = debug;
+      if (debug != null) return debug(debug);
+      flags &= ~FLAG_DEBUG_SET;
+      return this;
+    }
+
+    /** @see Span#shared */
+    public Builder shared(boolean shared) {
+      flags |= FLAG_SHARED_SET;
+      if (shared) {
+        flags |= FLAG_SHARED;
+      } else {
+        flags &= ~FLAG_SHARED;
+      }
       return this;
     }
 
     /** @see Span#shared */
     public Builder shared(@Nullable Boolean shared) {
-      this.shared = shared;
+      if (shared != null) return shared(shared);
+      flags &= ~FLAG_SHARED_SET;
       return this;
     }
 
@@ -484,16 +551,16 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     return Collections.unmodifiableList(result);
   }
 
-  // clutter below mainly due to difficulty working with Kryo which cannot handle AutoValue subclass
+  // Custom impl to reduce GC churn and Kryo which cannot handle AutoValue subclass
   // See https://github.com/openzipkin/zipkin/issues/1879
   final String traceId, parentId, id;
   final Kind kind;
   final String name;
-  final Long timestamp, duration;
+  final long timestamp, duration; // zero means null, saving 2 object references
   final Endpoint localEndpoint, remoteEndpoint;
   final List<Annotation> annotations;
   final Map<String, String> tags;
-  final Boolean debug, shared;
+  final int flags; // bit field for timestamp and duration, saving 2 object references
 
   Span(Builder builder) {
     traceId = builder.traceId;
@@ -507,8 +574,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     remoteEndpoint = builder.remoteEndpoint;
     annotations = sortedList(builder.annotations);
     tags = builder.tags == null ? Collections.emptyMap() : new LinkedHashMap<>(builder.tags);
-    debug = builder.debug;
-    shared = builder.shared;
+    flags = builder.flags;
   }
 
   @Override public boolean equals(Object o) {
@@ -520,16 +586,15 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       && (id.equals(that.id))
       && ((kind == null) ? (that.kind == null) : kind.equals(that.kind))
       && ((name == null) ? (that.name == null) : name.equals(that.name))
-      && ((timestamp == null) ? (that.timestamp == null) : timestamp.equals(that.timestamp))
-      && ((duration == null) ? (that.duration == null) : duration.equals(that.duration))
+      && (timestamp == that.timestamp)
+      && (duration == that.duration)
       && ((localEndpoint == null)
       ? (that.localEndpoint == null) : localEndpoint.equals(that.localEndpoint))
       && ((remoteEndpoint == null)
       ? (that.remoteEndpoint == null) : remoteEndpoint.equals(that.remoteEndpoint))
       && (annotations.equals(that.annotations))
       && (tags.equals(that.tags))
-      && ((debug == null) ? (that.debug == null) : debug.equals(that.debug))
-      && ((shared == null) ? (that.shared == null) : shared.equals(that.shared));
+      && (flags == that.flags);
   }
 
   @Override public int hashCode() {
@@ -545,9 +610,9 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     h *= 1000003;
     h ^= (name == null) ? 0 : name.hashCode();
     h *= 1000003;
-    h ^= (timestamp == null) ? 0 : timestamp.hashCode();
+    h ^= (int) (h ^ ((timestamp >>> 32) ^ timestamp));
     h *= 1000003;
-    h ^= (duration == null) ? 0 : duration.hashCode();
+    h ^= (int) (h ^ ((duration >>> 32) ^ duration));
     h *= 1000003;
     h ^= (localEndpoint == null) ? 0 : localEndpoint.hashCode();
     h *= 1000003;
@@ -557,9 +622,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     h *= 1000003;
     h ^= tags.hashCode();
     h *= 1000003;
-    h ^= (debug == null) ? 0 : debug.hashCode();
-    h *= 1000003;
-    h ^= (shared == null) ? 0 : shared.hashCode();
+    h ^= flags;
     return h;
   }
 

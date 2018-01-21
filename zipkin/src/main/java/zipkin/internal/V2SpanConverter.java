@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -347,11 +347,11 @@ public final class V2SpanConverter {
       result.traceIdHigh(lowerHexToUnsignedLong(traceId, 0));
     }
 
-    long startTs = in.timestamp() == null ? 0L : in.timestamp();
-    Long endTs = in.duration() == null ? 0L : in.timestamp() + in.duration();
+    long startTs = in.timestampAsLong(), duration = in.durationAsLong();
+    long endTs = startTs != 0L && duration != 0L ? startTs + duration : 0L;
     if (startTs != 0L) {
       result.timestamp(startTs);
-      result.duration(in.duration());
+      result.duration(duration);
     }
 
     zipkin.Endpoint local = in.localEndpoint() != null ? toEndpoint(in.localEndpoint()) : null;

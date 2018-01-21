@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -52,9 +52,9 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
 
   void indexSpans(BulkSpanIndexer indexer, List<Span> spans) {
     for (Span span : spans) {
-      Long spanTimestamp = span.timestamp();
+      long spanTimestamp = span.timestampAsLong();
       long indexTimestamp = 0L; // which index to store this span into
-      if (spanTimestamp != null) {
+      if (spanTimestamp != 0L) {
         indexTimestamp = spanTimestamp = TimeUnit.MICROSECONDS.toMillis(spanTimestamp);
       } else {
         // guessTimestamp is made for determining the span's authoritative timestamp. When choosing
@@ -78,7 +78,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
       this.indexNameFormatter = es.indexNameFormatter();
     }
 
-    void add(long indexTimestamp, Span span, @Nullable Long timestampMillis) {
+    void add(long indexTimestamp, Span span, long timestampMillis) {
       String index = indexNameFormatter.formatTypeAndTimestamp(ElasticsearchSpanStore.SPAN, indexTimestamp);
       byte[] document = prefixWithTimestampMillisAndQuery(span, timestampMillis);
       indexer.add(index, ElasticsearchSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
@@ -103,13 +103,13 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
    *
    * <p>Ex {@code curl -s localhost:9200/zipkin:span-2017-08-11/_search?q=_q:error=500}
    */
-  static byte[] prefixWithTimestampMillisAndQuery(Span span, @Nullable Long timestampMillis) {
+  static byte[] prefixWithTimestampMillisAndQuery(Span span, long timestampMillis) {
     Buffer query = new Buffer();
     JsonWriter writer = JsonWriter.of(query);
     try {
       writer.beginObject();
 
-      if (timestampMillis != null) writer.name("timestamp_millis").value(timestampMillis);
+      if (timestampMillis != 0L) writer.name("timestamp_millis").value(timestampMillis);
       if (!span.tags().isEmpty() || !span.annotations().isEmpty()) {
         writer.name("_q");
         writer.beginArray();
