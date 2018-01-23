@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,15 +13,12 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.BoundStatement;
-import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import java.util.Collections;
 import java.util.List;
 import org.assertj.core.api.ObjectArrayAssert;
 import org.junit.Test;
 import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.storage.cassandra.CassandraSpanConsumer.StoreSpansCall;
@@ -30,9 +27,9 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.withSettings;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
+import static zipkin2.TestObjects.TODAY;
 
 public class CassandraSpanConsumerTest {
   CassandraSpanConsumer consumer = spanConsumer(CassandraStorage.newBuilder());
@@ -217,6 +214,23 @@ public class CassandraSpanConsumerTest {
     assertEnclosedCalls(call)
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .isEmpty();
+  }
+
+  @Test public void searchDisabled_doesntIndex() {
+    consumer = spanConsumer(CassandraStorage.newBuilder().searchEnabled(false));
+
+    Span span = spanWithoutAnnotationsOrTags.toBuilder()
+      .addAnnotation(TODAY, "annotation")
+      .putTag("foo", "bar")
+      .duration(10000L).build();
+
+    StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
+
+    assertEnclosedCalls(call)
+      .hasSize(1)
+      .filteredOn(c -> c instanceof InsertSpan)
+      .extracting("input.annotation_query")
+      .allSatisfy(q -> assertThat(q).isNull());
   }
 
   static ObjectArrayAssert<Call<ResultSet>> assertEnclosedCalls(

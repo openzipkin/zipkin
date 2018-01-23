@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,6 +37,18 @@ public class CassandraSpanStoreTest {
     // a list of transformations, or possibly just one special-cased one
     assertThat(call.toString())
       .contains(FlatMapServicesToInputs.class.getSimpleName());
+  }
+
+  @Test public void searchDisabled_doesntMakeRemoteQueryRequests() {
+    CassandraSpanStore spanStore = spanStore(CassandraStorage.newBuilder().searchEnabled(false));
+
+    assertThat(spanStore.getTraces(
+      QueryRequest.newBuilder().endTs(TODAY).lookback(10000L).limit(10).build()
+    )).hasToString("ConstantCall{value=[]}");
+
+    assertThat(spanStore.getServiceNames()).hasToString("ConstantCall{value=[]}");
+
+    assertThat(spanStore.getSpanNames("icecream")).hasToString("ConstantCall{value=[]}");
   }
 
   static CassandraSpanStore spanStore(CassandraStorage.Builder builder) {

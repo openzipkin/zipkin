@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -120,9 +120,11 @@ public class ZipkinServerConfiguration {
   static class InMemoryConfiguration {
     @Bean StorageComponent storage(
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
       @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
       return V2StorageComponent.create(InMemoryStorage.newBuilder()
         .strictTraceId(strictTraceId)
+        .searchEnabled(searchEnabled)
         .maxSpanCount(maxSpans)
         .build());
     }

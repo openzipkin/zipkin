@@ -18,6 +18,7 @@ import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.Collections;
@@ -71,11 +72,11 @@ final class InsertSpan extends ResultSetFutureCall {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final boolean strictTraceId;
+    final boolean strictTraceId, searchEnabled;
 
-    Factory(Session session, boolean strictTraceId) {
+    Factory(Session session, boolean strictTraceId, boolean searchEnabled) {
       this.session = session;
-      this.preparedStatement = session.prepare(QueryBuilder.insertInto(TABLE_SPAN)
+      Insert insertQuery = QueryBuilder.insertInto(TABLE_SPAN)
         .value("trace_id", QueryBuilder.bindMarker("trace_id"))
         .value("trace_id_high", QueryBuilder.bindMarker("trace_id_high"))
         .value("ts_uuid", QueryBuilder.bindMarker("ts_uuid"))
@@ -86,14 +87,20 @@ final class InsertSpan extends ResultSetFutureCall {
         .value("ts", QueryBuilder.bindMarker("ts"))
         .value("duration", QueryBuilder.bindMarker("duration"))
         .value("l_ep", QueryBuilder.bindMarker("l_ep"))
-        .value("l_service", QueryBuilder.bindMarker("l_service"))
         .value("r_ep", QueryBuilder.bindMarker("r_ep"))
         .value("annotations", QueryBuilder.bindMarker("annotations"))
         .value("tags", QueryBuilder.bindMarker("tags"))
         .value("shared", QueryBuilder.bindMarker("shared"))
-        .value("debug", QueryBuilder.bindMarker("debug"))
-        .value("annotation_query", QueryBuilder.bindMarker("annotation_query")));
+        .value("debug", QueryBuilder.bindMarker("debug"));
+
+      if (searchEnabled) {
+        insertQuery.value("l_service", QueryBuilder.bindMarker("l_service"));
+        insertQuery.value("annotation_query", QueryBuilder.bindMarker("annotation_query"));
+      }
+
+      this.preparedStatement = session.prepare(insertQuery);
       this.strictTraceId = strictTraceId;
+      this.searchEnabled = searchEnabled;
     }
 
     Input newInput(zipkin2.Span span, UUID ts_uuid) {
@@ -106,7 +113,7 @@ final class InsertSpan extends ResultSetFutureCall {
       } else {
         annotations = Collections.emptyList();
       }
-      String annotation_query = CassandraUtil.annotationQuery(span);
+      String annotation_query = searchEnabled ? CassandraUtil.annotationQuery(span): null;
       return new AutoValue_InsertSpan_Input(
         ts_uuid,
         traceIdHigh ? span.traceId().substring(0, 16) : null,
@@ -178,15 +185,18 @@ final class InsertSpan extends ResultSetFutureCall {
     if (0L != input.ts()) bound.setLong("ts", input.ts());
     if (0L != input.duration()) bound.setLong("duration", input.duration());
     if (null != input.l_ep()) bound.set("l_ep", input.l_ep(), EndpointUDT.class);
-    if (null != input.l_ep()) bound.setString("l_service", input.l_ep().getService());
     if (null != input.r_ep()) bound.set("r_ep", input.r_ep(), EndpointUDT.class);
     if (!input.annotations().isEmpty()) bound.setList("annotations", input.annotations());
     if (!input.tags().isEmpty()) bound.setMap("tags", input.tags());
-    if (null != input.annotation_query()) {
-      bound.setString("annotation_query", input.annotation_query());
-    }
     if (input.shared()) bound.setBool("shared", true);
     if (input.debug()) bound.setBool("debug", true);
+
+    if (factory.searchEnabled) {
+      if (null != input.l_ep()) bound.setString("l_service", input.l_ep().getService());
+      if (null != input.annotation_query()) {
+        bound.setString("annotation_query", input.annotation_query());
+      }
+    }
     return factory.session.executeAsync(bound);
   }
 

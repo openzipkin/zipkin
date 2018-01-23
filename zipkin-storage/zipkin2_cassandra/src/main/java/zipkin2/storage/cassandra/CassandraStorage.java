@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -51,6 +51,7 @@ public abstract class CassandraStorage extends StorageComponent {
   public static Builder newBuilder() {
     return new AutoValue_CassandraStorage.Builder()
       .strictTraceId(true)
+      .searchEnabled(true)
       .keyspace(Schema.DEFAULT_KEYSPACE)
       .contactPoints("localhost")
       // Zipkin collectors can create out a lot of async requests in bursts
@@ -66,6 +67,9 @@ public abstract class CassandraStorage extends StorageComponent {
   public static abstract class Builder extends StorageComponent.Builder {
     /** {@inheritDoc} */
     @Override public abstract Builder strictTraceId(boolean strictTraceId);
+
+    /** {@inheritDoc} */
+    @Override public abstract Builder searchEnabled(boolean searchEnabled);
 
     /** Override to control how sessions are created. */
     public abstract Builder sessionFactory(SessionFactory sessionFactory);
@@ -146,6 +150,7 @@ public abstract class CassandraStorage extends StorageComponent {
   abstract String keyspace();
   abstract int indexFetchMultiplier();
   abstract boolean strictTraceId();
+  abstract boolean searchEnabled();
   abstract SessionFactory sessionFactory();
 
   /** session and close are typically called from different threads */

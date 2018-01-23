@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import zipkin.autoconfigure.prometheus.ZipkinPrometheusMetricsAutoConfiguration;
 import zipkin.autoconfigure.ui.ZipkinUiAutoConfiguration;
+import zipkin.internal.V2StorageComponent;
 import zipkin.server.brave.BraveConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -192,6 +193,21 @@ public class ZipkinServerConfigurationTest {
     context.refresh();
 
     assertThat(context.getBean(Brave.class)).isNotNull();
+  }
+
+  @Test public void search_canDisable() {
+    addEnvironment(context, "zipkin.storage.search-enabled:false");
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinServerConfigurationTest.Config.class,
+      ZipkinServerConfiguration.class
+    );
+    context.refresh();
+
+    V2StorageComponent v2Storage = context.getBean(V2StorageComponent.class);
+    assertThat(v2Storage.delegate())
+      .extracting("searchEnabled")
+      .containsExactly(false);
   }
 
   @Test public void ActuateCollectorMetrics_buffersArePresent() {

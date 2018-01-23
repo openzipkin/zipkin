@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.utils.UUIDs;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,7 +37,7 @@ import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 class CassandraSpanStore implements SpanStore { // not final for testing
   private final int maxTraceCols;
   private final int indexFetchMultiplier;
-  private final boolean strictTraceId;
+  private final boolean strictTraceId, searchEnabled;
   private final SelectFromSpan.Factory spans;
   private final SelectDependencies.Factory dependencies;
   private final SelectSpanNames.Factory spanNames;
@@ -50,15 +51,26 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     maxTraceCols = storage.maxTraceCols();
     indexFetchMultiplier = storage.indexFetchMultiplier();
     strictTraceId = storage.strictTraceId();
-    KeyspaceMetadata md = Schema.getKeyspaceMetadata(session);
-    indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
+    searchEnabled = storage.searchEnabled();
 
     spans = new SelectFromSpan.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
-    spanNames = new SelectSpanNames.Factory(session);
-    serviceNames = new SelectServiceNames.Factory(session).create();
-    spanTable = new SelectTraceIdsFromSpan.Factory(session);
-    traceIdsFromServiceSpan = new SelectTraceIdsFromServiceSpan.Factory(session);
+
+    if (searchEnabled) {
+      KeyspaceMetadata md = Schema.getKeyspaceMetadata(session);
+      indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
+
+      spanNames = new SelectSpanNames.Factory(session);
+      serviceNames = new SelectServiceNames.Factory(session).create();
+      spanTable = new SelectTraceIdsFromSpan.Factory(session);
+      traceIdsFromServiceSpan = new SelectTraceIdsFromServiceSpan.Factory(session);
+    } else {
+      indexTtl = 0;
+      spanNames = null;
+      serviceNames = null;
+      spanTable = null;
+      traceIdsFromServiceSpan = null;
+    }
   }
 
   /**
@@ -74,6 +86,8 @@ class CassandraSpanStore implements SpanStore { // not final for testing
    */
   @Override
   public Call<List<List<Span>>> getTraces(QueryRequest request) {
+    if (!searchEnabled) return Call.emptyList();
+
     return strictTraceId ? doGetTraces(request) :
       doGetTraces(request).map(new FilterTraces(request));
   }
@@ -174,10 +188,12 @@ class CassandraSpanStore implements SpanStore { // not final for testing
   }
 
   @Override public Call<List<String>> getServiceNames() {
+    if (!searchEnabled) return Call.emptyList();
     return serviceNames.clone();
   }
 
   @Override public Call<List<String>> getSpanNames(String serviceName) {
+    if (!searchEnabled) return Call.emptyList();
     return spanNames.create(serviceName);
   }
 

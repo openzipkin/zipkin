@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -46,7 +46,7 @@ public final class ElasticsearchHttpStorage extends StorageComponent
 
   public static final class Builder extends StorageComponent.Builder {
     final ElasticsearchStorage.Builder delegate;
-    private boolean legacyReadsEnabled;
+    boolean legacyReadsEnabled, searchEnabled;
 
     Builder(ElasticsearchStorage.Builder delegate) {
       this.delegate = delegate;
@@ -123,17 +123,24 @@ public final class ElasticsearchHttpStorage extends StorageComponent
       return this;
     }
 
+    @Override public final Builder searchEnabled(boolean searchEnabled) {
+      delegate.searchEnabled(this.searchEnabled = searchEnabled);
+      return this;
+    }
+
     @Override public final ElasticsearchHttpStorage build() {
-      return new ElasticsearchHttpStorage(delegate.build(), legacyReadsEnabled);
+      return new ElasticsearchHttpStorage(delegate.build(), legacyReadsEnabled, searchEnabled);
     }
   }
 
   public final ElasticsearchStorage delegate;
-  final boolean legacyReadsEnabled;
+  final boolean legacyReadsEnabled, searchEnabled;
 
-  ElasticsearchHttpStorage(ElasticsearchStorage delegate, boolean legacyReadsEnabled) {
+  ElasticsearchHttpStorage(ElasticsearchStorage delegate, boolean legacyReadsEnabled,
+    boolean searchEnabled) {
     this.delegate = delegate;
     this.legacyReadsEnabled = legacyReadsEnabled;
+    this.searchEnabled = searchEnabled;
   }
 
   @Override public SpanStore spanStore() {

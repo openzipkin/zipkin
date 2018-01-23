@@ -49,6 +49,7 @@ zipkin:
 
   storage:
     strict-trace-id: ${STRICT_TRACE_ID:true}
+    search-enabled: ${SEARCH_ENABLED:true}
     type: ${STORAGE_TYPE:mem}
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
@@ -133,6 +134,8 @@ zipkin:
     # Default duration to look back when finding traces.
     # Affects the "Start time" element in the UI. 1 hour in millis
     default-lookback: 3600000
+    # When false, disables the "find a trace" screen
+    search-enabled: ${SEARCH_ENABLED:true}
     # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)
     # Multiple sites can be specified, e.g.
     # - .*example1.com

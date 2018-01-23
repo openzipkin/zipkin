@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -99,5 +99,17 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     context.refresh();
 
     assertThat(context.getBean(CassandraStorage.class).strictTraceId()).isFalse();
+  }
+
+  @Test
+  public void searchEnabled_canSetToFalse() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:cassandra3");
+    addEnvironment(context, "zipkin.storage.search-enabled:false");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinCassandra3StorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(CassandraStorage.class).searchEnabled()).isFalse();
   }
 }

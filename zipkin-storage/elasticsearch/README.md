@@ -111,6 +111,15 @@ $ curl -s localhost:9200/zipkin:span-2017-08-22/_analyze -d '{
   "6b221d5bc9e6496c"
 ```
 
+### Disabling indexing
+Indexing is a good default, but some sites who don't use Zipkin UI's
+"Find a Trace" screen may want to disable indexing. This means templates
+will opt-out of analyzing any data in `span`, except `traceId`. This
+also means the special fields `_q` and `timestamp_millis` will neither
+be written, nor analyzed.
+
+[Disabling search](../../README.md#disabling-search) disables indexing.
+
 ## Customizing the ingest pipeline
 
 When using Elasticsearch 5.x, you can setup an [ingest pipeline](https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html)
