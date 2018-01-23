@@ -466,7 +466,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** @see Span#debug */
     public Builder debug(@Nullable Boolean debug) {
-      if (debug != null) return debug(debug);
+      if (debug != null) return debug((boolean) debug);
       flags &= ~FLAG_DEBUG_SET;
       return this;
     }
@@ -484,7 +484,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** @see Span#shared */
     public Builder shared(@Nullable Boolean shared) {
-      if (shared != null) return shared(shared);
+      if (shared != null) return shared((boolean) shared);
       flags &= ~FLAG_SHARED_SET;
       return this;
     }
