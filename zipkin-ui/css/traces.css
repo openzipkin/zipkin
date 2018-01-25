@@ -38,7 +38,7 @@
 
 #traces li {
   display: block;
-  padding: 5px;
+  padding: 5px 0;
   padding-bottom: 20px;
   margin: 20px 0px 20px;
   list-style: none;

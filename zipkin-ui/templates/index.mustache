@@ -121,47 +121,45 @@
   </form>
 </div>
 
-<div class="row">
-  {{#queryError}}
-    <div class="alert alert-danger" id="query-error-msg">
-      <p>Error executing query: {{ queryError }}</p>
-    </div>
-  {{/queryError}}
-  {{^queryWasPerformed}}
-    <div class="alert alert-info" id="help-msg">
-      <p data-i18n="traces.des">Please select the criteria for your trace lookup.</p>
-    </div>
-  {{/queryWasPerformed}}
-  {{#queryWasPerformed}}
-    <ul id="traces">
-      {{#traces}}
-        <li class="trace {{infoClass}}" data-traceId="{{traceId}}" data-duration="{{duration}}"
-            data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
-          <a href="{{contextRoot}}traces/{{traceId}}">
-            <div class="bar-block">
-              <span class="bar-graphic" style="width:{{width}}%;"></span>
-              <span class="bar-label">{{durationStr}}</span>
-              <span class="bar-label">{{totalSpans}} spans</span>
-            </div>
-            <div class="bar-block">
-              <span class="bar-graphic" style="width:{{servicePercentage}}%;"></span>
-              <span class="bar-label">{{serviceName}} {{servicePercentage}}%</span>
-            </div>
-          </a>
-          <div class="trace-details services">
-            {{#serviceDurations}}
-              <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}}
-                x{{count}} {{max}}ms</span>
-            {{/serviceDurations}}
+{{#queryError}}
+  <div class="alert alert-danger" id="query-error-msg">
+    <p>Error executing query: {{ queryError }}</p>
+  </div>
+{{/queryError}}
+{{^queryWasPerformed}}
+  <div class="alert alert-info" id="help-msg">
+    <p data-i18n="traces.des">Please select the criteria for your trace lookup.</p>
+  </div>
+{{/queryWasPerformed}}
+{{#queryWasPerformed}}
+  <ul id="traces">
+    {{#traces}}
+      <li class="trace {{infoClass}}" data-traceId="{{traceId}}" data-duration="{{duration}}"
+          data-timestamp="{{timestamp}}" data-service-percentage="{{servicePercentage}}">
+        <a href="{{contextRoot}}traces/{{traceId}}">
+          <div class="bar-block">
+            <span class="bar-graphic" style="width:{{width}}%;"></span>
+            <span class="bar-label">{{durationStr}}</span>
+            <span class="bar-label">{{totalSpans}} spans</span>
           </div>
-          <div class="trace-details timestamp pull-right">
-            <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>
+          <div class="bar-block">
+            <span class="bar-graphic" style="width:{{servicePercentage}}%;"></span>
+            <span class="bar-label">{{serviceName}} {{servicePercentage}}%</span>
           </div>
-        </li>
-      {{/traces}}
-    </ul>
-  {{/queryWasPerformed}}
-</div>
+        </a>
+        <div class="trace-details services">
+          {{#serviceDurations}}
+            <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}}
+              x{{count}} {{max}}ms</span>
+          {{/serviceDurations}}
+        </div>
+        <div class="trace-details timestamp pull-right">
+          <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>
+        </div>
+      </li>
+    {{/traces}}
+  </ul>
+{{/queryWasPerformed}}
 
 <!-- help panel for different lookup options -->
 <div class="modal fade" id="infoPanel" tabindex="-1">
