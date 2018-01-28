@@ -47,7 +47,7 @@ final class InfluxDBSpanStore implements SpanStore {
     }
 
     if (request.spanName() != null && !request.spanName().isEmpty()) {
-      q = String.format("%s AND \"name\" = '%s'", q, request.spanName());
+        q = String.format("%s AND \"name\" = '%s'", q, request.spanName());
     }
 
     StringBuilder result = new StringBuilder();
@@ -320,7 +320,7 @@ final class InfluxDBSpanStore implements SpanStore {
           services.put(id, serviceName);
         }
       }
-      System.out.println(services);
+
       for (QueryResult.Result result : response.getResults()) {
         if (result == null) {
           continue;
@@ -344,9 +344,8 @@ final class InfluxDBSpanStore implements SpanStore {
             .newBuilder()
             .child(child)
             .callCount(count);
-          if (!parentID.equals(id)) linkBuilder.parent(parent);
+          if (!parent.equals(id)) linkBuilder.parent(parent);
           links.add(linkBuilder.build());
-          System.out.println(links);
         }
       }
     }

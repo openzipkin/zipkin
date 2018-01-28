@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2017 The OpenZipkin Authors
+    Copyright 2015-2018 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@
 
   <groupId>io.zipkin.java</groupId>
   <artifactId>parent</artifactId>
-  <version>2.4.2-SNAPSHOT</version>
+  <version>2.4.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
@@ -48,20 +48,20 @@
     <main.basedir>${project.basedir}</main.basedir>
 
     <brave.version>4.8.0</brave.version>
-    <cassandra-driver-core.version>3.3.0</cassandra-driver-core.version>
+    <cassandra-driver-core.version>3.4.0</cassandra-driver-core.version>
     <okio.version>1.13.0</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
     <jooq.version>3.9.6</jooq.version>
-    <spring-boot.version>1.5.8.RELEASE</spring-boot.version>
+    <spring-boot.version>1.5.9.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
     <!-- Version 2.x might conflict w/ Spring Boot's version -->
-    <mariadb-java-client.version>1.6.5</mariadb-java-client.version>
+    <mariadb-java-client.version>1.7.1</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
-    <HikariCP.version>2.7.2</HikariCP.version>
+    <HikariCP.version>2.7.4</HikariCP.version>
     <slf4j.version>1.7.25</slf4j.version>
     <logback.version>1.2.3</logback.version>
     <!-- Be careful to set this as a provided dep, so that it doesn't interfere with dependencies
@@ -71,10 +71,10 @@
     <!-- to match powermock and spring testing -->
     <mockito.version>1.10.19</mockito.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
-    <assertj.version>3.8.0</assertj.version>
+    <assertj.version>3.9.0</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <okhttp.version>3.9.0</okhttp.version>
-    <testcontainers.version>1.5.0</testcontainers.version>
+    <okhttp.version>3.9.1</okhttp.version>
+    <testcontainers.version>1.5.1</testcontainers.version>
 
     <animal-sniffer-maven-plugin.version>1.16</animal-sniffer-maven-plugin.version>
     <maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
@@ -91,7 +91,7 @@
 
     <!-- Catch common Java mistakes as compile-time errors -->
     <plexus-compiler-javac-errorprone.version>2.8.2</plexus-compiler-javac-errorprone.version>
-    <errorprone.version>2.1.3</errorprone.version>
+    <errorprone.version>2.2.0</errorprone.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -347,13 +347,6 @@
       </dependency>
       <!-- End spring-boot-dependencies overrides -->
 
-      <!-- testcontainers overrides jnr-posix which conflicts w/ cassandra -->
-      <dependency>
-        <groupId>com.github.jnr</groupId>
-        <artifactId>jnr-posix</artifactId>
-        <version>3.0.42</version>
-      </dependency>
-
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp</artifactId>
@@ -381,7 +374,14 @@
       <dependency>
         <groupId>com.google.auto.value</groupId>
         <artifactId>auto-value</artifactId>
-        <version>1.5.2</version>
+        <version>1.5.3</version>
+      </dependency>
+
+      <!-- for testing flink -->
+      <dependency>
+        <groupId>com.esotericsoftware.kryo</groupId>
+        <artifactId>kryo</artifactId>
+        <version>2.24.0</version>
       </dependency>
 
       <dependency>
@@ -505,6 +505,27 @@
           <version>${maven-shade-plugin.version}</version>
         </plugin>
 
+        <!-- Need to block import of shaded packages in bnd.bnd as maven bundle plugin analyzes the unshaded jar -->
+        <plugin>
+          <groupId>org.apache.felix</groupId>
+          <artifactId>maven-bundle-plugin</artifactId>
+          <version>3.4.0</version>
+          <configuration>
+            <obrRepository>NONE</obrRepository>
+            <instructions>
+              <Bundle-SymbolicName>${project.groupId}.${project.artifactId}</Bundle-SymbolicName>
+            </instructions>
+          </configuration>
+          <executions>
+            <execution>
+              <phase>process-classes</phase>
+              <goals>
+                <goal>manifest</goal>
+              </goals>
+            </execution>
+          </executions>
+        </plugin>
+
         <plugin>
           <groupId>org.eclipse.m2e</groupId>
           <artifactId>lifecycle-mapping</artifactId>
@@ -536,7 +557,7 @@
         <plugin>
           <groupId>net.orfjackal.retrolambda</groupId>
           <artifactId>retrolambda-maven-plugin</artifactId>
-          <version>2.5.1</version>
+          <version>2.5.3</version>
           <executions>
             <execution>
               <goals>

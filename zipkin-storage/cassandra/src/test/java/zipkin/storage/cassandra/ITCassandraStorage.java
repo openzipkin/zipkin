@@ -33,7 +33,7 @@ public class ITCassandraStorage {
 
   @ClassRule
   public static LazyCassandraStorage storage =
-    new LazyCassandraStorage("openzipkin/zipkin-cassandra:2.2.2", "test_zipkin");
+    new LazyCassandraStorage("openzipkin/zipkin-cassandra:2.4.1", "test_zipkin");
 
   public static class DependenciesTest extends CassandraDependenciesTest {
     @Override protected CassandraStorage storage() {

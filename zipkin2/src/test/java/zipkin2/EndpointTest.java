@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -109,7 +109,7 @@ public class EndpointTest {
       .isNull();
   }
 
-  @Test public void ip_ipv6_compatIpv4() throws UnknownHostException {
+  @Test public void ip_ipv6_compatIpv4() {
     String ipv6 = "::0000:1.2.3.4";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
@@ -195,7 +195,7 @@ public class EndpointTest {
   }
 
   @Test public void lowercasesServiceName() {
-    assertThat(Endpoint.newBuilder().serviceName("fFf").ipv4("127.0.0.1").build().serviceName())
+    assertThat(Endpoint.newBuilder().serviceName("fFf").ip("127.0.0.1").build().serviceName())
       .isEqualTo("fff");
   }
 }

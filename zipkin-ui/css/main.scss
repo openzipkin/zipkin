@@ -23,16 +23,18 @@ $icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
   padding-top: 20px;
 }
 
-#annotationQuery {
-  margin: 5px 0;
-}
-
 .chosen-container .chosen-single {
   height: 30px;
 }
 
 .service-filter-label {
   cursor: pointer;
+}
+
+.json-badge-container {
+  float: right;
+  margin-top: 10px;
+  margin-right: 20px;
 }
 
 #errorPanel {

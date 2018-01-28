@@ -17,6 +17,15 @@ function escapeHtml(string) {
   return String(string).replace(/[&<>"'`=\/]/g, s => entityMap[s]);
 }
 
+export function isDupeBinaryAnnotation(tagMap, anno) {
+  if (!tagMap[anno.key]) {
+    tagMap[anno.key] = anno.value; // eslint-disable-line no-param-reassign
+  } else if (tagMap[anno.key] === anno.value) {
+    return true;
+  }
+  return false;
+}
+
 // Annotation values that contain the word "error" hint of a transient error.
 // This adds a class when that's the case.
 export function maybeMarkTransientError(row, anno) {
@@ -62,6 +71,7 @@ export default component(function spanPanel() {
 
   this.show = function(e, span) {
     const self = this;
+    const tagMap = {};
 
     this.$node.find('.modal-title').text(
       `${span.serviceName}.${span.spanName}: ${span.durationStr}`);
@@ -91,6 +101,7 @@ export default component(function spanPanel() {
 
     const $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
     $.each((span.binaryAnnotations || []), (i, anno) => {
+      if (isDupeBinaryAnnotation(tagMap, anno)) return;
       const $row = self.$binaryAnnotationTemplate.clone();
       if (anno.key === Constants.ERROR) {
         $row.addClass('anno-error-critical');

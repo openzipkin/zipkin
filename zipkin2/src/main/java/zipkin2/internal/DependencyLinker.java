@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -61,7 +61,7 @@ public final class DependencyLinker {
         return copyError(right, left);
       }
       Span server = left.kind() == Kind.SERVER ? left : right;
-      Span client = left == server ? right : left;
+      Span client = left.equals(server) ? right : left;
       if (server.remoteServiceName() != null) {
         return copyError(client, server);
       }

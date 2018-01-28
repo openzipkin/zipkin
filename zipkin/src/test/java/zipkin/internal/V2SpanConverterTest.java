@@ -227,6 +227,57 @@ public class V2SpanConverterTest {
       .containsExactly(simpleServer);
   }
 
+  /** Fix a span reported half in new style and half in old style, ex via a bridge */
+  @Test public void client_missingCs() {
+    Span span2 = Span.newBuilder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .id("216a2aea45d08fc9")
+      .name("get")
+      .kind(Kind.CLIENT)
+      .localEndpoint(frontend.toV2())
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .id(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .name("get")
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .addAnnotation(Annotation.create(1472470996406000L, Constants.CLIENT_SEND, frontend))
+      .build();
+
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void server_missingSr() {
+    Span span2 = Span.newBuilder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .id("216a2aea45d08fc9")
+      .name("get")
+      .kind(Kind.SERVER)
+      .localEndpoint(backend.toV2())
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceIdHigh(Util.lowerHexToUnsignedLong("7180c278b62e8f6a"))
+      .traceId(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .id(Util.lowerHexToUnsignedLong("216a2aea45d08fc9"))
+      .name("get")
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .addAnnotation(Annotation.create(1472470996406000L, Constants.SERVER_SEND, backend))
+      .build();
+
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
   /** Buggy instrumentation can send data with missing endpoints. Make sure we can record it. */
   @Test public void missingEndpoints() {
     Span span2 = Span.newBuilder()
@@ -270,6 +321,110 @@ public class V2SpanConverterTest {
       .name("foo")
       .timestamp(1472470996199000L)
       .addAnnotation(Annotation.create(1472470996199000L, "sr", null))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  /** Late flushed data on a server span */
+  @Test public void lateRemoteEndpoint_ss() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.SERVER)
+      .localEndpoint(backend.toV2())
+      .remoteEndpoint(frontend.toV2())
+      .addAnnotation(1472470996199000L, "ss")
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addAnnotation(Annotation.create(1472470996199000L, "ss", backend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, frontend))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  /** Late flushed data on a server span */
+  @Test public void lateRemoteEndpoint_ca() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.SERVER)
+      .remoteEndpoint(frontend.toV2())
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.CLIENT_ADDR, frontend))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void lateRemoteEndpoint_cr() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.CLIENT)
+      .localEndpoint(frontend.toV2())
+      .remoteEndpoint(backend.toV2())
+      .addAnnotation(1472470996199000L, "cr")
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addAnnotation(Annotation.create(1472470996199000L, "cr", frontend))
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
+      .build();
+
+    assertThat(V2SpanConverter.toSpan(span2))
+      .isEqualTo(span);
+    assertThat(V2SpanConverter.fromSpan(span))
+      .containsExactly(span2);
+  }
+
+  @Test public void lateRemoteEndpoint_sa() {
+    Span span2 = Span.newBuilder()
+      .traceId("1")
+      .parentId("1")
+      .id("2")
+      .name("foo")
+      .kind(Kind.CLIENT)
+      .remoteEndpoint(backend.toV2())
+      .build();
+
+    zipkin.Span span = zipkin.Span.builder()
+      .traceId(1L)
+      .parentId(1L)
+      .id(2L)
+      .name("foo")
+      .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, backend))
       .build();
 
     assertThat(V2SpanConverter.toSpan(span2))

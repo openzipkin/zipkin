@@ -13,18 +13,25 @@
  */
 package zipkin.storage.mysql;
 
+import java.util.List;
 import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
+import zipkin.Span;
+import zipkin.internal.MergeById;
 import zipkin.storage.StorageComponent;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(Enclosed.class)
 public class ITMySQLStorage {
 
-  @ClassRule
-  public static LazyMySQLStorage storage = new LazyMySQLStorage("2.1.0");
+  static LazyMySQLStorage classRule() {
+    return new LazyMySQLStorage("2.4.1");
+  }
 
   public static class DependenciesTest extends zipkin.storage.DependenciesTest {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
 
     @Override protected StorageComponent storage() {
       return storage.get();
@@ -36,6 +43,7 @@ public class ITMySQLStorage {
   }
 
   public static class SpanStoreTest extends zipkin.storage.SpanStoreTest {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
 
     @Override protected StorageComponent storage() {
       return storage.get();
@@ -48,24 +56,28 @@ public class ITMySQLStorage {
   }
 
   public static class StrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
+    @ClassRule public static LazyMySQLStorage storageRule = classRule();
 
-    private final MySQLStorage storage;
-
-    public StrictTraceIdFalseTest() {
-      this.storage = ITMySQLStorage.storage.computeStorageBuilder()
-          .strictTraceId(false)
-          .build();
-    }
+    private MySQLStorage storage;
 
     @Override protected StorageComponent storage() {
       return storage;
     }
 
-    @Override
-    public void clear() {
+    /** current implementation cannot return exact form reported */
+    @Override public void getTrace_retrievesBy64Or128BitTraceId() {
+      List<Span> trace = MergeById.apply(accept128BitTrace(storage()));
+      assertThat(store().getTrace(0L, trace.get(0).traceId))
+        .containsOnlyElementsOf(trace);
+      assertThat(store().getTrace(trace.get(0).traceIdHigh, trace.get(0).traceId))
+        .containsOnlyElementsOf(trace);
+    }
+
+    @Override public void clear() {
+      storage = storageRule.computeStorageBuilder()
+        .strictTraceId(false)
+        .build();
       storage.clear();
     }
   }
-
-
 }

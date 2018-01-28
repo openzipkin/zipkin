@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin.storage.mysql;
 
+import java.sql.SQLException;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
@@ -22,14 +23,13 @@ import zipkin.internal.LazyCloseable;
 import static org.junit.Assume.assumeTrue;
 import static zipkin.internal.Util.envOr;
 
-public class LazyMySQLStorage extends LazyCloseable<MySQLStorage>
-    implements TestRule {
+public class LazyMySQLStorage extends LazyCloseable<MySQLStorage> implements TestRule {
 
   final String version;
 
   ZipkinMySQLContainer container;
 
-  public LazyMySQLStorage(String version) {
+  LazyMySQLStorage(String version) {
     this.version = version;
   }
 
@@ -49,21 +49,24 @@ public class LazyMySQLStorage extends LazyCloseable<MySQLStorage>
   public MySQLStorage.Builder computeStorageBuilder() {
     final MariaDbDataSource dataSource;
 
-    if (container != null && container.getDataSource() != null) {
-      dataSource = container.getDataSource();
-    } else {
-      dataSource = new MariaDbDataSource();
+    try {
+      if (container != null && container.getDataSource() != null) {
+        dataSource = container.getDataSource();
+      } else {
+        dataSource = new MariaDbDataSource();
 
-      dataSource.setUser(System.getenv("MYSQL_USER"));
-      assumeTrue("Minimally, the environment variable MYSQL_USER must be set", dataSource.getUser() != null);
+        dataSource.setUser(System.getenv("MYSQL_USER"));
+        assumeTrue("Minimally, the environment variable MYSQL_USER must be set", dataSource.getUser() != null);
 
-      dataSource.setServerName(envOr("MYSQL_HOST", "localhost"));
-      dataSource.setPort(envOr("MYSQL_TCP_PORT", 3306));
-      dataSource.setDatabaseName(envOr("MYSQL_DB", "zipkin"));
-      dataSource.setPassword(envOr("MYSQL_PASS", ""));
+        dataSource.setServerName(envOr("MYSQL_HOST", "localhost"));
+        dataSource.setPort(envOr("MYSQL_TCP_PORT", 3306));
+        dataSource.setDatabaseName(envOr("MYSQL_DB", "zipkin"));
+        dataSource.setPassword(envOr("MYSQL_PASS", ""));
+      }
+      dataSource.setProperties("autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8");
+    } catch (SQLException e) {
+      throw new AssertionError(e);
     }
-
-    dataSource.setProperties("autoReconnect=true&useUnicode=yes&characterEncoding=UTF-8");
 
     return new MySQLStorage.Builder()
         .datasource(dataSource)

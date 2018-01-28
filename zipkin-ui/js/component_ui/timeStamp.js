@@ -12,7 +12,7 @@ export default component(function timeStamp() {
   };
 
   this.setDateTime = function(time) {
-    this.$date.val(time.format('MM-DD-YYYY'));
+    this.$date.val(time.format('YYYY-MM-DD'));
     this.$time.val(time.format('HH:mm'));
   };
 
@@ -27,7 +27,7 @@ export default component(function timeStamp() {
   };
 
   this.timeChanged = function() {
-    const time = moment(this.$date.val(), 'MM-DD-YYYY');
+    const time = moment(this.$date.val(), 'YYYY-MM-DD');
     time.add(moment.duration(this.$time.val()));
     this.setTimestamp(moment.utc(time));
   };
@@ -36,7 +36,7 @@ export default component(function timeStamp() {
     this.init();
     this.on(this.$time, 'change', this.timeChanged);
     this.$date
-      .datepicker({format: 'mm-dd-yyyy'})
+      .datepicker({format: 'yyyy-mm-dd'})
       .on('changeDate', this.dateChanged.bind(this));
   });
 });

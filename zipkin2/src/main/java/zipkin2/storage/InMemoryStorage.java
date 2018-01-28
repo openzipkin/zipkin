@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -144,7 +144,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     int spansToRecover = (spansByTraceIdTimeStamp.size() + delta) - maxSpanCount;
     evictToRecoverSpans(spansToRecover);
     for (Span span : spans) {
-      Long timestamp = span.timestamp() != null ? span.timestamp() : Long.MIN_VALUE;
+      long timestamp = span.timestampAsLong();
       String lowTraceId = lowTraceId(span.traceId());
       TraceIdTimestamp traceIdTimeStamp = TraceIdTimestamp.create(lowTraceId, timestamp);
       spansByTraceIdTimeStamp.put(traceIdTimeStamp, span);

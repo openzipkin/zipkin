@@ -26,8 +26,11 @@ import static org.mockito.Mockito.when;
 
 public class SchemaTest {
   DataSource dataSource = mock(DataSource.class);
-  Schema schema =
-      new Schema(dataSource, new DSLContexts(new Settings().withRenderSchema(false), null));
+  Schema schema = new Schema(
+    dataSource,
+    new DSLContexts(new Settings().withRenderSchema(false), null),
+    true
+  );
 
   @Test
   public void hasIpv6_falseWhenKnownSQLState() throws SQLException {

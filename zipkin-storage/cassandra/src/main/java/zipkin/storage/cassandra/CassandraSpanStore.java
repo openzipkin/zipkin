@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -189,7 +189,8 @@ public final class CassandraSpanStore implements GuavaSpanStore {
    */
   @Override
   public ListenableFuture<List<List<Span>>> getTraces(final QueryRequest request) {
-    checkArgument(request.minDuration == null, "getTraces with duration is unsupported");
+    checkArgument(request.minDuration == null,
+      "getTraces with duration is unsupported. Upgrade to the new cassandra3 schema.");
     // Over fetch on indexes as they don't return distinct (trace id, timestamp) rows.
     final int traceIndexFetchSize = request.limit * indexFetchMultiplier;
     ListenableFuture<Map<Long, Long>> traceIdToTimestamp;

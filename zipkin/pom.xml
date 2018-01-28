@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2017 The OpenZipkin Authors
+    Copyright 2015-2018 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>parent</artifactId>
-    <version>2.4.2-SNAPSHOT</version>
+    <version>2.4.4-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin</artifactId>
@@ -85,22 +85,11 @@
       <plugin>
         <groupId>org.apache.felix</groupId>
         <artifactId>maven-bundle-plugin</artifactId>
-        <!-- Travis cannot resolve 3.3.0-->
-        <version>3.2.0</version>
         <configuration>
-          <obrRepository>NONE</obrRepository>
           <instructions>
             <_include>-bnd.bnd</_include>
           </instructions>
         </configuration>
-        <executions>
-          <execution>
-            <phase>process-classes</phase>
-            <goals>
-              <goal>manifest</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <!-- Use of gson is internal only -->
       <plugin>
@@ -114,6 +103,11 @@
             <configuration>
               <shadeTestJar>false</shadeTestJar>
               <minimizeJar>true</minimizeJar>
+              <artifactSet>
+                <excludes>
+                  <exclude>io.zipkin.zipkin2:zipkin</exclude>
+                </excludes>
+              </artifactSet>
               <filters>
                 <filter>
                   <artifact>com.google.code.gson:gson</artifact>
@@ -123,13 +117,6 @@
                     <include>com/google/gson/stream/MalformedJsonException.class</include>
                     <include>com/google/gson/internal/JsonReaderInternalAccess.class</include>
                   </includes>
-                </filter>
-                <filter>
-                  <!-- don't include pom files, some are kilobytes -->
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/**</exclude>
-                  </excludes>
                 </filter>
               </filters>
               <relocations>

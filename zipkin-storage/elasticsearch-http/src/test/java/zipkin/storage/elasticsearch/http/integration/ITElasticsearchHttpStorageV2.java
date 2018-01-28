@@ -27,7 +27,7 @@ public class ITElasticsearchHttpStorageV2 {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
-    new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:2.2.2");
+    new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch:2.4.1");
 
   public static class DependenciesTest extends ElasticsearchHttpDependenciesTest {
     @Override protected ElasticsearchHttpStorage esStorage() {

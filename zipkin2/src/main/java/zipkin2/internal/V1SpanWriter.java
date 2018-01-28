@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -51,24 +51,24 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
     if (Boolean.TRUE.equals(value.shared()) && "sr".equals(parsed.begin)) {
       // don't report server-side timestamp on shared or incomplete spans
     } else {
-      if (value.timestamp() != null) {
+      if (value.timestampAsLong() != 0L) {
         sizeInBytes += 13; // ,"timestamp":
-        sizeInBytes += asciiSizeInBytes(value.timestamp());
+        sizeInBytes += asciiSizeInBytes(value.timestampAsLong());
       }
-      if (value.duration() != null) {
+      if (value.durationAsLong() != 0L) {
         sizeInBytes += 12; // ,"duration":
-        sizeInBytes += asciiSizeInBytes(value.duration());
+        sizeInBytes += asciiSizeInBytes(value.durationAsLong());
       }
     }
 
     int annotationCount = value.annotations().size();
 
-    if (parsed.startTs != null && parsed.begin != null) {
+    if (parsed.startTs != 0L && parsed.begin != null) {
       annotationCount++;
       sizeInBytes += coreAnnotationSizeInBytes(parsed.startTs, endpointSize);
     }
 
-    if (parsed.endTs != null && parsed.end != null) {
+    if (parsed.endTs != 0L && parsed.end != null) {
       annotationCount++;
       sizeInBytes += coreAnnotationSizeInBytes(parsed.endTs, endpointSize);
     }
@@ -122,22 +122,23 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
     if (Boolean.TRUE.equals(value.shared()) && "sr".equals(parsed.begin)) {
       // don't report server-side timestamp on shared or incomplete spans
     } else {
-      if (value.timestamp() != null) {
-        b.writeAscii(",\"timestamp\":").writeAscii(value.timestamp());
+      if (value.timestampAsLong() != 0L) {
+        b.writeAscii(",\"timestamp\":").writeAscii(value.timestampAsLong());
       }
-      if (value.duration() != null) {
-        b.writeAscii(",\"duration\":").writeAscii(value.duration());
+      if (value.durationAsLong() != 0L) {
+        b.writeAscii(",\"duration\":").writeAscii(value.durationAsLong());
       }
     }
 
     int annotationCount = value.annotations().size();
-    boolean beginAnnotation = parsed.startTs != null && parsed.begin != null;
-    boolean endAnnotation = parsed.endTs != null && parsed.end != null;
+    boolean beginAnnotation = parsed.startTs != 0L && parsed.begin != null;
+    boolean endAnnotation = parsed.endTs != 0L && parsed.end != null;
     if (annotationCount > 0 || beginAnnotation || endAnnotation) {
       int length = value.annotations().size();
       b.writeAscii(",\"annotations\":[");
       if (beginAnnotation) {
-        V2SpanWriter.writeAnnotation(Annotation.create(parsed.startTs, parsed.begin), endpointBytes, b);
+        V2SpanWriter.writeAnnotation(Annotation.create(parsed.startTs, parsed.begin), endpointBytes,
+          b);
         if (length > 0) b.writeByte(',');
       }
       for (int i = 0; i < length; ) {
@@ -215,16 +216,16 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
   }
 
   static class Parsed {
-    Long startTs = null, endTs = null;
+    long startTs, endTs;
     String begin = null, end = null;
     String remoteEndpointType = null;
   }
 
   static Parsed parse(Span in) {
     Parsed parsed = new Parsed();
-    parsed.startTs = in.timestamp();
-    parsed.endTs = in.timestamp() != null && in.duration() != null
-      ? in.timestamp() + in.duration() : null;
+    parsed.startTs = in.timestampAsLong();
+    parsed.endTs = parsed.startTs != 0L && in.durationAsLong() != 0L
+      ? parsed.startTs + in.durationAsLong() : 0L;
 
     if (in.kind() != null) {
       switch (in.kind()) {
@@ -245,7 +246,7 @@ public final class V1SpanWriter implements Buffer.Writer<Span> {
           break;
         case CONSUMER:
           parsed.remoteEndpointType = "ma";
-          if (parsed.endTs != null) {
+          if (parsed.endTs != 0L) {
             parsed.begin = "wr";
             parsed.end = "mr";
           } else {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,8 +13,9 @@
  */
 package zipkin2;
 
-import com.google.auto.value.AutoValue;
+import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.io.StreamCorruptedException;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
@@ -23,9 +24,8 @@ import java.util.Locale;
 import zipkin2.internal.Nullable;
 
 /** The network context of a node in the service graph. */
-@AutoValue
 //@Immutable
-public abstract class Endpoint implements Serializable { // for Spark jobs
+public final class Endpoint implements Serializable { // for Spark and Flink jobs
   private static final long serialVersionUID = 0L;
 
   /**
@@ -35,13 +35,17 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
    * <p>This is a primary label for trace lookup and aggregation, so it should be intuitive and
    * consistent. Many use a name from service discovery.
    */
-  @Nullable public abstract String serviceName();
+  @Nullable public String serviceName() {
+    return serviceName;
+  }
 
   /**
    * The text representation of the primary IPv4 address associated with this a connection. Ex.
    * 192.168.99.100 Absent if unknown.
    */
-  @Nullable public abstract String ipv4();
+  @Nullable public String ipv4() {
+    return ipv4;
+  }
 
   /**
    * The text representation of the primary IPv6 address associated with this a connection. Ex.
@@ -49,25 +53,44 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
    *
    * <p>Prefer using the {@link #ipv4()} field for mapped addresses.
    */
-  @Nullable public abstract String ipv6();
+  @Nullable public String ipv6() {
+    return ipv6;
+  }
 
   /**
    * Port of the IP's socket or null, if not known.
    *
    * @see java.net.InetSocketAddress#getPort()
    */
-  @Nullable public abstract Integer port();
-
-  public abstract Builder toBuilder();
-
-  public static Builder newBuilder() {
-    return new AutoValue_Endpoint.Builder();
+  @Nullable public Integer port() {
+    return port;
   }
 
-  @AutoValue.Builder
-  public static abstract class Builder {
+  public Builder toBuilder() {
+    return new Builder(this);
+  }
+
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    String serviceName, ipv4, ipv6;
+    Integer port;
+
+    Builder(Endpoint source) {
+      serviceName = source.serviceName;
+      ipv4 = source.ipv4;
+      ipv6 = source.ipv6;
+      port = source.port;
+    }
+
     /** @see Endpoint#serviceName */
-    public abstract Builder serviceName(@Nullable String serviceName);
+    public Builder serviceName(@Nullable String serviceName) {
+      this.serviceName = serviceName == null || serviceName.isEmpty()
+        ? null : serviceName.toLowerCase(Locale.ROOT);
+      return this;
+    }
 
     /** Chaining variant of {@link #parseIp(InetAddress)} */
     public Builder ip(@Nullable InetAddress addr) {
@@ -76,7 +99,7 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
     }
 
     /**
-     * Returns true if {@link #ipv4(String)} or {@link #ipv6(String)} could be parsed from the
+     * Returns true if {@link Endpoint#ipv4()} or {@link Endpoint#ipv6()} could be parsed from the
      * input.
      *
      * <p>Returns boolean not this for conditional parsing. For example:
@@ -91,14 +114,14 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
     public final boolean parseIp(@Nullable InetAddress addr) {
       if (addr == null) return false;
       if (addr instanceof Inet4Address) {
-        ipv4(addr.getHostAddress());
+        ipv4 = addr.getHostAddress();
       } else if (addr instanceof Inet6Address) {
         byte[] addressBytes = addr.getAddress();
         String ipv4 = parseEmbeddedIPv4(addressBytes);
         if (ipv4 != null) {
-          ipv4(ipv4);
+          this.ipv4 = ipv4;
         } else {
-          ipv6(writeIpV6(addressBytes));
+          ipv6 = writeIpV6(addressBytes);
         }
       } else {
         return false;
@@ -113,7 +136,7 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
     }
 
     /**
-     * Returns true if {@link #ipv4(String)} or {@link #ipv6(String)} could be parsed from the
+     * Returns true if {@link Endpoint#ipv4()} or {@link Endpoint#ipv6()} could be parsed from the
      * input.
      *
      * <p>Returns boolean not this for conditional parsing. For example:
@@ -129,27 +152,18 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
       if (ipString == null || ipString.isEmpty()) return false;
       IpFamily format = detectFamily(ipString);
       if (format == IpFamily.IPv4) {
-        ipv4(ipString);
+        ipv4 = ipString;
       } else if (format == IpFamily.IPv4Embedded) {
-        ipv4(ipString.substring(ipString.lastIndexOf(':') + 1));
+        ipv4 = ipString.substring(ipString.lastIndexOf(':') + 1);
       } else if (format == IpFamily.IPv6) {
         byte[] addressBytes = textToNumericFormatV6(ipString);
         if (addressBytes == null) return false;
-        ipv6(writeIpV6(addressBytes)); // ensures consistent format
+        ipv6 = writeIpV6(addressBytes); // ensures consistent format
       } else {
         return false;
       }
       return true;
     }
-
-    // hidden to ensure input are parsed as otherwise equals comparisons like needed for clock skew
-    // won't work.
-
-    /** @see Endpoint#ipv4 */
-    abstract Builder ipv4(@Nullable String ipv4);
-
-    /** @see Endpoint#ipv4 */
-    abstract Builder ipv6(@Nullable String ipv6);
 
     /**
      * Use this to set the port to an externally defined value.
@@ -157,29 +171,17 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
      * @param port port associated with the endpoint. zero coerces to null (unknown)
      * @see Endpoint#port()
      */
-    public abstract Builder port(@Nullable Integer port);
-
-    abstract @Nullable String serviceName();
-
-    abstract @Nullable Integer port();
-
-    abstract Endpoint autoBuild();
-
-    public final Endpoint build() {
-      String serviceName = serviceName();
-      if (serviceName != null) {
-        if (serviceName.isEmpty()) {
-          serviceName(null);
-        } else {
-          serviceName(serviceName.toLowerCase(Locale.ROOT));
-        }
-      }
-      Integer port = port();
+    public Builder port(@Nullable Integer port) {
       if (port != null) {
         if (port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
-        if (port <= 0) port(null);
+        if (port <= 0) port = null;
       }
-      return autoBuild();
+      this.port = port;
+      return this;
+    }
+
+    public Endpoint build() {
+      return new Endpoint(this);
     }
 
     Builder() {
@@ -434,4 +436,83 @@ public abstract class Endpoint implements Serializable { // for Spark jobs
     return c >= '0' && c <= '9';
   }
   // End code from io.netty.util.NetUtil 4.1
+
+  // clutter below mainly due to difficulty working with Kryo which cannot handle AutoValue subclass
+  // See https://github.com/openzipkin/zipkin/issues/1879
+  final String serviceName, ipv4, ipv6;
+  final Integer port;
+
+  Endpoint(Builder builder) {
+    serviceName = builder.serviceName;
+    ipv4 = builder.ipv4;
+    ipv6 = builder.ipv6;
+    port = builder.port;
+  }
+
+  Endpoint(SerializedForm serializedForm) {
+    serviceName = serializedForm.serviceName;
+    ipv4 = serializedForm.ipv4;
+    ipv6 = serializedForm.ipv6;
+    port = serializedForm.port;
+  }
+
+  @Override public String toString() {
+    return "Endpoint{"
+      + "serviceName=" + serviceName + ", "
+      + "ipv4=" + ipv4 + ", "
+      + "ipv6=" + ipv6 + ", "
+      + "port=" + port
+      + "}";
+  }
+
+  @Override public boolean equals(Object o) {
+    if (o == this) return true;
+    if (!(o instanceof Endpoint)) return false;
+    Endpoint that = (Endpoint) o;
+    return ((serviceName == null)
+      ? (that.serviceName == null) : serviceName.equals(that.serviceName))
+      && ((ipv4 == null) ? (that.ipv4 == null) : ipv4.equals(that.ipv4))
+      && ((ipv6 == null) ? (that.ipv6 == null) : ipv6.equals(that.ipv6))
+      && ((port == null) ? (that.port == null) : port.equals(that.port));
+  }
+
+  @Override public int hashCode() {
+    int h = 1;
+    h *= 1000003;
+    h ^= (serviceName == null) ? 0 : serviceName.hashCode();
+    h *= 1000003;
+    h ^= (ipv4 == null) ? 0 : ipv4.hashCode();
+    h *= 1000003;
+    h ^= (ipv6 == null) ? 0 : ipv6.hashCode();
+    h *= 1000003;
+    h ^= (port == null) ? 0 : port.hashCode();
+    return h;
+  }
+
+  // As this is an immutable object (no default constructor), defer to a serialization proxy.
+  final Object writeReplace() throws ObjectStreamException {
+    return new SerializedForm(this);
+  }
+
+  private static final class SerializedForm implements Serializable {
+    static final long serialVersionUID = 0L;
+
+    final String serviceName, ipv4, ipv6;
+    final Integer port;
+
+    SerializedForm(Endpoint endpoint) {
+      serviceName = endpoint.serviceName;
+      ipv4 = endpoint.ipv4;
+      ipv6 = endpoint.ipv6;
+      port = endpoint.port;
+    }
+
+    Object readResolve() throws ObjectStreamException {
+      try {
+        return new Endpoint(this);
+      } catch (IllegalArgumentException e) {
+        throw new StreamCorruptedException(e.getMessage());
+      }
+    }
+  }
 }

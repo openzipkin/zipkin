@@ -86,7 +86,7 @@ public class InfluxDBStorageRule extends ExternalResource {
   @Override protected void after() {
     if (container != null) {
       LOGGER.info("Stopping docker image " + image);
-      //container.stop();
+      container.stop();
     }
   }
 }

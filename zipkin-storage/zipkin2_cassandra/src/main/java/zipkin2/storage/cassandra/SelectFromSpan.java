@@ -65,8 +65,18 @@ final class SelectFromSpan extends ResultSetFutureCall {
 
     Call<List<Span>> newCall(String traceId) {
       checkNotNull(traceId, "traceId");
+      // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+      Set<String> traceIds;
+      if (!strictTraceId && traceId.length() == 32) {
+        traceIds = new LinkedHashSet<>();
+        traceIds.add(traceId);
+        traceIds.add(traceId.substring(16));
+      } else {
+        traceIds = Collections.singleton(traceId);
+      }
+
       return new SelectFromSpan(this,
-        Collections.singleton(traceId),
+        traceIds,
         maxTraceCols // amount of spans per trace is almost always larger than trace IDs
       ).flatMap(accumulateSpans);
     }

@@ -52,7 +52,7 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
         batch.point(taggedPoint(tag.getKey(), tag.getValue(), span).build());
       }
 
-      // annotations take the annotation'4s timestamp rather than the spans
+      // annotations take the annotation's timestamp rather than the spans
       for (Annotation anno : span.annotations()) {
         batch.point(annotatedPoint(anno.value(), anno.timestamp(), span).build());
       }
