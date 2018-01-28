@@ -52,7 +52,7 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
         batch.point(taggedPoint(tag.getKey(), tag.getValue(), span).build());
       }
 
-      // annotations take the annotation's timestamp rather than the spans
+      // annotations take the annotation'4s timestamp rather than the spans
       for (Annotation anno : span.annotations()) {
         batch.point(annotatedPoint(anno.value(), anno.timestamp(), span).build());
       }
@@ -66,6 +66,10 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
      .measurement(storage.measurement())
      .tag("trace_id", span.traceId())
      .tag("id", span.id());
+
+    if (span.name() != null ) {
+     point.tag("name", span.name());
+    }
 
     // When it is a root parent we set the parent_id to id to allow
     // a single query to retrieve all dependencies.

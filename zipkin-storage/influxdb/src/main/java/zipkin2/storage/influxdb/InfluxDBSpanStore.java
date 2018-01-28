@@ -42,12 +42,12 @@ final class InfluxDBSpanStore implements SpanStore {
       request.endTs(),
       request.endTs() - request.lookback());
 
-    if (request.spanName() != null && !request.serviceName().isEmpty()) {
+    if (request.serviceName() != null && !request.serviceName().isEmpty()) {
         q = String.format("%s AND \"service_name\" = '%s'", q, request.serviceName());
     }
 
     if (request.spanName() != null && !request.spanName().isEmpty()) {
-        q = String.format("%s AND \"name\" = '%s'", q, request.spanName());
+      q = String.format("%s AND \"name\" = '%s'", q, request.spanName());
     }
 
     StringBuilder result = new StringBuilder();
@@ -297,7 +297,7 @@ final class InfluxDBSpanStore implements SpanStore {
       String.format("SELECT COUNT(\"duration_us\") FROM \"%s\".\"%s\"", this.storage.retentionPolicy(), this.storage.measurement());
     q += String.format(" WHERE time < %dms", endTs);
     q += String.format(" AND time > %dms ", endTs - lookback);
-    q += String.format(" AND annotation='' GROUP BY \"id\",\"parent_id\",\"service_name\",time(%dms)", lookback);
+    q += String.format(" AND annotation='' GROUP BY \"id\",\"parent_id\",\"service_name\",time(%dms) fill(none)", lookback);
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query);
     if (response.hasError()){
@@ -320,7 +320,7 @@ final class InfluxDBSpanStore implements SpanStore {
           services.put(id, serviceName);
         }
       }
-
+      System.out.println(services);
       for (QueryResult.Result result : response.getResults()) {
         if (result == null) {
           continue;
@@ -344,8 +344,9 @@ final class InfluxDBSpanStore implements SpanStore {
             .newBuilder()
             .child(child)
             .callCount(count);
-          if (!parent.equals(id)) linkBuilder.parent(parent);
+          if (!parentID.equals(id)) linkBuilder.parent(parent);
           links.add(linkBuilder.build());
+          System.out.println(links);
         }
       }
     }
