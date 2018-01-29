@@ -81,6 +81,18 @@ The [Cassandra Legacy](zipkin-storage/cassandra) component is tested against Cas
 ### Elasticsearch
 The [ElasticsearchHttpStorage](zipkin-storage/elasticsearch-http) component is tested against Elasticsearch 2.x and 5.x. It stores spans as json and has been designed for larger scale. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
+### Disabling search
+Search is enabled by default, primarily in support of the `GET /traces`,
+`GET /spans` and `GET /services` endpoints used by the "Find a Trace"
+screen in Zipkin's UI. When search is disabled, traces can only be
+retrieved by ID.
+
+Sites who use another service (such as logs) to find trace IDs can
+disable search to reduce storage costs or increase write throughput.
+
+`StorageComponent.Builder.searchEnabled(false)` is implied when a zipkin
+is run with the env variable `SEARCH_ENABLED=false`.
+
 ## Running the server from source
 The [zipkin server](zipkin-server)
 receives spans via HTTP POST and respond to queries from its UI. It can also run collectors, such as Scribe or Kafka.

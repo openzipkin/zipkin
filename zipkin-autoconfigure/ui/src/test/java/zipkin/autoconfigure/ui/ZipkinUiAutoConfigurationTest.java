@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -76,6 +76,14 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
 
     context.getBean(ZipkinUiProperties.class);
+
+  }
+
+  @Test
+  public void canOverridesProperty_searchEnabled() {
+    context = createContextWithOverridenProperty("zipkin.ui.search-enabled:false");
+
+    assertThat(context.getBean(ZipkinUiProperties.class).isSearchEnabled()).isFalse();
   }
 
   @Test

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -68,11 +68,13 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
   ElasticsearchHttpStorage.Builder esHttpBuilder(
     ZipkinElasticsearchHttpStorageProperties elasticsearch,
     @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
+    @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-    @Value("${zipkin.query.lookback:86400000}") int namesLookback) {
+    @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled) {
     return elasticsearch.toBuilder(client)
+      .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
-      .namesLookback(namesLookback);
+      .searchEnabled(searchEnabled);
   }
 
   static final class HttpLoggingSet implements Condition {

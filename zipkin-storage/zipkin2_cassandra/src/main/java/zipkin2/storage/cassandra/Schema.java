@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -50,6 +50,7 @@ final class Schema {
 
   static final String DEFAULT_KEYSPACE = "zipkin2";
   private static final String SCHEMA_RESOURCE = "/zipkin2-schema.cql";
+  private static final String INDEX_RESOURCE = "/zipkin2-schema-indexes.cql";
 
   private Schema() {
   }
@@ -97,11 +98,15 @@ final class Schema {
     return keyspaceMetadata;
   }
 
-  static KeyspaceMetadata ensureExists(String keyspace, Session session) {
+  static KeyspaceMetadata ensureExists(String keyspace, boolean searchEnabled, Session session) {
     KeyspaceMetadata result = session.getCluster().getMetadata().getKeyspace(keyspace);
     if (result == null || result.getTable(Schema.TABLE_SPAN) == null) {
       LOG.info("Installing schema {}", SCHEMA_RESOURCE);
       applyCqlFile(keyspace, session, SCHEMA_RESOURCE);
+      if (searchEnabled) {
+        LOG.info("Installing indexes {}", INDEX_RESOURCE);
+        applyCqlFile(keyspace, session, INDEX_RESOURCE);
+      }
       // refresh metadata since we've installed the schema
       result = session.getCluster().getMetadata().getKeyspace(keyspace);
     }

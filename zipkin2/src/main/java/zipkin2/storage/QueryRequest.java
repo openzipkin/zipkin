@@ -22,9 +22,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import zipkin2.internal.Nullable;
 import zipkin2.Annotation;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
 
 /**
  * Invoking this request retrieves traces matching the below filters.
@@ -39,7 +39,6 @@ import zipkin2.Span;
  */
 @AutoValue
 public abstract class QueryRequest {
-
   /**
    * When present, corresponds to {@link zipkin2.Endpoint#serviceName} and constrains all other
    * parameters.

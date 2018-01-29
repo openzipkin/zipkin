@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -23,13 +23,13 @@ import org.junit.Test;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin2.TestObjects;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.storage.ITSpanStore.requestBuilder;
 
 public class InMemoryStorageTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
@@ -121,10 +121,5 @@ public class InMemoryStorageTest {
     assertThat(storage.getSpanNames("app").execute()).containsOnly(
       "root"
     );
-  }
-
-  static QueryRequest.Builder requestBuilder() {
-    return QueryRequest.newBuilder().endTs(TODAY + TestObjects.DAY).lookback(
-      TestObjects.DAY * 2).limit(100);
   }
 }

@@ -4,6 +4,7 @@ const defaults = {
   environment: '',
   queryLimit: 10,
   defaultLookback: 60 * 60 * 1000, // 1 hour
+  searchEnabled: true,
   dependency: {
     lowErrorRate: 0.5, // 50% of calls in error turns line yellow
     highErrorRate: 0.75 // 75% of calls in error turns line red

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,11 +28,13 @@ import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 final class VersionSpecificTemplates {
   static final Logger LOG = Logger.getLogger(VersionSpecificTemplates.class.getName());
 
+  final boolean searchEnabled;
   final String spanIndexTemplate;
   final String dependencyIndexTemplate;
 
   VersionSpecificTemplates(ElasticsearchStorage es) {
-    this.spanIndexTemplate = SPAN_INDEX_TEMPLATE
+    this.searchEnabled = es.searchEnabled();
+    this.spanIndexTemplate = spanIndexTemplate()
       .replace("${__INDEX__}", es.indexNameFormatter().index())
       .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
       .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()))
@@ -45,73 +47,88 @@ final class VersionSpecificTemplates {
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
-  static final String SPAN_INDEX_TEMPLATE = "{\n"
-    + "  \"TEMPLATE\": \"${__INDEX__}:" + SPAN + "-*\",\n"
-    + "  \"settings\": {\n"
-    + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
-    + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
-    + "    \"index.requests.cache.enable\": true,\n"
-    + "    \"index.mapper.dynamic\": false,\n"
-    + "    \"analysis\": {\n"
-    + "      \"analyzer\": {\n"
-    + "        \"traceId_analyzer\": {\n"
-    + "          \"type\": \"custom\",\n"
-    + "          \"tokenizer\": \"keyword\",\n"
-    + "          \"filter\": \"traceId_filter\"\n"
-    + "        }\n"
-    + "      },\n"
-    + "      \"filter\": {\n"
-    + "        \"traceId_filter\": {\n"
-    + "          \"type\": \"pattern_capture\",\n"
-    + "          \"patterns\": [\"([0-9a-f]{1,16})$\"],\n"
-    + "          \"preserve_original\": true\n"
-    + "        }\n"
-    + "      }\n"
-    + "    }\n"
-    + "  },\n"
-    + "  \"mappings\": {\n"
-    + "    \"_default_\": {\n"
-    + "      DISABLE_ALL" // don't concat all fields into big string
-    + "      \"dynamic_templates\": [\n"
-    + "        {\n"
-    + "          \"strings\": {\n"
-    + "            \"mapping\": {\n"
-    + "              KEYWORD,\n"
-    + "              \"ignore_above\": 256\n"
-    + "            },\n"
-    + "            \"match_mapping_type\": \"string\",\n"
-    + "            \"match\": \"*\"\n"
-    + "          }\n"
-    + "        }\n"
-    + "      ]\n"
-    + "    },\n"
-    + "    \"" + SPAN + "\": {\n"
-    + "      \"_source\": {\"excludes\": [\"_q\"] },\n"
-    + "      \"properties\": {\n"
-    + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
-    + "        \"name\": { KEYWORD },\n"
-    + "        \"localEndpoint\": {\n"
-    + "          \"type\": \"object\",\n"
-    + "          \"dynamic\": false,\n"
-    + "          \"properties\": { \"serviceName\": { KEYWORD } }\n"
-    + "        },\n"
-    + "        \"remoteEndpoint\": {\n"
-    + "          \"type\": \"object\",\n"
-    + "          \"dynamic\": false,\n"
-    + "          \"properties\": { \"serviceName\": { KEYWORD } }\n"
-    + "        },\n"
-    + "        \"timestamp_millis\": {\n"
-    + "          \"type\":   \"date\",\n"
-    + "          \"format\": \"epoch_millis\"\n"
-    + "        },\n"
-    + "        \"duration\": { \"type\": \"long\" },\n"
-    + "        \"annotations\": { \"enabled\": false },\n"
-    + "        \"tags\": { \"enabled\": false },\n"
-    + "        \"_q\": { KEYWORD }\n"
-    + "      }\n"
-    + "    }\n"
-    + "  }\n"
-    + "}";
+  String spanIndexTemplate() {
+    String result = "{\n"
+      + "  \"TEMPLATE\": \"${__INDEX__}:" + SPAN + "-*\",\n"
+      + "  \"settings\": {\n"
+      + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
+      + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
+      + "    \"index.requests.cache.enable\": true,\n"
+      + "    \"index.mapper.dynamic\": false,\n"
+      + "    \"analysis\": {\n"
+      + "      \"analyzer\": {\n"
+      + "        \"traceId_analyzer\": {\n"
+      + "          \"type\": \"custom\",\n"
+      + "          \"tokenizer\": \"keyword\",\n"
+      + "          \"filter\": \"traceId_filter\"\n"
+      + "        }\n"
+      + "      },\n"
+      + "      \"filter\": {\n"
+      + "        \"traceId_filter\": {\n"
+      + "          \"type\": \"pattern_capture\",\n"
+      + "          \"patterns\": [\"([0-9a-f]{1,16})$\"],\n"
+      + "          \"preserve_original\": true\n"
+      + "        }\n"
+      + "      }\n"
+      + "    }\n"
+      + "  },\n";
+    if (searchEnabled) {
+      return result + ("  \"mappings\": {\n"
+        + "    \"_default_\": {\n"
+        + "      DISABLE_ALL" // don't concat all fields into big string
+        + "      \"dynamic_templates\": [\n"
+        + "        {\n"
+        + "          \"strings\": {\n"
+        + "            \"mapping\": {\n"
+        + "              KEYWORD,\n"
+        + "              \"ignore_above\": 256\n"
+        + "            },\n"
+        + "            \"match_mapping_type\": \"string\",\n"
+        + "            \"match\": \"*\"\n"
+        + "          }\n"
+        + "        }\n"
+        + "      ]\n"
+        + "    },\n"
+        + "    \"" + SPAN + "\": {\n"
+        + "      \"_source\": {\"excludes\": [\"_q\"] },\n"
+        + "      \"properties\": {\n"
+        + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
+        + "        \"name\": { KEYWORD },\n"
+        + "        \"localEndpoint\": {\n"
+        + "          \"type\": \"object\",\n"
+        + "          \"dynamic\": false,\n"
+        + "          \"properties\": { \"serviceName\": { KEYWORD } }\n"
+        + "        },\n"
+        + "        \"remoteEndpoint\": {\n"
+        + "          \"type\": \"object\",\n"
+        + "          \"dynamic\": false,\n"
+        + "          \"properties\": { \"serviceName\": { KEYWORD } }\n"
+        + "        },\n"
+        + "        \"timestamp_millis\": {\n"
+        + "          \"type\":   \"date\",\n"
+        + "          \"format\": \"epoch_millis\"\n"
+        + "        },\n"
+        + "        \"duration\": { \"type\": \"long\" },\n"
+        + "        \"annotations\": { \"enabled\": false },\n"
+        + "        \"tags\": { \"enabled\": false },\n"
+        + "        \"_q\": { KEYWORD }\n"
+        + "      }\n"
+        + "    }\n"
+        + "  }\n"
+        + "}");
+    }
+    return result + ("  \"mappings\": {\n"
+      + "    \"_default_\": { DISABLE_ALL },\n"
+      + "    \"" + SPAN + "\": {\n"
+      + "      \"properties\": {\n"
+      + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
+      + "        \"annotations\": { \"enabled\": false },\n"
+      + "        \"tags\": { \"enabled\": false }\n"
+      + "      }\n"
+      + "    }\n"
+      + "  }\n"
+      + "}");
+  }
 
   /** Templatized due to version differences. Only fields used in search are declared */
   static final String DEPENDENCY_INDEX_TEMPLATE = "{\n"
@@ -163,7 +180,7 @@ final class VersionSpecificTemplates {
       return spanIndexTemplate
         .replace("TEMPLATE", "template")
         .replace("STRING", "string")
-        .replace("DISABLE_ALL", "\"_all\": {\"enabled\": false},\n")
+        .replace("DISABLE_ALL", "\"_all\": {\"enabled\": false}" + (searchEnabled ? ",\n" : ""))
         .replace("KEYWORD",
           "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": \"not_analyzed\"");
     } else if (version >= 5) {

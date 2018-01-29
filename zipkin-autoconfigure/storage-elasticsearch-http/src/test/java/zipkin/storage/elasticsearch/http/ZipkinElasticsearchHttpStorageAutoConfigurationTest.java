@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -398,7 +398,6 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.legacy-reads-enabled:false");
     context.register(PropertyPlaceholderAutoConfiguration.class,
       ZipkinElasticsearchOkHttpAutoConfiguration.class,
@@ -406,6 +405,21 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     context.refresh();
 
     assertThat(context.getBean(ElasticsearchHttpStorage.class).legacyReadsEnabled)
+      .isFalse();
+  }
+
+  @Test
+  public void searchEnabled_false() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.search-enabled:false");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchOkHttpAutoConfiguration.class,
+      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(ElasticsearchHttpStorage.class).searchEnabled)
       .isFalse();
   }
 

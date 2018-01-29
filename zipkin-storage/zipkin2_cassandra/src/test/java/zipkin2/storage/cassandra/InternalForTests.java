@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.junit.rules.TestName;
 import zipkin.DependencyLink;
 import zipkin2.storage.SpanConsumer;
 
@@ -54,8 +55,8 @@ public class InternalForTests {
     return storage.toBuilder().strictTraceId(false).build().spanConsumer();
   }
 
-  public static void ensureExists(String keyspace, Session session) {
-    Schema.ensureExists(keyspace, session);
+  public static void ensureExists(String keyspace, boolean searchEnabled, Session session) {
+    Schema.ensureExists(keyspace, searchEnabled, session);
   }
 
   public static void blockWhileInFlight(CassandraStorage storage) {
@@ -74,8 +75,17 @@ public class InternalForTests {
     }
   }
 
+  public static String keyspace(TestName testName) {
+    String result = testName.getMethodName().toLowerCase();
+    return result.length() <= 48 ? result : result.substring(result.length() - 48);
+  }
+
   public static void dropKeyspace(Session session, String keyspace) {
     session.execute("DROP KEYSPACE IF EXISTS " + keyspace);
     assertThat(session.getCluster().getMetadata().getKeyspace(keyspace)).isNull();
+  }
+
+  public static Session session(CassandraStorage storage) {
+    return storage.session();
   }
 }

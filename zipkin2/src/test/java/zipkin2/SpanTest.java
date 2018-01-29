@@ -106,6 +106,40 @@ public class SpanTest {
       .isNull();
   }
 
+  @Test public void canUsePrimitiveOverloads() {
+    Span primitives = base.toBuilder()
+      .timestamp(1L)
+      .duration(1L)
+      .shared(true)
+      .debug(true)
+      .build();
+
+    Span objects =  base.toBuilder()
+      .timestamp(Long.valueOf(1L))
+      .duration(Long.valueOf(1L))
+      .shared(Boolean.TRUE)
+      .debug(Boolean.TRUE)
+      .build();
+
+    assertThat(primitives)
+      .isEqualToComparingFieldByField(objects);
+  }
+
+  @Test public void nullToZeroOrFalse() {
+    Span nulls = base.toBuilder()
+      .timestamp(null)
+      .duration(null)
+      .build();
+
+    Span zeros =  base.toBuilder()
+      .timestamp(0L)
+      .duration(0L)
+      .build();
+
+    assertThat(nulls)
+      .isEqualToComparingFieldByField(zeros);
+  }
+
   @Test public void toString_isJson() {
     assertThat(base.toString()).hasToString(
       "{\"traceId\":\"0000000000000001\",\"id\":\"0000000000000001\",\"localEndpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}}"

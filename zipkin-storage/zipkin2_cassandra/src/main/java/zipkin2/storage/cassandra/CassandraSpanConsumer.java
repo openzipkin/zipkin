@@ -25,6 +25,7 @@ import java.util.UUID;
 import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.cassandra.internal.call.AggregateCall;
 
@@ -35,21 +36,27 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     = Long.getLong("zipkin2.storage.cassandra.internal.writtenNamesTtl", 60 * 60 * 1000);
 
   private final Session session;
-  private final boolean strictTraceId;
+  private final boolean strictTraceId, searchEnabled;
   private final InsertSpan.Factory insertSpan;
-  private final InsertTraceByServiceSpan.Factory insertTraceByServiceSpan;
-  private final InsertServiceSpan.Factory insertServiceSpanName;
+  @Nullable final InsertTraceByServiceSpan.Factory insertTraceByServiceSpan;
+  @Nullable private final InsertServiceSpan.Factory insertServiceSpanName;
 
   CassandraSpanConsumer(CassandraStorage storage) {
     session = storage.session();
     strictTraceId = storage.strictTraceId();
+    searchEnabled = storage.searchEnabled();
 
     // warns when schema problems exist
     Schema.readMetadata(session);
 
-    insertSpan = new InsertSpan.Factory(session, strictTraceId);
-    insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
-    insertServiceSpanName = new InsertServiceSpan.Factory(session, WRITTEN_NAMES_TTL);
+    insertSpan = new InsertSpan.Factory(session, strictTraceId, searchEnabled);
+    if (searchEnabled) {
+      insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
+      insertServiceSpanName = new InsertServiceSpan.Factory(session, WRITTEN_NAMES_TTL);
+    } else {
+      insertTraceByServiceSpan = null;
+      insertServiceSpanName = null;
+    }
   }
 
   /**
@@ -76,6 +83,8 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
         UUIDs.random().getLeastSignificantBits());
 
       spans.add(insertSpan.newInput(s, ts_uuid));
+
+      if (!searchEnabled) continue;
 
       // Empty values allow for api queries with blank service or span name
       String service = s.localServiceName() != null ? s.localServiceName() : "";
@@ -106,11 +115,13 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     for (InsertSpan.Input span : spans) {
       calls.add(insertSpan.create(span));
     }
-    for (InsertServiceSpan.Input serviceSpan : serviceSpans) {
-      calls.add(insertServiceSpanName.create(serviceSpan));
-    }
-    for (InsertTraceByServiceSpan.Input serviceSpan : traceByServiceSpans) {
-      calls.add(insertTraceByServiceSpan.create(serviceSpan));
+    if (searchEnabled) {
+      for (InsertServiceSpan.Input serviceSpan : serviceSpans) {
+        calls.add(insertServiceSpanName.create(serviceSpan));
+      }
+      for (InsertTraceByServiceSpan.Input serviceSpan : traceByServiceSpans) {
+        calls.add(insertTraceByServiceSpan.create(serviceSpan));
+      }
     }
     return new StoreSpansCall(calls);
   }

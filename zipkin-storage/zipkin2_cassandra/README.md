@@ -64,8 +64,8 @@ See [CassandraStorage](src/main/java/zipkin2/storage/cassandra/CassandraStorage.
 
 ### Trace indexing
 Indexing in CQL is simplified by SASI, for example, reducing the number
-of tables from 7 down to 4. SASI also moves some write-amplification from
-CassandraSpanConsumer into C*.
+of tables from 7 down to 4 (from the original cassandra schema). SASI
+also moves some write-amplification from CassandraSpanConsumer into C*.
 
 CassandraSpanConsumer directly writes to the tables `span`,
 `trace_by_service_span` and `span_by_service`. The latter two
@@ -117,6 +117,14 @@ discrete values, due to fewer distinct writes.
 You might wonder how the last two queries work, considering they don't know
 the service name associated with index rows. When needed, this implementation
 performs a service name fetch, resulting in a fan-out composition over row 2.
+
+#### Disabling indexing
+Indexing is a good default, but some sites who don't use Zipkin UI's
+"Find a Trace" screen may want to disable indexing. This means [indexing schema](src/main/resources/zipkin2-schema-indexes.cql)
+won't be setup, nor written at runtime. This increases write throughput
+and reduces size on disk by not amplifying writes with index data.
+
+[Disabling search](../../README.md#disabling-search) disables indexing.
 
 ### Time-To_live
 Time-To-Live is default now at the table level. It can not be overridden in write requests.

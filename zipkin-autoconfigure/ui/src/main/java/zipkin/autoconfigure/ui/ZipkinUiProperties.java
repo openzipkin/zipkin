@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,6 +24,7 @@ public class ZipkinUiProperties {
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
   private String logsUrl = null;
+  private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
 
   public int getDefaultLookback() {
@@ -66,6 +67,14 @@ public class ZipkinUiProperties {
     if (!StringUtils.isEmpty(logsUrl)) {
       this.logsUrl = logsUrl;
     }
+  }
+
+  public boolean isSearchEnabled() {
+    return searchEnabled;
+  }
+
+  public void setSearchEnabled(boolean searchEnabled) {
+    this.searchEnabled = searchEnabled;
   }
 
   public Dependency getDependency() {
