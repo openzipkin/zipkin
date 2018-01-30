@@ -82,9 +82,11 @@ If you use zipkin, it's very likely that you have distributed logging sytem also
 
 One convenient way to switch from a trace to its logs is to get a button which directly links a trace to its logs.
 
-This feature can be activated by setting the property zipkin.ui.logs-url or its corresponding environment variable:
+This feature can be activated by setting the property `zipkin.ui.logs-url` or its corresponding environment variable:
 
-`ZIPKIN_UI_LOGS_URL=http://kibana.company.com/query={traceId}`
+* Kibana 3: `ZIPKIN_UI_LOGS_URL=http://kibana.company.com/query={traceId}`
+* Kibana 4 or newer: `ZIPKIN_UI_LOGS_URL=http://kibana.company.com/app/kibana#/discover?_a=(index:'filebeat-*',query:(language:lucene,query:'{traceId}'))`
+  This assumes that the log data is stored under the `filebeat-*` index pattern (replace this with the correct pattern if needed) and it uses the default timerange of 15 minutes (change it to 24 hours by adding `&_g=(refreshInterval:(display:Off,pause:!f,value:0),time:(from:now-24h,mode:quick,to:now))` to the URL for example).
 
 where `{traceId}` will be contextually replaced by the trace id.
 
