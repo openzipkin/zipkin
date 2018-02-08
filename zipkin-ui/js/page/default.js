@@ -16,6 +16,7 @@ import TracesUI from '../component_ui/traces';
 import TimeStampUI from '../component_ui/timeStamp';
 import BackToTop from '../component_ui/backToTop';
 import {defaultTemplate} from '../templates';
+import {searchDisabled} from '../templates';
 import {contextRoot} from '../publicPath';
 import {i18nInit} from '../component_ui/i18n';
 
@@ -40,6 +41,11 @@ const DefaultPageComponent = component(function DefaultPage() {
 
   this.after('initialize', function() {
     window.document.title = 'Zipkin - Index';
+    if (!this.attr.config('searchEnabled')) {
+      this.$node.html(searchDisabled());
+      return;
+    }
+
     this.trigger(document, 'navigate', {route: 'zipkin/index'});
 
     const query = queryString.parse(window.location.search);
