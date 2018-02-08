@@ -271,8 +271,7 @@ final class MySQLSpanStore implements SpanStore {
           .selectDistinct(ZIPKIN_SPANS.NAME)
           .from(ZIPKIN_SPANS)
           .join(ZIPKIN_ANNOTATIONS)
-          .on(ZIPKIN_SPANS.TRACE_ID.eq(ZIPKIN_ANNOTATIONS.TRACE_ID))
-          .and(ZIPKIN_SPANS.ID.eq(ZIPKIN_ANNOTATIONS.SPAN_ID))
+          .on(schema.joinCondition(ZIPKIN_ANNOTATIONS))
           .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(serviceName))
           .orderBy(ZIPKIN_SPANS.NAME)
           .fetch(ZIPKIN_SPANS.NAME);
