@@ -58,8 +58,8 @@ final class InfluxDBSpanStore implements SpanStore {
       Map.Entry<String, String> next = i.next();
       String k = next.getKey();
       String v = next.getValue();
-      if (v.isEmpty()) {
-        result.append(String.format("\"annotation_key\" = '%s'", k));
+      if (k.isEmpty()) {
+        result.append(String.format("\"annotation\" = '%s'", k));
       } else {
         result.append(
           String.format("(\"annotation_key\" = '%s' AND \"annotation_value\" = '%s')", k, v));
@@ -268,7 +268,7 @@ final class InfluxDBSpanStore implements SpanStore {
     String q =
       String.format("SHOW TAG VALUES FROM \"%s\".\"%s\" with key=\"name\" WHERE \"service_name\" = '%s'",
       this.storage.retentionPolicy(),
-      this.storage.measurement(), serviceName);
+      this.storage.measurement(), serviceName.toLowerCase());
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query);
     if (response.hasError()){
@@ -309,6 +309,9 @@ final class InfluxDBSpanStore implements SpanStore {
       for (QueryResult.Result result : response.getResults()) {
         if (result == null) {
           continue;
+        }
+        if (result.hasError()){
+          throw new RuntimeException(result.getError());
         }
         for (QueryResult.Series series : result.getSeries()) {
           if (series == null) {

@@ -45,6 +45,9 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
       .build();
 
     for (Span span : spans) {
+      if (span.timestamp() == null) {
+        continue;
+      }
       batch.point(spanPoint(span).build());
 
       // add points for tags first, as they inherit the span's timestamp
@@ -75,7 +78,7 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
     // a single query to retrieve all dependencies.
     point.tag("parent_id", span.parentId() == null ? span.id() : span.parentId());
     String serviceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
-    if (serviceName != null) point.tag("service_name", serviceName);
+    if (serviceName != "unknown") point.tag("service_name", serviceName);
     if (span.timestamp() != null) point.time(span.timestamp(), TimeUnit.MICROSECONDS);
 
     // one field is mandatory, so initialize to zero if there's no duration

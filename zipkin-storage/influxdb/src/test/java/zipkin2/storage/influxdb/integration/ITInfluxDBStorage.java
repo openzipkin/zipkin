@@ -49,7 +49,6 @@ public class ITInfluxDBStorage {
     }
   }
 
-  @Ignore("Ignored as we know all tests will fail")
   public static class DependenciesTest extends InfluxDBDependenciesTest {
     @ClassRule public static InfluxDBStorageRule influxdb = classRule();
     @Rule public TestName testName = new TestName();
