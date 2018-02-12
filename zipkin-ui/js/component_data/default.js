@@ -4,8 +4,8 @@ import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
 
-export function convertToApiQuery(windowLocationSearch) {
-  const query = queryString.parse(windowLocationSearch);
+export function convertToApiQuery(source) {
+  const query = source;
   // zipkin's api looks back from endTs
   if (query.lookback !== 'custom') {
     delete query.startTs;
@@ -36,7 +36,7 @@ export default component(function DefaultData() {
       this.trigger('defaultPageModelView', {traces: []});
       return;
     }
-    const apiQuery = convertToApiQuery(window.location.search);
+    const apiQuery = convertToApiQuery(query);
     const apiURL = `api/v1/traces?${queryString.stringify(apiQuery)}`;
     $.ajax(apiURL, {
       type: 'GET',
