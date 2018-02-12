@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,7 +15,6 @@ package zipkin.storage.mysql;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 import org.jooq.Record;
 import org.jooq.TableField;
 import zipkin.BinaryAnnotation.Type;
@@ -63,9 +62,7 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
     }
 
     @Override public Iterator<Span> next() {
-      if(!hasNext()) {
-        throw new NoSuchElementException();
-      }
+      if (!hasNext()) throw new NoSuchElementException();
       currentTraceIdHi = hasTraceIdHigh ? traceIdHigh(delegate) : null;
       currentTraceIdLo = delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.TRACE_ID);
       return new DependencyLinkV2SpanIterator(delegate, currentTraceIdHi, currentTraceIdLo);
@@ -97,9 +94,7 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
 
   @Override
   public Span next() {
-    if(!hasNext()) {
-      throw new NoSuchElementException();
-    }
+    if (!hasNext()) throw new NoSuchElementException();
     Record row = delegate.peek();
 
     long spanId = row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID);
