@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.logging.Logger;
 
@@ -96,6 +97,9 @@ public final class Node<V> {
 
     @Override
     public Node<V> next() {
+      if(!hasNext()) {
+        throw new NoSuchElementException();
+      }
       Node<V> result = queue.remove();
       queue.addAll(result.children);
       return result;
