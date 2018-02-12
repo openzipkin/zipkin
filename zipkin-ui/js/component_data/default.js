@@ -31,14 +31,19 @@ export function convertToApiQuery(windowLocationSearch) {
 
 export default component(function DefaultData() {
   this.after('initialize', function() {
-    const query = convertToApiQuery(window.location.search);
-    const apiURL = `api/v1/traces?${queryString.stringify(query)}`;
+    const query = queryString.parse(window.location.search);
+    if (!query.serviceName) {
+      this.trigger('defaultPageModelView', {traces: []});
+      return;
+    }
+    const apiQuery = convertToApiQuery(window.location.search);
+    const apiURL = `api/v1/traces?${queryString.stringify(apiQuery)}`;
     $.ajax(apiURL, {
       type: 'GET',
       dataType: 'json'
     }).done(traces => {
       const modelview = {
-        traces: traceSummariesToMustache(query.serviceName, traces.map(traceSummary)),
+        traces: traceSummariesToMustache(apiQuery.serviceName, traces.map(traceSummary)),
         apiURL,
         rawResponse: traces
       };
