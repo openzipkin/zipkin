@@ -43,7 +43,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfiguration {
   @Conditional(HttpLoggingSet.class)
   Interceptor loggingInterceptor(ZipkinElasticsearchHttpStorageProperties es) {
     Logger logger = Logger.getLogger(ElasticsearchHttpStorage.class.getName());
-    return new HttpLoggingInterceptor(message -> logger.info(message))
+    return new HttpLoggingInterceptor(logger::info)
       .setLevel(es.getHttpLogging());
   }
 
