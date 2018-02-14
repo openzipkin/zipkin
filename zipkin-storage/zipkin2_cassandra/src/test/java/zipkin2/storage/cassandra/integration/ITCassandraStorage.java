@@ -34,7 +34,7 @@ import static zipkin2.storage.cassandra.InternalForTests.keyspace;
 public class ITCassandraStorage {
 
   static CassandraStorageRule classRule() {
-    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.4.1", "test_cassandra3");
+    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.4.6", "test_cassandra3");
   }
 
   public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {

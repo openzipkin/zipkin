@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,7 +27,7 @@ public class ITElasticsearchHttpStorageV6 {
 
   @ClassRule
   public static LazyElasticsearchHttpStorage storage =
-    new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch6:2.4.1");
+    new LazyElasticsearchHttpStorage("openzipkin/zipkin-elasticsearch6:2.4.6");
 
   public static class DependenciesTest extends ElasticsearchHttpDependenciesTest {
     @Override protected ElasticsearchHttpStorage esStorage() {

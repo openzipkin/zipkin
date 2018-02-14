@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,7 +33,7 @@ public class ITCassandraStorage {
 
   @ClassRule
   public static LazyCassandraStorage storage =
-    new LazyCassandraStorage("openzipkin/zipkin-cassandra:2.4.1", "test_zipkin");
+    new LazyCassandraStorage("openzipkin/zipkin-cassandra:2.4.6", "test_zipkin");
 
   public static class DependenciesTest extends CassandraDependenciesTest {
     @Override protected CassandraStorage storage() {

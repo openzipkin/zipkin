@@ -30,7 +30,7 @@ import static zipkin2.storage.cassandra.InternalForTests.dropKeyspace;
 public class ITCassandraStorageV1 {
 
   static CassandraStorageRule classRule() {
-    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.4.1",
+    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.4.6",
       "test_cassandra3_zipkinv1");
   }
 
