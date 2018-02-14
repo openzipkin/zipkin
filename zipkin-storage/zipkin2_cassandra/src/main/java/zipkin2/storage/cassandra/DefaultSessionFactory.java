@@ -58,6 +58,7 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
       if (cassandra.ensureSchema()) {
         session = closer.register(cluster.connect());
         Schema.ensureExists(cassandra.keyspace(), cassandra.searchEnabled(), session);
+        Schema.ensureExists(DEFAULT_KEYSPACE + "_udts", false, session);
         session.execute("USE " + cassandra.keyspace());
       } else {
         session = cluster.connect(cassandra.keyspace());
@@ -76,10 +77,9 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
   }
 
   private static void initializeUDTs(Session session) {
-    Schema.ensureExists(DEFAULT_KEYSPACE + "_udts", false, session);
     MappingManager mapping = new MappingManager(session);
 
-    // The UDTs are hardcoded against the zipkin keyspace.
+    // The UDTs are hardcoded against the zipkin2_udts keyspace.
     // If a different keyspace is being used the codecs must be re-applied to this different keyspace
     TypeCodec<EndpointUDT> endpointCodec = mapping.udtCodec(EndpointUDT.class);
     TypeCodec<AnnotationUDT> annoCodec = mapping.udtCodec(AnnotationUDT.class);

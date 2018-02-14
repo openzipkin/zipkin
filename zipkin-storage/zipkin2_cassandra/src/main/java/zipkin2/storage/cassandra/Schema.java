@@ -101,10 +101,10 @@ final class Schema {
   static KeyspaceMetadata ensureExists(String keyspace, boolean searchEnabled, Session session) {
     KeyspaceMetadata result = session.getCluster().getMetadata().getKeyspace(keyspace);
     if (result == null || result.getTable(Schema.TABLE_SPAN) == null) {
-      LOG.info("Installing schema {}", SCHEMA_RESOURCE);
+      LOG.info("Installing schema {} for keyspace {}", SCHEMA_RESOURCE, keyspace);
       applyCqlFile(keyspace, session, SCHEMA_RESOURCE);
       if (searchEnabled) {
-        LOG.info("Installing indexes {}", INDEX_RESOURCE);
+        LOG.info("Installing indexes {} for keyspace {}", INDEX_RESOURCE, keyspace);
         applyCqlFile(keyspace, session, INDEX_RESOURCE);
       }
       // refresh metadata since we've installed the schema
