@@ -65,7 +65,7 @@ public class BraveConfiguration {
     try {
       InetAddress address = Collections.list(NetworkInterface.getNetworkInterfaces()).stream()
           .flatMap(i -> Collections.list(i.getInetAddresses()).stream())
-          .filter(ip -> ip.isSiteLocalAddress())
+          .filter(InetAddress::isSiteLocalAddress)
           .findAny().get();
       builder.parseIp(address);
     } catch (Exception ignored) {
