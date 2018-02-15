@@ -37,9 +37,8 @@
     </dependency>
 
     <dependency>
-      <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-core</artifactId>
-      <version>${brave.version}</version>
+      <groupId>io.zipkin.brave.cassandra</groupId>
+      <artifactId>brave-instrumentation-cassandra-driver</artifactId>
       <optional>true</optional>
     </dependency>
   </dependencies>

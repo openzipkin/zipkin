@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,7 +29,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
  * alpine JRE. The solution is to go with pure properties instead.
  *
  * <pre>
- * <p>ConditionalOnClass(name = "com.github.kristofa.brave.Brave")
+ * <p>ConditionalOnClass(name = "brave.Tracing")
  * <p>ConditionalOnBean(Brave.class)
  * </pre>
  */
@@ -44,7 +44,7 @@ public @interface ConditionalOnSelfTracing {
 
     static boolean checkForBrave() {
       try {
-        Class.forName("com.github.kristofa.brave.Brave");
+        Class.forName("brave.Tracing");
         return true;
       } catch (ClassNotFoundException e) {
         return false;

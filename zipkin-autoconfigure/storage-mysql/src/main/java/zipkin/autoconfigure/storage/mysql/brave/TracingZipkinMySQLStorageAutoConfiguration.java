@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,13 +13,12 @@
  */
 package zipkin.autoconfigure.storage.mysql.brave;
 
-import com.github.kristofa.brave.Brave;
-import com.github.kristofa.brave.ServerSpan;
-import com.github.kristofa.brave.ServerSpanState;
-import com.twitter.zipkin.gen.Endpoint;
+import brave.Span;
+import brave.Tracer;
+import brave.Tracing;
+import brave.propagation.CurrentTraceContext;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 import java.util.concurrent.Executor;
 import org.jooq.ExecuteContext;
 import org.jooq.ExecuteListenerProvider;
@@ -35,15 +34,17 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import zipkin.Endpoint;
 import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageProperties;
 
+import static brave.Span.Kind.CLIENT;
 import static zipkin.TraceKeys.SQL_QUERY;
 
 /** Sets up the MySQL tracing in Brave as an initialization. */
-@ConditionalOnBean(Brave.class)
+@ConditionalOnBean(Tracing.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
 @Configuration
-public class TraceZipkinMySQLStorageAutoConfiguration extends DefaultExecuteListener {
+public class TracingZipkinMySQLStorageAutoConfiguration extends DefaultExecuteListener {
 
   @Autowired
   ZipkinMySQLStorageProperties mysql;
@@ -53,59 +54,53 @@ public class TraceZipkinMySQLStorageAutoConfiguration extends DefaultExecuteList
   }
 
   @Bean @ConditionalOnMissingBean(Executor.class)
-  public Executor executor(ServerSpanState serverState) {
+  public Executor executor(CurrentTraceContext currentTraceContext) {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
     executor.setThreadNamePrefix("MySQLStorage-");
     executor.initialize();
-    return command -> {
-      ServerSpan currentSpan = serverState.getCurrentServerSpan();
-      executor.execute(() -> {
-        serverState.setCurrentServerSpan(currentSpan);
-        command.run();
-      });
-    };
+    return currentTraceContext.executor(executor);
   }
 
   /** Attach the IP of the remote datasource, knowing that DNS may invalidate this */
   @Bean
   @Qualifier("mysql") Endpoint mysql() throws UnknownHostException {
-    int ipv4 = ByteBuffer.wrap(InetAddress.getByName(mysql.getHost()).getAddress()).getInt();
-    return Endpoint.builder().serviceName("mysql").ipv4(ipv4).port(mysql.getPort()).build();
+    Endpoint.Builder builder = Endpoint.builder().serviceName("mysql");
+    builder.parseIp(InetAddress.getByName(mysql.getHost()));
+    return builder.port(mysql.getPort()).build();
   }
 
   @Autowired
   @Lazy // to unwind a circular dep: we are tracing the storage used by brave
-  Brave brave;
+  Tracing tracing;
   @Autowired
   @Qualifier("mysql")
   Endpoint mysqlEndpoint;
 
   @Override
   public void renderEnd(ExecuteContext ctx) {
+    Tracer tracer = tracing.tracer();
     // Only join traces, don't start them. This prevents LocalCollector's thread from amplifying.
-    if (brave.serverSpanThreadBinder().getCurrentServerSpan() == null ||
-        brave.serverSpanThreadBinder().getCurrentServerSpan().getSpan() == null) {
-      return;
-    }
-
-    brave.clientTracer().startNewSpan(ctx.type().toString().toLowerCase());
-    String[] batchSQL = ctx.batchSQL();
-    if (!StringUtils.isBlank(ctx.sql())) {
-      brave.clientTracer().submitBinaryAnnotation(SQL_QUERY, ctx.sql());
-    } else if (batchSQL.length > 0 && batchSQL[batchSQL.length - 1] != null) {
-      brave.clientTracer().submitBinaryAnnotation(SQL_QUERY, StringUtils.join(batchSQL, '\n'));
-    }
-    brave.clientTracer()
-        .setClientSent(mysqlEndpoint);
+    if (tracer.currentSpan() == null) return;
+    Span span = tracer.nextSpan().name(ctx.type().toString()).kind(CLIENT);
+    if (!StringUtils.isBlank(ctx.sql())) span.tag(SQL_QUERY, ctx.sql());
+    // Don't tag ctx.batchSQL() because it can make huge tags!
+    span.remoteEndpoint(mysqlEndpoint);
+    currentSpanInScope.set(tracer.withSpanInScope(span.start()));
   }
+
+  /**
+   * There's no attribute namespace shared across request and response. Hence, we need to save off
+   * a reference to the span in scope, so that we can close it in the response.
+   */
+  final ThreadLocal<Tracer.SpanInScope> currentSpanInScope = new ThreadLocal<>();
 
   @Override
   public void executeEnd(ExecuteContext ctx) {
-    if (brave.serverSpanThreadBinder().getCurrentServerSpan() == null ||
-        brave.serverSpanThreadBinder().getCurrentServerSpan().getSpan() == null) {
-      return;
-    }
-    brave.clientTracer().setClientReceived();
+    Tracer.SpanInScope spanInScope = currentSpanInScope.get();
+    if (spanInScope == null) return;
+    Span span = tracing.tracer().currentSpan();
+    spanInScope.close();
+    span.finish();
   }
 }
 

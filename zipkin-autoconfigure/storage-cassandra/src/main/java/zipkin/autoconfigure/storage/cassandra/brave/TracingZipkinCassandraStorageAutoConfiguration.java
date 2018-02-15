@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,10 @@
  */
 package zipkin.autoconfigure.storage.cassandra.brave;
 
-import com.github.kristofa.brave.Brave;
+import brave.Tracing;
+import brave.cassandra.driver.CassandraClientSampler;
+import brave.cassandra.driver.CassandraClientTracing;
+import brave.cassandra.driver.TracingSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,16 +26,19 @@ import org.springframework.context.annotation.Lazy;
 import zipkin.storage.cassandra.SessionFactory;
 
 /** Sets up the Cassandra tracing in Brave as an initialization. */
-@ConditionalOnBean(Brave.class)
+@ConditionalOnBean(Tracing.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra")
 @Configuration
-public class TraceZipkinCassandraStorageAutoConfiguration {
+public class TracingZipkinCassandraStorageAutoConfiguration {
   final SessionFactory delegate = new SessionFactory.Default();
 
   // Lazy to unwind a circular dep: we are tracing the storage used by brave
-  @Autowired @Lazy Brave brave;
+  @Autowired @Lazy Tracing tracing;
 
   @Bean SessionFactory tracingSessionFactory() {
-    return storage -> TracedSession.create(delegate.create(storage), brave);
+    CassandraClientTracing cassandraClientTracing = CassandraClientTracing.newBuilder(tracing)
+      .sampler(CassandraClientSampler.NEVER_SAMPLE) // don't start new traces
+      .build();
+    return storage -> TracingSession.create(cassandraClientTracing, delegate.create(storage));
   }
 }
