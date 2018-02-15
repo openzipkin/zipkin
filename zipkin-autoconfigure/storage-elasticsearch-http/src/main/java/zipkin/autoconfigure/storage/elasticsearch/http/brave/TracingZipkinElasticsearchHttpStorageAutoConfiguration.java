@@ -18,6 +18,7 @@ import brave.Tracing;
 import brave.http.HttpTracing;
 import brave.okhttp3.TracingCallFactory;
 import brave.okhttp3.TracingInterceptor;
+import brave.propagation.CurrentTraceContext;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import okhttp3.Dispatcher;
@@ -51,12 +52,15 @@ public class TracingZipkinElasticsearchHttpStorageAutoConfiguration {
     ExecutorService tracingExecutor = httpTracing.tracing().currentTraceContext().executorService(
         new Dispatcher().executorService()
     );
-
+    Tracer tracer = httpTracing.tracing().tracer();
+    CurrentTraceContext currentTraceContext = httpTracing.tracing().currentTraceContext();
     OkHttpClient.Builder builder = new OkHttpClient.Builder();
     builder.addInterceptor(new Interceptor() {
       /** create a local span with the same name as the request tag */
       @Override public Response intercept(Chain chain) throws IOException {
-        Tracer tracer = httpTracing.tracing().tracer();
+        // don't start new traces (to prevent amplifying writes to local storage)
+        if (currentTraceContext.get() == null) return chain.proceed(chain.request());
+
         Request request = chain.request();
         brave.Span span = tracer.nextSpan().name(request.tag().toString());
         try (Tracer.SpanInScope ws = tracer.withSpanInScope(span.start())) {
