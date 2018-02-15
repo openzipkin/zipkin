@@ -33,6 +33,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.storage.cassandra.Schema.AnnotationUDT;
 import zipkin2.storage.cassandra.Schema.EndpointUDT;
 import zipkin2.storage.cassandra.Schema.TypeCodecImpl;
@@ -44,6 +46,7 @@ import static zipkin2.storage.cassandra.Schema.DEFAULT_KEYSPACE;
  * exception occurred.
  */
 final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
+  private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
 
   /**
    * Creates a session and ensures schema if configured. Closes the cluster and session if any
@@ -55,13 +58,15 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
       Cluster cluster = closer.register(buildCluster(cassandra));
       cluster.register(new QueryLogger.Builder().build());
       Session session;
+      String keyspace = cassandra.keyspace();
       if (cassandra.ensureSchema()) {
         session = closer.register(cluster.connect());
-        Schema.ensureExists(cassandra.keyspace(), cassandra.searchEnabled(), session);
+        Schema.ensureExists(keyspace, cassandra.searchEnabled(), session);
         Schema.ensureExists(DEFAULT_KEYSPACE + "_udts", false, session);
-        session.execute("USE " + cassandra.keyspace());
+        session.execute("USE " + keyspace);
       } else {
-        session = cluster.connect(cassandra.keyspace());
+        LOG.debug("Skipping schema check on keyspace {} as ensureSchema was false", keyspace);
+        session = cluster.connect(keyspace);
       }
 
       initializeUDTs(session);
@@ -87,6 +92,7 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
     KeyspaceMetadata keyspace =
         session.getCluster().getMetadata().getKeyspace(session.getLoggedKeyspace());
 
+    LOG.debug("Registering endpoint and annotation UDTs to keyspace {}", keyspace.getName());
     session.getCluster().getConfiguration().getCodecRegistry()
       .register(
         new TypeCodecImpl<>(keyspace.getUserType("endpoint"), EndpointUDT.class, endpointCodec))
