@@ -13,7 +13,7 @@
  */
 package zipkin.server;
 
-import com.github.kristofa.brave.Brave;
+import brave.Tracing;
 import io.prometheus.client.Histogram;
 import org.junit.After;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Import;
 import zipkin.autoconfigure.prometheus.ZipkinPrometheusMetricsAutoConfiguration;
 import zipkin.autoconfigure.ui.ZipkinUiAutoConfiguration;
 import zipkin.internal.V2StorageComponent;
-import zipkin.server.brave.BraveConfiguration;
+import zipkin.server.brave.TracingConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -188,11 +188,11 @@ public class ZipkinServerConfigurationTest {
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
-      BraveConfiguration.class
+      TracingConfiguration.class
     );
     context.refresh();
 
-    assertThat(context.getBean(Brave.class)).isNotNull();
+    context.getBean(Tracing.class).close();
   }
 
   @Test public void search_canDisable() {

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,30 +13,26 @@
  */
 package zipkin.server.brave;
 
-import com.github.kristofa.brave.Brave;
+import brave.Tracing;
 import java.io.IOException;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;
 
-/**
- * Storage component that traces each method invocation with Zipkin.
- *
- * <p>Note: this inherits the {@link StorageComponent.Builder#strictTraceId(boolean)} from the
- * delegate.
- */
-public final class TracedStorageComponent implements StorageComponent {
-  private final Brave brave;
+// public for use in ZipkinServerConfiguration
+// not making spans for async storage to avoid complexity around V2StorageComponent
+public final class TracingStorageComponent implements StorageComponent {
+  private final Tracing tracing;
   private final StorageComponent delegate;
 
-  public TracedStorageComponent(Brave brave, StorageComponent delegate) {
-    this.brave = brave;
+  public TracingStorageComponent(Tracing tracing, StorageComponent delegate) {
+    this.tracing = tracing;
     this.delegate = delegate;
   }
 
   @Override public SpanStore spanStore() {
-    return new TracedSpanStore(brave.localTracer(), delegate);
+    return new TracingSpanStore(tracing, delegate);
   }
 
   @Override public AsyncSpanStore asyncSpanStore() {
@@ -45,7 +41,7 @@ public final class TracedStorageComponent implements StorageComponent {
 
   @Override
   public AsyncSpanConsumer asyncSpanConsumer() {
-    return new TracedAsyncSpanConsumer(brave, delegate.asyncSpanConsumer());
+    return delegate.asyncSpanConsumer();
   }
 
   @Override public CheckResult check() {

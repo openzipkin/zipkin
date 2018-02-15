@@ -47,7 +47,7 @@
 
     <dependency>
       <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-okhttp</artifactId>
+      <artifactId>brave-instrumentation-okhttp3</artifactId>
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>

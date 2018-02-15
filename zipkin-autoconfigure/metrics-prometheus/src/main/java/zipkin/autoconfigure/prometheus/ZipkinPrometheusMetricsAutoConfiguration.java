@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import io.prometheus.client.spring.web.EnablePrometheusTiming;
 import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -46,7 +47,8 @@ public class ZipkinPrometheusMetricsAutoConfiguration {
     return http_request_duration_seconds;
   }
 
-  @Bean UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer() {
+  @Bean @Qualifier("httpRequestDurationCustomizer")
+  UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer() {
     HttpRequestDurationHandler.Wrapper result =
       new HttpRequestDurationHandler.Wrapper(http_request_duration_seconds);
     return info -> info.addInitialHandlerChainWrapper(result);

@@ -13,9 +13,10 @@
  */
 package zipkin.server;
 
-import com.github.kristofa.brave.Brave;
+import brave.Tracing;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
@@ -33,7 +34,8 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2StorageComponent;
-import zipkin.server.brave.TracedStorageComponent;
+import zipkin.server.brave.TracingStorageComponent;
+import zipkin.server.brave.TracingV2StorageComponent;
 import zipkin.storage.StorageComponent;
 import zipkin2.storage.InMemoryStorage;
 
@@ -45,7 +47,9 @@ public class ZipkinServerConfiguration {
     return new ZipkinHealthIndicator(healthAggregator);
   }
 
-  @Autowired(required = false)
+  @Autowired(required = false) @Qualifier("httpTracingCustomizer")
+  UndertowDeploymentInfoCustomizer httpTracingCustomizer;
+  @Autowired(required = false) @Qualifier("httpRequestDurationCustomizer")
   UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer;
   @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
@@ -63,6 +67,9 @@ public class ZipkinServerConfiguration {
     factory.addDeploymentInfoCustomizers(
       info -> info.addInitialHandlerChainWrapper(cors)
     );
+    if (httpTracingCustomizer != null) {
+      factory.addDeploymentInfoCustomizers(httpTracingCustomizer);
+    }
     if (httpRequestDurationCustomizer != null) {
       factory.addDeploymentInfoCustomizers(httpRequestDurationCustomizer);
     }
@@ -90,10 +97,10 @@ public class ZipkinServerConfiguration {
 
   @Configuration
   @ConditionalOnSelfTracing
-  static class BraveTracedStorageComponentEnhancer implements BeanPostProcessor {
+  static class TracingStorageComponentEnhancer implements BeanPostProcessor {
 
     @Autowired(required = false)
-    Brave brave;
+    Tracing tracing;
 
     @Override
     public Object postProcessBeforeInitialization(Object bean, String beanName) {
@@ -102,9 +109,11 @@ public class ZipkinServerConfiguration {
 
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof StorageComponent && brave != null &&
-        !(bean instanceof V2StorageComponent) /* TODO */) {
-        return new TracedStorageComponent(brave, (StorageComponent) bean);
+      if (tracing == null) return bean;
+      if (bean instanceof V2StorageComponent) {
+        return new TracingV2StorageComponent(tracing, (V2StorageComponent) bean);
+      } else if (bean instanceof StorageComponent) {
+        return new TracingStorageComponent(tracing, (StorageComponent) bean);
       }
       return bean;
     }

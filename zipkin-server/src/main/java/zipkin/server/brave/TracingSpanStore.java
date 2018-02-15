@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,8 @@
  */
 package zipkin.server.brave;
 
-import com.github.kristofa.brave.LocalTracer;
+import brave.Tracer;
+import brave.Tracing;
 import java.util.List;
 import zipkin.DependencyLink;
 import zipkin.Span;
@@ -22,26 +23,23 @@ import zipkin.storage.QueryRequest;
 import zipkin.storage.SpanStore;
 import zipkin.storage.StorageComponent;
 
-final class TracedSpanStore implements SpanStore {
-  private final LocalTracer tracer;
+final class TracingSpanStore implements SpanStore {
+  private final Tracer tracer;
   private final SpanStore delegate;
-  private final String component;
 
-  TracedSpanStore(LocalTracer tracer, StorageComponent component) {
-    this.tracer = tracer;
+  TracingSpanStore(Tracing tracing, StorageComponent component) {
+    this.tracer = tracing.tracer();
     this.delegate = component.spanStore();
-    this.component = component.getClass().getSimpleName();
   }
 
   @Override
   public List<List<Span>> getTraces(QueryRequest request) {
-    if (tracer.startNewSpan(component, "get-traces") != null) {
-      tracer.submitBinaryAnnotation("request", request.toString());
-    }
-    try {
+    brave.Span span = tracer.nextSpan().name("get-traces").tag("request", request.toString());
+
+    try (Tracer.SpanInScope ws = tracer.withSpanInScope(span.start())) {
       return delegate.getTraces(request);
     } finally {
-      tracer.finishSpan();
+      span.finish();
     }
   }
 
@@ -51,11 +49,12 @@ final class TracedSpanStore implements SpanStore {
   }
 
   @Override public List<Span> getTrace(long traceIdHigh, long traceIdLow) {
-    tracer.startNewSpan(component, "get-trace");
-    try {
+    brave.Span span = tracer.nextSpan().name("get-trace");
+
+    try (Tracer.SpanInScope ws = tracer.withSpanInScope(span.start())) {
       return delegate.getTrace(traceIdHigh, traceIdLow);
     } finally {
-      tracer.finishSpan();
+      span.finish();
     }
   }
 
@@ -65,41 +64,45 @@ final class TracedSpanStore implements SpanStore {
   }
 
   @Override public List<Span> getRawTrace(long traceIdHigh, long traceIdLow) {
-    tracer.startNewSpan(component, "get-raw-trace");
-    try {
+    brave.Span span = tracer.nextSpan().name("get-raw-trace");
+
+    try (Tracer.SpanInScope ws = tracer.withSpanInScope(span.start())) {
       return delegate.getRawTrace(traceIdHigh, traceIdLow);
     } finally {
-      tracer.finishSpan();
+      span.finish();
     }
   }
 
   @Override
   public List<String> getServiceNames() {
-    tracer.startNewSpan(component, "get-service-names");
-    try {
+    brave.Span span = tracer.nextSpan().name("get-service-names");
+
+    try (Tracer.SpanInScope ws = tracer.withSpanInScope(span.start())) {
       return delegate.getServiceNames();
     } finally {
-      tracer.finishSpan();
+      span.finish();
     }
   }
 
   @Override
   public List<String> getSpanNames(String serviceName) {
-    tracer.startNewSpan(component, "get-span-names");
-    try {
+    brave.Span span = tracer.nextSpan().name("get-span-names");
+
+    try (Tracer.SpanInScope ws = tracer.withSpanInScope(span.start())) {
       return delegate.getSpanNames(serviceName);
     } finally {
-      tracer.finishSpan();
+      span.finish();
     }
   }
 
   @Override
   public List<DependencyLink> getDependencies(long endTs, @Nullable Long lookback) {
-    tracer.startNewSpan(component, "get-dependencies");
-    try {
+    brave.Span span = tracer.nextSpan().name("get-dependencies");
+
+    try (Tracer.SpanInScope ws = tracer.withSpanInScope(span.start())) {
       return delegate.getDependencies(endTs, lookback);
     } finally {
-      tracer.finishSpan();
+      span.finish();
     }
   }
 }

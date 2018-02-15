@@ -40,5 +40,10 @@
       <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin-storage-cassandra</artifactId>
     </dependency>
+    <dependency>
+      <groupId>io.zipkin.brave</groupId>
+      <artifactId>brave</artifactId>
+      <optional>true</optional>
+    </dependency>
   </dependencies>
 </project>
