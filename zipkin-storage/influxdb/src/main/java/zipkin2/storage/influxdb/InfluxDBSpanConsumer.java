@@ -13,6 +13,7 @@
  */
 package zipkin2.storage.influxdb;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -77,8 +78,12 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
     // When it is a root parent we set the parent_id to id to allow
     // a single query to retrieve all dependencies.
     point.tag("parent_id", span.parentId() == null ? span.id() : span.parentId());
-    String serviceName = serviceName(span); // TODO: this is invalid, to conflate local and remote
-    if (serviceName != "unknown") point.tag("service_name", serviceName);
+    if (span.localServiceName() != null) {
+      point.tag("local_service_name", span.localServiceName());
+    }
+    if (span.remoteServiceName() != null) {
+      point.tag("remote_service_name", span.remoteServiceName());
+    }
     if (span.timestamp() != null) point.time(span.timestamp(), TimeUnit.MICROSECONDS);
 
     // one field is mandatory, so initialize to zero if there's no duration
@@ -88,39 +93,38 @@ final class InfluxDBSpanConsumer implements SpanConsumer {
 
   private Point.Builder taggedPoint(String key, String value, Span span) {
     // tagged points inherit the span's timestamp
-    return spanPoint(span)
+    Point.Builder point = spanPoint(span)
       .tag("annotation_key", key)
-      .tag("annotation", value)
-      .tag("endpoint_host", host(span));
+      .tag("annotation", value);
+
+    point = parseEndpoint("local_", span.localEndpoint(), point);
+    point = parseEndpoint("remote_", span.remoteEndpoint(), point);
+    return point;
   }
 
   private Point.Builder annotatedPoint(String value, long timestamp, Span span) {
-    return spanPoint(span)
-      .tag("endpoint_host", host(span))
+    Point.Builder point = spanPoint(span)
       .tag("annotation", value)
       .time(timestamp, TimeUnit.MICROSECONDS); // Use the annotation's timestamp rather than the span's timestamp
+
+    point = parseEndpoint("local_", span.localEndpoint(), point);
+    point = parseEndpoint("remote_", span.remoteEndpoint(), point);
+
+    return point;
   }
 
-  private String serviceName(Span span) {
-    String srv = "unknown";
-    if (span.remoteServiceName() != null) {
-      srv = span.remoteServiceName();
-    } else if (span.localServiceName() != null) {
-      srv = span.localServiceName();
+  private Point.Builder parseEndpoint(String suffix, Endpoint endpoint, Point.Builder point) {
+    if (endpoint != null) {
+      point.addField(suffix+"endpoint_name", endpoint.serviceName())
+        .addField(suffix+"endpoint_host_port", endpoint.port());
+
+      if (endpoint != null) {
+        point.addField(suffix+"endpoint_host_ipv4", endpoint.ipv4());
+      }
+      if (endpoint.ipv6() != null) {
+        point.addField(suffix+"endpoint_host_ipv6", endpoint.ipv6());
+      }
     }
-    return srv;
-  }
-
-  private String host(Span span) {
-    String addr = "0.0.0.0";
-    // TODO: this is dangerous to conflate local and remote. add rationale or change
-    Endpoint ep = span.localEndpoint() != null ? span.localEndpoint() : span.remoteEndpoint();
-
-    if (ep == null) {
-      return addr;
-    }
-
-    addr = ep.ipv4() == null ? ep.ipv6() == null ? addr : ep.ipv6() : ep.ipv4();
-    return ep.port() == null ? addr : String.format("%s:%d", addr, ep.port());
+    return point;
   }
 }

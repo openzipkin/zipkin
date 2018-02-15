@@ -42,12 +42,12 @@ final class InfluxDBSpanStore implements SpanStore {
       request.endTs(),
       request.endTs() - request.lookback());
 
-    if (request.serviceName() != null && !request.serviceName().isEmpty()) {
-        q = String.format("%s AND \"service_name\" = '%s'", q, request.serviceName());
-    }
-
     if (request.spanName() != null && !request.spanName().isEmpty()) {
         q = String.format("%s AND \"name\" = '%s'", q, request.spanName());
+    }
+
+    if (request.serviceName() != null && !request.serviceName().isEmpty()) {
+      q = String.format("%s AND ( \"local_service_name\" = '%s' OR \"remote_service_name\" = '%s' )", q, request.serviceName(), request.serviceName());
     }
 
     StringBuilder result = new StringBuilder();
@@ -136,8 +136,18 @@ final class InfluxDBSpanStore implements SpanStore {
       String anno = "";
       Long time = -1L;
       String annoKey = "";
-      String endPoint = "";
-      String serviceName = "";
+
+      String localEndpoint = "";
+      String localEndpointPort = "";
+      String localEndpointIpv4 = "";
+      String localEndpointIpv6 = "";
+      String localServiceName = "";
+
+      String remoteEndpoint = "";
+      String remoteServiceName = "";
+      String remoteEndpointIpv4 = "";
+      String remoteEndpointIpv6 = "";
+      String remoteEndpointPort = "";
       Object v = null;
 
       for (int i = 0; i < columnSize; i++) {
@@ -156,10 +166,34 @@ final class InfluxDBSpanStore implements SpanStore {
               builder.name(v.toString());
             }
             break;
-          case "service_name":
+          case "local_service_name":
             v = value.get(i);
             if (v != null) {
-              serviceName = v.toString() ;
+              localServiceName = v.toString();
+            }
+            break;
+          case "remote_service_name":
+            v = value.get(i);
+            if (v != null) {
+              remoteServiceName = v.toString() ;
+            }
+            break;
+          case "remote_endpoint_port":
+            v = value.get(i);
+            if (v != null) {
+              remoteEndpointPort = v.toString();
+            }
+            break;
+          case "remote_endpoint_ipv4":
+            v = value.get(i);
+            if (v != null) {
+              remoteEndpointIpv4 = v.toString();
+            }
+            break;
+          case "remote_endpoint_ipv6":
+            v = value.get(i);
+            if (v != null) {
+              remoteEndpointIpv6 = v.toString();
             }
             break;
           case "annotation":
@@ -174,10 +208,22 @@ final class InfluxDBSpanStore implements SpanStore {
               annoKey = v.toString() ;
             }
             break;
-          case "endpoint_host":
+          case "local_endpoint_port":
             v = value.get(i);
             if (v != null) {
-              endPoint = v.toString() ;
+              localEndpointPort = v.toString();
+            }
+            break;
+          case "local_endpoint_ipv4":
+            v = value.get(i);
+            if (v != null) {
+              localEndpointIpv4 = v.toString();
+            }
+            break;
+          case "local_endpoint_ipv6":
+            v = value.get(i);
+            if (v != null) {
+              localEndpointIpv6 = v.toString();
             }
             break;
           case "duration_us":
@@ -189,12 +235,21 @@ final class InfluxDBSpanStore implements SpanStore {
             break;
         }
       }
-      if (!endPoint.isEmpty() && !serviceName.isEmpty()) {
+      if (!remoteEndpoint.isEmpty() && !remoteServiceName.isEmpty()) {
+        builder.remoteEndpoint(
+          Endpoint
+            .newBuilder()
+            .serviceName(remoteServiceName)
+            .ip(String.format("%s:%s", remoteEndpointIpv6, remoteEndpointPort))
+            .build());
+      }
+
+      if (!localEndpoint.isEmpty() && !localServiceName.isEmpty()) {
         builder.localEndpoint(
           Endpoint
             .newBuilder()
-            .ip(endPoint) // TODO: missing port
-            .serviceName(serviceName)
+            .ip(String.format("%s:%s", localEndpointIpv4, localEndpointPort))
+            .serviceName(localServiceName)
             .build());
       }
 
@@ -238,7 +293,7 @@ final class InfluxDBSpanStore implements SpanStore {
 
   @Override public Call<List<String>> getServiceNames() {
     String q =
-      String.format("SHOW TAG VALUES FROM \"%s\".\"%s\" WITH KEY = \"service_name\"",
+      String.format("SHOW TAG VALUES FROM \"%s\".\"%s\" WITH KEY IN (\"local_service_name\",\"remote_service_name\")",
       this.storage.retentionPolicy(),
       this.storage.measurement());
     Query query = new Query(q, this.storage.database());
@@ -266,9 +321,9 @@ final class InfluxDBSpanStore implements SpanStore {
   @Override public Call<List<String>> getSpanNames(String serviceName) {
     if ("".equals(serviceName)) return Call.emptyList();
     String q =
-      String.format("SHOW TAG VALUES FROM \"%s\".\"%s\" with key=\"name\" WHERE \"service_name\" = '%s'",
+      String.format("SHOW TAG VALUES FROM \"%s\".\"%s\" with key=\"name\" WHERE \"remote_service_name\" = '%s' OR \"local_service_name\" = '%s'",
       this.storage.retentionPolicy(),
-      this.storage.measurement(), serviceName.toLowerCase());
+      this.storage.measurement(), serviceName.toLowerCase(), serviceName.toLowerCase());
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query);
     if (response.hasError()){
@@ -297,7 +352,7 @@ final class InfluxDBSpanStore implements SpanStore {
       String.format("SELECT COUNT(\"duration_us\") FROM \"%s\".\"%s\"", this.storage.retentionPolicy(), this.storage.measurement());
     q += String.format(" WHERE time < %dms", endTs);
     q += String.format(" AND time > %dms ", endTs - lookback);
-    q += String.format(" AND annotation='' GROUP BY \"id\",\"parent_id\",\"service_name\",time(%dms) fill(none)", lookback);
+    q += String.format(" AND annotation='' GROUP BY \"id\",\"parent_id\",\"remote_service_name\", \"local_service_name\",time(%dms) fill(none)", lookback);
     Query query = new Query(q, this.storage.database());
     QueryResult response = this.storage.get().query(query);
     if (response.hasError()){
