@@ -220,12 +220,6 @@
       <optional>true</optional>
     </dependency>
     <dependency>
-      <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-instrumentation-spring-webmvc</artifactId>
-      <version>${brave.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>io.zipkin.brave.cassandra</groupId>
       <artifactId>brave-instrumentation-cassandra-driver</artifactId>
       <optional>true</optional>

@@ -15,20 +15,27 @@ package zipkin.server.brave;
 
 import brave.Tracing;
 import java.io.IOException;
-import zipkin.storage.AsyncSpanConsumer;
+import zipkin.internal.V2StorageComponent;
 import zipkin.storage.AsyncSpanStore;
 import zipkin.storage.SpanStore;
-import zipkin.storage.StorageComponent;
 
 // public for use in ZipkinServerConfiguration
 // not making spans for async storage to avoid complexity around V2StorageComponent
-public final class TracingStorageComponent implements StorageComponent {
+public final class TracingV2StorageComponent extends V2StorageComponent {
   private final Tracing tracing;
-  private final StorageComponent delegate;
+  private final V2StorageComponent delegate;
 
-  public TracingStorageComponent(Tracing tracing, StorageComponent delegate) {
+  public TracingV2StorageComponent(Tracing tracing, V2StorageComponent delegate) {
     this.tracing = tracing;
     this.delegate = delegate;
+  }
+
+  @Override protected LegacySpanStoreProvider legacyProvider() {
+    throw new UnsupportedOperationException();
+  }
+
+  @Override public zipkin2.storage.StorageComponent delegate() {
+    return delegate.delegate();
   }
 
   @Override public SpanStore spanStore() {
@@ -37,11 +44,6 @@ public final class TracingStorageComponent implements StorageComponent {
 
   @Override public AsyncSpanStore asyncSpanStore() {
     return delegate.asyncSpanStore();
-  }
-
-  @Override
-  public AsyncSpanConsumer asyncSpanConsumer() {
-    return delegate.asyncSpanConsumer();
   }
 
   @Override public CheckResult check() {

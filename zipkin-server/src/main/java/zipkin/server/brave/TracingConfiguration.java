@@ -46,7 +46,7 @@ import zipkin2.reporter.Sender;
 
 @Configuration
 @ConditionalOnSelfTracing
-@Import(TracingWebMvcConfigurerAdapter.class)
+@Import(TracingHttpHandlerConfiguration.class)
 public class TracingConfiguration {
 
   // Note: there's a chicken or egg problem here. TracingStorageComponent wraps StorageComponent with

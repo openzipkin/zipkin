@@ -16,15 +16,16 @@ package zipkin.server;
 import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.embedded.LocalServerPort;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import zipkin2.Span;
-import zipkin2.reporter.AsyncReporter;
+import zipkin2.storage.InMemoryStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -39,21 +40,62 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {
   @LocalServerPort int zipkinPort;
-  @Autowired AsyncReporter<Span> reporter;
+  @Autowired InMemoryStorage storage;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Test public void queryRelatedEndpoints404() throws Exception {
-    assertThat(get("/api/v2/traces").code()).isEqualTo(200);
+  @Before public void clear() {
+    storage.clear();
+  }
+
+  @Test public void getIsTraced_v1() throws Exception {
+    assertThat(get("v1").body().string())
+      .isEqualTo("[]");
 
     Thread.sleep(1000);
 
-    assertThat(get("/api/v2/services").body().string())
+    assertThat(get("v1").body().string())
       .isEqualTo("[\"zipkin-server\"]");
   }
 
-  private Response get(String path) throws IOException {
+  @Test public void getIsTraced_v2() throws Exception {
+    assertThat(get("v2").body().string())
+      .isEqualTo("[]");
+
+    Thread.sleep(1000);
+
+    assertThat(get("v2").body().string())
+      .isEqualTo("[\"zipkin-server\"]");
+  }
+
+  @Test public void postIsTraced_v1() throws Exception {
+    post("v1");
+
+    Thread.sleep(1000);
+
+    assertThat(get("v1").body().string())
+      .isEqualTo("[\"zipkin-server\"]");
+  }
+
+  @Test public void postIsTraced_v2() throws Exception {
+    post("v2");
+
+    Thread.sleep(1000);
+
+    assertThat(get("v2").body().string())
+      .isEqualTo("[\"zipkin-server\"]");
+  }
+
+  private void post(String version) throws IOException {
+    client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/" + version + "/spans")
+      .header("x-b3-sampled", "1") // we don't trace POST by default
+      .post(RequestBody.create(null, "[" + "]"))
+      .build()).execute();
+  }
+
+  private Response get(String version) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + zipkinPort + path)
+      .url("http://localhost:" + zipkinPort + "/api/" + version + "/services")
       .build()).execute();
   }
 }
