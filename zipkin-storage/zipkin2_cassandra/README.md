@@ -9,8 +9,18 @@ The implementation uses the [Datastax Java Driver 3.1.x](https://github.com/data
 `zipkin2.storage.cassandra.CassandraStorage.Builder` includes defaults that will operate against a local Cassandra installation.
 
 ## Logging
-Queries are logged to the category "com.datastax.driver.core.QueryLogger" when debug or trace is
-enabled via SLF4J. Trace level includes bound values.
+Since the underlying driver uses SLF4J, Zipkin's storage layer also uses
+this (note SLF4J is supported out-of-the-box with no configuration in
+zipkin-server).
+
+Zipkin's storage layer logs to the category "zipkin2.storage.cassandra",
+but you may wish to see the entire "zipkin2" when troubleshooting.
+Depending on details desired, the underlying driver's category
+"com.datastax.driver.core" at debug level may help.
+
+If you just want to see queries and latency, set the category
+"com.datastax.driver.core.QueryLogger" to debug or trace. Trace level
+includes bound values.
 
 See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/3.0/supplemental/manual/logging/#logging-query-latencies) for more details.
 
