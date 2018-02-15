@@ -14,8 +14,6 @@
 package zipkin.autoconfigure.storage.cassandra3.brave;
 
 import brave.Tracing;
-import brave.cassandra.driver.CassandraClientSampler;
-import brave.cassandra.driver.CassandraClientTracing;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,10 +34,9 @@ public class TracingZipkinCassandra3StorageAutoConfiguration {
   // Lazy to unwind a circular dep: we are tracing the storage used by brave
   @Autowired @Lazy Tracing tracing;
 
+  // NOTE: this doesn't yet trace span consumption commands because the trace context
+  // is lost when indirected with SpanConsumer.accept().enqueue(). We'll fix this later
   @Bean SessionFactory tracingSessionFactory() {
-    CassandraClientTracing cassandraClientTracing = CassandraClientTracing.newBuilder(tracing)
-      .sampler(CassandraClientSampler.NEVER_SAMPLE) // don't start new traces
-      .build();
-    return storage -> brave.cassandra.driver.TracingSession.create(cassandraClientTracing, delegate.create(storage));
+    return storage -> new TracingSession(tracing, delegate.create(storage));
   }
 }
