@@ -10,11 +10,17 @@ The following configuration can be set for the RabbitMQ Collector.
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.rabbitmq.addresses` | `RABBIT_ADDRESSES` | Comma-separated list of RabbitMQ addresses, ex. `localhost:5672,localhost:5673`
 `zipkin.collector.rabbitmq.concurrency` | `RABBIT_CONCURRENCY` | Number of concurrent consumers. Defaults to `1`
 `zipkin.collector.rabbitmq.connection-timeout` | `RABBIT_CONNECTION_TIMEOUT` | Milliseconds to wait establishing a connection. Defaults to `60000` (1 minute)
-`zipkin.collector.rabbitmq.password` | `RABBIT_PASSWORD`| Password to use when connecting to RabbitMQ. Defaults to `guest`
 `zipkin.collector.rabbitmq.queue` | `RABBIT_QUEUE` | Queue from which to collect span messages. Defaults to `zipkin`
+`zipkin.collector.rabbitmq.uri` | `RABBIT_URI` | [RabbitMQ URI spec](https://www.rabbitmq.com/uri-spec.html)-compliant URI, ex. `amqp://user:pass@host:10000/vhost`
+
+If the URI is set, the following properties will be ignored.
+
+Property | Environment Variable | Description
+--- | --- | ---
+`zipkin.collector.rabbitmq.addresses` | `RABBIT_ADDRESSES` | Comma-separated list of RabbitMQ addresses, ex. `localhost:5672,localhost:5673`
+`zipkin.collector.rabbitmq.password` | `RABBIT_PASSWORD`| Password to use when connecting to RabbitMQ. Defaults to `guest`
 `zipkin.collector.rabbitmq.username` | `RABBIT_USER` | Username to use when connecting to RabbitMQ. Defaults to `guest`
 `zipkin.collector.rabbitmq.virtual-host` | `RABBIT_VIRTUAL_HOST` | RabbitMQ virtual host to use. Defaults to `/`
 `zipkin.collector.rabbitmq.use-ssl` | `RABBIT_USE_SSL` | Set to `true` to use SSL when connecting to RabbitMQ

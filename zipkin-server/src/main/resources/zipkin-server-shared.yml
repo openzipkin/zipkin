@@ -38,6 +38,7 @@ zipkin:
       username: ${RABBIT_USER:guest}
       virtual-host: ${RABBIT_VIRTUAL_HOST:/}
       useSsl: ${RABBIT_USE_SSL:false}
+      uri: ${RABBIT_URI:}
   query:
     enabled: ${QUERY_ENABLED:true}
     # 1 day in millis

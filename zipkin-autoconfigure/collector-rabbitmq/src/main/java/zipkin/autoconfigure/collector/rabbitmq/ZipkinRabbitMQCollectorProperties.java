@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,8 @@
 package zipkin.autoconfigure.collector.rabbitmq;
 
 import com.rabbitmq.client.ConnectionFactory;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
@@ -42,6 +44,9 @@ public class ZipkinRabbitMQCollectorProperties {
   private String virtualHost;
   /** Flag to use SSL */
   private Boolean useSsl;
+  /** RabbitMQ URI spec-compliant URI to connect to the RabbitMQ server.
+   * When used, other connection properties will be ignored. */
+  private URI uri;
 
   public List<String> getAddresses() {
     return addresses;
@@ -107,18 +112,31 @@ public class ZipkinRabbitMQCollectorProperties {
     this.useSsl = useSsl;
   }
 
+  public URI getUri() {
+    return uri;
+  }
+
+  public void setUri(URI uri) {
+    this.uri = uri;
+  }
+
   public RabbitMQCollector.Builder toBuilder()
-    throws KeyManagementException, NoSuchAlgorithmException {
+    throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException {
     final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
     ConnectionFactory connectionFactory = new ConnectionFactory();
-    if (addresses != null) result.addresses(addresses);
     if (concurrency != null) result.concurrency(concurrency);
     if (connectionTimeout != null) connectionFactory.setConnectionTimeout(connectionTimeout);
-    if (password != null) connectionFactory.setPassword(password);
     if (queue != null) result.queue(queue);
-    if (username != null) connectionFactory.setUsername(username);
-    if (virtualHost != null) connectionFactory.setVirtualHost(virtualHost);
-    if (useSsl != null && useSsl) connectionFactory.useSslProtocol();
+
+    if (uri != null) {
+      connectionFactory.setUri(uri);
+    } else {
+      if (addresses != null) result.addresses(addresses);
+      if (password != null) connectionFactory.setPassword(password);
+      if (username != null) connectionFactory.setUsername(username);
+      if (virtualHost != null) connectionFactory.setVirtualHost(virtualHost);
+      if (useSsl != null && useSsl) connectionFactory.useSslProtocol();
+    }
     result.connectionFactory(connectionFactory);
     return result;
   }
