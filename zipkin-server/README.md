@@ -310,7 +310,7 @@ $ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -Dzipkin.collector.kafka.overrides.auto.of
 ```
 
 ### RabbitMQ collector
-The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` for the RabbitMQ server(s) is set.
+The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set.
 
 Example usage:
 

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.collector.rabbitmq;
+package zipkin.autoconfigure.collector.rabbitmq;
 
 import org.junit.After;
 import org.junit.Ignore;
@@ -23,9 +23,9 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.autoconfigure.collector.rabbitmq.ZipkinRabbitMQCollectorAutoConfiguration;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.collector.rabbitmq.RabbitMQCollector;
 import zipkin.storage.InMemoryStorage;
 import zipkin.storage.StorageComponent;
 
@@ -47,7 +47,7 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
   }
 
   @Test
-  public void doesNotProvideCollectorComponent_whenAddressNotSet() {
+  public void doesNotProvideCollectorComponent_whenAddressAndUriNotSet() {
     context = new AnnotationConfigApplicationContext();
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinRabbitMQCollectorAutoConfiguration.class, InMemoryConfiguration.class);
@@ -58,9 +58,9 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
   }
 
   @Test
-  public void doesNotProvideCollectorComponent_whenAddressesIsEmptyString() {
+  public void doesNotProvideCollectorComponent_whenAddressesAndUriIsEmptyString() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.rabbitmq.addresses:");
+    addEnvironment(context, "zipkin.collector.rabbitmq.addresses:", "zipkin.collector.rabbitmq.uri:");
     context.register(PropertyPlaceholderAutoConfiguration.class,
         ZipkinRabbitMQCollectorAutoConfiguration.class, InMemoryConfiguration.class);
     context.refresh();

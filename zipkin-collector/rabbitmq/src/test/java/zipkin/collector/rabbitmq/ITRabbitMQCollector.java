@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -47,7 +47,7 @@ public class ITRabbitMQCollector {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  @Test public void checkPasses() throws Exception {
+  @Test public void checkPasses() {
     assertThat(rabbit.collector.check().ok).isTrue();
   }
 

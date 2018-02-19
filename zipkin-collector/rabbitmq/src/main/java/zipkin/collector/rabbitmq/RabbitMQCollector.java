@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -137,7 +137,7 @@ public final class RabbitMQCollector implements CollectorComponent {
     protected Connection compute() {
       Connection connection;
       try {
-        connection = builder.connectionFactory.newConnection(builder.addresses);
+        connection = (builder.addresses == null) ? builder.connectionFactory.newConnection() : builder.connectionFactory.newConnection(builder.addresses);
         connection.createChannel().queueDeclare(builder.queue, true, false, false, null);
       } catch (IOException | TimeoutException e) {
         throw new IllegalStateException("Unable to establish connection to RabbitMQ server", e);

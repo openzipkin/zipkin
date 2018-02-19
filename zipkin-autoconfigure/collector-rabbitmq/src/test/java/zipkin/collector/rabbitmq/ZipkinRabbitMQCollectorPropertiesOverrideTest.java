@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,8 @@
  */
 package zipkin.collector.rabbitmq;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -74,8 +76,11 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
             ZipkinRabbitMQCollectorProperties::getVirtualHost,
             builder -> builder.connectionFactory.getVirtualHost()),
         parameters("useSsl", true,
-          ZipkinRabbitMQCollectorProperties::getUseSsl,
-          builder -> builder.connectionFactory.isSSL())
+            ZipkinRabbitMQCollectorProperties::getUseSsl,
+            builder -> builder.connectionFactory.isSSL()),
+        parameters("uri", URI.create("amqp://localhost"),
+            ZipkinRabbitMQCollectorProperties::getUri,
+            builder -> URI.create("amqp://" + builder.connectionFactory.getHost()))
     );
   }
 
@@ -104,7 +109,7 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
 
   @Test
   public void propertyTransferredToCollectorBuilder()
-    throws NoSuchAlgorithmException, KeyManagementException {
+    throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
     addEnvironment(context, property + ":" + value);
 
     context.register(
