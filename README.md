@@ -28,7 +28,7 @@ Check out the [`zipkin-server`](/zipkin-server) documentation for configuration 
 ## Core Library
 The [core library](zipkin2/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
 
-This includes built-in codec for Zipkin's v2 json formats (for Zipkin's v1, please take a look at [zipkin](zipkin/src/main/java/zipkin)). A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
+This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
 
 Ex.
 ```java
