@@ -15,11 +15,9 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.QueryLogger;
 import com.datastax.driver.core.QueryOptions;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.TypeCodec;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
 import com.datastax.driver.core.policies.RoundRobinPolicy;
@@ -37,9 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.storage.cassandra.Schema.AnnotationUDT;
 import zipkin2.storage.cassandra.Schema.EndpointUDT;
-import zipkin2.storage.cassandra.Schema.TypeCodecImpl;
 
-import static zipkin2.storage.cassandra.Schema.DEFAULT_KEYSPACE;
 
 /**
  * Creates a session and ensures schema if configured. Closes the cluster and session if any
@@ -62,7 +58,6 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
       if (cassandra.ensureSchema()) {
         session = closer.register(cluster.connect());
         Schema.ensureExists(keyspace, cassandra.searchEnabled(), session);
-        Schema.ensureExists(DEFAULT_KEYSPACE + "_udts", false, session);
         session.execute("USE " + keyspace);
       } else {
         LOG.debug("Skipping schema check on keyspace {} as ensureSchema was false", keyspace);
@@ -83,21 +78,10 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
 
   private static void initializeUDTs(Session session) {
     MappingManager mapping = new MappingManager(session);
-
-    // The UDTs are hardcoded against the zipkin2_udts keyspace.
-    // If a different keyspace is being used the codecs must be re-applied to this different keyspace
-    TypeCodec<EndpointUDT> endpointCodec = mapping.udtCodec(EndpointUDT.class);
-    TypeCodec<AnnotationUDT> annoCodec = mapping.udtCodec(AnnotationUDT.class);
-
-    KeyspaceMetadata keyspace =
-        session.getCluster().getMetadata().getKeyspace(session.getLoggedKeyspace());
-
-    LOG.debug("Registering endpoint and annotation UDTs to keyspace {}", keyspace.getName());
-    session.getCluster().getConfiguration().getCodecRegistry()
-      .register(
-        new TypeCodecImpl<>(keyspace.getUserType("endpoint"), EndpointUDT.class, endpointCodec))
-      .register(
-        new TypeCodecImpl<>(keyspace.getUserType("annotation"), AnnotationUDT.class, annoCodec));
+    String keyspace = session.getLoggedKeyspace();
+    LOG.debug("Registering endpoint and annotation UDTs to keyspace {}", keyspace);
+    mapping.udtCodec(EndpointUDT.class, keyspace);
+    mapping.udtCodec(AnnotationUDT.class, keyspace);
   }
 
   // Visible for testing
