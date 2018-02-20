@@ -126,7 +126,7 @@ final class Schema {
     }
   }
 
-  @UDT(keyspace = DEFAULT_KEYSPACE + "_udts", name = "endpoint")
+  @UDT(name = "endpoint")
   static final class EndpointUDT implements Serializable { // for Spark jobs
     private static final long serialVersionUID = 0L;
 
@@ -189,7 +189,7 @@ final class Schema {
     }
   }
 
-  @UDT(keyspace = DEFAULT_KEYSPACE + "_udts", name = "annotation")
+  @UDT(name = "annotation")
   static final class AnnotationUDT implements Serializable { // for Spark jobs
     private static final long serialVersionUID = 0L;
 
