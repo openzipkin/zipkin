@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -237,9 +237,6 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
       if (this.traceIdHigh == null || this.traceIdHigh == 0) {
         this.traceIdHigh = that.traceIdHigh;
       }
-      if (this.name == null || this.name.length() == 0 || this.name.equals("unknown")) {
-        this.name = that.name;
-      }
       if (this.id == null) {
         this.id = that.id;
       }
@@ -248,18 +245,24 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
       }
 
       // When we move to span model 2, remove this code in favor of using Span.kind == CLIENT
-      boolean thisIsClientSpan = this.isClientSpan;
-      boolean thatIsClientSpan = false;
+      boolean thisIsClientSpan = isClientSpan, thatIsClientSpan = false, thatIsServerSpan = false;
 
       // This guards to ensure we don't add duplicate annotations or binary annotations on merge
       if (!that.annotations.isEmpty()) {
         boolean thisHadNoAnnotations = this.annotations == null;
         for (Annotation a : that.annotations) {
           if (a.value.equals(Constants.CLIENT_SEND)) thatIsClientSpan = true;
+          if (a.value.equals(Constants.SERVER_RECV)) thatIsServerSpan = true;
           if (thisHadNoAnnotations || !this.annotations.contains(a)) {
             addAnnotation(a);
           }
         }
+      }
+
+      if (nameUnknown(this)) {
+        this.name = that.name;
+      } else if (thisIsClientSpan && thatIsServerSpan && !that.name.isEmpty()) {
+        this.name = that.name; // prefer the server's span name on collision
       }
 
       if (!that.binaryAnnotations.isEmpty()) {
@@ -518,5 +521,9 @@ public final class Span implements Comparable<Span>, Serializable { // for Spark
         throw new StreamCorruptedException(e.getMessage());
       }
     }
+  }
+
+  static boolean nameUnknown(Span.Builder span) {
+    return span.name == null || span.name.length() == 0 || span.name.equals("unknown");
   }
 }

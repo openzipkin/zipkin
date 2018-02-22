@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 package zipkin;
 
 /**
- * Well-known {@link BinaryAnnotation#key binary annotation keys}.
+ * Well-known {@link BinaryAnnotation#key binary annotation aka Tag keys}.
  *
  * <h3>Overhead of adding Trace Data</h3>
  *
@@ -53,19 +53,31 @@ public final class TraceKeys {
   /**
    * The absolute http path, without any query parameters. Ex. "/objects/abcd-ff"
    *
-   * Used to filter against an http route, portably with zipkin v1.
+   * <p>Used as a filter or to clarify the request path for a given route. For example, the path for
+   * a route "/objects/:objectId" could be "/objects/abdc-ff". This does not limit cardinality like
+   * {@link #HTTP_ROUTE} can, so is not a good input to a span name.
    *
-   * <p>In zipkin v1, only equals filters are supported. Dropping query parameters makes the number
-   * of distinct URIs less. For example, one can query for the same resource, regardless of signing
-   * parameters encoded in the query line. This does not reduce cardinality to a HTTP single route.
-   * For example, it is common to express a route as an http URI template like
-   * /resource/{resource_id}. In systems where only equals queries are available, searching for
-   * http/path=/resource won't match if the actual request was /resource/abcd-ff.
+   * <p>The Zipkin query api only supports equals filters. Dropping query parameters makes the
+   * number of distinct URIs less. For example, one can query for the same resource, regardless of
+   * signing parameters encoded in the query line. Dropping query parameters also limits the
+   * security impact of this tag.
    *
-   * <p>Historical note: This was commonly expressed as "http.uri" in zipkin, eventhough it was most
-   * often just a path.
+   * <p>Historical note: This was commonly expressed as "http.uri" in zipkin, even though it was most
    */
   public static final String HTTP_PATH = "http.path";
+
+  /**
+   * The route which a request matched or "" (empty string) if routing is supported, but there was
+   * no match. Ex "/objects/{objectId}"
+   *
+   * <p>Often used as a span name when known, with empty routes coercing to "not_found" or
+   * "redirected" based on {@link #HTTP_STATUS_CODE}.
+   *
+   * <p>Unlike {@link #HTTP_PATH}, this value is fixed cardinality, so is a safe input to a span
+   * name function or a metrics dimension. Different formats are possible. For example, the
+   * following are all valid route templates: "/objects" "/objects/:objectId" "/objects/*"
+   */
+  public static final String HTTP_ROUTE = "http.route";
 
   /**
    * The entire URL, including the scheme, host and query parameters if available. Ex.

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -124,6 +124,28 @@ public class SpanTest {
 
     assertThat(part1.toBuilder().merge(part2).build()).isEqualTo(expected);
     assertThat(part2.toBuilder().merge(part1).build()).isEqualTo(expected);
+  }
+
+  @Test
+  public void mergePrefersServerSpanName() {
+    Span clientPart = Span.builder()
+      .traceId(1L)
+      .name("get")
+      .id(1L)
+      .addAnnotation(Annotation.create(1L, CLIENT_SEND, APP_ENDPOINT))
+      .build();
+
+    Span serverPart = Span.builder()
+      .traceId(1L)
+      .name("/users/:userid")
+      .id(1L)
+      .addAnnotation(Annotation.create(2L, SERVER_RECV, APP_ENDPOINT))
+      .build();
+
+    assertThat(clientPart.toBuilder().merge(serverPart).build().name)
+      .isEqualTo("/users/:userid");
+    assertThat(serverPart.toBuilder().merge(clientPart).build().name)
+      .isEqualTo("/users/:userid");
   }
 
   /**
