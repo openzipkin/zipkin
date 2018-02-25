@@ -4,7 +4,7 @@ import $ from 'jquery';
 import queryString from 'query-string';
 
 export default component(function lookback() {
-  this.onChange = function() {
+  this.refreshCustomFields = function() {
     if (this.$node.val() === 'custom') {
       $('#custom-lookback').show();
     } else {
@@ -24,7 +24,8 @@ export default component(function lookback() {
 
   this.after('initialize', function() {
     this.render();
+    this.refreshCustomFields();
 
-    this.on('change', this.onChange);
+    this.on('change', this.refreshCustomFields);
   });
 });
