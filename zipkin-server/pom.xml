@@ -291,6 +291,7 @@
         <artifactId>spring-boot-maven-plugin</artifactId>
         <configuration>
           <classifier>exec</classifier>
+          <executable>true</executable>
         </configuration>
       </plugin>
       <!-- disable retrolambda since this module uses java 8 types -->
