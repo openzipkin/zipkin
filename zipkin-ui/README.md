@@ -64,7 +64,7 @@ This runs an NPM development server, which will automatically rebuild the webapp
 when you change the source code. You should now be able to access your local
 copy of zipkin-ui at http://localhost:9090.
 
-#### What's an easy way to create new spans for testing?
+## What's an easy way to create new spans for testing?
 
 Using this setup, if you open the web UI and find a trace from zipkin-server,
 you can download a JSON blob by right clicking on the JSON button on the trace
@@ -75,7 +75,7 @@ and then you can submit the span(s) via curl:
 $ curl -H "Content-Type: application/json" --data @span.json http://localhost:9411/api/v1/spans
 ```
 
-#### How do I find logs associated with a particular trace
+## How do I find logs associated with a particular trace
 
 Since zipkin provides a correlation id (the trace id), it's a good pattern to add it in your logs.
 If you use zipkin, it's very likely that you have distributed logging sytem also and a way to query your logs (e.g. ELK stack).
@@ -94,7 +94,11 @@ If this feature is activated, you'll see on the trace detail page an additional 
 
 ![Logs Button](https://cloud.githubusercontent.com/assets/9842366/20482538/6e35ca66-afed-11e6-90e9-1e28f66d985e.png)
 
-#### How do I adjust the error rates in the dependency graph
+## How do I make errors visible in yellow or red?
+The UI interprets an "error" tag as a failed span, coloring it red. It interprets an annotation containing the substring
+"error" as a transient failure. To ensure the UI displays errors, please use the [error key](https://zipkin.io/public/thrift/v1/zipkinCore.html#Const_ERROR) appropriately.
+
+## How do I adjust the error rates in the dependency graph
 
 By default, the /dependency endpoint colors a link yellow when the error
 rate is 50% or higher, or red when it 75% or higher. You can control
