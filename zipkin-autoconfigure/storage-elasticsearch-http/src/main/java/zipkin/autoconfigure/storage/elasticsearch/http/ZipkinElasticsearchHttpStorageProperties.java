@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,7 +37,7 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
   /** The index prefix to use when generating daily index names. Defaults to zipkin. */
   private String index = "zipkin";
   /** The date separator used to create the index name. Default to -. */
-  private char dateSeparator = '-';
+  private String dateSeparator = "-";
   /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 */
   private int maxRequests = 64;
   /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
@@ -118,11 +118,15 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
     this.indexShards = indexShards;
   }
 
-  public char getDateSeparator() {
+  public String getDateSeparator() {
     return dateSeparator;
   }
 
-  public void setDateSeparator(char dateSeparator) {
+  public void setDateSeparator(String dateSeparator) {
+    String trimmed = dateSeparator.trim();
+    if (trimmed.length() > 1) {
+      throw new IllegalArgumentException("dateSeparator must be empty or a single character");
+    }
     this.dateSeparator = dateSeparator;
   }
 
@@ -179,7 +183,7 @@ public class ZipkinElasticsearchHttpStorageProperties implements Serializable { 
     if (hosts != null) builder.hosts(hosts);
     return builder
         .index(index)
-        .dateSeparator(dateSeparator)
+        .dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0))
         .pipeline(pipeline)
         .maxRequests(maxRequests)
         .indexShards(indexShards)
