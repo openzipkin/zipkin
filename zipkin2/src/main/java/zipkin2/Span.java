@@ -207,8 +207,8 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    * When an RPC (or messaging) span, indicates the other side of the connection.
    *
    * <p>By recording the remote endpoint, your trace will contain network context even if the peer
-   * is not tracing. For example,For example, you can record the IP from the {@code X-Forwarded-For}
-   * header or or the service name and socket of a remote peer.
+   * is not tracing. For example, you can record the IP from the {@code X-Forwarded-For} header or
+   * the service name and socket of a remote peer.
    */
   @Nullable public Endpoint remoteEndpoint() {
     return remoteEndpoint;
