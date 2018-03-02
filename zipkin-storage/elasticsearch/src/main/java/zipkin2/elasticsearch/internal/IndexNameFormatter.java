@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,7 +33,6 @@ public abstract class IndexNameFormatter {
 
   public abstract Builder toBuilder();
 
-  private static final String DAILY_INDEX_FORMAT = "yyyy-MM-dd";
   private static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
   public abstract String index();
@@ -54,8 +53,9 @@ public abstract class IndexNameFormatter {
     public final IndexNameFormatter build() {
       return dateFormat(new ThreadLocal<SimpleDateFormat>() {
         @Override protected SimpleDateFormat initialValue() {
-          SimpleDateFormat result =
-            new SimpleDateFormat(DAILY_INDEX_FORMAT.replace('-', dateSeparator()));
+          char separator = dateSeparator();
+          SimpleDateFormat result = new SimpleDateFormat(separator == 0 ?
+            "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator));
           result.setTimeZone(TimeZone.getTimeZone("UTC"));
           return result;
         }

@@ -20,6 +20,7 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -324,6 +325,37 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
         .isEqualTo("zipkin:span-1970.01.01");
+  }
+
+  @Test
+  public void dailyIndexFormat_overridingDateSeparator_empty() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+      "zipkin.storage.elasticsearch.date-separator:");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchOkHttpAutoConfiguration.class,
+      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    context.refresh();
+
+    assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
+      .isEqualTo("zipkin:span-19700101");
+  }
+
+  @Test
+  public void dailyIndexFormat_overridingDateSeparator_invalidToBeMultiChar() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context,
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+      "zipkin.storage.elasticsearch.date-separator:blagho");
+    context.register(PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchOkHttpAutoConfiguration.class,
+      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+
+    thrown.expect(BeanCreationException.class);
+    context.refresh();
   }
 
   @Test
