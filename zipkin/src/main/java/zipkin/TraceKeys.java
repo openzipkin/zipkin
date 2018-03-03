@@ -68,14 +68,14 @@ public final class TraceKeys {
 
   /**
    * The route which a request matched or "" (empty string) if routing is supported, but there was
-   * no match. Ex "/objects/{objectId}"
+   * no match. Ex "GET /objects/{objectId}"
    *
-   * <p>Often used as a span name when known, with empty routes coercing to "not_found" or
-   * "redirected" based on {@link #HTTP_STATUS_CODE}.
+   * <p>Often used as a span name when known, with empty routes coercing to "POST not_found" or
+   * "GET redirected" based on {@link #HTTP_STATUS_CODE}.
    *
    * <p>Unlike {@link #HTTP_PATH}, this value is fixed cardinality, so is a safe input to a span
    * name function or a metrics dimension. Different formats are possible. For example, the
-   * following are all valid route templates: "/objects" "/objects/:objectId" "/objects/*"
+   * following are all valid route templates: "POST /objects" "PUT /objects/:objectId" "GET /objects/*"
    */
   public static final String HTTP_ROUTE = "http.route";
 
