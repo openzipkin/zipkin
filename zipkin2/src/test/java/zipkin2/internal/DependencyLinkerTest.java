@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package zipkin2.internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,6 +60,29 @@ public class DependencyLinkerTest {
     assertThat(new DependencyLinker().putTrace(TRACE.iterator()).link()).containsExactly(
       DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build(),
       DependencyLink.newBuilder().parent("app").child("db").callCount(1L).errorCount(1L).build()
+    );
+  }
+
+  /**
+   * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.
+   *
+   * <p>See https://github.com/openzipkin/zipkin/pull/1745
+   */
+  @Test
+  public void linksSpans_serverMissingParentId() {
+    List<Span> trace = asList(
+      span2("a", null, "a", Kind.SERVER, "arn", null, false),
+      span2("a", "a", "b", Kind.CLIENT, "arn", "link", false),
+      // below the parent ID is null as it wasn't propagated
+      span2("a", null, "b", Kind.SERVER, "link", "arn", false)
+        .toBuilder().shared(true).build()
+    );
+
+    // trace is actually reported in reverse order
+    Collections.reverse(trace);
+
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsExactly(
+      DependencyLink.newBuilder().parent("arn").child("link").callCount(1L).build()
     );
   }
 
