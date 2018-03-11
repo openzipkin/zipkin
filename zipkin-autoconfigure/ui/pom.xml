@@ -52,5 +52,11 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-ui</artifactId>
     </dependency>
+    <dependency>
+      <!-- HTML library for injecting configurable <base> tag -->
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>1.11.2</version>
+    </dependency>
   </dependencies>
 </project>

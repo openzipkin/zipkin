@@ -14,9 +14,13 @@
 package zipkin.autoconfigure.ui;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -75,6 +79,20 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   @Value("classpath:zipkin-ui/index.html")
   Resource indexHtml;
 
+  @Bean
+  String processedIndexHtml() throws IOException {
+    InputStream is = indexHtml.getInputStream();
+    Document soup = Jsoup.parse(is, null, ui.getBasePath());
+    is.close();
+    if (soup.head().getElementsByTag("base").isEmpty()) {
+      soup.head().appendChild(
+        soup.createElement("base")
+      );
+    }
+    soup.head().getElementsByTag("base").html(ui.getBasePath());
+    return soup.html();
+  }
+
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
     registry.addResourceHandler("/zipkin/**")
@@ -115,10 +133,11 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   }
 
   @RequestMapping(value = "/zipkin/index.html", method = GET)
-  public ResponseEntity<Resource> serveIndex() {
+  public ResponseEntity<String> serveIndex() throws IOException {
     return ResponseEntity.ok()
         .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
-        .body(indexHtml);
+        .contentType(MediaType.TEXT_HTML)
+        .body(processedIndexHtml());
   }
 
   /**

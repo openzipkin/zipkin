@@ -24,6 +24,7 @@ public class ZipkinUiProperties {
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
   private String logsUrl = null;
+  private String basePath = "/zipkin/";
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
 
@@ -83,6 +84,14 @@ public class ZipkinUiProperties {
 
   public void setDependency(Dependency dependency) {
     this.dependency = dependency;
+  }
+
+  public String getBasePath() {
+    return basePath;
+  }
+
+  public void setBasePath(String basePath) {
+    this.basePath = basePath;
   }
 
   public static class Dependency {

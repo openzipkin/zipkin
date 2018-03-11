@@ -18,6 +18,9 @@ import org.junit.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.http.MediaType;
+
+import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -39,6 +42,13 @@ public class ZipkinUiAutoConfigurationTest {
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml)
         .isNotNull();
+  }
+
+  @Test
+  public void indexContentType() throws IOException {
+    context = createContext();
+    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getHeaders().getContentType())
+      .isEqualTo(MediaType.TEXT_HTML);
   }
 
   @Test
@@ -100,6 +110,22 @@ public class ZipkinUiAutoConfigurationTest {
 
     assertThat(context.getBean(ZipkinUiProperties.class).getDependency().getHighErrorRate())
       .isEqualTo(0.1f);
+  }
+
+  @Test
+  public void defaultBaseUrl() throws IOException {
+    context = createContext();
+
+    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody())
+      .contains("<base>/zipkin/</base>");
+  }
+
+  @Test
+  public void canOverideProperty_basePath() throws IOException {
+    context = createContextWithOverridenProperty("zipkin.ui.base-path:/foo/bar/");
+
+    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody())
+      .contains("<base>/foo/bar/</base>");
   }
 
   private static AnnotationConfigApplicationContext createContext() {
