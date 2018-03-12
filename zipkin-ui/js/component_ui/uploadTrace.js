@@ -3,6 +3,16 @@ import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
 import traceToMustache from '../../js/component_ui/traceToMustache';
 import {SPAN_V1} from '../spanConverter';
 
+function rootToFrontComparator(span1/* , span2*/) {
+  return span1.parentId === undefined ? -1 : 0;
+}
+
+function sort(trace) {
+  if (trace != null) {
+    trace.sort(rootToFrontComparator);
+  }
+}
+
 function ensureV1(trace) {
   if (trace == null || trace.length === 0
           || (trace[0].localEndpoint === undefined && trace[0].remoteEndpoint === undefined)) {
@@ -30,6 +40,7 @@ export default component(function uploadTrace() {
       try {
         let trace = JSON.parse(evt.target.result);
         trace = ensureV1(trace);
+        sort(trace);
 
         const modelview = traceToMustache(trace);
         model = {modelview, trace};
