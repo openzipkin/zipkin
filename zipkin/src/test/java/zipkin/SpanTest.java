@@ -166,7 +166,8 @@ public class SpanTest {
     Span clientPart = Span.builder()
         .traceId(1L)
         .name("test")
-        .id(1L)
+        .parentId(1L)
+        .id(2L)
         .timestamp(clientTimestamp).duration(clientDuration)
         .addAnnotation(Annotation.create(clientTimestamp, CLIENT_SEND, APP_ENDPOINT))
         .addAnnotation(Annotation.create(clientTimestamp + clientDuration, CLIENT_RECV, APP_ENDPOINT))
@@ -176,18 +177,27 @@ public class SpanTest {
     Span serverPart = Span.builder()
         .traceId(1L)
         .name("test")
-        .id(1L)
+        .id(2L)
         .timestamp(serverTimestamp).duration(serverDuration)
         .addAnnotation(Annotation.create(serverTimestamp, SERVER_RECV, APP_ENDPOINT))
         .addAnnotation(Annotation.create(serverTimestamp + serverDuration, SERVER_SEND, APP_ENDPOINT))
         .build();
 
-    Span completeSpan = clientPart.toBuilder()
+    Span clientFirst = clientPart.toBuilder()
         .merge(serverPart)
         .build();
 
-    assertThat(completeSpan.timestamp).isEqualTo(clientTimestamp);
-    assertThat(completeSpan.duration).isEqualTo(clientDuration);
+    Span serverFirst = serverPart.toBuilder()
+        .merge(clientPart)
+        .build();
+
+    for (Span completeSpan : Arrays.asList(clientFirst, serverFirst)) {
+      assertThat(completeSpan.timestamp).isEqualTo(clientTimestamp);
+      assertThat(completeSpan.duration).isEqualTo(clientDuration);
+
+      // ensure if server isn't propagated the parent ID, it is still ok.
+      assertThat(completeSpan.parentId).isEqualTo(clientPart.parentId);
+    }
   }
 
   /**

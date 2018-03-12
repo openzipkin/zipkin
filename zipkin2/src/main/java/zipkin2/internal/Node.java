@@ -13,6 +13,7 @@
  */
 package zipkin2.internal;
 
+import com.google.auto.value.AutoValue;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -142,6 +143,7 @@ public final class Node<V> {
 
     String rootId = null;
     Node<V> rootNode = null;
+    List<Entry<V>> entries = new ArrayList<>();
     // Nodes representing the trace tree
     Map<String, Node<V>> idToNode = new LinkedHashMap<>();
     // Collect the parent-child relationships between all spans.
@@ -149,6 +151,25 @@ public final class Node<V> {
 
     /** Returns false after logging to FINE if the value couldn't be added */
     public boolean addNode(@Nullable String parentId, String id, V value) {
+      if (parentId != null) {
+        if (parentId.equals(id)) {
+          if (logger.isLoggable(FINE)) {
+            logger.fine(
+              format("skipping circular dependency: traceId=%s, spanId=%s", traceId, id));
+          }
+          return false;
+        }
+      }
+      idToParent.put(id, parentId);
+      entries.add(Entry.create(parentId, id, value));
+      return true;
+    }
+
+    void processNode(Entry<V> entry) {
+      String parentId = entry.parentId() != null ? entry.parentId() : idToParent.get(entry.id());
+      String id = entry.id();
+      V value = entry.value();
+
       if (parentId == null) {
         if (rootId != null) {
           if (logger.isLoggable(FINE)) {
@@ -159,12 +180,6 @@ public final class Node<V> {
         } else {
           rootId = id;
         }
-      } else if (parentId.equals(id)) {
-        if (logger.isLoggable(FINE)) {
-          logger.fine(
-            format("skipping circular dependency: traceId=%s, spanId=%s", traceId, id));
-        }
-        return false;
       }
 
       Node<V> node = new Node<V>().value(value);
@@ -173,18 +188,21 @@ public final class Node<V> {
       if (parentId == null && rootNode == null) {
         rootNode = node;
         rootId = id;
+        idToParent.remove(id);
       } else if (parentId == null && rootId.equals(id)) {
         rootNode.value(mergeFunction.merge(rootNode.value, node.value));
       } else {
         Node<V> previous = idToNode.put(id, node);
         if (previous != null) node.value(mergeFunction.merge(previous.value, node.value));
-        idToParent.put(id, parentId);
       }
-      return true;
     }
 
     /** Builds a tree from calls to {@link #addNode}, or returns an empty tree. */
     public Node<V> build() {
+      for (int i = 0, length = entries.size(); i < length; i++) {
+        processNode(entries.get(i));
+      }
+
       // Materialize the tree using parent - child relationships
       for (Map.Entry<String, String> entry : idToParent.entrySet()) {
         Node<V> node = idToNode.get(entry.getKey());
@@ -204,5 +222,18 @@ public final class Node<V> {
       }
       return rootNode != null ? rootNode : new Node<>();
     }
+  }
+
+  @AutoValue
+  static abstract class Entry<V> {
+    static <V> Entry<V> create(@Nullable String parentId, String id, V value) {
+      return new AutoValue_Node_Entry(parentId, id, value);
+    }
+
+    @Nullable abstract String parentId();
+
+    abstract String id();
+
+    abstract V value();
   }
 }
