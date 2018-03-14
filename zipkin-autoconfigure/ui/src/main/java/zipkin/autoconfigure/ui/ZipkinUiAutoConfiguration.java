@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,6 @@ import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,6 +44,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.servlet.HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE;
+import static zipkin.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASE_PATH;
 
 /**
  * Zipkin-UI is a single-page application mounted at /zipkin. For simplicity, assume paths mentioned
@@ -83,23 +83,17 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   @Bean
   @Lazy
   String processedIndexHtml() throws IOException {
-    InputStream is = null;
-    try {
-      is = indexHtml.getInputStream();
-      Document soup = Jsoup.parse(is, null, ui.getBasePath());
-      is.close();
-      if (soup.head().getElementsByTag("base").isEmpty()) {
-        soup.head().appendChild(
-          soup.createElement("base")
-        );
-      }
-      soup.head().getElementsByTag("base").html(ui.getBasePath());
-      return soup.html();
-    } finally {
-      if (is != null) {
-        is.close();
-      }
+    Document soup;
+    try (InputStream is = indexHtml.getInputStream()) {
+      soup = Jsoup.parse(is, null, ui.getBasePath());
     }
+    if (soup.head().getElementsByTag("base").isEmpty()) {
+      soup.head().appendChild(
+        soup.createElement("base")
+      );
+    }
+    soup.head().getElementsByTag("base").html(ui.getBasePath());
+    return soup.html();
   }
 
   @Override
@@ -142,11 +136,13 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   }
 
   @RequestMapping(value = "/zipkin/index.html", method = GET)
-  public ResponseEntity<String> serveIndex() throws IOException {
-    return ResponseEntity.ok()
-        .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
-        .contentType(MediaType.TEXT_HTML)
-        .body(processedIndexHtml());
+  public ResponseEntity<?> serveIndex() throws IOException {
+    ResponseEntity.BodyBuilder result = ResponseEntity.ok()
+      .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
+      .contentType(MediaType.TEXT_HTML);
+    return DEFAULT_BASE_PATH.equals(ui.getBasePath())
+      ? result.body(indexHtml)
+      : result.body(processedIndexHtml());
   }
 
   /**

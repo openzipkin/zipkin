@@ -19,12 +19,14 @@ import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("zipkin.ui")
 public class ZipkinUiProperties {
+  static final String DEFAULT_BASE_PATH = "/zipkin/";
+
   private String environment;
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
   private String logsUrl = null;
-  private String basePath = "/zipkin/";
+  private String basePath = DEFAULT_BASE_PATH;
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
 

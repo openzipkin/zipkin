@@ -13,6 +13,7 @@
  */
 package zipkin.autoconfigure.ui;
 
+import java.io.IOException;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -22,9 +23,8 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.MediaType;
-
-import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.isA;
@@ -50,13 +50,14 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContext();
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml)
-        .isNotNull();
+      .isNotNull();
   }
 
   @Test
   public void indexContentType() throws IOException {
     context = createContext();
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getHeaders().getContentType())
+    assertThat(
+      context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getHeaders().getContentType())
       .isEqualTo(MediaType.TEXT_HTML);
   }
 
@@ -64,7 +65,7 @@ public class ZipkinUiAutoConfigurationTest {
   public void invalidIndexHtml() throws IOException {
     // I failed to make Jsoup barf, even on nonsense like: "<head wait no I changed my mind this HTML is totally invalid <<<<<<<<<<<"
     // So let's just run with a case where the file doesn't exist
-    context = createContext();
+    context = createContextWithOverridenProperty("zipkin.ui.base-path:/foo/bar/");
     ZipkinUiAutoConfiguration ui = context.getBean(ZipkinUiAutoConfiguration.class);
     ui.indexHtml = new ClassPathResource("does-not-exist.html");
 
@@ -80,13 +81,13 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.defaultLookback:100");
 
     assertThat(context.getBean(ZipkinUiProperties.class).getDefaultLookback())
-        .isEqualTo(100);
+      .isEqualTo(100);
   }
 
   @Test
   public void canOverrideProperty_logsUrl() {
     final String url = "http://mycompany.com/kibana";
-    context = createContextWithOverridenProperty("zipkin.ui.logs-url:"+ url);
+    context = createContextWithOverridenProperty("zipkin.ui.logs-url:" + url);
 
     assertThat(context.getBean(ZipkinUiProperties.class).getLogsUrl()).isEqualTo(url);
   }
@@ -110,7 +111,6 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.enabled:false");
 
     context.getBean(ZipkinUiProperties.class);
-
   }
 
   @Test
@@ -137,18 +137,20 @@ public class ZipkinUiAutoConfigurationTest {
   }
 
   @Test
-  public void defaultBaseUrl() throws IOException {
+  public void defaultBaseUrl_doesNotChangeResource() throws IOException {
     context = createContext();
+    Resource index =
+      (Resource) context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody();
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody())
-      .contains("<base>/zipkin/</base>");
+    assertThat(index.getInputStream())
+      .hasSameContentAs(getClass().getResourceAsStream("/zipkin-ui/index.html"));
   }
 
   @Test
   public void canOverideProperty_basePath() throws IOException {
     context = createContextWithOverridenProperty("zipkin.ui.base-path:/foo/bar/");
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody())
+    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody().toString())
       .contains("<base>/foo/bar/</base>");
   }
 
@@ -159,7 +161,8 @@ public class ZipkinUiAutoConfigurationTest {
     return context;
   }
 
-  private static AnnotationConfigApplicationContext createContextWithOverridenProperty(String pair) {
+  private static AnnotationConfigApplicationContext createContextWithOverridenProperty(
+    String pair) {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
     addEnvironment(context, pair);
     context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
