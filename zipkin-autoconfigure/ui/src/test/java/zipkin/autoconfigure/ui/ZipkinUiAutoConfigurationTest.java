@@ -151,7 +151,7 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody().toString())
-      .contains("<base>/foo/bar/</base>");
+      .contains("<base href=\"/foo/bar/\">");
   }
 
   @Test
@@ -159,7 +159,7 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody().toString())
-      .contains("<base>/</base>");
+      .contains("<base href=\"/\">");
   }
 
   private static AnnotationConfigApplicationContext createContext() {

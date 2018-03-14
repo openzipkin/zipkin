@@ -93,7 +93,7 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
         soup.createElement("base")
       );
     }
-    soup.head().getElementsByTag("base").html(baseTagValue);
+    soup.head().getElementsByTag("base").attr("href", baseTagValue);
     return soup.html();
   }
 
