@@ -19,14 +19,14 @@ import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("zipkin.ui")
 public class ZipkinUiProperties {
-  static final String DEFAULT_BASE_PATH = "/zipkin/";
+  static final String DEFAULT_BASEPATH = "/zipkin";
 
   private String environment;
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
   private String logsUrl = null;
-  private String basePath = DEFAULT_BASE_PATH;
+  private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
 
@@ -88,12 +88,12 @@ public class ZipkinUiProperties {
     this.dependency = dependency;
   }
 
-  public String getBasePath() {
-    return basePath;
+  public String getBasepath() {
+    return basepath;
   }
 
-  public void setBasePath(String basePath) {
-    this.basePath = basePath;
+  public void setBasepath(String basepath) {
+    this.basepath = basepath;
   }
 
   public static class Dependency {

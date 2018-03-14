@@ -65,7 +65,7 @@ public class ZipkinUiAutoConfigurationTest {
   public void invalidIndexHtml() throws IOException {
     // I failed to make Jsoup barf, even on nonsense like: "<head wait no I changed my mind this HTML is totally invalid <<<<<<<<<<<"
     // So let's just run with a case where the file doesn't exist
-    context = createContextWithOverridenProperty("zipkin.ui.base-path:/foo/bar/");
+    context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
     ZipkinUiAutoConfiguration ui = context.getBean(ZipkinUiAutoConfiguration.class);
     ui.indexHtml = new ClassPathResource("does-not-exist.html");
 
@@ -148,10 +148,18 @@ public class ZipkinUiAutoConfigurationTest {
 
   @Test
   public void canOverideProperty_basePath() throws IOException {
-    context = createContextWithOverridenProperty("zipkin.ui.base-path:/foo/bar/");
+    context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody().toString())
       .contains("<base>/foo/bar/</base>");
+  }
+
+  @Test
+  public void canOverideProperty_specialCaseRoot() throws IOException {
+    context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
+
+    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody().toString())
+      .contains("<base>/</base>");
   }
 
   private static AnnotationConfigApplicationContext createContext() {

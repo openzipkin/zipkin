@@ -44,7 +44,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.servlet.HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE;
-import static zipkin.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASE_PATH;
+import static zipkin.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
  * Zipkin-UI is a single-page application mounted at /zipkin. For simplicity, assume paths mentioned
@@ -83,16 +83,17 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   @Bean
   @Lazy
   String processedIndexHtml() throws IOException {
+    String baseTagValue = "/".equals(ui.getBasepath()) ? "/" : ui.getBasepath() + "/";
     Document soup;
     try (InputStream is = indexHtml.getInputStream()) {
-      soup = Jsoup.parse(is, null, ui.getBasePath());
+      soup = Jsoup.parse(is, null, baseTagValue);
     }
     if (soup.head().getElementsByTag("base").isEmpty()) {
       soup.head().appendChild(
         soup.createElement("base")
       );
     }
-    soup.head().getElementsByTag("base").html(ui.getBasePath());
+    soup.head().getElementsByTag("base").html(baseTagValue);
     return soup.html();
   }
 
@@ -140,7 +141,7 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
     ResponseEntity.BodyBuilder result = ResponseEntity.ok()
       .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
       .contentType(MediaType.TEXT_HTML);
-    return DEFAULT_BASE_PATH.equals(ui.getBasePath())
+    return DEFAULT_BASEPATH.equals(ui.getBasepath())
       ? result.body(indexHtml)
       : result.body(processedIndexHtml());
   }
