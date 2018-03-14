@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
@@ -80,17 +81,25 @@ public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
   Resource indexHtml;
 
   @Bean
+  @Lazy
   String processedIndexHtml() throws IOException {
-    InputStream is = indexHtml.getInputStream();
-    Document soup = Jsoup.parse(is, null, ui.getBasePath());
-    is.close();
-    if (soup.head().getElementsByTag("base").isEmpty()) {
-      soup.head().appendChild(
-        soup.createElement("base")
-      );
+    InputStream is = null;
+    try {
+      is = indexHtml.getInputStream();
+      Document soup = Jsoup.parse(is, null, ui.getBasePath());
+      is.close();
+      if (soup.head().getElementsByTag("base").isEmpty()) {
+        soup.head().appendChild(
+          soup.createElement("base")
+        );
+      }
+      soup.head().getElementsByTag("base").html(ui.getBasePath());
+      return soup.html();
+    } finally {
+      if (is != null) {
+        is.close();
+      }
     }
-    soup.head().getElementsByTag("base").html(ui.getBasePath());
-    return soup.html();
   }
 
   @Override

@@ -14,15 +14,21 @@
 package zipkin.autoconfigure.ui;
 
 import org.junit.After;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 
 import java.io.IOException;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.isA;
+import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinUiAutoConfigurationTest {
@@ -35,6 +41,9 @@ public class ZipkinUiAutoConfigurationTest {
       context.close();
     }
   }
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
 
   @Test
   public void indexHtmlFromClasspath() {
@@ -49,6 +58,21 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContext();
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getHeaders().getContentType())
       .isEqualTo(MediaType.TEXT_HTML);
+  }
+
+  @Test
+  public void invalidIndexHtml() throws IOException {
+    // I failed to make Jsoup barf, even on nonsense like: "<head wait no I changed my mind this HTML is totally invalid <<<<<<<<<<<"
+    // So let's just run with a case where the file doesn't exist
+    context = createContext();
+    ZipkinUiAutoConfiguration ui = context.getBean(ZipkinUiAutoConfiguration.class);
+    ui.indexHtml = new ClassPathResource("does-not-exist.html");
+
+    thrown.expect(BeanCreationException.class);
+    // There's a BeanInstantiationException nested in between BeanCreationException and IOException,
+    // so we go one level deeper about causes. There's no `expectRootCause`.
+    thrown.expectCause(hasCause(isA(IOException.class)));
+    ui.serveIndex();
   }
 
   @Test
