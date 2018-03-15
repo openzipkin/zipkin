@@ -1,6 +1,7 @@
 import {component} from 'flightjs';
 import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
 import traceToMustache from '../../js/component_ui/traceToMustache';
+import _ from 'lodash';
 import {SPAN_V1} from '../spanConverter';
 
 function rootToFrontComparator(span1/* , span2*/) {
@@ -19,11 +20,17 @@ function ensureV1(trace) {
     return trace;
   }
 
-  const newTrace = [];
-  for (let i = 0; i < trace.length; i++) {
-    newTrace.push(SPAN_V1.convert(trace[i]));
-  }
-
+  const groupedById = _(trace).map(SPAN_V1.convert).groupBy('id').value();
+  const newTrace = _(groupedById).map((spans) => {
+    if (spans.length === 1) return spans[0];
+    let merged = spans[0];
+    for (let i = 1; i < spans.length; i++) {
+      merged = SPAN_V1.merge(merged, spans[i]);
+    }
+    return merged;
+  })
+  .sort((l, r) => l.timestamp || 0 - r.timestamp || 0)
+  .value();
   return newTrace;
 }
 

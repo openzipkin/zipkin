@@ -27,15 +27,17 @@ function toV1Annotation(ann, endpoint) {
 // that 'beginAnnotation' comes first timestamp/duration should always be copied over
 function convertV1(span) {
   const res = {
-    traceId: span.traceId
+    traceId: span.traceId,
   };
   if (span.parentId) { // instead of writing "parentId": NULL
     res.parentId = span.parentId;
   }
   res.id = span.id;
   res.name = span.name || ''; // undefined is not allowed in v1
-  res.timestamp = span.timestamp;
-  res.duration = span.duration;
+  if (!span.shared) {
+    res.timestamp = span.timestamp;
+    res.duration = span.duration;
+  }
 
   const jsonEndpoint = toV1Endpoint(span.localEndpoint);
 
@@ -107,8 +109,70 @@ function convertV1(span) {
   return res;
 }
 
+function merge(left, right) {
+  const res = {
+    traceId: left.traceId,
+    parentId: left.parentId,
+    id: left.id
+  };
+  if (right.parentId) {
+    res.parentId = right.parentId;
+  } else if (!res.parentId) {
+    delete(res.parentId);
+  }
+
+  let leftClientSpan = false;
+  for (let i = 0; i < left.annotations.length; i++) {
+    if (left.annotations[i].value === 'cs') {
+      leftClientSpan = true;
+      break;
+    }
+  }
+  let rightServerSpan = false;
+  for (let i = 0; i < right.annotations.length; i++) {
+    if (right.annotations[i].value === 'sr') {
+      rightServerSpan = true;
+      break;
+    }
+  }
+
+  if (left.name === '' || left.name === 'unknown') {
+    res.name = right.name;
+  } else if (right.name === '' || right.name === 'unknown') {
+    res.name = left.name;
+  } else if (leftClientSpan && rightServerSpan) {
+    res.name = right.name; // prefer the server's span name
+  } else {
+    res.name = left.name;
+  }
+
+  if (right.timestamp) {
+    res.timestamp = right.timestamp;
+  } else {
+    delete(res.timestamp);
+  }
+  if (right.duration) {
+    res.duration = right.duration;
+  } else {
+    delete(res.duration);
+  }
+  res.annotations = left.annotations
+                        .concat(right.annotations)
+                        .sort((l, r) => l.timestamp - r.timestamp);
+  res.binaryAnnotations = left.binaryAnnotations
+                              .concat(right.binaryAnnotations);
+
+  if (right.debug) { // instead of writing "debug": false
+    res.debug = true;
+  }
+  return res;
+}
+
 module.exports.SPAN_V1 = {
   convert(span) {
     return convertV1(span);
+  },
+  merge(left, right) {
+    return merge(left, right);
   }
 };
