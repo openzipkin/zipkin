@@ -125,6 +125,24 @@ describe('traceToMustache', () => {
     testSpan.binaryAnnotations[0].key.should.equal('Local Component');
   });
 
+  it('should not include empty Local Component annotations', () => {
+    const testTrace = [{
+      traceId: '2480ccca8df0fca5',
+      name: 'get',
+      id: '2480ccca8df0fca5',
+      timestamp: 1457186385375000,
+      duration: 333000,
+      binaryAnnotations: [{
+        key: 'lc',
+        value: '',
+        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+      }]
+    }];
+    const {spans: [testSpan]} = traceToMustache(testTrace);
+    // skips empty Local Component, but still shows it as an address
+    testSpan.binaryAnnotations[0].key.should.equal('Local Address');
+  });
+
   it('should tolerate spans without binary annotations', () => {
     const testTrace = [{
       traceId: '2480ccca8df0fca5',

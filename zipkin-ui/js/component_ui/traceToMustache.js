@@ -114,7 +114,10 @@ export default function traceToMustache(trace, logsUrl = undefined) {
       const width = (span.duration || 0) / summary.duration * 100;
       let errorType = 'none';
 
-      const binaryAnnotations = (span.binaryAnnotations || []).map((a) => {
+      const binaryAnnotations = (span.binaryAnnotations || [])
+      // empty "lc" tags are just a hack for "Local Address" which is processed below
+      .filter((a) => a.key !== Constants.LOCAL_COMPONENT || a.value.length > 0)
+      .map((a) => {
         if (a.key === Constants.ERROR) {
           errorType = 'critical';
         }
