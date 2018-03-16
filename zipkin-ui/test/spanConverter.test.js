@@ -157,6 +157,44 @@ describe('SPAN v1 Conversion', () => {
     ]);
   });
 
+  it('should retain ipv4 and ipv6 addresses', () => {
+    const localEndpoint = {
+      serviceName: 'there',
+      ipv4: '10.57.50.84',
+      ipv6: '2001:db8::c001',
+      port: 80
+    };
+
+    const spanV2 = {
+      traceId: 'a',
+      id: 'a',
+      kind: 'CLIENT',
+      timestamp: 1,
+      localEndpoint
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1.annotations.map(s => s.endpoint)).to.deep.equal([localEndpoint]);
+  });
+
+  it('should backfill empty endpoint serviceName', () => {
+    const spanV2 = {
+      traceId: 'a',
+      id: 'a',
+      kind: 'CLIENT',
+      timestamp: 1,
+      localEndpoint: {
+        ipv6: '2001:db8::c001'
+      }
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1.annotations.map(s => s.endpoint)).to.deep.equal([{
+      serviceName: '',
+      ipv6: '2001:db8::c001'
+    }]);
+  });
+
   it('should not write timestamps for shared span', () => {
     const spanV2 = {
       traceId: 'a',
