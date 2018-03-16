@@ -353,6 +353,32 @@ describe('SPAN v1 Conversion', () => {
     expect(spanV1).to.deep.equal(expected);
   });
 
+  it('converts local span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      name: 'process',
+      id: 'c',
+      parentId: 'b',
+      timestamp: 1,
+      localEndpoint: {serviceName: 'backend'}
+    };
+
+    const expected = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'process',
+      timestamp: 1,
+      annotations: [],
+      binaryAnnotations: [
+        {key: 'lc', value: '', endpoint: {serviceName: 'backend'}}
+      ]
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
   it('should write CS/CR when no annotations exist', () => {
     const spanV2 = {
       traceId: 'a',
