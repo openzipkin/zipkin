@@ -8,6 +8,9 @@ function toV1Endpoint(endpoint) {
   if (endpoint.ipv4) {
     res.ipv4 = endpoint.ipv4;
   }
+  if (endpoint.ipv6) {
+    res.ipv6 = endpoint.ipv6;
+  }
   if (endpoint.port) {
     res.port = endpoint.port;
   }
@@ -58,11 +61,7 @@ function convertV1(span) {
     default:
   }
 
-  if (span.annotations !== undefined && span.annotations.length > 0
-          || beginAnnotation) { // don't write empty array
-    res.annotations = [];
-  }
-
+  res.annotations = []; // prefer empty to undefined for arrays
   if (beginAnnotation) {
     res.annotations.push({
       value: beginAnnotation,
@@ -85,8 +84,9 @@ function convertV1(span) {
     });
   }
 
+  res.binaryAnnotations = []; // prefer empty to undefined for arrays
   const keys = Object.keys(span.tags || {});
-  if (keys.length > 0 || span.remoteEndpoint) { // don't write empty array
+  if (keys.length > 0) {
     res.binaryAnnotations = keys.map(key => ({
       key,
       value: span.tags[key],
@@ -103,7 +103,7 @@ function convertV1(span) {
     res.binaryAnnotations.push(address);
   }
 
-  if (span.debug) { // instead of writing "debug": false
+  if (span.debug) {
     res.debug = true;
   }
   return res;
@@ -121,20 +121,8 @@ function merge(left, right) {
     delete(res.parentId);
   }
 
-  let leftClientSpan = false;
-  for (let i = 0; i < left.annotations.length; i++) {
-    if (left.annotations[i].value === 'cs') {
-      leftClientSpan = true;
-      break;
-    }
-  }
-  let rightServerSpan = false;
-  for (let i = 0; i < right.annotations.length; i++) {
-    if (right.annotations[i].value === 'sr') {
-      rightServerSpan = true;
-      break;
-    }
-  }
+  const leftClientSpan = left.annotations.findIndex(a => a.value === 'cr') !== -1;
+  const rightServerSpan = right.annotations.findIndex(a => a.value === 'sr') !== -1;
 
   if (left.name === '' || left.name === 'unknown') {
     res.name = right.name;
@@ -162,7 +150,7 @@ function merge(left, right) {
   res.binaryAnnotations = left.binaryAnnotations
                               .concat(right.binaryAnnotations);
 
-  if (right.debug) { // instead of writing "debug": false
+  if (right.debug) {
     res.debug = true;
   }
   return res;
