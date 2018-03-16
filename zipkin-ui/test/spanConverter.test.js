@@ -2,12 +2,12 @@ const {SPAN_V1} = require('../js/spanConverter');
 const should = require('chai').should();
 
 describe('SPAN v1 Conversion', () => {
-  it('should transform correctly from v2 to v1', () => {
+  it('converts root server span', () => {
+    // let's pretend there was no caller, so we don't set shared flag
     const spanV2 = {
       traceId: 'a',
       name: 'get',
-      id: 'c',
-      parentId: 'b',
+      id: 'b',
       kind: 'SERVER',
       timestamp: 1,
       duration: 1,
@@ -17,39 +17,40 @@ describe('SPAN v1 Conversion', () => {
         port: 8080
       },
       tags: {
-        warning: 'The cake is a lie'
+        'http.path': '/foo'
       }
     };
 
     const expected = {
       traceId: 'a',
+      id: 'b',
       name: 'get',
-      id: 'c',
-      parentId: 'b',
+      timestamp: 1,
+      duration: 1,
       annotations: [
         {
+          value: 'sr',
+          timestamp: 1,
           endpoint: {
             serviceName: 'portalservice',
             ipv4: '10.57.50.83',
             port: 8080
-          },
-          timestamp: 1,
-          value: 'sr'
+          }
         },
         {
+          value: 'ss',
+          timestamp: 2,
           endpoint: {
             serviceName: 'portalservice',
             ipv4: '10.57.50.83',
-            port: 8080,
-          },
-          timestamp: 2,
-          value: 'ss'
+            port: 8080
+          }
         }
       ],
       binaryAnnotations: [
         {
-          key: 'warning',
-          value: 'The cake is a lie',
+          key: 'http.path',
+          value: '/foo',
           endpoint: {
             serviceName: 'portalservice',
             ipv4: '10.57.50.83',
@@ -60,12 +61,296 @@ describe('SPAN v1 Conversion', () => {
     };
 
     const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1.traceId).to.equal(expected.traceId);
-    expect(spanV1.name).to.equal(expected.name);
-    expect(spanV1.id).to.equal(expected.id);
-    expect(spanV1.parentId).to.equal(expected.parentId);
-    expect(spanV1.annotations).to.deep.equal(expected.annotations);
-    expect(spanV1.binaryAnnotations).to.deep.equal(expected.binaryAnnotations);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
+  it('converts incomplete shared server span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'get',
+      kind: 'SERVER',
+      shared: true,
+      timestamp: 1,
+      localEndpoint: {
+        serviceName: 'portalservice',
+        ipv4: '10.57.50.83',
+        port: 8080
+      },
+      tags: {
+        'http.path': '/foo'
+      }
+    };
+
+    const expected = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'get',
+      annotations: [
+        {
+          value: 'sr',
+          timestamp: 1,
+          endpoint: {
+            serviceName: 'portalservice',
+            ipv4: '10.57.50.83',
+            port: 8080
+          }
+        }
+      ],
+      binaryAnnotations: [
+        {
+          key: 'http.path',
+          value: '/foo',
+          endpoint: {
+            serviceName: 'portalservice',
+            ipv4: '10.57.50.83',
+            port: 8080
+          }
+        }
+      ]
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
+  it('converts client span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      name: 'get',
+      id: 'b',
+      kind: 'CLIENT',
+      timestamp: 1,
+      duration: 1,
+      localEndpoint: {
+        serviceName: 'portalservice',
+        ipv4: '10.57.50.83',
+        port: 8080
+      },
+      tags: {
+        'http.path': '/foo'
+      }
+    };
+
+    const expected = {
+      traceId: 'a',
+      id: 'b',
+      name: 'get',
+      timestamp: 1,
+      duration: 1,
+      annotations: [
+        {
+          value: 'cs',
+          timestamp: 1,
+          endpoint: {
+            serviceName: 'portalservice',
+            ipv4: '10.57.50.83',
+            port: 8080
+          }
+        },
+        {
+          value: 'cr',
+          timestamp: 2,
+          endpoint: {
+            serviceName: 'portalservice',
+            ipv4: '10.57.50.83',
+            port: 8080
+          }
+        }
+      ],
+      binaryAnnotations: [
+        {
+          key: 'http.path',
+          value: '/foo',
+          endpoint: {
+            serviceName: 'portalservice',
+            ipv4: '10.57.50.83',
+            port: 8080
+          }
+        }
+      ]
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
+  it('converts incomplete client span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'get',
+      kind: 'CLIENT',
+      timestamp: 1,
+      localEndpoint: {
+        serviceName: 'portalservice',
+        ipv4: '10.57.50.83',
+        port: 8080
+      },
+      tags: {
+        'http.path': '/foo'
+      }
+    };
+
+    const expected = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'get',
+      timestamp: 1,
+      annotations: [
+        {
+          value: 'cs',
+          timestamp: 1,
+          endpoint: {
+            serviceName: 'portalservice',
+            ipv4: '10.57.50.83',
+            port: 8080
+          }
+        }
+      ],
+      binaryAnnotations: [
+        {
+          key: 'http.path',
+          value: '/foo',
+          endpoint: {
+            serviceName: 'portalservice',
+            ipv4: '10.57.50.83',
+            port: 8080
+          }
+        }
+      ]
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
+  it('converts producer span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      name: 'publish',
+      id: 'c',
+      parentId: 'b',
+      kind: 'PRODUCER',
+      timestamp: 1,
+      duration: 1,
+      localEndpoint: {serviceName: 'frontend'},
+      remoteEndpoint: {serviceName: 'rabbitmq'}
+    };
+
+    const expected = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'publish',
+      timestamp: 1,
+      duration: 1,
+      annotations: [
+        {value: 'ms', timestamp: 1, endpoint: {serviceName: 'frontend'}},
+        {value: 'ws', timestamp: 2, endpoint: {serviceName: 'frontend'}},
+      ],
+      binaryAnnotations: [
+        {
+          key: 'ma',
+          value: true,
+          endpoint: {serviceName: 'rabbitmq'}
+        }
+      ]
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
+  it('converts incomplete producer span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      name: 'publish',
+      id: 'c',
+      parentId: 'b',
+      kind: 'PRODUCER',
+      timestamp: 1,
+      localEndpoint: {serviceName: 'frontend'}
+    };
+
+    const expected = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'publish',
+      timestamp: 1,
+      annotations: [{value: 'ms', timestamp: 1, endpoint: {serviceName: 'frontend'}}],
+      binaryAnnotations: []
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
+  it('converts consumer span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      name: 'next-message',
+      id: 'c',
+      parentId: 'b',
+      kind: 'CONSUMER',
+      timestamp: 1,
+      duration: 1,
+      localEndpoint: {serviceName: 'backend'},
+      remoteEndpoint: {serviceName: 'rabbitmq'}
+    };
+
+    const expected = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'next-message',
+      timestamp: 1,
+      duration: 1,
+      annotations: [
+        {value: 'wr', timestamp: 1, endpoint: {serviceName: 'backend'}},
+        {value: 'mr', timestamp: 2, endpoint: {serviceName: 'backend'}},
+      ],
+      binaryAnnotations: [
+        {
+          key: 'ma',
+          value: true,
+          endpoint: {serviceName: 'rabbitmq'}
+        }
+      ]
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
+  });
+
+  it('converts incomplete consumer span', () => {
+    const spanV2 = {
+      traceId: 'a',
+      name: 'next-message',
+      id: 'c',
+      parentId: 'b',
+      kind: 'CONSUMER',
+      timestamp: 1,
+      localEndpoint: {serviceName: 'backend'}
+    };
+
+    const expected = {
+      traceId: 'a',
+      parentId: 'b',
+      id: 'c',
+      name: 'next-message',
+      timestamp: 1,
+      annotations: [{value: 'mr', timestamp: 1, endpoint: {serviceName: 'backend'}}],
+      binaryAnnotations: []
+    };
+
+    const spanV1 = SPAN_V1.convert(spanV2);
+    expect(spanV1).to.deep.equal(expected);
   });
 
   it('should write CS/CR when no annotations exist', () => {

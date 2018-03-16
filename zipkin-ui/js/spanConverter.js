@@ -38,8 +38,8 @@ function convertV1(span) {
   res.id = span.id;
   res.name = span.name || ''; // undefined is not allowed in v1
   if (!span.shared) {
-    res.timestamp = span.timestamp;
-    res.duration = span.duration;
+    if (span.timestamp) res.timestamp = span.timestamp;
+    if (span.duration) res.duration = span.duration;
   }
 
   const jsonEndpoint = toV1Endpoint(span.localEndpoint);
@@ -57,6 +57,20 @@ function convertV1(span) {
       beginAnnotation = span.timestamp ? 'sr' : undefined;
       endAnnotation = 'ss';
       addressKey = 'ca';
+      break;
+    case 'PRODUCER':
+      beginAnnotation = span.timestamp ? 'ms' : undefined;
+      endAnnotation = 'ws';
+      addressKey = 'ma';
+      break;
+    case 'CONSUMER':
+      if (span.timestamp && span.duration) {
+        beginAnnotation = 'wr';
+        endAnnotation = 'mr';
+      } else if (span.timestamp) {
+        beginAnnotation = 'mr';
+      }
+      addressKey = 'ma';
       break;
     default:
   }
