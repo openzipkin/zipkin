@@ -47,6 +47,7 @@ function convertV1(span) {
   let beginAnnotation;
   let endAnnotation;
   let addressKey;
+  let local;
   switch (span.kind) {
     case 'CLIENT':
       beginAnnotation = span.timestamp ? 'cs' : undefined;
@@ -73,6 +74,7 @@ function convertV1(span) {
       addressKey = 'ma';
       break;
     default:
+      local = true;
   }
 
   res.annotations = []; // prefer empty to undefined for arrays
@@ -84,11 +86,9 @@ function convertV1(span) {
     });
   }
 
-  if (span.annotations !== undefined && span.annotations.length > 0) {
-    span.annotations.forEach((ann) =>
-      res.annotations.push(toV1Annotation(ann, jsonEndpoint))
-    );
-  }
+  (span.annotations || []).forEach((ann) =>
+    res.annotations.push(toV1Annotation(ann, jsonEndpoint))
+  );
 
   if (beginAnnotation && span.duration) {
     res.annotations.push({
@@ -106,6 +106,11 @@ function convertV1(span) {
       value: span.tags[key],
       endpoint: jsonEndpoint
     }));
+  }
+
+  // worst case, make a dummy local component annotation, so the span can be looked up
+  if (res.annotations.length === 0 && res.binaryAnnotations.length === 0 && local) {
+    res.binaryAnnotations.push({key: 'lc', value: '', endpoint: jsonEndpoint});
   }
 
   if (span.remoteEndpoint) {
