@@ -79,7 +79,7 @@ database needed.
 
 ### Cassandra
 The [Cassandra](zipkin-storage/cassandra) component is tested against
-Cassandra 3.11+. It stores spans using UDTs, such that they appear like
+Cassandra 3.11.3+. It stores spans using UDTs, such that they appear like
 the v2 Zipkin model in cqlsh. It is designed for scale. For example, it
 uses a combination of SASI and manually implemented indexes to make
 querying larger data more performant.

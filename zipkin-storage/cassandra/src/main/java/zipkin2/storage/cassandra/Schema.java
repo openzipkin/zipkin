@@ -16,10 +16,12 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.Host;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.TypeCodec;
+import com.datastax.driver.core.VersionNumber;
 import com.datastax.driver.core.exceptions.InvalidTypeException;
 import com.datastax.driver.mapping.annotations.UDT;
 import com.google.common.base.Preconditions;
@@ -97,6 +99,11 @@ final class Schema {
   }
 
   static KeyspaceMetadata ensureExists(String keyspace, boolean searchEnabled, Session session) {
+    session.getCluster().getMetadata().getAllHosts().forEach((host) -> {
+      Preconditions.checkState(
+              0 < VersionNumber.parse("3.11.3").compareTo(host.getCassandraVersion()),
+              "All Cassandra nodes must be running 3.11.3+");
+    });
     KeyspaceMetadata result = session.getCluster().getMetadata().getKeyspace(keyspace);
     if (result == null || result.getTable(Schema.TABLE_SPAN) == null) {
       LOG.info("Installing schema {} for keyspace {}", SCHEMA_RESOURCE, keyspace);
