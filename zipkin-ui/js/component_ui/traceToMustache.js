@@ -79,17 +79,15 @@ function toSpanDepths(spans) {
   return treeDepths(entry, 1);
 }
 
-export function formatEndpoint({ipv4, ipv6, port = 0, serviceName = ''}) {
-  if (serviceName) {
-    if (ipv6) {
-      return `[${ipv6}]:${port} (${serviceName})`;
-    }
-    return `${ipv4}:${port} (${serviceName})`;
+export function formatEndpoint({ipv4, ipv6, port, serviceName}) {
+  if (ipv4 || ipv6) {
+    const ip = ipv6 ? `[${ipv6}]` : ipv4; // arbitrarily prefer ipv6
+    const portString = port ? `:${port}` : '';
+    const serviceNameString = serviceName ? ` (${serviceName})` : '';
+    return ip + portString + serviceNameString;
+  } else {
+    return serviceName || '';
   }
-  if (ipv6) {
-    return `[${ipv6}]:${port}`;
-  }
-  return `${ipv4}:${port}`;
 }
 
 export default function traceToMustache(trace, logsUrl = undefined) {
