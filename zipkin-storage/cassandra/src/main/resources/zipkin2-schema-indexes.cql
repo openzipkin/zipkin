@@ -33,13 +33,14 @@ CREATE TABLE IF NOT EXISTS zipkin2.span_by_service (
     AND speculative_retry = '95percentile'
     AND comment = 'Secondary table for looking up span names by a service name.';
 
+DROP INDEX IF EXISTS zipkin2.span_annotation_query_idx;
+
 CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2.span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {
-    'mode': 'CONTAINS',
+    'mode': 'PREFIX',
     'analyzed': 'true',
-    'analyzer_class':'org.apache.cassandra.index.sasi.analyzer.NonTokenizingAnalyzer',
-    'case_sensitive': 'false'
-   };
+    'analyzer_class':'org.apache.cassandra.index.sasi.analyzer.DelimiterAnalyzer',
+    'delimiter': '░'};
 
 CREATE CUSTOM INDEX IF NOT EXISTS ON zipkin2.span (l_service) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};

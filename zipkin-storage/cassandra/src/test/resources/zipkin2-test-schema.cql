@@ -1,4 +1,4 @@
-CREATE KEYSPACE IF NOT EXISTS stress_zipkin2 WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};
+CREATE KEYSPACE IF NOT EXISTS stress_zipkin2 WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'} AND durable_writes = false;
 
 //-- same schema but remove all UDTs and collections (as cassandra-stress doesn't support them)
 
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS stress_zipkin2.span (
     PRIMARY KEY (trace_id, ts_uuid, id)
 )
     WITH CLUSTERING ORDER BY (ts_uuid DESC)
-    AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy', 'compaction_window_size': 10, 'compaction_window_unit': 'MINUTES'}
     AND default_time_to_live =  604800;
 
 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS stress_zipkin2.trace_by_service_span (
     PRIMARY KEY ((service, span, bucket), ts)
 )
    WITH CLUSTERING ORDER BY (ts DESC)
-    AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy'}
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.TimeWindowCompactionStrategy', 'compaction_window_size': 10, 'compaction_window_unit': 'MINUTES'}
     AND default_time_to_live =  259200;
 
 CREATE TABLE IF NOT EXISTS stress_zipkin2.span_by_service (
@@ -43,11 +43,10 @@ CREATE TABLE IF NOT EXISTS stress_zipkin2.span_by_service (
 
 CREATE CUSTOM INDEX IF NOT EXISTS ON stress_zipkin2.span (annotation_query) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {
-    'mode': 'CONTAINS',
+    'mode': 'PREFIX',
     'analyzed': 'true',
-    'analyzer_class':'org.apache.cassandra.index.sasi.analyzer.NonTokenizingAnalyzer',
-    'case_sensitive': 'false'
-   };
+    'analyzer_class':'org.apache.cassandra.index.sasi.analyzer.DelimiterAnalyzer',
+    'delimiter': 'a'};
 
 CREATE CUSTOM INDEX IF NOT EXISTS ON stress_zipkin2.span (l_service) USING 'org.apache.cassandra.index.sasi.SASIIndex'
    WITH OPTIONS = {'mode': 'PREFIX'};

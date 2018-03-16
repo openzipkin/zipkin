@@ -104,8 +104,7 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
       Input input =
           new AutoValue_SelectTraceIdsFromSpan_Input(
               serviceName,
-              // % for like, bracing with ░ to ensure no accidental substring match
-              "%░" + annotationKey + "░%",
+              annotationKey,
               timestampRange.startUUID,
               timestampRange.endUUID,
               limit);
