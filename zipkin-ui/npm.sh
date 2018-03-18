@@ -1,10 +1,10 @@
 #!/bin/sh
-
 TARGET="$(dirname $0)/target/node"
 
-if [ ! -x "$TARGET/npm" ]; then
-    echo "ERROR: npm not found at $TARGET/npm, did you run mvn install?"
+if [ ! -x "$TARGET/node" ]; then
+    echo "ERROR: node not found at $TARGET/node, did you run mvn install?"
     exit 1
 fi
 
-PATH="$TARGET:$PATH" npm "$@"
+PATH=$TARGET:$PATH
+node "target/node/node_modules/npm/bin/npm-cli.js" "$@"
