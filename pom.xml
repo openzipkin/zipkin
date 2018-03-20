@@ -650,7 +650,6 @@
         <version>${maven-install-plugin.version}</version>
         <configuration>
           <createChecksum>true</createChecksum>
-          <installAtEnd>true</installAtEnd>
         </configuration>
       </plugin>
 
