@@ -56,7 +56,7 @@ public abstract class IndexNameFormatter {
           char separator = dateSeparator();
           SimpleDateFormat result = new SimpleDateFormat(separator == 0 ?
             "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator));
-          result.setTimeZone(TimeZone.getTimeZone("UTC"));
+          result.setTimeZone(UTC);
           return result;
         }
       }).autoBuild();
