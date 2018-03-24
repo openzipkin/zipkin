@@ -14,9 +14,11 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.ResultSet;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import org.assertj.core.api.ObjectArrayAssert;
+import org.assertj.core.api.AbstractListAssert;
+import org.assertj.core.api.ObjectAssert;
 import org.junit.Test;
 import org.mockito.Mockito;
 import zipkin2.Call;
@@ -233,10 +235,10 @@ public class CassandraSpanConsumerTest {
       .allSatisfy(q -> assertThat(q).isNull());
   }
 
-  static ObjectArrayAssert<Call<ResultSet>> assertEnclosedCalls(
+  static AbstractListAssert<?, List<? extends Call<ResultSet>>, Call<ResultSet>, ObjectAssert<Call<ResultSet>>> assertEnclosedCalls(
     StoreSpansCall call) {
     return assertThat(call).extracting("calls")
-      .flatExtracting(calls -> (List<Call<ResultSet>>) calls);
+      .flatExtracting(calls -> (Collection<Call<ResultSet>>) calls);
   }
 
   static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {

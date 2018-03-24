@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -227,12 +227,12 @@ public final class QueryRequest {
      */
     public Builder parseAnnotationQuery(@Nullable String annotationQuery) {
       if (annotationQuery != null && !annotationQuery.isEmpty()) {
-        for (String ann : annotationQuery.split(" and ")) {
+        for (String ann : annotationQuery.split(" and ", 100)) {
           int idx = ann.indexOf('=');
           if (idx == -1) {
             addAnnotation(ann);
           } else {
-            String[] keyValue = ann.split("=");
+            String[] keyValue = ann.split("=", 2);
             addBinaryAnnotation(ann.substring(0, idx),
                 keyValue.length < 2 ? "" : ann.substring(idx + 1));
           }

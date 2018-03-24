@@ -16,9 +16,9 @@ package zipkin2.elasticsearch;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
-import okhttp3.internal.tls.SslClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.internal.tls.SslClient;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -105,6 +105,7 @@ public class ElasticsearchStorageTest {
     SslClient sslClient = SslClient.localhost();
     OkHttpClient client = new OkHttpClient.Builder()
       .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+      .hostnameVerifier((host, session) -> true)
       .build();
     es.useHttps(sslClient.socketFactory, false);
 
