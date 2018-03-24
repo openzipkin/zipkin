@@ -16,6 +16,10 @@ export default function loadConfig() {
     type: 'GET',
     dataType: 'json'
   }).then(data => function config(key) {
+    if (data[key] === false) {
+      return false;
+    }
+
     return data[key] || defaults[key];
   });
 }
