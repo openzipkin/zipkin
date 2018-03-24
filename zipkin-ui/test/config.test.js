@@ -11,6 +11,17 @@ describe('Config Data', () => {
   });
   after(() => { server.restore(); });
 
+  it('searchEnabled defaults to true', (done) => {
+    server.respondWith('config.json', [
+      200, {'Content-Type': 'application/json'}, JSON.stringify({})
+    ]);
+
+    loadConfig().then(config => {
+      config('searchEnabled').should.equal(true);
+      done();
+    });
+  });
+
   // This tests false can override true!
   it('should parse searchEnabled false value', (done) => {
     server.respondWith('config.json', [
