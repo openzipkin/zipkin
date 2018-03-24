@@ -105,6 +105,7 @@ public class ElasticsearchStorageTest {
     SslClient sslClient = SslClient.localhost();
     OkHttpClient client = new OkHttpClient.Builder()
       .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+      .hostnameVerifier((host, session) -> true)
       .build();
     es.useHttps(sslClient.socketFactory, false);
 
