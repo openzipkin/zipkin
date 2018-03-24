@@ -30,7 +30,7 @@
 	<properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <amqp-client.version>4.4.2</amqp-client.version>
+    <amqp-client.version>4.5.0</amqp-client.version>
   </properties>
 
   <dependencies>

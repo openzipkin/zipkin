@@ -130,12 +130,12 @@ public abstract class QueryRequest {
     public Builder parseAnnotationQuery(@Nullable String annotationQuery) {
       if (annotationQuery == null || annotationQuery.isEmpty()) return this;
       Map<String, String> map = new LinkedHashMap<>();
-      for (String ann : annotationQuery.split(" and ")) {
+      for (String ann : annotationQuery.split(" and ", 100)) {
         int idx = ann.indexOf('=');
         if (idx == -1) {
           map.put(ann, "");
         } else {
-          String[] keyValue = ann.split("=");
+          String[] keyValue = ann.split("=", 2);
           map.put(ann.substring(0, idx), keyValue.length < 2 ? "" : ann.substring(idx + 1));
         }
       }

@@ -227,12 +227,12 @@ public final class QueryRequest {
      */
     public Builder parseAnnotationQuery(@Nullable String annotationQuery) {
       if (annotationQuery != null && !annotationQuery.isEmpty()) {
-        for (String ann : annotationQuery.split(" and ")) {
+        for (String ann : annotationQuery.split(" and ", 100)) {
           int idx = ann.indexOf('=');
           if (idx == -1) {
             addAnnotation(ann);
           } else {
-            String[] keyValue = ann.split("=");
+            String[] keyValue = ann.split("=", 2);
             addBinaryAnnotation(ann.substring(0, idx),
                 keyValue.length < 2 ? "" : ann.substring(idx + 1));
           }
