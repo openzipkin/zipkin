@@ -34,7 +34,7 @@ import zipkin.storage.StorageComponent;
 @Configuration
 @Conditional(ZipkinRabbitMQCollectorAutoConfiguration.RabbitMQAddressesOrUriSet.class)
 @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
-public class ZipkinRabbitMQCollectorAutoConfiguration {
+class ZipkinRabbitMQCollectorAutoConfiguration {
 
   @Bean(initMethod = "start") RabbitMQCollector rabbitMq(
     ZipkinRabbitMQCollectorProperties properties,

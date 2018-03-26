@@ -26,7 +26,7 @@ import zipkin.collector.rabbitmq.RabbitMQCollector;
  * Properties for configuring and building a {@link RabbitMQCollector}.
  */
 @ConfigurationProperties("zipkin.collector.rabbitmq")
-public class ZipkinRabbitMQCollectorProperties {
+class ZipkinRabbitMQCollectorProperties {
 
   /** RabbitMQ server addresses in the form of a (comma-separated) list of host:port pairs */
   private List<String> addresses;

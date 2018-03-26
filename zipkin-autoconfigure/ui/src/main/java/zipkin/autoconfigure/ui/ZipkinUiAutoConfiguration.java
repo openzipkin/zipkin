@@ -72,7 +72,7 @@ import static zipkin.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @EnableConfigurationProperties(ZipkinUiProperties.class)
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 @RestController
-public class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
+class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 
   @Autowired
   ZipkinUiProperties ui;

@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,9 +15,10 @@ package zipkin.server;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import zipkin.server.internal.RegisterZipkinHealthIndicators;
 
 @SpringBootApplication
-@EnableZipkinServer
+@zipkin.server.internal.EnableZipkinServer
 public class ZipkinServer {
 
   public static void main(String[] args) {

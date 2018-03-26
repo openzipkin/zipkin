@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,10 +18,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.autoconfigure.storage.cassandra.ZipkinCassandraStorageAutoConfiguration;
-import zipkin.autoconfigure.storage.cassandra.ZipkinCassandraStorageProperties;
+import zipkin.autoconfigure.storage.cassandra.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -44,8 +42,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   public void doesntProvidesStorageComponent_whenStorageTypeNotCassandra() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:elasticsearch");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
+    Access.registerCassandra(context);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -56,8 +53,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   public void providesStorageComponent_whenStorageTypeCassandra() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
+    Access.registerCassandra(context);
     context.refresh();
 
     assertThat(context.getBean(CassandraStorage.class)).isNotNull();
@@ -70,11 +66,10 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
         "zipkin.storage.type:cassandra",
         "zipkin.storage.cassandra.contact-points:host1,host2" // note snake-case supported
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
+    Access.registerCassandra(context);
     context.refresh();
 
-    assertThat(context.getBean(ZipkinCassandraStorageProperties.class).getContactPoints())
+    assertThat(context.getBean(CassandraStorage.class).contactPoints)
         .isEqualTo("host1,host2");
   }
 
@@ -82,8 +77,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   public void strictTraceId_defaultsToTrue() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
+    Access.registerCassandra(context);
     context.refresh();
     assertThat(context.getBean(CassandraStorage.class).strictTraceId).isTrue();
   }
@@ -93,8 +87,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
     addEnvironment(context, "zipkin.storage.strict-trace-id:false");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinCassandraStorageAutoConfiguration.class);
+    Access.registerCassandra(context);
     context.refresh();
 
     assertThat(context.getBean(CassandraStorage.class).strictTraceId).isFalse();

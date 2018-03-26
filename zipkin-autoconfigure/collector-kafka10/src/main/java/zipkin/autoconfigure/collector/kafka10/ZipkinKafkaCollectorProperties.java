@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.collector.kafka10.KafkaCollector;
 
 @ConfigurationProperties("zipkin.collector.kafka")
-public class ZipkinKafkaCollectorProperties {
+class ZipkinKafkaCollectorProperties {
   /** Comma-separated list of Kafka bootstrap servers in the form [host]:[port],... */
   private String bootstrapServers;
   /** Kafka consumer group id used by the collector. */

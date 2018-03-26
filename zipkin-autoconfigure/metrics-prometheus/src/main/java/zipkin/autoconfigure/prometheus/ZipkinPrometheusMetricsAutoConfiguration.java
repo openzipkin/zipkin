@@ -31,7 +31,7 @@ import org.springframework.context.annotation.Configuration;
 @EnableSpringBootMetricsCollector
 @EnablePrometheusTiming
 @Configuration
-public class ZipkinPrometheusMetricsAutoConfiguration {
+class ZipkinPrometheusMetricsAutoConfiguration {
   // needs to be a JVM singleton
   static final Histogram http_request_duration_seconds = Histogram.build()
     .labelNames("path", "method")

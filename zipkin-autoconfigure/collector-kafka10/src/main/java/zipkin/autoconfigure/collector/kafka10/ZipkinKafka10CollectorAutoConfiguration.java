@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,7 +32,7 @@ import zipkin.storage.StorageComponent;
 @Configuration
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 @Conditional(ZipkinKafka10CollectorAutoConfiguration.KafkaBootstrapServersSet.class)
-public class ZipkinKafka10CollectorAutoConfiguration { // makes simple type name unique for /autoconfig
+class ZipkinKafka10CollectorAutoConfiguration { // makes simple type name unique for /autoconfig
 
   @Bean(initMethod = "start") KafkaCollector kafka(ZipkinKafkaCollectorProperties properties,
       CollectorSampler sampler, CollectorMetrics metrics, StorageComponent storage) {
