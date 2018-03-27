@@ -225,7 +225,7 @@ public final class CorrectForClockSkew {
     long latency;
     if (oneWay) {
       latency = serverRecv.timestamp - clientSend.timestamp;
-      // the only way there is skey is when the client appears to be after the server
+      // the only way there is skew is when the client appears to be after the server
       if (latency > 0) return null;
       // We can't currently do better than push the client and server apart by minimum duration (1)
       return new ClockSkew(server, latency - 1);
