@@ -126,7 +126,7 @@
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-failsafe-plugin</artifactId>
+            <artifactId>maven-surefire-plugin</artifactId>
             <!-- to prevent class not found in tests -->
             <configuration>
               <argLine>--add-modules java.xml.bind</argLine>
