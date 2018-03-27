@@ -117,4 +117,23 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <id>jigsaw</id>
+      <activation>
+        <jdk>[1.9,)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-failsafe-plugin</artifactId>
+            <!-- to prevent class not found in tests -->
+            <configuration>
+              <argLine>--add-modules java.xml.bind</argLine>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
