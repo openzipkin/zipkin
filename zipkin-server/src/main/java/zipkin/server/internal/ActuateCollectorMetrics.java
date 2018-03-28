@@ -117,40 +117,28 @@ public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMe
 
   @Override public Collection<Metric<?>> metrics() {
     List<Metric<?>> metrics = new ArrayList<>();
-    gaugeBuffers.forEach((key, gauge) -> {
-      metrics.add(new Metric<>(key, gauge.value, new Date(gauge.timestamp)));
-    });
-    counterBuffers.forEach((key, counter) -> {
-      metrics.add(new Metric<>(key, counter.sum(), new Date(counter.timestamp)));
-    });
+    gaugeBuffers.forEach((key, gauge) -> metrics.add(gauge.toMetric(key)));
+    counterBuffers.forEach((key, counter) -> metrics.add(counter.toMetric(key)));
     return metrics;
   }
 
   void increment(String name, long delta) {
-    CounterBuffer buffer = computeIfAbsent(counterBuffers, name, () -> new CounterBuffer(0L));
+    CounterBuffer buffer = computeIfAbsent(counterBuffers, name, CounterBuffer::new);
     buffer.timestamp = System.currentTimeMillis();
-    buffer.add(delta);
+    buffer.count.add(delta);
   }
 
   static class CounterBuffer {
     volatile long timestamp;
-    final LongAdder adder = new LongAdder();
+    final LongAdder count = new LongAdder();
 
-    CounterBuffer(long timestamp) {
-      this.timestamp = timestamp;
-    }
-
-    void add(long delta) {
-      adder.add(delta);
-    }
-
-    long sum() {
-      return adder.sum();
+    Metric<Long> toMetric(String key) {
+      return new Metric<>(key, count.sum(), new Date(timestamp));
     }
   }
 
   void set(String name, double value) {
-    GaugeBuffer buffer = computeIfAbsent(gaugeBuffers, name, () -> new GaugeBuffer(0L));
+    GaugeBuffer buffer = computeIfAbsent(gaugeBuffers, name, GaugeBuffer::new);
     buffer.timestamp = System.currentTimeMillis();
     buffer.value = value;
   }
@@ -159,8 +147,8 @@ public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMe
     volatile long timestamp;
     volatile double value;
 
-    GaugeBuffer(long timestamp) {
-      this.timestamp = timestamp;
+    Metric<Double> toMetric(String key) {
+      return new Metric<>(key, value, new Date(timestamp));
     }
   }
 
