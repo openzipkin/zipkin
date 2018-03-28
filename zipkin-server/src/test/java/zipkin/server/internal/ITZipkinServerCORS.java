@@ -20,7 +20,8 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.boot.context.embedded.LocalServerPort;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
@@ -45,7 +46,7 @@ public class ITZipkinServerCORS {
   static final String ALLOWED_ORIGIN = "http://foo.example.com";
   static final String DISALLOWED_ORIGIN = "http://bar.example.com";
 
-  @LocalServerPort int zipkinPort;
+  @Autowired @Value("${local.server.port}") int zipkinPort;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   /** Notably, javascript makes pre-flight requests, and won't POST spans if disallowed! */
