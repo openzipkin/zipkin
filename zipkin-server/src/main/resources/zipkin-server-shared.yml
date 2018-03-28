@@ -23,10 +23,6 @@ zipkin:
       streams: ${KAFKA_STREAMS:1}
       # Maximum size of a message containing spans in bytes
       max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
-    scribe:
-      enabled: ${SCRIBE_ENABLED:false}
-      category: zipkin
-      port: ${COLLECTOR_PORT:9410}
     rabbitmq:
       # RabbitMQ server address list (comma-separated list of host:port)
       addresses: ${RABBIT_ADDRESSES:}

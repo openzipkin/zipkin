@@ -43,6 +43,35 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <version>${spring-boot.version}</version>
+        <configuration>
+          <layoutFactory implementation="zipkin.layout.ZipkinLayoutFactory">
+            <name>custom</name>
+          </layoutFactory>
+          <classifier>module</classifier>
+          <!-- exclude dependencies already packaged in zipkin-server -->
+          <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
+          <excludeGroupIds>org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson</excludeGroupIds>
+          <!-- excludes direct dependency instead of the group id, as otherwise we'd exclude ourselves -->
+          <excludeArtifactIds>zipkin</excludeArtifactIds>
+        </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>io.zipkin.layout</groupId>
+            <artifactId>zipkin-layout-factory</artifactId>
+            <version>0.0.2</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+    </plugins>
+  </build>
+
   <profiles>
     <profile>
       <id>jigsaw</id>

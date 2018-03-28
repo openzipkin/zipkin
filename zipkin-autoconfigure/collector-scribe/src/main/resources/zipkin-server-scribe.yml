@@ -1,0 +1,6 @@
+zipkin:
+  collector:
+    scribe:
+      enabled: ${SCRIBE_ENABLED:false}
+      category: ${SCRIBE_CATEGORY:zipkin}
+      port: ${COLLECTOR_PORT:9410}

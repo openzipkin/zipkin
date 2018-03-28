@@ -185,13 +185,6 @@
       <optional>true</optional>
     </dependency>
 
-    <!-- Scribe Collector -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
-      <optional>true</optional>
-    </dependency>
-
     <!-- Prometheus metrics -->
     <dependency>
       <groupId>${project.groupId}</groupId>
