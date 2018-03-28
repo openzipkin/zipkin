@@ -18,7 +18,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("zipkin.ui")
-public class ZipkinUiProperties {
+class ZipkinUiProperties {
   static final String DEFAULT_BASEPATH = "/zipkin";
 
   private String environment;

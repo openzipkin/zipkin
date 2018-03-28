@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,7 +29,7 @@ import zipkin.storage.StorageComponent;
 @Configuration
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 @Conditional(KafkaZooKeeperSetCondition.class)
-public class ZipkinKafkaCollectorAutoConfiguration {
+class ZipkinKafkaCollectorAutoConfiguration {
 
   /**
    * This launches a thread to run start. This prevents a several second hang, or worse crash if

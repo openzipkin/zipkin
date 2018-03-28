@@ -23,14 +23,10 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.autoconfigure.storage.elasticsearch.http.BasicAuthInterceptor;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageAutoConfiguration;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageProperties;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchOkHttpAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.http.Access;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,8 +50,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
   public void doesntProvideStorageComponent_whenStorageTypeNotElasticsearch() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -69,9 +64,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es()).isNotNull();
@@ -84,12 +77,10 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200,http://host2:9200"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(context.getBean(ZipkinElasticsearchHttpStorageProperties.class).getHosts())
+    assertThat(es().hostsSupplier().get())
         .containsExactly("http://host1:9200", "http://host2:9200");
   }
 
@@ -101,9 +92,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
         "zipkin.storage.elasticsearch.pipeline:zipkin"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().pipeline())
@@ -118,9 +107,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
         "zipkin.storage.elasticsearch.max-requests:200"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().maxRequests())
@@ -135,9 +122,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:host1:9300"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().hostsSupplier().get())
@@ -151,9 +136,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:host1:9200"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().hostsSupplier().get())
@@ -167,9 +150,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:host1"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().hostsSupplier().get())
@@ -199,9 +180,8 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        InterceptorConfiguration.class);
+    Access.registerElasticsearchHttp(context);
+    context.register(InterceptorConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
@@ -215,9 +195,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchOkHttpAutoConfiguration.class,
-      InterceptorConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     OkHttpClient client = context.getBean(OkHttpClient.class);
@@ -238,9 +216,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.timeout:" + timeout
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchOkHttpAutoConfiguration.class,
-      InterceptorConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     OkHttpClient client = context.getBean(OkHttpClient.class);
@@ -258,9 +234,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     addEnvironment(context,
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
     assertThat(es().strictTraceId()).isTrue();
   }
@@ -272,9 +246,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
         "zipkin.storage.strict-trace-id:false");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().strictTraceId()).isFalse();
@@ -286,9 +258,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     addEnvironment(context,
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -302,9 +272,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
         "zipkin.storage.elasticsearch.index:zipkin_prod");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -318,9 +286,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
         "zipkin.storage.elasticsearch.date-separator:.");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -334,9 +300,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.date-separator:");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchOkHttpAutoConfiguration.class,
-      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -350,9 +314,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.date-separator:blagho");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchOkHttpAutoConfiguration.class,
-      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
 
     thrown.expect(BeanCreationException.class);
     context.refresh();
@@ -365,9 +327,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
         "zipkin.query.lookback:" + TimeUnit.DAYS.toMillis(2));
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(es().namesLookback())
@@ -381,13 +341,11 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(BasicAuthInterceptor.class);
+    context.getBean(Interceptor.class);
   }
 
   @Test
@@ -400,14 +358,12 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.password:pass"
 
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
-        .extracting(i -> i.getClass())
-        .contains((Class) BasicAuthInterceptor.class);
+        .extracting(i -> i.getClass().getName())
+        .contains("zipkin.autoconfigure.storage.elasticsearch.http.BasicAuthInterceptor");
   }
 
   @Test
@@ -416,9 +372,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     addEnvironment(context,
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchOkHttpAutoConfiguration.class,
-      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(context.getBean(ElasticsearchHttpStorage.class).legacyReadsEnabled)
@@ -431,9 +385,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     addEnvironment(context,
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.legacy-reads-enabled:false");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchOkHttpAutoConfiguration.class,
-      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(context.getBean(ElasticsearchHttpStorage.class).legacyReadsEnabled)
@@ -446,9 +398,7 @@ public class ZipkinElasticsearchHttpStorageAutoConfigurationTest {
     addEnvironment(context,
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.search-enabled:false");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchOkHttpAutoConfiguration.class,
-      ZipkinElasticsearchHttpStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(context.getBean(ElasticsearchHttpStorage.class).searchEnabled)

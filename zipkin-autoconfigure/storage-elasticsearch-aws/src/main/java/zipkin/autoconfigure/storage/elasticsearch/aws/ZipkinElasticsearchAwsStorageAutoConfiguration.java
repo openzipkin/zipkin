@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,8 +17,6 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.AWSSessionCredentials;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.DefaultAwsRegionProviderChain;
-import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -37,20 +35,17 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchHttpStorageProperties;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
+import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 import static java.lang.String.format;
 import static zipkin.internal.Util.checkArgument;
 
 @Configuration
-@EnableConfigurationProperties({
-    ZipkinElasticsearchHttpStorageProperties.class,
-    ZipkinElasticsearchAwsStorageProperties.class
-})
+@EnableConfigurationProperties(ZipkinElasticsearchAwsStorageProperties.class)
 @Conditional(ZipkinElasticsearchAwsStorageAutoConfiguration.AwsMagic.class)
-public class ZipkinElasticsearchAwsStorageAutoConfiguration {
+class ZipkinElasticsearchAwsStorageAutoConfiguration {
   static final Pattern AWS_URL =
       Pattern.compile("^https://[^.]+\\.([^.]+)\\.es\\.amazonaws\\.com", Pattern.CASE_INSENSITIVE);
   static final Logger log =
@@ -59,15 +54,18 @@ public class ZipkinElasticsearchAwsStorageAutoConfiguration {
   @Bean
   @Qualifier("zipkinElasticsearchHttp")
   Interceptor awsSignatureVersion4(
-      ZipkinElasticsearchHttpStorageProperties es,
-      ZipkinElasticsearchAwsStorageProperties aws,
-      AWSCredentials.Provider credentials) {
-    return new AWSSignatureVersion4(region(es, aws), "es", credentials);
+    String region,
+    ZipkinElasticsearchAwsStorageProperties aws,
+    AWSCredentials.Provider credentials
+  ) {
+    return new AWSSignatureVersion4(region, "es", credentials);
   }
 
-  @Bean String region(ZipkinElasticsearchHttpStorageProperties es,
-      ZipkinElasticsearchAwsStorageProperties aws) {
-    List<String> hosts = es.getHosts();
+  @Bean String region(
+    @Value("${zipkin.storage.elasticsearch.hosts:}") String hosts,
+    ZipkinElasticsearchAwsStorageProperties aws
+  ) {
+    if ("".equals(hosts)) hosts = null;
     String domain = aws.getDomain();
     if (hosts != null && domain != null) {
       log.warning(
@@ -115,18 +113,17 @@ public class ZipkinElasticsearchAwsStorageAutoConfiguration {
   @Bean
   @Conditional(AwsDomainSetCondition.class)
   StorageComponent storage(
-      ZipkinElasticsearchHttpStorageProperties es,
-      ZipkinElasticsearchAwsStorageProperties aws,
-      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
-      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
+    String region,
+    ElasticsearchHttpStorage.Builder builder,
+    ZipkinElasticsearchAwsStorageProperties aws,
+    @Qualifier("zipkinElasticsearchHttp") OkHttpClient client
+  ) {
     String domain = aws.getDomain();
-    String region = region(es, aws);
 
     ElasticsearchDomainEndpoint hosts = new ElasticsearchDomainEndpoint(
         client, HttpUrl.parse("https://es." + region + ".amazonaws.com"), domain);
 
-    return V2StorageComponent.create(
-      es.toBuilder(client).strictTraceId(strictTraceId).hostsSupplier(hosts).build());
+    return V2StorageComponent.create(builder.hostsSupplier(hosts).build());
   }
 
   static final class AwsDomainSetCondition extends SpringBootCondition {
@@ -151,13 +148,13 @@ public class ZipkinElasticsearchAwsStorageAutoConfiguration {
       if (isEmpty(hosts) && isEmpty(domain)) return false;
 
       // Either we have a domain, or we check the hosts auto-detection magic
-      return !isEmpty(domain) || regionFromAwsUrls(Arrays.asList(hosts.split(","))) != null;
+      return !isEmpty(domain) || regionFromAwsUrls(hosts) != null;
     }
   }
 
-  static String regionFromAwsUrls(List<String> hosts) {
+  static String regionFromAwsUrls(String hosts) {
     String awsRegion = null;
-    for (String url : hosts) {
+    for (String url : hosts.split(",", 100)) {
       Matcher matcher = AWS_URL.matcher(url);
       if (matcher.find()) {
         String matched = matcher.group(1);

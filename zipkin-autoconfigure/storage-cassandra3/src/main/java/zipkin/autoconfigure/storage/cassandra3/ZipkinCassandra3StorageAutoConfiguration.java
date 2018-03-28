@@ -36,7 +36,7 @@ import zipkin2.storage.cassandra.CassandraStorage;
 @ConditionalOnMissingBean(StorageComponent.class)
 // This component is named .*Cassandra3.* even though the package already says cassandra3 because
 // Spring Boot configuration endpoints only printout the simple name of the class
-public class ZipkinCassandra3StorageAutoConfiguration {
+class ZipkinCassandra3StorageAutoConfiguration {
 
   @Autowired(required = false)
   @Qualifier("tracingSessionFactory")

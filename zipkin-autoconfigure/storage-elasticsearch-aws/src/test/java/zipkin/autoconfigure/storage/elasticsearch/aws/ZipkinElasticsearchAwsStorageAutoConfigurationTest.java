@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,7 +21,7 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchOkHttpAutoConfiguration;
+import zipkin.autoconfigure.storage.elasticsearch.http.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -59,9 +59,8 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:https://search-domain-xyzzy.us-west-2.es.amazonaws.com"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchAwsStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
+    context.register(ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
@@ -77,9 +76,8 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
         "zipkin.storage.elasticsearch.aws.domain:foobar",
         "zipkin.storage.elasticsearch.aws.region:us-west-2"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinElasticsearchOkHttpAutoConfiguration.class,
-        ZipkinElasticsearchAwsStorageAutoConfiguration.class);
+    Access.registerElasticsearchHttp(context);
+    context.register(ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())

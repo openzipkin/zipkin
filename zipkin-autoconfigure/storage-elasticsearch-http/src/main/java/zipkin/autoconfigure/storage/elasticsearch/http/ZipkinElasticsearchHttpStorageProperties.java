@@ -24,7 +24,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-public class ZipkinElasticsearchHttpStorageProperties implements Serializable { // for Spark jobs
+class ZipkinElasticsearchHttpStorageProperties implements Serializable { // for Spark jobs
   static final Logger log =
       Logger.getLogger(ZipkinElasticsearchHttpStorageProperties.class.getName());
 

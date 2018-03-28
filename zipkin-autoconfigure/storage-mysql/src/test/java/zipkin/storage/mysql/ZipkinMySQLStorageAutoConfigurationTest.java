@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2016 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,15 +13,14 @@
  */
 package zipkin.storage.mysql;
 
+import com.zaxxer.hikari.HikariDataSource;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.boot.autoconfigure.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageAutoConfiguration;
-import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageProperties;
+import zipkin.autoconfigure.storage.mysql.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -44,8 +43,7 @@ public class ZipkinMySQLStorageAutoConfigurationTest {
   public void doesntProvidesStorageComponent_whenStorageTypeNotMySQL() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinMySQLStorageAutoConfiguration.class);
+    Access.registerMySQL(context);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -56,8 +54,7 @@ public class ZipkinMySQLStorageAutoConfigurationTest {
   public void providesStorageComponent_whenStorageTypeMySQL() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:mysql");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinMySQLStorageAutoConfiguration.class);
+    Access.registerMySQL(context);
     context.refresh();
 
     assertThat(context.getBean(MySQLStorage.class)).isNotNull();
@@ -67,23 +64,21 @@ public class ZipkinMySQLStorageAutoConfigurationTest {
   public void canOverridesProperty_username() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context,
-        "zipkin.storage.type:mysql",
-        "zipkin.storage.mysql.username:robot"
+      "zipkin.storage.type:mysql",
+      "zipkin.storage.mysql.username:robot"
     );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinMySQLStorageAutoConfiguration.class);
+    Access.registerMySQL(context);
     context.refresh();
 
-    assertThat(context.getBean(ZipkinMySQLStorageProperties.class).getUsername())
-        .isEqualTo("robot");
+    assertThat(context.getBean(HikariDataSource.class).getUsername())
+      .isEqualTo("robot");
   }
 
   @Test
   public void strictTraceId_defaultsToTrue() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:mysql");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinMySQLStorageAutoConfiguration.class);
+    Access.registerMySQL(context);
     context.refresh();
     assertThat(context.getBean(MySQLStorage.class).strictTraceId).isTrue();
   }
@@ -93,8 +88,7 @@ public class ZipkinMySQLStorageAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:mysql");
     addEnvironment(context, "zipkin.storage.strict-trace-id:false");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinMySQLStorageAutoConfiguration.class);
+    Access.registerMySQL(context);
     context.refresh();
 
     assertThat(context.getBean(MySQLStorage.class).strictTraceId).isFalse();
