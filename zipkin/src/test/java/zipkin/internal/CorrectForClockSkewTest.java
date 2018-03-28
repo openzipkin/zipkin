@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -120,6 +120,27 @@ public class CorrectForClockSkewTest {
         .build();
 
     assertThat(getClockSkew(span).skew).isEqualTo(-15);
+  }
+
+  @Test
+  public void getClockSkew_oneWay_server1usAfterClient() {
+    Span span = Span.builder()
+      .traceId(1L).id(1L).name("")
+      .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+      .build();
+
+    assertThat(getClockSkew(span).skew).isEqualTo(-11);
+
+    Span adjusted = CorrectForClockSkew.apply(asList(span)).get(0);
+
+    // verify the server timestamp is after, not the same as the client
+    assertThat(adjusted)
+      .isEqualTo(Span.builder()
+        .traceId(1L).id(1L).name("")
+        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+        .addAnnotation(Annotation.create(21, SERVER_RECV, APP_ENDPOINT))
+        .build());
   }
 
   /** We can't currently correct async spans, where the server lets go early. */

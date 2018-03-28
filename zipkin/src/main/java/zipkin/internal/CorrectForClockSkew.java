@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -205,32 +205,48 @@ public final class CorrectForClockSkew {
     Annotation serverRecv = annotations.get(Constants.SERVER_RECV);
     Annotation serverSend = annotations.get(Constants.SERVER_SEND);
 
-    if (clientSend == null || clientRecv == null || serverRecv == null || serverSend == null) {
+    boolean oneWay = false;
+    if (clientSend == null || serverRecv == null) {
       return null;
+    } else if (serverSend == null || clientRecv == null) {
+      oneWay = true;
     }
 
-    Endpoint server = serverRecv.endpoint != null ? serverRecv.endpoint : serverSend.endpoint;
+    Endpoint server = serverRecv.endpoint != null ? serverRecv.endpoint :
+      oneWay ? null : serverSend.endpoint;
     if (server == null) return null;
-    Endpoint client = clientSend.endpoint != null ? clientSend.endpoint : clientRecv.endpoint;
+    Endpoint client = clientSend.endpoint != null ? clientSend.endpoint :
+      oneWay ? null : clientRecv.endpoint;
     if (client == null) return null;
 
     // There's no skew if the RPC is going to itself
     if (ipsMatch(server, client)) return null;
 
-    long clientDuration = clientRecv.timestamp - clientSend.timestamp;
-    long serverDuration = serverSend.timestamp - serverRecv.timestamp;
-    // We assume latency is half the difference between the client and server duration.
-    // This breaks if client duration is smaller than server (due to async return for example).
-    if (clientDuration < serverDuration) return null;
+    long latency;
+    if (oneWay) {
+      latency = serverRecv.timestamp - clientSend.timestamp;
+      // the only way there is skew is when the client appears to be after the server
+      if (latency > 0) return null;
+      // We can't currently do better than push the client and server apart by minimum duration (1)
+      return new ClockSkew(server, latency - 1);
+    } else {
+      long clientDuration = clientRecv.timestamp - clientSend.timestamp;
+      long serverDuration = serverSend.timestamp - serverRecv.timestamp;
+      // We assume latency is half the difference between the client and server duration.
+      // This breaks if client duration is smaller than server (due to async return for example).
+      if (clientDuration < serverDuration) return null;
 
-    long latency = (clientDuration - serverDuration) / 2;
-    // We can't see skew when send happens before receive
-    if (latency < 0) return null;
+      latency = (clientDuration - serverDuration) / 2;
+      // We can't see skew when send happens before receive
+      if (latency < 0) return null;
 
-    long skew = serverRecv.timestamp - latency - clientSend.timestamp;
-    if (skew != 0L) {
-      return new ClockSkew(server, skew);
+      long skew = serverRecv.timestamp - latency - clientSend.timestamp;
+      if (skew != 0L) {
+        return new ClockSkew(server, skew);
+      }
     }
+
+
     return null;
   }
 
