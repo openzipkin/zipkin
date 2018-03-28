@@ -112,6 +112,8 @@ final class ElasticsearchSpanStore implements SpanStore {
           List<Span> input = BodyConverters.SPANS.convert(content);
           List<List<Span>> traces = groupByTraceId(input, strictTraceId);
 
+          if (strictTraceId) return traces;
+
           // Due to tokenization of the trace ID, our matches are imprecise on Span.traceIdHigh
           for (Iterator<List<Span>> trace = traces.iterator(); trace.hasNext(); ) {
             List<Span> next = trace.next();
