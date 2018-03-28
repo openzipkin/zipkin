@@ -65,7 +65,7 @@ public class ITZipkinServer {
   @Before public void init() {
     storage.clear();
     duration.clear();
-    metrics.forTransport("http").reset();
+    metrics.forTransport("http").clear();
   }
 
   @Test public void writeSpans_noContentTypeIsJson() throws Exception {

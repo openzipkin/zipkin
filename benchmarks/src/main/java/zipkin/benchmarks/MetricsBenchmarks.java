@@ -13,7 +13,6 @@
  */
 package zipkin.benchmarks;
 
-import com.google.common.io.ByteStreams;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -28,13 +27,10 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
-import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.server.internal.ActuateCollectorMetrics;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 @Measurement(iterations = 80, time = 1)
@@ -51,7 +47,7 @@ public class MetricsBenchmarks
   static final int SHORT_SPAN = 500;
 
   private InMemoryCollectorMetrics inMemoryCollectorMetrics = new InMemoryCollectorMetrics();
-  private ActuateCollectorMetrics actuateCollectorMetrics = new ActuateCollectorMetrics(new CounterBuffers(), new GaugeBuffers());
+  private ActuateCollectorMetrics actuateCollectorMetrics = new ActuateCollectorMetrics();
 
   @Benchmark
   public int incrementBytes_longSpans_inMemory() {
@@ -98,14 +94,5 @@ public class MetricsBenchmarks
         .build();
 
     new Runner(opt).run();
-  }
-
-
-  static byte[] read(String resource) {
-    try {
-      return ByteStreams.toByteArray(CodecBenchmarks.class.getResourceAsStream(resource));
-    } catch (IOException e) {
-      throw new IllegalStateException(e);
-    }
   }
 }

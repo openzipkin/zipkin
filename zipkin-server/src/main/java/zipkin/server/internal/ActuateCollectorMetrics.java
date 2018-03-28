@@ -15,12 +15,13 @@ package zipkin.server.internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.LongAdder;
+import java.util.function.Supplier;
 import org.springframework.boot.actuate.endpoint.PublicMetrics;
 import org.springframework.boot.actuate.metrics.Metric;
-import org.springframework.boot.actuate.metrics.buffer.BufferMetricReader;
-import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
-import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.Nullable;
 
@@ -46,11 +47,12 @@ import static zipkin.internal.Util.checkNotNull;
  * </pre>
  *
  * See https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html
+ *
+ * <p>In-memory implementation mimics code from org.springframework.boot.actuate.metrics.buffer
  */
-public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMetrics
-{
-  private final CounterBuffers counterBuffers;
-  private final GaugeBuffers gaugeBuffers;
+public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMetrics {
+  private final ConcurrentHashMap<String, CounterBuffer> counterBuffers;
+  private final ConcurrentHashMap<String, GaugeBuffer> gaugeBuffers;
   private final String messages;
   private final String messagesDropped;
   private final String messageBytes;
@@ -58,17 +60,18 @@ public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMe
   private final String bytes;
   private final String spans;
   private final String spansDropped;
-  private final BufferMetricReader reader;
 
-  public ActuateCollectorMetrics(CounterBuffers counterBuffers, GaugeBuffers gaugeBuffers) {
-    this(counterBuffers, gaugeBuffers, null);
+  public ActuateCollectorMetrics() {
+    this(new ConcurrentHashMap<>(), new ConcurrentHashMap<>(), null);
   }
 
-  ActuateCollectorMetrics(CounterBuffers counterBuffers, GaugeBuffers gaugeBuffers,
-      @Nullable String transport) {
+  ActuateCollectorMetrics(
+    ConcurrentHashMap<String, CounterBuffer> counterBuffers,
+    ConcurrentHashMap<String, GaugeBuffer> gaugeBuffers,
+    @Nullable String transport
+  ) {
     this.counterBuffers = counterBuffers;
     this.gaugeBuffers = gaugeBuffers;
-    this.reader = new BufferMetricReader(counterBuffers, gaugeBuffers);
     String footer = transport == null ? "" : "." + transport;
     this.messages = "counter.zipkin_collector.messages" + footer;
     this.messagesDropped = "counter.zipkin_collector.messages_dropped" + footer;
@@ -84,47 +87,87 @@ public final class ActuateCollectorMetrics implements CollectorMetrics, PublicMe
     return new ActuateCollectorMetrics(counterBuffers, gaugeBuffers, transportType);
   }
 
-  @Override
-  public Collection<Metric<?>> metrics()
-  {
-    final Iterable<Metric<?>> metrics = reader.findAll();
-
-    final List<Metric<?>> result = new ArrayList<>();
-    metrics.forEach(result::add);
-    return result;
-  }
-
   @Override public void incrementMessages() {
-    counterBuffers.increment(messages, 1L);
+    increment(messages, 1L);
   }
 
   @Override public void incrementMessagesDropped() {
-    counterBuffers.increment(messagesDropped, 1L);
+    increment(messagesDropped, 1L);
   }
 
   @Override public void incrementSpans(int quantity) {
-    gaugeBuffers.set(messageSpans, quantity);
-    counterBuffers.increment(spans, quantity);
+    set(messageSpans, quantity);
+    increment(spans, quantity);
   }
 
   @Override public void incrementBytes(int quantity) {
-    gaugeBuffers.set(messageBytes, quantity);
-    counterBuffers.increment(bytes, quantity);
+    set(messageBytes, quantity);
+    increment(bytes, quantity);
   }
 
-  @Override
-  public void incrementSpansDropped(int quantity) {
-    counterBuffers.increment(spansDropped, quantity);
+  @Override public void incrementSpansDropped(int quantity) {
+    increment(spansDropped, quantity);
   }
 
   // visible for testing
-  void reset() {
-    counterBuffers.reset(messages);
-    counterBuffers.reset(messagesDropped);
-    counterBuffers.reset(bytes);
-    counterBuffers.reset(spans);
-    counterBuffers.reset(spansDropped);
-    gaugeBuffers.set(messageSpans, 0);
-    gaugeBuffers.set(messageBytes, 0);
+  void clear() {
+    counterBuffers.clear();
+    gaugeBuffers.clear();
+  }
+
+  @Override public Collection<Metric<?>> metrics() {
+    List<Metric<?>> metrics = new ArrayList<>();
+    gaugeBuffers.forEach((key, gauge) -> {
+      metrics.add(new Metric<>(key, gauge.value, new Date(gauge.timestamp)));
+    });
+    counterBuffers.forEach((key, counter) -> {
+      metrics.add(new Metric<>(key, counter.sum(), new Date(counter.timestamp)));
+    });
+    return metrics;
+  }
+
+  void increment(String name, long delta) {
+    CounterBuffer buffer = computeIfAbsent(counterBuffers, name, () -> new CounterBuffer(0L));
+    buffer.timestamp = System.currentTimeMillis();
+    buffer.add(delta);
+  }
+
+  static class CounterBuffer {
+    volatile long timestamp;
+    final LongAdder adder = new LongAdder();
+
+    CounterBuffer(long timestamp) {
+      this.timestamp = timestamp;
+    }
+
+    void add(long delta) {
+      adder.add(delta);
+    }
+
+    long sum() {
+      return adder.sum();
+    }
+  }
+
+  void set(String name, double value) {
+    GaugeBuffer buffer = computeIfAbsent(gaugeBuffers, name, () -> new GaugeBuffer(0L));
+    buffer.timestamp = System.currentTimeMillis();
+    buffer.value = value;
+  }
+
+  static class GaugeBuffer {
+    volatile long timestamp;
+    volatile double value;
+
+    GaugeBuffer(long timestamp) {
+      this.timestamp = timestamp;
+    }
+  }
+
+  // optimization from org.springframework.boot.actuate.metrics.buffer carried over
+  static <K, V> V computeIfAbsent(ConcurrentHashMap<K, V> map, K key, Supplier<V> valueFunction) {
+    V value = map.get(key);
+    if (value != null) return value;
+    return map.computeIfAbsent(key, ignored -> valueFunction.get());
   }
 }
