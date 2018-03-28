@@ -14,14 +14,11 @@
 package zipkin.server.internal;
 
 import brave.Tracing;
-import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
-import org.springframework.boot.actuate.metrics.buffer.CounterBuffers;
-import org.springframework.boot.actuate.metrics.buffer.GaugeBuffers;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
@@ -84,15 +81,10 @@ public class ZipkinServerConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(CollectorMetrics.class)
-  CollectorMetrics metrics(Optional<CounterBuffers> counterBuffers,
-    Optional<GaugeBuffers> gaugeBuffers) {
-    // it is not guaranteed that BufferCounterService/CounterBuffers will be used,
-    // for ex., com.datastax.cassandra:cassandra-driver-core brings com.codahale.metrics.MetricRegistry
-    // and as result DropwizardMetricServices is getting instantiated instead of standard Java8 BufferCounterService.
-    // On top of it Cassandra driver heavily relies on Dropwizard metrics and manually excluding it from pom.xml is not an option.
-    // MetricsDropwizardAutoConfiguration can be manually excluded either, as Cassandra metrics won't be recorded.
-    return new ActuateCollectorMetrics(counterBuffers.orElse(new CounterBuffers()),
-      gaugeBuffers.orElse(new GaugeBuffers()));
+  CollectorMetrics metrics() {
+    // org.springframework.boot.actuate.metrics.buffer package is removed in boot v2. Temporarily,
+    // this inlines the important code. Later we will switch to micrometer.
+    return new ActuateCollectorMetrics();
   }
 
   @Configuration
