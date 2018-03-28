@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 @RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {
-  @Autowired @Value("${local.server.port}") int zipkinPort;
+  @Value("${local.server.port}") int zipkinPort;
   @Autowired InMemoryStorage storage;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 

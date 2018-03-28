@@ -58,7 +58,7 @@ public class ITZipkinServer {
   @Autowired InMemoryStorage storage;
   @Autowired ActuateCollectorMetrics metrics;
   @Autowired Histogram duration;
-  @Autowired @Value("${local.server.port}") int zipkinPort;
+  @Value("${local.server.port}") int zipkinPort;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
