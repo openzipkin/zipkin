@@ -34,6 +34,8 @@ import zipkin2.storage.SpanConsumer;
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
   static final Logger LOG = Logger.getLogger(ElasticsearchSpanConsumer.class.getName());
 
+  private static final int INDEX_CHARS_LIMIT = 256;
+
   final ElasticsearchStorage es;
   final IndexNameFormatter indexNameFormatter;
   final boolean searchEnabled;
@@ -119,13 +121,22 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         writer.name("_q");
         writer.beginArray();
         for (Annotation a : span.annotations()) {
-          if (a.value().length() > 255) continue;
+          if (a.value().length() > INDEX_CHARS_LIMIT) {
+            continue;
+          }
           writer.value(a.value());
         }
         for (Map.Entry<String, String> tag : span.tags().entrySet()) {
-          if (tag.getKey().length() + tag.getValue().length() + 1 > 255) continue;
+          int length = tag.getKey().length() + tag.getValue().length() + 1;
+          if (length > INDEX_CHARS_LIMIT) {
+            continue;
+          }
           writer.value(tag.getKey()); // search is possible by key alone
-          writer.value(tag.getKey() + "=" + tag.getValue());
+          writer.value(
+            new StringBuilder(length)
+              .append(tag.getKey()).append("=").append(tag.getValue())
+              .toString()
+          );
         }
         writer.endArray();
       }
