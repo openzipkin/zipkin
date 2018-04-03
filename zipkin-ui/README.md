@@ -155,3 +155,7 @@ And then it's observable in the UI:
 ```bash
 $ open http://localhost/proxy/foo/bar/zipkin/?serviceName=zipkin-server&startTs=1378193040000&endTs=1505463856013
 ```
+### How do I configure security (authentication, authorization)? 
+
+Zipkin UI can be secured by running it behind an authenticating proxy like [Apache HTTPD](https://httpd.apache.org/docs/current/howto/auth.html), 
+[Nginx](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) or similar.
