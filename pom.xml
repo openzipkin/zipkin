@@ -29,7 +29,6 @@
     <module>zipkin-junit</module>
     <module>zipkin-guava</module>
     <module>benchmarks</module>
-    <module>zipkin-zookeeper</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
     <module>zipkin-autoconfigure</module>
@@ -181,12 +180,6 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-junit</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-zookeeper</artifactId>
         <version>${project.version}</version>
       </dependency>
 
