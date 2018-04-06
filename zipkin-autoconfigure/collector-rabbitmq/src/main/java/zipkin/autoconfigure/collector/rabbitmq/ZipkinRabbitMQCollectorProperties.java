@@ -27,6 +27,7 @@ import zipkin.collector.rabbitmq.RabbitMQCollector;
  */
 @ConfigurationProperties("zipkin.collector.rabbitmq")
 class ZipkinRabbitMQCollectorProperties {
+  static final URI EMPTY_URI = URI.create("");
 
   /** RabbitMQ server addresses in the form of a (comma-separated) list of host:port pairs */
   private List<String> addresses;
@@ -44,8 +45,10 @@ class ZipkinRabbitMQCollectorProperties {
   private String virtualHost;
   /** Flag to use SSL */
   private Boolean useSsl;
-  /** RabbitMQ URI spec-compliant URI to connect to the RabbitMQ server.
-   * When used, other connection properties will be ignored. */
+  /**
+   * RabbitMQ URI spec-compliant URI to connect to the RabbitMQ server.
+   * When used, other connection properties will be ignored.
+   */
   private URI uri;
 
   public List<String> getAddresses() {
@@ -117,6 +120,7 @@ class ZipkinRabbitMQCollectorProperties {
   }
 
   public void setUri(URI uri) {
+    if (EMPTY_URI.equals(uri)) return;
     this.uri = uri;
   }
 
