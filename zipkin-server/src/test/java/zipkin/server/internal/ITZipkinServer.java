@@ -13,9 +13,12 @@
  */
 package zipkin.server.internal;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import io.prometheus.client.Histogram;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -57,14 +60,14 @@ public class ITZipkinServer {
 
   @Autowired InMemoryStorage storage;
   @Autowired ActuateCollectorMetrics metrics;
-  @Autowired Histogram duration;
+  //@Autowired Histogram duration;
   @Value("${local.server.port}") int zipkinPort;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Before public void init() {
     storage.clear();
-    duration.clear();
+   // duration.clear();
     metrics.forTransport("http").clear();
   }
 
@@ -329,6 +332,42 @@ public class ITZipkinServer {
       .isEqualTo("./zipkin/");
   }
 
+  @Test public void readsHealth() throws Exception{
+    Response response = get("/health");
+    assertThat(response.isSuccessful()).isTrue();
+    String json = response.body().string();
+    assertThat(readString(json, "$.status"))
+      .isIn("UP", "DOWN", "UNKNOWN");
+    assertThat(readString(json, "$.zipkin.status"))
+      .isIn("UP", "DOWN", "UNKNOWN");
+  }
+
+  @Test public void writesSpans_readMetricsFormat() throws Exception{
+    metrics.forTransport("http").clear();
+    byte[] span = {'z','i', 'p', 'k', 'i', 'n'};
+    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
+    byte[] body = Codec.JSON.writeSpans(spans);
+    post("/api/v1/spans", body);
+    post("/api/v1/spans", body);
+    post("/api/v1/spans",  span);
+    Thread.sleep(1500);
+    Response response = get("/metrics");
+    assertThat(response.isSuccessful()).isTrue();
+    String json = response.body().string();
+    System.out.println(json);
+    assertThat(readJson(json))
+      .contains(
+          "gauge.zipkin_collector.message_spans.http"
+        , "gauge.zipkin_collector.message_bytes.http"
+        , "counter.zipkin_collector.messages.http"
+        , "counter.zipkin_collector.bytes.http"
+        , "counter.zipkin_collector.spans.http"
+        , "gauge.response.api.v1.spans"
+        , "gauge.response.api.v1.traces"
+        , "counter.zipkin_collector.messages_dropped.http"
+      );
+  }
+
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
       .url("http://localhost:" + zipkinPort + path)
@@ -348,5 +387,17 @@ public class ITZipkinServer {
 
   static Double readDouble(String json, String jsonPath) {
     return JsonPath.compile(jsonPath).read(json);
+  }
+
+  static String readString(String json, String jsonPath){
+    return JsonPath.compile(jsonPath).read(json);
+  }
+
+  static List readJson(String json) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode jsonNode = mapper.readTree(json);
+    List<String> fieldsList = new ArrayList<>();
+    jsonNode.fieldNames().forEachRemaining(fieldsList::add);
+    return fieldsList;
   }
 }

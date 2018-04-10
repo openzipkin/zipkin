@@ -186,11 +186,11 @@
     </dependency>
 
     <!-- Prometheus metrics -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-metrics-prometheus</artifactId>
-      <optional>true</optional>
-    </dependency>
+    <!--<dependency>-->
+      <!--<groupId>${project.groupId}</groupId>-->
+      <!--<artifactId>zipkin-autoconfigure-metrics-prometheus</artifactId>-->
+      <!--<optional>true</optional>-->
+    <!--</dependency>-->
 
     <!-- Trace api controller activity with Brave -->
     <dependency>
@@ -229,6 +229,18 @@
       <artifactId>json-path</artifactId>
       <version>2.4.0</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-spring-legacy</artifactId>
+      <version>${micrometer.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>${micrometer.version}</version>
     </dependency>
   </dependencies>
 
