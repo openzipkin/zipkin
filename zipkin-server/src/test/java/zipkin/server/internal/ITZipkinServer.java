@@ -59,7 +59,7 @@ import static zipkin.internal.Util.UTF_8;
 public class ITZipkinServer {
 
   @Autowired InMemoryStorage storage;
-  @Autowired ActuateCollectorMetrics metrics;
+  //@Autowired ActuateCollectorMetrics metrics;
   //@Autowired Histogram duration;
   @Value("${local.server.port}") int zipkinPort;
 
@@ -68,7 +68,7 @@ public class ITZipkinServer {
   @Before public void init() {
     storage.clear();
    // duration.clear();
-    metrics.forTransport("http").clear();
+    //metrics.forTransport("http").clear();
   }
 
   @Test public void writeSpans_noContentTypeIsJson() throws Exception {
@@ -338,12 +338,12 @@ public class ITZipkinServer {
     String json = response.body().string();
     assertThat(readString(json, "$.status"))
       .isIn("UP", "DOWN", "UNKNOWN");
-    assertThat(readString(json, "$.zipkin.status"))
+    assertThat(readString(json, "$.details.zipkin.status"))
       .isIn("UP", "DOWN", "UNKNOWN");
   }
 
   @Test public void writesSpans_readMetricsFormat() throws Exception{
-    metrics.forTransport("http").clear();
+    //metrics.forTransport("http").clear();
     byte[] span = {'z','i', 'p', 'k', 'i', 'n'};
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = Codec.JSON.writeSpans(spans);
@@ -362,8 +362,6 @@ public class ITZipkinServer {
         , "counter.zipkin_collector.messages.http"
         , "counter.zipkin_collector.bytes.http"
         , "counter.zipkin_collector.spans.http"
-        , "gauge.response.api.v1.spans"
-        , "gauge.response.api.v1.traces"
         , "counter.zipkin_collector.messages_dropped.http"
       );
   }
