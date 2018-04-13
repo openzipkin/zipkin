@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -215,13 +215,9 @@ public class SpanBytesEncoderTest {
       .isEqualTo(Endpoint.newBuilder().ip("127.0.0.1").build());
   }
 
-  @Test public void niceErrorOnIncomplete_endpoint() {
-    thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Empty endpoint at $.localEndpoint reading Span from json");
-
-    String json = "{\n"
+  @Test public void skipsIncompleteEndpoint() {
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("{\n"
       + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-      + "  \"name\": \"get-traces\",\n"
       + "  \"id\": \"6b221d5bc9e6496c\",\n"
       + "  \"localEndpoint\": {\n"
       + "    \"serviceName\": null,\n"
@@ -229,8 +225,33 @@ public class SpanBytesEncoderTest {
       + "    \"ipv6\": null,\n"
       + "    \"port\": null\n"
       + "  }\n"
-      + "}";
-    SpanBytesDecoder.JSON_V2.decodeOne(json.getBytes(UTF_8));
+      + "}")
+      .getBytes(UTF_8)).localEndpoint()).isNull();
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"localEndpoint\": {\n"
+      + "  }\n"
+      + "}")
+      .getBytes(UTF_8)).localEndpoint()).isNull();
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"remoteEndpoint\": {\n"
+      + "    \"serviceName\": null,\n"
+      + "    \"ipv4\": null,\n"
+      + "    \"ipv6\": null,\n"
+      + "    \"port\": null\n"
+      + "  }\n"
+      + "}")
+      .getBytes(UTF_8)).remoteEndpoint()).isNull();
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(("{\n"
+      + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+      + "  \"id\": \"6b221d5bc9e6496c\",\n"
+      + "  \"remoteEndpoint\": {\n"
+      + "  }\n"
+      + "}")
+      .getBytes(UTF_8)).remoteEndpoint()).isNull();
   }
 
   @Test public void niceErrorOnIncomplete_annotation() {
