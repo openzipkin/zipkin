@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -131,8 +131,7 @@ public final class V2SpanReader implements JsonReaderAdapter<Span> {
         }
       }
       reader.endObject();
-      if (!readField) throw new IllegalArgumentException("Empty endpoint at " + reader.getPath());
-      return result.build();
+      return readField ? result.build() : null;
     }
 
     @Override public String toString() {
