@@ -42,6 +42,11 @@ public class BufferBenchmarks {
   // Order id = d07c4daa-0fa9-4c03-90b1-e06c4edae250 doesn't exist
   static final String CHINESE_UTF8 = "订单d07c4daa-0fa9-4c03-90b1-e06c4edae250不存在";
   static final int CHINESE_UTF8_SIZE = CHINESE_UTF8.getBytes(UTF_8).length;
+  /* length-prefixing a 1 KiB span */
+  static final int TEST_INT = 1024;
+  /* epoch micros timestamp */
+  static final long TEST_LONG = 1472470996199000L;
+  Buffer buffer = new Buffer(8);
 
   @Benchmark public int utf8SizeInBytes_chinese() {
     return Buffer.utf8SizeInBytes(CHINESE_UTF8);
@@ -55,6 +60,32 @@ public class BufferBenchmarks {
 
   @Benchmark public byte[] writeUtf8_chinese_jdk() {
     return CHINESE_UTF8.getBytes(UTF_8);
+  }
+
+  @Benchmark public int varIntSizeInBytes_32() {
+    return Buffer.varintSizeInBytes(TEST_INT);
+  }
+
+  @Benchmark public int varIntSizeInBytes_64() {
+    return Buffer.varintSizeInBytes(TEST_LONG);
+  }
+
+  @Benchmark public int writeVarint_32() {
+    buffer.pos = 0;
+    buffer.writeVarint(TEST_INT);
+    return buffer.pos;
+  }
+
+  @Benchmark public int writeVarint_64() {
+    buffer.pos = 0;
+    buffer.writeVarint(TEST_LONG);
+    return buffer.pos;
+  }
+
+  @Benchmark public int writeLongLe() {
+    buffer.pos = 0;
+    buffer.writeLongLe(TEST_LONG);
+    return buffer.pos;
   }
 
   // Convenience main entry-point
