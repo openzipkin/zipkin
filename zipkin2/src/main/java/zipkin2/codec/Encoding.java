@@ -14,6 +14,7 @@
 package zipkin2.codec;
 
 import java.util.List;
+import zipkin2.internal.Buffer;
 
 public enum Encoding {
   JSON {
@@ -41,8 +42,8 @@ public enum Encoding {
   PROTO3 {
     /** Returns the size of a length-prefixed field in a protobuf message */
     @Override public int listSizeInBytes(int encodedSizeInBytes) {
-      return 1 // assumes field number <= 127
-        + unsignedVarint(encodedSizeInBytes) // bytes to encode the length
+      return 1 // assumes field number <= 15
+        + Buffer.varintSizeInBytes(encodedSizeInBytes) // bytes to encode the length
         + encodedSizeInBytes; // the actual length
     }
 
@@ -53,22 +54,6 @@ public enum Encoding {
         sizeInBytes += listSizeInBytes(values.get(i++).length);
       }
       return sizeInBytes;
-    }
-
-    /**
-     * A base 128 varint encodes 7 bits at a time, this checks how many bytes are needed to
-     * represent the value.
-     *
-     * <p>See https://developers.google.com/protocol-buffers/docs/encoding#varints
-     *
-     * <p>This logic is the same as {@code com.squareup.wire.WireOutput.varint32Size} v2.3.0
-     */
-    int unsignedVarint(int value) {
-      if ((value & (0xffffffff << 7)) == 0) return 1;
-      if ((value & (0xffffffff << 14)) == 0) return 2;
-      if ((value & (0xffffffff << 21)) == 0) return 3;
-      if ((value & (0xffffffff << 28)) == 0) return 4;
-      return 5;
     }
   };
 

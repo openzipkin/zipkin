@@ -29,10 +29,10 @@ import static java.lang.String.format;
  * reasons.
  *
  * <ul>
- *   <li>Eliminates the need to keep separate model classes for thrift vs json</li>
+ *   <li>Eliminates the need to keep separate model classes for proto3 vs json</li>
  *   <li>Avoids magic field initialization which, can miss constructor guards</li>
  *   <li>Allows us to safely re-use the json form in toString methods</li>
- *   <li>Encourages logic to be based on the thrift shape of objects</li>
+ *   <li>Encourages logic to be based on the json shape of objects</li>
  *   <li>Ensures the order and naming of the fields in json is stable</li>
  * </ul>
  *
