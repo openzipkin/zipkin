@@ -1,0 +1,23 @@
+{
+  "traceId": "4d1e00c0db9010db86154a4ba6e91385",
+  "parentId": "86154a4ba6e91385",
+  "id": "4d1e00c0db9010db",
+  "kind": "CLIENT",
+  "name": "个人信息查询",
+  "timestamp": 1472470996199000,
+  "duration": 207000,
+  "localEndpoint": {
+    "serviceName": "订单维护服务",
+    "ipv6": "7::0.128.128.127"
+  },
+  "remoteEndpoint": {
+    "serviceName": "个人信息服务",
+    "ipv4": "192.168.99.101",
+    "port": 9000
+  },
+  "tags": {
+    "http.path": "/person/profile/query",
+    "http.status_code": "403",
+    "error": "此用户没有操作权限"
+  }
+}
