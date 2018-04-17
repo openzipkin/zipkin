@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.errors.InterruptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin.Span;
@@ -77,7 +78,7 @@ final class KafkaCollectorWorker implements Runnable {
             metrics.incrementMessagesDropped();
           } else {
             // If we received legacy single-span encoding, decode it into a singleton list
-            if (bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not a list */) {
+            if (bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not list */) {
               metrics.incrementBytes(bytes.length);
               try {
                 Span span = SpanDecoder.THRIFT_DECODER.readSpan(bytes);
@@ -91,6 +92,11 @@ final class KafkaCollectorWorker implements Runnable {
           }
         }
       }
+    } catch (InterruptException e) {
+      // Interrupts are normal on shutdown, intentionally swallow
+    } catch (RuntimeException | Error e) {
+      LOG.warn("Unexpected error in polling loop spans", e);
+      throw e;
     } finally {
       LOG.info("Kafka consumer polling loop stopped.");
       LOG.info("Closing Kafka consumer...");

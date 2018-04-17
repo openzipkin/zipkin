@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -55,8 +55,8 @@ public class KafkaCollectorTest {
   private static final EphemeralKafkaBroker broker =
       EphemeralKafkaBroker.create(RANDOM_PORT, RANDOM_PORT, buildBrokerConfig());
 
-  @ClassRule public static KafkaJunitRule kafka = new KafkaJunitRule(broker).waitForStartup();
-  @ClassRule public static Timeout globalTimeout = Timeout.seconds(30);
+  @Rule public KafkaJunitRule kafka = new KafkaJunitRule(broker).waitForStartup();
+  @Rule public Timeout globalTimeout = Timeout.seconds(30);
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
