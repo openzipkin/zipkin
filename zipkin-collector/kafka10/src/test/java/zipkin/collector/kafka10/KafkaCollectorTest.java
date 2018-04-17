@@ -55,8 +55,8 @@ public class KafkaCollectorTest {
   private static final EphemeralKafkaBroker broker =
       EphemeralKafkaBroker.create(RANDOM_PORT, RANDOM_PORT, buildBrokerConfig());
 
-  @ClassRule public static KafkaJunitRule kafka = new KafkaJunitRule(broker).waitForStartup();
-  @ClassRule public static Timeout globalTimeout = Timeout.seconds(30);
+  @Rule public KafkaJunitRule kafka = new KafkaJunitRule(broker).waitForStartup();
+  @Rule public Timeout globalTimeout = Timeout.seconds(30);
   @Rule public ExpectedException thrown = ExpectedException.none();
 
   InMemoryCollectorMetrics metrics = new InMemoryCollectorMetrics();
