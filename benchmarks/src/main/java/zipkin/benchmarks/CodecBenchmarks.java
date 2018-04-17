@@ -48,6 +48,8 @@ import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 
+import static zipkin2.proto3.Span.parseFrom;
+
 /**
  * This compares the speed of the bundled java codec with the approach used in the scala
  * implementation. Re-run this benchmark when changing internals of {@link zipkin.Codec}.
@@ -195,6 +197,16 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
+  public Span readClientSpan_proto3_zipkin2() {
+    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Proto3);
+  }
+
+  @Benchmark
+  public zipkin2.proto3.Span readClientSpan_proto3_protobuf() throws Exception {
+    return parseFrom(zipkin2Proto3);
+  }
+
+  @Benchmark
   public List<Span> readTenClientSpans_json_zipkin2() {
     return SpanBytesDecoder.JSON_V2.decodeList(tenSpan2sJson);
   }
@@ -220,11 +232,6 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
-  public Span readClientSpan_proto3_zipkin2() {
-    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Json);
-  }
-
-  @Benchmark
   public byte[] writeClientSpan_proto3_zipkin2() {
     return SpanBytesEncoder.PROTO3.encode(zipkin2);
   }
@@ -239,13 +246,18 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
-  public byte[] writeChineseSpan_json_zipkin2() {
-    return SpanBytesEncoder.JSON_V2.encode(zipkin2Chinese);
+  public Span readChineseSpan_proto3_zipkin2() {
+    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Proto3Chinese);
   }
 
   @Benchmark
-  public Span readChineseSpan_proto3_zipkin2() {
-    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Proto3Chinese);
+  public zipkin2.proto3.Span readChineseSpan_proto3_protobuf() throws Exception {
+    return parseFrom(zipkin2Proto3Chinese);
+  }
+
+  @Benchmark
+  public byte[] writeChineseSpan_json_zipkin2() {
+    return SpanBytesEncoder.JSON_V2.encode(zipkin2Chinese);
   }
 
   @Benchmark
