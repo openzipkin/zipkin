@@ -84,6 +84,15 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
    * @see java.net.InetSocketAddress#getPort()
    */
   @Nullable public Integer port() {
+    return port != 0 ? port : null;
+  }
+
+  /**
+   * Like {@link #port()} except returns a primitive where zero implies absent.
+   *
+   * <p>Using this method will avoid allocation, so is encouraged when copying data.
+   */
+  public int portAsInt() {
     return port;
   }
 
@@ -98,7 +107,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
   public static final class Builder {
     String serviceName, ipv4, ipv6;
     byte[] ipv4Bytes, ipv6Bytes;
-    Integer port;
+    int port; // zero means null
 
     Builder(Endpoint source) {
       serviceName = source.serviceName;
@@ -200,8 +209,16 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     public Builder port(@Nullable Integer port) {
       if (port != null) {
         if (port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
-        if (port <= 0) port = null;
+        if (port <= 0) port = 0;
       }
+      this.port = port != null ? port : 0;
+      return this;
+    }
+
+    /** @see Endpoint#portAsInt() */
+    public Builder port(int port) {
+      if (port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
+      if (port < 0) port = 0;
       this.port = port;
       return this;
     }
@@ -469,7 +486,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
   // See https://github.com/openzipkin/zipkin/issues/1879
   final String serviceName, ipv4, ipv6;
   final byte[] ipv4Bytes, ipv6Bytes;
-  final Integer port;
+  final int port;
 
   Endpoint(Builder builder) {
     serviceName = builder.serviceName;
@@ -506,7 +523,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       ? (that.serviceName == null) : serviceName.equals(that.serviceName))
       && ((ipv4 == null) ? (that.ipv4 == null) : ipv4.equals(that.ipv4))
       && ((ipv6 == null) ? (that.ipv6 == null) : ipv6.equals(that.ipv6))
-      && ((port == null) ? (that.port == null) : port.equals(that.port));
+      && port == that.port;
   }
 
   @Override public int hashCode() {
@@ -518,7 +535,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     h *= 1000003;
     h ^= (ipv6 == null) ? 0 : ipv6.hashCode();
     h *= 1000003;
-    h ^= (port == null) ? 0 : port.hashCode();
+    h ^= port;
     return h;
   }
 
@@ -533,7 +550,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
 
     final String serviceName, ipv4, ipv6;
     final byte[] ipv4Bytes, ipv6Bytes;
-    final Integer port;
+    final int port;
 
     SerializedForm(Endpoint endpoint) {
       serviceName = endpoint.serviceName;

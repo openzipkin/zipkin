@@ -133,20 +133,20 @@ final class Schema {
     private String service;
     private InetAddress ipv4;
     private InetAddress ipv6;
-    private Integer port;
+    private int port;
 
     EndpointUDT() {
       this.service = null;
       this.ipv4 = null;
       this.ipv6 = null;
-      this.port = null;
+      this.port = 0;
     }
 
     EndpointUDT(Endpoint endpoint) {
       this.service = endpoint.serviceName();
       this.ipv4 = endpoint.ipv4() == null ? null : InetAddresses.forString(endpoint.ipv4());
       this.ipv6 = endpoint.ipv6() == null ? null : InetAddresses.forString(endpoint.ipv6());
-      this.port = endpoint.port();
+      this.port = endpoint.portAsInt();
     }
 
     public String getService() {
@@ -161,7 +161,7 @@ final class Schema {
       return ipv6;
     }
 
-    public Integer getPort() {
+    public int getPort() {
       return port;
     }
 

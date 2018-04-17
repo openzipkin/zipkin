@@ -188,6 +188,14 @@ public class EndpointTest {
     Endpoint.newBuilder().port(65536).build();
   }
 
+  /** Catches common error when zero is passed instead of null for a port */
+  @Test public void coercesZeroPortToNull() {
+    Endpoint endpoint = Endpoint.newBuilder().port(0).build();
+
+    assertThat(endpoint.port())
+      .isNull();
+  }
+
   @Test public void lowercasesServiceName() {
     assertThat(Endpoint.newBuilder().serviceName("fFf").ip("127.0.0.1").build().serviceName())
       .isEqualTo("fff");
