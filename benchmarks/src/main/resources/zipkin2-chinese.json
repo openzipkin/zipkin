@@ -8,7 +8,7 @@
   "duration": 207000,
   "localEndpoint": {
     "serviceName": "订单维护服务",
-    "ipv6": "7::0.128.128.127"
+    "ipv6": "2001:db8::c001"
   },
   "remoteEndpoint": {
     "serviceName": "个人信息服务",

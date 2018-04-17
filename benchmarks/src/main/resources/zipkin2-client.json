@@ -8,7 +8,7 @@
   "duration": 207000,
   "localEndpoint": {
     "serviceName": "frontend",
-    "ipv6": "7::0.128.128.127"
+    "ipv6": "2001:db8::c001"
   },
   "remoteEndpoint": {
     "serviceName": "backend",
