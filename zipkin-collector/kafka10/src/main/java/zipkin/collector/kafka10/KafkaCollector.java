@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -195,12 +195,13 @@ public final class KafkaCollector implements CollectorComponent {
           try {
             delegate.run();
           } catch (InterruptException e) {
-            LOG.info("Kafka collector worker was interrupted. This is expected during shutdown.",
-              e);
-            failure.set(CheckResult.failed(e));
+            // Interrupts are normal on shutdown, intentionally swallow
           } catch (RuntimeException e) {
-            LOG.error("Kafka collector worker exited with exception.", e);
+            LOG.error("Kafka worker exited with exception", e);
             failure.set(CheckResult.failed(e));
+          } catch (Error e) {
+            LOG.error("Kafka worker exited with error", e);
+            failure.set(CheckResult.failed(new RuntimeException(e)));
           }
         }
       };
