@@ -203,7 +203,7 @@ public class BufferTest {
     assertThat(buffer.toByteArray())
       .containsExactly(0b0101_0000);
 
-    // largest value to not require mode than 2 bytes (14 bits set)
+    // largest value to not require more than 2 bytes (14 bits set)
     buffer = new Buffer(Buffer.varintSizeInBytes(16383));
     buffer.writeVarint(16383);
 
