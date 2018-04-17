@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -266,7 +266,7 @@ public final class Endpoint implements Serializable { // for Spark jobs
   public zipkin2.Endpoint toV2() {
     zipkin2.Endpoint.Builder result = zipkin2.Endpoint.newBuilder()
       .serviceName(serviceName)
-      .port(port != null ? port & 0xffff : null);
+      .port(port != null ? port & 0xffff : 0);
     if (ipv4 != 0) {
       result.parseIp(new StringBuilder()
         .append(ipv4 >> 24 & 0xff).append('.')

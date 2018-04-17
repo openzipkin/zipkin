@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -135,7 +135,7 @@ final class JsonAdapters {
     @Override public Endpoint fromJson(JsonReader reader) throws IOException {
       reader.beginObject();
       String serviceName = null, ipv4 = null, ipv6 = null;
-      Integer port = null;
+      int port = 0;
       while (reader.hasNext()) {
         String nextName = reader.nextName();
         if (reader.peek() == JsonReader.Token.NULL) {
@@ -160,9 +160,7 @@ final class JsonAdapters {
         }
       }
       reader.endObject();
-      if (serviceName == null && ipv4 == null && ipv6 == null && port == null) {
-        throw new IllegalStateException("Incomplete endpoint at " + reader.getPath());
-      }
+      if (serviceName == null && ipv4 == null && ipv6 == null && port == 0) return null;
       return Endpoint.newBuilder().serviceName(serviceName).ip(ipv4).ip(ipv6).port(port).build();
     }
 

@@ -158,10 +158,11 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
       sizeInBytes += 9; // "ipv6":""
       sizeInBytes += value.ipv6().length();
     }
-    if (value.port() != null) {
+    int port = value.portAsInt();
+    if (port != 0) {
       if (sizeInBytes != 1) sizeInBytes++; // ,
       sizeInBytes += 7; // "port":
-      sizeInBytes += asciiSizeInBytes(value.port());
+      sizeInBytes += asciiSizeInBytes(port);
     }
     return ++sizeInBytes; // }
   }
@@ -186,9 +187,10 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
       b.writeAscii(value.ipv6()).writeByte('"');
       wroteField = true;
     }
-    if (value.port() != null) {
+    int port = value.portAsInt();
+    if (port != 0) {
       if (wroteField) b.writeByte(',');
-      b.writeAscii("\"port\":").writeAscii(value.port());
+      b.writeAscii("\"port\":").writeAscii(port);
     }
     b.writeByte('}');
   }

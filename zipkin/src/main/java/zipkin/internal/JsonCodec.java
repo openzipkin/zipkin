@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -102,10 +102,11 @@ public final class JsonCodec implements Codec {
         sizeInBytes += 9; // "ipv6":""
         sizeInBytes += value.ipv6().length();
       }
-      if (value.port() != null) {
+      int port = value.portAsInt();
+      if (port != 0) {
         if (sizeInBytes != 1) sizeInBytes++; // ,
         sizeInBytes += 7; // "port":
-        sizeInBytes += asciiSizeInBytes(value.port());
+        sizeInBytes += asciiSizeInBytes(port);
       }
       return ++sizeInBytes; // }
     }
@@ -125,8 +126,9 @@ public final class JsonCodec implements Codec {
         b.writeAscii(",\"ipv6\":\"");
         b.writeAscii(value.ipv6()).writeByte('"');
       }
-      if (value.port() != null) {
-        b.writeAscii(",\"port\":").writeAscii(value.port());
+      int port = value.portAsInt();
+      if (port != 0) {
+        b.writeAscii(",\"port\":").writeAscii(port);
       }
       b.writeByte('}');
     }

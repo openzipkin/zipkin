@@ -406,7 +406,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** @see Span#timestamp() */
     public Builder timestamp(@Nullable Long timestamp) {
-      if (timestamp == null || timestamp == 0L) timestamp = 0L;
+      if (timestamp == null || timestamp < 0L) timestamp = 0L;
       this.timestamp = timestamp;
       return this;
     }
@@ -420,7 +420,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** @see Span#duration() */
     public Builder duration(@Nullable Long duration) {
-      if (duration == null || duration == 0L) duration = 0L;
+      if (duration == null || duration < 0L) duration = 0L;
       this.duration = duration;
       return this;
     }
