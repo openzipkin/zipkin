@@ -188,10 +188,33 @@ public class BufferTest {
   @Test public void writeVarint_64() {
     long number = 300;
 
-    Buffer buffer = new Buffer(Buffer.varintSizeInBytes(300));
+    Buffer buffer = new Buffer(Buffer.varintSizeInBytes(number));
     buffer.writeVarint(number);
 
     assertThat(buffer.toByteArray())
       .containsExactly(0b1010_1100, 0b0000_0010);
+  }
+
+  @Test public void writeVarint_ports() {
+    // normal case
+    Buffer buffer = new Buffer(Buffer.varintSizeInBytes(80));
+    buffer.writeVarint(80);
+
+    assertThat(buffer.toByteArray())
+      .containsExactly(0b0101_0000);
+
+    // largest value to not require mode than 2 bytes (14 bits set)
+    buffer = new Buffer(Buffer.varintSizeInBytes(16383));
+    buffer.writeVarint(16383);
+
+    assertThat(buffer.toByteArray())
+      .containsExactly(0b1111_1111, 0b0111_1111);
+
+    // worst case is a byte longer than fixed 16
+    buffer = new Buffer(Buffer.varintSizeInBytes(65535));
+    buffer.writeVarint(65535);
+
+    assertThat(buffer.toByteArray())
+      .containsExactly(0b1111_1111, 0b1111_1111, 0b0000_0011);
   }
 }
