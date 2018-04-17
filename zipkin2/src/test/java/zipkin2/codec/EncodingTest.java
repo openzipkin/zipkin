@@ -48,35 +48,20 @@ public class EncodingTest {
       .isEqualTo(0);
   }
 
+  // an entry in a list is a repeated field
   @Test public void singletonList_proto3() {
     List<byte[]> encoded = Arrays.asList(new byte[10]);
 
     assertThat(Encoding.PROTO3.listSizeInBytes(encoded.get(0).length))
-      .isEqualTo(1 + 1 /* tag, length */ + 10);
+      .isEqualTo(10);
     assertThat(Encoding.PROTO3.listSizeInBytes(encoded))
-      .isEqualTo(1 + 1 /* tag, length */ + 10);
+      .isEqualTo(10);
   }
 
   // per ListOfSpans in zipkin2.proto
   @Test public void multiItemList_proto3() {
     List<byte[]> encoded = Arrays.asList(new byte[3], new byte[4], new byte[128]);
     assertThat(Encoding.PROTO3.listSizeInBytes(encoded))
-      .isEqualTo(0
-        + (1 + 1 /* tag, length */ + 3)
-        + (1 + 1 /* tag, length */ + 4)
-        + (1 + 2 /* tag, length */ + 128)
-      );
-  }
-
-  @Test public void singletonList_proto3_big() {
-    // Not good to have a 5MiB span, but lets test the length prefix
-    int bigSpan = 5 * 1024 * 1024;
-    assertThat(Encoding.PROTO3.listSizeInBytes(bigSpan))
-      .isEqualTo(1 + 4 /* tag, length */ + bigSpan);
-
-    // Terrible value in real life as this would be a 536 meg span!
-    int twentyNineBitNumber = 536870911;
-    assertThat(Encoding.PROTO3.listSizeInBytes(twentyNineBitNumber))
-      .isEqualTo(1 + 5 /* tag, length */ + twentyNineBitNumber);
+      .isEqualTo(3 + 4 + 128);
   }
 }

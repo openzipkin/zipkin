@@ -14,7 +14,6 @@
 package zipkin2.codec;
 
 import java.util.List;
-import zipkin2.internal.Buffer;
 
 // ZIPKIN3 make this not an enum as it prevents non-standard encoding, for example reporting to
 // DataDog which has a message pack encoding.
@@ -36,24 +35,22 @@ public enum Encoding {
     }
   },
   /**
-   * Repeated (type 2) fields are length-prefixed, the value is a concatenation with no additional
-   * overhead.
+   * Repeated (type 2) fields are length-prefixed. A list is a concatenation of fields with no
+   * additional overhead.
    *
    * <p>See https://developers.google.com/protocol-buffers/docs/encoding#optional
    */
   PROTO3 {
-    /** Returns the size of a length-prefixed field in a protobuf message */
+    /** Returns the input as it is assumed to be length-prefixed field from a protobuf message */
     @Override public int listSizeInBytes(int encodedSizeInBytes) {
-      return 1 // assumes field number <= 15
-        + Buffer.varintSizeInBytes(encodedSizeInBytes) // bytes to encode the length
-        + encodedSizeInBytes; // the actual length
+      return encodedSizeInBytes;
     }
 
-    /** Returns a concatenation of length-prefixed size for each value */
+    /** Returns a concatenation of sizes */
     @Override public int listSizeInBytes(List<byte[]> values) {
       int sizeInBytes = 0;
       for (int i = 0, length = values.size(); i < length; ) {
-        sizeInBytes += listSizeInBytes(values.get(i++).length);
+        sizeInBytes += values.get(i++).length;
       }
       return sizeInBytes;
     }

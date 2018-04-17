@@ -18,6 +18,7 @@ import org.junit.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
+import zipkin2.internal.Proto3SpanWriterTest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
@@ -25,6 +26,9 @@ import static zipkin2.TestObjects.FRONTEND;
 
 /**
  * This test is intentionally sensitive to ensure our custom encoders do not break in subtle ways.
+ *
+ * <p>Test for {@link SpanBytesEncoder#PROTO3} are sanity-check only as the corresponding tests are
+ * in {@link Proto3SpanWriterTest}.
  */
 public class SpanBytesEncoderTest {
   static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -89,6 +93,11 @@ public class SpanBytesEncoderTest {
         "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"kind\":\"CLIENT\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"localEndpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"},\"remoteEndpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000},\"annotations\":[{\"timestamp\":1472470996238000,\"value\":\"foo\"},{\"timestamp\":1472470996403000,\"value\":\"bar\"}],\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}}");
   }
 
+  @Test public void span_PROTO3() {
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(182);
+  }
+
   @Test public void span_64bitTraceId_JSON_V1() {
     span = span.toBuilder().traceId(span.traceId().substring(16)).build();
 
@@ -103,6 +112,13 @@ public class SpanBytesEncoderTest {
     assertThat(new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8))
       .isEqualTo(
         "{\"traceId\":\"216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"kind\":\"CLIENT\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"localEndpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"},\"remoteEndpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000},\"annotations\":[{\"timestamp\":1472470996238000,\"value\":\"foo\"},{\"timestamp\":1472470996403000,\"value\":\"bar\"}],\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}}");
+  }
+
+  @Test public void span_64bitTraceId_PROTO3() {
+    span = span.toBuilder().traceId(span.traceId().substring(16)).build();
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(174);
   }
 
   @Test public void span_shared_JSON_V1() {
@@ -121,6 +137,13 @@ public class SpanBytesEncoderTest {
         "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"kind\":\"SERVER\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"localEndpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"},\"remoteEndpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000},\"annotations\":[{\"timestamp\":1472470996238000,\"value\":\"foo\"},{\"timestamp\":1472470996403000,\"value\":\"bar\"}],\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"},\"shared\":true}");
   }
 
+  @Test public void span_shared_PROTO3() {
+    span = span.toBuilder().kind(Span.Kind.SERVER).shared(true).build();
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(184);
+  }
+
   @Test public void specialCharsInJson_JSON_V1() {
     span = UTF8_SPAN;
 
@@ -135,6 +158,13 @@ public class SpanBytesEncoderTest {
     assertThat(new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8))
       .isEqualTo(
         "{\"traceId\":\"0000000000000001\",\"id\":\"0000000000000001\",\"name\":\"\\\"\\\\\\t\\b\\n\\r\\f\",\"annotations\":[{\"timestamp\":1,\"value\":\"\\u2028 and \\u2029\"}],\"tags\":{\"\\\"foo\":\"Database error: ORA-00942:\\u2028 and \\u2029 table or view does not exist\\n\"}}");
+  }
+
+  @Test public void specialCharsInJson_PROTO3() {
+    span = UTF8_SPAN;
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(133);
   }
 
   @Test public void span_minimum_JSON_V1() {
@@ -159,6 +189,16 @@ public class SpanBytesEncoderTest {
         "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"id\":\"5b4185666d50f68b\"}");
   }
 
+  @Test public void span_minimum_PROTO3() {
+    span = Span.newBuilder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .id("5b4185666d50f68b")
+      .build();
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(30);
+  }
+
   @Test public void span_noLocalServiceName_JSON_V1() {
     span = span.toBuilder()
       .localEndpoint(FRONTEND.toBuilder().serviceName(null).build())
@@ -177,6 +217,15 @@ public class SpanBytesEncoderTest {
     assertThat(new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8))
       .isEqualTo(
         "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"kind\":\"CLIENT\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"localEndpoint\":{\"ipv4\":\"127.0.0.1\"},\"remoteEndpoint\":{\"serviceName\":\"backend\",\"ipv4\":\"192.168.99.101\",\"port\":9000},\"annotations\":[{\"timestamp\":1472470996238000,\"value\":\"foo\"},{\"timestamp\":1472470996403000,\"value\":\"bar\"}],\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}}");
+  }
+
+  @Test public void span_noLocalServiceName_PROTO3() {
+    span = span.toBuilder()
+      .localEndpoint(FRONTEND.toBuilder().serviceName(null).build())
+      .build();
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(172);
   }
 
   @Test public void span_noRemoteServiceName_JSON_V1() {
@@ -199,6 +248,15 @@ public class SpanBytesEncoderTest {
         "{\"traceId\":\"7180c278b62e8f6a216a2aea45d08fc9\",\"parentId\":\"6b221d5bc9e6496c\",\"id\":\"5b4185666d50f68b\",\"kind\":\"CLIENT\",\"name\":\"get\",\"timestamp\":1472470996199000,\"duration\":207000,\"localEndpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"},\"remoteEndpoint\":{\"ipv4\":\"192.168.99.101\",\"port\":9000},\"annotations\":[{\"timestamp\":1472470996238000,\"value\":\"foo\"},{\"timestamp\":1472470996403000,\"value\":\"bar\"}],\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}}");
   }
 
+  @Test public void span_noRemoteServiceName_PROTO3() {
+    span = span.toBuilder()
+      .remoteEndpoint(BACKEND.toBuilder().serviceName(null).build())
+      .build();
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(173);
+  }
+
   @Test public void noAnnotations_rootServerSpan_JSON_V1() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 
@@ -213,6 +271,13 @@ public class SpanBytesEncoderTest {
     assertThat(new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8))
       .isEqualTo(
         "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"kind\":\"SERVER\",\"name\":\"get\",\"timestamp\":1510256710021866,\"duration\":1117,\"localEndpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"},\"tags\":{\"http.path\":\"/rs/A\",\"location\":\"T67792\",\"other\":\"A\"}}");
+  }
+
+  @Test public void noAnnotations_rootServerSpan_PROTO3() {
+    span = NO_ANNOTATIONS_ROOT_SERVER_SPAN;
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(109);
   }
 
   @Test public void noAnnotations_rootServerSpan_JSON_V1_incomplete() {
@@ -231,6 +296,13 @@ public class SpanBytesEncoderTest {
         "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"kind\":\"SERVER\",\"name\":\"get\",\"timestamp\":1510256710021866,\"localEndpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"},\"tags\":{\"http.path\":\"/rs/A\",\"location\":\"T67792\",\"other\":\"A\"}}");
   }
 
+  @Test public void noAnnotations_rootServerSpan_PROTO3_incomplete() {
+    span = NO_ANNOTATIONS_ROOT_SERVER_SPAN.toBuilder().duration(null).build();
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(106);
+  }
+
   @Test public void noAnnotations_rootServerSpan_JSON_V1_shared() {
     span = NO_ANNOTATIONS_ROOT_SERVER_SPAN.toBuilder().shared(true).build();
 
@@ -245,5 +317,12 @@ public class SpanBytesEncoderTest {
     assertThat(new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8))
       .isEqualTo(
         "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"kind\":\"SERVER\",\"name\":\"get\",\"timestamp\":1510256710021866,\"duration\":1117,\"localEndpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"},\"tags\":{\"http.path\":\"/rs/A\",\"location\":\"T67792\",\"other\":\"A\"},\"shared\":true}");
+  }
+
+  @Test public void noAnnotations_rootServerSpan_PROTO3_shared() {
+    span = NO_ANNOTATIONS_ROOT_SERVER_SPAN.toBuilder().shared(true).build();
+
+    assertThat(SpanBytesEncoder.PROTO3.encode(span))
+      .hasSize(111);
   }
 }

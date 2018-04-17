@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.util.List;
 import zipkin2.Span;
 import zipkin2.internal.Buffer;
 import zipkin2.internal.JsonCodec;
+import zipkin2.internal.Proto3Codec;
 import zipkin2.internal.V1SpanWriter;
 import zipkin2.internal.V2SpanWriter;
 
@@ -69,6 +70,29 @@ public enum SpanBytesEncoder implements BytesEncoder<Span> {
 
     @Override public int encodeList(List<Span> spans, byte[] out, int pos) {
       return JsonCodec.writeList(writer, spans, out, pos);
+    }
+  },
+  PROTO3 {
+    final Proto3Codec codec = new Proto3Codec();
+
+    @Override public Encoding encoding() {
+      return Encoding.PROTO3;
+    }
+
+    @Override public int sizeInBytes(Span input) {
+      return codec.sizeInBytes(input);
+    }
+
+    @Override public byte[] encode(Span span) {
+      return codec.write(span);
+    }
+
+    @Override public byte[] encodeList(List<Span> spans) {
+      return codec.writeList(spans);
+    }
+
+    @Override public int encodeList(List<Span> spans, byte[] out, int pos) {
+      return codec.writeList(spans, out, pos);
     }
   };
 

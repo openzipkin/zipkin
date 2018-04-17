@@ -258,6 +258,108 @@ public final class Buffer {
     buf[pos++] = (byte) ((v >> 56) & 0xff);
   }
 
+  long readLongLe() {
+    return (buf[pos++] & 0xffL)
+      | (buf[pos++] & 0xffL) << 8
+      | (buf[pos++] & 0xffL) << 16
+      | (buf[pos++] & 0xffL) << 24
+      | (buf[pos++] & 0xffL) << 32
+      | (buf[pos++] & 0xffL) << 40
+      | (buf[pos++] & 0xffL) << 48
+      | (buf[pos++] & 0xffL) << 56;
+  }
+
+  /** This needs to be checked externally to not overrun the underlying array */
+  byte readByte() {
+    return buf[pos++];
+  }
+
+  /**
+   * @return the value read. Use {@link Buffer#varintSizeInBytes(int)} to tell how many bytes.
+   * @throws IllegalArgumentException if more than 32 bits were encoded
+   */
+  // hard-coded as this is used commonly, for example reading tags
+  int readVarint32() {
+    int lastIndex = buf.length - 1;
+    checkNotTruncated(pos, lastIndex);
+
+    byte b; // negative number implies MSB set
+    if ((b = buf[pos++]) >= 0) {
+      return b;
+    }
+    int result = b & 0x7f;
+
+    checkNotTruncated(pos, lastIndex);
+    if ((b = buf[pos++]) >= 0) {
+      return result | b << 7;
+    }
+    result |= (b & 0x7f) << 7;
+
+    checkNotTruncated(pos, lastIndex);
+    if ((b = buf[pos++]) >= 0) {
+      return result | b << 14;
+    }
+    result |= (b & 0x7f) << 14;
+
+    checkNotTruncated(pos, lastIndex);
+    if ((b = buf[pos++]) >= 0) {
+      return result | b << 21;
+    }
+    result |= (b & 0x7f) << 21;
+
+    checkNotTruncated(pos, lastIndex);
+    b = buf[pos];
+    if ((b & 0xf0) != 0) {
+      throw new IllegalArgumentException("Greater than 32-bit varint at position " + pos);
+    }
+    return result | b << 28;
+  }
+
+  static void checkNotTruncated(int pos, int lastIndex) {
+    if (pos > lastIndex) {
+      throw new IllegalArgumentException("Truncated reading position " + pos);
+    }
+  }
+
+  /**
+   * @return the value read. Use {@link Buffer#varintSizeInBytes(long)} to tell how many bytes.
+   * @throws IllegalArgumentException if more than 64 bits were encoded
+   */
+  long readVarint64() {
+    int lastIndex = buf.length - 1;
+    checkNotTruncated(pos, lastIndex);
+
+    byte b; // negative number implies MSB set
+    if ((b = buf[pos++]) >= 0) {
+      return b;
+    }
+
+    long result = b & 0x7f;
+    for (int i = 1; b < 0 && i < 10; i++) {
+      checkNotTruncated(pos, lastIndex);
+      b = buf[pos++];
+      if (i == 9 && (b & 0xf0) != 0) {
+        throw new IllegalArgumentException("Greater than 64-bit varint at position " + (pos - 1));
+      }
+      result |= (long) (b & 0x7f) << i * 7;
+    }
+    return result;
+  }
+
+  int remaining() {
+    return buf.length - pos;
+  }
+
+  boolean skip(int maxCount) {
+    int nextPos = pos + maxCount;
+    if (nextPos > buf.length) {
+      pos = buf.length;
+      return false;
+    }
+    pos = nextPos;
+    return true;
+  }
+
   public byte[] toByteArray() {
     //assert pos == buf.length;
     return buf;
