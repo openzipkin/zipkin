@@ -187,8 +187,8 @@ public final class JsonCodec {
       // method. If that's the case, we'd stack overflow. Instead, emit what we've written so far.
       String message = format(
         "Bug found using %s to write %s as json. Wrote %s/%s bytes: %s",
-        writer.getClass().getSimpleName().replace("AutoValue_", ""),
-        value.getClass().getSimpleName(), lengthWritten, bytes.length, written);
+        writer.getClass().getSimpleName(), value.getClass().getSimpleName(), lengthWritten,
+        bytes.length, written);
       throw Platform.get().assertionError(message, e);
     }
     return b.toByteArray();
