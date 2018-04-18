@@ -207,10 +207,10 @@ public final class JsonCodec {
       out[pos++] = ']';
       return 2;
     }
-    int length = sizeInBytes(writer, value);
+    int initialPos = pos;
     Buffer result = new Buffer(out, pos);
     writeList(writer, value, result);
-    return length;
+    return result.pos - initialPos;
   }
 
   public static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {
