@@ -13,8 +13,6 @@
  */
 package zipkin.server.internal;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.undertow.io.Receiver;
 import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
@@ -30,6 +28,7 @@ import org.springframework.context.annotation.Configuration;
 import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
 //import zipkin.collector.CollectorMetrics;
+import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2JsonSpanDecoder;
 import zipkin.storage.Callback;
@@ -50,25 +49,23 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
     CONTENT_TYPE = HttpString.tryFromString("Content-Type"),
     CONTENT_ENCODING = HttpString.tryFromString("Content-Encoding");
 
-  static final String transport = "http";
-
   final Collector collector;
   final HttpCollector JSON_V2, JSON_V1, THRIFT;
   final Receiver.ErrorCallback errorCallback;
   private HttpHandler next;
 
-  private MetricsCollector metrics;
+  private CollectorMetrics metrics;
 
-  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, MetricsCollector metrics) {
+  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
     this.collector = Collector.builder(getClass())
       .storage(storage).sampler(sampler).build(); //      .storage(storage).sampler(sampler).metrics(this.metrics).build();
-    this.metrics = metrics;
+    this.metrics = metrics.forTransport("http");
     this.JSON_V2 = new HttpCollector(new V2JsonSpanDecoder());
     this.JSON_V1 = new HttpCollector(JSON_DECODER);
     this.THRIFT = new HttpCollector(THRIFT_DECODER);
     this.errorCallback = new Receiver.ErrorCallback() {
       @Override public void error(HttpServerExchange exchange, IOException e) {
-        ZipkinHttpCollector.this.metrics.incrementMessagesDropped(transport);
+        ZipkinHttpCollector.this.metrics.incrementMessagesDropped();
         ZipkinHttpCollector.error(exchange, e);
       }
     };
@@ -98,7 +95,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
     }
 
     HttpCollector collector = v2 ? JSON_V2 : thrift ? THRIFT : JSON_V1;
-    metrics.incrementMessages(transport);
+    metrics.incrementMessages();
     exchange.getRequestReceiver().receiveFullBytes(collector, errorCallback);
   }
 
@@ -121,7 +118,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
         try {
           body = gunzip(body);
         } catch (IOException e) {
-          metrics.incrementMessagesDropped(transport);
+          metrics.incrementMessagesDropped();
           exchange.setStatusCode(400)
             .getResponseSender().send("Cannot gunzip spans: " + e.getMessage() + "\n");
           return;

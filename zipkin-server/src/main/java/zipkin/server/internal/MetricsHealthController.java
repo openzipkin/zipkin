@@ -14,7 +14,11 @@ package zipkin.server.internal;
  */
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.ArrayList;
+import java.util.List;
+import org.omg.CORBA.PRIVATE_MEMBER;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.actuate.health.Health;
@@ -26,7 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class MetricsHealthController {
 
-  @Autowired MeterRegistry meterRegistry;
+  @Autowired private MeterRegistry meterRegistry;
 
   @Autowired HealthEndpoint healthEndpointDelegate;
 
@@ -34,10 +38,19 @@ public class MetricsHealthController {
 
   static final String messageCounter = "counter.zipkin_collector.messages.http";
 
+
   @GetMapping("/metrics")
   public ObjectNode fetchMetricsFromMicrometer(){
     ObjectNode node  = factory.objectNode();
-    node.put(messageCounter, meterRegistry.get(messageCounter).counter().count());
+    for (Meter meter: meterRegistry.getMeters()) {
+      if (meter.getId().getName().contains("zipkin") && meter.getId().getName().contains("counter")){
+        node.put(meter.getId().getName(), meterRegistry.get(meter.getId().getName()).counter().count());
+      }
+      if (meter.getId().getName().contains("zipkin") && meter.getId().getName().contains("gauge")){
+        node.put(meter.getId().getName(), meterRegistry.get(meter.getId().getName()).gauge().value());
+      }
+    }
+    //node.put(messageCounter, meterRegistry.get(messageCounter).counter().count());
     return node;
   }
 

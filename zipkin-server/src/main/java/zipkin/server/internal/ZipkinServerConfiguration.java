@@ -14,6 +14,7 @@
 package zipkin.server.internal;
 
 import brave.Tracing;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -79,13 +80,13 @@ public class ZipkinServerConfiguration {
     return CollectorSampler.create(rate);
   }
 
-  //@Bean
-  //  //@ConditionalOnMissingBean(CollectorMetrics.class)
-  //  //CollectorMetrics metrics() {
-  //  //  // org.springframework.boot.actuate.metrics.buffer package is removed in boot v2. Temporarily,
-  //  //  // this inlines the important code. Later we will switch to micrometer.
-  //  //  return new ActuateCollectorMetrics();
-  //  //}
+  @Bean
+  @ConditionalOnMissingBean(CollectorMetrics.class)
+  ActuateCollectorMetrics metrics(MeterRegistry registry) {
+    // org.springframework.boot.actuate.metrics.buffer package is removed in boot v2. Temporarily,
+    // this inlines the important code. Later we will switch to micrometer.
+    return new ActuateCollectorMetrics(registry);
+  }
 
   @Configuration
   @ConditionalOnSelfTracing
