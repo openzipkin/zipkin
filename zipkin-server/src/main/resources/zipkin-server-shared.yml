@@ -189,9 +189,9 @@ management:
     web:
       exposure:
         include: '*'
-      base-path: /
-      path-mapping:
-        health: /health
+#      base-path: /
+#      path-mapping:
+#        health: /health
   metrics:
     distribution:
       percentiles-histogram:

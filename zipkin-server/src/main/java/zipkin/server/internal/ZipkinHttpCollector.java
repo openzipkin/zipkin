@@ -13,6 +13,8 @@
  */
 package zipkin.server.internal;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.undertow.io.Receiver;
 import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
@@ -48,24 +50,25 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
     CONTENT_TYPE = HttpString.tryFromString("Content-Type"),
     CONTENT_ENCODING = HttpString.tryFromString("Content-Encoding");
 
-  // final CollectorMetrics metrics;
+  static final String transport = "http";
+
   final Collector collector;
   final HttpCollector JSON_V2, JSON_V1, THRIFT;
   final Receiver.ErrorCallback errorCallback;
   private HttpHandler next;
 
-  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler) {
-    // CollectorMetrics metrics) {
-    // this.metrics = metrics.forTransport("http");
+  private MetricsCollector metrics;
+
+  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, MetricsCollector metrics) {
     this.collector = Collector.builder(getClass())
       .storage(storage).sampler(sampler).build(); //      .storage(storage).sampler(sampler).metrics(this.metrics).build();
-
+    this.metrics = metrics;
     this.JSON_V2 = new HttpCollector(new V2JsonSpanDecoder());
     this.JSON_V1 = new HttpCollector(JSON_DECODER);
     this.THRIFT = new HttpCollector(THRIFT_DECODER);
     this.errorCallback = new Receiver.ErrorCallback() {
       @Override public void error(HttpServerExchange exchange, IOException e) {
-        // ZipkinHttpCollector.this.metrics.incrementMessagesDropped();
+        ZipkinHttpCollector.this.metrics.incrementMessagesDropped(transport);
         ZipkinHttpCollector.error(exchange, e);
       }
     };
@@ -95,7 +98,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
     }
 
     HttpCollector collector = v2 ? JSON_V2 : thrift ? THRIFT : JSON_V1;
-    // metrics.incrementMessages();
+    metrics.incrementMessages(transport);
     exchange.getRequestReceiver().receiveFullBytes(collector, errorCallback);
   }
 
@@ -118,7 +121,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
         try {
           body = gunzip(body);
         } catch (IOException e) {
-          // metrics.incrementMessagesDropped();
+          metrics.incrementMessagesDropped(transport);
           exchange.setStatusCode(400)
             .getResponseSender().send("Cannot gunzip spans: " + e.getMessage() + "\n");
           return;
