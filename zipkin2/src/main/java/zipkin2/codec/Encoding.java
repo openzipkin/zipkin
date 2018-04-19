@@ -16,6 +16,8 @@ package zipkin2.codec;
 import java.util.List;
 import zipkin2.internal.Buffer;
 
+// ZIPKIN3 make this not an enum as it prevents non-standard encoding, for example reporting to
+// DataDog which has a message pack encoding.
 public enum Encoding {
   JSON {
     /** Encoding overhead of a single element is brackets */
