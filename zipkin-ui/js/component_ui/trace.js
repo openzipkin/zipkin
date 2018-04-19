@@ -33,11 +33,6 @@ export function showSpans(spans, parents, children, selectedSpans) {
   family.forEach(id => spans[id].show());
 }
 
-function hideSpan(span) {
-  if (span.inFilters > 0 || span.openChildren > 0 || span.openParents > 0) return;
-  span.hide();
-}
-
 // extracted for testing. this code mutates spans and selectedSpans
 export function hideSpans(spans, parents, children, selectedSpans, childrenOnly) {
   const family = new Set();
@@ -46,7 +41,7 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
 
     if (!childrenOnly && $selected.inFilters === 0) {
       $selected.removeClass('highlight');
-      hideSpan($selected);
+      $selected.hide();
     }
 
     $selected.expanded = false;
@@ -68,7 +63,8 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
       });
     }
   });
-  family.forEach(id => hideSpan(spans[id]));
+  family.forEach(id => hideSpans(spans, parents, children, [spans[id]], true));
+  family.forEach(id => spans[id].hide());
 }
 
 function spanChildren($span) {
