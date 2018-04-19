@@ -16,7 +16,6 @@ package zipkin.server.internal;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import io.prometheus.client.Histogram;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,16 +58,12 @@ import static zipkin.internal.Util.UTF_8;
 public class ITZipkinServer {
 
   @Autowired InMemoryStorage storage;
-  //@Autowired ActuateCollectorMetrics metrics;
-  //@Autowired Histogram duration;
   @Value("${local.server.port}") int zipkinPort;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Before public void init() {
     storage.clear();
-   // duration.clear();
-    //metrics.forTransport("http").clear();
   }
 
   @Test public void writeSpans_noContentTypeIsJson() throws Exception {
@@ -99,27 +94,7 @@ public class ITZipkinServer {
       .isEqualTo(Codec.JSON.writeSpans(asList(span)));
   }
 
-  @Test public void writeSpans_updatesMetrics() throws Exception {
-    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
-    byte[] body = Codec.JSON.writeSpans(spans);
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", body);
 
-    Response response = get("/metrics");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
-
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.messages.http']"))
-      .isEqualTo(2);
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.bytes.http']"))
-      .isEqualTo(body.length * 2);
-    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_bytes.http']"))
-      .isEqualTo(body.length);
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.spans.http']"))
-      .isEqualTo(spans.size() * 2);
-    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
-      .isEqualTo(spans.size());
-  }
 
   /** Makes sure the prometheus filter doesn't count twice */
   @Test public void writeSpans_updatesPrometheusMetrics() throws Exception {
@@ -155,19 +130,7 @@ public class ITZipkinServer {
       .startsWith("Malformed reading List<Span> from json");
   }
 
-  @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
-    byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    post("/api/v1/spans", body);
 
-    Response response = get("/metrics");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
-
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.messages.http']"))
-      .isEqualTo(1);
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
-      .isEqualTo(1);
-  }
 
   @Test public void writeSpans_malformedGzipIsBadRequest() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
@@ -208,10 +171,7 @@ public class ITZipkinServer {
       .startsWith("Malformed reading List<Span> from TBinary");
   }
 
-  @Test public void healthIsOK() throws Exception {
-    assertThat(get("/health").isSuccessful())
-      .isTrue();
-  }
+
 
   @Test public void v2WiresUp() throws Exception {
     assertThat(get("/api/v2/services").isSuccessful())
@@ -332,39 +292,7 @@ public class ITZipkinServer {
       .isEqualTo("./zipkin/");
   }
 
-  @Test public void readsHealth() throws Exception{
-    Response response = get("/health");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
-    assertThat(readString(json, "$.status"))
-      .isIn("UP", "DOWN", "UNKNOWN");
-    assertThat(readString(json, "$.details.zipkin.status"))
-      .isIn("UP", "DOWN", "UNKNOWN");
-  }
 
-  @Test public void writesSpans_readMetricsFormat() throws Exception{
-    //metrics.forTransport("http").clear();
-    byte[] span = {'z','i', 'p', 'k', 'i', 'n'};
-    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
-    byte[] body = Codec.JSON.writeSpans(spans);
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", body);
-    post("/api/v1/spans",  span);
-    Thread.sleep(1500);
-    Response response = get("/metrics");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
-    System.out.println(json);
-    assertThat(readJson(json))
-      .contains(
-          "gauge.zipkin_collector.message_spans.http"
-        , "gauge.zipkin_collector.message_bytes.http"
-        , "counter.zipkin_collector.messages.http"
-        , "counter.zipkin_collector.bytes.http"
-        , "counter.zipkin_collector.spans.http"
-        , "counter.zipkin_collector.messages_dropped.http"
-      );
-  }
 
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
@@ -377,25 +305,5 @@ public class ITZipkinServer {
       .url("http://localhost:" + zipkinPort + path)
       .post(RequestBody.create(null, body))
       .build()).execute();
-  }
-
-  static Integer readInteger(String json, String jsonPath) {
-    return JsonPath.compile(jsonPath).read(json);
-  }
-
-  static Double readDouble(String json, String jsonPath) {
-    return JsonPath.compile(jsonPath).read(json);
-  }
-
-  static String readString(String json, String jsonPath){
-    return JsonPath.compile(jsonPath).read(json);
-  }
-
-  static List readJson(String json) throws Exception {
-    ObjectMapper mapper = new ObjectMapper();
-    JsonNode jsonNode = mapper.readTree(json);
-    List<String> fieldsList = new ArrayList<>();
-    jsonNode.fieldNames().forEachRemaining(fieldsList::add);
-    return fieldsList;
   }
 }

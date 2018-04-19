@@ -17,11 +17,7 @@ package zipkin.server.internal;
 import com.google.common.util.concurrent.AtomicDouble;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.Nullable;
 
@@ -53,12 +49,12 @@ import static zipkin.internal.Util.checkNotNull;
 
 public final class ActuateCollectorMetrics implements CollectorMetrics{
 
-  @Autowired private MeterRegistry meterRegistry;
+  private MeterRegistry meterRegistry;
 
   private final Counter messages;
   private final Counter messagesDropped;
-  private final AtomicDouble messageBytes;
-  private final AtomicDouble messageSpans;
+  private AtomicDouble messageBytes;
+  private AtomicDouble messageSpans;
   private final Counter bytes;
   private final Counter spans;
   private final Counter spansDropped;
@@ -76,9 +72,9 @@ public final class ActuateCollectorMetrics implements CollectorMetrics{
     this.messagesDropped = this.meterRegistry
       .counter("counter.zipkin_collector.messages_dropped" + transportType);
     this.messageBytes = this.meterRegistry
-      .gauge("gauge.zipkin_collector.message_bytes" + transportType, new AtomicDouble());
+      .gauge("gauge.zipkin_collector.message_bytes" + transportType, new AtomicDouble(0.0));
     this.messageSpans = this.meterRegistry
-      .gauge("gauge.zipkin_collector.message_spans" + transportType, new AtomicDouble());
+      .gauge("gauge.zipkin_collector.message_spans" + transportType, new AtomicDouble(0.0));
     this.bytes = this.meterRegistry
       .counter("counter.zipkin_collector.bytes" + transportType);
     this.spans = this.meterRegistry
@@ -102,15 +98,16 @@ public final class ActuateCollectorMetrics implements CollectorMetrics{
 
   @Override public void incrementSpans(int quantity) {
     messageSpans.set(quantity);
-    spans.increment();
+    spans.increment(quantity);
   }
 
   @Override public void incrementBytes(int quantity) {
     messageBytes.set(quantity);
-    bytes.increment();
+    bytes.increment(quantity);
   }
 
   @Override public void incrementSpansDropped(int quantity) {
-    spansDropped.increment();
+    spansDropped.increment(quantity);
   }
+
 }

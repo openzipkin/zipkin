@@ -42,6 +42,7 @@ public class MetricsHealthController {
   @GetMapping("/metrics")
   public ObjectNode fetchMetricsFromMicrometer(){
     ObjectNode node  = factory.objectNode();
+    // Iterate over the meters and get the Zipkin Custom meters for constructing the Metrics endpoint
     for (Meter meter: meterRegistry.getMeters()) {
       if (meter.getId().getName().contains("zipkin") && meter.getId().getName().contains("counter")){
         node.put(meter.getId().getName(), meterRegistry.get(meter.getId().getName()).counter().count());
@@ -50,10 +51,10 @@ public class MetricsHealthController {
         node.put(meter.getId().getName(), meterRegistry.get(meter.getId().getName()).gauge().value());
       }
     }
-    //node.put(messageCounter, meterRegistry.get(messageCounter).counter().count());
     return node;
   }
 
+  // Delegates the health endpoint from the Actuator to the root context path
   @ReadOperation
   @GetMapping("/health")
   public ResponseEntity<Health> getHealth(){

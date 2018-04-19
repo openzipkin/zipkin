@@ -57,9 +57,9 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
   private CollectorMetrics metrics;
 
   @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
-    this.collector = Collector.builder(getClass())
-      .storage(storage).sampler(sampler).build(); //      .storage(storage).sampler(sampler).metrics(this.metrics).build();
     this.metrics = metrics.forTransport("http");
+    this.collector = Collector.builder(getClass())
+      .storage(storage).sampler(sampler).metrics(this.metrics).build();
     this.JSON_V2 = new HttpCollector(new V2JsonSpanDecoder());
     this.JSON_V1 = new HttpCollector(JSON_DECODER);
     this.THRIFT = new HttpCollector(THRIFT_DECODER);
