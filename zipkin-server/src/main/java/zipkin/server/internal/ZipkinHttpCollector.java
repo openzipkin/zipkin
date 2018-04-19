@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import zipkin.SpanDecoder;
 import zipkin.collector.Collector;
+//import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2JsonSpanDecoder;
@@ -48,14 +49,14 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
     CONTENT_TYPE = HttpString.tryFromString("Content-Type"),
     CONTENT_ENCODING = HttpString.tryFromString("Content-Encoding");
 
-  final CollectorMetrics metrics;
   final Collector collector;
   final HttpCollector JSON_V2, JSON_V1, THRIFT;
   final Receiver.ErrorCallback errorCallback;
   private HttpHandler next;
 
-  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
-    CollectorMetrics metrics) {
+  private CollectorMetrics metrics;
+
+  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
     this.metrics = metrics.forTransport("http");
     this.collector = Collector.builder(getClass())
       .storage(storage).sampler(sampler).metrics(this.metrics).build();

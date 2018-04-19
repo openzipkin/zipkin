@@ -14,14 +14,15 @@
 package zipkin.server.internal;
 
 import brave.Tracing;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
-import org.springframework.boot.context.embedded.undertow.UndertowEmbeddedServletContainerFactory;
+import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
+import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -51,10 +52,10 @@ public class ZipkinServerConfiguration {
   @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
 
-  @Bean public UndertowEmbeddedServletContainerFactory embeddedServletContainerFactory(
+  @Bean public UndertowServletWebServerFactory embeddedServletContainerFactory(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins
   ) {
-    UndertowEmbeddedServletContainerFactory factory = new UndertowEmbeddedServletContainerFactory();
+    UndertowServletWebServerFactory factory = new UndertowServletWebServerFactory();
     CorsHandler cors = new CorsHandler(allowedOrigins);
     if (httpCollector != null) {
       factory.addDeploymentInfoCustomizers(
@@ -81,10 +82,10 @@ public class ZipkinServerConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(CollectorMetrics.class)
-  CollectorMetrics metrics() {
+  ActuateCollectorMetrics metrics(MeterRegistry registry) {
     // org.springframework.boot.actuate.metrics.buffer package is removed in boot v2. Temporarily,
     // this inlines the important code. Later we will switch to micrometer.
-    return new ActuateCollectorMetrics();
+    return new ActuateCollectorMetrics(registry);
   }
 
   @Configuration
