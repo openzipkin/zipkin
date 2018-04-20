@@ -218,6 +218,19 @@ public class CodecBenchmarks {
     return SpanBytesEncoder.JSON_V1.encodeList(tenSpan2s);
   }
 
+  static final byte[] zipkin2JsonChinese = read("/zipkin2-chinese.json");
+  static final Span zipkin2Chinese = SpanBytesDecoder.JSON_V2.decodeOne(zipkin2JsonChinese);
+
+  @Benchmark
+  public Span readChineseSpan_json_zipkin2() {
+    return SpanBytesDecoder.JSON_V2.decodeOne(zipkin2JsonChinese);
+  }
+
+  @Benchmark
+  public byte[] writeChineseSpan_json_zipkin2() {
+    return SpanBytesEncoder.JSON_V2.encode(zipkin2Chinese);
+  }
+
   static final byte[] rpcSpanJson = read("/span-rpc.json");
   static final zipkin.Span rpcSpan = Codec.JSON.readSpan(rpcSpanJson);
   static final byte[] rpcSpanThrift = Codec.THRIFT.writeSpan(rpcSpan);
@@ -291,7 +304,7 @@ public class CodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + CodecBenchmarks.class.getSimpleName() + ".*kryo_zipkin2")
+        .include(".*" + CodecBenchmarks.class.getSimpleName())
         .build();
 
     new Runner(opt).run();

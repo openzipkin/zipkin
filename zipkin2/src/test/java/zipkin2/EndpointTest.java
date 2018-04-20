@@ -15,7 +15,6 @@ package zipkin2;
 
 import java.net.Inet4Address;
 import java.net.Inet6Address;
-import java.net.UnknownHostException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -46,129 +45,124 @@ public class EndpointTest {
       .isEqualTo(65535);
   }
 
-  @Test public void ip_addr_ipv4() throws UnknownHostException {
+  @Test public void ip_addr_ipv4() throws Exception {
     Endpoint.Builder newBuilder = Endpoint.newBuilder();
-    assertThat(newBuilder.parseIp(Inet4Address.getByName("1.2.3.4"))).isTrue();
+    assertThat(newBuilder.parseIp(Inet4Address.getByName("43.0.192.2"))).isTrue();
     Endpoint endpoint = newBuilder.build();
 
-    assertThat(endpoint.ipv4())
-      .isEqualTo("1.2.3.4");
-    assertThat(endpoint.ipv6())
-      .isNull();
+    assertExpectedIpv4(endpoint);
   }
 
   @Test
-  public void ip_string_ipv4() throws UnknownHostException {
+  public void ip_string_ipv4() {
     Endpoint.Builder newBuilder = Endpoint.newBuilder();
-    assertThat(newBuilder.parseIp("1.2.3.4")).isTrue();
+    assertThat(newBuilder.parseIp("43.0.192.2")).isTrue();
     Endpoint endpoint = newBuilder.build();
 
-    assertThat(endpoint.ipv4())
-      .isEqualTo("1.2.3.4");
-    assertThat(endpoint.ipv6())
-      .isNull();
+    assertExpectedIpv4(endpoint);
   }
 
-  @Test public void ip_ipv6() throws UnknownHostException {
+  @Test public void ip_ipv6() throws Exception {
     String ipv6 = "2001:db8::c001";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
     assertThat(endpoint.ipv4())
       .isNull();
+    assertThat(endpoint.ipv4Bytes())
+      .isNull();
     assertThat(endpoint.ipv6())
       .isEqualTo(ipv6);
+    assertThat(endpoint.ipv6Bytes())
+      .containsExactly(Inet6Address.getByName(ipv6).getAddress());
   }
 
-  @Test public void ip_ipv6_addr() throws UnknownHostException {
+  @Test public void ip_ipv6_addr() throws Exception {
     String ipv6 = "2001:db8::c001";
     Endpoint endpoint = Endpoint.newBuilder().ip(Inet6Address.getByName(ipv6)).build();
 
     assertThat(endpoint.ipv4())
       .isNull();
+    assertThat(endpoint.ipv4Bytes())
+      .isNull();
     assertThat(endpoint.ipv6())
       .isEqualTo(ipv6);
+    assertThat(endpoint.ipv6Bytes())
+      .containsExactly(Inet6Address.getByName(ipv6).getAddress());
   }
 
-  @Test public void ip_ipv6_mappedIpv4() throws UnknownHostException {
-    String ipv6 = "::FFFF:1.2.3.4";
+  @Test public void ip_ipv6_mappedIpv4() {
+    String ipv6 = "::FFFF:43.0.192.2";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
-    assertThat(endpoint.ipv4())
-      .isEqualTo("1.2.3.4");
-    assertThat(endpoint.ipv6())
-      .isNull();
+    assertExpectedIpv4(endpoint);
   }
 
-  @Test public void ip_ipv6_addr_mappedIpv4() throws UnknownHostException {
-    String ipv6 = "::FFFF:1.2.3.4";
+  @Test public void ip_ipv6_addr_mappedIpv4() throws Exception {
+    String ipv6 = "::FFFF:43.0.192.2";
     Endpoint endpoint = Endpoint.newBuilder().ip(Inet6Address.getByName(ipv6)).build();
 
-    assertThat(endpoint.ipv4())
-      .isEqualTo("1.2.3.4");
-    assertThat(endpoint.ipv6())
-      .isNull();
+    assertExpectedIpv4(endpoint);
   }
 
   @Test public void ip_ipv6_compatIpv4() {
-    String ipv6 = "::0000:1.2.3.4";
+    String ipv6 = "::0000:43.0.192.2";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
-    assertThat(endpoint.ipv4())
-      .isEqualTo("1.2.3.4");
-    assertThat(endpoint.ipv6())
-      .isNull();
+    assertExpectedIpv4(endpoint);
   }
 
-  @Test public void ip_ipv6_addr_compatIpv4() throws UnknownHostException {
-    String ipv6 = "::0000:1.2.3.4";
+  @Test public void ip_ipv6_addr_compatIpv4() throws Exception {
+    String ipv6 = "::0000:43.0.192.2";
     Endpoint endpoint = Endpoint.newBuilder().ip(Inet6Address.getByName(ipv6)).build();
 
-    assertThat(endpoint.ipv4())
-      .isEqualTo("1.2.3.4");
-    assertThat(endpoint.ipv6())
-      .isNull();
+    assertExpectedIpv4(endpoint);
   }
 
-  @Test public void ipv6_notMappedIpv4() throws UnknownHostException {
-    String ipv6 = "::ffef:1.2.3.4";
+  @Test public void ipv6_notMappedIpv4() {
+    String ipv6 = "::ffef:43.0.192.2";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
     assertThat(endpoint.ipv4())
       .isNull();
+    assertThat(endpoint.ipv4Bytes())
+      .isNull();
     assertThat(endpoint.ipv6())
+      .isNull();
+    assertThat(endpoint.ipv6Bytes())
       .isNull();
   }
 
-  @Test public void ipv6_downcases() throws UnknownHostException {
+  @Test public void ipv6_downcases() {
     Endpoint endpoint = Endpoint.newBuilder().ip("2001:DB8::C001").build();
 
     assertThat(endpoint.ipv6())
       .isEqualTo("2001:db8::c001");
   }
 
-  @Test public void ip_ipv6_compatIpv4_compressed() throws UnknownHostException {
-    String ipv6 = "::1.2.3.4";
+  @Test public void ip_ipv6_compatIpv4_compressed() {
+    String ipv6 = "::43.0.192.2";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
-    assertThat(endpoint.ipv4())
-      .isEqualTo("1.2.3.4");
-    assertThat(endpoint.ipv6())
-      .isNull();
+    assertExpectedIpv4(endpoint);
   }
 
   /** This ensures we don't mistake IPv6 localhost for a mapped IPv4 0.0.0.1 */
-  @Test public void ipv6_localhost() throws UnknownHostException {
+  @Test public void ipv6_localhost() {
     String ipv6 = "::1";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
     assertThat(endpoint.ipv4())
       .isNull();
+    assertThat(endpoint.ipv4Bytes())
+      .isNull();
     assertThat(endpoint.ipv6())
       .isEqualTo(ipv6);
+    assertThat(endpoint.ipv6Bytes())
+      .containsExactly(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1);
   }
 
   /** This is an unusable compat Ipv4 of 0.0.0.2. This makes sure it isn't mistaken for localhost */
-  @Test public void ipv6_notLocalhost() throws UnknownHostException {
+  @Test public void ipv6_notLocalhost() {
     String ipv6 = "::2";
     Endpoint endpoint = Endpoint.newBuilder().ip(ipv6).build();
 
@@ -194,8 +188,27 @@ public class EndpointTest {
     Endpoint.newBuilder().port(65536).build();
   }
 
+  /** Catches common error when zero is passed instead of null for a port */
+  @Test public void coercesZeroPortToNull() {
+    Endpoint endpoint = Endpoint.newBuilder().port(0).build();
+
+    assertThat(endpoint.port())
+      .isNull();
+  }
+
   @Test public void lowercasesServiceName() {
     assertThat(Endpoint.newBuilder().serviceName("fFf").ip("127.0.0.1").build().serviceName())
       .isEqualTo("fff");
+  }
+
+  static void assertExpectedIpv4(Endpoint endpoint) {
+    assertThat(endpoint.ipv4())
+      .isEqualTo("43.0.192.2");
+    assertThat(endpoint.ipv4Bytes())
+      .containsExactly(43, 0, 192, 2);
+    assertThat(endpoint.ipv6())
+      .isNull();
+    assertThat(endpoint.ipv6Bytes())
+      .isNull();
   }
 }

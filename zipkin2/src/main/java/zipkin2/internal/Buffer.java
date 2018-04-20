@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,11 +13,7 @@
  */
 package zipkin2.internal;
 
-import java.nio.charset.Charset;
-
 public final class Buffer {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
-
   public interface Writer<T> {
     int sizeInBytes(T value);
 
@@ -47,19 +43,30 @@ public final class Buffer {
     return this;
   }
 
+  /**
+   * This returns the bytes needed to transcode a UTF-16 Java String to UTF-8 bytes.
+   *
+   * <p>Originally based on http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
+   * <p>Later, ASCII run and malformed surrogate logic borrowed from okio.Utf8
+   */
   static int utf8SizeInBytes(String string) {
-    // Adapted from http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
     int sizeInBytes = 0;
     for (int i = 0, len = string.length(); i < len; i++) {
       char ch = string.charAt(i);
       if (ch < 0x80) {
-        sizeInBytes++; // 7-bit character
+        sizeInBytes++; // 7-bit ASCII character
+        // This could be an ASCII run, or possibly entirely ASCII
+        while (i < len - 1) {
+          ch = string.charAt(i + 1);
+          if (ch >= 0x80) break;
+          i++;
+          sizeInBytes++; // another 7-bit ASCII character
+        }
       } else if (ch < 0x800) {
         sizeInBytes += 2; // 11-bit character
       } else if (ch < 0xd800 || ch > 0xdfff) {
         sizeInBytes += 3; // 16-bit character
       } else {
-        // malformed surrogate logic borrowed from okio.Utf8
         int low = i + 1 < len ? string.charAt(i + 1) : 0;
         if (ch > 0xdbff || low < 0xdc00 || low > 0xdfff) {
           sizeInBytes++; // A malformed surrogate, which yields '?'.
@@ -74,26 +81,61 @@ public final class Buffer {
   }
 
   public Buffer writeAscii(String v) {
-    int length = v.length();
-    for (int i = 0; i < length; i++) {
+    for (int i = 0, len = v.length(); i < len; i++) {
       buf[pos++] = (byte) v.charAt(i);
     }
     return this;
   }
 
-  static boolean isAscii(String v) {
-    for (int i = 0, length = v.length(); i < length; i++) {
-      if (v.charAt(i) >= 0x80) {
-        return false;
+  /**
+   * This transcodes a UTF-16 Java String to UTF-8 bytes.
+   *
+   * <p>This looks most similar to {@code io.netty.buffer.ByteBufUtil.writeUtf8(AbstractByteBuf, int, CharSequence, int)}
+   * v4.1, modified including features to address ASCII runs of text.
+   */
+  public Buffer writeUtf8(String string) {
+    for (int i = 0, len = string.length(); i < len; i++) {
+      char ch = string.charAt(i);
+      if (ch < 0x80) { // 7-bit ASCII character
+        buf[pos++] = (byte) ch;
+        // This could be an ASCII run, or possibly entirely ASCII
+        while (i < len - 1) {
+          ch = string.charAt(i + 1);
+          if (ch >= 0x80) break;
+          i++;
+          buf[pos++] = (byte) ch; // another 7-bit ASCII character
+        }
+      } else if (ch < 0x800) {  // 11-bit character
+        buf[pos++] = (byte) (0xc0 | (ch >> 6));
+        buf[pos++] = (byte) (0x80 | (ch & 0x3f));
+      } else if (ch < 0xd800 || ch > 0xdfff) { // 16-bit character
+        buf[pos++] = (byte) (0xe0 | (ch >> 12));
+        buf[pos++] = (byte) (0x80 | ((ch >> 6) & 0x3f));
+        buf[pos++] = (byte) (0x80 | (ch & 0x3f));
+      } else { // Possibly a 21-bit character
+        if (!Character.isHighSurrogate(ch)) { // Malformed or not UTF-8
+          buf[pos++] = '?';
+          continue;
+        }
+        if (i == len - 1) { // Truncated or not UTF-8
+          buf[pos++] = '?';
+          break;
+        }
+        char low = string.charAt(++i);
+        if (!Character.isLowSurrogate(low)) { // Malformed or not UTF-8
+          buf[pos++] = '?';
+          buf[pos++] = (byte) (Character.isHighSurrogate(low) ? '?' : low);
+          continue;
+        }
+        // Write the 21-bit character using 4 bytes
+        // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630
+        int codePoint = Character.toCodePoint(ch, low);
+        buf[pos++] = (byte) (0xf0 | (codePoint >> 18));
+        buf[pos++] = (byte) (0x80 | ((codePoint >> 12) & 0x3f));
+        buf[pos++] = (byte) (0x80 | ((codePoint >> 6) & 0x3f));
+        buf[pos++] = (byte) (0x80 | (codePoint & 0x3f));
       }
     }
-    return true;
-  }
-
-  public Buffer writeUtf8(String v) {
-    if (isAscii(v)) return writeAscii(v);
-    byte[] temp = v.getBytes(UTF_8);
-    write(temp);
     return this;
   }
 
@@ -155,6 +197,66 @@ public final class Buffer {
   }
 
   static final byte[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+
+  /**
+   * A base 128 varint encodes 7 bits at a time, this checks how many bytes are needed to
+   * represent the value.
+   *
+   * <p>See https://developers.google.com/protocol-buffers/docs/encoding#varints
+   *
+   * <p>This logic is the same as {@code com.squareup.wire.ProtoWriter.varint32Size} v2.3.0
+   * which benchmarked faster than loop variants of the frequently copy/pasted VarInt.varIntSize
+   */
+  public static int varintSizeInBytes(int value) {
+    if ((value & (0xffffffff << 7)) == 0) return 1;
+    if ((value & (0xffffffff << 14)) == 0) return 2;
+    if ((value & (0xffffffff << 21)) == 0) return 3;
+    if ((value & (0xffffffff << 28)) == 0) return 4;
+    return 5;
+  }
+
+  // com.squareup.wire.ProtoWriter.writeVarint v2.3.0
+  void writeVarint(int v) {
+    while ((v & ~0x7f) != 0) {
+      buf[pos++] = (byte) ((v & 0x7f) | 0x80);
+      v >>>= 7;
+    }
+    buf[pos++] = (byte) v;
+  }
+
+  /** Like {@link #varintSizeInBytes(int)}, except for uint64. */
+  public static int varintSizeInBytes(long v) {
+    if ((v & (0xffffffffffffffffL << 7)) == 0) return 1;
+    if ((v & (0xffffffffffffffffL << 14)) == 0) return 2;
+    if ((v & (0xffffffffffffffffL << 21)) == 0) return 3;
+    if ((v & (0xffffffffffffffffL << 28)) == 0) return 4;
+    if ((v & (0xffffffffffffffffL << 35)) == 0) return 5;
+    if ((v & (0xffffffffffffffffL << 42)) == 0) return 6;
+    if ((v & (0xffffffffffffffffL << 49)) == 0) return 7;
+    if ((v & (0xffffffffffffffffL << 56)) == 0) return 8;
+    if ((v & (0xffffffffffffffffL << 63)) == 0) return 9;
+    return 10;
+  }
+
+  // com.squareup.wire.ProtoWriter.writeVarint v2.3.0
+  void writeVarint(long v) {
+    while ((v & ~0x7fL) != 0) {
+      buf[pos++] = (byte) ((v & 0x7f) | 0x80);
+      v >>>= 7;
+    }
+    buf[pos++] = (byte) v;
+  }
+
+  void writeLongLe(long v) {
+    buf[pos++] = (byte) (v & 0xff);
+    buf[pos++] = (byte) ((v >> 8 & 0xff));
+    buf[pos++] = (byte) ((v >> 16 & 0xff));
+    buf[pos++] = (byte) ((v >> 24 & 0xff));
+    buf[pos++] = (byte) ((v >> 32) & 0xff);
+    buf[pos++] = (byte) ((v >> 40) & 0xff);
+    buf[pos++] = (byte) ((v >> 48) & 0xff);
+    buf[pos++] = (byte) ((v >> 56) & 0xff);
+  }
 
   public byte[] toByteArray() {
     //assert pos == buf.length;

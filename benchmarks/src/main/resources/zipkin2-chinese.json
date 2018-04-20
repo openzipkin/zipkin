@@ -3,30 +3,21 @@
   "parentId": "86154a4ba6e91385",
   "id": "4d1e00c0db9010db",
   "kind": "CLIENT",
-  "name": "get",
+  "name": "个人信息查询",
   "timestamp": 1472470996199000,
   "duration": 207000,
   "localEndpoint": {
-    "serviceName": "frontend",
+    "serviceName": "订单维护服务",
     "ipv6": "2001:db8::c001"
   },
   "remoteEndpoint": {
-    "serviceName": "backend",
+    "serviceName": "个人信息服务",
     "ipv4": "192.168.99.101",
     "port": 9000
   },
-  "annotations": [
-    {
-      "timestamp": 1472470996238000,
-      "value": "foo"
-    },
-    {
-      "timestamp": 1472470996403000,
-      "value": "bar"
-    }
-  ],
   "tags": {
-    "http.path": "/api",
-    "clnt/finagle.version": "6.45.0"
+    "http.path": "/person/profile/query",
+    "http.status_code": "403",
+    "error": "此用户没有操作权限"
   }
 }

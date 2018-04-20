@@ -48,13 +48,34 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
   }
 
   /**
+   * IPv4 endpoint address packed into 4 bytes or null if unknown.
+   *
+   * @see #ipv6()
+   * @see java.net.Inet4Address#getAddress()
+   */
+  @Nullable public byte[] ipv4Bytes() {
+    return ipv4Bytes;
+  }
+
+  /**
    * The text representation of the primary IPv6 address associated with this a connection. Ex.
    * 2001:db8::c001 Absent if unknown.
    *
-   * <p>Prefer using the {@link #ipv4()} field for mapped addresses.
+   * @see #ipv4() for mapped addresses
+   * @see #ipv6Bytes()
    */
   @Nullable public String ipv6() {
     return ipv6;
+  }
+
+  /**
+   * IPv6 endpoint address packed into 16 bytes or null if unknown.
+   *
+   * @see #ipv6()
+   * @see java.net.Inet6Address#getAddress()
+   */
+  @Nullable public byte[] ipv6Bytes() {
+    return ipv6Bytes;
   }
 
   /**
@@ -63,6 +84,15 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
    * @see java.net.InetSocketAddress#getPort()
    */
   @Nullable public Integer port() {
+    return port != 0 ? port : null;
+  }
+
+  /**
+   * Like {@link #port()} except returns a primitive where zero implies absent.
+   *
+   * <p>Using this method will avoid allocation, so is encouraged when copying data.
+   */
+  public int portAsInt() {
     return port;
   }
 
@@ -76,12 +106,15 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
 
   public static final class Builder {
     String serviceName, ipv4, ipv6;
-    Integer port;
+    byte[] ipv4Bytes, ipv6Bytes;
+    int port; // zero means null
 
     Builder(Endpoint source) {
       serviceName = source.serviceName;
       ipv4 = source.ipv4;
       ipv6 = source.ipv6;
+      ipv4Bytes = source.ipv4Bytes;
+      ipv6Bytes = source.ipv6Bytes;
       port = source.port;
     }
 
@@ -115,13 +148,12 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       if (addr == null) return false;
       if (addr instanceof Inet4Address) {
         ipv4 = addr.getHostAddress();
+        ipv4Bytes = addr.getAddress();
       } else if (addr instanceof Inet6Address) {
         byte[] addressBytes = addr.getAddress();
-        String ipv4 = parseEmbeddedIPv4(addressBytes);
-        if (ipv4 != null) {
-          this.ipv4 = ipv4;
-        } else {
+        if (!parseEmbeddedIPv4(addressBytes)) {
           ipv6 = writeIpV6(addressBytes);
+          ipv6Bytes = addressBytes;
         }
       } else {
         return false;
@@ -153,12 +185,15 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       IpFamily format = detectFamily(ipString);
       if (format == IpFamily.IPv4) {
         ipv4 = ipString;
+        ipv4Bytes = getIpv4Bytes(ipv4);
       } else if (format == IpFamily.IPv4Embedded) {
         ipv4 = ipString.substring(ipString.lastIndexOf(':') + 1);
+        ipv4Bytes = getIpv4Bytes(ipv4);
       } else if (format == IpFamily.IPv6) {
         byte[] addressBytes = textToNumericFormatV6(ipString);
         if (addressBytes == null) return false;
         ipv6 = writeIpV6(addressBytes); // ensures consistent format
+        ipv6Bytes = addressBytes;
       } else {
         return false;
       }
@@ -174,8 +209,16 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     public Builder port(@Nullable Integer port) {
       if (port != null) {
         if (port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
-        if (port <= 0) port = null;
+        if (port <= 0) port = 0;
       }
+      this.port = port != null ? port : 0;
+      return this;
+    }
+
+    /** @see Endpoint#portAsInt() */
+    public Builder port(int port) {
+      if (port > 0xffff) throw new IllegalArgumentException("invalid port " + port);
+      if (port < 0) port = 0;
       this.port = port;
       return this;
     }
@@ -186,22 +229,24 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
 
     Builder() {
     }
-  }
 
-  static @Nullable String parseEmbeddedIPv4(byte[] ipv6) {
-    for (int i = 0; i < 10; i++) { // Embedded IPv4 addresses start with unset 80 bits
-      if (ipv6[i] != 0) return null;
+    boolean parseEmbeddedIPv4(byte[] ipv6) {
+      for (int i = 0; i < 10; i++) { // Embedded IPv4 addresses start with unset 80 bits
+        if (ipv6[i] != 0) return false;
+      }
+
+      int flag = (ipv6[10] & 0xff) << 8 | (ipv6[11] & 0xff);
+      if (flag != 0 && flag != -1) return false; // IPv4-Compatible or IPv4-Mapped
+
+      byte o1 = ipv6[12], o2 = ipv6[13], o3 = ipv6[14], o4 = ipv6[15];
+      if (flag == 0 && o1 == 0 && o2 == 0 && o3 == 0 && o4 == 1) {
+        return false; // ::1 is localhost, not an embedded compat address
+      }
+
+      ipv4 = String.valueOf(o1 & 0xff) + '.' + (o2 & 0xff) + '.' + (o3 & 0xff) + '.' + (o4 & 0xff);
+      ipv4Bytes = new byte[] {o1, o2, o3, o4};
+      return true;
     }
-
-    int flag = (ipv6[10] & 0xff) << 8 | (ipv6[11] & 0xff);
-    if (flag != 0 && flag != -1) return null; // IPv4-Compatible or IPv4-Mapped
-
-    int o1 = ipv6[12] & 0xff, o2 = ipv6[13] & 0xff, o3 = ipv6[14] & 0xff, o4 = ipv6[15] & 0xff;
-    if (flag == 0 && o1 == 0 && o2 == 0 && o3 == 0 && o4 == 1) {
-      return null; // ::1 is localhost, not an embedded compat address
-    }
-
-    return String.valueOf(o1) + '.' + o2 + '.' + o3 + '.' + o4;
   }
 
   enum IpFamily {
@@ -440,19 +485,24 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
   // clutter below mainly due to difficulty working with Kryo which cannot handle AutoValue subclass
   // See https://github.com/openzipkin/zipkin/issues/1879
   final String serviceName, ipv4, ipv6;
-  final Integer port;
+  final byte[] ipv4Bytes, ipv6Bytes;
+  final int port;
 
   Endpoint(Builder builder) {
     serviceName = builder.serviceName;
     ipv4 = builder.ipv4;
+    ipv4Bytes = builder.ipv4Bytes;
     ipv6 = builder.ipv6;
+    ipv6Bytes = builder.ipv6Bytes;
     port = builder.port;
   }
 
   Endpoint(SerializedForm serializedForm) {
     serviceName = serializedForm.serviceName;
     ipv4 = serializedForm.ipv4;
+    ipv4Bytes = serializedForm.ipv4Bytes;
     ipv6 = serializedForm.ipv6;
+    ipv6Bytes = serializedForm.ipv6Bytes;
     port = serializedForm.port;
   }
 
@@ -473,7 +523,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       ? (that.serviceName == null) : serviceName.equals(that.serviceName))
       && ((ipv4 == null) ? (that.ipv4 == null) : ipv4.equals(that.ipv4))
       && ((ipv6 == null) ? (that.ipv6 == null) : ipv6.equals(that.ipv6))
-      && ((port == null) ? (that.port == null) : port.equals(that.port));
+      && port == that.port;
   }
 
   @Override public int hashCode() {
@@ -485,7 +535,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     h *= 1000003;
     h ^= (ipv6 == null) ? 0 : ipv6.hashCode();
     h *= 1000003;
-    h ^= (port == null) ? 0 : port.hashCode();
+    h ^= port;
     return h;
   }
 
@@ -494,16 +544,20 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     return new SerializedForm(this);
   }
 
+  // TODO: replace this with native proto3 encoding
   private static final class SerializedForm implements Serializable {
     static final long serialVersionUID = 0L;
 
     final String serviceName, ipv4, ipv6;
-    final Integer port;
+    final byte[] ipv4Bytes, ipv6Bytes;
+    final int port;
 
     SerializedForm(Endpoint endpoint) {
       serviceName = endpoint.serviceName;
       ipv4 = endpoint.ipv4;
+      ipv4Bytes = endpoint.ipv4Bytes;
       ipv6 = endpoint.ipv6;
+      ipv6Bytes = endpoint.ipv6Bytes;
       port = endpoint.port;
     }
 
@@ -514,5 +568,31 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
         throw new StreamCorruptedException(e.getMessage());
       }
     }
+  }
+
+  static byte[] getIpv4Bytes(String ipv4) {
+    byte[] result = new byte[4];
+    int pos = 0;
+    for (int i = 0, len = ipv4.length(); i < len; ) {
+      char ch = ipv4.charAt(i++);
+      int octet = ch - '0';
+      if (i == len || (ch = ipv4.charAt(i++)) == '.') {
+        // then we have a single digit octet
+        result[pos++] = (byte) octet;
+        continue;
+      }
+      // push the decimal
+      octet = (octet * 10) + (ch - '0');
+      if (i == len || (ch = ipv4.charAt(i++)) == '.') {
+        // then we have a two digit octet
+        result[pos++] = (byte) octet;
+        continue;
+      }
+      // otherwise, we have a three digit octet
+      octet = (octet * 10) + (ch - '0');
+      result[pos++] = (byte) octet;
+      i++; // skip the dot
+    }
+    return result;
   }
 }

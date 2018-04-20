@@ -478,7 +478,7 @@ public final class V2SpanConverter {
   public static zipkin.Endpoint toEndpoint(Endpoint input) {
     zipkin.Endpoint.Builder result = zipkin.Endpoint.builder()
       .serviceName(input.serviceName() != null ? input.serviceName() : "")
-      .port(input.port() != null ? input.port() : 0);
+      .port(input.portAsInt());
     if (input.ipv6() != null) {
       result.parseIp(input.ipv6()); // parse first in case there's a mapped IP
     }

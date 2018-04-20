@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -29,10 +29,10 @@ import static java.lang.String.format;
  * reasons.
  *
  * <ul>
- *   <li>Eliminates the need to keep separate model classes for thrift vs json</li>
+ *   <li>Eliminates the need to keep separate model classes for proto3 vs json</li>
  *   <li>Avoids magic field initialization which, can miss constructor guards</li>
  *   <li>Allows us to safely re-use the json form in toString methods</li>
- *   <li>Encourages logic to be based on the thrift shape of objects</li>
+ *   <li>Encourages logic to be based on the json shape of objects</li>
  *   <li>Ensures the order and naming of the fields in json is stable</li>
  * </ul>
  *
@@ -187,8 +187,8 @@ public final class JsonCodec {
       // method. If that's the case, we'd stack overflow. Instead, emit what we've written so far.
       String message = format(
         "Bug found using %s to write %s as json. Wrote %s/%s bytes: %s",
-        writer.getClass().getSimpleName().replace("AutoValue_", ""),
-        value.getClass().getSimpleName(), lengthWritten, bytes.length, written);
+        writer.getClass().getSimpleName(), value.getClass().getSimpleName(), lengthWritten,
+        bytes.length, written);
       throw Platform.get().assertionError(message, e);
     }
     return b.toByteArray();
@@ -207,10 +207,10 @@ public final class JsonCodec {
       out[pos++] = ']';
       return 2;
     }
-    int length = sizeInBytes(writer, value);
+    int initialPos = pos;
     Buffer result = new Buffer(out, pos);
     writeList(writer, value, result);
-    return length;
+    return result.pos - initialPos;
   }
 
   public static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {

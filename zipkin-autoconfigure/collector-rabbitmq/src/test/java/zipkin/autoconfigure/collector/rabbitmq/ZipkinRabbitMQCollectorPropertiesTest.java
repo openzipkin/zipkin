@@ -21,10 +21,9 @@ import org.junit.Test;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ZipkinRabbitMQCollectorPropertiesTest {
+  ZipkinRabbitMQCollectorProperties properties = new ZipkinRabbitMQCollectorProperties();
 
-  @Test
-  public void uriProperlyParsedAndIgnoresOtherProperties_whenUriSet() throws Exception {
-    ZipkinRabbitMQCollectorProperties properties = new ZipkinRabbitMQCollectorProperties();
+  @Test public void uriProperlyParsedAndIgnoresOtherProperties_whenUriSet() throws Exception {
     properties.setUri(URI.create("amqp://admin:admin@localhost:5678/myv"));
     properties.setAddresses(Collections.singletonList("will_not^work!"));
     properties.setUsername("bob");
@@ -40,5 +39,12 @@ public class ZipkinRabbitMQCollectorPropertiesTest {
         assertThat(connFactory.getPassword()).isEqualTo("admin");
         assertThat(connFactory.getVirtualHost()).isEqualTo("myv");
       });
+  }
+
+  /** This prevents an empty RABBIT_URI variable from being mistaken as a real one */
+  @Test public void ignoresEmptyURI() {
+    properties.setUri(URI.create(""));
+
+    assertThat(properties.getUri()).isNull();
   }
 }

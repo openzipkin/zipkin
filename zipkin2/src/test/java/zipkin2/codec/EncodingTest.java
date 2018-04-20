@@ -57,6 +57,7 @@ public class EncodingTest {
       .isEqualTo(1 + 1 /* tag, length */ + 10);
   }
 
+  // per ListOfSpans in zipkin2.proto
   @Test public void multiItemList_proto3() {
     List<byte[]> encoded = Arrays.asList(new byte[3], new byte[4], new byte[128]);
     assertThat(Encoding.PROTO3.listSizeInBytes(encoded))
