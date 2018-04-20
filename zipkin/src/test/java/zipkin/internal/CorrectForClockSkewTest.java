@@ -242,8 +242,13 @@ public class CorrectForClockSkewTest {
     Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
     Span local = localSpan(rpcSpan, APP_ENDPOINT, rpcSpan.timestamp + 5, 200L);
     Span local2 = localSpan(local, APP_ENDPOINT, local.timestamp + 10, 100L);
+    Span local3 = Span.builder().traceId(local2.traceId).parentId(local2.id).id(local2.id +1)
+      .name("crappylc") // missing timestamp duration and even missing endpoint
+      .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "lc",null))
+      .build();
 
-    List<Span> adjustedSpans = CorrectForClockSkew.apply(asList(rpcSpan, rootSpan, local, local2));
+    List<Span> adjustedSpans =
+      CorrectForClockSkew.apply(asList(rpcSpan, rootSpan, local, local2, local3));
 
     Span adjustedLocal = getById(adjustedSpans, local.id);
     assertThat(local.timestamp - skew)
@@ -252,6 +257,10 @@ public class CorrectForClockSkewTest {
     Span adjustedLocal2 = getById(adjustedSpans, local2.id);
     assertThat(local2.timestamp - skew)
         .isEqualTo(adjustedLocal2.timestamp.longValue());
+
+    Span adjustedLocal3 = getById(adjustedSpans, local3.id);
+    assertThat(adjustedLocal3)
+      .isEqualTo(local3); // no change
   }
 
   @Test
