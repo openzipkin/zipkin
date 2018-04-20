@@ -155,13 +155,13 @@ public final class CorrectForClockSkew {
   /** If any annotation has an IP with skew associated, adjust accordingly. */
   static Span adjustTimestamps(Span span, ClockSkew skew) {
     List<Annotation> annotations = null;
-    Long annotationTimestamp = null;
+    Long spanTimestamp = span.timestamp, annotationTimestamp = null;
     for (int i = 0, length = span.annotations.size(); i < length; i++) {
       Annotation a = span.annotations.get(i);
       if (a.endpoint == null) continue;
       if (ipsMatch(skew.endpoint, a.endpoint)) {
         if (annotations == null) annotations = new ArrayList<>(span.annotations);
-        if (span.timestamp != null && a.timestamp == span.timestamp) {
+        if (spanTimestamp != null && a.timestamp == spanTimestamp) {
           annotationTimestamp = a.timestamp;
         }
         annotations.set(i, a.toBuilder().timestamp(a.timestamp - skew.skew).build());
@@ -175,11 +175,12 @@ public final class CorrectForClockSkew {
       return builder.build();
     }
     // Search for a local span on the skewed endpoint
+    if (spanTimestamp == null) return span; // We can't adjust something lacking a timestamp
     for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
       BinaryAnnotation b = span.binaryAnnotations.get(i);
       if (b.endpoint == null) continue;
       if (b.key.equals(Constants.LOCAL_COMPONENT) && ipsMatch(skew.endpoint, b.endpoint)) {
-        return span.toBuilder().timestamp(span.timestamp - skew.skew).build();
+        return span.toBuilder().timestamp(spanTimestamp - skew.skew).build();
       }
     }
     return span;
