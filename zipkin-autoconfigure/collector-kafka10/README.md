@@ -99,7 +99,7 @@ $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
 Multiple bootstrap servers:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=broker1:9092.local,broker2.local:9092 \
+$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 \
     java \
     -Dloader.path='kafka10.jar,kafka10.jar!/lib' \
     -Dspring.profiles.active=kafka \
