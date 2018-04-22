@@ -155,3 +155,8 @@ And then it's observable in the UI:
 ```bash
 $ open http://localhost/proxy/foo/bar/zipkin/?serviceName=zipkin-server&startTs=1378193040000&endTs=1505463856013
 ```
+### How do I configure security (authentication, authorization)? 
+
+Zipkin UI can be secured by running it behind an authenticating proxy like [Apache HTTPD](https://httpd.apache.org/docs/current/howto/auth.html), [Nginx](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) or similar. Make sure to also consult the [notes](#apache-http-as-a-zipkin-reverse-proxy) on running apache http as a reverse proxy for the UI, as it can be a bit tricky.
+
+Note that by default, a Zipkin server runs both the UI ('/zipkin') and the span collector ('/api') endpoint. Your configuration to secure the UI should only target the UI endpoint in order to not prevent clients from ingesting span data.
