@@ -34,15 +34,14 @@ import zipkin2.internal.Nullable;
  * which nest to form a latency tree. Spans are in the same trace when they share the same trace ID.
  * The {@link #parentId} field establishes the position of one span in the tree.
  *
- * The root span is where {@link #parentId} is null and usually has the longest {@link #duration}
+ * <p>The root span is where {@link #parentId} is null and usually has the longest {@link #duration}
  * in the trace. However, nested asynchronous work can materialize as child spans whose duration
  * exceed the root span.
  *
  * <p>Spans usually represent remote activity such as RPC calls, or messaging producers and
  * consumers. However, they can also represent in-process activity in any position of the trace. For
  * example, a root span could represent a server receiving an initial client request. A root span
- * could also represent a scheduled job that has no remote context. At any place in the trace tree,
- * intermediate in-process activities such as message processors, could be also be spans.
+ * could also represent a scheduled job that has no remote context.
  *
  * <p>While span identifiers are packed into longs, they should be treated opaquely. ID encoding is
  * 16 or 32 character lower-hex, to avoid signed interpretation.
