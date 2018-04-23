@@ -160,7 +160,6 @@ spring:
     exclude:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-
 info:
   zipkin:
     version: "@project.version@"
@@ -183,9 +182,12 @@ logging:
 #     zipkin.collector.kafka10.KafkaCollector: 'DEBUG'
 #     zipkin.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
 #     zipkin.collector.scribe.ScribeCollector: 'DEBUG'
-
 management:
   security:
     # do not lock-down metrics by default
     # https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-1.5-Release-Notes#actuator-security
+    enabled: false
+
+endpoints:
+  metrics:
     enabled: false

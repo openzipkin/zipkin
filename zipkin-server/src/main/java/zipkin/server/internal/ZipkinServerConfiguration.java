@@ -14,6 +14,7 @@
 package zipkin.server.internal;
 
 import brave.Tracing;
+import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,17 +40,17 @@ import zipkin2.storage.InMemoryStorage;
 @Configuration
 public class ZipkinServerConfiguration {
 
-  /** Registers health for any components, even those not in this jar. */
-  @Bean ZipkinHealthIndicator zipkinHealthIndicator(HealthAggregator healthAggregator) {
-    return new ZipkinHealthIndicator(healthAggregator);
-  }
-
   @Autowired(required = false) @Qualifier("httpTracingCustomizer")
   UndertowDeploymentInfoCustomizer httpTracingCustomizer;
   @Autowired(required = false) @Qualifier("httpRequestDurationCustomizer")
   UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer;
   @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
+
+  /** Registers health for any components, even those not in this jar. */
+  @Bean ZipkinHealthIndicator zipkinHealthIndicator(HealthAggregator healthAggregator) {
+    return new ZipkinHealthIndicator(healthAggregator);
+  }
 
   @Bean public UndertowEmbeddedServletContainerFactory embeddedServletContainerFactory(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins
@@ -81,10 +82,10 @@ public class ZipkinServerConfiguration {
 
   @Bean
   @ConditionalOnMissingBean(CollectorMetrics.class)
-  CollectorMetrics metrics() {
+  CollectorMetrics metrics(MeterRegistry registry) {
     // org.springframework.boot.actuate.metrics.buffer package is removed in boot v2. Temporarily,
     // this inlines the important code. Later we will switch to micrometer.
-    return new ActuateCollectorMetrics();
+    return new ActuateCollectorMetrics(registry);
   }
 
   @Configuration
