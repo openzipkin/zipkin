@@ -168,8 +168,6 @@ public class ITZipkinMetricsHealth {
       .isIn("UP", "DOWN", "UNKNOWN");
     assertThat(readString(json, "$.zipkin.status"))
       .isIn("UP", "DOWN", "UNKNOWN");
-    assertThat(readString(json, "$.diskSpace.status"))
-      .isIn("UP", "DOWN", "UNKNOWN");
   }
 
   @Test public void writesSpans_readMetricsFormat() throws Exception {

@@ -1,4 +1,3 @@
-package zipkin.server.internal;
 /**
  * Copyright 2015-2018 The OpenZipkin Authors
  *
@@ -12,6 +11,8 @@ package zipkin.server.internal;
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+package zipkin.server.internal;
+
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.micrometer.core.instrument.Meter;
