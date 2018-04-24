@@ -94,16 +94,28 @@ public class ITZipkinMetricsHealth {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = Codec.JSON.writeSpans(spans);
     Double messagesCount = registry.get("counter.zipkin_collector.spans.http").counter().count();
+    // Get the http count from the registry and it should match the summation previous count
+    // and count of calls below
+    long httpCount = registry
+      .find("http_request_duration")
+      .tag("path", "/api/v1/spans")
+      .timer()
+      .count();
+    httpCount += 2;
 
+    System.out.print(httpCount);
     post("/api/v1/spans", body);
     post("/api/v1/spans", body);
-
     Response response = get("/prometheus");
     assertThat(response.isSuccessful()).isTrue();
     String prometheus = response.body().string();
 
     assertThat(prometheus)
       .contains("counter_zipkin_collector_spans_http_total " + (messagesCount + 6));
+    assertThat(prometheus)
+      .contains(
+        "http_request_duration_seconds_count{method=\"POST\",path=\"/api/v1/spans\",status=\"200\",} "
+          + httpCount);
   }
 
   @Test public void writeSpans_updatesMetrics() throws Exception {
@@ -134,7 +146,8 @@ public class ITZipkinMetricsHealth {
   @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
     Double messagesCount = registry.get("counter.zipkin_collector.messages.http").counter().count();
-    Double messagesDeoppedCount = registry.get("counter.zipkin_collector.messages_dropped.http").counter().count();
+    Double messagesDeoppedCount =
+      registry.get("counter.zipkin_collector.messages_dropped.http").counter().count();
     post("/api/v1/spans", body);
 
     Response response = get("/metrics");

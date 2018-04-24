@@ -13,11 +13,10 @@
  */
 package zipkin.autoconfigure.prometheus;
 
-import io.prometheus.client.Histogram;
-import java.util.Collections;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.After;
 import org.junit.Test;
-import org.springframework.boot.actuate.endpoint.PublicMetrics;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -29,17 +28,6 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
 
   @After public void close() {
     context.close();
-  }
-
-  @Test public void providesHttpRequestDurationHistogram() {
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinPrometheusMetricsAutoConfiguration.class,
-      TestConfig.class
-    );
-    context.refresh();
-
-    context.getBean(Histogram.class);
   }
 
   @Test public void providesHttpRequestDurationCustomizer() {
@@ -55,8 +43,9 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
 
   @Configuration
   static class TestConfig {
-    @Bean PublicMetrics publicMetrics() {
-      return Collections::emptyList;
+    @Bean
+    MeterRegistry registry() {
+      return new SimpleMeterRegistry();
     }
   }
 }

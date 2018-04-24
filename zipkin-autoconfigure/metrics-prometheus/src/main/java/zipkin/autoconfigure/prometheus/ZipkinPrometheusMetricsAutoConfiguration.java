@@ -14,78 +14,81 @@
 
 package zipkin.autoconfigure.prometheus;
 
-import io.prometheus.client.Histogram;
-import io.prometheus.client.hotspot.DefaultExports;
-import io.prometheus.client.spring.boot.EnablePrometheusEndpoint;
-import io.prometheus.client.spring.boot.EnableSpringBootMetricsCollector;
-import io.prometheus.client.spring.web.EnablePrometheusTiming;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Timer;
 import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import java.util.Arrays;
+import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-@EnablePrometheusEndpoint
-@EnableSpringBootMetricsCollector
-@EnablePrometheusTiming
 @Configuration
-class ZipkinPrometheusMetricsAutoConfiguration {
-  // needs to be a JVM singleton
-  static final Histogram http_request_duration_seconds = Histogram.build()
-    .labelNames("path", "method")
-    .help("Response time histogram")
-    .name("http_request_duration_seconds")
-    .register();
+public class ZipkinPrometheusMetricsAutoConfiguration {
+  private MeterRegistry registry;
 
-  ZipkinPrometheusMetricsAutoConfiguration() {
-    DefaultExports.initialize();
-  }
-
-  @Bean Histogram httpRequestDuration() {
-    return http_request_duration_seconds;
+  ZipkinPrometheusMetricsAutoConfiguration(MeterRegistry registry) {
+    this.registry = registry;
   }
 
   @Bean @Qualifier("httpRequestDurationCustomizer")
   UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer() {
     HttpRequestDurationHandler.Wrapper result =
-      new HttpRequestDurationHandler.Wrapper(http_request_duration_seconds);
+      new HttpRequestDurationHandler.Wrapper(registry);
     return info -> info.addInitialHandlerChainWrapper(result);
   }
 
   static final class HttpRequestDurationHandler implements HttpHandler {
-    static final class Wrapper implements HandlerWrapper {
-      final Histogram httpRequestDuration;
-
-      Wrapper(Histogram httpRequestDuration) {
-        this.httpRequestDuration = httpRequestDuration;
-      }
-
-      @Override public HttpHandler wrap(HttpHandler next) {
-        return new HttpRequestDurationHandler(httpRequestDuration, next);
-      }
-    }
-
-    final Histogram httpRequestDuration;
+    final MeterRegistry registry;
     final HttpHandler next;
-
-    HttpRequestDurationHandler(Histogram httpRequestDuration, HttpHandler next) {
-      this.httpRequestDuration = httpRequestDuration;
+    final Clock clock;
+    HttpRequestDurationHandler(MeterRegistry registry, HttpHandler next) {
+      this.registry = registry;
       this.next = next;
+      this.clock = registry.config().clock();
     }
 
     @Override public void handleRequest(HttpServerExchange exchange) throws Exception {
+      final long startTime = clock.monotonicTime();
       if (!exchange.isComplete()) {
-        Histogram.Timer timer = httpRequestDuration
-          .labels(exchange.getRelativePath(), exchange.getRequestMethod().toString())
-          .startTimer();
+        Timer timer = getTimeBuilder(exchange).register(registry);
         exchange.addExchangeCompleteListener((exchange1, nextListener) -> {
-          timer.observeDuration();
+          timer.record(clock.monotonicTime() - startTime, TimeUnit.NANOSECONDS);
           nextListener.proceed();
         });
       }
       next.handleRequest(exchange);
+    }
+
+    private Timer.Builder getTimeBuilder(HttpServerExchange exchange) {
+      return Timer.builder("http_request_duration")
+        .tags(this.getTags(exchange))
+        .description("Response time histogram")
+        .publishPercentileHistogram();
+    }
+
+    private Iterable<Tag> getTags(HttpServerExchange exchange) {
+      return Arrays.asList(Tag.of("method", exchange.getRequestMethod().toString())
+        , Tag.of("path", exchange.getRelativePath())
+        , Tag.of("status", Integer.toString(exchange.getStatusCode()))
+      );
+    }
+
+    static final class Wrapper implements HandlerWrapper {
+      final MeterRegistry registry;
+
+      Wrapper(MeterRegistry registry) {
+        this.registry = registry;
+      }
+
+      @Override public HttpHandler wrap(HttpHandler next) {
+        return new HttpRequestDurationHandler(registry, next);
+      }
     }
   }
 }
