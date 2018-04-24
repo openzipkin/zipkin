@@ -13,6 +13,7 @@
  */
 package zipkin.benchmarks;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -27,6 +28,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
+import org.springframework.beans.factory.annotation.Autowired;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.server.internal.ActuateCollectorMetrics;
@@ -45,9 +47,9 @@ public class MetricsBenchmarks
   static final int LONG_SPAN = 5000;
   static final int MEDIUM_SPAN = 1000;
   static final int SHORT_SPAN = 500;
-
+  @Autowired private MeterRegistry registry;
   private InMemoryCollectorMetrics inMemoryCollectorMetrics = new InMemoryCollectorMetrics();
-  private ActuateCollectorMetrics actuateCollectorMetrics = new ActuateCollectorMetrics();
+  private ActuateCollectorMetrics actuateCollectorMetrics = new ActuateCollectorMetrics(registry);
 
   @Benchmark
   public int incrementBytes_longSpans_inMemory() {

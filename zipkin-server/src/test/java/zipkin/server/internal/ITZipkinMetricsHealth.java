@@ -16,7 +16,7 @@ package zipkin.server.internal;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import io.prometheus.client.Histogram;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,7 +50,7 @@ public class ITZipkinMetricsHealth {
 
   @Autowired InMemoryStorage storage;
   @Autowired ActuateCollectorMetrics metrics;
-  @Autowired Histogram duration;
+  @Autowired MeterRegistry registry;
   @Value("${local.server.port}") int zipkinPort;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
@@ -77,8 +77,6 @@ public class ITZipkinMetricsHealth {
 
   @Before public void init() {
     storage.clear();
-    duration.clear();
-    metrics.forTransport("http").clear();
   }
 
   @Test public void healthIsOK() throws Exception {
@@ -95,20 +93,37 @@ public class ITZipkinMetricsHealth {
   @Test public void writeSpans_updatesPrometheusMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = Codec.JSON.writeSpans(spans);
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", body);
+    Double messagesCount = registry.get("counter.zipkin_collector.spans.http").counter().count();
+    // Get the http count from the registry and it should match the summation previous count
+    // and count of calls below
+    long httpCount = registry
+      .find("http_request_duration")
+      .tag("path", "/api/v1/spans")
+      .timer()
+      .count();
+    httpCount += 2;
 
+    System.out.print(httpCount);
+    post("/api/v1/spans", body);
+    post("/api/v1/spans", body);
     Response response = get("/prometheus");
     assertThat(response.isSuccessful()).isTrue();
     String prometheus = response.body().string();
 
     assertThat(prometheus)
-      .contains("http_request_duration_seconds_count{path=\"/api/v1/spans\",method=\"POST\",} 2.0");
+      .contains("counter_zipkin_collector_spans_http_total " + (messagesCount + 6));
+    assertThat(prometheus)
+      .contains(
+        "http_request_duration_seconds_count{method=\"POST\",path=\"/api/v1/spans\",status=\"200\",} "
+          + httpCount);
   }
 
   @Test public void writeSpans_updatesMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = Codec.JSON.writeSpans(spans);
+    Double messagesCount = registry.get("counter.zipkin_collector.messages.http").counter().count();
+    Double bytesCount = registry.get("counter.zipkin_collector.bytes.http").counter().count();
+    Double spansCount = registry.get("counter.zipkin_collector.spans.http").counter().count();
     post("/api/v1/spans", body);
     post("/api/v1/spans", body);
 
@@ -116,30 +131,33 @@ public class ITZipkinMetricsHealth {
     assertThat(response.isSuccessful()).isTrue();
     String json = response.body().string();
 
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.messages.http']"))
-      .isEqualTo(2);
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.bytes.http']"))
-      .isEqualTo(body.length * 2);
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
+      .isEqualTo(messagesCount + 2.0);
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.bytes.http']"))
+      .isEqualTo(bytesCount + (body.length * 2));
     assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_bytes.http']"))
       .isEqualTo(body.length);
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.spans.http']"))
-      .isEqualTo(spans.size() * 2);
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.spans.http']"))
+      .isEqualTo(spansCount + (spans.size() * 2));
     assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
       .isEqualTo(spans.size());
   }
 
   @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
+    Double messagesCount = registry.get("counter.zipkin_collector.messages.http").counter().count();
+    Double messagesDeoppedCount =
+      registry.get("counter.zipkin_collector.messages_dropped.http").counter().count();
     post("/api/v1/spans", body);
 
     Response response = get("/metrics");
     assertThat(response.isSuccessful()).isTrue();
     String json = response.body().string();
 
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.messages.http']"))
-      .isEqualTo(1);
-    assertThat(readInteger(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
-      .isEqualTo(1);
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
+      .isEqualTo(messagesCount + 1);
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
+      .isEqualTo(messagesDeoppedCount + 1);
   }
 
   @Test public void readsHealth() throws Exception {
