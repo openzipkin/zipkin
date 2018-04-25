@@ -103,7 +103,6 @@ public class ITZipkinMetricsHealth {
       .count();
     httpCount += 2;
 
-    System.out.print(httpCount);
     post("/api/v1/spans", body);
     post("/api/v1/spans", body);
     Response response = get("/prometheus");
