@@ -14,6 +14,8 @@
 package zipkin.benchmarks;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -47,7 +49,7 @@ public class MetricsBenchmarks
   static final int LONG_SPAN = 5000;
   static final int MEDIUM_SPAN = 1000;
   static final int SHORT_SPAN = 500;
-  @Autowired private MeterRegistry registry;
+  private MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
   private InMemoryCollectorMetrics inMemoryCollectorMetrics = new InMemoryCollectorMetrics();
   private ActuateCollectorMetrics actuateCollectorMetrics = new ActuateCollectorMetrics(registry);
 
