@@ -187,6 +187,12 @@ management:
     # do not lock-down metrics by default
     # https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-1.5-Release-Notes#actuator-security
     enabled: false
+# Disabling auto time http requests since it is added in Undertow HttpHandler in Zipkin autoconfigure
+# Prometheus module. In Zipkin we use different naming for the http requests duration
+  metrics:
+    web:
+      server:
+        auto-time-requests: false
 
 endpoints:
   metrics:

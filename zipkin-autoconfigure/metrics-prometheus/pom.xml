@@ -27,7 +27,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <prometheus_simpleclient.version>0.3.0</prometheus_simpleclient.version>
+    <micrometer.version>1.0.3</micrometer.version>
   </properties>
 
   <dependencies>
