@@ -27,20 +27,20 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <prometheus_simpleclient.version>0.3.0</prometheus_simpleclient.version>
+    <micrometer.version>1.0.3</micrometer.version>
   </properties>
 
   <dependencies>
     <!-- Micrometer and Prometheus Registry-->
     <dependency>
       <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-spring-legacy</artifactId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
       <version>${micrometer.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-registry-prometheus</artifactId>
-      <version>${micrometer.version}</version>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+      <version>${spring-boot.version}</version>
     </dependency>
     <dependency>
       <groupId>org.springframework.boot</groupId>

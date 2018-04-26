@@ -17,18 +17,31 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.prometheus.client.CollectorRegistry;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @RestController
-public class MetricsHealthController {
+public class MetricsHealthController implements WebMvcConfigurer {
   private MeterRegistry meterRegistry;
+  private HealthEndpoint healthEndpointDelegate;
+  private final CollectorRegistry collectorRegistry;
   final JsonNodeFactory factory = JsonNodeFactory.instance;
 
-  MetricsHealthController(MeterRegistry meterRegistry) {
+  MetricsHealthController(MeterRegistry meterRegistry
+    , HealthEndpoint healthEndpointDelegate
+    , CollectorRegistry collectorRegistry){
     this.meterRegistry = meterRegistry;
+    this.healthEndpointDelegate = healthEndpointDelegate;
+    this.collectorRegistry = collectorRegistry;
   }
 
+  // Extracts Zipkin metrics to provide backward compatibility
   @GetMapping("/metrics")
   public ObjectNode fetchMetricsFromMicrometer(){
     ObjectNode metrics  = factory.objectNode();
@@ -42,5 +55,21 @@ public class MetricsHealthController {
       }
     }
     return metrics;
+  }
+
+  // Delegates the health endpoint from the Actuator to the root context path and can be deprecated
+  // in future in favour of Actuator endpoints
+  @GetMapping("/health")
+  public Map getHealth() {
+    Map health = new HashMap();
+    health.put("status", healthEndpointDelegate.health().getStatus().getCode());
+    health.put("zipkin", healthEndpointDelegate.health().getDetails().get("zipkin"));
+    return health;
+  }
+
+  // Redirects the prometheus scrape endpoint for backward compatibility
+  @Override
+  public void addViewControllers(ViewControllerRegistry registry) {
+    registry.addRedirectViewController("/prometheus", "/actuator/prometheus");
   }
 }

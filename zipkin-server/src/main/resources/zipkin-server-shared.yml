@@ -182,12 +182,18 @@ logging:
 #     zipkin.collector.kafka10.KafkaCollector: 'DEBUG'
 #     zipkin.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
 #     zipkin.collector.scribe.ScribeCollector: 'DEBUG'
-management:
-  security:
-    # do not lock-down metrics by default
-    # https://github.com/spring-projects/spring-boot/wiki/Spring-Boot-1.5-Release-Notes#actuator-security
-    enabled: false
 
-endpoints:
+management:
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      show-details: always
+# Disabling auto time http requests since it is added in Undertow HttpHandler in Zipkin autoconfigure
+# Prometheus module. In Zipkin we use different naming for the http requests duration
   metrics:
-    enabled: false
+    web:
+      server:
+        auto-time-requests: false
