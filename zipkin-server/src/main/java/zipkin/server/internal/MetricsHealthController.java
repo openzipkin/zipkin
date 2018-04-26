@@ -27,13 +27,14 @@ import java.util.Map;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @RestController
-public class MetricsHealthController {
+public class MetricsHealthController implements WebMvcConfigurer {
   private MeterRegistry meterRegistry;
   private HealthEndpoint healthEndpointDelegate;
   private final CollectorRegistry collectorRegistry;
-
   final JsonNodeFactory factory = JsonNodeFactory.instance;
 
   MetricsHealthController(MeterRegistry meterRegistry
@@ -70,20 +71,9 @@ public class MetricsHealthController {
     return health;
   }
 
-  // Prometheus scrape code ported from springboot actuator and can be deprecated later
-  // through root context path for backward compatibility, Mimics the same code from
-  // org.springframework.boot.actuate.metrics.export.prometheus.PrometheusScrapeEndpoint
-  @GetMapping("/prometheus")
-  public String scrape() {
-    try {
-      Writer writer = new StringWriter();
-      TextFormat.write004(writer, this.collectorRegistry.metricFamilySamples());
-      return writer.toString();
-    }
-    catch (IOException e) {
-      // This actually never happens since StringWriter::write() doesn't throw any
-      // IOException
-      throw new RuntimeException("Writing metrics failed", e);
-    }
+  // Redirects the prometheus scrape endpoint for backward compatibility
+  @Override
+  public void addViewControllers(ViewControllerRegistry registry) {
+    registry.addRedirectViewController("/prometheus", "/actuator/prometheus");
   }
 }
