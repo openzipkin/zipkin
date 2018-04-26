@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -133,7 +133,8 @@ public abstract class Collector<D, S> {
 
   RuntimeException doError(String message, Throwable e) {
     String error = e.getMessage() != null ? e.getMessage() : "";
-    if (e instanceof RuntimeException && error.startsWith("Malformed")) {
+    if (e instanceof RuntimeException &&
+      (error.startsWith("Malformed") || error.startsWith("Truncated"))) {
       if (shouldWarn()) warn(error, e);
       return (RuntimeException) e;
     } else {

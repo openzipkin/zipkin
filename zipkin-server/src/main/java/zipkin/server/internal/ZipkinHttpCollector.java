@@ -30,6 +30,7 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2JsonSpanDecoder;
+import zipkin.internal.V2Proto3SpanDecoder;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
 
@@ -50,7 +51,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
 
   final CollectorMetrics metrics;
   final Collector collector;
-  final HttpCollector JSON_V2, JSON_V1, THRIFT;
+  final HttpCollector JSON_V2, PROTO3, JSON_V1, THRIFT;
   final Receiver.ErrorCallback errorCallback;
   private HttpHandler next;
 
@@ -60,6 +61,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
     this.collector = Collector.builder(getClass())
       .storage(storage).sampler(sampler).metrics(this.metrics).build();
     this.JSON_V2 = new HttpCollector(new V2JsonSpanDecoder());
+    this.PROTO3 = new HttpCollector(new V2Proto3SpanDecoder());
     this.JSON_V1 = new HttpCollector(JSON_DECODER);
     this.THRIFT = new HttpCollector(THRIFT_DECODER);
     this.errorCallback = new Receiver.ErrorCallback() {
@@ -86,14 +88,15 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
     String contentTypeValue = exchange.getRequestHeaders().getFirst(CONTENT_TYPE);
     boolean json = contentTypeValue == null || contentTypeValue.startsWith("application/json");
     boolean thrift = !json && contentTypeValue.startsWith("application/x-thrift");
-    if (!json && !thrift) {
+    boolean proto = v2 && !json && contentTypeValue.startsWith("application/x-protobuf");
+    if (!json && !thrift && !proto) {
       exchange.setStatusCode(400)
         .getResponseSender()
         .send("unsupported content type " + contentTypeValue + "\n");
       return;
     }
 
-    HttpCollector collector = v2 ? JSON_V2 : thrift ? THRIFT : JSON_V1;
+    HttpCollector collector = v2 ? (json ? JSON_V2 : PROTO3) : thrift ? THRIFT : JSON_V1;
     metrics.incrementMessages();
     exchange.getRequestReceiver().receiveFullBytes(collector, errorCallback);
   }

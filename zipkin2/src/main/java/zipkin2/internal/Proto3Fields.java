@@ -43,8 +43,8 @@ final class Proto3Fields {
      */
     final int key;
 
-    Field(int fieldNumber, int wireType) {
-      this(fieldNumber, wireType, (fieldNumber << 3) | wireType);
+    Field(int key) {
+      this(key >>> 3, key & (1 << 3) - 1, key);
     }
 
     Field(int fieldNumber, int wireType, int key) {
@@ -53,33 +53,17 @@ final class Proto3Fields {
       this.key = key;
     }
 
-    void readThisKey(Buffer buffer) {
-      int readKey = buffer.readVarint32();
-      if (key != readKey) {
-        int lastPositionRead = buffer.pos - 1;
-        int readWireType = Proto3Fields.Field.wireType(readKey, lastPositionRead);
-        if (readWireType != wireType) {
-          throw new IllegalArgumentException(
-            "Expected wire type " + wireType + " but was " + readWireType);
-        }
-        int readFieldNumber = Proto3Fields.Field.fieldNumber(readKey, lastPositionRead);
-        if (readFieldNumber != fieldNumber) {
-          throw new IllegalArgumentException(
-            "Expected field number " + fieldNumber + " but was " + readFieldNumber);
-        }
-      }
-    }
-
-    static int fieldNumber(int key, int pos) {
+    static int fieldNumber(int key, int byteL) {
       int fieldNumber = key >>> 3;
       if (fieldNumber != 0) return fieldNumber;
-      throw new IllegalArgumentException("fieldNumber was zero at position: " + pos);
+      throw new IllegalArgumentException("Malformed: fieldNumber was zero at byte " + byteL);
     }
 
-    static int wireType(int key, int pos) {
+    static int wireType(int key, int byteL) {
       int wireType = key & (1 << 3) - 1;
       if (wireType != 0 && wireType != 1 && wireType != 2 && wireType != 5) {
-        throw new IllegalArgumentException("invalid wireType " + wireType + " at position: " + pos);
+        throw new IllegalArgumentException(
+          "Malformed: invalid wireType " + wireType + " at byte " + byteL);
       }
       return wireType;
     }
@@ -101,19 +85,21 @@ final class Proto3Fields {
           return buffer.skip(4);
         default:
           throw new IllegalArgumentException(
-            "invalid wireType " + wireType + " at position: " + (buffer.pos - 1));
+            "Malformed: invalid wireType " + wireType + " at byte " + buffer.pos);
       }
     }
   }
 
   static abstract class LengthDelimitedField<T> extends Field {
-    LengthDelimitedField(int fieldNumber) {
-      super(fieldNumber, WIRETYPE_LENGTH_DELIMITED);
+    LengthDelimitedField(int key) {
+      super(key);
+      assert wireType == WIRETYPE_LENGTH_DELIMITED;
     }
 
     final int sizeInBytes(T value) {
       if (value == null) return 0;
       int sizeOfValue = sizeOfValue(value);
+      if (sizeOfValue == 0) return 0;
       return sizeOfLengthDelimitedField(sizeOfValue);
     }
 
@@ -139,8 +125,8 @@ final class Proto3Fields {
   }
 
   static class BytesField extends LengthDelimitedField<byte[]> {
-    BytesField(int fieldNumber) {
-      super(fieldNumber);
+    BytesField(int key) {
+      super(key);
     }
 
     @Override int sizeOfValue(byte[] bytes) {
@@ -150,14 +136,22 @@ final class Proto3Fields {
     @Override void writeValue(Buffer b, byte[] bytes) {
       b.write(bytes);
     }
+
+    byte[] readValue(Buffer buffer) {
+      int length = ensureLength(buffer);
+      byte[] result = new byte[length];
+      System.arraycopy(buffer.toByteArray(), buffer.pos, result, 0, length);
+      buffer.pos += length;
+      return result;
+    }
   }
 
   static class HexField extends LengthDelimitedField<String> {
     static final char[] HEX_DIGITS =
       {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-    HexField(int fieldNumber) {
-      super(fieldNumber);
+    HexField(int key) {
+      super(key);
     }
 
     @Override int sizeOfValue(String hex) {
@@ -197,8 +191,8 @@ final class Proto3Fields {
   }
 
   static class Utf8Field extends LengthDelimitedField<String> {
-    Utf8Field(int fieldNumber) {
-      super(fieldNumber);
+    Utf8Field(int key) {
+      super(key);
     }
 
     @Override int sizeOfValue(String utf8) {
@@ -212,13 +206,16 @@ final class Proto3Fields {
     String readValue(Buffer buffer) {
       int lengthOfString = ensureLength(buffer);
       if (lengthOfString == 0) return null;
-      return new String(buffer.toByteArray(), buffer.pos, lengthOfString, UTF_8);
+      String result = new String(buffer.toByteArray(), buffer.pos, lengthOfString, UTF_8);
+      buffer.pos += lengthOfString;
+      return result;
     }
   }
 
   static final class Fixed64Field extends Field {
-    Fixed64Field(int fieldNumber) {
-      super(fieldNumber, WIRETYPE_FIXED64);
+    Fixed64Field(int key) {
+      super(key);
+      assert wireType == WIRETYPE_FIXED64;
     }
 
     void write(Buffer b, long number) {
@@ -239,8 +236,9 @@ final class Proto3Fields {
   }
 
   static class VarintField extends Field {
-    VarintField(int fieldNumber) {
-      super(fieldNumber, WIRETYPE_VARINT);
+    VarintField(int key) {
+      super(key);
+      assert wireType == WIRETYPE_VARINT;
     }
 
     int sizeInBytes(int number) {
@@ -265,8 +263,9 @@ final class Proto3Fields {
   }
 
   static final class BooleanField extends Field {
-    BooleanField(int fieldNumber) {
-      super(fieldNumber, WIRETYPE_VARINT);
+    BooleanField(int key) {
+      super(key);
+      assert wireType == WIRETYPE_VARINT;
     }
 
     int sizeInBytes(boolean bool) {
@@ -282,21 +281,21 @@ final class Proto3Fields {
     boolean read(Buffer b) {
       byte bool = b.readByte();
       if (bool < 0 || bool > 1) {
-        throw new IllegalArgumentException("invalid boolean value at position " + (b.pos - 1));
+        throw new IllegalArgumentException("Malformed: invalid boolean value at byte " + b.pos);
       }
       return bool == 1;
     }
   }
 
   static class MapEntryField extends LengthDelimitedField<Map.Entry<String, String>> {
-    static final int KEY_FIELD = 1;
-    static final int VALUE_FIELD = 1;
+    static final int KEY_KEY = (1 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int VALUE_KEY = (2 << 3) | WIRETYPE_LENGTH_DELIMITED;
 
-    static final Utf8Field KEY = new Utf8Field(KEY_FIELD);
-    static final Utf8Field VALUE = new Utf8Field(VALUE_FIELD);
+    static final Utf8Field KEY = new Utf8Field(KEY_KEY);
+    static final Utf8Field VALUE = new Utf8Field(VALUE_KEY);
 
-    MapEntryField(int fieldNumber) {
-      super(fieldNumber);
+    MapEntryField(int key) {
+      super(key);
     }
 
     @Override int sizeOfValue(Map.Entry<String, String> value) {
@@ -311,8 +310,9 @@ final class Proto3Fields {
 
   // added for completion as later we will skip fields we don't use
   static final class Fixed32Field extends Field {
-    Fixed32Field(int fieldNumber) {
-      super(fieldNumber, WIRETYPE_FIXED32);
+    Fixed32Field(int key) {
+      super(key);
+      assert wireType == WIRETYPE_FIXED32;
     }
 
     int sizeInBytes(int number) {
@@ -328,7 +328,7 @@ final class Proto3Fields {
   static void ensureLength(Buffer buffer, int length) {
     if (length > buffer.remaining()) {
       throw new IllegalArgumentException(
-        "truncated: length " + length + " > bytes remaining " + buffer.remaining());
+        "Truncated: length " + length + " > bytes remaining " + buffer.remaining());
     }
   }
 }

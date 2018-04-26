@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -44,13 +44,13 @@ final class KafkaStreamProcessor implements Runnable {
       byte[] bytes = messages.next().message();
       metrics.incrementMessages();
 
-      if (bytes.length == 0) {
+      if (bytes.length < 2) { // need two bytes to check if protobuf
         metrics.incrementMessagesDropped();
         continue;
       }
 
       // If we received legacy single-span encoding, decode it into a singleton list
-      if (bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not a list */) {
+      if (!protobuf3(bytes) && bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not a list */) {
         try {
           metrics.incrementBytes(bytes.length);
           Span span = SpanDecoder.THRIFT_DECODER.readSpan(bytes);
@@ -62,5 +62,10 @@ final class KafkaStreamProcessor implements Runnable {
         collector.acceptSpans(bytes, DETECTING_DECODER, NOOP);
       }
     }
+  }
+
+  /* span key or trace ID key */
+  static boolean protobuf3(byte[] bytes) {
+    return bytes[0] == 10 && bytes[1] != 0; // varint follows and won't be zero
   }
 }

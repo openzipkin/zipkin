@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -144,6 +144,16 @@ public class CollectorTest {
 
     assertThat(message)
       .isEqualTo("Malformed reading spans");
+  }
+
+  @Test
+  public void errorDecoding_doesntWrapTruncatedException() {
+    RuntimeException exception = new IllegalArgumentException("Truncated reading spans");
+
+    String message = collector.errorReading(exception).getMessage();
+
+    assertThat(message)
+      .isEqualTo("Truncated reading spans");
   }
 
   @Test public void sampledSpansAreStored() {

@@ -13,8 +13,14 @@
  */
 package zipkin2.internal;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import zipkin2.Span;
+
+import static java.lang.String.format;
+import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 //@Immutable
 public final class Proto3Codec {
@@ -35,5 +41,51 @@ public final class Proto3Codec {
 
   public int writeList(List<Span> spans, byte[] out, int pos) {
     return writer.writeList(spans, out, pos);
+  }
+
+  public static boolean read(byte[] bytes, Collection<Span> out) {
+    if (bytes.length == 0) return false;
+    Buffer buffer = new Buffer(bytes, 0);
+    try {
+      Span span = SPAN.read(buffer);
+      if (span == null) return false;
+      out.add(span);
+      return true;
+    } catch (Exception e) {
+      throw exceptionReading("Span", e);
+    }
+  }
+
+  public static @Nullable Span readOne(byte[] bytes) {
+    return SPAN.read(new Buffer(bytes, 0));
+  }
+
+  public static boolean readList(byte[] bytes, Collection<Span> out) {
+    int length = bytes.length;
+    if (length == 0) return false;
+    Buffer buffer = new Buffer(bytes, 0);
+    try {
+      while (buffer.pos < length) {
+        Span span = SPAN.read(buffer);
+        if (span == null) return false;
+        out.add(span);
+      }
+    } catch (Exception e) {
+      throw exceptionReading("List<Span>", e);
+    }
+    return true;
+  }
+
+  public static List<Span> readList(byte[] bytes) {
+    List<Span> out = new ArrayList<>();
+    if (!readList(bytes, out)) return Collections.emptyList();
+    return out;
+  }
+
+  static IllegalArgumentException exceptionReading(String type, Exception e) {
+    String cause = e.getMessage() == null ? "Error" : e.getMessage();
+    if (cause.indexOf("Malformed") != -1) cause = "Malformed";
+    String message = format("%s reading %s from proto3", cause, type);
+    throw new IllegalArgumentException(message, e);
   }
 }

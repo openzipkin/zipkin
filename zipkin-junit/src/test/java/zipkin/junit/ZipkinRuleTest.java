@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -58,22 +58,30 @@ public class ZipkinRuleTest {
 
     // read the traces directly
     assertThat(zipkin.getTraces())
-        .containsOnly(trace);
+      .containsOnly(trace);
   }
 
-  @Test
-  public void getTraces_storedViaPostVersion2() throws IOException {
+  @Test public void getTraces_storedViaPostVersion2_json() throws IOException {
+    getTraces_storedViaPostVersion2("application/json", SpanBytesEncoder.JSON_V2);
+  }
+
+  @Test public void getTraces_storedViaPostVersion2_proto3() throws IOException {
+    getTraces_storedViaPostVersion2("application/x-protobuf", SpanBytesEncoder.PROTO3);
+  }
+
+  void getTraces_storedViaPostVersion2(String mediaType, SpanBytesEncoder encoder)
+    throws IOException {
     List<Span> spans = Arrays.asList(
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]),
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(V2SpanConverter.fromSpans(spans));
+    byte[] message = encoder.encodeList(V2SpanConverter.fromSpans(spans));
 
     // write the span to the zipkin using http api v2
     Response response = client.newCall(new Request.Builder()
       .url(zipkin.httpUrl() + "/api/v2/spans")
-      .post(RequestBody.create(MediaType.parse("application/json"), message)).build()
+      .post(RequestBody.create(MediaType.parse(mediaType), message)).build()
     ).execute();
     assertThat(response.code()).isEqualTo(202);
 
@@ -91,13 +99,13 @@ public class ZipkinRuleTest {
 
     // read the traces directly
     assertThat(zipkin.getTraces())
-        .containsOnly(asList(span));
+      .containsOnly(asList(span));
   }
 
   @Test
   public void healthIsOK() throws IOException {
     Response getResponse = client.newCall(new Request.Builder()
-        .url(zipkin.httpUrl() + "/health").build()
+      .url(zipkin.httpUrl() + "/health").build()
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);
@@ -111,7 +119,7 @@ public class ZipkinRuleTest {
 
     // read trace id using the the http api
     Response getResponse = client.newCall(new Request.Builder()
-        .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), TRACE.get(0).traceId)).build()
+      .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), TRACE.get(0).traceId)).build()
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);
@@ -128,14 +136,14 @@ public class ZipkinRuleTest {
 
     // Default will merge by span id
     Response defaultResponse = client.newCall(new Request.Builder()
-        .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
+      .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), traceId)).build()
     ).execute();
 
     assertThat(Codec.JSON.readSpans(defaultResponse.body().bytes())).hasSize(1);
 
     // In the in-memory (or cassandra) stores, a raw read will show duplicate span rows.
     Response rawResponse = client.newCall(new Request.Builder()
-        .url(format("%s/api/v1/trace/%016x?raw", zipkin.httpUrl(), traceId)).build()
+      .url(format("%s/api/v1/trace/%016x?raw", zipkin.httpUrl(), traceId)).build()
     ).execute();
 
     assertThat(Codec.JSON.readSpans(rawResponse.body().bytes())).hasSize(2);
@@ -149,7 +157,7 @@ public class ZipkinRuleTest {
     zipkin.storeSpans(asList(span));
 
     Response getResponse = client.newCall(new Request.Builder()
-        .url(format("%s/api/v1/trace/%016x%016x", zipkin.httpUrl(), traceId, traceId)).build()
+      .url(format("%s/api/v1/trace/%016x%016x", zipkin.httpUrl(), traceId, traceId)).build()
     ).execute();
 
     assertThat(getResponse.code()).isEqualTo(200);
@@ -220,9 +228,9 @@ public class ZipkinRuleTest {
     ByteString gzippedJson = sink.readByteString();
 
     client.newCall(new Request.Builder()
-        .url(zipkin.httpUrl() + "/api/v1/spans")
-        .addHeader("Content-Encoding", "gzip")
-        .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson)).build()
+      .url(zipkin.httpUrl() + "/api/v1/spans")
+      .addHeader("Content-Encoding", "gzip")
+      .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson)).build()
     ).execute();
 
     assertThat(zipkin.collectorMetrics().bytes()).isEqualTo(spansInJson.length);
@@ -231,9 +239,9 @@ public class ZipkinRuleTest {
   @Test
   public void gzippedSpans_invalidIs400() throws IOException {
     Response response = client.newCall(new Request.Builder()
-        .url(zipkin.httpUrl() + "/api/v1/spans")
-        .addHeader("Content-Encoding", "gzip")
-        .post(RequestBody.create(MediaType.parse("application/json"), "hello".getBytes())).build()
+      .url(zipkin.httpUrl() + "/api/v1/spans")
+      .addHeader("Content-Encoding", "gzip")
+      .post(RequestBody.create(MediaType.parse("application/json"), "hello".getBytes())).build()
     ).execute();
 
     assertThat(response.code()).isEqualTo(400);
@@ -250,8 +258,8 @@ public class ZipkinRuleTest {
     zipkin.storeSpans(trace);
 
     Response response = client.newCall(new Request.Builder()
-            .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), trace.get(0).traceId))
-            .addHeader("Accept-Encoding", "gzip").build()
+      .url(format("%s/api/v1/trace/%016x", zipkin.httpUrl(), trace.get(0).traceId))
+      .addHeader("Accept-Encoding", "gzip").build()
     ).execute();
 
     assertThat(response.code()).isEqualTo(200);
@@ -268,8 +276,8 @@ public class ZipkinRuleTest {
   Response postSpans(List<Span> spans) throws IOException {
     byte[] spansInJson = Codec.JSON.writeSpans(spans);
     return client.newCall(new Request.Builder()
-        .url(zipkin.httpUrl() + "/api/v1/spans")
-        .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
+      .url(zipkin.httpUrl() + "/api/v1/spans")
+      .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
     ).execute();
   }
 }

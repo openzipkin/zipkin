@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -72,12 +72,30 @@ public class DetectingSpanDecoderTest {
     decoder.readSpan(SpanBytesEncoder.JSON_V2.encode(span2_1));
   }
 
+  /** Single-element reads were for legacy non-list encoding. Don't add new code that does this */
+  @Test(expected = UnsupportedOperationException.class) public void readSpan_proto3() {
+    decoder.readSpan(SpanBytesEncoder.PROTO3.encode(span2_1));
+  }
+
   @Test(expected = IllegalArgumentException.class) public void readSpans_json2_not_list() {
     decoder.readSpans(SpanBytesEncoder.JSON_V2.encode(span2_1));
   }
 
+  /** There is no difference between a list of size one and a single element in proto3 */
+  @Test public void readSpans_proto3_not_list() {
+    assertThat(decoder.readSpans(SpanBytesEncoder.PROTO3.encode(span2_1)))
+      .containsExactly(span1);
+  }
+
   @Test public void readSpans_json2() {
     byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(span2_1, span2_2));
+
+    assertThat(decoder.readSpans(message))
+      .containsExactly(span1, span2);
+  }
+
+  @Test public void readSpans_proto3() {
+    byte[] message = SpanBytesEncoder.PROTO3.encodeList(asList(span2_1, span2_2));
 
     assertThat(decoder.readSpans(message))
       .containsExactly(span1, span2);

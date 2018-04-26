@@ -632,7 +632,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
   // This is an immutable object, and our encoder is faster than java's: use a serialization proxy.
   final Object writeReplace() throws ObjectStreamException {
-    return new SerializedForm(SpanBytesEncoder.JSON_V2.encode(this));
+    return new SerializedForm(SpanBytesEncoder.PROTO3.encode(this));
   }
 
   private static final class SerializedForm implements Serializable {
@@ -646,7 +646,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     Object readResolve() throws ObjectStreamException {
       try {
-        return SpanBytesDecoder.JSON_V2.decodeOne(bytes);
+        return SpanBytesDecoder.PROTO3.decodeOne(bytes);
       } catch (IllegalArgumentException e) {
         throw new StreamCorruptedException(e.getMessage());
       }

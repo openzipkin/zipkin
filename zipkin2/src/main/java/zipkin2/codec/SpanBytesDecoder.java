@@ -18,6 +18,7 @@ import java.util.List;
 import zipkin2.Span;
 import zipkin2.internal.JsonCodec;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.Proto3Codec;
 import zipkin2.internal.V2SpanReader;
 
 /** This is separate from {@link SpanBytesEncoder}, as it isn't needed for instrumentation */
@@ -46,6 +47,30 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     /** Convenience method for {@link #decode(byte[], Collection)} */
     @Override public List<Span> decodeList(byte[] spans) {
       return JsonCodec.readList(new V2SpanReader(), spans);
+    }
+  },
+  PROTO3 {
+    @Override public Encoding encoding() {
+      return Encoding.PROTO3;
+    }
+
+    @Override
+    public boolean decode(byte[] span, Collection<Span> out) { // ex decode span in dependencies job
+      return Proto3Codec.read(span, out);
+    }
+
+    @Override public boolean decodeList(byte[] spans, Collection<Span> out) { // ex getTrace
+      return Proto3Codec.readList(spans, out);
+    }
+
+    /** Visible for testing. This returns the first span parsed from the serialized object or null */
+    @Override @Nullable public Span decodeOne(byte[] span) {
+      return Proto3Codec.readOne(span);
+    }
+
+    /** Convenience method for {@link #decode(byte[], Collection)} */
+    @Override public List<Span> decodeList(byte[] spans) {
+      return Proto3Codec.readList(spans);
     }
   }
 }

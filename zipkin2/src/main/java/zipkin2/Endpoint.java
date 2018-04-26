@@ -161,6 +161,32 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       return true;
     }
 
+    /**
+     * Like {@link #parseIp(String)} except this accepts a byte array.
+     *
+     * @param ipBytes byte array whose ownership is exclusively transfered to this endpoint.
+     */
+    public final boolean parseIp(byte[] ipBytes) {
+      if (ipBytes == null) return false;
+      if (ipBytes.length == 4) {
+        ipv4Bytes = ipBytes;
+        ipv4 = String.valueOf(
+          ipBytes[0] & 0xff) + '.'
+          + (ipBytes[1] & 0xff) + '.'
+          + (ipBytes[2] & 0xff) + '.'
+          + (ipBytes[3] & 0xff
+        );
+      } else if (ipBytes.length == 16) {
+        if (!parseEmbeddedIPv4(ipBytes)) {
+          ipv6 = writeIpV6(ipBytes);
+          ipv6Bytes = ipBytes;
+        }
+      } else {
+        return false;
+      }
+      return true;
+    }
+
     /** Chaining variant of {@link #parseIp(String)} */
     public Builder ip(@Nullable String ipString) {
       parseIp(ipString);

@@ -13,9 +13,11 @@
  */
 package zipkin.collector.rabbitmq;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -90,15 +92,24 @@ public class ITRabbitMQCollector {
     assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
   }
 
-  /** Ensures list encoding works: a version 2 json encoded list of spans */
-  @Test
-  public void messageWithMultipleSpans_json2() throws Exception {
+  /** Ensures list encoding works: a version 2 json list of spans */
+  @Test public void messageWithMultipleSpans_json2() throws Exception {
+    messageWithMultipleSpans(SpanBytesEncoder.JSON_V2);
+  }
+
+  /** Ensures list encoding works: proto3 ListOfSpans */
+  @Test public void messageWithMultipleSpans_proto3() throws Exception {
+    messageWithMultipleSpans(SpanBytesEncoder.PROTO3);
+  }
+
+  void messageWithMultipleSpans(SpanBytesEncoder encoder)
+    throws IOException, TimeoutException, InterruptedException {
     List<Span> spans = Arrays.asList(
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]),
       ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1])
     );
 
-    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(V2SpanConverter.fromSpans(spans));
+    byte[] message = encoder.encodeList(V2SpanConverter.fromSpans(spans));
     rabbit.publish(message);
 
     Thread.sleep(1000);

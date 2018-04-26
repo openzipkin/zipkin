@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,6 +30,7 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorMetrics;
 import zipkin.internal.Nullable;
 import zipkin.internal.V2JsonSpanDecoder;
+import zipkin.internal.V2Proto3SpanDecoder;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.Callback;
 import zipkin.storage.QueryRequest;
@@ -45,6 +46,7 @@ import static zipkin2.Span.normalizeTraceId;
 final class ZipkinDispatcher extends Dispatcher {
   static final long DEFAULT_LOOKBACK = 86400000L; // 1 day in millis
   static final SpanDecoder JSON2_DECODER = new V2JsonSpanDecoder();
+  static final SpanDecoder PROTO3_DECODER = new V2Proto3SpanDecoder();
 
   private final SpanStore store;
   private final zipkin2.storage.SpanStore store2;
@@ -77,14 +79,17 @@ final class ZipkinDispatcher extends Dispatcher {
         }
       }
     } else if (request.getMethod().equals("POST")) {
+      String type = request.getHeader("Content-Type");
       if (url.encodedPath().equals("/api/v1/spans")) {
-        String type = request.getHeader("Content-Type");
         SpanDecoder decoder = type != null && type.contains("/x-thrift")
           ? SpanDecoder.THRIFT_DECODER
           : SpanDecoder.JSON_DECODER;
         return acceptSpans(request, decoder);
       } else if (url.encodedPath().equals("/api/v2/spans")) {
-        return acceptSpans(request, JSON2_DECODER);
+        SpanDecoder decoder = type != null && type.contains("/x-protobuf")
+          ? PROTO3_DECODER
+          : JSON2_DECODER;
+        return acceptSpans(request, decoder);
       }
     } else { // unsupported method
       return new MockResponse().setResponseCode(405);
