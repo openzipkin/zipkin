@@ -17,18 +17,34 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.prometheus.client.CollectorRegistry;
+import io.prometheus.client.exporter.common.TextFormat;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MetricsHealthController {
   private MeterRegistry meterRegistry;
+  private HealthEndpoint healthEndpointDelegate;
+  private final CollectorRegistry collectorRegistry;
+
   final JsonNodeFactory factory = JsonNodeFactory.instance;
 
-  MetricsHealthController(MeterRegistry meterRegistry) {
+  MetricsHealthController(MeterRegistry meterRegistry
+    , HealthEndpoint healthEndpointDelegate
+    , CollectorRegistry collectorRegistry){
     this.meterRegistry = meterRegistry;
+    this.healthEndpointDelegate = healthEndpointDelegate;
+    this.collectorRegistry = collectorRegistry;
   }
 
+  // Extracts Zipkin metrics to provide backward compatibility
   @GetMapping("/metrics")
   public ObjectNode fetchMetricsFromMicrometer(){
     ObjectNode metrics  = factory.objectNode();
@@ -42,5 +58,32 @@ public class MetricsHealthController {
       }
     }
     return metrics;
+  }
+
+  // Delegates the health endpoint from the Actuator to the root context path and can be deprecated
+  // in future in favour of Actuator endpoints
+  @GetMapping("/health")
+  public Map getHealth() {
+    Map health = new HashMap();
+    health.put("status", healthEndpointDelegate.health().getStatus().getCode());
+    health.put("zipkin", healthEndpointDelegate.health().getDetails().get("zipkin"));
+    return health;
+  }
+
+  // Prometheus scrape code ported from springboot actuator and can be deprecated later
+  // through root context path for backward compatibility, Mimics the same code from
+  // org.springframework.boot.actuate.metrics.export.prometheus.PrometheusScrapeEndpoint
+  @GetMapping("/prometheus")
+  public String scrape() {
+    try {
+      Writer writer = new StringWriter();
+      TextFormat.write004(writer, this.collectorRegistry.metricFamilySamples());
+      return writer.toString();
+    }
+    catch (IOException e) {
+      // This actually never happens since StringWriter::write() doesn't throw any
+      // IOException
+      throw new RuntimeException("Writing metrics failed", e);
+    }
   }
 }
