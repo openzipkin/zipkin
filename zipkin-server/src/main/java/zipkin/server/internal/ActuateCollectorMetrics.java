@@ -1,5 +1,3 @@
-package zipkin.server.internal;
-
 /**
  * Copyright 2015-2018 The OpenZipkin Authors
  *
@@ -13,6 +11,7 @@ package zipkin.server.internal;
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+package zipkin.server.internal;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -45,18 +44,16 @@ import static zipkin.internal.Util.checkNotNull;
  *
  * <p>In-memory implementation mimics code from org.springframework.boot.actuate.metrics.buffer
  */
-
 public final class ActuateCollectorMetrics implements CollectorMetrics {
 
-  private MeterRegistry registryInstance;
-  private final Counter messages;
-  private final Counter messagesDropped;
-  private final Counter bytes;
-  private final Counter spans;
-  private final Counter spansDropped;
-  private AtomicInteger messageBytes;
-  private AtomicInteger messageSpans;
-
+  final MeterRegistry registryInstance;
+  final Counter messages;
+  final Counter messagesDropped;
+  final Counter bytes;
+  final Counter spans;
+  final Counter spansDropped;
+  final AtomicInteger messageBytes;
+  final AtomicInteger messageSpans;
 
   public ActuateCollectorMetrics(MeterRegistry registry) {
     this(null, registry);

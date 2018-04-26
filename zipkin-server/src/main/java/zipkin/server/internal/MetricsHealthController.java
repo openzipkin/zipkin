@@ -28,30 +28,33 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @RestController
 public class MetricsHealthController implements WebMvcConfigurer {
-  private MeterRegistry meterRegistry;
-  private HealthEndpoint healthEndpointDelegate;
-  private final CollectorRegistry collectorRegistry;
+  final MeterRegistry meterRegistry;
+  final HealthEndpoint healthEndpoint;
+  final CollectorRegistry collectorRegistry;
   final JsonNodeFactory factory = JsonNodeFactory.instance;
 
-  MetricsHealthController(MeterRegistry meterRegistry
-    , HealthEndpoint healthEndpointDelegate
-    , CollectorRegistry collectorRegistry){
+  MetricsHealthController(MeterRegistry meterRegistry, HealthEndpoint healthEndpoint,
+    CollectorRegistry collectorRegistry) {
     this.meterRegistry = meterRegistry;
-    this.healthEndpointDelegate = healthEndpointDelegate;
+    this.healthEndpoint = healthEndpoint;
     this.collectorRegistry = collectorRegistry;
   }
 
   // Extracts Zipkin metrics to provide backward compatibility
   @GetMapping("/metrics")
-  public ObjectNode fetchMetricsFromMicrometer(){
-    ObjectNode metrics  = factory.objectNode();
+  public ObjectNode fetchMetricsFromMicrometer() {
+    ObjectNode metrics = factory.objectNode();
     // Iterate over the meters and get the Zipkin Custom meters for constructing the Metrics endpoint
-    for (Meter meter: meterRegistry.getMeters()) {
-      if (meter.getId().getName().contains("zipkin") && meter.getId().getName().contains("counter")){
-        metrics.put(meter.getId().getName(), meterRegistry.get(meter.getId().getName()).counter().count());
+    for (Meter meter : meterRegistry.getMeters()) {
+      if (meter.getId().getName().contains("zipkin") && meter.getId()
+        .getName()
+        .contains("counter")) {
+        metrics.put(meter.getId().getName(),
+          meterRegistry.get(meter.getId().getName()).counter().count());
       }
-      if (meter.getId().getName().contains("zipkin") && meter.getId().getName().contains("gauge")){
-        metrics.put(meter.getId().getName(), meterRegistry.get(meter.getId().getName()).gauge().value());
+      if (meter.getId().getName().contains("zipkin") && meter.getId().getName().contains("gauge")) {
+        metrics.put(meter.getId().getName(),
+          meterRegistry.get(meter.getId().getName()).gauge().value());
       }
     }
     return metrics;
@@ -62,8 +65,8 @@ public class MetricsHealthController implements WebMvcConfigurer {
   @GetMapping("/health")
   public Map getHealth() {
     Map health = new HashMap();
-    health.put("status", healthEndpointDelegate.health().getStatus().getCode());
-    health.put("zipkin", healthEndpointDelegate.health().getDetails().get("zipkin"));
+    health.put("status", healthEndpoint.health().getStatus().getCode());
+    health.put("zipkin", healthEndpoint.health().getDetails().get("zipkin"));
     return health;
   }
 
