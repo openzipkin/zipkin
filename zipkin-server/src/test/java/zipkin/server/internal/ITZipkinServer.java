@@ -147,6 +147,35 @@ public class ITZipkinServer {
       .startsWith("Malformed reading List<Span> from TBinary");
   }
 
+  @Test public void writeSpans_contentTypeXProtobuf() throws Exception {
+    Span span = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[0]);
+
+    byte[] message = SpanBytesEncoder.PROTO3.encodeList(asList(
+      V2SpanConverter.fromSpan(span).get(0)
+    ));
+
+    Response response = client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/spans")
+      .post(RequestBody.create(MediaType.parse("application/x-protobuf"), message))
+      .build()).execute();
+
+    assertThat(response.code())
+      .isEqualTo(202);
+  }
+
+  @Test public void writeSpans_malformedProto3IsBadRequest() throws Exception {
+    byte[] body = {'h', 'e', 'l', 'l', 'o'};
+
+    Response response = client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkinPort + "/api/v2/spans")
+      .post(RequestBody.create(MediaType.parse("application/x-protobuf"), body))
+      .build()).execute();
+
+    assertThat(response.code()).isEqualTo(400);
+    assertThat(response.body().string())
+      .startsWith("Truncated: length 101 > bytes remaining 3 reading List<Span> from proto3");
+  }
+
   @Test public void v2WiresUp() throws Exception {
     assertThat(get("/api/v2/services").isSuccessful())
       .isTrue();

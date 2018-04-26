@@ -74,11 +74,11 @@ final class KafkaCollectorWorker implements Runnable {
           metrics.incrementMessages();
           final byte[] bytes = record.value();
 
-          if (bytes.length == 0) {
+          if (bytes.length < 2) { // need two bytes to check if protobuf
             metrics.incrementMessagesDropped();
           } else {
             // If we received legacy single-span encoding, decode it into a singleton list
-            if (bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not list */) {
+            if (!protobuf3(bytes) && bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not list */) {
               metrics.incrementBytes(bytes.length);
               try {
                 Span span = SpanDecoder.THRIFT_DECODER.readSpan(bytes);
@@ -103,5 +103,10 @@ final class KafkaCollectorWorker implements Runnable {
       kafkaConsumer.close();
       LOG.info("Kafka consumer closed.");
     }
+  }
+
+  /* span key or trace ID key */
+  static boolean protobuf3(byte[] bytes) {
+    return bytes[0] == 10 && bytes[1] != 0; // varint follows and won't be zero
   }
 }

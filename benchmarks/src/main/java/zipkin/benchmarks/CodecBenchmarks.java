@@ -162,6 +162,7 @@ public class CodecBenchmarks {
 
   static final byte[] zipkin2Json = read("/zipkin2-client.json");
   static final Span zipkin2 = SpanBytesDecoder.JSON_V2.decodeOne(zipkin2Json);
+  static final byte[] zipkin2Proto3 = SpanBytesEncoder.PROTO3.encode(zipkin2);
   static final List<Span> tenSpan2s = Collections.nCopies(10, zipkin2);
   static final byte[] tenSpan2sJson = SpanBytesEncoder.JSON_V2.encodeList(tenSpan2s);
   static final Kryo kryo = new Kryo();
@@ -218,8 +219,19 @@ public class CodecBenchmarks {
     return SpanBytesEncoder.JSON_V1.encodeList(tenSpan2s);
   }
 
+  @Benchmark
+  public Span readClientSpan_proto3_zipkin2() {
+    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Json);
+  }
+
+  @Benchmark
+  public byte[] writeClientSpan_proto3_zipkin2() {
+    return SpanBytesEncoder.PROTO3.encode(zipkin2);
+  }
+
   static final byte[] zipkin2JsonChinese = read("/zipkin2-chinese.json");
   static final Span zipkin2Chinese = SpanBytesDecoder.JSON_V2.decodeOne(zipkin2JsonChinese);
+  static final byte[] zipkin2Proto3Chinese = SpanBytesEncoder.PROTO3.encode(zipkin2Chinese);
 
   @Benchmark
   public Span readChineseSpan_json_zipkin2() {
@@ -229,6 +241,16 @@ public class CodecBenchmarks {
   @Benchmark
   public byte[] writeChineseSpan_json_zipkin2() {
     return SpanBytesEncoder.JSON_V2.encode(zipkin2Chinese);
+  }
+
+  @Benchmark
+  public Span readChineseSpan_proto3_zipkin2() {
+    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Proto3Chinese);
+  }
+
+  @Benchmark
+  public byte[] writeChineseSpan_proto3_zipkin2() {
+    return SpanBytesEncoder.PROTO3.encode(zipkin2Chinese);
   }
 
   static final byte[] rpcSpanJson = read("/span-rpc.json");

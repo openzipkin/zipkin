@@ -38,14 +38,18 @@ public class Proto3FieldsTest {
 
   /** Shows we can reliably look at a byte zero to tell if we are decoding proto3 repeated fields. */
   @Test public void field_key_fieldOneLengthDelimited() {
-    Field field = new Field(1, WIRETYPE_LENGTH_DELIMITED);
+    Field field = new Field(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
     assertThat(field.key)
       .isEqualTo(0b00001010) // (field_number << 3) | wire_type = 1 << 3 | 2
       .isEqualTo(10); // for sanity of those looking at debugger, 4th bit + 2nd bit = 10
+    assertThat(field.fieldNumber)
+      .isEqualTo(1);
+    assertThat(field.wireType)
+      .isEqualTo(WIRETYPE_LENGTH_DELIMITED);
   }
 
   @Test public void varint_sizeInBytes() {
-    VarintField field = new VarintField(1);
+    VarintField field = new VarintField(1 << 3 | WIRETYPE_VARINT);
 
     assertThat(field.sizeInBytes(0))
       .isZero();
@@ -63,7 +67,7 @@ public class Proto3FieldsTest {
   }
 
   @Test public void boolean_sizeInBytes() {
-    BooleanField field = new BooleanField(1);
+    BooleanField field = new BooleanField(1 << 3 | WIRETYPE_VARINT);
 
     assertThat(field.sizeInBytes(false))
       .isZero();
@@ -74,7 +78,7 @@ public class Proto3FieldsTest {
   }
 
   @Test public void utf8_sizeInBytes() {
-    Utf8Field field = new Utf8Field(1);
+    Utf8Field field = new Utf8Field(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
     assertThat(field.sizeInBytes("12345678"))
       .isEqualTo(0
         + 1 /* tag of string field */ + 1 /* len */ + 8 // 12345678
@@ -83,7 +87,7 @@ public class Proto3FieldsTest {
 
   /** A map entry is an embedded messages: one for field the key and one for the value */
   @Test public void mapEntry_sizeInBytes() {
-    MapEntryField field = new MapEntryField(1);
+    MapEntryField field = new MapEntryField(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
     assertThat(field.sizeInBytes(entry("123", "56789")))
       .isEqualTo(0
         + 1 /* tag of embedded key field */ + 1 /* len */ + 3
@@ -93,31 +97,31 @@ public class Proto3FieldsTest {
   }
 
   @Test public void fixed64_sizeInBytes() {
-    Fixed64Field field = new Fixed64Field(1);
+    Fixed64Field field = new Fixed64Field(1 << 3 | WIRETYPE_FIXED64);
     assertThat(field.sizeInBytes(Long.MIN_VALUE))
       .isEqualTo(9);
   }
 
   @Test public void fixed32_sizeInBytes() {
-    Fixed32Field field = new Fixed32Field(1);
+    Fixed32Field field = new Fixed32Field(1 << 3 | WIRETYPE_FIXED32);
     assertThat(field.sizeInBytes(Integer.MIN_VALUE))
       .isEqualTo(5);
   }
 
   @Test public void supportedFields() {
     for (Field field : asList(
-      new VarintField(128),
-      new BooleanField(128),
-      new HexField(128),
-      new Utf8Field(128),
-      new BytesField(128),
-      new Fixed32Field(128),
-      new Fixed64Field(128),
-      new MapEntryField(128)
+      new VarintField(128 << 3 | WIRETYPE_VARINT),
+      new BooleanField(128 << 3 | WIRETYPE_VARINT),
+      new HexField(128 << 3 | WIRETYPE_LENGTH_DELIMITED),
+      new Utf8Field(128 << 3 | WIRETYPE_LENGTH_DELIMITED),
+      new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED),
+      new Fixed32Field(128 << 3 | WIRETYPE_FIXED32),
+      new Fixed64Field(128 << 3 | WIRETYPE_FIXED64),
+      new MapEntryField(128 << 3 | WIRETYPE_LENGTH_DELIMITED)
     )) {
-      assertThat(Field.fieldNumber(field.key, 0))
+      assertThat(Field.fieldNumber(field.key, 1))
         .isEqualTo(field.fieldNumber);
-      assertThat(Field.wireType(field.key, 0))
+      assertThat(Field.wireType(field.key, 1))
         .isEqualTo(field.wireType);
     }
   }
@@ -128,7 +132,7 @@ public class Proto3FieldsTest {
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
       assertThat(e)
-        .hasMessage("fieldNumber was zero at position: 2");
+        .hasMessage("Malformed: fieldNumber was zero at byte 2");
     }
   }
 
@@ -139,13 +143,13 @@ public class Proto3FieldsTest {
         failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
       } catch (IllegalArgumentException e) {
         assertThat(e)
-          .hasMessage("invalid wireType " + unsupported + " at position: 2");
+          .hasMessage("Malformed: invalid wireType " + unsupported + " at byte 2");
       }
     }
   }
 
   @Test public void field_skipValue_VARINT() {
-    VarintField field = new VarintField(128);
+    VarintField field = new VarintField(128 << 3 | WIRETYPE_VARINT);
     field.write(buf, 0xffffffffffffffffL);
 
     buf.pos = 1; // skip the key
@@ -153,7 +157,7 @@ public class Proto3FieldsTest {
   }
 
   @Test public void field_skipValue_LENGTH_DELIMITED() {
-    Utf8Field field = new Utf8Field(128);
+    Utf8Field field = new Utf8Field(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, "订单维护服务");
 
     buf.pos = 1; // skip the key
@@ -161,7 +165,7 @@ public class Proto3FieldsTest {
   }
 
   @Test public void field_skipValue_FIXED64() {
-    Fixed64Field field = new Fixed64Field(128);
+    Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 
     buf.pos = 1; // skip the key
@@ -169,7 +173,7 @@ public class Proto3FieldsTest {
   }
 
   @Test public void field_skipValue_FIXED32() {
-    Fixed32Field field = new Fixed32Field(128);
+    Fixed32Field field = new Fixed32Field(128 << 3 | WIRETYPE_FIXED32);
     buf.writeByte(field.key);
     buf.writeByte(0xff).writeByte(0xff).writeByte(0xff).writeByte(0xff);
 
@@ -178,7 +182,7 @@ public class Proto3FieldsTest {
   }
 
   @Test public void field_ensureLength_LENGTH_DELIMITED() {
-    BytesField field = new BytesField(128);
+    BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, new byte[10]);
     buf.pos = 1; // skip the key
 
@@ -187,7 +191,7 @@ public class Proto3FieldsTest {
   }
 
   @Test public void field_ensureLength_LENGTH_DELIMITED_truncated() {
-    BytesField field = new BytesField(128);
+    BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     buf = new Buffer(10);
     buf.writeVarint(100); // much larger than the buffer size
     buf.pos = 0; // reset
@@ -196,12 +200,12 @@ public class Proto3FieldsTest {
       field.ensureLength(buf);
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessage("truncated: length 100 > bytes remaining 9");
+      assertThat(e).hasMessage("Truncated: length 100 > bytes remaining 9");
     }
   }
 
   @Test public void field_read_FIXED64() {
-    Fixed64Field field = new Fixed64Field(128);
+    Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 
     buf.pos = 1; // skip the key

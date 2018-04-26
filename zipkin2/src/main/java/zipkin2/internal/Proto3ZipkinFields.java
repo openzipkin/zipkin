@@ -15,39 +15,48 @@ package zipkin2.internal;
 
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.Proto3Fields.BooleanField;
-import zipkin2.internal.Proto3Fields.Field;
 import zipkin2.internal.Proto3Fields.MapEntryField;
 import zipkin2.internal.Proto3Fields.Utf8Field;
 
+import static java.util.logging.Level.FINE;
 import static zipkin2.internal.Proto3Fields.BytesField;
+import static zipkin2.internal.Proto3Fields.Field.fieldNumber;
+import static zipkin2.internal.Proto3Fields.Field.skipValue;
+import static zipkin2.internal.Proto3Fields.Field.wireType;
 import static zipkin2.internal.Proto3Fields.Fixed64Field;
 import static zipkin2.internal.Proto3Fields.HexField;
 import static zipkin2.internal.Proto3Fields.LengthDelimitedField;
 import static zipkin2.internal.Proto3Fields.VarintField;
+import static zipkin2.internal.Proto3Fields.WIRETYPE_FIXED64;
+import static zipkin2.internal.Proto3Fields.WIRETYPE_LENGTH_DELIMITED;
+import static zipkin2.internal.Proto3Fields.WIRETYPE_VARINT;
 
+/** Keys are used in this class because while verbose, it allows us to use switch statements */
 //@Immutable
 final class Proto3ZipkinFields {
+  static final Logger LOG = Logger.getLogger(Proto3ZipkinFields.class.getName());
   /** This is the only field in the ListOfSpans type */
   static final SpanField SPAN = new SpanField();
   static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
   static class EndpointField extends LengthDelimitedField<Endpoint> {
-    static final int SERVICE_NAME_FIELD = 1;
-    static final int IPV4_FIELD = 2;
-    static final int IPV6_FIELD = 3;
-    static final int PORT_FIELD = 4;
+    static final int SERVICE_NAME_KEY = (1 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int IPV4_KEY = (2 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int IPV6_KEY = (3 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int PORT_KEY = (4 << 3) | WIRETYPE_VARINT;
 
-    static final Utf8Field SERVICE_NAME = new Utf8Field(SERVICE_NAME_FIELD);
-    static final BytesField IPV4 = new BytesField(IPV4_FIELD);
-    static final BytesField IPV6 = new BytesField(IPV6_FIELD);
-    static final VarintField PORT = new VarintField(PORT_FIELD);
+    static final Utf8Field SERVICE_NAME = new Utf8Field(SERVICE_NAME_KEY);
+    static final BytesField IPV4 = new BytesField(IPV4_KEY);
+    static final BytesField IPV6 = new BytesField(IPV6_KEY);
+    static final VarintField PORT = new VarintField(PORT_KEY);
 
-    EndpointField(int fieldNumber) {
-      super(fieldNumber);
+    EndpointField(int key) {
+      super(key);
     }
 
     @Override int sizeOfValue(Endpoint value) {
@@ -66,17 +75,47 @@ final class Proto3ZipkinFields {
       IPV6.write(b, value.ipv6Bytes());
       PORT.write(b, value.portAsInt());
     }
+
+    Endpoint readValue(Buffer buffer) {
+      int length = ensureLength(buffer);
+      if (length == 0) return null;
+      int endPos = buffer.pos + length;
+
+      // now, we are in the endpoint fields
+      Endpoint.Builder builder = Endpoint.newBuilder();
+      while (buffer.pos < endPos) {
+        int nextKey = buffer.readVarint32();
+        switch (nextKey) {
+          case SERVICE_NAME_KEY:
+            builder.serviceName(SERVICE_NAME.readValue(buffer));
+            break;
+          case IPV4_KEY:
+            builder.parseIp(IPV4.readValue(buffer));
+            break;
+          case IPV6_KEY:
+            builder.parseIp(IPV6.readValue(buffer));
+            break;
+          case PORT_KEY:
+            builder.port(buffer.readVarint32());
+            break;
+          default:
+            logAndSkip(buffer, nextKey);
+        }
+      }
+      Endpoint result = builder.build();
+      return EMPTY_ENDPOINT.equals(result) ? null : result;
+    }
   }
 
   static class AnnotationField extends LengthDelimitedField<Annotation> {
-    static final int TIMESTAMP_FIELD = 1;
-    static final int VALUE_FIELD = 2;
+    static final int TIMESTAMP_KEY = (1 << 3) | WIRETYPE_FIXED64;
+    static final int VALUE_KEY = (2 << 3) | WIRETYPE_LENGTH_DELIMITED;
 
-    static final Fixed64Field TIMESTAMP = new Fixed64Field(TIMESTAMP_FIELD);
-    static final Utf8Field VALUE = new Utf8Field(VALUE_FIELD);
+    static final Fixed64Field TIMESTAMP = new Fixed64Field(TIMESTAMP_KEY);
+    static final Utf8Field VALUE = new Utf8Field(VALUE_KEY);
 
-    AnnotationField(int fieldNumber) {
-      super(fieldNumber);
+    AnnotationField(int key) {
+      super(key);
     }
 
     @Override int sizeOfValue(Annotation value) {
@@ -87,39 +126,97 @@ final class Proto3ZipkinFields {
       TIMESTAMP.write(b, value.timestamp());
       VALUE.write(b, value.value());
     }
+
+    boolean readValue(Buffer buffer, Span.Builder builder) {
+      int length = ensureLength(buffer);
+      if (length == 0) return false;
+      int endPos = buffer.pos + length;
+
+      // now, we are in the annotation fields
+      long timestamp = 0L;
+      String value = null;
+      while (buffer.pos < endPos) {
+        int nextKey = buffer.readVarint32();
+        switch (nextKey) {
+          case TIMESTAMP_KEY:
+            timestamp = TIMESTAMP.readValue(buffer);
+            break;
+          case VALUE_KEY:
+            value = VALUE.readValue(buffer);
+            break;
+          default:
+            logAndSkip(buffer, nextKey);
+        }
+      }
+      if (timestamp == 0L || value == null) return false;
+      builder.addAnnotation(timestamp, value);
+      return true;
+    }
+  }
+
+  static class TagField extends MapEntryField {
+    TagField(int key) {
+      super(key);
+    }
+
+    boolean readValue(Buffer buffer, Span.Builder builder) {
+      int length = ensureLength(buffer);
+      if (length == 0) return false;
+      int endPos = buffer.pos + length;
+
+      // now, we are in the tag fields
+      String key = null, value = ""; // empty tags allowed
+      while (buffer.pos < endPos) {
+        int nextKey = buffer.readVarint32();
+        switch (nextKey) {
+          case KEY_KEY:
+            key = KEY.readValue(buffer);
+            break;
+          case VALUE_KEY:
+            String read = VALUE.readValue(buffer);
+            if (read != null) value = read; // empty tags allowed
+            break;
+          default:
+            logAndSkip(buffer, nextKey);
+        }
+      }
+      if (key == null) return false;
+      builder.putTag(key, value);
+      return true;
+    }
   }
 
   static class SpanField extends LengthDelimitedField<Span> {
-    static final int TRACE_ID_FIELD = 1;
-    static final int PARENT_ID_FIELD = 2;
-    static final int ID_FIELD = 3;
-    static final int KIND_FIELD = 4;
-    static final int NAME_FIELD = 5;
-    static final int TIMESTAMP_FIELD = 6;
-    static final int DURATION_FIELD = 7;
-    static final int LOCAL_ENDPOINT_FIELD = 8;
-    static final int REMOTE_ENDPOINT_FIELD = 9;
-    static final int ANNOTATION_FIELD = 10;
-    static final int TAG_FIELD = 11;
-    static final int DEBUG_FIELD = 12;
-    static final int SHARED_FIELD = 13;
+    static final int TRACE_ID_KEY = (1 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int PARENT_ID_KEY = (2 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int ID_KEY = (3 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int KIND_KEY = (4 << 3) | WIRETYPE_VARINT;
+    static final int NAME_KEY = (5 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int TIMESTAMP_KEY = (6 << 3) | WIRETYPE_FIXED64;
+    static final int DURATION_KEY = (7 << 3) | WIRETYPE_VARINT;
+    static final int LOCAL_ENDPOINT_KEY = (8 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int REMOTE_ENDPOINT_KEY = (9 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int ANNOTATION_KEY = (10 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int TAG_KEY = (11 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int DEBUG_KEY = (12 << 3) | WIRETYPE_VARINT;
+    static final int SHARED_KEY = (13 << 3) | WIRETYPE_VARINT;
 
-    static final HexField TRACE_ID = new HexField(TRACE_ID_FIELD);
-    static final HexField PARENT_ID = new HexField(PARENT_ID_FIELD);
-    static final HexField ID = new HexField(ID_FIELD);
-    static final VarintField KIND = new VarintField(KIND_FIELD);
-    static final Utf8Field NAME = new Utf8Field(NAME_FIELD);
-    static final Fixed64Field TIMESTAMP = new Fixed64Field(TIMESTAMP_FIELD);
-    static final VarintField DURATION = new VarintField(DURATION_FIELD);
-    static final EndpointField LOCAL_ENDPOINT = new EndpointField(LOCAL_ENDPOINT_FIELD);
-    static final EndpointField REMOTE_ENDPOINT = new EndpointField(REMOTE_ENDPOINT_FIELD);
-    static final AnnotationField ANNOTATION = new AnnotationField(ANNOTATION_FIELD);
-    static final MapEntryField TAG = new MapEntryField(TAG_FIELD);
-    static final BooleanField DEBUG = new BooleanField(DEBUG_FIELD);
-    static final BooleanField SHARED = new BooleanField(SHARED_FIELD);
+    static final HexField TRACE_ID = new HexField(TRACE_ID_KEY);
+    static final HexField PARENT_ID = new HexField(PARENT_ID_KEY);
+    static final HexField ID = new HexField(ID_KEY);
+    static final VarintField KIND = new VarintField(KIND_KEY);
+    static final Utf8Field NAME = new Utf8Field(NAME_KEY);
+    static final Fixed64Field TIMESTAMP = new Fixed64Field(TIMESTAMP_KEY);
+    static final VarintField DURATION = new VarintField(DURATION_KEY);
+    static final EndpointField LOCAL_ENDPOINT = new EndpointField(LOCAL_ENDPOINT_KEY);
+    static final EndpointField REMOTE_ENDPOINT = new EndpointField(REMOTE_ENDPOINT_KEY);
+    static final AnnotationField ANNOTATION = new AnnotationField(ANNOTATION_KEY);
+    static final TagField TAG = new TagField(TAG_KEY);
+    static final BooleanField DEBUG = new BooleanField(DEBUG_KEY);
+    static final BooleanField SHARED = new BooleanField(SHARED_KEY);
 
     SpanField() {
-      super(1);
+      super((1 << 3) | WIRETYPE_LENGTH_DELIMITED);
     }
 
     @Override int sizeOfValue(Span span) {
@@ -186,7 +283,7 @@ final class Proto3ZipkinFields {
     }
 
     public Span read(Buffer buffer) {
-      readThisKey(buffer);
+      buffer.readVarint32(); // toss the key
       return readValue(buffer);
     }
 
@@ -199,72 +296,62 @@ final class Proto3ZipkinFields {
       Span.Builder builder = Span.newBuilder();
       while (buffer.pos < endPos) {
         int nextKey = buffer.readVarint32();
-        int lastPos = buffer.pos - 1;
-        int nextWireType = wireType(nextKey, lastPos);
-        int nextFieldNumber = fieldNumber(nextKey, lastPos);
-        switch (nextFieldNumber) {
-          case TRACE_ID_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.traceId", TRACE_ID);
+        switch (nextKey) {
+          case TRACE_ID_KEY:
             builder.traceId(TRACE_ID.readValue(buffer));
             break;
-          case PARENT_ID_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.parentId", PARENT_ID);
+          case PARENT_ID_KEY:
             builder.parentId(PARENT_ID.readValue(buffer));
             break;
-          case ID_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.id", ID);
+          case ID_KEY:
             builder.id(ID.readValue(buffer));
             break;
-          case KIND_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.kind", KIND);
+          case KIND_KEY:
             int kind = buffer.readVarint32();
-            builder.kind(Span.Kind.values()[kind]);
+            builder.kind(Span.Kind.values()[kind - 1]);
             break;
-          case NAME_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.name", NAME);
+          case NAME_KEY:
             builder.name(NAME.readValue(buffer));
             break;
-          case TIMESTAMP_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.timestamp", TIMESTAMP);
+          case TIMESTAMP_KEY:
             builder.timestamp(TIMESTAMP.readValue(buffer));
             break;
-          case DURATION_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.duration", DURATION);
+          case DURATION_KEY:
             builder.duration(buffer.readVarint64());
             break;
-          case LOCAL_ENDPOINT_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.localEndpoint", LOCAL_ENDPOINT);
+          case LOCAL_ENDPOINT_KEY:
+            builder.localEndpoint(LOCAL_ENDPOINT.readValue(buffer));
             break;
-          case REMOTE_ENDPOINT_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.remoteEndpoint", REMOTE_ENDPOINT);
+          case REMOTE_ENDPOINT_KEY:
+            builder.remoteEndpoint(REMOTE_ENDPOINT.readValue(buffer));
             break;
-          case ANNOTATION_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.annotations", ANNOTATION);
+          case ANNOTATION_KEY:
+            ANNOTATION.readValue(buffer, builder);
             break;
-          case TAG_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.tags", TAG);
+          case TAG_KEY:
+            TAG.readValue(buffer, builder);
             break;
-          case DEBUG_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.debug", DEBUG);
+          case DEBUG_KEY:
             if (DEBUG.read(buffer)) builder.debug(true);
             break;
-          case SHARED_FIELD:
-            checkWireType(lastPos, nextWireType, "Span.shared", SHARED);
+          case SHARED_KEY:
             if (SHARED.read(buffer)) builder.shared(true);
             break;
           default:
-            skipValue(buffer, nextWireType);
+            logAndSkip(buffer, nextKey);
         }
       }
       return builder.build();
     }
   }
 
-  static void checkWireType(int pos, int wireType, String fieldName, Field field) {
-    if (wireType == field.wireType) return;
-    throw new IllegalArgumentException(
-      "wireType " + wireType + " at position " + pos + " was not " + fieldName + "'s wireType "
-        + field.wireType
-    );
+  static void logAndSkip(Buffer buffer, int nextKey) {
+    int nextWireType = wireType(nextKey, buffer.pos);
+    if (LOG.isLoggable(FINE)) {
+      int nextFieldNumber = fieldNumber(nextKey, buffer.pos);
+      LOG.fine(String.format("Skipping field: byte=%s, fieldNumber=%s, wireType=%s",
+        buffer.pos, nextFieldNumber, nextWireType));
+    }
+    skipValue(buffer, nextWireType);
   }
 }
