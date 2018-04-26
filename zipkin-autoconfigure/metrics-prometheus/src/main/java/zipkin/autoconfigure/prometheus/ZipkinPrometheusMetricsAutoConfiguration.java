@@ -47,6 +47,7 @@ class ZipkinPrometheusMetricsAutoConfiguration {
     final MeterRegistry registry;
     final HttpHandler next;
     final Clock clock;
+
     HttpRequestDurationHandler(MeterRegistry registry, HttpHandler next) {
       this.registry = registry;
       this.next = next;

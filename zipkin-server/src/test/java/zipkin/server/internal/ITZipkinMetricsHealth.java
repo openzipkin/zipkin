@@ -1,4 +1,3 @@
-package zipkin.server.internal;
 /**
  * Copyright 2015-2018 The OpenZipkin Authors
  *
@@ -12,6 +11,7 @@ package zipkin.server.internal;
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+package zipkin.server.internal;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -53,17 +53,13 @@ public class ITZipkinMetricsHealth {
   @Autowired MeterRegistry registry;
   @Value("${local.server.port}") int zipkinPort;
 
-  OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
+  OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
   static Double readDouble(String json, String jsonPath) {
     return JsonPath.compile(jsonPath).read(json);
   }
 
   static String readString(String json, String jsonPath) {
-    return JsonPath.compile(jsonPath).read(json);
-  }
-
-  static Integer readInteger(String json, String jsonPath) {
     return JsonPath.compile(jsonPath).read(json);
   }
 
@@ -93,6 +89,10 @@ public class ITZipkinMetricsHealth {
   @Test public void writeSpans_updatesPrometheusMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = Codec.JSON.writeSpans(spans);
+
+    post("/api/v1/spans", body);
+    post("/api/v1/spans", body);
+
     Double messagesCount = registry.get("counter.zipkin_collector.spans.http").counter().count();
     // Get the http count from the registry and it should match the summation previous count
     // and count of calls below
@@ -101,16 +101,13 @@ public class ITZipkinMetricsHealth {
       .tag("path", "/api/v1/spans")
       .timer()
       .count();
-    httpCount += 2;
 
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", body);
     Response response = get("/prometheus");
     assertThat(response.isSuccessful()).isTrue();
     String prometheus = response.body().string();
 
     assertThat(prometheus)
-      .contains("counter_zipkin_collector_spans_http_total " + (messagesCount + 6));
+      .contains("counter_zipkin_collector_spans_http_total " + messagesCount);
     assertThat(prometheus)
       .contains(
         "http_request_duration_seconds_count{method=\"POST\",path=\"/api/v1/spans\",status=\"200\",} "

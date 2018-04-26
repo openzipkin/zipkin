@@ -15,7 +15,6 @@ package zipkin.server.internal;
 
 import brave.Tracing;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.After;
@@ -145,5 +144,4 @@ public class ZipkinServerConfigurationTest {
       return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
     }
   }
-
 }
