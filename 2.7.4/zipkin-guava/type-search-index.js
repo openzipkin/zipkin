@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"zipkin.storage.guava","l":"GuavaSpanConsumer"},{"p":"zipkin.storage.guava","l":"GuavaSpanStore"},{"p":"zipkin.storage.guava","l":"GuavaStorageAdapters"},{"p":"zipkin.storage.guava","l":"GuavaStorageComponent"},{"p":"zipkin.storage.guava","l":"LazyGuavaStorageComponent"}]
