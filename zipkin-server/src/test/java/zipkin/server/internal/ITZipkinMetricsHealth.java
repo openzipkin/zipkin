@@ -77,11 +77,37 @@ public class ITZipkinMetricsHealth {
   @Test public void healthIsOK() throws Exception {
     assertThat(get("/health").isSuccessful())
       .isTrue();
+
+    // ensure we don't track health in prometheus
+    assertThat(getAsString("/prometheus"))
+      .doesNotContain("health");
   }
 
   @Test public void metricsIsOK() throws Exception {
     assertThat(get("/metrics").isSuccessful())
       .isTrue();
+
+    // ensure we don't track metrics in prometheus
+    assertThat(getAsString("/prometheus"))
+      .doesNotContain("metrics");
+  }
+
+  @Test public void actuatorIsOK() throws Exception {
+    assertThat(get("/actuator").isSuccessful())
+      .isTrue();
+
+    // ensure we don't track actuator in prometheus
+    assertThat(getAsString("/prometheus"))
+      .doesNotContain("actuator");
+  }
+
+  @Test public void prometheusIsOK() throws Exception {
+    assertThat(get("/prometheus").isSuccessful())
+      .isTrue();
+
+    // ensure we don't track prometheus in prometheus
+    assertThat(getAsString("/prometheus"))
+      .doesNotContain("prometheus");
   }
 
   /** Makes sure the prometheus filter doesn't count twice */
@@ -101,9 +127,7 @@ public class ITZipkinMetricsHealth {
       .timer()
       .count();
 
-    Response response = get("/prometheus");
-    assertThat(response.isSuccessful()).isTrue();
-    String prometheus = response.body().string();
+    String prometheus = getAsString("/prometheus");
 
     // ensure unscoped counter does not exist
     assertThat(prometheus)
@@ -126,9 +150,7 @@ public class ITZipkinMetricsHealth {
     post("/api/v1/spans", body);
     post("/api/v1/spans", body);
 
-    Response response = get("/metrics");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
+    String json = getAsString("/metrics");
 
     assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
       .isEqualTo(messagesCount + 2.0);
@@ -149,9 +171,7 @@ public class ITZipkinMetricsHealth {
       registry.get("counter.zipkin_collector.messages_dropped.http").counter().count();
     post("/api/v1/spans", body);
 
-    Response response = get("/metrics");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
+    String json = getAsString("/metrics");
 
     assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
       .isEqualTo(messagesCount + 1);
@@ -160,9 +180,7 @@ public class ITZipkinMetricsHealth {
   }
 
   @Test public void readsHealth() throws Exception {
-    Response response = get("/health");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
+    String json = getAsString("/health");
     assertThat(readString(json, "$.status"))
       .isIn("UP", "DOWN", "UNKNOWN");
     assertThat(readString(json, "$.zipkin.status"))
@@ -177,10 +195,10 @@ public class ITZipkinMetricsHealth {
     post("/api/v1/spans", body);
     post("/api/v1/spans", span);
     Thread.sleep(1500);
-    Response response = get("/metrics");
-    assertThat(response.isSuccessful()).isTrue();
-    String json = response.body().string();
-    assertThat(readJson(json))
+
+    String metrics = getAsString("/metrics");
+
+    assertThat(readJson(metrics))
       .contains(
         "gauge.zipkin_collector.message_spans.http"
         , "gauge.zipkin_collector.message_bytes.http"
@@ -189,6 +207,12 @@ public class ITZipkinMetricsHealth {
         , "counter.zipkin_collector.spans.http"
         , "counter.zipkin_collector.messages_dropped.http"
       );
+  }
+
+  private String getAsString(String path) throws IOException {
+    Response response = get(path);
+    assertThat(response.isSuccessful()).isTrue();
+    return response.body().string();
   }
 
   private Response get(String path) throws IOException {
