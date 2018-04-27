@@ -20,7 +20,6 @@ import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.Proto3Fields.BooleanField;
-import zipkin2.internal.Proto3Fields.MapEntryField;
 import zipkin2.internal.Proto3Fields.Utf8Field;
 
 import static java.util.logging.Level.FINE;
@@ -76,9 +75,7 @@ final class Proto3ZipkinFields {
       PORT.write(b, value.portAsInt());
     }
 
-    Endpoint readValue(Buffer buffer) {
-      int length = ensureLength(buffer);
-      if (length == 0) return null;
+    @Override Endpoint readValue(Buffer buffer, int length) {
       int endPos = buffer.pos + length;
 
       // now, we are in the endpoint fields
@@ -87,13 +84,13 @@ final class Proto3ZipkinFields {
         int nextKey = buffer.readVarint32();
         switch (nextKey) {
           case SERVICE_NAME_KEY:
-            builder.serviceName(SERVICE_NAME.readValue(buffer));
+            builder.serviceName(SERVICE_NAME.readLengthPrefixAndValue(buffer));
             break;
           case IPV4_KEY:
-            builder.parseIp(IPV4.readValue(buffer));
+            builder.parseIp(IPV4.readLengthPrefixAndValue(buffer));
             break;
           case IPV6_KEY:
-            builder.parseIp(IPV6.readValue(buffer));
+            builder.parseIp(IPV6.readLengthPrefixAndValue(buffer));
             break;
           case PORT_KEY:
             builder.port(buffer.readVarint32());
@@ -107,7 +104,21 @@ final class Proto3ZipkinFields {
     }
   }
 
-  static class AnnotationField extends LengthDelimitedField<Annotation> {
+  /** Contributes to a builder as opposed to reading values directly. Avoids allocation. */
+  static abstract class SpanBuilderField<T> extends LengthDelimitedField<T> {
+
+    SpanBuilderField(int key) {
+      super(key);
+    }
+
+    @Override final T readValue(Buffer b, int length) {
+      throw new UnsupportedOperationException();
+    }
+
+    abstract boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder);
+  }
+
+  static class AnnotationField extends SpanBuilderField<Annotation> {
     static final int TIMESTAMP_KEY = (1 << 3) | WIRETYPE_FIXED64;
     static final int VALUE_KEY = (2 << 3) | WIRETYPE_LENGTH_DELIMITED;
 
@@ -127,25 +138,25 @@ final class Proto3ZipkinFields {
       VALUE.write(b, value.value());
     }
 
-    boolean readValue(Buffer buffer, Span.Builder builder) {
-      int length = ensureLength(buffer);
+    @Override boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder) {
+      int length = readLengthPrefix(b);
       if (length == 0) return false;
-      int endPos = buffer.pos + length;
+      int endPos = b.pos + length;
 
       // now, we are in the annotation fields
       long timestamp = 0L;
       String value = null;
-      while (buffer.pos < endPos) {
-        int nextKey = buffer.readVarint32();
+      while (b.pos < endPos) {
+        int nextKey = b.readVarint32();
         switch (nextKey) {
           case TIMESTAMP_KEY:
-            timestamp = TIMESTAMP.readValue(buffer);
+            timestamp = TIMESTAMP.readValue(b);
             break;
           case VALUE_KEY:
-            value = VALUE.readValue(buffer);
+            value = VALUE.readLengthPrefixAndValue(b);
             break;
           default:
-            logAndSkip(buffer, nextKey);
+            logAndSkip(b, nextKey);
         }
       }
       if (timestamp == 0L || value == null) return false;
@@ -154,30 +165,46 @@ final class Proto3ZipkinFields {
     }
   }
 
-  static class TagField extends MapEntryField {
+  static final class TagField extends SpanBuilderField<Map.Entry<String, String>> {
+    // map<string,string> in proto is a special field with key, value
+    static final int KEY_KEY = (1 << 3) | WIRETYPE_LENGTH_DELIMITED;
+    static final int VALUE_KEY = (2 << 3) | WIRETYPE_LENGTH_DELIMITED;
+
+    static final Utf8Field KEY = new Utf8Field(KEY_KEY);
+    static final Utf8Field VALUE = new Utf8Field(VALUE_KEY);
+
     TagField(int key) {
       super(key);
     }
 
-    boolean readValue(Buffer buffer, Span.Builder builder) {
-      int length = ensureLength(buffer);
+    @Override int sizeOfValue(Map.Entry<String, String> value) {
+      return KEY.sizeInBytes(value.getKey()) + VALUE.sizeInBytes(value.getValue());
+    }
+
+    @Override void writeValue(Buffer b, Map.Entry<String, String> value) {
+      KEY.write(b, value.getKey());
+      VALUE.write(b, value.getValue());
+    }
+
+    @Override boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder) {
+      int length = readLengthPrefix(b);
       if (length == 0) return false;
-      int endPos = buffer.pos + length;
+      int endPos = b.pos + length;
 
       // now, we are in the tag fields
       String key = null, value = ""; // empty tags allowed
-      while (buffer.pos < endPos) {
-        int nextKey = buffer.readVarint32();
+      while (b.pos < endPos) {
+        int nextKey = b.readVarint32();
         switch (nextKey) {
           case KEY_KEY:
-            key = KEY.readValue(buffer);
+            key = KEY.readLengthPrefixAndValue(b);
             break;
           case VALUE_KEY:
-            String read = VALUE.readValue(buffer);
+            String read = VALUE.readLengthPrefixAndValue(b);
             if (read != null) value = read; // empty tags allowed
             break;
           default:
-            logAndSkip(buffer, nextKey);
+            logAndSkip(b, nextKey);
         }
       }
       if (key == null) return false;
@@ -284,12 +311,10 @@ final class Proto3ZipkinFields {
 
     public Span read(Buffer buffer) {
       buffer.readVarint32(); // toss the key
-      return readValue(buffer);
+      return readLengthPrefixAndValue(buffer);
     }
 
-    Span readValue(Buffer buffer) {
-      int length = ensureLength(buffer);
-      if (length == 0) return null;
+    @Override Span readValue(Buffer buffer, int length) {
       int endPos = buffer.pos + length;
 
       // now, we are in the span fields
@@ -298,20 +323,20 @@ final class Proto3ZipkinFields {
         int nextKey = buffer.readVarint32();
         switch (nextKey) {
           case TRACE_ID_KEY:
-            builder.traceId(TRACE_ID.readValue(buffer));
+            builder.traceId(TRACE_ID.readLengthPrefixAndValue(buffer));
             break;
           case PARENT_ID_KEY:
-            builder.parentId(PARENT_ID.readValue(buffer));
+            builder.parentId(PARENT_ID.readLengthPrefixAndValue(buffer));
             break;
           case ID_KEY:
-            builder.id(ID.readValue(buffer));
+            builder.id(ID.readLengthPrefixAndValue(buffer));
             break;
           case KIND_KEY:
             int kind = buffer.readVarint32();
             builder.kind(Span.Kind.values()[kind - 1]);
             break;
           case NAME_KEY:
-            builder.name(NAME.readValue(buffer));
+            builder.name(NAME.readLengthPrefixAndValue(buffer));
             break;
           case TIMESTAMP_KEY:
             builder.timestamp(TIMESTAMP.readValue(buffer));
@@ -320,16 +345,16 @@ final class Proto3ZipkinFields {
             builder.duration(buffer.readVarint64());
             break;
           case LOCAL_ENDPOINT_KEY:
-            builder.localEndpoint(LOCAL_ENDPOINT.readValue(buffer));
+            builder.localEndpoint(LOCAL_ENDPOINT.readLengthPrefixAndValue(buffer));
             break;
           case REMOTE_ENDPOINT_KEY:
-            builder.remoteEndpoint(REMOTE_ENDPOINT.readValue(buffer));
+            builder.remoteEndpoint(REMOTE_ENDPOINT.readLengthPrefixAndValue(buffer));
             break;
           case ANNOTATION_KEY:
-            ANNOTATION.readValue(buffer, builder);
+            ANNOTATION.readLengthPrefixAndValue(buffer, builder);
             break;
           case TAG_KEY:
-            TAG.readValue(buffer, builder);
+            TAG.readLengthPrefixAndValue(buffer, builder);
             break;
           case DEBUG_KEY:
             if (DEBUG.read(buffer)) builder.debug(true);
