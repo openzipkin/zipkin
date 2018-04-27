@@ -47,13 +47,8 @@ import static zipkin.internal.Util.checkNotNull;
 public final class ActuateCollectorMetrics implements CollectorMetrics {
 
   final MeterRegistry registryInstance;
-  final Counter messages;
-  final Counter messagesDropped;
-  final Counter bytes;
-  final Counter spans;
-  final Counter spansDropped;
-  final AtomicInteger messageBytes;
-  final AtomicInteger messageSpans;
+  final Counter messages, messagesDropped, bytes, spans, spansDropped;
+  final AtomicInteger messageBytes,messageSpans;
 
   public ActuateCollectorMetrics(MeterRegistry registry) {
     this(null, registry);
@@ -61,7 +56,12 @@ public final class ActuateCollectorMetrics implements CollectorMetrics {
 
   ActuateCollectorMetrics(@Nullable String transport, MeterRegistry meterRegistry) {
     this.registryInstance = meterRegistry;
-    String transportType = transport == null ? "" : "." + transport;
+    if (transport == null) {
+      messages = messagesDropped = bytes = spans = spansDropped = null;
+      messageBytes = messageSpans = null;
+      return;
+    }
+    String transportType = "." + transport;
     this.messages = meterRegistry
       .counter("counter.zipkin_collector.messages" + transportType);
     this.messagesDropped = meterRegistry
@@ -84,24 +84,33 @@ public final class ActuateCollectorMetrics implements CollectorMetrics {
   }
 
   @Override public void incrementMessages() {
+    checkScoped();
     messages.increment();
   }
 
   @Override public void incrementMessagesDropped() {
+    checkScoped();
     messagesDropped.increment();
   }
 
   @Override public void incrementSpans(int quantity) {
+    checkScoped();
     messageSpans.set(quantity);
     spans.increment(quantity);
   }
 
   @Override public void incrementBytes(int quantity) {
+    checkScoped();
     messageBytes.set(quantity);
     bytes.increment(quantity);
   }
 
   @Override public void incrementSpansDropped(int quantity) {
+    checkScoped();
     spansDropped.increment(quantity);
+  }
+
+  void checkScoped() {
+    if (messages == null) throw new IllegalStateException("always scope with ActuateCollectorMetrics.forTransport");
   }
 }

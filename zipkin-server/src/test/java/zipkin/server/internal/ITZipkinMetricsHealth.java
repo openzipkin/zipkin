@@ -106,6 +106,9 @@ public class ITZipkinMetricsHealth {
     assertThat(response.isSuccessful()).isTrue();
     String prometheus = response.body().string();
 
+    // ensure unscoped counter does not exist
+    assertThat(prometheus)
+      .doesNotContain("counter_zipkin_collector_spans_total " + messagesCount);
     assertThat(prometheus)
       .contains("counter_zipkin_collector_spans_http_total " + messagesCount);
     assertThat(prometheus)
