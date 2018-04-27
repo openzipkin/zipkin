@@ -15,10 +15,12 @@ package zipkin.server.internal;
 
 import brave.Tracing;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
@@ -83,9 +85,22 @@ public class ZipkinServerConfiguration {
   @Bean
   @ConditionalOnMissingBean(CollectorMetrics.class)
   CollectorMetrics metrics(MeterRegistry registry) {
-    // org.springframework.boot.actuate.metrics.buffer package is removed in boot v2. Temporarily,
-    // this inlines the important code. Later we will switch to micrometer.
     return new ActuateCollectorMetrics(registry);
+  }
+
+  @Bean
+  public MeterRegistryCustomizer meterRegistryCustomizer() {
+    return registry -> registry.config()
+      .meterFilter(MeterFilter.deny(id -> {
+          String uri = id.getTag("path");
+          return uri != null
+            && (uri.startsWith("/actuator")
+            || uri.startsWith("/metrics")
+            || uri.startsWith("/health")
+            || uri.startsWith("/favicon.ico")
+            || uri.startsWith("/prometheus"));
+        })
+      );
   }
 
   @Configuration
