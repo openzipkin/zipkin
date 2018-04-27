@@ -13,39 +13,33 @@
  */
 package zipkin.autoconfigure.prometheus;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 public class ZipkinPrometheusMetricsAutoConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+
+  @Before public void refresh() {
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      MetricsAutoConfiguration.class,
+      PrometheusMetricsExportAutoConfiguration.class,
+      ZipkinPrometheusMetricsAutoConfiguration.class
+    );
+    context.refresh();
+  }
 
   @After public void close() {
     context.close();
   }
 
   @Test public void providesHttpRequestDurationCustomizer() {
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinPrometheusMetricsAutoConfiguration.class,
-      TestConfig.class
-    );
-    context.refresh();
-
     context.getBean(UndertowDeploymentInfoCustomizer.class);
-  }
-
-  @Configuration
-  static class TestConfig {
-    @Bean
-    MeterRegistry registry() {
-      return new SimpleMeterRegistry();
-    }
   }
 }
