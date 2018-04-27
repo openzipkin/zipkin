@@ -122,10 +122,9 @@ public class ITZipkinMetricsHealth {
 
     // ensure unscoped counter does not exist
     assertThat(prometheus)
-      .doesNotContain("counter_zipkin_collector_spans " + messagesCount);
-    // has the old name, which does not have a _total suffix
+      .doesNotContain("counter_zipkin_collector_spans_total " + messagesCount);
     assertThat(prometheus)
-      .contains("counter_zipkin_collector_spans_http " + messagesCount);
+      .contains("counter_zipkin_collector_spans_http_total " + messagesCount);
     assertThat(prometheus)
       .contains(
         "http_request_duration_seconds_count{method=\"POST\",path=\"/api/v1/spans\",status=\"200\",} "

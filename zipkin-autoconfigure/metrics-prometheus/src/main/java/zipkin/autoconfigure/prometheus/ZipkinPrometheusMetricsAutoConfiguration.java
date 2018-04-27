@@ -18,7 +18,6 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.config.NamingConvention;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
@@ -35,13 +34,6 @@ import org.springframework.context.annotation.Configuration;
 
   ZipkinPrometheusMetricsAutoConfiguration(PrometheusMeterRegistry registry) {
     this.registry = registry;
-    NamingConvention delegate = registry.config().namingConvention();
-    registry.config().namingConvention((name, type, baseUnit) -> {
-      if (name.contains("zipkin_collector")) {
-        return NamingConvention.snakeCase.name(name, type, baseUnit);
-      }
-      return delegate.name(name, type, baseUnit);
-    });
   }
 
   @Bean @Qualifier("httpRequestDurationCustomizer")
