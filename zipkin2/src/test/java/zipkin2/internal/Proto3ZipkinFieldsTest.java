@@ -19,9 +19,11 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.Proto3ZipkinFields.AnnotationField;
 import zipkin2.internal.Proto3ZipkinFields.EndpointField;
+import zipkin2.internal.Proto3ZipkinFields.TagField;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.atIndex;
+import static org.assertj.core.data.MapEntry.entry;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
@@ -31,6 +33,17 @@ import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 public class Proto3ZipkinFieldsTest {
   Buffer buf = new Buffer(2048); // bigger than needed to test sizeInBytes
+
+  /** A map entry is an embedded messages: one for field the key and one for the value */
+  @Test public void tag_sizeInBytes() {
+    TagField field = new TagField(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
+    assertThat(field.sizeInBytes(entry("123", "56789")))
+      .isEqualTo(0
+        + 1 /* tag of embedded key field */ + 1 /* len */ + 3
+        + 1 /* tag of embedded value field  */ + 1 /* len */ + 5
+        + 1 /* tag of map entry field */ + 1 /* len */
+      );
+  }
 
   @Test public void annotation_sizeInBytes() {
     AnnotationField field = new AnnotationField(1 << 3 | WIRETYPE_LENGTH_DELIMITED);

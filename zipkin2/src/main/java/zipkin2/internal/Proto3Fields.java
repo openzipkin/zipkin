@@ -112,16 +112,28 @@ final class Proto3Fields {
       writeValue(b, value);
     }
 
+    /**
+     * Calling this after consuming the field key to ensures there's enough space for the data. Null
+     * is returned when the length prefix is zero.
+     */
+    final T readLengthPrefixAndValue(Buffer b) {
+      int length = readLengthPrefix(b);
+      if (length == 0) return null;
+      return readValue(b, length);
+    }
+
+    final int readLengthPrefix(Buffer b) {
+      int length = b.readVarint32();
+      Proto3Fields.ensureLength(b, length);
+      return length;
+    }
+
     abstract int sizeOfValue(T value);
 
     abstract void writeValue(Buffer b, T value);
 
-    /** Call this after consuming the field key to ensure there's enough space for the data */
-    int ensureLength(Buffer buffer) {
-      int length = buffer.readVarint32();
-      Proto3Fields.ensureLength(buffer, length);
-      return length;
-    }
+    /** @param length is greater than zero */
+    abstract T readValue(Buffer b, int length);
   }
 
   static class BytesField extends LengthDelimitedField<byte[]> {
@@ -137,11 +149,10 @@ final class Proto3Fields {
       b.write(bytes);
     }
 
-    byte[] readValue(Buffer buffer) {
-      int length = ensureLength(buffer);
+    @Override byte[] readValue(Buffer b, int length) {
       byte[] result = new byte[length];
-      System.arraycopy(buffer.toByteArray(), buffer.pos, result, 0, length);
-      buffer.pos += length;
+      System.arraycopy(b.toByteArray(), b.pos, result, 0, length);
+      b.pos += length;
       return result;
     }
   }
@@ -174,10 +185,8 @@ final class Proto3Fields {
       throw new AssertionError("not lowerHex " + c); // bug
     }
 
-    String readValue(Buffer buffer) {
-      int length = ensureLength(buffer) * 2;
-      if (length == 0) return null;
-
+    @Override String readValue(Buffer buffer, int length) {
+      length *= 2;
       char[] result = new char[length];
 
       for (int i = 0; i < length; i += 2) {
@@ -203,11 +212,9 @@ final class Proto3Fields {
       b.writeUtf8(utf8);
     }
 
-    String readValue(Buffer buffer) {
-      int lengthOfString = ensureLength(buffer);
-      if (lengthOfString == 0) return null;
-      String result = new String(buffer.toByteArray(), buffer.pos, lengthOfString, UTF_8);
-      buffer.pos += lengthOfString;
+    @Override String readValue(Buffer buffer, int length) {
+      String result = new String(buffer.toByteArray(), buffer.pos, length, UTF_8);
+      buffer.pos += length;
       return result;
     }
   }
@@ -284,27 +291,6 @@ final class Proto3Fields {
         throw new IllegalArgumentException("Malformed: invalid boolean value at byte " + b.pos);
       }
       return bool == 1;
-    }
-  }
-
-  static class MapEntryField extends LengthDelimitedField<Map.Entry<String, String>> {
-    static final int KEY_KEY = (1 << 3) | WIRETYPE_LENGTH_DELIMITED;
-    static final int VALUE_KEY = (2 << 3) | WIRETYPE_LENGTH_DELIMITED;
-
-    static final Utf8Field KEY = new Utf8Field(KEY_KEY);
-    static final Utf8Field VALUE = new Utf8Field(VALUE_KEY);
-
-    MapEntryField(int key) {
-      super(key);
-    }
-
-    @Override int sizeOfValue(Map.Entry<String, String> value) {
-      return KEY.sizeInBytes(value.getKey()) + VALUE.sizeInBytes(value.getValue());
-    }
-
-    @Override void writeValue(Buffer b, Map.Entry<String, String> value) {
-      KEY.write(b, value.getKey());
-      VALUE.write(b, value.getValue());
     }
   }
 

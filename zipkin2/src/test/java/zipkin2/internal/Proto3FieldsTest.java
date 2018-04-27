@@ -17,14 +17,12 @@ import org.junit.Test;
 import zipkin2.internal.Proto3Fields.BooleanField;
 import zipkin2.internal.Proto3Fields.BytesField;
 import zipkin2.internal.Proto3Fields.Fixed64Field;
-import zipkin2.internal.Proto3Fields.MapEntryField;
 import zipkin2.internal.Proto3Fields.Utf8Field;
 import zipkin2.internal.Proto3Fields.VarintField;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.assertj.core.data.MapEntry.entry;
 import static zipkin2.internal.Proto3Fields.Field;
 import static zipkin2.internal.Proto3Fields.Fixed32Field;
 import static zipkin2.internal.Proto3Fields.HexField;
@@ -85,17 +83,6 @@ public class Proto3FieldsTest {
       );
   }
 
-  /** A map entry is an embedded messages: one for field the key and one for the value */
-  @Test public void mapEntry_sizeInBytes() {
-    MapEntryField field = new MapEntryField(1 << 3 | WIRETYPE_LENGTH_DELIMITED);
-    assertThat(field.sizeInBytes(entry("123", "56789")))
-      .isEqualTo(0
-        + 1 /* tag of embedded key field */ + 1 /* len */ + 3
-        + 1 /* tag of embedded value field  */ + 1 /* len */ + 5
-        + 1 /* tag of map entry field */ + 1 /* len */
-      );
-  }
-
   @Test public void fixed64_sizeInBytes() {
     Fixed64Field field = new Fixed64Field(1 << 3 | WIRETYPE_FIXED64);
     assertThat(field.sizeInBytes(Long.MIN_VALUE))
@@ -116,8 +103,7 @@ public class Proto3FieldsTest {
       new Utf8Field(128 << 3 | WIRETYPE_LENGTH_DELIMITED),
       new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED),
       new Fixed32Field(128 << 3 | WIRETYPE_FIXED32),
-      new Fixed64Field(128 << 3 | WIRETYPE_FIXED64),
-      new MapEntryField(128 << 3 | WIRETYPE_LENGTH_DELIMITED)
+      new Fixed64Field(128 << 3 | WIRETYPE_FIXED64)
     )) {
       assertThat(Field.fieldNumber(field.key, 1))
         .isEqualTo(field.fieldNumber);
@@ -181,23 +167,23 @@ public class Proto3FieldsTest {
     skipValue(WIRETYPE_FIXED32);
   }
 
-  @Test public void field_ensureLength_LENGTH_DELIMITED() {
+  @Test public void field_readLengthPrefix_LENGTH_DELIMITED() {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, new byte[10]);
     buf.pos = 1; // skip the key
 
-    assertThat(field.ensureLength(buf))
+    assertThat(field.readLengthPrefix(buf))
       .isEqualTo(10);
   }
 
-  @Test public void field_ensureLength_LENGTH_DELIMITED_truncated() {
+  @Test public void field_readLengthPrefix_LENGTH_DELIMITED_truncated() {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     buf = new Buffer(10);
     buf.writeVarint(100); // much larger than the buffer size
     buf.pos = 0; // reset
 
     try {
-      field.ensureLength(buf);
+      field.readLengthPrefix(buf);
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
       assertThat(e).hasMessage("Truncated: length 100 > bytes remaining 9");
