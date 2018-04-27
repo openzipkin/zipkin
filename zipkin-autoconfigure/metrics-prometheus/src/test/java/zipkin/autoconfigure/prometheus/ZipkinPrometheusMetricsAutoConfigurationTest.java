@@ -13,8 +13,6 @@
  */
 package zipkin.autoconfigure.prometheus;
 
-import io.micrometer.core.instrument.config.NamingConvention;
-import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -23,9 +21,6 @@ import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-
-import static io.micrometer.core.instrument.Meter.Type.COUNTER;
-import static org.assertj.core.api.Assertions.assertThat;
 
 public class ZipkinPrometheusMetricsAutoConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -46,13 +41,5 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
 
   @Test public void providesHttpRequestDurationCustomizer() {
     context.getBean(UndertowDeploymentInfoCustomizer.class);
-  }
-
-  /** old naming convention didn't end in _total */
-  @Test public void usesOldNamingConvention() {
-    NamingConvention prometheusNamingConvention =
-      context.getBean(PrometheusMeterRegistry.class).config().namingConvention();
-    assertThat(prometheusNamingConvention.name("counter.zipkin_collector.messages.http", COUNTER))
-      .doesNotEndWith("_total");
   }
 }
