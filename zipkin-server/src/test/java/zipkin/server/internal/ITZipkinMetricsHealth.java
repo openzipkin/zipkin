@@ -49,7 +49,6 @@ import static zipkin.TestObjects.LOTS_OF_SPANS;
 public class ITZipkinMetricsHealth {
 
   @Autowired InMemoryStorage storage;
-  @Autowired ActuateCollectorMetrics metrics;
   @Autowired MeterRegistry registry;
   @Value("${local.server.port}") int zipkinPort;
 
@@ -108,9 +107,10 @@ public class ITZipkinMetricsHealth {
 
     // ensure unscoped counter does not exist
     assertThat(prometheus)
-      .doesNotContain("counter_zipkin_collector_spans_total " + messagesCount);
+      .doesNotContain("counter_zipkin_collector_spans " + messagesCount);
+    // has the old name, which does not have a _total suffix
     assertThat(prometheus)
-      .contains("counter_zipkin_collector_spans_http_total " + messagesCount);
+      .contains("counter_zipkin_collector_spans_http " + messagesCount);
     assertThat(prometheus)
       .contains(
         "http_request_duration_seconds_count{method=\"POST\",path=\"/api/v1/spans\",status=\"200\",} "
@@ -145,7 +145,7 @@ public class ITZipkinMetricsHealth {
   @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
     Double messagesCount = registry.get("counter.zipkin_collector.messages.http").counter().count();
-    Double messagesDeoppedCount =
+    Double messagesDroppedCount =
       registry.get("counter.zipkin_collector.messages_dropped.http").counter().count();
     post("/api/v1/spans", body);
 
@@ -156,7 +156,7 @@ public class ITZipkinMetricsHealth {
     assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
       .isEqualTo(messagesCount + 1);
     assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
-      .isEqualTo(messagesDeoppedCount + 1);
+      .isEqualTo(messagesDroppedCount + 1);
   }
 
   @Test public void readsHealth() throws Exception {
