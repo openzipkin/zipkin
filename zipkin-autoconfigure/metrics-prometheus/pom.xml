@@ -47,5 +47,13 @@
       <artifactId>spring-boot-starter-undertow</artifactId>
       <version>${spring-boot.version}</version>
     </dependency>
+
+    <!-- micrometer autoconfiguration has a hard dep on slf4j, at least in tests -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>${slf4j.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

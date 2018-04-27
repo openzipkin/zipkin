@@ -18,6 +18,7 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.undertow.server.HandlerWrapper;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
@@ -30,9 +31,9 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 class ZipkinPrometheusMetricsAutoConfiguration {
-  private MeterRegistry registry;
+  final PrometheusMeterRegistry registry;
 
-  ZipkinPrometheusMetricsAutoConfiguration(MeterRegistry registry) {
+  ZipkinPrometheusMetricsAutoConfiguration(PrometheusMeterRegistry registry) {
     this.registry = registry;
   }
 
