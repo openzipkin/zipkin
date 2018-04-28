@@ -13,6 +13,8 @@
  */
 package zipkin.collector.kafka10;
 
+import com.google.gson.Gson;
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -86,6 +88,20 @@ final class KafkaCollectorWorker implements Runnable {
               } catch (RuntimeException e) {
                 metrics.incrementMessagesDropped();
               }
+            } else if (bytes[0] == 123) {
+              // If the string start with "{", we parse the Json Object, then get specified field
+              Gson gson;
+              String str, newStr;
+              byte[] newBytes;
+              HashMap<String, String> map;
+
+              gson = new Gson();
+              str = new String(bytes);
+              map = gson.fromJson(str, map.getClass());
+              newStr = map.get("message");
+              newBytes = newStr.getBytes();
+
+              collector.acceptSpans(newBytes, DETECTING_DECODER, NOOP);
             } else {
               collector.acceptSpans(bytes, DETECTING_DECODER, NOOP);
             }
