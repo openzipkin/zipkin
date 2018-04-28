@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"com.twitter.zipkin.thriftjava"},{"l":"zipkin.benchmarks"},{"l":"zipkin.benchmarks.generated"},{"l":"zipkin2"},{"l":"zipkin2.generated"},{"l":"zipkin2.internal"},{"l":"zipkin2.internal.generated"}]

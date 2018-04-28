@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"zipkin.collector.kafka","l":"KafkaCollector"},{"p":"zipkin.collector.kafka","l":"KafkaCollector.Builder"}]
