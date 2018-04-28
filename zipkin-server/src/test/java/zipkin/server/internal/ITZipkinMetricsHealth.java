@@ -96,9 +96,56 @@ public class ITZipkinMetricsHealth {
     assertThat(get("/prometheus").isSuccessful())
       .isTrue();
 
-    // ensure we don't track prometheus in prometheus
+    // ensure we don't track prometheus, UI requests in prometheus
     assertThat(getAsString("/prometheus"))
       .doesNotContain("prometheus");
+
+    assertThat(getAsString("/prometheus"))
+      .doesNotContain("uri=\"/zipkin");
+
+    assertThat(getAsString("/prometheus"))
+      .doesNotContain("uri=\"/\"");
+  }
+
+  @Test public void notFound_prometheus() throws Exception {
+    assertThat(get("/doo-wop").isSuccessful())
+      .isFalse();
+
+    assertThat(getAsString("/prometheus"))
+      .contains("uri=\"NOT_FOUND\"")
+      .doesNotContain("uri=\"/doo-wop");
+  }
+
+  @Test public void redirected_prometheus() throws Exception {
+    assertThat(get("/").isSuccessful())
+      .isTrue(); // follows redirects
+
+    assertThat(getAsString("/prometheus"))
+      .contains("uri=\"REDIRECTION\"")
+      .contains("uri=\"/zipkin/index.html\"")
+      .doesNotContain("uri=\"/\"");
+  }
+
+  @Test public void apiTemplate_prometheus() throws Exception {
+    List<Span> spans = asList(LOTS_OF_SPANS[0]);
+    byte[] body = Codec.JSON.writeSpans(spans);
+    post("/api/v1/spans", body);
+
+    assertThat(get("/api/v1/trace/" + LOTS_OF_SPANS[0].traceIdString()).isSuccessful())
+      .isTrue();
+
+    assertThat(getAsString("/prometheus"))
+      .contains("uri=\"/api/v1/trace/{traceId}\"")
+      .doesNotContain(LOTS_OF_SPANS[0].traceIdString());
+  }
+
+  @Test public void forwardedRoute_prometheus() throws Exception {
+    assertThat(get("/zipkin/api/v2/services").isSuccessful())
+      .isTrue();
+
+    assertThat(getAsString("/prometheus"))
+      .contains("uri=\"/api/v2/services\"")
+      .doesNotContain("uri=\"/zipkin/api/v2/services\"");
   }
 
   /** Makes sure the prometheus filter doesn't count twice */
@@ -114,7 +161,7 @@ public class ITZipkinMetricsHealth {
     // and count of calls below
     long httpCount = registry
       .find("http_request_duration")
-      .tag("path", "/api/v1/spans")
+      .tag("uri", "/api/v1/spans")
       .timer()
       .count();
 
@@ -127,7 +174,7 @@ public class ITZipkinMetricsHealth {
       .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount);
     assertThat(prometheus)
       .contains(
-        "http_request_duration_seconds_count{method=\"POST\",path=\"/api/v1/spans\",status=\"200\",} "
+        "http_request_duration_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v1/spans\",} "
           + httpCount);
   }
 
