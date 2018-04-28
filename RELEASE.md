@@ -78,3 +78,91 @@ $ ./mvnw com.mycila:license-maven-plugin:format
 $ ./mvnw versions:set -DnewVersion=1.3.2-SNAPSHOT -DgenerateBackupPoms=false
 $ git commit -am"Adjusts copyright headers for this year"
 ```
+
+## Backport patch release
+
+Usually we only release incrementing numbers. For example, if the current
+release is 2.8.7, we release 2.8.8. In some rare scenarios, we might have
+to release a backport on a non-current minor. To do this is manual, as we
+don't have automation. Please proceed with caution when doing this.
+
+Notably, watch https://circleci.com/gh/openzipkin/zipkin carefully as
+travis does not build version tags!
+
+### Find or create a N.N.x branch
+
+If a backport release already existed for a minor, you'll find a N.N.x branch. For example, if the last minor version was 2.4.4, the branch would
+be 2.4.x. Check this out.
+
+If there is no branch, find the last commit before the next minor. For
+example, using `git log`, you look for the commit for "prepare release"
+and branch off the one right before it.
+
+Ex. With the following git log
+```
+commit 1f5808b0b5bd7ad911cc2e21d3336540bd4ec83d (tag: 2.5.0)
+Author: zipkinci <zipkinci+zipkin-dev@googlegroups.com>
+Date:   Tue Mar 20 11:08:41 2018 +0000
+
+    [maven-release-plugin] prepare release 2.5.0
+
+commit 9a4ec17cf741bc4dcabef8aad41c1071dd5cfb77 (tag: release-2.5.0)
+```
+
+You would checkout and branch off `9a4ec17cf741bc4dcabef8aad41c1071dd5cfb77` like so:
+
+```bash
+$ git checkout 9a4ec17cf741bc4dcabef8aad41c1071dd5cfb77
+$ git checkout -b 2.4.x
+# pushing the branch just so that circleci will check it
+$ git push origin 2.4.x
+```
+
+### Add the changes you need
+Once you are on the branch, you'd use `git cherry-pick` to add the
+commits you need. Once you have what you need, make sure you push
+them so that circleci can check it.
+
+Assuming abcdef1 is the commit ID needed, cherry-pick it like so:
+```bash
+$ git cherry-pick abcdef1
+$ git push origin 2.4.x
+```
+
+### Do a release locally
+With all the changes staged and ready, you need to do a release.
+This involves changing the "pom" files which is mostly automatic,
+creating a couple commit, pushing a tag, and running deploy.
+
+Assuming you are on branch 2.4.x and you want to release 2.4.5.
+```bash
+$ ./mvnw versions:set -DnewVersion=2.4.5 -DgenerateBackupPoms=false 
+# edit the pom and change <tag>HEAD</tag> to <tag>2.4.5</tag>
+$ git commit -am"prepare to release 2.4.5"
+$ git tag 2.4.5
+$ git push origin 2.4.5
+```
+
+Once you are here, actually do the release. You'll need bintray
+access:
+```bash
+$ BINTRAY_USER=adrianmole \
+BINTRAY_KEY=abcdef1abcdef1abcdef1abcdef1 \
+./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy -X
+```
+
+Note: this will release to bintray, but not sync central. Test the
+release and delete if it is screwed up. Once it is ready, release
+to maven central via bintray: https://bintray.com/openzipkin/zipkin/zipkin/view#central
+
+### Prepare the next version number
+Once all of that is done, push the next snapshot version to the
+release branch.
+
+Assuming you are on branch 2.4.x and you just released 2.4.5.
+```bash
+$ ./mvnw versions:set -DnewVersion=2.4.6-SNAPSHOT -DgenerateBackupPoms=false 
+# edit the pom and change <tag>2.4.5</tag> to <tag>HEAD</tag>
+$ git commit -am"prepare next version"
+$ git push origin 2.4.x
+```
