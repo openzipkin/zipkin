@@ -49,6 +49,8 @@ final class KafkaCollectorWorker implements Runnable {
   final AtomicReference<List<TopicPartition>> assignedPartitions =
       new AtomicReference<>(Collections.emptyList());
 
+  final String field;
+
   KafkaCollectorWorker(KafkaCollector.Builder builder) {
     kafkaConsumer = new KafkaConsumer<>(builder.properties);
     List<String> topics = Arrays.asList(builder.topic.split(","));
@@ -63,6 +65,7 @@ final class KafkaCollectorWorker implements Runnable {
     });
     this.collector = builder.delegate.build();
     this.metrics = builder.metrics;
+    this.field = builder.field;
   }
 
   @Override
@@ -90,17 +93,15 @@ final class KafkaCollectorWorker implements Runnable {
               }
             } else if (bytes[0] == 123) {
               // If the string start with "{", we parse the Json Object, then get specified field
-              Gson gson;
-              String str, newStr;
               byte[] newBytes;
-              HashMap<String, String> map;
-
-              gson = new Gson();
-              str = new String(bytes);
+              Gson gson = new Gson();
+              String str = new String(bytes);
+              HashMap<String, String> map = new HashMap<>();
               map = gson.fromJson(str, map.getClass());
-              newStr = map.get("message");
-              newBytes = newStr.getBytes();
-
+              // str = map.get("message");
+			  LOG.debug(field);
+              str = map.get(field);
+              newBytes = str.getBytes();
               collector.acceptSpans(newBytes, DETECTING_DECODER, NOOP);
             } else {
               collector.acceptSpans(bytes, DETECTING_DECODER, NOOP);

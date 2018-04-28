@@ -58,6 +58,7 @@ public final class KafkaCollector implements CollectorComponent {
     Collector.Builder delegate = Collector.builder(KafkaCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String topic = "zipkin";
+    String field = "message";
     int streams = 1;
 
     @Override public Builder storage(StorageComponent storage) {
@@ -82,6 +83,14 @@ public final class KafkaCollector implements CollectorComponent {
      */
     public Builder topic(String topic) {
       this.topic = checkNotNull(topic, "topic");
+      return this;
+    }
+
+    /**
+     * The field of the span json data will be parsed. Defaults to "message"
+     */
+    public Builder field(String field) {
+      this.field = checkNotNull(field, "message");
       return this;
     }
 

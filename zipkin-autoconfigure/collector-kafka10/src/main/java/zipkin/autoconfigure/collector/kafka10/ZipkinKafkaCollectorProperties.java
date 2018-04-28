@@ -26,6 +26,8 @@ class ZipkinKafkaCollectorProperties {
   private String groupId;
   /** Kafka topic span data will be retrieved from. */
   private String topic;
+  /** Kafka topic span data field (if it's json). */
+  private String field;
   /** Number of Kafka consumer threads to run. */
   private Integer streams;
   /** Additional Kafka consumer configuration. */
@@ -55,6 +57,14 @@ class ZipkinKafkaCollectorProperties {
     this.topic = emptyToNull(topic);
   }
 
+  public String getField() {
+    return field;
+  }
+
+  public void setField(String field) {
+    this.field = emptyToNull(field);
+  }
+
   public Integer getStreams() {
     return streams;
   }
@@ -76,6 +86,7 @@ class ZipkinKafkaCollectorProperties {
     if (bootstrapServers != null) result.bootstrapServers(bootstrapServers);
     if (groupId != null) result.groupId(groupId);
     if (topic != null) result.topic(topic);
+    if (field != null) result.field(field);
     if (streams != null) result.streams(streams);
     if (overrides != null) result.overrides(overrides);
     return result;
