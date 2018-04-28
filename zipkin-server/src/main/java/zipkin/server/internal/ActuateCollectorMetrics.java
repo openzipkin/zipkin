@@ -14,6 +14,7 @@
 package zipkin.server.internal;
 
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.atomic.AtomicInteger;
 import zipkin.collector.CollectorMetrics;
@@ -48,7 +49,7 @@ public final class ActuateCollectorMetrics implements CollectorMetrics {
 
   final MeterRegistry registryInstance;
   final Counter messages, messagesDropped, bytes, spans, spansDropped;
-  final AtomicInteger messageBytes,messageSpans;
+  final AtomicInteger messageBytes, messageSpans;
 
   public ActuateCollectorMetrics(MeterRegistry registry) {
     this(null, registry);
@@ -61,21 +62,40 @@ public final class ActuateCollectorMetrics implements CollectorMetrics {
       messageBytes = messageSpans = null;
       return;
     }
-    String transportType = "." + transport;
-    this.messages = meterRegistry
-      .counter("counter.zipkin_collector.messages" + transportType);
-    this.messagesDropped = meterRegistry
-      .counter("counter.zipkin_collector.messages_dropped" + transportType);
-    this.messageBytes = meterRegistry
-      .gauge("gauge.zipkin_collector.message_bytes" + transportType, new AtomicInteger(0));
-    this.messageSpans = meterRegistry
-      .gauge("gauge.zipkin_collector.message_spans" + transportType, new AtomicInteger(0));
-    this.bytes = meterRegistry
-      .counter("counter.zipkin_collector.bytes" + transportType);
-    this.spans = meterRegistry
-      .counter("counter.zipkin_collector.spans" + transportType);
-    this.spansDropped = meterRegistry
-      .counter("counter.zipkin_collector.spans_dropped" + transportType);
+    this.messages = Counter.builder("zipkin_collector.messages")
+      .description("cumulative amount of messages received")
+      .tag("transport", transport)
+      .register(registryInstance);
+    this.messagesDropped = Counter.builder("zipkin_collector.messages_dropped")
+      .description("cumulative amount of messages received that were later dropped")
+      .tag("transport", transport)
+      .register(registryInstance);
+
+    this.bytes = Counter.builder("zipkin_collector.bytes")
+      .description("cumulative amount of bytes received")
+      .tag("transport", transport)
+      .baseUnit("bytes")
+      .register(registryInstance);
+    this.spans = Counter.builder("zipkin_collector.spans")
+      .description("cumulative amount of spans received")
+      .tag("transport", transport)
+      .register(registryInstance);
+    this.spansDropped = Counter.builder("zipkin_collector.spans_dropped")
+      .description("cumulative amount of spans received that were later dropped")
+      .tag("transport", transport)
+      .register(registryInstance);
+
+    this.messageSpans = new AtomicInteger(0);
+    Gauge.builder("zipkin_collector.message_spans", messageSpans, AtomicInteger::get)
+      .description("count of spans per message")
+      .tag("transport", transport)
+      .register(registryInstance);
+    this.messageBytes = new AtomicInteger(0);
+    Gauge.builder("zipkin_collector.message_bytes", messageBytes, AtomicInteger::get)
+      .description("size of a message containing serialized spans")
+      .tag("transport", transport)
+      .baseUnit("bytes")
+      .register(registryInstance);
   }
 
   @Override public ActuateCollectorMetrics forTransport(String transportType) {

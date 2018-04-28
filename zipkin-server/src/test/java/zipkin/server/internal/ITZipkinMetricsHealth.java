@@ -109,7 +109,7 @@ public class ITZipkinMetricsHealth {
     post("/api/v1/spans", body);
     post("/api/v1/spans", body);
 
-    Double messagesCount = registry.get("counter.zipkin_collector.spans.http").counter().count();
+    double messagesCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
     // Get the http count from the registry and it should match the summation previous count
     // and count of calls below
     long httpCount = registry
@@ -122,9 +122,9 @@ public class ITZipkinMetricsHealth {
 
     // ensure unscoped counter does not exist
     assertThat(prometheus)
-      .doesNotContain("counter_zipkin_collector_spans_total " + messagesCount);
+      .doesNotContain("zipkin_collector_spans_total " + messagesCount);
     assertThat(prometheus)
-      .contains("counter_zipkin_collector_spans_http_total " + messagesCount);
+      .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount);
     assertThat(prometheus)
       .contains(
         "http_request_duration_seconds_count{method=\"POST\",path=\"/api/v1/spans\",status=\"200\",} "
@@ -134,9 +134,10 @@ public class ITZipkinMetricsHealth {
   @Test public void writeSpans_updatesMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = Codec.JSON.writeSpans(spans);
-    Double messagesCount = registry.get("counter.zipkin_collector.messages.http").counter().count();
-    Double bytesCount = registry.get("counter.zipkin_collector.bytes.http").counter().count();
-    Double spansCount = registry.get("counter.zipkin_collector.spans.http").counter().count();
+    double messagesCount =
+      registry.counter("zipkin_collector.messages", "transport", "http").count();
+    double bytesCount = registry.counter("zipkin_collector.bytes", "transport", "http").count();
+    double spansCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
     post("/api/v1/spans", body);
     post("/api/v1/spans", body);
 
@@ -156,9 +157,10 @@ public class ITZipkinMetricsHealth {
 
   @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    Double messagesCount = registry.get("counter.zipkin_collector.messages.http").counter().count();
+    Double messagesCount =
+      registry.counter("zipkin_collector.messages", "transport", "http").count();
     Double messagesDroppedCount =
-      registry.get("counter.zipkin_collector.messages_dropped.http").counter().count();
+      registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
     post("/api/v1/spans", body);
 
     String json = getAsString("/metrics");
@@ -189,13 +191,14 @@ public class ITZipkinMetricsHealth {
     String metrics = getAsString("/metrics");
 
     assertThat(readJson(metrics))
-      .contains(
+      .containsExactlyInAnyOrder(
         "gauge.zipkin_collector.message_spans.http"
         , "gauge.zipkin_collector.message_bytes.http"
         , "counter.zipkin_collector.messages.http"
         , "counter.zipkin_collector.bytes.http"
         , "counter.zipkin_collector.spans.http"
         , "counter.zipkin_collector.messages_dropped.http"
+        , "counter.zipkin_collector.spans_dropped.http"
       );
   }
 

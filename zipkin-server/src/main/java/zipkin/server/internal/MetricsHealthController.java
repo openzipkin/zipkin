@@ -34,15 +34,18 @@ public class MetricsHealthController {
     ObjectNode metrics = factory.objectNode();
     // Iterate over the meters and get the Zipkin Custom meters for constructing the Metrics endpoint
     for (Meter meter : meterRegistry.getMeters()) {
-      if (meter.getId().getName().contains("zipkin") && meter.getId()
-        .getName()
-        .contains("counter")) {
-        metrics.put(meter.getId().getName(),
-          meterRegistry.get(meter.getId().getName()).counter().count());
-      }
-      if (meter.getId().getName().contains("zipkin") && meter.getId().getName().contains("gauge")) {
-        metrics.put(meter.getId().getName(),
-          meterRegistry.get(meter.getId().getName()).gauge().value());
+      String name = meter.getId().getName();
+      if (!name.startsWith("zipkin_collector")) continue;
+      String transport = meter.getId().getTag("transport");
+      if (transport == null) continue;
+      switch (meter.getId().getType()) {
+        case COUNTER:
+          metrics.put("counter." + name + "." + transport,
+            meterRegistry.get(name).counter().count());
+          continue;
+        case GAUGE:
+          metrics.put("gauge." + name + "." + transport,
+            meterRegistry.get(name).gauge().value());
       }
     }
     return metrics;
