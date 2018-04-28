@@ -92,13 +92,14 @@ public class ZipkinServerConfiguration {
   public MeterRegistryCustomizer meterRegistryCustomizer() {
     return registry -> registry.config()
       .meterFilter(MeterFilter.deny(id -> {
-          String uri = id.getTag("path");
+          String uri = id.getTag("uri");
           return uri != null
             && (uri.startsWith("/actuator")
             || uri.startsWith("/metrics")
             || uri.startsWith("/health")
             || uri.startsWith("/favicon.ico")
-            || uri.startsWith("/prometheus"));
+            || uri.startsWith("/prometheus")
+          );
         })
       );
   }

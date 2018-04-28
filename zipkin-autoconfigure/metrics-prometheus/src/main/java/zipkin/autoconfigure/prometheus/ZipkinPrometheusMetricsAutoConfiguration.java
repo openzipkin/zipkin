@@ -28,8 +28,17 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
 
 @Configuration class ZipkinPrometheusMetricsAutoConfiguration {
+  // from io.micrometer.spring.web.servlet.WebMvcTags
+  private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
+  private static final Tag URI_REDIRECTION = Tag.of("uri", "REDIRECTION");
+  private static final Tag URI_TRACE_V1 = Tag.of("uri", "/api/v1/trace/{traceId}");
+  private static final Tag URI_TRACE_V2 = Tag.of("uri", "/api/v2/trace/{traceId}");
+  // single-page app requests are forwarded to index: ZipkinUiAutoConfiguration.forwardUiEndpoints
+  private static final Tag URI_CROSSROADS = Tag.of("uri", "/zipkin/index.html");
+
   final PrometheusMeterRegistry registry;
 
   ZipkinPrometheusMetricsAutoConfiguration(PrometheusMeterRegistry registry) {
@@ -57,9 +66,9 @@ import org.springframework.context.annotation.Configuration;
     @Override public void handleRequest(HttpServerExchange exchange) throws Exception {
       final long startTime = clock.monotonicTime();
       if (!exchange.isComplete()) {
-        Timer timer = getTimeBuilder(exchange).register(registry);
         exchange.addExchangeCompleteListener((exchange1, nextListener) -> {
-          timer.record(clock.monotonicTime() - startTime, TimeUnit.NANOSECONDS);
+          getTimeBuilder(exchange).register(registry)
+            .record(clock.monotonicTime() - startTime, TimeUnit.NANOSECONDS);
           nextListener.proceed();
         });
       }
@@ -75,9 +84,44 @@ import org.springframework.context.annotation.Configuration;
 
     private Iterable<Tag> getTags(HttpServerExchange exchange) {
       return Arrays.asList(Tag.of("method", exchange.getRequestMethod().toString())
-        , Tag.of("path", exchange.getRelativePath())
+        , uri(exchange)
         , Tag.of("status", Integer.toString(exchange.getStatusCode()))
       );
+    }
+
+    /** Ensure metrics cardinality doesn't blow up on variables */
+    // TODO: this should really live in the zipkin-server codebase!
+    private static Tag uri(HttpServerExchange exchange) {
+      int status = exchange.getStatusCode();
+      if (status > 299 && status < 400) return URI_REDIRECTION;
+      if (status == 404) return URI_NOT_FOUND;
+
+      String uri = getPathInfo(exchange);
+      if (uri.startsWith("/zipkin")) {
+        if (uri.equals("/zipkin/") || uri.equals("/zipkin")
+          || uri.startsWith("/zipkin/traces/")
+          || uri.equals("/zipkin/dependency")
+          || uri.equals("/zipkin/traceViewer")) {
+          return URI_CROSSROADS; // single-page app route
+        }
+
+        // un-map UI's api route
+        if (uri.startsWith("/zipkin/api")) {
+          uri = uri.replaceFirst("/zipkin", "");
+        }
+      }
+      // handle templated routes instead of exploding on trace ID cardinality
+      if (uri.startsWith("/api/v1/trace/")) return URI_TRACE_V1;
+      if (uri.startsWith("/api/v2/trace/")) return URI_TRACE_V2;
+      return Tag.of("uri", uri);
+    }
+
+    // from io.micrometer.spring.web.servlet.WebMvcTags
+    private static String getPathInfo(HttpServerExchange exchange) {
+      String uri = exchange.getRelativePath();
+      if (!StringUtils.hasText(uri)) return "/";
+      return uri.replaceAll("//+", "/")
+        .replaceAll("/$", "");
     }
 
     static final class Wrapper implements HandlerWrapper {
