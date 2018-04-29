@@ -48,6 +48,13 @@
     </dependency>
 
     <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
@@ -72,13 +79,6 @@
       <groupId>org.assertj</groupId>
       <artifactId>assertj-guava</artifactId>
       <version>3.1.0</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>ch.qos.logback</groupId>
-      <artifactId>logback-classic</artifactId>
-      <version>${logback.version}</version>
       <scope>test</scope>
     </dependency>
 
