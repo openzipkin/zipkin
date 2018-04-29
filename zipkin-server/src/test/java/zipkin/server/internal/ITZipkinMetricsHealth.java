@@ -169,7 +169,7 @@ public class ITZipkinMetricsHealth {
     // Get the http count from the registry and it should match the summation previous count
     // and count of calls below
     long httpCount = registry
-      .find("http_request_duration")
+      .find("http.server.requests")
       .tag("uri", "/api/v1/spans")
       .timer()
       .count();
@@ -183,7 +183,7 @@ public class ITZipkinMetricsHealth {
       .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount);
     assertThat(prometheus)
       .contains(
-        "http_request_duration_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v1/spans\",} "
+        "http_server_requests_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v1/spans\",} "
           + httpCount);
   }
 
