@@ -333,6 +333,8 @@ final class Proto3ZipkinFields {
             break;
           case KIND_KEY:
             int kind = buffer.readVarint32();
+            if (kind == 0) break;
+            if (kind > Span.Kind.values().length) break;
             builder.kind(Span.Kind.values()[kind - 1]);
             break;
           case NAME_KEY:
