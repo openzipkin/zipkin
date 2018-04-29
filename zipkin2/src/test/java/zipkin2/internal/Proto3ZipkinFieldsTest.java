@@ -152,7 +152,22 @@ public class Proto3ZipkinFieldsTest {
   @Test public void span_write_kind() {
     SPAN.write(buf, spanBuilder().kind(Span.Kind.PRODUCER).build());
     assertThat(buf.toByteArray())
-      .contains(0b0100000, atIndex(22)); // (field_number << 3) | wire_type = 4 << 3 | 0
+      .contains(0b0100000, atIndex(22)) // (field_number << 3) | wire_type = 4 << 3 | 0
+      .contains(0b0000011, atIndex(23)); // producer's index is 3
+  }
+
+  @Test public void span_read_kind_tolerant() {
+    assertRoundTrip(spanBuilder().kind(Span.Kind.CONSUMER).build());
+
+    buf.pos = 0;
+    buf.toByteArray()[23] = (byte) (Span.Kind.values().length + 1); // undefined kind
+    assertThat(SPAN.read(buf))
+      .isEqualTo(spanBuilder().build()); // skips undefined kind instead of dying
+
+    buf.pos = 0;
+    buf.toByteArray()[23] = 0; // serialized zero
+    assertThat(SPAN.read(buf))
+      .isEqualTo(spanBuilder().build());
   }
 
   @Test public void span_write_debug() {
