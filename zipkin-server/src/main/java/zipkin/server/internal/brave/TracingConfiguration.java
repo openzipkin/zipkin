@@ -66,6 +66,7 @@ public class TracingConfiguration {
       .metrics(new ReporterMetricsAdapter(metrics.forTransport("local"))).build();
   }
 
+  // Spring Boot uses SLF4J
   @Bean CurrentTraceContext currentTraceContext() {
     return MDCCurrentTraceContext.create(); // puts trace IDs into logs
   }

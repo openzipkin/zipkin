@@ -204,6 +204,7 @@
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
+    <!-- Spring Boot uses SLF4J -->
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-context-slf4j</artifactId>
