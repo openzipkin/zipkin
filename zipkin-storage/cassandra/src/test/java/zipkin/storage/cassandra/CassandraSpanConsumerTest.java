@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,17 +13,11 @@
  */
 package zipkin.storage.cassandra;
 
-import ch.qos.logback.classic.Logger;
-import ch.qos.logback.classic.spi.LoggingEvent;
-import ch.qos.logback.core.Appender;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.Futures;
 import java.util.stream.IntStream;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
-import org.slf4j.LoggerFactory;
 import zipkin.Annotation;
 import zipkin.Constants;
 import zipkin.Span;
@@ -31,33 +25,14 @@ import zipkin.TestObjects;
 
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static zipkin.Constants.CLIENT_RECV;
-import static zipkin.Constants.CLIENT_SEND;
-import static zipkin.TestObjects.APP_ENDPOINT;
 
 abstract class CassandraSpanConsumerTest {
-
-  private final Appender mockAppender = mock(Appender.class);
 
   abstract protected CassandraStorage storage();
 
   @Before
   public void clear() {
     storage().clear();
-    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    when(mockAppender.getName()).thenReturn(CassandraSpanConsumerTest.class.getName());
-    root.addAppender(mockAppender);
-  }
-
-  @After
-  public void tearDown() {
-    Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
-    root.detachAppender(mockAppender);
   }
 
   /**
@@ -80,31 +55,6 @@ abstract class CassandraSpanConsumerTest {
     accept(span);
 
     assertThat(rowCount(Tables.ANNOTATIONS_INDEX)).isZero();
-  }
-
-  @Test
-  public void logTimestampMissingOnClientSend() {
-    Span span = Span.builder().traceId(1L).parentId(1L).id(2L).name("query")
-            .addAnnotation(Annotation.create(0L, CLIENT_SEND, APP_ENDPOINT))
-            .addAnnotation(Annotation.create(0L, CLIENT_RECV, APP_ENDPOINT)).build();
-    accept(span);
-    verify(mockAppender).doAppend(considerSwitchStrategyLog());
-  }
-
-  @Test
-  public void dontLogTimestampMissingOnMidTierServerSpan() {
-    Span span = TestObjects.TRACE.get(0);
-    accept(span);
-    verify(mockAppender, never()).doAppend(considerSwitchStrategyLog());
-  }
-
-  private static Object considerSwitchStrategyLog() {
-    return argThat(new ArgumentMatcher() {
-      @Override
-      public boolean matches(final Object argument) {
-        return ((LoggingEvent)argument).getFormattedMessage().contains("If this happens a lot consider switching back to SizeTieredCompactionStrategy");
-      }
-    });
   }
 
   /**
