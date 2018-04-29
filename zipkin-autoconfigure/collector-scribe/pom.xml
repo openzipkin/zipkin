@@ -57,7 +57,7 @@
           <classifier>module</classifier>
           <!-- exclude dependencies already packaged in zipkin-server -->
           <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
-          <excludeGroupIds>org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson</excludeGroupIds>
+          <excludeGroupIds>org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson,com.google.guava</excludeGroupIds>
           <!-- excludes direct dependency instead of the group id, as otherwise we'd exclude ourselves -->
           <excludeArtifactIds>zipkin</excludeArtifactIds>
         </configuration>
