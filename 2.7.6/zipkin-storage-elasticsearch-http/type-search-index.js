@@ -1,0 +1,1 @@
+typeSearchIndex = [{"p":"zipkin.storage.elasticsearch.http","l":"ElasticsearchHttpStorage"},{"p":"zipkin.storage.elasticsearch.http","l":"ElasticsearchHttpStorage.Builder"},{"p":"zipkin.storage.elasticsearch.http","l":"ElasticsearchHttpStorage.HostsSupplier"}]
