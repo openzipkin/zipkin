@@ -176,6 +176,13 @@
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
       <optional>true</optional>
+      <exclusions>
+        <!-- StandardServletEnvironment fails to load then logging ceases without this -->
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- RabbitMQ Collector -->
