@@ -16,7 +16,7 @@ package zipkin.server.internal;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
-import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,26 +49,10 @@ import static zipkin.TestObjects.LOTS_OF_SPANS;
 public class ITZipkinMetricsHealth {
 
   @Autowired InMemoryStorage storage;
-  @Autowired MeterRegistry registry;
+  @Autowired PrometheusMeterRegistry registry;
   @Value("${local.server.port}") int zipkinPort;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
-
-  static Double readDouble(String json, String jsonPath) {
-    return JsonPath.compile(jsonPath).read(json);
-  }
-
-  static String readString(String json, String jsonPath) {
-    return JsonPath.compile(jsonPath).read(json);
-  }
-
-  static List readJson(String json) throws Exception {
-    ObjectMapper mapper = new ObjectMapper();
-    JsonNode jsonNode = mapper.readTree(json);
-    List<String> fieldsList = new ArrayList<>();
-    jsonNode.fieldNames().forEachRemaining(fieldsList::add);
-    return fieldsList;
-  }
 
   @Before public void init() {
     storage.clear();
@@ -79,7 +63,7 @@ public class ITZipkinMetricsHealth {
       .isTrue();
 
     // ensure we don't track health in prometheus
-    assertThat(getAsString("/prometheus"))
+    assertThat(scrape())
       .doesNotContain("health");
   }
 
@@ -88,7 +72,7 @@ public class ITZipkinMetricsHealth {
       .isTrue();
 
     // ensure we don't track metrics in prometheus
-    assertThat(getAsString("/prometheus"))
+    assertThat(scrape())
       .doesNotContain("metrics");
   }
 
@@ -97,13 +81,9 @@ public class ITZipkinMetricsHealth {
       .isTrue();
 
     // ensure we don't track prometheus, UI requests in prometheus
-    assertThat(getAsString("/prometheus"))
-      .doesNotContain("prometheus");
-
-    assertThat(getAsString("/prometheus"))
-      .doesNotContain("uri=\"/zipkin");
-
-    assertThat(getAsString("/prometheus"))
+    assertThat(scrape())
+      .doesNotContain("prometheus")
+      .doesNotContain("uri=\"/zipkin")
       .doesNotContain("uri=\"/\"");
   }
 
@@ -111,7 +91,7 @@ public class ITZipkinMetricsHealth {
     assertThat(get("/doo-wop").isSuccessful())
       .isFalse();
 
-    assertThat(getAsString("/prometheus"))
+    assertThat(scrape())
       .contains("uri=\"NOT_FOUND\"")
       .doesNotContain("uri=\"/doo-wop");
   }
@@ -120,7 +100,7 @@ public class ITZipkinMetricsHealth {
     assertThat(get("/").isSuccessful())
       .isTrue(); // follows redirects
 
-    assertThat(getAsString("/prometheus"))
+    assertThat(scrape())
       .contains("uri=\"REDIRECTION\"")
       .contains("uri=\"/zipkin/index.html\"")
       .doesNotContain("uri=\"/\"");
@@ -134,7 +114,7 @@ public class ITZipkinMetricsHealth {
     assertThat(get("/api/v1/trace/" + LOTS_OF_SPANS[0].traceIdString()).isSuccessful())
       .isTrue();
 
-    assertThat(getAsString("/prometheus"))
+    assertThat(scrape())
       .contains("uri=\"/api/v1/trace/{traceId}\"")
       .doesNotContain(LOTS_OF_SPANS[0].traceIdString());
   }
@@ -143,9 +123,14 @@ public class ITZipkinMetricsHealth {
     assertThat(get("/zipkin/api/v2/services").isSuccessful())
       .isTrue();
 
-    assertThat(getAsString("/prometheus"))
+    assertThat(scrape())
       .contains("uri=\"/api/v2/services\"")
       .doesNotContain("uri=\"/zipkin/api/v2/services\"");
+  }
+
+  String scrape() throws InterruptedException {
+    Thread.sleep(100);
+    return registry.scrape();
   }
 
   /** Makes sure the prometheus filter doesn't count twice */
@@ -160,21 +145,17 @@ public class ITZipkinMetricsHealth {
     // Get the http count from the registry and it should match the summation previous count
     // and count of calls below
     long httpCount = registry
-      .find("http_request_duration")
+      .find("http.server.requests")
       .tag("uri", "/api/v1/spans")
       .timer()
       .count();
 
-    String prometheus = getAsString("/prometheus");
-
     // ensure unscoped counter does not exist
-    assertThat(prometheus)
-      .doesNotContain("zipkin_collector_spans_total " + messagesCount);
-    assertThat(prometheus)
-      .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount);
-    assertThat(prometheus)
+    assertThat(scrape())
+      .doesNotContain("zipkin_collector_spans_total " + messagesCount)
+      .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount)
       .contains(
-        "http_request_duration_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v1/spans\",} "
+        "http_server_requests_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v1/spans\",} "
           + httpCount);
   }
 
@@ -266,5 +247,21 @@ public class ITZipkinMetricsHealth {
       .url("http://localhost:" + zipkinPort + path)
       .post(RequestBody.create(null, body))
       .build()).execute();
+  }
+
+  static Double readDouble(String json, String jsonPath) {
+    return JsonPath.compile(jsonPath).read(json);
+  }
+
+  static String readString(String json, String jsonPath) {
+    return JsonPath.compile(jsonPath).read(json);
+  }
+
+  static List readJson(String json) throws Exception {
+    ObjectMapper mapper = new ObjectMapper();
+    JsonNode jsonNode = mapper.readTree(json);
+    List<String> fieldsList = new ArrayList<>();
+    jsonNode.fieldNames().forEachRemaining(fieldsList::add);
+    return fieldsList;
   }
 }

@@ -25,6 +25,7 @@ import io.undertow.server.HttpServerExchange;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -40,25 +41,34 @@ import org.springframework.util.StringUtils;
   private static final Tag URI_CROSSROADS = Tag.of("uri", "/zipkin/index.html");
 
   final PrometheusMeterRegistry registry;
+  // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
+  final String metricName;
 
-  ZipkinPrometheusMetricsAutoConfiguration(PrometheusMeterRegistry registry) {
+  ZipkinPrometheusMetricsAutoConfiguration(
+    PrometheusMeterRegistry registry,
+    @Value("${management.metrics.web.server.requests-metric-name:http.server.requests}")
+      String metricName
+  ) {
     this.registry = registry;
+    this.metricName = metricName;
   }
 
   @Bean @Qualifier("httpRequestDurationCustomizer")
   UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer() {
     HttpRequestDurationHandler.Wrapper result =
-      new HttpRequestDurationHandler.Wrapper(registry);
+      new HttpRequestDurationHandler.Wrapper(registry, metricName);
     return info -> info.addInitialHandlerChainWrapper(result);
   }
 
   static final class HttpRequestDurationHandler implements HttpHandler {
     final MeterRegistry registry;
+    final String metricName;
     final HttpHandler next;
     final Clock clock;
 
-    HttpRequestDurationHandler(MeterRegistry registry, HttpHandler next) {
+    HttpRequestDurationHandler(MeterRegistry registry, String metricName, HttpHandler next) {
       this.registry = registry;
+      this.metricName = metricName;
       this.next = next;
       this.clock = registry.config().clock();
     }
@@ -76,7 +86,7 @@ import org.springframework.util.StringUtils;
     }
 
     private Timer.Builder getTimeBuilder(HttpServerExchange exchange) {
-      return Timer.builder("http_request_duration")
+      return Timer.builder(metricName)
         .tags(this.getTags(exchange))
         .description("Response time histogram")
         .publishPercentileHistogram();
@@ -126,13 +136,15 @@ import org.springframework.util.StringUtils;
 
     static final class Wrapper implements HandlerWrapper {
       final MeterRegistry registry;
+      final String metricName;
 
-      Wrapper(MeterRegistry registry) {
+      Wrapper(MeterRegistry registry, String metricName) {
         this.registry = registry;
+        this.metricName = metricName;
       }
 
       @Override public HttpHandler wrap(HttpHandler next) {
-        return new HttpRequestDurationHandler(registry, next);
+        return new HttpRequestDurationHandler(registry, metricName, next);
       }
     }
   }
