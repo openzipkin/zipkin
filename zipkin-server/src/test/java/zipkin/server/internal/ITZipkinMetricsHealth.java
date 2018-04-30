@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.Codec;
 import zipkin.Span;
@@ -38,6 +39,7 @@ import zipkin2.storage.InMemoryStorage;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 import static zipkin.TestObjects.LOTS_OF_SPANS;
 
 @SpringBootTest(
@@ -46,6 +48,7 @@ import static zipkin.TestObjects.LOTS_OF_SPANS;
   properties = "spring.config.name=zipkin-server"
 )
 @RunWith(SpringRunner.class)
+@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 public class ITZipkinMetricsHealth {
 
   @Autowired InMemoryStorage storage;
