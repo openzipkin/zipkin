@@ -55,7 +55,7 @@ public class ITZipkinServer {
   @Autowired InMemoryStorage storage;
   @Value("${local.server.port}") int zipkinPort;
 
-  OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
+  OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
   @Before public void init() {
     storage.clear();
@@ -288,11 +288,16 @@ public class ITZipkinServer {
       .addHeader("X-Forwarded-Port", "444")
       .build();
 
-    Response response = client.newCall(forwarded).execute();
+    Response response = client.newBuilder().followRedirects(false).build()
+      .newCall(forwarded).execute();
 
     // Redirect header should be the proxy, not the backed IP/port
     assertThat(response.header("Location"))
       .isEqualTo("./zipkin/");
+  }
+
+  @Test public void infoEndpointIsAvailable() throws IOException {
+    assertThat(get("/info").isSuccessful()).isTrue();
   }
 
   private Response get(String path) throws IOException {
