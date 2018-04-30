@@ -31,6 +31,8 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
+import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2StorageComponent;
@@ -40,7 +42,7 @@ import zipkin.storage.StorageComponent;
 import zipkin2.storage.InMemoryStorage;
 
 @Configuration
-public class ZipkinServerConfiguration {
+public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Autowired(required = false) @Qualifier("httpTracingCustomizer")
   UndertowDeploymentInfoCustomizer httpTracingCustomizer;
@@ -52,6 +54,11 @@ public class ZipkinServerConfiguration {
   /** Registers health for any components, even those not in this jar. */
   @Bean ZipkinHealthIndicator zipkinHealthIndicator(HealthAggregator healthAggregator) {
     return new ZipkinHealthIndicator(healthAggregator);
+  }
+
+  @Override
+  public void addViewControllers(ViewControllerRegistry registry) {
+    registry.addRedirectViewController("/info", "/actuator/info");
   }
 
   @Bean public UndertowServletWebServerFactory embeddedServletContainerFactory(
