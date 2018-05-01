@@ -27,7 +27,7 @@
     <dependency>
       <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin</artifactId>
-      <version>@project.version@</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -41,7 +41,7 @@
     <dependency>
       <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-server</artifactId>
-      <version>@project.version@</version>
+      <version>${project.version}</version>
       <classifier>exec</classifier>
       <exclusions>
         <!-- TODO: should the exec jar declare dependencies it bundles? -->
