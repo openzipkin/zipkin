@@ -140,7 +140,7 @@ zipkin:
     # Default is "match all websites"
     instrumented: .*
     # URL placed into the <base> tag in the HTML
-    base-path: /zipkin/
+    base-path: /zipkin
 
 server:
   port: ${QUERY_PORT:9411}
