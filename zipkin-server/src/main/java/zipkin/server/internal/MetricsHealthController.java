@@ -20,7 +20,10 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthEndpoint;
+import org.springframework.boot.actuate.health.HealthStatusHttpMapper;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
@@ -30,13 +33,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MetricsHealthController implements WebMvcConfigurer {
   final MeterRegistry meterRegistry;
   final HealthEndpoint healthEndpoint;
+  final HealthStatusHttpMapper statusMapper;
   final CollectorRegistry collectorRegistry;
   final JsonNodeFactory factory = JsonNodeFactory.instance;
 
-  MetricsHealthController(MeterRegistry meterRegistry, HealthEndpoint healthEndpoint,
-    CollectorRegistry collectorRegistry) {
+  MetricsHealthController(
+    MeterRegistry meterRegistry,
+    HealthEndpoint healthEndpoint,
+    HealthStatusHttpMapper statusMapper,
+    CollectorRegistry collectorRegistry
+  ) {
     this.meterRegistry = meterRegistry;
     this.healthEndpoint = healthEndpoint;
+    this.statusMapper = statusMapper;
     this.collectorRegistry = collectorRegistry;
   }
 
@@ -66,11 +75,12 @@ public class MetricsHealthController implements WebMvcConfigurer {
   // Delegates the health endpoint from the Actuator to the root context path and can be deprecated
   // in future in favour of Actuator endpoints
   @GetMapping("/health")
-  public Map getHealth() {
-    Map health = new HashMap();
-    health.put("status", healthEndpoint.health().getStatus().getCode());
-    health.put("zipkin", healthEndpoint.health().getDetails().get("zipkin"));
-    return health;
+  public ResponseEntity<Map> getHealth() {
+    Health health = healthEndpoint.health();
+    Map body = new HashMap();
+    body.put("status", health.getStatus().getCode());
+    body.put("zipkin", health.getDetails().get("zipkin"));
+    return ResponseEntity.status(statusMapper.mapStatus(health.getStatus())).body(body);
   }
 
   // Redirects the prometheus scrape endpoint for backward compatibility
