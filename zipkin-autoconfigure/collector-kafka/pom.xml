@@ -34,6 +34,18 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-collector-kafka</artifactId>
+      <exclusions>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <!-- com.101tec:zkclient has a log4j dep, re-route it with the bridge
+         https://logging.apache.org/log4j/2.x/manual/migration.html -->
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-1.2-api</artifactId>
     </dependency>
   </dependencies>
 </project>

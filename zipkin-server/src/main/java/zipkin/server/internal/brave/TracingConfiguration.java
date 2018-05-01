@@ -14,7 +14,7 @@
 package zipkin.server.internal.brave;
 
 import brave.Tracing;
-import brave.context.slf4j.MDCCurrentTraceContext;
+import brave.context.log4j2.ThreadContextCurrentTraceContext;
 import brave.http.HttpAdapter;
 import brave.http.HttpSampler;
 import brave.http.HttpTracing;
@@ -66,9 +66,8 @@ public class TracingConfiguration {
       .metrics(new ReporterMetricsAdapter(metrics.forTransport("local"))).build();
   }
 
-  // Spring Boot uses SLF4J
   @Bean CurrentTraceContext currentTraceContext() {
-    return MDCCurrentTraceContext.create(); // puts trace IDs into logs
+    return ThreadContextCurrentTraceContext.create(); // puts trace IDs into logs
   }
 
   /** Controls aspects of tracing such as the name that shows up in the UI */

@@ -51,12 +51,12 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-starter-tomcat</artifactId>
-        </exclusion>
-      </exclusions>
+    </dependency>
+
+    <!-- Use log4j 2 instead of SLF4J to allow log4j 1.2 used by Kafka 0.8 to still work -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-log4j2</artifactId>
     </dependency>
 
     <!-- reduces http transport latency -->
@@ -204,10 +204,9 @@
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
-    <!-- Spring Boot uses SLF4J -->
     <dependency>
       <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-context-slf4j</artifactId>
+      <artifactId>brave-context-log4j2</artifactId>
       <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
@@ -286,6 +285,7 @@
         <configuration>
           <classifier>exec</classifier>
           <executable>true</executable>
+          <excludeArtifactIds>logback-classic</excludeArtifactIds>
         </configuration>
       </plugin>
       <!-- disable retrolambda since this module uses java 8 types -->
