@@ -93,16 +93,19 @@ final class KafkaCollectorWorker implements Runnable {
               }
             } else if (bytes[0] == 123) {
               // If the string start with "{", we parse the Json Object, then get specified field
+              String newStr;
               byte[] newBytes;
               Gson gson = new Gson();
               String str = new String(bytes);
               HashMap<String, String> map = new HashMap<>();
               map = gson.fromJson(str, map.getClass());
-              // str = map.get("message");
-			  LOG.debug(field);
-              str = map.get(field);
-              newBytes = str.getBytes();
-              collector.acceptSpans(newBytes, DETECTING_DECODER, NOOP);
+              newStr = map.get(field);
+              if (newStr != null) {
+                newBytes = newStr.getBytes();
+                collector.acceptSpans(newBytes, DETECTING_DECODER, NOOP);
+              } else {
+                LOG.warn("Unexpected json formate, not included field: {}, data: {}", field, str);
+              }
             } else {
               collector.acceptSpans(bytes, DETECTING_DECODER, NOOP);
             }
