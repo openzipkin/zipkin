@@ -113,6 +113,9 @@ zipkin:
       password: ${ES_PASSWORD:}
       http-logging: ${ES_HTTP_LOGGING:}
       legacy-reads-enabled: ${ES_LEGACY_READS_ENABLED:true}
+    kafka:
+      bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
+      topic: ${KAFKA_TOPIC:zipkin}
     mysql:
       host: ${MYSQL_HOST:localhost}
       port: ${MYSQL_TCP_PORT:3306}

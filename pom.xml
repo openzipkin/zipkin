@@ -207,6 +207,18 @@
       </dependency>
 
       <dependency>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-storage-kafka</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-kafka</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-storage-mysql</artifactId>
         <version>${project.version}</version>

@@ -164,6 +164,13 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Kafka storage backend -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-storage-kafka</artifactId>
+      <optional>true</optional>
+    </dependency>
+
     <!-- MySQL backend -->
     <dependency>
       <groupId>${project.groupId}</groupId>
