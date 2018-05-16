@@ -31,18 +31,12 @@ import zipkin2.storage.kafka.KafkaStorage;
 @EnableConfigurationProperties(ZipkinKafkaStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "kafka")
 @ConditionalOnMissingBean(StorageComponent.class)
-// This component is named .*Cassandra3.* even though the package already says cassandra3 because
-// Spring Boot configuration endpoints only printout the simple name of the class
 class ZipkinKafkaStorageAutoConfiguration {
 
   @Bean
   @ConditionalOnMissingBean
   V2StorageComponent storage(ZipkinKafkaStorageProperties properties) {
-    KafkaStorage result = KafkaStorage.newBuilder()
-      .bootstrapServers(properties.getBootstrapServers())
-      .topic(properties.getTopic())
-      .overrides(properties.getOverrides())
-      .build();
+    KafkaStorage result = properties.toBuilder().build();
     return V2StorageComponent.create(result);
   }
 

@@ -13,6 +13,7 @@
  */
 package zipkin.autoconfigure.storage.kafka;
 
+import org.apache.kafka.clients.producer.KafkaProducer;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.storage.kafka.KafkaStorage;
 
@@ -21,13 +22,14 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 @ConfigurationProperties("zipkin.storage.kafka")
-class ZipkinKafkaStorageProperties implements Serializable { // for Spark jobs
+class ZipkinKafkaStorageProperties implements Serializable {
   /** Comma-separated list of Kafka bootstrap servers in the form [host]:[port],... */
   private String bootstrapServers;
   /** Kafka consumer group id used by the collector. */
   private String topic;
   /** Additional Kafka consumer configuration. */
   private Map<String, String> overrides = new LinkedHashMap<>();
+  private KafkaProducer<byte[], byte[]> kafkaProducer;
 
   public String getBootstrapServers() {
     return bootstrapServers;
@@ -58,6 +60,7 @@ class ZipkinKafkaStorageProperties implements Serializable { // for Spark jobs
     if (bootstrapServers != null) result.bootstrapServers(bootstrapServers);
     if (topic != null) result.topic(topic);
     if (overrides != null) result.overrides(overrides);
+    result.createProducer();
     return result;
   }
 

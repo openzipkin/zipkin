@@ -245,6 +245,22 @@ to prevent excessive load, service and span name queries are limited by
 `QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
 today and one for yesterday)
 
+### Kafka Storage
+You can write your spans to Kafka. This allows you to run Zipkin HTTP write-only servers and 
+ultimately send your spans to a [Kafka Collector](../zipkin-autoconfigure/collector-kafka10/). This useful for 
+getting spans out of locked-down environments without having change instrumentation libraries to use Kafka. 
+Reading from Kafka with this storage backend is not possible at this time, nor is it recommended. 
+
+Here is an example of running Kafka storage with `acks=all` enabled:
+```bash
+$ export STORAGE_TYPE=kafka
+$ export QUERY_ENABLED=false
+$ export KAFKA_BOOTSTRAP_SERVERS=localhost:9092
+$ export KAFKA_TOPIC=test_topic
+$ java -Dzipkin.storage.kafka.overrides.acks=all -jar zipkin.jar
+```   
+
+
 ### HTTP Collector
 The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans` and `POST /api/v2/spans`.
 The HTTP collector supports the following configuration:
