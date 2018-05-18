@@ -60,6 +60,7 @@
     -->
     <!-- Version 2.x might conflict w/ Spring Boot's version -->
     <mariadb-java-client.version>1.7.3</mariadb-java-client.version>
+	<postgresql.version>42.2.2</postgresql.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>2.7.9</HikariCP.version>
     <log4j.version>2.11.0</log4j.version>
@@ -86,6 +87,7 @@
     <maven-shade-plugin.version>3.1.0</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>2.21.0</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M1</maven-enforcer-plugin.version>
+	
 
     <!-- Catch common Java mistakes as compile-time errors -->
     <plexus-compiler-javac-errorprone.version>2.8.2</plexus-compiler-javac-errorprone.version>
@@ -215,6 +217,18 @@
       <dependency>
         <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+	<dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-storage-postgresql</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-postgresql</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -447,12 +461,23 @@
         <artifactId>mysql</artifactId>
         <version>${testcontainers.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.testcontainers</groupId>
+        <artifactId>postgresql</artifactId>
+        <version>${testcontainers.version}</version>
+      </dependency>
 
       <dependency>
         <groupId>org.mariadb.jdbc</groupId>
         <artifactId>mariadb-java-client</artifactId>
         <version>${mariadb-java-client.version}</version>
       </dependency>
+	  
+	  <dependency>
+	    <groupId>org.postgresql</groupId>
+	    <artifactId>postgresql</artifactId>
+	    <version>${postgresql.version}</version>
+	</dependency>
 
       <dependency>
         <groupId>com.zaxxer</groupId>
