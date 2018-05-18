@@ -170,6 +170,13 @@
       <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
       <optional>true</optional>
     </dependency>
+	
+	<!-- PostgreSQL backend -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-autoconfigure-storage-postgresql</artifactId>
+      <optional>true</optional>
+    </dependency>
 
     <!-- Kafka Collector -->
     <dependency>

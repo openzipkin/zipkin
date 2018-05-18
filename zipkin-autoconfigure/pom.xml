@@ -44,6 +44,7 @@
     <module>storage-elasticsearch-http</module>
     <module>storage-elasticsearch-aws</module>
     <module>storage-mysql</module>
+	<module>storage-postgresql</module>
     <module>metrics-prometheus</module>
   </modules>
 
