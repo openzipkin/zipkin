@@ -16,7 +16,6 @@ package zipkin2.storage.kafka;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
@@ -26,8 +25,6 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.SpanConsumer;
 
 import java.util.List;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 public class KafkaSpanConsumer implements SpanConsumer {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSpanStore.class);
@@ -45,6 +42,9 @@ public class KafkaSpanConsumer implements SpanConsumer {
     @Override
     public Call<Void> accept(List<Span> spanList) {
       LOG.debug("Storing {} spans into kafka", spanList.size());
+      if (spanList.size() > 0) {
+        LOG.debug("Id of first span: {}", spanList.get(0).id());
+      }
       byte[] messages;
       if (encoding.equals(Encoding.JSON)) {
         messages = SpanBytesEncoder.JSON_V2.encodeList(spanList);
@@ -52,15 +52,16 @@ public class KafkaSpanConsumer implements SpanConsumer {
         LOG.error("Unsupported encoding for kafka storage component: {}", encoding);
         return null; // TODO: Is return null a good idea?
       }
-      Future<RecordMetadata> sent = kafkaProducer.send(new ProducerRecord<>(topic, messages));
-      try {
-        sent.get();
-        return Call.create(null); // TODO: Do we need to more here?
-      } catch (InterruptedException | ExecutionException e) {
-        LOG.error("Failed to send spans to kafka", e);
-      }
-
-      return null;
+      kafkaProducer.send(new ProducerRecord<>(topic, messages), (metadata, e) -> {
+        if(e == null) {
+          LOG.debug("The offset of the record we just sent is: {}", metadata.offset());
+        } else {
+          // TODO: What is the best way to handle errors?
+          LOG.error("Hit exception trying to send span(s)", e);
+          Call.propagateIfFatal(e);
+        }
+      });
+      return Call.create(null); // TODO: Do we need to more here?
     }
 
 }
