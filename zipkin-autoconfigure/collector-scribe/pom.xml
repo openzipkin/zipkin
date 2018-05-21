@@ -34,13 +34,15 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-collector-scribe</artifactId>
-    </dependency>
-    <!-- Avoid javax.validation.ValidationException during tests -->
-    <dependency>
-      <groupId>org.hibernate</groupId>
-      <artifactId>hibernate-validator</artifactId>
-      <version>5.2.4.Final</version>
-      <scope>test</scope>
+      <exclusions>
+        <!-- com.facebook.swift:swift-service brings an old version which
+             leads to javax.validation.ValidationException. Exclude it!
+        -->
+        <exclusion>
+          <groupId>javax.validation</groupId>
+          <artifactId>validation-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
