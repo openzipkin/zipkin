@@ -46,11 +46,16 @@ public class KafkaSpanConsumer implements SpanConsumer {
         LOG.debug("Id of first span: {}", spanList.get(0).id());
       }
       byte[] messages;
-      if (encoding.equals(Encoding.JSON)) {
-        messages = SpanBytesEncoder.JSON_V2.encodeList(spanList);
-      } else {
-        LOG.error("Unsupported encoding for kafka storage component: {}", encoding);
-        return null; // TODO: Is return null a good idea?
+      // TODO: Utest coverage to make sure if `Encoding` is added we fail if this isn't updated
+      switch (encoding) {
+        case JSON:
+          messages = SpanBytesEncoder.JSON_V2.encodeList(spanList);
+          break;
+        case PROTO3:
+          messages = SpanBytesEncoder.PROTO3.encodeList(spanList);
+          break;
+        default:
+          throw new RuntimeException("Unknown encoding for kafka storage component: " + encoding);
       }
       kafkaProducer.send(new ProducerRecord<>(topic, messages), (metadata, e) -> {
         if(e == null) {
