@@ -24,6 +24,7 @@ import zipkin2.codec.Encoding;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.SpanConsumer;
 
+import java.util.Collections;
 import java.util.List;
 
 public class KafkaSpanConsumer implements SpanConsumer {
@@ -45,27 +46,31 @@ public class KafkaSpanConsumer implements SpanConsumer {
       if (spanList.size() > 0) {
         LOG.debug("Id of first span: {}", spanList.get(0).id());
       }
-      byte[] messages;
-      // TODO: Utest coverage to make sure if `Encoding` is added we fail if this isn't updated
-      switch (encoding) {
-        case JSON:
-          messages = SpanBytesEncoder.JSON_V2.encodeList(spanList);
-          break;
-        case PROTO3:
-          messages = SpanBytesEncoder.PROTO3.encodeList(spanList);
-          break;
-        default:
-          throw new RuntimeException("Unknown encoding for kafka storage component: " + encoding);
-      }
-      kafkaProducer.send(new ProducerRecord<>(topic, messages), (metadata, e) -> {
-        if(e == null) {
-          LOG.debug("The offset of the record we just sent is: {}", metadata.offset());
-        } else {
-          // TODO: What is the best way to handle errors?
-          LOG.error("Hit exception trying to send span(s)", e);
-          Call.propagateIfFatal(e);
+
+      // We have to send one span at a time because when spans are received in ground they are usually larger than 1MB
+      for (Span span : spanList) {
+        byte[] message;
+        // TODO: Utest coverage to make sure if `Encoding` is added we fail if this isn't updated
+        switch (encoding) {
+          case JSON:
+            message = SpanBytesEncoder.JSON_V2.encodeList(Collections.singletonList(span));
+            break;
+          case PROTO3:
+            message = SpanBytesEncoder.PROTO3.encodeList(Collections.singletonList(span));
+            break;
+          default:
+            throw new RuntimeException("Unknown encoding for kafka storage component: " + encoding);
         }
-      });
+        kafkaProducer.send(new ProducerRecord<>(topic, message), (metadata, e) -> {
+          if(e == null) {
+            LOG.debug("The offset of the record we just sent is: {}", metadata.offset());
+          } else {
+            // TODO: What is the best way to handle errors?
+            LOG.error("Hit exception trying to send " + spanList.size() + " span(s)", e);
+            Call.propagateIfFatal(e);
+          }
+        });
+      }
       return Call.create(null); // TODO: Do we need to more here?
     }
 
