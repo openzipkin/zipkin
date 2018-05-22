@@ -143,14 +143,8 @@ public abstract class KafkaStorage extends zipkin2.storage.StorageComponent {
   }
 
   CheckResult ensureKafkaReady() {
-        /*Request request = new Request.Builder().url(http().baseUrl.resolve("/_cluster/health/" + index))
-                .tag("get-cluster-health").build();
-
-        try {
-            return http().newCall(request, ReadStatus.INSTANCE).execute();
-        } catch (IOException | RuntimeException e) {
-            return CheckResult.failed(e);
-        }*/
+    // This ensures that all previously send messages completed and is a good gauge of kafka readiness.
+    kafkaProducer().flush();
     return CheckResult.OK;
   }
 
