@@ -13,8 +13,6 @@
  */
 package zipkin2.storage;
 
-import com.google.auto.value.AutoValue;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -152,7 +150,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     for (Span span : spans) {
       long timestamp = span.timestampAsLong();
       String lowTraceId = lowTraceId(span.traceId());
-      TraceIdTimestamp traceIdTimeStamp = TraceIdTimestamp.create(lowTraceId, timestamp);
+      TraceIdTimestamp traceIdTimeStamp = new TraceIdTimestamp(lowTraceId, timestamp);
       spansByTraceIdTimeStamp.put(traceIdTimeStamp, span);
       traceIdToTraceIdTimeStamps.put(lowTraceId, traceIdTimeStamp);
       acceptedSpanCount++;
@@ -171,17 +169,6 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return Call.create(null /* Void == null */);
   }
 
-  @AutoValue
-  static abstract class TraceIdTimestamp {
-    static TraceIdTimestamp create(String traceId, long timestamp) {
-      return new AutoValue_InMemoryStorage_TraceIdTimestamp(traceId, timestamp);
-    }
-
-    abstract String lowTraceId();
-
-    abstract long timestamp();
-  }
-
   /** Returns the count of spans evicted. */
   int evictToRecoverSpans(int spansToRecover) {
     int spansEvicted = 0;
@@ -196,7 +183,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   /** Returns the count of spans evicted. */
   private int deleteOldestTrace() {
     int spansEvicted = 0;
-    String lowTraceId = spansByTraceIdTimeStamp.delegate.lastKey().lowTraceId();
+    String lowTraceId = spansByTraceIdTimeStamp.delegate.lastKey().lowTraceId;
     Collection<TraceIdTimestamp> traceIdTimeStamps = traceIdToTraceIdTimeStamps.remove(lowTraceId);
     for (Iterator<TraceIdTimestamp> traceIdTimeStampIter = traceIdTimeStamps.iterator();
       traceIdTimeStampIter.hasNext(); ) {
@@ -279,8 +266,8 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     if (traceIdTimestamps == null || traceIdTimestamps.isEmpty()) return Collections.emptySet();
     Set<String> result = new LinkedHashSet<>();
     for (TraceIdTimestamp traceIdTimestamp : traceIdTimestamps) {
-      if (traceIdTimestamp.timestamp() >= startTs || traceIdTimestamp.timestamp() <= endTs) {
-        result.add(traceIdTimestamp.lowTraceId());
+      if (traceIdTimestamp.timestamp >= startTs || traceIdTimestamp.timestamp <= endTs) {
+        result.add(traceIdTimestamp.lowTraceId);
       }
     }
     return result;
@@ -357,10 +344,10 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   static final Comparator<TraceIdTimestamp> TIMESTAMP_DESCENDING =
     new Comparator<TraceIdTimestamp>() {
       @Override public int compare(TraceIdTimestamp left, TraceIdTimestamp right) {
-        long x = left.timestamp(), y = right.timestamp();
+        long x = left.timestamp, y = right.timestamp;
         int result = (x < y) ? -1 : ((x == y) ? 0 : 1); // Long.compareTo is JRE 7+
         if (result != 0) return -result; // use negative as we are descending
-        return right.lowTraceId().compareTo(left.lowTraceId());
+        return right.lowTraceId.compareTo(left.lowTraceId);
       }
 
       @Override public String toString() {
@@ -435,7 +422,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     }
   }
 
-  private List<Span> spansByTraceId(String lowTraceId) {
+  List<Span> spansByTraceId(String lowTraceId) {
     List<Span> sameTraceId = new ArrayList<>();
     for (TraceIdTimestamp traceIdTimestamp : traceIdToTraceIdTimeStamps.get(lowTraceId)) {
       sameTraceId.addAll(spansByTraceIdTimeStamp.get(traceIdTimestamp));
@@ -443,7 +430,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return sameTraceId;
   }
 
-  private Collection<TraceIdTimestamp> traceIdTimestampsByServiceName(String serviceName) {
+  Collection<TraceIdTimestamp> traceIdTimestampsByServiceName(String serviceName) {
     List<TraceIdTimestamp> traceIdTimestamps = new ArrayList<>();
     for (String lowTraceId : serviceToTraceIds.get(serviceName)) {
       traceIdTimestamps.addAll(traceIdToTraceIdTimeStamps.get(lowTraceId));
@@ -464,6 +451,34 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return this;
   }
 
-  @Override public void close() throws IOException {
+  @Override public void close() {
+  }
+
+  static final class TraceIdTimestamp {
+    final String lowTraceId;
+    final long timestamp;
+
+    TraceIdTimestamp(String lowTraceId, long timestamp) {
+      this.lowTraceId = lowTraceId;
+      this.timestamp = timestamp;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+      if (o == this) return true;
+      if (!(o instanceof TraceIdTimestamp)) return false;
+      TraceIdTimestamp that = (TraceIdTimestamp) o;
+      return lowTraceId.equals(that.lowTraceId) && timestamp == that.timestamp;
+    }
+
+    @Override
+    public int hashCode() {
+      int h$ = 1;
+      h$ *= 1000003;
+      h$ ^= lowTraceId.hashCode();
+      h$ *= 1000003;
+      h$ ^= (int) ((timestamp >>> 32) ^ timestamp);
+      return h$;
+    }
   }
 }

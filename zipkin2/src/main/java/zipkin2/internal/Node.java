@@ -13,7 +13,6 @@
  */
 package zipkin2.internal;
 
-import com.google.auto.value.AutoValue;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,12 +38,12 @@ import static java.util.logging.Level.FINE;
 public final class Node<V> {
 
   /** Set via {@link #addChild(Node)} */
-  private Node<V> parent;
+  Node<V> parent;
   /** mutable as some transformations, such as clock skew, adjust this. */
-  private V value;
+  V value;
   /** mutable to avoid allocating lists for childless nodes */
-  private List<Node<V>> children = Collections.emptyList();
-  private boolean missingRootDummyNode;
+  List<Node<V>> children = Collections.emptyList();
+  boolean missingRootDummyNode;
 
   /** Returns the parent, or null if root */
   @Nullable public Node<V> parent() {
@@ -161,14 +160,14 @@ public final class Node<V> {
         }
       }
       idToParent.put(id, parentId);
-      entries.add(Entry.create(parentId, id, value));
+      entries.add(new Entry<>(parentId, id, value));
       return true;
     }
 
     void processNode(Entry<V> entry) {
-      String parentId = entry.parentId() != null ? entry.parentId() : idToParent.get(entry.id());
-      String id = entry.id();
-      V value = entry.value();
+      String parentId = entry.parentId != null ? entry.parentId : idToParent.get(entry.id);
+      String id = entry.id;
+      V value = entry.value;
 
       if (parentId == null) {
         if (rootId != null) {
@@ -224,16 +223,27 @@ public final class Node<V> {
     }
   }
 
-  @AutoValue
-  static abstract class Entry<V> {
-    static <V> Entry<V> create(@Nullable String parentId, String id, V value) {
-      return new AutoValue_Node_Entry(parentId, id, value);
+  static final class Entry<V> {
+    @Nullable final String parentId;
+    final String id;
+    final V value;
+
+    Entry(@Nullable String parentId, String id, V value) {
+      if (id == null) throw new NullPointerException("id == null");
+      if (value == null) throw new NullPointerException("value == null");
+      this.parentId = parentId;
+      this.id = id;
+      this.value = value;
     }
 
-    @Nullable abstract String parentId();
+    @Override
+    public String toString() {
+      return "Entry{parentId=" + parentId + ", id=" + id + ", value=" + value + "}";
+    }
+  }
 
-    abstract String id();
-
-    abstract V value();
+  @Override
+  public String toString() {
+    return "Node{parent=" + parent + ", value=" + value + ", children=" + children + "}";
   }
 }

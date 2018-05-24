@@ -13,7 +13,6 @@
  */
 package zipkin2.storage;
 
-import com.google.auto.value.AutoValue;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -37,16 +36,19 @@ import zipkin2.internal.Nullable;
  * microseconds, the grain of {@link Span#timestamp()}. Milliseconds is a more familiar and
  * supported granularity for query, index and windowing functions.
  */
-@AutoValue
-public abstract class QueryRequest {
+public final class QueryRequest {
   /**
    * When present, corresponds to {@link zipkin2.Endpoint#serviceName} and constrains all other
    * parameters.
    */
-  @Nullable public abstract String serviceName();
+  @Nullable public String serviceName() {
+    return serviceName;
+  }
 
   /** When present, only include traces with this {@link Span#name} */
-  @Nullable public abstract String spanName();
+  @Nullable public String spanName() {
+    return spanName;
+  }
 
   /**
    * When an input value is the empty string, include traces whose {@link Span#annotations()}
@@ -55,34 +57,46 @@ public abstract class QueryRequest {
    *
    * <p>Multiple entries are combined with AND, and AND against other conditions.
    */
-  public abstract Map<String, String> annotationQuery();
+  public Map<String, String> annotationQuery(){
+    return annotationQuery;
+  }
 
   /**
    * Only return traces whose {@link Span#duration()} is greater than or equal to minDuration
    * microseconds.
    */
-  @Nullable public abstract Long minDuration();
+  @Nullable public Long minDuration() {
+    return minDuration;
+  }
 
   /**
    * Only return traces whose {@link Span#duration()} is less than or equal to maxDuration
    * microseconds. Only valid with {@link #minDuration}.
    */
-  @Nullable public abstract Long maxDuration();
+  @Nullable public Long maxDuration() {
+    return maxDuration;
+  }
 
   /**
    * Only return traces where all {@link Span#timestamp()} are at or before this time in epoch
    * milliseconds. Defaults to current time.
    */
-  public abstract long endTs();
+  public long endTs() {
+    return endTs;
+  }
 
   /**
    * Only return traces where all {@link Span#timestamp()} are at or after (endTs - lookback) in
    * milliseconds. Defaults to endTs.
    */
-  public abstract long lookback();
+  public long lookback() {
+    return lookback;
+  }
 
   /** Maximum number of traces to return. Defaults to 10 */
-  public abstract int limit();
+  public int limit() {
+    return limit;
+  }
 
   /**
    * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
@@ -103,24 +117,47 @@ public abstract class QueryRequest {
     return result.length() > 0 ? result.toString() : null;
   }
 
-  public abstract Builder toBuilder();
-
-  public static Builder newBuilder() {
-    return new AutoValue_QueryRequest.Builder().annotationQuery(Collections.emptyMap());
+  public Builder toBuilder() {
+    return new Builder(this);
   }
 
-  @AutoValue.Builder
-  public abstract static class Builder {
+  public static Builder newBuilder() {
+    return new Builder();
+  }
+
+  public static final class Builder {
+    String serviceName, spanName;
+    Map<String, String> annotationQuery = Collections.emptyMap();
+    Long minDuration, maxDuration;
+    long endTs, lookback;
+    int limit;
+
+    Builder(QueryRequest source) {
+      serviceName = source.serviceName;
+      spanName = source.spanName;
+      annotationQuery = source.annotationQuery;
+      minDuration = source.minDuration;
+      maxDuration = source.maxDuration;
+      endTs = source.endTs;
+      lookback = source.lookback;
+      limit = source.limit;
+    }
 
     /** @see QueryRequest#serviceName() */
-    public abstract Builder serviceName(@Nullable String serviceName);
+    public Builder serviceName(@Nullable String serviceName) {
+      this.serviceName = serviceName;
+      return this;
+    }
 
     /**
      * This ignores the reserved span name "all".
      *
      * @see QueryRequest#spanName()
      */
-    public abstract Builder spanName(@Nullable String spanName);
+    public Builder spanName(@Nullable String spanName) {
+      this.spanName = spanName;
+      return this;
+    }
 
     /**
      * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
@@ -143,61 +180,73 @@ public abstract class QueryRequest {
     }
 
     /** @see QueryRequest#annotationQuery() */
-    public abstract Builder annotationQuery(Map<String, String> annotationQuery);
+    public Builder annotationQuery(Map<String, String> annotationQuery) {
+      if (annotationQuery == null) throw new NullPointerException("annotationQuery == null");
+      this.annotationQuery = annotationQuery;
+      return this;
+    }
 
     /** @see QueryRequest#minDuration() */
-    public abstract Builder minDuration(@Nullable Long minDuration);
+    public Builder minDuration(@Nullable Long minDuration) {
+      this.minDuration = minDuration;
+      return this;
+    }
 
     /** @see QueryRequest#maxDuration() */
-    public abstract Builder maxDuration(@Nullable Long maxDuration);
+    public Builder maxDuration(@Nullable Long maxDuration) {
+      this.maxDuration = maxDuration;
+      return this;
+    }
 
     /** @see QueryRequest#endTs() */
-    public abstract Builder endTs(long endTs);
+    public Builder endTs(long endTs) {
+      this.endTs = endTs;
+      return this;
+    }
 
     /** @see QueryRequest#lookback() */
-    public abstract Builder lookback(long lookback);
+    public Builder lookback(long lookback) {
+      this.lookback = lookback;
+      return this;
+    }
 
     /** @see QueryRequest#limit() */
-    public abstract Builder limit(int limit);
-
-    // getters for validation
-    @Nullable abstract String serviceName();
-
-    @Nullable abstract String spanName();
-
-    abstract Map<String, String> annotationQuery();
-
-    @Nullable abstract Long minDuration();
-
-    @Nullable abstract Long maxDuration();
-
-    abstract long endTs();
-
-    abstract int limit();
-
-    abstract QueryRequest autoBuild();
+    public Builder limit(int limit) {
+      this.limit = limit;
+      return this;
+    }
 
     public final QueryRequest build() {
       // coerce service and span names to lowercase
-      if (serviceName() != null) serviceName(serviceName().toLowerCase(Locale.ROOT));
-      if (spanName() != null) spanName(spanName().toLowerCase(Locale.ROOT));
+      if (serviceName != null) serviceName = serviceName.toLowerCase(Locale.ROOT);
+      if (spanName != null) spanName = spanName.toLowerCase(Locale.ROOT);
 
       // remove any accidental empty strings
-      annotationQuery().remove("");
-      if ("".equals(serviceName())) serviceName(null);
-      if ("".equals(spanName()) || "all".equals(spanName())) spanName(null);
+      annotationQuery.remove("");
+      if ("".equals(serviceName)) serviceName = null ;
+      if ("".equals(spanName) || "all".equals(spanName)) spanName = null;
 
-      if (endTs() <= 0) throw new IllegalArgumentException("endTs <= 0");
-      if (limit() <= 0) throw new IllegalArgumentException("limit <= 0");
-      if (minDuration() != null) {
-        if (minDuration() <= 0) throw new IllegalArgumentException("minDuration <= 0");
-        if (maxDuration() != null && maxDuration() < minDuration()) {
+      if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
+      if (limit <= 0) throw new IllegalArgumentException("limit <= 0");
+      if (minDuration != null) {
+        if (minDuration <= 0) throw new IllegalArgumentException("minDuration <= 0");
+        if (maxDuration != null && maxDuration < minDuration) {
           throw new IllegalArgumentException("maxDuration < minDuration");
         }
-      } else if (maxDuration() != null) {
+      } else if (maxDuration != null) {
         throw new IllegalArgumentException("maxDuration is only valid with minDuration");
       }
-      return autoBuild();
+
+      return new QueryRequest(
+        serviceName,
+        spanName,
+        annotationQuery,
+        minDuration,
+        maxDuration,
+        endTs,
+        lookback,
+        limit
+      );
     }
 
     Builder() {
@@ -270,6 +319,43 @@ public abstract class QueryRequest {
       && testedDuration;
   }
 
-  QueryRequest() {
+
+  final String serviceName, spanName;
+  final Map<String, String> annotationQuery;
+  final Long minDuration, maxDuration;
+  final long endTs, lookback;
+  final int limit;
+
+  QueryRequest(
+    @Nullable String serviceName,
+    @Nullable String spanName,
+    Map<String, String> annotationQuery,
+    @Nullable Long minDuration,
+    @Nullable Long maxDuration,
+    long endTs,
+    long lookback,
+    int limit) {
+    this.serviceName = serviceName;
+    this.spanName = spanName;
+    this.annotationQuery = annotationQuery;
+    this.minDuration = minDuration;
+    this.maxDuration = maxDuration;
+    this.endTs = endTs;
+    this.lookback = lookback;
+    this.limit = limit;
+  }
+
+  @Override
+  public String toString() {
+    return "QueryRequest{"
+      + "serviceName=" + serviceName + ", "
+      + "spanName=" + spanName + ", "
+      + "annotationQuery=" + annotationQuery + ", "
+      + "minDuration=" + minDuration + ", "
+      + "maxDuration=" + maxDuration + ", "
+      + "endTs=" + endTs + ", "
+      + "lookback=" + lookback + ", "
+      + "limit=" + limit
+      + "}";
   }
 }

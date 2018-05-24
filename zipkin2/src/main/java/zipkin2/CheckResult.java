@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,6 @@
  */
 package zipkin2;
 
-import com.google.auto.value.AutoValue;
 import zipkin2.internal.Nullable;
 
 /**
@@ -25,20 +24,34 @@ import zipkin2.internal.Nullable;
  *
  * @see CheckResult#OK
  */
-@AutoValue
-//@Immutable
-public abstract class CheckResult {
-  public static final CheckResult OK = new AutoValue_CheckResult(true, null);
+// @Immutable
+public final class CheckResult {
+  public static final CheckResult OK = new CheckResult(true, null);
 
   public static CheckResult failed(Throwable error) {
-    return new AutoValue_CheckResult(false, error);
+    return new CheckResult(false, error);
   }
 
-  public abstract boolean ok();
+  public boolean ok() {
+    return ok;
+  }
 
   /** Present when not ok */
-  @Nullable public abstract Throwable error();
+  @Nullable
+  public Throwable error() {
+    return error;
+  }
 
-  CheckResult() {
+  final boolean ok;
+  final Throwable error;
+
+  CheckResult(boolean ok, @Nullable Throwable error) {
+    this.ok = ok;
+    this.error = error;
+  }
+
+  @Override
+  public String toString() {
+    return "CheckResult{ok=" + ok + ", " + "error=" + error + "}";
   }
 }

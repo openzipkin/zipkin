@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -228,8 +228,8 @@ public abstract class Call<V> implements Cloneable {
     final Mapper<V, R> mapper;
     final Call<V> delegate;
 
-    Mapping(Mapper<V, R> Mapper, Call<V> delegate) {
-      this.mapper = Mapper;
+    Mapping(Mapper<V, R> mapper, Call<V> delegate) {
+      this.mapper = mapper;
       this.delegate = delegate;
     }
 
@@ -320,7 +320,7 @@ public abstract class Call<V> implements Cloneable {
       try {
         return delegate.execute();
       } catch (IOException | RuntimeException | Error e) {
-        final AtomicReference ref = new AtomicReference(SENTINEL);
+        final AtomicReference ref = new AtomicReference<>(SENTINEL);
         errorHandler.onErrorReturn(e, new Callback<V>() {
           @Override public void onSuccess(V value) {
             ref.set(value);

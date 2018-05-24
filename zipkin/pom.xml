@@ -143,6 +143,8 @@
             <id>default-jar</id>
             <configuration>
               <archive>
+                <!-- prevents huge pom file from also being added to the jar under META-INF/maven -->
+                <addMavenDescriptor>false</addMavenDescriptor>
                 <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
               </archive>
             </configuration>
