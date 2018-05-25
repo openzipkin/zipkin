@@ -228,6 +228,7 @@ public final class QueryRequest {
 
       if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
       if (limit <= 0) throw new IllegalArgumentException("limit <= 0");
+      if (lookback <= 0) throw new IllegalArgumentException("lookback <= 0");
       if (minDuration != null) {
         if (minDuration <= 0) throw new IllegalArgumentException("minDuration <= 0");
         if (maxDuration != null && maxDuration < minDuration) {
