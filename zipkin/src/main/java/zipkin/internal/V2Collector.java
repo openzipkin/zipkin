@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.filter.SpanFilter;
 import zipkin.storage.Callback;
 import zipkin2.Span;
 import zipkin2.codec.BytesDecoder;
@@ -30,9 +31,9 @@ public final class V2Collector extends Collector<BytesDecoder<Span>, Span> {
   final StorageComponent storage;
   final CollectorSampler sampler;
 
-  public V2Collector(Logger logger, @Nullable CollectorMetrics metrics,
+  public V2Collector(Logger logger, @Nullable CollectorMetrics metrics, List<SpanFilter> filters,
     @Nullable CollectorSampler sampler, StorageComponent storage) {
-    super(logger, metrics);
+    super(logger, metrics, filters);
     this.storage = checkNotNull(storage, "storage");
     this.sampler = sampler == null ? CollectorSampler.ALWAYS_SAMPLE : sampler;
   }

@@ -14,10 +14,12 @@
 package zipkin.internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
 import zipkin.collector.CollectorMetrics;
+import zipkin.filter.SpanFilter;
 import zipkin.storage.Callback;
 
 import static java.lang.String.format;
@@ -28,10 +30,12 @@ public abstract class Collector<D, S> {
 
   protected final Logger logger;
   protected final CollectorMetrics metrics;
+  protected final List<SpanFilter> filters;
 
-  protected Collector(Logger logger, @Nullable CollectorMetrics metrics) {
+  protected Collector(Logger logger, @Nullable CollectorMetrics metrics, List<SpanFilter> filters) {
     this.logger = checkNotNull(logger, "logger");
     this.metrics = metrics == null ? CollectorMetrics.NOOP_METRICS : metrics;
+    this.filters = filters == null ? Collections.EMPTY_LIST : Collections.unmodifiableList(filters);
   }
 
   protected abstract List<S> decodeList(D decoder, byte[] serialized);
@@ -55,12 +59,29 @@ public abstract class Collector<D, S> {
     List<S> spans;
     try {
       spans = decodeList(decoder, serializedSpans);
+      spans = filterSpans(spans, callback);
     } catch (RuntimeException e) {
       callback.onError(errorReading(e));
       return;
     }
     accept(spans, callback);
   }
+
+  /**
+   * Take the list of spans and pump them through pre-configured filters
+   *
+   * @param spans
+   */
+  private List<S> filterSpans(List<S> spans, Callback<Void> callback) {
+    // These should never be processed in parallel.
+    // If you need parallel processing put that into your specific filter implementation.
+    List<S> processed = spans;
+    for (SpanFilter filter : filters) {
+      processed = filter.process(processed, callback);
+    }
+    return processed;
+  }
+
 
   public void accept(List<S> spans, Callback<Void> callback) {
     if (spans.isEmpty()) {

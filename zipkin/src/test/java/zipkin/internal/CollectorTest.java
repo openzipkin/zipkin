@@ -40,7 +40,7 @@ public class CollectorTest {
   Span span2 = ApplyTimestampAndDuration.apply(LOTS_OF_SPANS[1]);
 
   @Before public void setup() throws Exception {
-    collector = spy(new Collector<SpanDecoder, Span>(mock(Logger.class), null) {
+    collector = spy(new Collector<SpanDecoder, Span>(mock(Logger.class), null, null) {
 
       @Override protected List<Span> decodeList(SpanDecoder decoder, byte[] serialized) {
         return decoder.readSpans(serialized);
