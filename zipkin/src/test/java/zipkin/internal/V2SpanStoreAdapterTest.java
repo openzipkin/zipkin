@@ -1,5 +1,5 @@
 /**
- * Copyright 2015-2017 The OpenZipkin Authors
+ * Copyright 2015-2018 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -40,6 +40,7 @@ import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static zipkin.TestObjects.DAY;
 import static zipkin.TestObjects.TODAY;
 
 public class V2SpanStoreAdapterTest {
@@ -436,7 +437,7 @@ public class V2SpanStoreAdapterTest {
       .lookback(60L)
       .limit(100)
       .build()))
-      .isEqualTo(zipkin2.storage.QueryRequest.newBuilder()
+      .isEqualToComparingFieldByField(zipkin2.storage.QueryRequest.newBuilder()
         .serviceName("service")
         .spanName("span")
         .parseAnnotationQuery("annotation and tag=value")
@@ -446,6 +447,19 @@ public class V2SpanStoreAdapterTest {
         .lookback(60L)
         .limit(100)
         .build());
+  }
+
+  @Test public void convert_queryRequest_less() {
+    // from CassandraSpanStoreTest.overFetchesToCompensateForDuplicateIndexData
+    QueryRequest input = QueryRequest.builder()
+      .serviceName("web")
+      .lookback(DAY).limit(2000).build();
+    zipkin2.storage.QueryRequest converted = V2SpanStoreAdapter.convertRequest(input);
+
+    assertThat(converted.serviceName()).isEqualTo(input.serviceName);
+    assertThat(converted.endTs()).isEqualTo(input.endTs);
+    assertThat(converted.lookback()).isEqualTo(input.lookback);
+    assertThat(converted.limit()).isEqualTo(input.limit);
   }
 
   void doEnqueue(Consumer<zipkin2.Callback> answer) {

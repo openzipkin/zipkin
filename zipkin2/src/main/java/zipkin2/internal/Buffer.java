@@ -341,7 +341,7 @@ public final class Buffer {
       if (i == 9 && (b & 0xf0) != 0) {
         throw new IllegalArgumentException("Greater than 64-bit varint at position " + (pos - 1));
       }
-      result |= (long) (b & 0x7f) << i * 7;
+      result |= (long) (b & 0x7f) << (i * 7);
     }
     return result;
   }

@@ -35,18 +35,6 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.google.auto.value</groupId>
-      <artifactId>auto-value</artifactId>
-      <scope>provided</scope>
-    </dependency>
-    <!-- generated code includes Generated annotations! -->
-    <dependency>
-      <groupId>javax.annotation</groupId>
-      <artifactId>javax.annotation-api</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
-    <dependency>
       <groupId>org.jvnet</groupId>
       <artifactId>animal-sniffer-annotation</artifactId>
       <version>1.0</version>
@@ -145,6 +133,8 @@
             <id>default-jar</id>
             <configuration>
               <archive>
+                <!-- prevents huge pom file from also being added to the jar under META-INF/maven -->
+                <addMavenDescriptor>false</addMavenDescriptor>
                 <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
               </archive>
             </configuration>
