@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import zipkin.SpanDecoder;
@@ -60,7 +61,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
   private HttpHandler next;
 
   @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
-    CollectorMetrics metrics, List<SpanFilter> filters) {
+    CollectorMetrics metrics, @Value("#{null}") List<SpanFilter> filters) {
     this.metrics = metrics.forTransport("http");
     this.collector = Collector.builder(getClass())
       .storage(storage).sampler(sampler).metrics(this.metrics).filters(filters).build();
