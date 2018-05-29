@@ -15,6 +15,7 @@ package zipkin.collector;
 
 import java.util.List;
 import zipkin.Component;
+import zipkin.filter.SpanFilter;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.Callback;
 import zipkin.storage.StorageComponent;
@@ -52,6 +53,12 @@ public interface CollectorComponent extends Component {
      * system. Defaults to always sample.
      */
     Builder sampler(CollectorSampler sampler);
+
+    /**
+     * {@link List<zipkin.filter.SpanFilter> is a collection of filter classes that you can optionally plugin.
+     * Defaults to no filtering.
+     */
+    Builder filters(List<SpanFilter> filters);
 
     CollectorComponent build();
   }

@@ -26,6 +26,8 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
+import java.util.Collections;
+
 import static java.util.Arrays.asList;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.eq;

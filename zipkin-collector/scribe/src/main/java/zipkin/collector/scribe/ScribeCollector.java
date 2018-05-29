@@ -21,8 +21,11 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.filter.SpanFilter;
 import zipkin.storage.StorageComponent;
 import zipkin.storage.guava.GuavaSpanConsumer;
+
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
@@ -59,6 +62,12 @@ public final class ScribeCollector implements CollectorComponent {
 
     @Override public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
+      return this;
+    }
+
+    @Override
+    public CollectorComponent.Builder filters(List<SpanFilter> filters) {
+      delegate.filters(filters);
       return this;
     }
 

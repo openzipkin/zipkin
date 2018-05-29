@@ -28,6 +28,7 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.filter.SpanFilter;
 import zipkin.internal.LazyCloseable;
 import zipkin.storage.StorageComponent;
 
@@ -58,6 +59,12 @@ public final class RabbitMQCollector implements CollectorComponent {
 
     @Override public Builder sampler(CollectorSampler sampler) {
       this.delegate.sampler(sampler);
+      return this;
+    }
+
+    @Override
+    public CollectorComponent.Builder filters(List<SpanFilter> filters) {
+      this.delegate.filters(filters);
       return this;
     }
 

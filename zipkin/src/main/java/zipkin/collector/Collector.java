@@ -14,9 +14,12 @@
 package zipkin.collector;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.ServiceLoader;
 import java.util.logging.Logger;
 import zipkin.SpanDecoder;
+import zipkin.filter.SpanFilter;
 import zipkin.internal.DetectingSpanDecoder;
 import zipkin.internal.V2Collector;
 import zipkin.internal.V2JsonSpanDecoder;
@@ -51,6 +54,7 @@ public class Collector
     StorageComponent storage = null;
     CollectorSampler sampler = null;
     CollectorMetrics metrics = null;
+    List<SpanFilter> filters = null;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -74,23 +78,44 @@ public class Collector
       return this;
     }
 
+    /** @see {@link CollectorComponent.Builder#filters(List<SpanFilter>)} */
+    public Builder filters(List<SpanFilter> filters) {
+      if (filters == null) {
+        filters = Collections.emptyList();
+      }
+      /*SpanFilter<Span> filter = null;
+      try {
+        filter = (SpanFilter<Span>)SpanFilter.class.cast(Class.forName("net.afalko.zipkin.filter.ExampleSpanFilter").newInstance());
+      } catch (IllegalAccessException | ClassNotFoundException | InstantiationException e) {
+        throw new RuntimeException("Class not found...", e);
+      }
+      filters.add(filter);*/
+      logger.info("Total filters loaded: " + filters.size());
+
+      this.filters = checkNotNull(filters, "filters");
+      return this;
+    }
+
     public Collector build() {
       return new Collector(this);
     }
   }
 
   final CollectorSampler sampler;
+  final List<SpanFilter> filters;
   final StorageComponent storage;
   final V2Collector storage2;
 
   Collector(Builder builder) {
-    super(builder.logger, builder.metrics);
+    super(builder.logger, builder.metrics, builder.filters);
     this.storage = checkNotNull(builder.storage, "storage");
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
+    this.filters = builder.filters;
     if (storage instanceof V2StorageComponent) {
       storage2 = new V2Collector(
         builder.logger,
         builder.metrics,
+        builder.filters,
         builder.sampler,
         ((V2StorageComponent) storage).delegate()
       );

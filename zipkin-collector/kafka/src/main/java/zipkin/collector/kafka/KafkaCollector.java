@@ -15,6 +15,7 @@ package zipkin.collector.kafka;
 
 import java.io.IOException;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +28,7 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.filter.SpanFilter;
 import zipkin.internal.LazyCloseable;
 import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.StorageComponent;
@@ -63,6 +65,12 @@ public final class KafkaCollector implements CollectorComponent {
 
     @Override public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
+      return this;
+    }
+
+    @Override
+    public CollectorComponent.Builder filters(List<SpanFilter> filters) {
+      delegate.filters(filters);
       return this;
     }
 

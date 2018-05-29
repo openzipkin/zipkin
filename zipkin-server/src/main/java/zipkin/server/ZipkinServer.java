@@ -15,6 +15,7 @@ package zipkin.server;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.annotation.ComponentScan;
 import zipkin.server.internal.RegisterZipkinHealthIndicators;
 
 @SpringBootApplication
