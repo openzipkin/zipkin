@@ -22,6 +22,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import static com.google.gson.stream.JsonToken.BOOLEAN;
+import static com.google.gson.stream.JsonToken.NULL;
+import static com.google.gson.stream.JsonToken.STRING;
 import static java.lang.String.format;
 
 /**
@@ -97,8 +100,16 @@ public final class JsonCodec {
       return delegate.nextInt();
     }
 
+    public boolean peekString() throws IOException {
+      return delegate.peek() == STRING;
+    }
+
+    public boolean peekBoolean() throws IOException {
+      return delegate.peek() == BOOLEAN;
+    }
+
     public boolean peekNull() throws IOException {
-      return delegate.peek() == com.google.gson.stream.JsonToken.NULL;
+      return delegate.peek() == NULL;
     }
 
     @Override public String toString() {

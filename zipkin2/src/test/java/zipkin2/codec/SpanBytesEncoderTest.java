@@ -31,13 +31,13 @@ import static zipkin2.TestObjects.FRONTEND;
  * in {@link Proto3SpanWriterTest}.
  */
 public class SpanBytesEncoderTest {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
+  public static final Charset UTF_8 = Charset.forName("UTF-8");
 
   /**
    * Similar to {@link TestObjects#CLIENT_SPAN} except with fixed timestamps to ensure easy testing
    * of json literals.
    */
-  static final Span SPAN = Span.newBuilder()
+  public static final Span SPAN = Span.newBuilder()
     .traceId("7180c278b62e8f6a216a2aea45d08fc9")
     .parentId("6b221d5bc9e6496c")
     .id("5b4185666d50f68b")
@@ -54,7 +54,7 @@ public class SpanBytesEncoderTest {
     .build();
 
   // service name is surrounded by control characters
-  static final Span UTF8_SPAN = Span.newBuilder().traceId("1").id("1")
+  public static final Span UTF8_SPAN = Span.newBuilder().traceId("1").id("1")
     // name is terrible
     .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
     // annotation value includes some json newline characters
@@ -63,7 +63,7 @@ public class SpanBytesEncoderTest {
     .putTag("\"foo", "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
     .build();
 
-  static final Span NO_ANNOTATIONS_ROOT_SERVER_SPAN = Span.newBuilder()
+  public static final Span NO_ANNOTATIONS_ROOT_SERVER_SPAN = Span.newBuilder()
     .traceId("dc955a1d4768875d")
     .id("dc955a1d4768875d")
     .name("get")
@@ -77,6 +77,18 @@ public class SpanBytesEncoderTest {
     .putTag("http.path", "/rs/A")
     .putTag("location", "T67792")
     .putTag("other", "A")
+    .build();
+
+  public static final Span LOCAL_SPAN = Span.newBuilder()
+    .traceId("dc955a1d4768875d")
+    .id("dc955a1d4768875d")
+    .name("encode")
+    .timestamp(1510256710021866L)
+    .duration(1117L)
+    .localEndpoint(Endpoint.newBuilder()
+      .serviceName("isao01")
+      .ip("10.23.14.72")
+      .build())
     .build();
 
   Span span = SPAN;
@@ -96,6 +108,23 @@ public class SpanBytesEncoderTest {
   @Test public void span_PROTO3() {
     assertThat(SpanBytesEncoder.PROTO3.encode(span))
       .hasSize(182);
+  }
+
+  @Test public void localSpan_JSON_V1() {
+    assertThat(new String(SpanBytesEncoder.JSON_V1.encode(LOCAL_SPAN), UTF_8))
+        .isEqualTo(
+            "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"name\":\"encode\",\"timestamp\":1510256710021866,\"duration\":1117,\"binaryAnnotations\":[{\"key\":\"lc\",\"value\":\"\",\"endpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}]}");
+  }
+
+  @Test public void localSpan_JSON_V2() {
+    assertThat(new String(SpanBytesEncoder.JSON_V2.encode(LOCAL_SPAN), UTF_8))
+        .isEqualTo(
+            "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"name\":\"encode\",\"timestamp\":1510256710021866,\"duration\":1117,\"localEndpoint\":{\"serviceName\":\"isao01\",\"ipv4\":\"10.23.14.72\"}}");
+  }
+
+  @Test public void localSpan_PROTO3() {
+    assertThat(SpanBytesEncoder.PROTO3.encode(LOCAL_SPAN))
+      .hasSize(58);
   }
 
   @Test public void span_64bitTraceId_JSON_V1() {
