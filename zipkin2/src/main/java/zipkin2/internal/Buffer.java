@@ -27,7 +27,7 @@ public final class Buffer {
     buf = new byte[size];
   }
 
-  Buffer(byte[] buf, int pos) {
+  public Buffer(byte[] buf, int pos) {
     this.buf = buf;
     this.pos = pos;
   }
@@ -49,7 +49,7 @@ public final class Buffer {
    * <p>Originally based on http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
    * <p>Later, ASCII run and malformed surrogate logic borrowed from okio.Utf8
    */
-  static int utf8SizeInBytes(String string) {
+  public static int utf8SizeInBytes(String string) {
     int sizeInBytes = 0;
     for (int i = 0, len = string.length(); i < len; i++) {
       char ch = string.charAt(i);
@@ -358,6 +358,10 @@ public final class Buffer {
     }
     pos = nextPos;
     return true;
+  }
+
+  public int pos() {
+    return pos;
   }
 
   public byte[] toByteArray() {

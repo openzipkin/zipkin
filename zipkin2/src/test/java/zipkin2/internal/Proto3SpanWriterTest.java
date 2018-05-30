@@ -25,6 +25,15 @@ public class Proto3SpanWriterTest {
 
   Proto3SpanWriter writer = new Proto3SpanWriter();
 
+  /** proto messages always need a key, so the non-list form is just a single-field */
+  @Test public void write_startsWithSpanKeyAndLengthPrefix() {
+    byte[] buff = writer.write(CLIENT_SPAN);
+
+    assertThat(buff)
+      .hasSize(writer.sizeInBytes(CLIENT_SPAN))
+      .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));
+  }
+
   @Test public void writeList_startsWithSpanKeyAndLengthPrefix() {
     byte[] buff = writer.writeList(asList(CLIENT_SPAN));
 

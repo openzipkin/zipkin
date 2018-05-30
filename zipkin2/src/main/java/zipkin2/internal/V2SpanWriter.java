@@ -61,7 +61,7 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
       int length = value.annotations().size();
       if (length > 1) sizeInBytes += length - 1; // comma to join elements
       for (int i = 0; i < length; i++) {
-        sizeInBytes += annotationSizeInBytes(value.annotations().get(i), null);
+        sizeInBytes += annotationSizeInBytes(value.annotations().get(i), 0);
       }
     }
     if (!value.tags().isEmpty()) {
@@ -195,11 +195,11 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     b.writeByte('}');
   }
 
-  static int annotationSizeInBytes(Annotation value, @Nullable Integer endpointSizeInBytes) {
+  static int annotationSizeInBytes(Annotation value, int endpointSizeInBytes) {
     int sizeInBytes = 25; // {"timestamp":,"value":""}
     sizeInBytes += asciiSizeInBytes(value.timestamp());
     sizeInBytes += jsonEscapedSizeInBytes(value.value());
-    if (endpointSizeInBytes != null) {
+    if (endpointSizeInBytes != 0) {
       sizeInBytes += 12; // ,"endpoint":
       sizeInBytes += endpointSizeInBytes;
     }

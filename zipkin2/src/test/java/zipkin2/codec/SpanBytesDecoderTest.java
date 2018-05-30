@@ -24,6 +24,7 @@ import zipkin2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
+import static zipkin2.codec.SpanBytesEncoderTest.LOCAL_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.UTF8_SPAN;
@@ -42,6 +43,16 @@ public class SpanBytesDecoderTest {
   @Test public void spanRoundTrip_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(span)))
       .isEqualTo(span);
+  }
+
+  @Test public void localSpanRoundTrip_JSON_V2() {
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(LOCAL_SPAN)))
+      .isEqualTo(LOCAL_SPAN);
+  }
+
+  @Test public void localSpanRoundTrip_PROTO3() {
+    assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(LOCAL_SPAN)))
+      .isEqualTo(LOCAL_SPAN);
   }
 
   @Test public void spanRoundTrip_64bitTraceId_JSON_V2() {
