@@ -17,6 +17,7 @@ import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import com.squareup.moshi.Types;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -56,8 +57,13 @@ final class HttpV2SpanStore implements SpanStore {
     maybeAddQueryParam(url, "endTs", request.endTs());
     maybeAddQueryParam(url, "lookback", request.lookback());
     maybeAddQueryParam(url, "limit", request.limit());
-    return factory.newCall(new Request.Builder().url(url.build()).build(),
-      content -> JsonCodec.readList(new SpanListReader(), content.readByteArray()));
+    return factory.newCall(
+        new Request.Builder().url(url.build()).build(),
+        content -> {
+          List<List<Span>> result = new ArrayList<>();
+          JsonCodec.readList(new SpanListReader(), content.readByteArray(), result);
+          return result;
+        });
   }
 
   @Override public Call<List<Span>> getTrace(String traceId) {

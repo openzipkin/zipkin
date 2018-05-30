@@ -80,8 +80,10 @@ public final class DependencyLinker {
    * @param spans spans where all spans have the same trace id
    */
   public DependencyLinker putTrace(Iterator<Span> spans) {
+    List<Span> list = new ArrayList<>();
     if (!spans.hasNext()) return this;
     Span first = spans.next();
+    list.add(first);
     if (logger.isLoggable(FINE)) logger.fine("linking trace " + first.traceId());
 
     // Build a tree based on spanId and parentId values
@@ -89,6 +91,7 @@ public final class DependencyLinker {
     builder.addNode(first.parentId(), first.id(), first);
     while (spans.hasNext()) {
       Span next = spans.next();
+      list.add(next);
       builder.addNode(next.parentId(), next.id(), next);
     }
 

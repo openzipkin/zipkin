@@ -22,8 +22,8 @@ import zipkin2.Span;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 
-public class V1SpanWriterTest {
-  V1SpanWriter writer = new V1SpanWriter();
+public class V1JsonSpanWriterTest {
+  V1JsonSpanWriter writer = new V1JsonSpanWriter();
   Buffer buf = new Buffer(2048); // bigger than needed to test sizeOf
 
   @Test

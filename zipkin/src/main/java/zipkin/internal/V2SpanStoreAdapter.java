@@ -185,6 +185,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
     INSTANCE;
 
     @Override public List<zipkin.Span> map(List<Span> spans) {
+      if (spans == null) return null;
       List<zipkin.Span> span1s = CorrectForClockSkew.apply(MergeById.apply(toSpans(spans)));
       return (span1s.isEmpty()) ? null : span1s;
     }
@@ -198,6 +199,7 @@ final class V2SpanStoreAdapter implements zipkin.storage.SpanStore, AsyncSpanSto
     INSTANCE;
 
     @Override public List<zipkin.Span> map(List<Span> spans) {
+      if (spans == null) return null;
       List<zipkin.Span> span1s = toSpans(spans);
       return (span1s.isEmpty()) ? null : span1s;
     }
