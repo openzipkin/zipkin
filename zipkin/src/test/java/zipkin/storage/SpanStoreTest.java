@@ -537,7 +537,7 @@ public abstract class SpanStoreTest {
   }
 
   /**
-   * Spans and traces are meaningless unless they have a timestamp. While unlikley, this could
+   * Spans and traces are meaningless unless they have a timestamp. While unlikely, this could
    * happen if a binary annotation is logged before a timestamped one is.
    */
   @Test
@@ -614,7 +614,7 @@ public abstract class SpanStoreTest {
    */
   @Test
   public void getTraces_differentiateOnServiceName() {
-    Span trace1 = Span.builder().traceId(1).name("get").id(1)
+    Span trace1 = Span.builder().traceId(1).name("1").id(1)
         .timestamp((TODAY + 1) * 1000)
         .duration(3000L)
         .addAnnotation(Annotation.create((TODAY + 1) * 1000, CLIENT_SEND, WEB_ENDPOINT))
@@ -626,7 +626,7 @@ public abstract class SpanStoreTest {
         .addBinaryAnnotation(BinaryAnnotation.create("web-b", "web", WEB_ENDPOINT))
         .build();
 
-    Span trace2 = Span.builder().traceId(2).name("get").id(2)
+    Span trace2 = Span.builder().traceId(2).name("2").id(2)
         .timestamp((TODAY + 11) * 1000)
         .duration(3000L)
         .addAnnotation(Annotation.create((TODAY + 11) * 1000, CLIENT_SEND, APP_ENDPOINT))

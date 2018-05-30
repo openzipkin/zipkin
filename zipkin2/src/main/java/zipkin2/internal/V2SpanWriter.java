@@ -23,9 +23,10 @@ import static zipkin2.internal.Buffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
-//@Immutable
+// @Immutable
 public final class V2SpanWriter implements Buffer.Writer<Span> {
-  @Override public int sizeInBytes(Span value) {
+  @Override
+  public int sizeInBytes(Span value) {
     int sizeInBytes = 13; // {"traceId":""
     sizeInBytes += value.traceId().length();
     if (value.parentId() != null) {
@@ -50,18 +51,19 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     }
     if (value.localEndpoint() != null) {
       sizeInBytes += 17; // ,"localEndpoint":
-      sizeInBytes += endpointSizeInBytes(value.localEndpoint());
+      sizeInBytes += endpointSizeInBytes(value.localEndpoint(), false);
     }
     if (value.remoteEndpoint() != null) {
       sizeInBytes += 18; // ,"remoteEndpoint":
-      sizeInBytes += endpointSizeInBytes(value.remoteEndpoint());
+      sizeInBytes += endpointSizeInBytes(value.remoteEndpoint(), false);
     }
     if (!value.annotations().isEmpty()) {
       sizeInBytes += 17; // ,"annotations":[]
       int length = value.annotations().size();
       if (length > 1) sizeInBytes += length - 1; // comma to join elements
       for (int i = 0; i < length; i++) {
-        sizeInBytes += annotationSizeInBytes(value.annotations().get(i), 0);
+        Annotation a = value.annotations().get(i);
+        sizeInBytes += annotationSizeInBytes(a.timestamp(), a.value(), 0);
       }
     }
     if (!value.tags().isEmpty()) {
@@ -83,7 +85,8 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return ++sizeInBytes; // }
   }
 
-  @Override public void write(Span value, Buffer b) {
+  @Override
+  public void write(Span value, Buffer b) {
     b.writeAscii("{\"traceId\":\"").writeAscii(value.traceId()).writeByte('"');
     if (value.parentId() != null) {
       b.writeAscii(",\"parentId\":\"").writeAscii(value.parentId()).writeByte('"');
@@ -103,17 +106,18 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     }
     if (value.localEndpoint() != null) {
       b.writeAscii(",\"localEndpoint\":");
-      writeEndpoint(value.localEndpoint(), b);
+      writeEndpoint(value.localEndpoint(), b, false);
     }
     if (value.remoteEndpoint() != null) {
       b.writeAscii(",\"remoteEndpoint\":");
-      writeEndpoint(value.remoteEndpoint(), b);
+      writeEndpoint(value.remoteEndpoint(), b, false);
     }
     if (!value.annotations().isEmpty()) {
       b.writeAscii(",\"annotations\":");
       b.writeByte('[');
       for (int i = 0, length = value.annotations().size(); i < length; ) {
-        writeAnnotation(value.annotations().get(i++), null, b);
+        Annotation a = value.annotations().get(i++);
+        writeAnnotation(a.timestamp(), a.value(), null, b);
         if (i < length) b.writeByte(',');
       }
       b.writeByte(']');
@@ -138,15 +142,18 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     b.writeByte('}');
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return "Span";
   }
 
-  static int endpointSizeInBytes(Endpoint value) {
+  static int endpointSizeInBytes(Endpoint value, boolean writeEmptyServiceName) {
     int sizeInBytes = 1; // {
-    if (value.serviceName() != null) {
+    String serviceName = value.serviceName();
+    if (serviceName == null && writeEmptyServiceName) serviceName = "";
+    if (serviceName != null) {
       sizeInBytes += 16; // "serviceName":""
-      sizeInBytes += jsonEscapedSizeInBytes(value.serviceName());
+      sizeInBytes += jsonEscapedSizeInBytes(serviceName);
     }
     if (value.ipv4() != null) {
       if (sizeInBytes != 1) sizeInBytes++; // ,
@@ -167,12 +174,14 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return ++sizeInBytes; // }
   }
 
-  static void writeEndpoint(Endpoint value, Buffer b) {
+  static void writeEndpoint(Endpoint value, Buffer b, boolean writeEmptyServiceName) {
     b.writeByte('{');
     boolean wroteField = false;
-    if (value.serviceName() != null) {
+    String serviceName = value.serviceName();
+    if (serviceName == null && writeEmptyServiceName) serviceName = "";
+    if (serviceName != null) {
       b.writeAscii("\"serviceName\":\"");
-      b.writeUtf8(jsonEscape(value.serviceName())).writeByte('"');
+      b.writeUtf8(jsonEscape(serviceName)).writeByte('"');
       wroteField = true;
     }
     if (value.ipv4() != null) {
@@ -195,10 +204,10 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     b.writeByte('}');
   }
 
-  static int annotationSizeInBytes(Annotation value, int endpointSizeInBytes) {
+  static int annotationSizeInBytes(long timestamp, String value, int endpointSizeInBytes) {
     int sizeInBytes = 25; // {"timestamp":,"value":""}
-    sizeInBytes += asciiSizeInBytes(value.timestamp());
-    sizeInBytes += jsonEscapedSizeInBytes(value.value());
+    sizeInBytes += asciiSizeInBytes(timestamp);
+    sizeInBytes += jsonEscapedSizeInBytes(value);
     if (endpointSizeInBytes != 0) {
       sizeInBytes += 12; // ,"endpoint":
       sizeInBytes += endpointSizeInBytes;
@@ -206,10 +215,10 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return sizeInBytes;
   }
 
-  static void writeAnnotation(Annotation value, @Nullable byte[] endpointBytes, Buffer b) {
-    b.writeAscii("{\"timestamp\":").writeAscii(value.timestamp());
-    b.writeAscii(",\"value\":\"").writeUtf8(jsonEscape(value.value())).writeByte('"');
-    if (endpointBytes != null) b.writeAscii(",\"endpoint\":").write(endpointBytes);
+  static void writeAnnotation(long timestamp, String value, @Nullable byte[] endpoint, Buffer b) {
+    b.writeAscii("{\"timestamp\":").writeAscii(timestamp);
+    b.writeAscii(",\"value\":\"").writeUtf8(jsonEscape(value)).writeByte('"');
+    if (endpoint != null) b.writeAscii(",\"endpoint\":").write(endpoint);
     b.writeByte('}');
   }
 }

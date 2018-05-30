@@ -57,6 +57,6 @@ public interface BytesDecoder<T> {
    */
   boolean decodeList(byte[] serialized, Collection<T> out);
 
-  /** Convenience method for {@link #decode(byte[], Collection)} */
+  /** Convenience method for {@link #decodeList(byte[], Collection)} */
   List<T> decodeList(byte[] serialized);
 }

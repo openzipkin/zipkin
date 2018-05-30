@@ -18,7 +18,8 @@ import zipkin2.Span;
 import zipkin2.internal.Buffer;
 import zipkin2.internal.JsonCodec;
 import zipkin2.internal.Proto3Codec;
-import zipkin2.internal.V1SpanWriter;
+import zipkin2.internal.V1JsonSpanWriter;
+import zipkin2.internal.V1ThriftSpanWriter;
 import zipkin2.internal.V2SpanWriter;
 
 /** Limited interface needed by those writing span reporters */
@@ -26,72 +27,112 @@ import zipkin2.internal.V2SpanWriter;
 public enum SpanBytesEncoder implements BytesEncoder<Span> {
   /** Corresponds to the Zipkin v1 json format (with tags as binary annotations) */
   JSON_V1 {
-    final Buffer.Writer<Span> writer = new V1SpanWriter();
-
-    @Override public Encoding encoding() {
+    @Override
+    public Encoding encoding() {
       return Encoding.JSON;
     }
 
-    @Override public int sizeInBytes(Span input) {
-      return writer.sizeInBytes(input);
+    @Override
+    public int sizeInBytes(Span input) {
+      return new V1JsonSpanWriter().sizeInBytes(input);
     }
 
-    @Override public byte[] encode(Span span) {
-      return JsonCodec.write(writer, span);
+    @Override
+    public byte[] encode(Span span) {
+      return JsonCodec.write(new V1JsonSpanWriter(), span);
     }
 
-    @Override public byte[] encodeList(List<Span> spans) {
-      return JsonCodec.writeList(writer, spans);
+    @Override
+    public byte[] encodeList(List<Span> spans) {
+      return JsonCodec.writeList(new V1JsonSpanWriter(), spans);
     }
 
-    @Override public int encodeList(List<Span> spans, byte[] out, int pos) {
-      return JsonCodec.writeList(writer, spans, out, pos);
+    @Override
+    public int encodeList(List<Span> spans, byte[] out, int pos) {
+      return JsonCodec.writeList(new V1JsonSpanWriter(), spans, out, pos);
+    }
+  },
+  /** Corresponds to the Zipkin v1 thrift format */
+  THRIFT {
+    @Override
+    public Encoding encoding() {
+      return Encoding.THRIFT;
+    }
+
+    @Override
+    public int sizeInBytes(Span input) {
+      return new V1ThriftSpanWriter().sizeInBytes(input);
+    }
+
+    @Override
+    public byte[] encode(Span span) {
+      return new V1ThriftSpanWriter().write(span);
+    }
+
+    @Override
+    public byte[] encodeList(List<Span> spans) {
+      return new V1ThriftSpanWriter().writeList(spans);
+    }
+
+    @Override
+    public int encodeList(List<Span> spans, byte[] out, int pos) {
+      return new V1ThriftSpanWriter().writeList(spans, out, pos);
     }
   },
   /** Corresponds to the Zipkin v2 json format */
   JSON_V2 {
     final Buffer.Writer<Span> writer = new V2SpanWriter();
 
-    @Override public Encoding encoding() {
+    @Override
+    public Encoding encoding() {
       return Encoding.JSON;
     }
 
-    @Override public int sizeInBytes(Span input) {
+    @Override
+    public int sizeInBytes(Span input) {
       return writer.sizeInBytes(input);
     }
 
-    @Override public byte[] encode(Span span) {
+    @Override
+    public byte[] encode(Span span) {
       return JsonCodec.write(writer, span);
     }
 
-    @Override public byte[] encodeList(List<Span> spans) {
+    @Override
+    public byte[] encodeList(List<Span> spans) {
       return JsonCodec.writeList(writer, spans);
     }
 
-    @Override public int encodeList(List<Span> spans, byte[] out, int pos) {
+    @Override
+    public int encodeList(List<Span> spans, byte[] out, int pos) {
       return JsonCodec.writeList(writer, spans, out, pos);
     }
   },
   PROTO3 {
     final Proto3Codec codec = new Proto3Codec();
 
-    @Override public Encoding encoding() {
+    @Override
+    public Encoding encoding() {
       return Encoding.PROTO3;
     }
 
-    @Override public int sizeInBytes(Span input) {
+    @Override
+    public int sizeInBytes(Span input) {
       return codec.sizeInBytes(input);
     }
 
-    @Override public byte[] encode(Span span) {
+    @Override
+    public byte[] encode(Span span) {
       return codec.write(span);
     }
 
-    @Override public byte[] encodeList(List<Span> spans) {
+    @Override
+    public byte[] encodeList(List<Span> spans) {
       return codec.writeList(spans);
     }
 
-    @Override public int encodeList(List<Span> spans, byte[] out, int pos) {
+    @Override
+    public int encodeList(List<Span> spans, byte[] out, int pos) {
       return codec.writeList(spans, out, pos);
     }
   };

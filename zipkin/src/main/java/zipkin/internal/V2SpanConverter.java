@@ -488,13 +488,6 @@ public final class V2SpanConverter {
     return result.build();
   }
 
-  static boolean endTimestampReflectsSpanDuration(Annotation end, zipkin.Span source) {
-    return end != null
-      && source.timestamp != null
-      && source.duration != null
-      && source.timestamp + source.duration == end.timestamp;
-  }
-
   static List<zipkin.Span> toSpans(List<Span> spans) {
     if (spans.isEmpty()) return Collections.emptyList();
     int length = spans.size();

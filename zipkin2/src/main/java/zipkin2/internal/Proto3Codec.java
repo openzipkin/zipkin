@@ -13,16 +13,14 @@
  */
 package zipkin2.internal;
 
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import zipkin2.Span;
 
 import static java.lang.String.format;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
-//@Immutable
+// @Immutable
 public final class Proto3Codec {
 
   final Proto3SpanWriter writer = new Proto3SpanWriter();
@@ -74,12 +72,6 @@ public final class Proto3Codec {
       throw exceptionReading("List<Span>", e);
     }
     return true;
-  }
-
-  public static List<Span> readList(byte[] bytes) {
-    List<Span> out = new ArrayList<>();
-    if (!readList(bytes, out)) return Collections.emptyList();
-    return out;
   }
 
   static IllegalArgumentException exceptionReading(String type, Exception e) {
