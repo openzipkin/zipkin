@@ -17,6 +17,14 @@ import java.util.List;
 import zipkin.Span;
 import zipkin.SpanDecoder;
 
+/**
+ * Detecting decoder used in transports which don't include means to identify the type of the data.
+ *
+ * <p>For example, we can identify the encoding and also the format in http via the request path and
+ * content-type. However, in Kafka it could be that folks send mixed Zipkin data without identifying
+ * its format. For example, Kafka historically has no content-type and users don't always segregate
+ * different queues by instrumentation format.
+ */
 // In TBinaryProtocol encoding, the first byte is the TType, in a range 0-16
 // .. If the first byte isn't in that range, it isn't a thrift.
 //
@@ -29,12 +37,29 @@ import zipkin.SpanDecoder;
 // .. When serializing a List[ThriftSpan], the first byte is the member type, TType.STRUCT(12)
 // .. As ThriftSpan has no STRUCT fields: so, if the first byte is TType.STRUCT(12), it is a list.
 public final class DetectingSpanDecoder implements SpanDecoder {
-  /** zipkin v2 will have this tag, and others won't. */
-  static final byte[] LOCAL_ENDPOINT_TAG = "\"localEndpoint\"".getBytes(Util.UTF_8);
+  /**
+   * Zipkin v2 json will have "localEndpoint" or "remoteEndpoint" fields, and others won't.
+   *
+   * <p>Note: Technically, it is also possible that one can thwart this by creating an binary
+   * annotation of type string with a name or value literally ending in Endpoint. This would be
+   * strange, especially as the convention to identify a local endpoint is the key "lc". To prevent
+   * a secondary check, this scenario is also ignored.
+   */
+  static final byte[] ENDPOINT_FIELD_SUFFIX = "Endpoint\"".getBytes(Util.UTF_8);
+
+  /**
+   * Technically, it is possible to have a v2 span with no endpoints. This should catch the case
+   * where someone reported a tag without reporting the "localEndpoint".
+   *
+   * <p>Note: we don't check for annotations as that exists in both v1 and v2 formats.
+   */
+  static final byte[] TAGS_FIELD = {'"', 't', 'a', 'g', 's', '"'};
+
   static final SpanDecoder JSON2_DECODER = new V2JsonSpanDecoder();
   static final SpanDecoder PROTO3_DECODER = new V2Proto3SpanDecoder();
 
-  @Override public Span readSpan(byte[] span) {
+  @Override
+  public Span readSpan(byte[] span) {
     SpanDecoder decoder = detectFormat(span);
     if (span[0] == 12 /* List[ThriftSpan] */ || span[0] == '[') {
       throw new IllegalArgumentException("Expected json or thrift object, not list encoding");
@@ -42,7 +67,8 @@ public final class DetectingSpanDecoder implements SpanDecoder {
     return decoder.readSpan(span);
   }
 
-  @Override public List<Span> readSpans(byte[] span) {
+  @Override
+  public List<Span> readSpans(byte[] span) {
     SpanDecoder decoder = detectFormat(span);
     if (span[0] != 12 /* List[ThriftSpan] */ && !protobuf3(span) && span[0] != '[') {
       throw new IllegalArgumentException("Expected json, proto3 or thrift list encoding");
@@ -58,16 +84,22 @@ public final class DetectingSpanDecoder implements SpanDecoder {
     } else if (bytes[0] != '[' && bytes[0] != '{') {
       throw new IllegalArgumentException("Could not detect the span format");
     }
+    if (contains(bytes, ENDPOINT_FIELD_SUFFIX)) return JSON2_DECODER;
+    if (contains(bytes, TAGS_FIELD)) return JSON2_DECODER;
+    return SpanDecoder.JSON_DECODER;
+  }
+
+  static boolean contains(byte[] bytes, byte[] subsequence) {
     bytes:
-    for (int i = 0; i < bytes.length - LOCAL_ENDPOINT_TAG.length + 1; i++) {
-      for (int j = 0; j < LOCAL_ENDPOINT_TAG.length; j++) {
-        if (bytes[i + j] != LOCAL_ENDPOINT_TAG[j]) {
+    for (int i = 0; i < bytes.length - subsequence.length + 1; i++) {
+      for (int j = 0; j < subsequence.length; j++) {
+        if (bytes[i + j] != subsequence[j]) {
           continue bytes;
         }
       }
-      return JSON2_DECODER;
+      return true;
     }
-    return SpanDecoder.JSON_DECODER;
+    return false;
   }
 
   /* span key or trace ID key */
