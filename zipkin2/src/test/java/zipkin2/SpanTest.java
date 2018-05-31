@@ -159,4 +159,44 @@ public class SpanTest {
     assertThat(new ObjectInputStream(buffer.inputStream()).readObject())
       .isEqualTo(span);
   }
+
+  @Test public void traceIdFromLong() {
+    assertThat(base.toBuilder().traceId(0L, 12345678L).build().traceId())
+      .isEqualTo("0000000000bc614e");
+  }
+
+  @Test public void traceIdFromLong_128() {
+    assertThat(base.toBuilder().traceId(1234L, 5678L).build().traceId())
+      .isEqualTo("00000000000004d2000000000000162e");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void traceIdFromLong_invalid() {
+    base.toBuilder().traceId(0, 0);
+  }
+
+  @Test public void parentIdFromLong() {
+    assertThat(base.toBuilder().parentId(3405691582L).build().parentId())
+      .isEqualTo("00000000cafebabe");
+  }
+
+  @Test public void parentIdFromLong_zeroSameAsNull() {
+    assertThat(base.toBuilder().parentId(0L).build().parentId())
+      .isNull();
+  }
+
+  @Test public void idFromLong() {
+    assertThat(base.toBuilder().id(3405691582L).build().id())
+      .isEqualTo("00000000cafebabe");
+  }
+
+  @Test public void idFromLong_minValue() {
+    assertThat(base.toBuilder().id(Long.MAX_VALUE).build().id())
+      .isEqualTo("7fffffffffffffff");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void idFromLong_invalid() {
+    base.toBuilder().id(0);
+  }
 }
