@@ -723,6 +723,10 @@
         <configuration>
           <!-- session.executionRootDirectory resolves properly even with nested modules -->
           <header>${main.basedir}/src/etc/header.txt</header>
+          <mapping>
+            <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
+            <java>SLASHSTAR_STYLE</java>
+          </mapping>
           <excludes>
             <exclude>.travis.yml</exclude>
             <exclude>.editorconfig</exclude>
