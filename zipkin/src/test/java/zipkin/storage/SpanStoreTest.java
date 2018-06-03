@@ -222,7 +222,7 @@ public abstract class SpanStoreTest {
     List<String> spanNames = new ArrayList<>();
     for (int i = 0; i < 50; i++) {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
-      accept(span1.toBuilder().id(i).name("yak" + suffix).build());
+      accept(span1.toBuilder().id(i + 1).name("yak" + suffix).build());
       spanNames.add("yak" + suffix);
     }
 
@@ -249,7 +249,7 @@ public abstract class SpanStoreTest {
       String suffix = i < 10 ? "0" + i : String.valueOf(i);
       BinaryAnnotation yak =
           BinaryAnnotation.address("sa", Endpoint.create("yak" + suffix, 127 << 24 | 1));
-      accept(span1.toBuilder().id(i).addBinaryAnnotation(yak).build());
+      accept(span1.toBuilder().id(i + 1).addBinaryAnnotation(yak).build());
       serviceNames.add("yak" + suffix);
     }
 
