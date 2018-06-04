@@ -25,8 +25,8 @@ import zipkin2.Call;
 import zipkin2.Callback;
 
 /**
- * Similar to {@link ListenableFutureCall} except it takes advantage of special 'get' hooks on
- * {@link com.datastax.driver.core.ResultSetFuture}.
+ * Future call pattern that takes advantage of special 'get' hooks on {@link
+ * com.datastax.driver.core.ResultSetFuture}.
  */
 // some copy/pasting is ok here as debugging is obscured when the type hierarchy gets deep.
 public abstract class ResultSetFutureCall extends Call.Base<ResultSet> {
@@ -35,14 +35,17 @@ public abstract class ResultSetFutureCall extends Call.Base<ResultSet> {
 
   volatile ListenableFuture<ResultSet> future;
 
-  @Override protected ResultSet doExecute() throws IOException {
+  @Override
+  protected ResultSet doExecute() throws IOException {
     return getUninterruptibly(future = newFuture());
   }
 
-  @Override protected void doEnqueue(Callback<ResultSet> callback) {
+  @Override
+  protected void doEnqueue(Callback<ResultSet> callback) {
     // Similar to Futures.addCallback except doesn't double-wrap
     class CallbackListener implements Runnable {
-      @Override public void run() {
+      @Override
+      public void run() {
         try {
           callback.onSuccess(getUninterruptibly(future));
         } catch (RuntimeException | Error e) {
@@ -54,12 +57,14 @@ public abstract class ResultSetFutureCall extends Call.Base<ResultSet> {
     (future = newFuture()).addListener(new CallbackListener(), DirectExecutor.INSTANCE);
   }
 
-  @Override protected void doCancel() {
+  @Override
+  protected void doCancel() {
     ListenableFuture<ResultSet> maybeFuture = future;
     if (maybeFuture != null) maybeFuture.cancel(true);
   }
 
-  @Override protected final boolean doIsCanceled() {
+  @Override
+  protected final boolean doIsCanceled() {
     ListenableFuture<ResultSet> maybeFuture = future;
     return maybeFuture != null && maybeFuture.isCancelled();
   }

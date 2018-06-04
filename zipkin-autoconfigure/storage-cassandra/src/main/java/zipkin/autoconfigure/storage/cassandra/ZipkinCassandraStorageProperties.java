@@ -16,7 +16,7 @@ package zipkin.autoconfigure.storage.cassandra;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin.storage.cassandra.CassandraStorage;
+import zipkin2.storage.cassandra.v1.CassandraStorage;
 
 @ConfigurationProperties("zipkin.storage.cassandra")
 class ZipkinCassandraStorageProperties implements Serializable { // for Spark jobs
@@ -160,7 +160,7 @@ class ZipkinCassandraStorageProperties implements Serializable { // for Spark jo
   }
 
   public CassandraStorage.Builder toBuilder() {
-    return CassandraStorage.builder()
+    return CassandraStorage.newBuilder()
         .keyspace(keyspace)
         .contactPoints(contactPoints)
         .localDc(localDc)
