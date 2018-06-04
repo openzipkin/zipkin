@@ -182,8 +182,8 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-storage-cassandra</artifactId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-storage-cassandra-v1</artifactId>
         <version>${project.version}</version>
       </dependency>
 

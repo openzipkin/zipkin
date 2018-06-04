@@ -21,14 +21,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.storage.StorageComponent;
-import zipkin.storage.cassandra.CassandraStorage;
-import zipkin.storage.cassandra.SessionFactory;
+import zipkin.internal.V2StorageComponent;
+import zipkin2.storage.StorageComponent;
+import zipkin2.storage.cassandra.v1.CassandraStorage;
+import zipkin2.storage.cassandra.v1.SessionFactory;
 
 /**
- * This storage accepts Cassandra logs in a specified category. Each log entry is expected to contain
- * a single span, which is TBinaryProtocol big-endian, then base64 encoded. Decoded spans are stored
- * asynchronously.
+ * This storage accepts Cassandra logs in a specified category. Each log entry is expected to
+ * contain a single span, which is TBinaryProtocol big-endian, then base64 encoded. Decoded spans
+ * are stored asynchronously.
  */
 @Configuration
 @EnableConfigurationProperties(ZipkinCassandraStorageProperties.class)
@@ -40,11 +41,23 @@ class ZipkinCassandraStorageAutoConfiguration {
   @Qualifier("tracingSessionFactory")
   SessionFactory tracingSessionFactory;
 
-  @Bean StorageComponent storage(ZipkinCassandraStorageProperties properties,
-      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
-    CassandraStorage.Builder builder = properties.toBuilder().strictTraceId(strictTraceId);
-    return tracingSessionFactory == null
-        ? builder.build()
-        : builder.sessionFactory(tracingSessionFactory).build();
+  @Bean
+  @ConditionalOnMissingBean
+  V2StorageComponent storage(
+      ZipkinCassandraStorageProperties properties,
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled) {
+    CassandraStorage.Builder builder =
+        properties.toBuilder().strictTraceId(strictTraceId).searchEnabled(searchEnabled);
+    CassandraStorage result =
+        tracingSessionFactory == null
+            ? builder.build()
+            : builder.sessionFactory(tracingSessionFactory).build();
+    return V2StorageComponent.create(result);
+  }
+
+  @Bean
+  CassandraStorage v2Storage(V2StorageComponent component) {
+    return (CassandraStorage) component.delegate();
   }
 }

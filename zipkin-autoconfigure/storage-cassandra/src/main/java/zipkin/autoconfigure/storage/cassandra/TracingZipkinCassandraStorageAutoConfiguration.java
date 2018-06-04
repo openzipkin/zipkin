@@ -20,7 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import zipkin.storage.cassandra.SessionFactory;
+import zipkin2.storage.cassandra.v1.SessionFactory;
 
 /** Sets up the Cassandra tracing in Brave as an initialization. */
 @ConditionalOnBean(Tracing.class)
