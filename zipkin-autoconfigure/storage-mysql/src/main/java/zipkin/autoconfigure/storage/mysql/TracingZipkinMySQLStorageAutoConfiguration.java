@@ -32,7 +32,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import zipkin.autoconfigure.storage.mysql.ZipkinMySQLStorageProperties;
 import zipkin2.Endpoint;
 
 /** Sets up the MySQL tracing in Brave as an initialization. */

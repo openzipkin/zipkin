@@ -206,8 +206,8 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-storage-mysql</artifactId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-storage-mysql-v1</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -467,10 +467,6 @@
         <exclusions>
           <exclusion>
             <groupId>io.zipkin.zipkin2</groupId>
-            <artifactId>zipkin</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>${project.groupId}</groupId>
             <artifactId>zipkin</artifactId>
           </exclusion>
         </exclusions>

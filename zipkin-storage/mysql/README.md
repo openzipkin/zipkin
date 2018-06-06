@@ -34,7 +34,7 @@ That said, all integration tests run on pull request via Travis.
 ## Exploring Zipkin Data
 
 When troubleshooting, it is important to note that zipkin ids are encoded as hex.
-If you want to view data in mysql, you'll need to use the hex function accordingly. 
+If you want to view data in mysql, you'll need to use the hex function accordingly.
 
 For example, all the below query the same trace using different tools:
 * zipkin-ui: `http://1.2.3.4:9411/traces/27960dafb1ea7454`
@@ -89,6 +89,6 @@ $ mysql -uroot -Dzipkin < zipkin-storage/mysql/src/main/resources/mysql.sql
 ## Generating the schema types
 
 ```bash
-$ rm -rf zipkin-storage/mysql/src/main/java/zipkin/storage/mysql/internal/generated/
-$ ./mvnw -pl :zipkin-storage-mysql clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
+$ rm -rf rm -rf zipkin-storage/mysql/src/main/java/zipkin2/storage/mysql/v1/internal/generated/
+$ ./mvnw -pl :zipkin-storage-mysql-v1 clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
 ```
