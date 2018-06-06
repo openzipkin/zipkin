@@ -25,8 +25,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import zipkin.storage.StorageComponent;
-import zipkin.storage.mysql.MySQLStorage;
+import zipkin2.storage.StorageComponent;
+import zipkin2.storage.mysql.v1.MySQLStorage;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinMySQLStorageProperties.class)
@@ -53,7 +53,7 @@ class ZipkinMySQLStorageAutoConfiguration {
 
   @Bean StorageComponent storage(Executor executor, DataSource dataSource,
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
-    return MySQLStorage.builder()
+    return MySQLStorage.newBuilder()
         .strictTraceId(strictTraceId)
         .executor(executor)
         .datasource(dataSource)
