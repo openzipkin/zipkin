@@ -22,11 +22,11 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class DoesntCrashWhenKafkaZooKeeperIsDownTest {
+public class DoesntCrashWhenKafkaBrokerIsDownTest {
 
   @Rule
   public ExecJarRule zipkin = new ExecJarRule()
-      .putEnvironment("KAFKA_ZOOKEEPER", "idontexist");
+      .putEnvironment("KAFKA_BOOTSTRAP_SERVERS", "idontexist");
 
   @Test
   public void startsButReturnsFailedHealthCheck() {

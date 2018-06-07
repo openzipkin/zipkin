@@ -272,41 +272,34 @@ Property | Environment Variable | Description
 A collector supporting Scribe is available as an external module. See
 [zipkin-autoconfigure/collector-scribe](../zipkin-autoconfigure/collector-scribe/).
 
-### Kafka (Modern) Collector
-This defaul collector remains a legacy Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
+### Kafka Collector
+The Kafka collector is enabled when `KAFKA_BOOTSTRAP_SERVERS` is set to
+a v0.10+ server. The following apply and are further documented [here](../zipkin-autoconfigure/collector-kafka/).
 
-A collector supporting Kafka versions 0.10 and later is available as an external module. See
-[zipkin-autoconfigure/collector-kafka](../zipkin-autoconfigure/collector-kafka/).
 
-The following apply when `KAFKA_ZOOKEEPER` is set:
-
-    * `KAFKA_TOPIC`: Topic zipkin spans will be consumed from. Defaults to "zipkin". When Kafka 0.10 is in use, multiple topics may be specified if comma delimited.
-    * `KAFKA_STREAMS`: Count of threads/streams consuming the topic. Defaults to 1
-
-Settings below correspond to "Old Consumer Configs" in [Kafka documentation](http://kafka.apache.org/documentation.html)
-
-Variable | Old Consumer Config | Description
+Variable | New Consumer Config | Description
 --- | --- | ---
-KAFKA_ZOOKEEPER | zookeeper.connect | The zookeeper connect string, ex. 127.0.0.1:2181. No default
-KAFKA_GROUP_ID | group.id | The consumer group this process is consuming on behalf of. Defaults to "zipkin"
-KAFKA_MAX_MESSAGE_SIZE | fetch.message.max.bytes | Maximum size of a message containing spans in bytes. Defaults to 1 MiB
+`KAFKA_BOOTSTRAP_SERVERS` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
+`KAFKA_GROUP_ID` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
+`KAFKA_TOPIC` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
+`KAFKA_STREAMS` | N/A | Count of threads consuming the topic. Defaults to `1`
 
 Example usage:
 
 ```bash
-$ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -jar zipkin.jar
 ```
 
 Example targeting Kafka running in Docker:
 
 ```bash
-$ export KAFKA_ZOOKEEPER=$(docker-machine ip `docker-machine active`)
+$ export KAFKA_BOOTSTRAP_SERVERS=$(docker-machine ip `docker-machine active`)
 # Run Kafka in the background
-$ docker run -d -p 2181:2181 -p 9092:9092 \
-    --env ADVERTISED_HOST=$KAFKA_ZOOKEEPER \
+$ docker run -d -p 9092:9092 \
+    --env ADVERTISED_HOST=$KAFKA_BOOTSTRAP_SERVERS \
     --env AUTO_CREATE_TOPICS=true \
     spotify/kafka
-# Start the zipkin server, which reads $KAFKA_ZOOKEEPER
+# Start the zipkin server, which reads $KAFKA_BOOTSTRAP_SERVERS
 $ java -jar zipkin.jar
 ```
 
@@ -320,8 +313,12 @@ For example, to override "overrides.auto.offset.reset", you can set a
 prefixed system property:
 
 ```bash
-$ KAFKA_ZOOKEEPER=127.0.0.1:2181 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
 ```
+
+#### Kafka (Legacy) Collector
+The default collector is for Kafka 0.10.x+ brokers. You can use Kafka
+0.8 brokers via an external module. See [zipkin-autoconfigure/collector-kafka08](../zipkin-autoconfigure/collector-kafka08/).
 
 ### RabbitMQ collector
 The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set.

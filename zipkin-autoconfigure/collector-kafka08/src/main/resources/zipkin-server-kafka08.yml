@@ -1,0 +1,7 @@
+zipkin:
+  collector:
+    kafka:
+      # ZooKeeper host string, comma-separated host:port value.
+      zookeeper: ${KAFKA_ZOOKEEPER:}
+      # Maximum size of a message containing spans in bytes
+      max-message-size: ${KAFKA_MAX_MESSAGE_SIZE:1048576}
