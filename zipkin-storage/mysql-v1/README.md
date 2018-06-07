@@ -1,6 +1,6 @@
-# storage-mysql
+# storage-mysql-v1
 
-This MySQL storage component includes a blocking `SpanStore` and span consumer function.
+This MySQL (Legacy) storage component includes a blocking `SpanStore` and span consumer function.
 `SpanStore.getDependencies()` aggregates dependency links on-demand.
 
 The implementation uses JOOQ to generate MySQL SQL commands. It is only tested on MySQL 5.6-5.7.
@@ -16,7 +16,7 @@ This module conditionally runs integration tests against a local MySQL instance.
 You minimally need to export the variable `MYSQL_USER` to run tests.
 Ex.
 ```
-$ MYSQL_USER=root ./mvnw clean install -pl :zipkin-storage-mysql
+$ MYSQL_USER=root ./mvnw clean install -pl :zipkin-storage-mysql-v1
 ```
 
 If you run tests via Maven or otherwise without specifying `MYSQL_USER`,
@@ -83,12 +83,12 @@ $ mysql -uroot -e "show global variables like 'innodb_file_format'"
 
 # install the schema and indexes
 $ mysql -uroot -e "create database if not exists zipkin"
-$ mysql -uroot -Dzipkin < zipkin-storage/mysql/src/main/resources/mysql.sql
+$ mysql -uroot -Dzipkin < zipkin-storage/mysql-v1/src/main/resources/mysql.sql
 ```
 
 ## Generating the schema types
 
 ```bash
-$ rm -rf rm -rf zipkin-storage/mysql/src/main/java/zipkin2/storage/mysql/v1/internal/generated/
+$ rm -rf rm -rf zipkin-storage/mysql-v1/src/main/java/zipkin2/storage/mysql/v1/internal/generated/
 $ ./mvnw -pl :zipkin-storage-mysql-v1 clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
 ```

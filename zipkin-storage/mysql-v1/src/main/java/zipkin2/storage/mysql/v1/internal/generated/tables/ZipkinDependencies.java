@@ -52,7 +52,7 @@ import zipkin2.storage.mysql.v1.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinDependencies extends TableImpl<Record> {
 
-    private static final long serialVersionUID = 1870027917;
+    private static final long serialVersionUID = -2000554329;
 
     /**
      * The reference instance of <code>zipkin.zipkin_dependencies</code>
@@ -134,7 +134,7 @@ public class ZipkinDependencies extends TableImpl<Record> {
      */
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.ZIPKIN_DEPENDENCIES_DAY, Indexes.ZIPKIN_DEPENDENCIES_DAY_2);
+        return Arrays.<Index>asList(Indexes.ZIPKIN_DEPENDENCIES_DAY);
     }
 
     /**
@@ -142,7 +142,7 @@ public class ZipkinDependencies extends TableImpl<Record> {
      */
     @Override
     public List<UniqueKey<Record>> getKeys() {
-        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_DEPENDENCIES_DAY, Keys.KEY_ZIPKIN_DEPENDENCIES_DAY_2);
+        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_DEPENDENCIES_DAY);
     }
 
     /**

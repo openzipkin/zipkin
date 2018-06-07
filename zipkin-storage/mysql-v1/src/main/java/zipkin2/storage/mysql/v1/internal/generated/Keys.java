@@ -52,11 +52,8 @@ public class Keys {
     // -------------------------------------------------------------------------
 
     public static final UniqueKey<Record> KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH = UniqueKeys0.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH;
-    public static final UniqueKey<Record> KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4 = UniqueKeys0.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4;
     public static final UniqueKey<Record> KEY_ZIPKIN_DEPENDENCIES_DAY = UniqueKeys0.KEY_ZIPKIN_DEPENDENCIES_DAY;
-    public static final UniqueKey<Record> KEY_ZIPKIN_DEPENDENCIES_DAY_2 = UniqueKeys0.KEY_ZIPKIN_DEPENDENCIES_DAY_2;
     public static final UniqueKey<Record> KEY_ZIPKIN_SPANS_TRACE_ID_HIGH = UniqueKeys0.KEY_ZIPKIN_SPANS_TRACE_ID_HIGH;
-    public static final UniqueKey<Record> KEY_ZIPKIN_SPANS_TRACE_ID_HIGH_4 = UniqueKeys0.KEY_ZIPKIN_SPANS_TRACE_ID_HIGH_4;
 
     // -------------------------------------------------------------------------
     // FOREIGN KEY definitions
@@ -69,10 +66,7 @@ public class Keys {
 
     private static class UniqueKeys0 {
         public static final UniqueKey<Record> KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH = Internal.createUniqueKey(ZipkinAnnotations.ZIPKIN_ANNOTATIONS, "KEY_zipkin_annotations_trace_id_high", ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TIMESTAMP);
-        public static final UniqueKey<Record> KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4 = Internal.createUniqueKey(ZipkinAnnotations.ZIPKIN_ANNOTATIONS, "KEY_zipkin_annotations_trace_id_high_4", ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.TRACE_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.SPAN_ID, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_KEY, ZipkinAnnotations.ZIPKIN_ANNOTATIONS.A_TIMESTAMP);
         public static final UniqueKey<Record> KEY_ZIPKIN_DEPENDENCIES_DAY = Internal.createUniqueKey(ZipkinDependencies.ZIPKIN_DEPENDENCIES, "KEY_zipkin_dependencies_day", ZipkinDependencies.ZIPKIN_DEPENDENCIES.DAY, ZipkinDependencies.ZIPKIN_DEPENDENCIES.PARENT, ZipkinDependencies.ZIPKIN_DEPENDENCIES.CHILD);
-        public static final UniqueKey<Record> KEY_ZIPKIN_DEPENDENCIES_DAY_2 = Internal.createUniqueKey(ZipkinDependencies.ZIPKIN_DEPENDENCIES, "KEY_zipkin_dependencies_day_2", ZipkinDependencies.ZIPKIN_DEPENDENCIES.DAY, ZipkinDependencies.ZIPKIN_DEPENDENCIES.PARENT, ZipkinDependencies.ZIPKIN_DEPENDENCIES.CHILD);
         public static final UniqueKey<Record> KEY_ZIPKIN_SPANS_TRACE_ID_HIGH = Internal.createUniqueKey(ZipkinSpans.ZIPKIN_SPANS, "KEY_zipkin_spans_trace_id_high", ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID, ZipkinSpans.ZIPKIN_SPANS.ID);
-        public static final UniqueKey<Record> KEY_ZIPKIN_SPANS_TRACE_ID_HIGH_4 = Internal.createUniqueKey(ZipkinSpans.ZIPKIN_SPANS, "KEY_zipkin_spans_trace_id_high_4", ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID, ZipkinSpans.ZIPKIN_SPANS.ID);
     }
 }

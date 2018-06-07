@@ -51,7 +51,7 @@ import zipkin2.storage.mysql.v1.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinAnnotations extends TableImpl<Record> {
 
-    private static final long serialVersionUID = -1052872924;
+    private static final long serialVersionUID = -711861568;
 
     /**
      * The reference instance of <code>zipkin.zipkin_annotations</code>
@@ -163,7 +163,7 @@ public class ZipkinAnnotations extends TableImpl<Record> {
      */
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.ZIPKIN_ANNOTATIONS_A_KEY, Indexes.ZIPKIN_ANNOTATIONS_A_KEY_2, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE_2, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_5, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_6);
+        return Arrays.<Index>asList(Indexes.ZIPKIN_ANNOTATIONS_A_KEY, Indexes.ZIPKIN_ANNOTATIONS_A_TYPE, Indexes.ZIPKIN_ANNOTATIONS_ENDPOINT_SERVICE_NAME, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_3);
     }
 
     /**
@@ -171,7 +171,7 @@ public class ZipkinAnnotations extends TableImpl<Record> {
      */
     @Override
     public List<UniqueKey<Record>> getKeys() {
-        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH, Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH_4);
+        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_ANNOTATIONS_TRACE_ID_HIGH);
     }
 
     /**

@@ -51,7 +51,7 @@ import zipkin2.storage.mysql.v1.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinSpans extends TableImpl<Record> {
 
-    private static final long serialVersionUID = 2695945;
+    private static final long serialVersionUID = -1337310437;
 
     /**
      * The reference instance of <code>zipkin.zipkin_spans</code>
@@ -148,7 +148,7 @@ public class ZipkinSpans extends TableImpl<Record> {
      */
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_NAME_2, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_START_TS_2, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_3, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_4, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_5, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_6);
+        return Arrays.<Index>asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_2, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH_3);
     }
 
     /**
@@ -156,7 +156,7 @@ public class ZipkinSpans extends TableImpl<Record> {
      */
     @Override
     public List<UniqueKey<Record>> getKeys() {
-        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_SPANS_TRACE_ID_HIGH, Keys.KEY_ZIPKIN_SPANS_TRACE_ID_HIGH_4);
+        return Arrays.<UniqueKey<Record>>asList(Keys.KEY_ZIPKIN_SPANS_TRACE_ID_HIGH);
     }
 
     /**
