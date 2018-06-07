@@ -30,13 +30,12 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
-import zipkin.internal.Nullable;
-import zipkin.internal.V2StorageComponent;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
@@ -57,37 +56,32 @@ public class ZipkinQueryApiV2 {
   volatile int serviceCount; // used as a threshold to start returning cache-control headers
 
   ZipkinQueryApiV2(
-    zipkin.storage.StorageComponent storage,
-    @Value("${zipkin.storage.type:mem}") String storageType,
-    @Value("${zipkin.query.lookback:86400000}") long defaultLookback, // 1 day in millis
-    @Value("${zipkin.query.names-max-age:300}") int namesMaxAge // 5 minutes
-  ) {
-    if (storage instanceof V2StorageComponent) {
-      this.storage = ((V2StorageComponent) storage).delegate();
-    } else {
-      this.storage = null;
-    }
+      StorageComponent storage,
+      @Value("${zipkin.storage.type:mem}") String storageType,
+      @Value("${zipkin.query.lookback:86400000}") long defaultLookback, // 1 day in millis
+      @Value("${zipkin.query.names-max-age:300}") int namesMaxAge // 5 minutes
+      ) {
+    this.storage = storage;
     this.storageType = storageType;
     this.defaultLookback = defaultLookback;
     this.namesMaxAge = namesMaxAge;
   }
 
-  @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
+  @RequestMapping(
+      value = "/dependencies",
+      method = RequestMethod.GET,
+      produces = APPLICATION_JSON_VALUE)
   public byte[] getDependencies(
-    @RequestParam(value = "endTs", required = true) long endTs,
-    @Nullable @RequestParam(value = "lookback", required = false) Long lookback
-  ) throws IOException {
-    if (storage == null) throw new Version2StorageNotConfigured();
-
-    Call<List<DependencyLink>> call = storage.spanStore()
-      .getDependencies(endTs, lookback != null ? lookback : defaultLookback);
+      @RequestParam(value = "endTs", required = true) long endTs,
+      @Nullable @RequestParam(value = "lookback", required = false) Long lookback)
+      throws IOException {
+    Call<List<DependencyLink>> call =
+        storage.spanStore().getDependencies(endTs, lookback != null ? lookback : defaultLookback);
     return DependencyLinkBytesEncoder.JSON_V1.encodeList(call.execute());
   }
 
   @RequestMapping(value = "/services", method = RequestMethod.GET)
   public ResponseEntity<List<String>> getServiceNames() throws IOException {
-    if (storage == null) throw new Version2StorageNotConfigured();
-
     List<String> serviceNames = storage.spanStore().getServiceNames().execute();
     serviceCount = serviceNames.size();
     return maybeCacheNames(serviceNames);
@@ -95,65 +89,50 @@ public class ZipkinQueryApiV2 {
 
   @RequestMapping(value = "/spans", method = RequestMethod.GET)
   public ResponseEntity<List<String>> getSpanNames(
-    @RequestParam(value = "serviceName", required = true) String serviceName
-  ) throws IOException {
-    if (storage == null) throw new Version2StorageNotConfigured();
-
+      @RequestParam(value = "serviceName", required = true) String serviceName) throws IOException {
     return maybeCacheNames(storage.spanStore().getSpanNames(serviceName).execute());
   }
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public String getTraces(
-    @Nullable @RequestParam(value = "serviceName", required = false) String serviceName,
-    @Nullable @RequestParam(value = "spanName", required = false) String spanName,
-    @Nullable @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
-    @Nullable @RequestParam(value = "minDuration", required = false) Long minDuration,
-    @Nullable @RequestParam(value = "maxDuration", required = false) Long maxDuration,
-    @Nullable @RequestParam(value = "endTs", required = false) Long endTs,
-    @Nullable @RequestParam(value = "lookback", required = false) Long lookback,
-    @RequestParam(value = "limit", defaultValue = "10") int limit
-  ) throws IOException {
-    if (storage == null) throw new Version2StorageNotConfigured();
-
-    QueryRequest queryRequest = QueryRequest.newBuilder()
-      .serviceName(serviceName)
-      .spanName(spanName)
-      .parseAnnotationQuery(annotationQuery)
-      .minDuration(minDuration)
-      .maxDuration(maxDuration)
-      .endTs(endTs != null ? endTs : System.currentTimeMillis())
-      .lookback(lookback != null ? lookback : defaultLookback)
-      .limit(limit).build();
+      @Nullable @RequestParam(value = "serviceName", required = false) String serviceName,
+      @Nullable @RequestParam(value = "spanName", required = false) String spanName,
+      @Nullable @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
+      @Nullable @RequestParam(value = "minDuration", required = false) Long minDuration,
+      @Nullable @RequestParam(value = "maxDuration", required = false) Long maxDuration,
+      @Nullable @RequestParam(value = "endTs", required = false) Long endTs,
+      @Nullable @RequestParam(value = "lookback", required = false) Long lookback,
+      @RequestParam(value = "limit", defaultValue = "10") int limit)
+      throws IOException {
+    QueryRequest queryRequest =
+        QueryRequest.newBuilder()
+            .serviceName(serviceName)
+            .spanName(spanName)
+            .parseAnnotationQuery(annotationQuery)
+            .minDuration(minDuration)
+            .maxDuration(maxDuration)
+            .endTs(endTs != null ? endTs : System.currentTimeMillis())
+            .lookback(lookback != null ? lookback : defaultLookback)
+            .limit(limit)
+            .build();
 
     List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();
     return new String(writeTraces(SpanBytesEncoder.JSON_V2, traces), UTF_8);
   }
 
-  @RequestMapping(value = "/trace/{traceIdHex}", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
+  @RequestMapping(
+      value = "/trace/{traceIdHex}",
+      method = RequestMethod.GET,
+      produces = APPLICATION_JSON_VALUE)
   public String getTrace(@PathVariable String traceIdHex, WebRequest request) throws IOException {
-    if (storage == null) throw new Version2StorageNotConfigured();
-
     List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
     if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
     return new String(SpanBytesEncoder.JSON_V2.encodeList(trace), UTF_8);
   }
 
-  @ExceptionHandler(Version2StorageNotConfigured.class)
-  @ResponseStatus(HttpStatus.NOT_FOUND)
-  public void version2StorageNotConfigured() {
-  }
-
-  /** {@linkplain V2StorageComponent} is still an internal, so we can't hard-wire based on it. */
-  class Version2StorageNotConfigured extends RuntimeException {
-    Version2StorageNotConfigured() {
-      super("Api version 2 not yet supported for " + storageType);
-    }
-  }
-
   @ExceptionHandler(TraceNotFoundException.class)
   @ResponseStatus(HttpStatus.NOT_FOUND)
-  public void notFound() {
-  }
+  public void notFound() {}
 
   static class TraceNotFoundException extends RuntimeException {
     TraceNotFoundException(String traceIdHex) {

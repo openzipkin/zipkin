@@ -16,6 +16,7 @@ package zipkin.benchmarks;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -30,12 +31,9 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import zipkin.collector.CollectorMetrics;
-import zipkin.collector.InMemoryCollectorMetrics;
 import zipkin.server.internal.ActuateCollectorMetrics;
-
-import java.util.concurrent.TimeUnit;
+import zipkin2.collector.CollectorMetrics;
+import zipkin2.collector.InMemoryCollectorMetrics;
 
 @Measurement(iterations = 80, time = 1)
 @Warmup(iterations = 20, time = 1)

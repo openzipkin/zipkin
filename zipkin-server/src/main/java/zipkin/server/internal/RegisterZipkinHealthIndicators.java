@@ -17,13 +17,14 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import zipkin.Component;
+import zipkin2.Component;
 
 /** Makes sure all zipkin components end up in the /health endpoint. */
 // This is an application listener to ensure the graph is fully constructed before doing health
 public final class RegisterZipkinHealthIndicators implements ApplicationListener {
 
-  @Override public void onApplicationEvent(ApplicationEvent event) {
+  @Override
+  public void onApplicationEvent(ApplicationEvent event) {
     if (!(event instanceof ApplicationReadyEvent)) return;
     ConfigurableListableBeanFactory beanFactory =
         ((ApplicationReadyEvent) event).getApplicationContext().getBeanFactory();

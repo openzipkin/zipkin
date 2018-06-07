@@ -33,25 +33,30 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import zipkin.collector.CollectorMetrics;
-import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2StorageComponent;
 import zipkin.server.internal.brave.TracingV2StorageComponent;
+import zipkin2.collector.CollectorMetrics;
+import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
 public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
-  @Autowired(required = false) @Qualifier("httpTracingCustomizer")
+  @Autowired(required = false)
+  @Qualifier("httpTracingCustomizer")
   UndertowDeploymentInfoCustomizer httpTracingCustomizer;
-  @Autowired(required = false) @Qualifier("httpRequestDurationCustomizer")
+
+  @Autowired(required = false)
+  @Qualifier("httpRequestDurationCustomizer")
   UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer;
+
   @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
 
   /** Registers health for any components, even those not in this jar. */
-  @Bean ZipkinHealthIndicator zipkinHealthIndicator(HealthAggregator healthAggregator) {
+  @Bean
+  ZipkinHealthIndicator zipkinHealthIndicator(HealthAggregator healthAggregator) {
     return new ZipkinHealthIndicator(healthAggregator);
   }
 
@@ -60,19 +65,16 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     registry.addRedirectViewController("/info", "/actuator/info");
   }
 
-  @Bean public UndertowServletWebServerFactory embeddedServletContainerFactory(
-    @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins
-  ) {
+  @Bean
+  public UndertowServletWebServerFactory embeddedServletContainerFactory(
+      @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
     UndertowServletWebServerFactory factory = new UndertowServletWebServerFactory();
     CorsHandler cors = new CorsHandler(allowedOrigins);
     if (httpCollector != null) {
       factory.addDeploymentInfoCustomizers(
-        info -> info.addInitialHandlerChainWrapper(httpCollector)
-      );
+          info -> info.addInitialHandlerChainWrapper(httpCollector));
     }
-    factory.addDeploymentInfoCustomizers(
-      info -> info.addInitialHandlerChainWrapper(cors)
-    );
+    factory.addDeploymentInfoCustomizers(info -> info.addInitialHandlerChainWrapper(cors));
     if (httpTracingCustomizer != null) {
       factory.addDeploymentInfoCustomizers(httpTracingCustomizer);
     }
@@ -94,26 +96,22 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     return new ActuateCollectorMetrics(registry);
   }
 
-  /** temporary until v2 collector is merged */
-  @Bean
-  V2StorageComponent v1StorageComponent(StorageComponent v2) {
-    return V2StorageComponent.create(v2);
-  }
-
   @Bean
   public MeterRegistryCustomizer meterRegistryCustomizer() {
-    return registry -> registry.config()
-      .meterFilter(MeterFilter.deny(id -> {
-          String uri = id.getTag("uri");
-          return uri != null
-            && (uri.startsWith("/actuator")
-            || uri.startsWith("/metrics")
-            || uri.startsWith("/health")
-            || uri.startsWith("/favicon.ico")
-            || uri.startsWith("/prometheus")
-          );
-        })
-      );
+    return registry ->
+        registry
+            .config()
+            .meterFilter(
+                MeterFilter.deny(
+                    id -> {
+                      String uri = id.getTag("uri");
+                      return uri != null
+                          && (uri.startsWith("/actuator")
+                              || uri.startsWith("/metrics")
+                              || uri.startsWith("/health")
+                              || uri.startsWith("/favicon.ico")
+                              || uri.startsWith("/prometheus"));
+                    }));
   }
 
   @Configuration
@@ -131,6 +129,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
       if (tracing == null) return bean;
+      // TODO: this will miss as we no longer wire a V2StorageComponent
       if (bean instanceof V2StorageComponent) {
         return new TracingV2StorageComponent(tracing, (V2StorageComponent) bean);
       }
@@ -146,20 +145,22 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Conditional(StorageTypeMemAbsentOrEmpty.class)
   @ConditionalOnMissingBean(StorageComponent.class)
   static class InMemoryConfiguration {
-    @Bean StorageComponent storage(
-      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
-      @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
+    @Bean
+    StorageComponent storage(
+        @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+        @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
+        @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
       return InMemoryStorage.newBuilder()
-        .strictTraceId(strictTraceId)
-        .searchEnabled(searchEnabled)
-        .maxSpanCount(maxSpans)
-        .build();
+          .strictTraceId(strictTraceId)
+          .searchEnabled(searchEnabled)
+          .maxSpanCount(maxSpans)
+          .build();
     }
   }
 
   static final class StorageTypeMemAbsentOrEmpty implements Condition {
-    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
+    @Override
+    public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
       String storageType = condition.getEnvironment().getProperty("zipkin.storage.type");
       if (storageType == null) return true;
       storageType = storageType.trim();

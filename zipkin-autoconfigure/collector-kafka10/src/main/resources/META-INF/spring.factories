@@ -1,2 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-zipkin.autoconfigure.collector.kafka10.ZipkinKafka10CollectorAutoConfiguration

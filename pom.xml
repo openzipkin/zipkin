@@ -157,6 +157,12 @@
 
       <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-collector</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-storage-elasticsearch</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -247,49 +253,49 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-collector-kafka08</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-autoconfigure-collector-kafka08</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-collector-kafka</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-collector-kafka10</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-collector-kafka10</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-collector-rabbitmq</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-collector-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>

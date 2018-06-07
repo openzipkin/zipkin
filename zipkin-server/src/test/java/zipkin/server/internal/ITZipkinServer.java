@@ -144,7 +144,7 @@ public class ITZipkinServer {
 
     assertThat(response.code()).isEqualTo(400);
     assertThat(response.body().string())
-      .startsWith("Malformed reading List<Span> from TBinary");
+      .endsWith("reading List<Span> from TBinary");
   }
 
   @Test public void writeSpans_contentTypeXProtobuf() throws Exception {

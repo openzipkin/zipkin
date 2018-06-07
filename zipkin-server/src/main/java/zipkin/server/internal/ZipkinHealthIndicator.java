@@ -17,8 +17,8 @@ import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.HealthIndicator;
-import zipkin.Component;
-import zipkin.internal.V2StorageComponent;
+import zipkin2.CheckResult;
+import zipkin2.Component;
 
 final class ZipkinHealthIndicator extends CompositeHealthIndicator {
 
@@ -27,9 +27,7 @@ final class ZipkinHealthIndicator extends CompositeHealthIndicator {
   }
 
   void addComponent(Component component) {
-    String healthName = component instanceof V2StorageComponent
-      ? ((V2StorageComponent) component).delegate().getClass().getSimpleName()
-      : component.getClass().getSimpleName();
+    String healthName = component.getClass().getSimpleName();
     healthName = healthName.replace("AutoValue_", "");
     addHealthIndicator(healthName, new ComponentHealthIndicator(component));
   }
@@ -42,9 +40,10 @@ final class ZipkinHealthIndicator extends CompositeHealthIndicator {
     }
 
     /** synchronized to prevent overlapping requests to a storage backend */
-    @Override public synchronized Health health() {
-      Component.CheckResult result = component.check();
-      return result.ok ? Health.up().build() : Health.down(result.exception).build();
+    @Override
+    public synchronized Health health() {
+      CheckResult result = component.check();
+      return result.ok() ? Health.up().build() : Health.down((Exception) result.error()).build();
     }
   }
 }

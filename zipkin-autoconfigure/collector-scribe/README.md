@@ -13,14 +13,14 @@ JRE 8 is required to run Zipkin server.
 Fetch the latest released
 [executable jar for Zipkin server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec)
 and
-[autoconfigure module jar for the scribe collector](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-autoconfigure-collector-scribe&v=LATEST&c=module).
+[autoconfigure module jar for the scribe collector](https://search.maven.org/remote_content?g=io.zipkin.zipkin2&a=zipkin-autoconfigure-collector-scribe&v=LATEST&c=module).
 Run Zipkin server with the Scribe collector enabled.
 
 For example:
 
 ```bash
 $ curl -sSL https://zipkin.io/quickstart.sh | bash -s
-$ curl -sSL https://zipkin.io/quickstart.sh | bash -s io.zipkin.java:zipkin-autoconfigure-collector-scribe:LATEST:module scribe.jar
+$ curl -sSL https://zipkin.io/quickstart.sh | bash -s io.zipkin.zipkin2:zipkin-autoconfigure-collector-scribe:LATEST:module scribe.jar
 $ SCRIBE_ENABLED=true \
     java \
     -Dloader.path='scribe.jar,scribe.jar!/lib' \

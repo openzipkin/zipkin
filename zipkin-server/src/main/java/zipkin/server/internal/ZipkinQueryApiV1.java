@@ -31,6 +31,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.request.WebRequest;
 import zipkin.Codec;
 import zipkin.Span;
+import zipkin.internal.V2StorageComponent;
 import zipkin.storage.QueryRequest;
 import zipkin.storage.StorageComponent;
 
@@ -60,8 +61,9 @@ public class ZipkinQueryApiV1 {
   private final StorageComponent storage;
 
   @Autowired
-  public ZipkinQueryApiV1(StorageComponent storage) {
-    this.storage = storage; // don't cache spanStore here as it can cause the app to crash!
+  public ZipkinQueryApiV1(zipkin2.storage.StorageComponent storage) {
+    // don't cache spanStore here as it can cause the app to crash!
+    this.storage = V2StorageComponent.create(storage);
   }
 
   @RequestMapping(value = "/dependencies", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)

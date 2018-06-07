@@ -83,6 +83,11 @@
     </dependency>
 
     <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-collector</artifactId>
+    </dependency>
+
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
     </dependency>
@@ -171,16 +176,16 @@
       <optional>true</optional>
     </dependency>
 
-    <!-- Kafka Collector -->
+    <!-- Kafka Collector (legacy) -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-autoconfigure-collector-kafka08</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- RabbitMQ Collector -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
       <optional>true</optional>
     </dependency>

@@ -23,19 +23,18 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.collector.CollectorMetrics;
-import zipkin.collector.CollectorSampler;
-import zipkin.collector.rabbitmq.RabbitMQCollector;
-import zipkin.storage.InMemoryStorage;
-import zipkin.storage.StorageComponent;
+import zipkin2.collector.CollectorMetrics;
+import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.rabbitmq.RabbitMQCollector;
+import zipkin2.storage.InMemoryStorage;
+import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinRabbitMQCollectorAutoConfigurationTest {
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  @Rule public ExpectedException thrown = ExpectedException.none();
 
   private AnnotationConfigApplicationContext context;
 
@@ -49,8 +48,10 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
   @Test
   public void doesNotProvideCollectorComponent_whenAddressAndUriNotSet() {
     context = new AnnotationConfigApplicationContext();
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinRabbitMQCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinRabbitMQCollectorAutoConfiguration.class,
+        InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -60,9 +61,12 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
   @Test
   public void doesNotProvideCollectorComponent_whenAddressesAndUriIsEmptyString() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.rabbitmq.addresses:", "zipkin.collector.rabbitmq.uri:");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinRabbitMQCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    addEnvironment(
+        context, "zipkin.collector.rabbitmq.addresses:", "zipkin.collector.rabbitmq.uri:");
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinRabbitMQCollectorAutoConfiguration.class,
+        InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -74,8 +78,10 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
   public void providesCollectorComponent_whenAddressesSet() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.collector.rabbitmq.addresses=localhost:5672");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinRabbitMQCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinRabbitMQCollectorAutoConfiguration.class,
+        InMemoryConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(RabbitMQCollector.class)).isNotNull();
@@ -83,16 +89,19 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
 
   @Configuration
   static class InMemoryConfiguration {
-    @Bean CollectorSampler sampler() {
+    @Bean
+    CollectorSampler sampler() {
       return CollectorSampler.ALWAYS_SAMPLE;
     }
 
-    @Bean CollectorMetrics metrics() {
+    @Bean
+    CollectorMetrics metrics() {
       return CollectorMetrics.NOOP_METRICS;
     }
 
-    @Bean StorageComponent storage() {
-      return new InMemoryStorage();
+    @Bean
+    StorageComponent storage() {
+      return InMemoryStorage.newBuilder().build();
     }
   }
 }
