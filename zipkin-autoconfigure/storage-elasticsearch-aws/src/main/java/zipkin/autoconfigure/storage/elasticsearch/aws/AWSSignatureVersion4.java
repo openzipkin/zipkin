@@ -26,7 +26,6 @@ import okio.Buffer;
 import okio.ByteString;
 
 import static java.lang.String.format;
-import static zipkin.internal.Util.checkNotNull;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 // http://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
@@ -41,25 +40,31 @@ final class AWSSignatureVersion4 implements Interceptor {
   static final String HOST_DATE_TOKEN = HOST_DATE + ";" + X_AMZ_SECURITY_TOKEN;
 
   // SimpleDateFormat isn't thread-safe
-  static final ThreadLocal<SimpleDateFormat> iso8601 = new ThreadLocal<SimpleDateFormat>() {
-    @Override protected SimpleDateFormat initialValue() {
-      SimpleDateFormat result = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
-      result.setTimeZone(TimeZone.getTimeZone("UTC"));
-      return result;
-    }
-  };
+  static final ThreadLocal<SimpleDateFormat> iso8601 =
+      new ThreadLocal<SimpleDateFormat>() {
+        @Override
+        protected SimpleDateFormat initialValue() {
+          SimpleDateFormat result = new SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'");
+          result.setTimeZone(TimeZone.getTimeZone("UTC"));
+          return result;
+        }
+      };
 
   final String region;
   final String service;
   final AWSCredentials.Provider credentials;
 
   AWSSignatureVersion4(String region, String service, AWSCredentials.Provider credentials) {
-    this.region = checkNotNull(region, "region");
-    this.service = checkNotNull(service, "service");
-    this.credentials = checkNotNull(credentials, "credentials");
+    if (region == null) throw new NullPointerException("region == null");
+    if (service == null) throw new NullPointerException("service == null");
+    if (credentials == null) throw new NullPointerException("credentials == null");
+    this.region = region;
+    this.service = service;
+    this.credentials = credentials;
   }
 
-  @Override public Response intercept(Chain chain) throws IOException {
+  @Override
+  public Response intercept(Chain chain) throws IOException {
     Request input = chain.request();
     Request signed = sign(input);
     Response response = chain.proceed(signed);
@@ -80,11 +85,10 @@ final class AWSSignatureVersion4 implements Interceptor {
 
     // CanonicalURI + '\n' +
     // TODO: make this more efficient
-    result.writeUtf8(input.url().encodedPath()
-        .replace("*", "%2A")
-        .replace(",", "%2C")
-        .replace(":", "%3A")
-    ).writeByte('\n');
+    result
+        .writeUtf8(
+            input.url().encodedPath().replace("*", "%2A").replace(",", "%2C").replace(":", "%3A"))
+        .writeByte('\n');
 
     // CanonicalQueryString + '\n' +
     String query = input.url().encodedQuery();
@@ -92,7 +96,7 @@ final class AWSSignatureVersion4 implements Interceptor {
 
     // CanonicalHeaders + '\n' +
     Buffer signedHeaders = new Buffer();
-    for (String canonicalHeader: CANONICAL_HEADERS) {
+    for (String canonicalHeader : CANONICAL_HEADERS) {
       String value = input.header(canonicalHeader);
       if (value != null) {
         result.writeUtf8(canonicalHeader).writeByte(':').writeUtf8(value).writeByte('\n');
@@ -131,7 +135,8 @@ final class AWSSignatureVersion4 implements Interceptor {
   }
 
   Request sign(Request input) throws IOException {
-    AWSCredentials credentials = checkNotNull(this.credentials.get(), "awsCredentials");
+    AWSCredentials credentials = this.credentials.get();
+    if (credentials == null) throw new NullPointerException("credentials == null");
 
     String timestamp = iso8601.get().format(new Date());
     String yyyyMMdd = timestamp.substring(0, 8);
@@ -154,10 +159,17 @@ final class AWSSignatureVersion4 implements Interceptor {
     ByteString signatureKey = signatureKey(credentials.secretKey, yyyyMMdd);
     String signature = toSign.readByteString().hmacSha256(signatureKey).hex();
 
-    String authorization = new StringBuilder().append("AWS4-HMAC-SHA256 Credential=")
-        .append(credentials.accessKey).append('/').append(credentialScope)
-        .append(", SignedHeaders=").append(signedHeaders)
-        .append(", Signature=").append(signature).toString();
+    String authorization =
+        new StringBuilder()
+            .append("AWS4-HMAC-SHA256 Credential=")
+            .append(credentials.accessKey)
+            .append('/')
+            .append(credentialScope)
+            .append(", SignedHeaders=")
+            .append(signedHeaders)
+            .append(", Signature=")
+            .append(signature)
+            .toString();
 
     return builder.header("authorization", authorization).build();
   }

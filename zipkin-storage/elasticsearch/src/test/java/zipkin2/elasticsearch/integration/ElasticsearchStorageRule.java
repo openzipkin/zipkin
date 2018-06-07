@@ -46,9 +46,10 @@ public class ElasticsearchStorageRule extends ExternalResource {
   protected void before() throws Throwable {
     try {
       LOGGER.info("Starting docker image " + image);
-      container = new GenericContainer(image)
-        .withExposedPorts(ELASTICSEARCH_PORT)
-        .waitingFor(new HttpWaitStrategy().forPath("/"));
+      container =
+          new GenericContainer(image)
+              .withExposedPorts(ELASTICSEARCH_PORT)
+              .waitingFor(new HttpWaitStrategy().forPath("/"));
       container.start();
       if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
         container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image)));
@@ -78,31 +79,36 @@ public class ElasticsearchStorageRule extends ExternalResource {
   }
 
   public ElasticsearchStorage.Builder computeStorageBuilder() {
-    OkHttpClient ok = Boolean.valueOf(System.getenv("ES_DEBUG"))
-      ? new OkHttpClient.Builder()
-      .addInterceptor(new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-      .addNetworkInterceptor(chain -> chain.proceed( // logging interceptor doesn't gunzip
-        chain.request().newBuilder().removeHeader("Accept-Encoding").build()))
-      .build()
-      : new OkHttpClient();
-    return ElasticsearchStorage.newBuilder(ok).index(index)
-      .flushOnWrites(true)
-      .hosts(Arrays.asList(baseUrl()));
+    OkHttpClient ok =
+        Boolean.valueOf(System.getenv("ES_DEBUG"))
+            ? new OkHttpClient.Builder()
+                .addInterceptor(
+                    new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
+                .addNetworkInterceptor(
+                    chain ->
+                        chain.proceed( // logging interceptor doesn't gunzip
+                            chain.request().newBuilder().removeHeader("Accept-Encoding").build()))
+                .build()
+            : new OkHttpClient();
+    return ElasticsearchStorage.newBuilder(ok)
+        .index(index)
+        .flushOnWrites(true)
+        .hosts(Arrays.asList(baseUrl()));
   }
 
   String baseUrl() {
     if (container != null && container.isRunning()) {
-      return String.format("http://%s:%d",
-        container.getContainerIpAddress(),
-        container.getMappedPort(ELASTICSEARCH_PORT)
-      );
+      return String.format(
+          "http://%s:%d",
+          container.getContainerIpAddress(), container.getMappedPort(ELASTICSEARCH_PORT));
     } else {
       // Use localhost if we failed to start a container (i.e. Docker is not available)
       return "http://localhost:" + ELASTICSEARCH_PORT;
     }
   }
 
-  @Override protected void after() {
+  @Override
+  protected void after() {
     try {
       closer.close();
     } catch (Exception | Error e) {

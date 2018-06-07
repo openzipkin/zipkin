@@ -96,8 +96,8 @@
 
     <!-- Cassandra backend -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-autoconfigure-storage-cassandra-v1</artifactId>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -135,8 +135,8 @@
 
     <!-- Cassandra 3 backend -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -150,24 +150,24 @@
       </exclusions>
     </dependency>
 
-    <!-- Elasticsearch http backend -->
+    <!-- Elasticsearch http -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-storage-elasticsearch-http</artifactId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- Elasticsearch aws support -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin-autoconfigure-storage-elasticsearch-aws</artifactId>
       <optional>true</optional>
     </dependency>
 
     <!-- MySQL backend -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-autoconfigure-storage-mysql-v1</artifactId>
       <optional>true</optional>
     </dependency>
 

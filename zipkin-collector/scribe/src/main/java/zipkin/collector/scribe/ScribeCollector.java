@@ -21,8 +21,8 @@ import zipkin.collector.Collector;
 import zipkin.collector.CollectorComponent;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
+import zipkin.storage.AsyncSpanConsumer;
 import zipkin.storage.StorageComponent;
-import zipkin.storage.guava.GuavaSpanConsumer;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.emptyList;
@@ -31,7 +31,7 @@ import static zipkin.internal.Util.checkNotNull;
 /**
  * This collector accepts Scribe logs in a specified category. Each log entry is expected to contain
  * a single span, which is TBinaryProtocol big-endian, then base64 encoded. These spans are chained
- * to an {@link GuavaSpanConsumer#accept asynchronous span consumer}.
+ * to an {@link AsyncSpanConsumer#accept asynchronous span consumer}.
  */
 public final class ScribeCollector implements CollectorComponent {
 

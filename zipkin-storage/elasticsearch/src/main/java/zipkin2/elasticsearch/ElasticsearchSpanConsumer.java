@@ -46,7 +46,8 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     this.searchEnabled = es.searchEnabled();
   }
 
-  @Override public Call<Void> accept(List<Span> spans) {
+  @Override
+  public Call<Void> accept(List<Span> spans) {
     if (spans.isEmpty()) return Call.create(null);
     BulkSpanIndexer indexer = new BulkSpanIndexer(es);
     indexSpans(indexer, spans);
@@ -84,11 +85,14 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     }
 
     void add(long indexTimestamp, Span span, long timestampMillis) {
-      String index = indexNameFormatter.formatTypeAndTimestamp(ElasticsearchSpanStore.SPAN, indexTimestamp);
-      byte[] document = searchEnabled
-        ? prefixWithTimestampMillisAndQuery(span, timestampMillis)
-        : SpanBytesEncoder.JSON_V2.encode(span);
-      indexer.add(index, ElasticsearchSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
+      String index =
+          indexNameFormatter.formatTypeAndTimestamp(ElasticsearchSpanStore.SPAN, indexTimestamp);
+      byte[] document =
+          searchEnabled
+              ? prefixWithTimestampMillisAndQuery(span, timestampMillis)
+              : SpanBytesEncoder.JSON_V2.encode(span);
+      indexer.add(
+          index, ElasticsearchSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
     }
 
     HttpCall<Void> newCall() {
@@ -133,10 +137,11 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
           }
           writer.value(tag.getKey()); // search is possible by key alone
           writer.value(
-            new StringBuilder(length)
-              .append(tag.getKey()).append("=").append(tag.getValue())
-              .toString()
-          );
+              new StringBuilder(length)
+                  .append(tag.getKey())
+                  .append("=")
+                  .append(tag.getValue())
+                  .toString());
         }
         writer.endArray();
       }

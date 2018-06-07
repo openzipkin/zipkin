@@ -27,7 +27,6 @@
     <module>zipkin</module>
     <module>zipkin-ui</module>
     <module>zipkin-junit</module>
-    <module>zipkin-guava</module>
     <module>benchmarks</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
@@ -188,8 +187,8 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-autoconfigure-storage-cassandra-v1</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -200,8 +199,8 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -212,25 +211,19 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-autoconfigure-storage-mysql-v1</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-storage-elasticsearch-http</artifactId>
+        <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-elasticsearch-http</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-autoconfigure-storage-elasticsearch-aws</artifactId>
         <version>${project.version}</version>
       </dependency>

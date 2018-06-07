@@ -56,18 +56,18 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   public static Builder newBuilder(OkHttpClient client) {
     return new $AutoValue_ElasticsearchStorage.Builder()
-      .client(client)
-      .hosts(Collections.singletonList("http://localhost:9200"))
-      .maxRequests(64)
-      .strictTraceId(true)
-      .searchEnabled(true)
-      .index("zipkin")
-      .dateSeparator('-')
-      .indexShards(5)
-      .indexReplicas(1)
-      .namesLookback(86400000)
-      .shutdownClientOnClose(false)
-      .flushOnWrites(false);
+        .client(client)
+        .hosts(Collections.singletonList("http://localhost:9200"))
+        .maxRequests(64)
+        .strictTraceId(true)
+        .searchEnabled(true)
+        .index("zipkin")
+        .dateSeparator('-')
+        .indexShards(5)
+        .indexReplicas(1)
+        .namesLookback(86400000)
+        .shutdownClientOnClose(false)
+        .flushOnWrites(false);
   }
 
   public static Builder newBuilder() {
@@ -79,7 +79,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   abstract Builder toBuilder();
 
   @AutoValue.Builder
-  public static abstract class Builder extends StorageComponent.Builder {
+  public abstract static class Builder extends StorageComponent.Builder {
     abstract Builder client(OkHttpClient client);
 
     public abstract Builder shutdownClientOnClose(boolean shutdownClientOnClose);
@@ -90,15 +90,18 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public final Builder hosts(final List<String> hosts) {
       if (hosts == null) throw new NullPointerException("hosts == null");
-      return hostsSupplier(new HostsSupplier() {
-        @Override public List<String> get() {
-          return hosts;
-        }
+      return hostsSupplier(
+          new HostsSupplier() {
+            @Override
+            public List<String> get() {
+              return hosts;
+            }
 
-        @Override public String toString() {
-          return hosts.toString();
-        }
-      });
+            @Override
+            public String toString() {
+              return hosts.toString();
+            }
+          });
     }
 
     /**
@@ -135,9 +138,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     /** Visible for testing */
     public abstract Builder flushOnWrites(boolean flushOnWrites);
 
-    /**
-     * The index prefix to use when generating daily index names. Defaults to zipkin.
-     */
+    /** The index prefix to use when generating daily index names. Defaults to zipkin. */
     public final Builder index(String index) {
       indexNameFormatterBuilder().index(index);
       return this;
@@ -148,8 +149,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      *
      * <p>By default, spans with a timestamp falling on 2016/03/19 end up in the index
      * 'zipkin:span-2016-03-19'. When the date separator is '.', the index would be
-     * 'zipkin:span-2016.03.19'. If the date separator is 0, there is no delimiter. Ex the
-     * index would be 'zipkin:span-20160319'
+     * 'zipkin:span-2016.03.19'. If the date separator is 0, there is no delimiter. Ex the index
+     * would be 'zipkin:span-20160319'
      */
     public final Builder dateSeparator(char dateSeparator) {
       indexNameFormatterBuilder().dateSeparator(dateSeparator);
@@ -162,7 +163,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      * improve read and write performance. Number of shards cannot be changed for existing indices,
      * but new daily indices will pick up changes to the setting. Defaults to 5.
      *
-     * <p>Corresponds to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html">index.number_of_shards</a>
+     * <p>Corresponds to <a
+     * href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html">index.number_of_shards</a>
      */
     public abstract Builder indexShards(int indexShards);
 
@@ -173,20 +175,23 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      * changed for existing indices. Defaults to 1. It is highly discouraged to set this to 0 as it
      * would mean a machine failure results in data loss.
      *
-     * <p>Corresponds to <a href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html">index.number_of_replicas</a>
+     * <p>Corresponds to <a
+     * href="https://www.elastic.co/guide/en/elasticsearch/reference/current/index-modules.html">index.number_of_replicas</a>
      */
     public abstract Builder indexReplicas(int indexReplicas);
 
-    @Override public abstract Builder strictTraceId(boolean strictTraceId);
+    @Override
+    public abstract Builder strictTraceId(boolean strictTraceId);
 
-    @Override public abstract Builder searchEnabled(boolean searchEnabled);
+    @Override
+    public abstract Builder searchEnabled(boolean searchEnabled);
 
-    @Override public abstract ElasticsearchStorage build();
+    @Override
+    public abstract ElasticsearchStorage build();
 
     abstract IndexNameFormatter.Builder indexNameFormatterBuilder();
 
-    Builder() {
-    }
+    Builder() {}
   }
 
   abstract OkHttpClient client();
@@ -195,7 +200,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   public abstract HostsSupplier hostsSupplier();
 
-  @Nullable public abstract String pipeline();
+  @Nullable
+  public abstract String pipeline();
 
   public abstract boolean flushOnWrites();
 
@@ -213,12 +219,14 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   public abstract int namesLookback();
 
-  @Override public SpanStore spanStore() {
+  @Override
+  public SpanStore spanStore() {
     ensureIndexTemplates();
     return new ElasticsearchSpanStore(this);
   }
 
-  @Override public SpanConsumer spanConsumer() {
+  @Override
+  public SpanConsumer spanConsumer() {
     ensureIndexTemplates();
     return new ElasticsearchSpanConsumer(this);
   }
@@ -237,9 +245,12 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   void clear(String index) throws IOException {
-    Request deleteRequest = new Request.Builder()
-      .url(http().baseUrl.newBuilder().addPathSegment(index).build())
-      .delete().tag("delete-index").build();
+    Request deleteRequest =
+        new Request.Builder()
+            .url(http().baseUrl.newBuilder().addPathSegment(index).build())
+            .delete()
+            .tag("delete-index")
+            .build();
 
     http().newCall(deleteRequest, BodyConverters.NULL).execute();
 
@@ -248,22 +259,29 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   /** This is a blocking call, only used in tests. */
   public static void flush(HttpCall.Factory factory, String index) throws IOException {
-    Request flushRequest = new Request.Builder()
-      .url(factory.baseUrl.newBuilder().addPathSegment(index).addPathSegment("_flush").build())
-      .post(RequestBody.create(APPLICATION_JSON, ""))
-      .tag("flush-index").build();
+    Request flushRequest =
+        new Request.Builder()
+            .url(
+                factory.baseUrl.newBuilder().addPathSegment(index).addPathSegment("_flush").build())
+            .post(RequestBody.create(APPLICATION_JSON, ""))
+            .tag("flush-index")
+            .build();
 
     factory.newCall(flushRequest, BodyConverters.NULL).execute();
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
-  @Override public CheckResult check() {
+  @Override
+  public CheckResult check() {
     return ensureClusterReady(indexNameFormatter().formatType(SPAN));
   }
 
   CheckResult ensureClusterReady(String index) {
-    Request request = new Request.Builder().url(http().baseUrl.resolve("/_cluster/health/" + index))
-      .tag("get-cluster-health").build();
+    Request request =
+        new Request.Builder()
+            .url(http().baseUrl.resolve("/_cluster/health/" + index))
+            .tag("get-cluster-health")
+            .build();
 
     try {
       return http().newCall(request, ReadStatus.INSTANCE).execute();
@@ -275,7 +293,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   enum ReadStatus implements HttpCall.BodyConverter<CheckResult> {
     INSTANCE;
 
-    @Override public CheckResult convert(BufferedSource b) throws IOException {
+    @Override
+    public CheckResult convert(BufferedSource b) throws IOException {
       b.request(Long.MAX_VALUE); // Buffer the entire body.
       Buffer body = b.buffer();
       JsonReader status = enterPath(JsonReader.of(body.clone()), "status");
@@ -288,7 +307,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       return CheckResult.OK;
     }
 
-    @Override public String toString(){
+    @Override
+    public String toString() {
       return "ReadStatus";
     }
   }
@@ -299,8 +319,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     try {
       IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
       EnsureIndexTemplate.apply(http(), index + ":" + SPAN + "_template", templates.span());
-      EnsureIndexTemplate.apply(http(), index + ":" + DEPENDENCY + "_template",
-        templates.dependency());
+      EnsureIndexTemplate.apply(
+          http(), index + ":" + DEPENDENCY + "_template", templates.dependency());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
@@ -312,21 +332,23 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   HttpCall.Factory http() {
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
-    OkHttpClient ok = hosts.size() == 1
-      ? client()
-      : client().newBuilder()
-        .dns(PseudoAddressRecordSet.create(hosts, client().dns()))
-        .build();
+    OkHttpClient ok =
+        hosts.size() == 1
+            ? client()
+            : client()
+                .newBuilder()
+                .dns(PseudoAddressRecordSet.create(hosts, client().dns()))
+                .build();
     ok.dispatcher().setMaxRequests(maxRequests());
     ok.dispatcher().setMaxRequestsPerHost(maxRequests());
     return new HttpCall.Factory(ok, HttpUrl.parse(hosts.get(0)));
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (!shutdownClientOnClose()) return;
     http().close();
   }
 
-  ElasticsearchStorage() {
-  }
+  ElasticsearchStorage() {}
 }

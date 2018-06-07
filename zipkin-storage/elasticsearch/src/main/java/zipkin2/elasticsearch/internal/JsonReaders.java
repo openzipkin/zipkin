@@ -28,6 +28,7 @@ public final class JsonReaders {
    * This saves you from having to define nested types to read a single value
    *
    * <p>Instead of defining two types like this, and double-checking null..
+   *
    * <pre>{@code
    * class Response {
    *   Message message;
@@ -41,6 +42,7 @@ public final class JsonReaders {
    * }</pre>
    *
    * <p>You can advance to the field directly.
+   *
    * <pre>{@code
    * JsonReader status = enterPath(JsonReader.of(body.source()), "message", "status");
    * if (status != null) throw new IllegalStateException(status.nextString());
@@ -105,6 +107,5 @@ public final class JsonReaders {
     }
   }
 
-  JsonReaders() {
-  }
+  JsonReaders() {}
 }

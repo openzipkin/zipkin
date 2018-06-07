@@ -14,7 +14,9 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -23,8 +25,9 @@
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
+  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
-  <name>Auto Configuration: Cassandra Storage</name>
+  <name>Auto Configuration: Cassandra 3 Storage</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
@@ -32,19 +35,17 @@
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>io.zipkin.zipkin2</groupId>
-      <artifactId>zipkin-storage-cassandra-v1</artifactId>
+      <artifactId>zipkin-storage-cassandra</artifactId>
     </dependency>
-
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave</artifactId>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-storage-cassandra-v1</artifactId>
     </dependency>
   </dependencies>
 </project>

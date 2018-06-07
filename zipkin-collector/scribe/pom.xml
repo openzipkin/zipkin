@@ -39,11 +39,6 @@
     </dependency>
 
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-guava</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-service</artifactId>
       <version>0.23.1</version>

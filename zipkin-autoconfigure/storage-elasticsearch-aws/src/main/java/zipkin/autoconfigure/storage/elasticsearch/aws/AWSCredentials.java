@@ -13,9 +13,7 @@
  */
 package zipkin.autoconfigure.storage.elasticsearch.aws;
 
-import zipkin.internal.Nullable;
-
-import static zipkin.internal.Util.checkNotNull;
+import zipkin2.internal.Nullable;
 
 final class AWSCredentials {
   interface Provider {
@@ -27,8 +25,10 @@ final class AWSCredentials {
   @Nullable final String sessionToken;
 
   AWSCredentials(String accessKey, String secretKey, @Nullable String sessionToken) {
-    this.accessKey = checkNotNull(accessKey, "accessKey");
-    this.secretKey = checkNotNull(secretKey, "secretKey");
+    if (accessKey == null) throw new NullPointerException("accessKey == null");
+    if (secretKey == null) throw new NullPointerException("secretKey == null");
+    this.accessKey = accessKey;
+    this.secretKey = secretKey;
     this.sessionToken = sessionToken;
   }
 }

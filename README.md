@@ -50,7 +50,10 @@ bytes = SpanBytesEncoder.JSON_V2.encode(span);
 Note: The above is just an example, most likely you'll want to use an existing tracing library like [Brave](https://github.com/openzipkin/brave)
 
 ## Storage Component
-Zipkin includes a [StorageComponent](zipkin2/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and dependency links. This is used by the server and those making custom servers, collectors, or span reporters. For this reason, storage components have minimal dependencies; many run on Java 7.
+Zipkin includes a [StorageComponent](zipkin2/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
+dependency links. This is used by the server and those making custom
+servers, collectors, or span reporters. For this reason, storage
+components have minimal dependencies, but most require Java 8+
 
 Ex.
 ```java
@@ -69,19 +72,25 @@ storage.close();
 ```
 
 ### In-Memory
-The [InMemoryStorage](zipkin2/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It is not persistent, nor viable for realistic work loads. Its purpose is for testing, for example starting a server on your laptop without any database needed.
+The [InMemoryStorage](zipkin2/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It
+is neither persistent, nor viable for realistic work loads. Its purpose
+is for testing, for example starting a server on your laptop without any
+database needed.
 
-### MySQL
-The [MySQLStorage](zipkin-storage/mysql) component currently is only tested with MySQL 5.6-7. It is designed to be easy to understand, and get started with. For example, it deconstructs spans into columns, so you can perform ad-hoc queries using SQL. However, this component has [known performance issues](https://github.com/openzipkin/zipkin/issues/1233): queries will eventually take seconds to return if you put a lot of data into it.
+### Cassandra
+The [Cassandra](zipkin-storage/cassandra) component is tested against
+Cassandra 3.11+. It stores spans using UDTs, such that they appear like
+the v2 Zipkin model in cqlsh. It is designed for scale. For example, it
+uses a combination of SASI and manually implemented indexes to make
+querying larger data more performant.
 
-### Cassandra v3
-The [Cassandra v3](zipkin-storage/zipkin2_cassandra) component is tested against Cassandra 3.11+. It stores spans using UDTs, such that they appear like the v2 Zipkin model in cqlsh. It is designed for scale. For example, it uses a combination of SASI and manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
-
-### Cassandra Legacy
-The [Cassandra Legacy](zipkin-storage/cassandra) component is tested against Cassandra 2.2+. It stores spans as opaque thrifts which means you can't read them in cqlsh. However, it is designed for scale. For example, it has manually implemented indexes to make querying larger data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ### Elasticsearch
-The [ElasticsearchHttpStorage](zipkin-storage/elasticsearch-http) component is tested against Elasticsearch 2.x and 5.x. It stores spans as json and has been designed for larger scale. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+The [Elasticsearch](zipkin-storage/elasticsearch) component is tested against Elasticsearch 2-6.x.
+It stores spans as json and has been designed for larger scale.
+
+Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ### Disabling search
 Search is enabled by default, primarily in support of the `GET /traces`,
@@ -95,11 +104,34 @@ disable search to reduce storage costs or increase write throughput.
 `StorageComponent.Builder.searchEnabled(false)` is implied when a zipkin
 is run with the env variable `SEARCH_ENABLED=false`.
 
-## Running the server from source
-The [zipkin server](zipkin-server)
-receives spans via HTTP POST and respond to queries from its UI. It can also run collectors, such as Scribe or Kafka.
+### Legacy (v1) components
+The following components are no longer encouraged, but exist to help aid
+transition to supported ones. These are indicated as "v1" as they use
+data layouts based on Zipkin's V1 Thrift model, as opposed to the
+simpler v2 data model currently used.
 
-To run the server from the currently checked out source, enter the following. JDK 8 is required.
+#### MySQL
+The [MySQL v1](zipkin-storage/mysql-v1) component currently is only
+tested with MySQL 5.6-7. It is designed to be easy to understand, and
+get started with. For example, it deconstructs spans into columns, so
+you can perform ad-hoc queries using SQL. However, this component has
+[known performance issues](https://github.com/openzipkin/zipkin/issues/1233): queries will eventually take seconds to return
+if you put a lot of data into it.
+
+#### Cassandra
+The [Cassandra v1](zipkin-storage/cassandra-v1) component is tested
+against Cassandra 2.2+. It stores spans as opaque thrifts which means
+you can't read them in cqlsh. However, it is designed for scale. For
+example, it has manually implemented indexes to make querying larger
+data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate
+dependency links.
+
+## Running the server from source
+The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to queries
+from its UI. It can also run collectors, such as RabbitMQ or Kafka.
+
+To run the server from the currently checked out source, enter the
+following. JDK 8 is required.
 ```bash
 # Build the server and also make its dependencies
 $ ./mvnw -DskipTests --also-make -pl zipkin-server clean install

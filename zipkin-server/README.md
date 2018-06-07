@@ -131,12 +131,10 @@ Defaults to true
 * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 
 ### Cassandra Storage
-Zipkin's [Cassandra v3 storage component](../zipkin-storage/zipkin2_cassandra)
-supports version 3.9+ and applies when `STORAGE_TYPE` is set to `cassandra2`:
-Zipkin's [Cassandra legacy storage component](../zipkin-storage/cassandra)
-supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
+Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
+supports version 3.11+ and applies when `STORAGE_TYPE` is set to `cassandra3`:
 
-    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin2" when storage type is "cassandra3" or "zipkin" if legacy.
+    * `CASSANDRA_KEYSPACE`: The keyspace to use. Defaults to "zipkin2"
     * `CASSANDRA_CONTACT_POINTS`: Comma separated list of host addresses part of Cassandra cluster. You can also specify a custom port with 'host:port'. Defaults to localhost on port 9042.
     * `CASSANDRA_LOCAL_DC`: Name of the datacenter that will be considered "local" for latency load balancing. When unset, load-balancing is round-robin.
     * `CASSANDRA_ENSURE_SCHEMA`: Ensuring cassandra has the latest schema. If enabled tries to execute scripts in the classpath prefixed with `cassandra-schema-cql3`. Defaults to true
@@ -156,25 +154,9 @@ Example usage with logging:
 $ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --logging.level.zipkin2=trace --logging.level.com.datastax.driver.core=debug
 ```
 
-### MySQL Storage
-The following apply when `STORAGE_TYPE` is set to `mysql`:
-
-    * `MYSQL_DB`: The database to use. Defaults to "zipkin".
-    * `MYSQL_USER` and `MYSQL_PASS`: MySQL authentication, which defaults to empty string.
-    * `MYSQL_HOST`: Defaults to localhost
-    * `MYSQL_TCP_PORT`: Defaults to 3306
-    * `MYSQL_MAX_CONNECTIONS`: Maximum concurrent connections, defaults to 10
-    * `MYSQL_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
-
-Example usage:
-
-```bash
-$ STORAGE_TYPE=mysql MYSQL_USER=root java -jar zipkin.jar
-```
-
 ### Elasticsearch Storage
-Zipkin's [Elasticsearch Http storage component](../zipkin-storage/elasticsearch-http)
-supports versions 2.x and 5.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
+Zipkin's [Elasticsearch storage component](../zipkin-storage/elasticsearch)
+supports versions 2-6.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
 
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
@@ -185,7 +167,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   https://search-domain-xyzzy.us-west-2.es.amazonaws.com) then Zipkin will attempt to
                   use the default AWS credential provider (env variables, system properties, config
                   files, or ec2 profiles) to sign outbound requests to the cluster.
-    * `ES_PIPELINE`: Only valid when the destination is Elasticsearch 5.x. Indicates the ingest
+    * `ES_PIPELINE`: Only valid when the destination is Elasticsearch 5+. Indicates the ingest
                      pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
                     Elasticsearch Api. Defaults to 10000 (10 seconds)
@@ -213,8 +195,6 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                                        Use when X-Pack security (formerly Shield) is in place.
     * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch Api.
                          Options are BASIC, HEADERS, BODY
-    * `ES_LEGACY_READS_ENABLED`: When true, Redundantly queries indexes made with pre v1.31 collectors.
-                                 Defaults to true.
 Example usage:
 
 To connect normally:
@@ -236,6 +216,41 @@ $ STORAGE_TYPE=elasticsearch ES_HOSTS=https://search-mydomain-2rlih66ibw43ftlk43
 
 # Or you can have zipkin implicitly lookup your domain's URL
 $ STORAGE_TYPE=elasticsearch ES_AWS_DOMAIN=mydomain ES_AWS_REGION=ap-southeast-1 java -jar zipkin.jar
+```
+
+### Legacy (v1) storage components
+The following components are no longer encouraged, but exist to help aid
+transition to supported ones. These are indicated as "v1" as they use
+data layouts based on Zipkin's V1 Thrift model, as opposed to the
+simpler v2 data model currently used.
+
+#### MySQL Storage
+The following apply when `STORAGE_TYPE` is set to `mysql`:
+
+    * `MYSQL_DB`: The database to use. Defaults to "zipkin".
+    * `MYSQL_USER` and `MYSQL_PASS`: MySQL authentication, which defaults to empty string.
+    * `MYSQL_HOST`: Defaults to localhost
+    * `MYSQL_TCP_PORT`: Defaults to 3306
+    * `MYSQL_MAX_CONNECTIONS`: Maximum concurrent connections, defaults to 10
+    * `MYSQL_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
+
+Example usage:
+
+```bash
+$ STORAGE_TYPE=mysql MYSQL_USER=root java -jar zipkin.jar
+```
+
+### Cassandra Storage
+Zipkin's [Legacy (v1) Cassandra storage component](../zipkin-storage/cassandra-v1)
+supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
+
+The environment variables are the same as `STORAGE_TYPE=cassandra3`,
+except the default keyspace name is "zipkin".
+
+Example usage:
+
+```bash
+$ STORAGE_TYPE=cassandra java -jar zipkin.jar
 ```
 
 #### Service and Span names query
