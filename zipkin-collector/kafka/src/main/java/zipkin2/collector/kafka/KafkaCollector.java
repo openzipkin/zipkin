@@ -20,7 +20,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
@@ -36,6 +37,8 @@ import zipkin2.storage.StorageComponent;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.AUTO_OFFSET_RESET_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG;
 import static org.apache.kafka.clients.consumer.ConsumerConfig.GROUP_ID_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG;
+import static org.apache.kafka.clients.consumer.ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG;
 
 /**
  * This collector polls a Kafka topic for messages that contain TBinaryProtocol big-endian encoded
@@ -139,10 +142,8 @@ public final class KafkaCollector extends CollectorComponent {
       // https://kafka.apache.org/documentation/#newconsumerconfigs
       properties.put(GROUP_ID_CONFIG, "zipkin");
       properties.put(AUTO_OFFSET_RESET_CONFIG, "earliest");
-      properties.put(
-          ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
-      properties.put(
-          ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+      properties.put(KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
+      properties.put(VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class.getName());
     }
   }
 
@@ -215,7 +216,7 @@ public final class KafkaCollector extends CollectorComponent {
               : Executors.newFixedThreadPool(streams);
 
       for (int i = 0; i < streams; i++) {
-        final KafkaCollectorWorker worker = new KafkaCollectorWorker(builder);
+        KafkaCollectorWorker worker = new KafkaCollectorWorker(builder);
         workers.add(worker);
         pool.execute(guardFailures(worker));
       }
@@ -224,20 +225,21 @@ public final class KafkaCollector extends CollectorComponent {
     }
 
     Runnable guardFailures(final Runnable delegate) {
-      return new Runnable() {
-        @Override
-        public void run() {
-          try {
-            delegate.run();
-          } catch (InterruptException e) {
-            // Interrupts are normal on shutdown, intentionally swallow
-          } catch (RuntimeException e) {
-            LOG.error("Kafka worker exited with exception", e);
-            failure.set(CheckResult.failed(e));
-          } catch (Error e) {
-            LOG.error("Kafka worker exited with error", e);
-            failure.set(CheckResult.failed(new RuntimeException(e)));
-          }
+      return () -> {
+        try {
+          delegate.run();
+        } catch (InterruptException e) {
+          // Interrupts are normal on shutdown, intentionally swallow
+        } catch (KafkaException e) {
+          if (e.getCause() instanceof ConfigException) e = (KafkaException) e.getCause();
+          LOG.error("Kafka worker exited with exception", e);
+          failure.set(CheckResult.failed(e));
+        } catch (RuntimeException e) {
+          LOG.error("Kafka worker exited with exception", e);
+          failure.set(CheckResult.failed(e));
+        } catch (Error e) {
+          LOG.error("Kafka worker exited with error", e);
+          failure.set(CheckResult.failed(new RuntimeException(e)));
         }
       };
     }
