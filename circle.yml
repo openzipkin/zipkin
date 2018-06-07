@@ -36,7 +36,7 @@ dependencies:
 database:
   override:
     - mysql -u ubuntu -e 'SET GLOBAL innodb_file_format=Barracuda'
-    - mysql -u ubuntu circle_test < zipkin-storage/mysql/src/main/resources/mysql.sql
+    - mysql -u ubuntu circle_test < zipkin-storage/mysql-v1/src/main/resources/mysql.sql
 
 test:
   override:
