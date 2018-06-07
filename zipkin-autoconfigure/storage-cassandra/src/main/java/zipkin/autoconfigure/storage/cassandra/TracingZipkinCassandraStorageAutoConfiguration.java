@@ -14,6 +14,7 @@
 package zipkin.autoconfigure.storage.cassandra;
 
 import brave.Tracing;
+import brave.cassandra.driver.TracingSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,6 +37,6 @@ class TracingZipkinCassandraStorageAutoConfiguration {
   // is lost when indirected with SpanConsumer.accept().enqueue(). We'll fix this later
   @Bean
   SessionFactory tracingSessionFactory() {
-    return storage -> new TracingSession(tracing, delegate.create(storage));
+    return storage -> TracingSession.create(tracing, delegate.create(storage));
   }
 }
