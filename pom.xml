@@ -193,8 +193,8 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-autoconfigure-storage-cassandra-v1</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -205,8 +205,8 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -217,19 +217,19 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-autoconfigure-storage-mysql-v1</artifactId>
+        <groupId>${project.groupId}</groupId>
+        <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-autoconfigure-storage-elasticsearch-aws</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -271,7 +271,7 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -283,7 +283,7 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -295,7 +295,7 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
+        <groupId>${project.groupId}</groupId>
         <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>

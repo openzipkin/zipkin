@@ -13,14 +13,14 @@ JRE 8 is required to run Zipkin server.
 Fetch the latest released
 [executable jar for Zipkin server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec)
 and
-[autoconfigure module jar for the kafka collector](https://search.maven.org/remote_content?g=io.zipkin.zipkin2&a=zipkin-autoconfigure-collector-kafka08&v=LATEST&c=module).
+[autoconfigure module jar for the kafka collector](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-autoconfigure-collector-kafka08&v=LATEST&c=module).
 Run Zipkin server with the Kafka 0.10+ collector enabled.
 
 For example:
 
 ```bash
 $ curl -sSL https://zipkin.io/quickstart.sh | bash -s
-$ curl -sSL https://zipkin.io/quickstart.sh | bash -s io.zipkin.zipkin2:zipkin-autoconfigure-collector-kafka08:LATEST:module kafka08.jar
+$ curl -sSL https://zipkin.io/quickstart.sh | bash -s io.zipkin.java:zipkin-autoconfigure-collector-kafka08:LATEST:module kafka08.jar
 $ KAFKA_ZOOKEEPER=127.0.0.1:2181 \
     java \
     -Dloader.path='kafka08.jar,kafka08.jar!/lib' \

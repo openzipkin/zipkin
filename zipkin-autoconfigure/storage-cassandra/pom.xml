@@ -25,9 +25,8 @@
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
-  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
-  <name>Auto Configuration: Cassandra 3 Storage</name>
+  <name>Auto Configuration: Cassandra Storage (v1)</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
@@ -36,16 +35,13 @@
   <dependencies>
     <dependency>
       <groupId>io.zipkin.zipkin2</groupId>
-      <artifactId>zipkin-storage-cassandra</artifactId>
+      <artifactId>zipkin-storage-cassandra-v1</artifactId>
     </dependency>
+
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave</artifactId>
       <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
-      <artifactId>zipkin-storage-cassandra-v1</artifactId>
     </dependency>
   </dependencies>
 </project>

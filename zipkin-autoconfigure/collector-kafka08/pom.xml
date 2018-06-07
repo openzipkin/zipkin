@@ -25,7 +25,6 @@
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
-  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin-autoconfigure-collector-kafka08</artifactId>
   <name>Auto Configuration: Kafka Collector</name>
 
