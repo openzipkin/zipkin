@@ -25,9 +25,8 @@
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
-  <groupId>io.zipkin.zipkin2</groupId>
-  <artifactId>zipkin-autoconfigure-storage-mysql-v1</artifactId>
-  <name>Auto Configuration: MySQL Storage</name>
+  <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+  <name>Auto Configuration: Cassandra 3 Storage</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
@@ -36,23 +35,16 @@
   <dependencies>
     <dependency>
       <groupId>io.zipkin.zipkin2</groupId>
-      <artifactId>zipkin-storage-mysql-v1</artifactId>
+      <artifactId>zipkin-storage-cassandra</artifactId>
     </dependency>
-
-    <dependency>
-      <groupId>org.mariadb.jdbc</groupId>
-      <artifactId>mariadb-java-client</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.zaxxer</groupId>
-      <artifactId>HikariCP</artifactId>
-    </dependency>
-
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave</artifactId>
       <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-storage-cassandra-v1</artifactId>
     </dependency>
   </dependencies>
 </project>

@@ -25,7 +25,6 @@
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
-  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
   <name>Auto Configuration: Scribe Collector</name>
 
