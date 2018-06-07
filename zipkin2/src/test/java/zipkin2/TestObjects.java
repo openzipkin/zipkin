@@ -15,6 +15,7 @@ package zipkin2;
 
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
 
@@ -22,20 +23,16 @@ public final class TestObjects {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
   /** Notably, the cassandra implementation has day granularity */
   public static final long DAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
+
   public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
   // Use real time, as most span-stores have TTL logic which looks back several days.
   public static final long TODAY = midnightUTC(System.currentTimeMillis());
 
-  public static final Endpoint FRONTEND = Endpoint.newBuilder()
-    .serviceName("frontend")
-    .ip("127.0.0.1")
-    .build();
-  public static final Endpoint BACKEND = Endpoint.newBuilder()
-    .serviceName("backend")
-    .ip("192.168.99.101")
-    .port(9000)
-    .build();
+  public static final Endpoint FRONTEND =
+      Endpoint.newBuilder().serviceName("frontend").ip("127.0.0.1").build();
+  public static final Endpoint BACKEND =
+      Endpoint.newBuilder().serviceName("backend").ip("192.168.99.101").port(9000).build();
 
   /** For bucketed data floored to the day. For example, dependency links. */
   public static long midnightUTC(long epochMillis) {
@@ -48,18 +45,43 @@ public final class TestObjects {
     return day.getTimeInMillis();
   }
 
-  public static final Span CLIENT_SPAN = Span.newBuilder()
-    .traceId("7180c278b62e8f6a216a2aea45d08fc9")
-    .parentId("6b221d5bc9e6496c")
-    .id("5b4185666d50f68b")
-    .name("get")
-    .kind(Span.Kind.CLIENT)
-    .localEndpoint(FRONTEND)
-    .remoteEndpoint(BACKEND)
-    .timestamp((TODAY - 207) * 1000L)
-    .duration(207 * 1000L)
-    .addAnnotation((TODAY - 100) * 1000L, "foo")
-    .putTag("http.path", "/api")
-    .putTag("clnt/finagle.version", "6.45.0")
-    .build();
+  public static final Span CLIENT_SPAN =
+      Span.newBuilder()
+          .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+          .parentId("6b221d5bc9e6496c")
+          .id("5b4185666d50f68b")
+          .name("get")
+          .kind(Span.Kind.CLIENT)
+          .localEndpoint(FRONTEND)
+          .remoteEndpoint(BACKEND)
+          .timestamp((TODAY - 207) * 1000L)
+          .duration(207 * 1000L)
+          .addAnnotation((TODAY - 100) * 1000L, "foo")
+          .putTag("http.path", "/api")
+          .putTag("clnt/finagle.version", "6.45.0")
+          .build();
+
+  static final Span.Builder spanBuilder = spanBuilder();
+
+  /** Reuse a builder as it is significantly slows tests to create 100000 of these! */
+  static Span.Builder spanBuilder() {
+    return Span.newBuilder()
+        .name("get /foo")
+        .timestamp(System.currentTimeMillis() * 1000)
+        .duration(1000)
+        .kind(Span.Kind.SERVER)
+        .localEndpoint(BACKEND)
+        .putTag("http.method", "GET");
+  }
+
+  /**
+   * Zipkin trace ids are random 64bit numbers. This creates a relatively large input to avoid
+   * flaking out due to PRNG nuance.
+   */
+  public static final Span[] LOTS_OF_SPANS =
+      new Random().longs(100_000).mapToObj(t -> span(t)).toArray(Span[]::new);
+
+  public static Span span(long traceId) {
+    return spanBuilder.traceId(Long.toHexString(traceId)).id(traceId).build();
+  }
 }

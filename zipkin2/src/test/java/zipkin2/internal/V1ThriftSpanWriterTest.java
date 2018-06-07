@@ -294,6 +294,16 @@ public class V1ThriftSpanWriterTest {
             ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // serviceName (empty is 32 zero bits)
   }
 
+  /** To match finagle */
+  @Test
+  public void writesDebugFalse() {
+    span = span.toBuilder().debug(false).build();
+
+    writer.write(span, buf);
+
+    assertThat(buf.toByteArray()).containsSequence(ThriftField.TYPE_BOOL, 0);
+  }
+
   @Test
   public void tagsAreBinaryAnnotations() {
     writer.write(span.toBuilder().putTag("foo", "bar").build(), buf);

@@ -83,7 +83,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
       }
     }
 
-    if (Boolean.TRUE.equals(v1Span.debug())) sizeInBytes += 3 + 1; // DEBUG
+    if (v1Span.debug() != null) sizeInBytes += 3 + 1; // DEBUG
     if (v1Span.timestamp() != 0L) sizeInBytes += 3 + 8; // TIMESTAMP
     if (v1Span.duration() != 0L) sizeInBytes += 3 + 8; // DURATION
 
@@ -117,9 +117,9 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     BINARY_ANNOTATIONS.write(buffer);
     writeBinaryAnnotations(buffer, v1Span, endpointBytes);
 
-    if (Boolean.TRUE.equals(v1Span.debug())) {
+    if (v1Span.debug() != null) {
       DEBUG.write(buffer);
-      buffer.writeByte(1);
+      buffer.writeByte(v1Span.debug() ? 1 : 0);
     }
 
     if (v1Span.timestamp() != 0L) {

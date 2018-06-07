@@ -158,11 +158,13 @@ public final class V1ThriftSpanReader {
           skip(bytes, thriftField.type);
         }
       }
-      if (value == null) return;
+      if (key == null || value == null) return;
       if (isString) {
         builder.addBinaryAnnotation(key, new String(value, UTF_8), endpoint);
       } else if (isBoolean && value.length == 1 && value[0] == 1 && endpoint != null) {
-        builder.addBinaryAnnotation(key, endpoint);
+        if (key.equals("sa") || key.equals("ca") || key.equals("ma")) {
+          builder.addBinaryAnnotation(key, endpoint);
+        }
       }
     }
   }

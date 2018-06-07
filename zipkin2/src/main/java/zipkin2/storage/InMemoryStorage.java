@@ -135,6 +135,10 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     this.maxSpanCount = builder.maxSpanCount;
   }
 
+  public int acceptedSpanCount() {
+    return acceptedSpanCount;
+  }
+
   public synchronized void clear() {
     acceptedSpanCount = 0;
     traceIdToTraceIdTimeStamps.clear();

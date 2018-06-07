@@ -164,7 +164,9 @@ public final class V1JsonSpanReader implements JsonReaderAdapter<V1Span> {
     if (stringValue != null) {
       builder.addBinaryAnnotation(key, stringValue, endpoint);
     } else if (booleanValue != null && booleanValue && endpoint != null) {
-      builder.addBinaryAnnotation(key, endpoint);
+      if (key.equals("sa") || key.equals("ca") || key.equals("ma")) {
+        builder.addBinaryAnnotation(key, endpoint);
+      }
     }
   }
 }

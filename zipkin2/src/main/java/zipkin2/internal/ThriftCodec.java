@@ -190,7 +190,11 @@ public final class ThriftCodec {
   }
 
   static void skip(ByteBuffer bytes, int count) {
-    bytes.position(bytes.position() + count);
+    // avoid java.lang.NoSuchMethodError: java.nio.ByteBuffer.position(I)Ljava/nio/ByteBuffer;
+    // bytes.position(bytes.position() + count);
+    for (int i = 0; i< count && bytes.hasRemaining(); i++) {
+      bytes.get();
+    }
   }
 
   static byte[] readByteArray(ByteBuffer bytes) {

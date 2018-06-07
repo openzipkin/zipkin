@@ -341,6 +341,29 @@ public class V1SpanBytesDecoderTest {
   }
 
   @Test
+  public void ignoresNonAddressBooleanBinaryAnnotations() {
+    String json =
+        "{\n"
+            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+            + "  \"id\": \"6b221d5bc9e6496c\",\n"
+            + "  \"binaryAnnotations\": [\n"
+            + "    {\n"
+            + "      \"key\": \"aa\",\n"
+            + "      \"value\": true,\n"
+            + "      \"endpoint\": {\n"
+            + "        \"serviceName\": \"foo\"\n"
+            + "      }\n"
+            + "    }\n"
+            + "  ]\n"
+            + "}";
+
+    Span decoded = SpanBytesDecoder.JSON_V1.decodeOne(json.getBytes(UTF_8));
+    assertThat(decoded.tags()).isEmpty();
+    assertThat(decoded.localEndpoint()).isNull();
+    assertThat(decoded.remoteEndpoint()).isNull();
+  }
+
+  @Test
   public void niceErrorOnIncomplete_annotation() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("Incomplete annotation at $.annotations[0].timestamp");
