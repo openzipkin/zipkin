@@ -33,8 +33,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import zipkin.internal.V2StorageComponent;
-import zipkin.server.internal.brave.TracingV2StorageComponent;
+import zipkin.server.internal.brave.TracingStorageComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.InMemoryStorage;
@@ -129,9 +128,8 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
       if (tracing == null) return bean;
-      // TODO: this will miss as we no longer wire a V2StorageComponent
-      if (bean instanceof V2StorageComponent) {
-        return new TracingV2StorageComponent(tracing, (V2StorageComponent) bean);
+      if (bean instanceof StorageComponent) {
+        return new TracingStorageComponent(tracing, (StorageComponent) bean);
       }
       return bean;
     }
