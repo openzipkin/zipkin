@@ -162,22 +162,12 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
     * `ES_HOSTS`: A comma separated list of elasticsearch base urls to connect to ex. http://host:9200.
                   Defaults to "http://localhost:9200".
-
-                  If the http URL is an AWS-hosted elasticsearch installation (e.g.
-                  https://search-domain-xyzzy.us-west-2.es.amazonaws.com) then Zipkin will attempt to
-                  use the default AWS credential provider (env variables, system properties, config
-                  files, or ec2 profiles) to sign outbound requests to the cluster.
     * `ES_PIPELINE`: Only valid when the destination is Elasticsearch 5+. Indicates the ingest
                      pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
                     Elasticsearch Api. Defaults to 10000 (10 seconds)
     * `ES_MAX_REQUESTS`: Only valid when the transport is http. Sets maximum in-flight requests from
                          this process to any Elasticsearch host. Defaults to 64.
-    * `ES_AWS_DOMAIN`: The name of the AWS-hosted elasticsearch domain to use. Supercedes any set
-                       `ES_HOSTS`. Triggers the same request signing behavior as with `ES_HOSTS`, but
-                       requires the additional IAM permission to describe the given domain.
-    * `ES_AWS_REGION`: An optional override to the default region lookup to search for the domain
-                       given in `ES_AWS_DOMAIN`. Ignored if only `ES_HOSTS` is present.
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_DATE_SEPARATOR`: The date separator to use when generating daily index names. Defaults to '-'.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
@@ -205,17 +195,6 @@ $ STORAGE_TYPE=elasticsearch ES_HOSTS=http://myhost:9200 java -jar zipkin.jar
 To log Elasticsearch api requests:
 ```bash
 $ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
-```
-
-Or to use the Amazon Elasticsearch Service.
-```bash
-# make sure your cli credentials are setup as zipkin will read them
-$ aws es describe-elasticsearch-domain --domain-name mydomain|jq .DomainStatus.Endpoint
-"search-mydomain-2rlih66ibw43ftlk4342ceeewu.ap-southeast-1.es.amazonaws.com"
-$ STORAGE_TYPE=elasticsearch ES_HOSTS=https://search-mydomain-2rlih66ibw43ftlk4342ceeewu.ap-southeast-1.es.amazonaws.com java -jar zipkin.jar
-
-# Or you can have zipkin implicitly lookup your domain's URL
-$ STORAGE_TYPE=elasticsearch ES_AWS_DOMAIN=mydomain ES_AWS_REGION=ap-southeast-1 java -jar zipkin.jar
 ```
 
 ### Legacy (v1) storage components

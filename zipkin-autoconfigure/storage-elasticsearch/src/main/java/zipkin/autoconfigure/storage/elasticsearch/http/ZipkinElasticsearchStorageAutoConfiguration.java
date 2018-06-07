@@ -35,7 +35,8 @@ import zipkin2.storage.StorageComponent;
 @EnableConfigurationProperties(ZipkinElasticsearchStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
-class ZipkinElasticsearchStorageAutoConfiguration {
+// intentionally public for import by zipkin-autoconfigure-storage-elasticsearch-aws
+public class ZipkinElasticsearchStorageAutoConfiguration {
 
   @Bean
   @Qualifier("zipkinElasticsearchHttp")
