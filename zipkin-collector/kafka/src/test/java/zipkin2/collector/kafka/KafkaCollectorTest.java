@@ -89,22 +89,30 @@ public class KafkaCollectorTest {
   }
 
   @Test
-  public void checkPasses() throws Exception {
+  public void checkPasses() {
     try (KafkaCollector collector = builder("check_passes").build()) {
       assertThat(collector.check().ok()).isTrue();
     }
   }
 
+  /**
+   * Don't raise exception (crash process), rather fail status check! This allows the health check
+   * to report the cause.
+   */
   @Test
-  public void start_failsOnInvalidBootstrapServers() throws Exception {
-    thrown.expect(KafkaException.class);
-    thrown.expectMessage("Failed to construct kafka consumer");
+  public void check_failsOnInvalidBootstrapServers() throws Exception {
 
     KafkaCollector.Builder builder =
         builder("fail_invalid_bootstrap_servers").bootstrapServers("1.1.1.1");
 
     try (KafkaCollector collector = builder.build()) {
       collector.start();
+
+      Thread.sleep(1000L); // wait for crash
+
+      assertThat(collector.check().error())
+          .isInstanceOf(KafkaException.class)
+          .hasMessage("Invalid url in bootstrap.servers: 1.1.1.1");
     }
   }
 
@@ -309,12 +317,11 @@ public class KafkaCollectorTest {
   }
 
   @Test
-  public void multipleTopicsCommaDelimited() throws Exception {
+  public void multipleTopicsCommaDelimited() {
     try (KafkaCollector collector = builder("topic1,topic2").build()) {
       collector.start();
 
-      assertThat(collector.kafkaWorkers.workers.get(0).kafkaConsumer.subscription())
-          .containsExactly("topic1", "topic2");
+      assertThat(collector.kafkaWorkers.workers.get(0).topics).containsExactly("topic1", "topic2");
     }
   }
 

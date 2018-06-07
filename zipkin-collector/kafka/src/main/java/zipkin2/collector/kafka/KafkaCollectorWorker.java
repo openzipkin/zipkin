@@ -18,8 +18,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
-import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
@@ -46,7 +46,8 @@ final class KafkaCollectorWorker implements Runnable {
         public void onError(Throwable t) {}
       };
 
-  final Consumer<byte[], byte[]> kafkaConsumer;
+  final Properties properties;
+  final List<String> topics;
   final Collector collector;
   final CollectorMetrics metrics;
   /** Kafka topic partitions currently assigned to this worker. List is not modifiable. */
@@ -54,9 +55,16 @@ final class KafkaCollectorWorker implements Runnable {
       new AtomicReference<>(Collections.emptyList());
 
   KafkaCollectorWorker(KafkaCollector.Builder builder) {
-    kafkaConsumer = new KafkaConsumer<>(builder.properties);
-    List<String> topics = Arrays.asList(builder.topic.split(","));
-    kafkaConsumer.subscribe(
+    properties = builder.properties;
+    topics = Arrays.asList(builder.topic.split(","));
+    collector = builder.delegate.build();
+    metrics = builder.metrics;
+  }
+
+  @Override
+  public void run() {
+    try (KafkaConsumer kafkaConsumer = new KafkaConsumer<>(properties)) {
+      kafkaConsumer.subscribe(
         topics,
         new ConsumerRebalanceListener() {
           @Override
@@ -69,13 +77,6 @@ final class KafkaCollectorWorker implements Runnable {
             assignedPartitions.set(Collections.unmodifiableList(new ArrayList<>(partitions)));
           }
         });
-    this.collector = builder.delegate.build();
-    this.metrics = builder.metrics;
-  }
-
-  @Override
-  public void run() {
-    try {
       LOG.info("Kafka consumer starting polling loop.");
       while (true) {
         final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(1000);
@@ -110,7 +111,6 @@ final class KafkaCollectorWorker implements Runnable {
     } finally {
       LOG.info("Kafka consumer polling loop stopped.");
       LOG.info("Closing Kafka consumer...");
-      kafkaConsumer.close();
       LOG.info("Kafka consumer closed.");
     }
   }
