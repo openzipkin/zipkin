@@ -268,15 +268,15 @@ Property | Environment Variable | Description
 --- | --- | ---
 `zipkin.collector.http.enabled` | `HTTP_COLLECTOR_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
 
-### Scribe Collector
+### Scribe (Legacy) Collector
 A collector supporting Scribe is available as an external module. See
 [zipkin-autoconfigure/collector-scribe](../zipkin-autoconfigure/collector-scribe/).
 
-### Kafka Collector
-This collector remains a Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
+### Kafka (Modern) Collector
+This defaul collector remains a legacy Kafka 0.8.x consumer, while Zipkin systems update to 0.9+.
 
 A collector supporting Kafka versions 0.10 and later is available as an external module. See
-[zipkin-autoconfigure/collector-kafka10](../zipkin-autoconfigure/collector-kafka10/).
+[zipkin-autoconfigure/collector-kafka](../zipkin-autoconfigure/collector-kafka/).
 
 The following apply when `KAFKA_ZOOKEEPER` is set:
 

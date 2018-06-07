@@ -26,8 +26,8 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.internal.V2StorageComponent;
 import zipkin.server.internal.brave.TracingConfiguration;
+import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -126,8 +126,8 @@ public class ZipkinServerConfigurationTest {
     );
     context.refresh();
 
-    V2StorageComponent v2Storage = context.getBean(V2StorageComponent.class);
-    assertThat(v2Storage.delegate())
+    StorageComponent v2Storage = context.getBean(StorageComponent.class);
+    assertThat(v2Storage)
       .extracting("searchEnabled")
       .containsExactly(false);
   }

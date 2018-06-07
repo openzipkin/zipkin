@@ -17,7 +17,7 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
-import zipkin.collector.rabbitmq.RabbitMQCollector;
+import zipkin2.collector.rabbitmq.RabbitMQCollector;
 
 /** opens package access for testing */
 public final class Access {
@@ -25,19 +25,15 @@ public final class Access {
   /** Just registering properties to avoid automatically connecting to a Rabbit MQ server */
   public static void registerRabbitMQProperties(AnnotationConfigApplicationContext context) {
     context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      EnableRabbitMQCollectorProperties.class
-    );
+        PropertyPlaceholderAutoConfiguration.class, EnableRabbitMQCollectorProperties.class);
   }
 
   @Configuration
   @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
-  static class EnableRabbitMQCollectorProperties {
-  }
+  static class EnableRabbitMQCollectorProperties {}
 
   public static RabbitMQCollector.Builder collectorBuilder(
-    AnnotationConfigApplicationContext context
-  ) throws Exception {
+      AnnotationConfigApplicationContext context) throws Exception {
     return context.getBean(ZipkinRabbitMQCollectorProperties.class).toBuilder();
   }
 }

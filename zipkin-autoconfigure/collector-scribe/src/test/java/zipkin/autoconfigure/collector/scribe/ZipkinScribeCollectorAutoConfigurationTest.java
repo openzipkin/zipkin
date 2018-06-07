@@ -22,19 +22,18 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.collector.CollectorMetrics;
-import zipkin.collector.CollectorSampler;
-import zipkin.collector.scribe.ScribeCollector;
-import zipkin.storage.InMemoryStorage;
-import zipkin.storage.StorageComponent;
+import zipkin2.collector.CollectorMetrics;
+import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.scribe.ScribeCollector;
+import zipkin2.storage.InMemoryStorage;
+import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinScribeCollectorAutoConfigurationTest {
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  @Rule public ExpectedException thrown = ExpectedException.none();
 
   AnnotationConfigApplicationContext context;
 
@@ -48,8 +47,10 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   @Test
   public void doesntProvidesCollectorComponent_byDefault() {
     context = new AnnotationConfigApplicationContext();
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinScribeCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinScribeCollectorAutoConfiguration.class,
+        InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -61,8 +62,10 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   public void providesCollectorComponent_whenEnabled() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.collector.scribe.enabled:true");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinScribeCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinScribeCollectorAutoConfiguration.class,
+        InMemoryConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(ScribeCollector.class)).isNotNull();
@@ -71,30 +74,32 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   @Test
   public void canOverrideProperty_port() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context,
-        "zipkin.collector.scribe.enabled:true",
-        "zipkin.collector.scribe.port:9999"
-    );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
-        ZipkinScribeCollectorAutoConfiguration.class, InMemoryConfiguration.class);
+    addEnvironment(
+        context, "zipkin.collector.scribe.enabled:true", "zipkin.collector.scribe.port:9999");
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinScribeCollectorAutoConfiguration.class,
+        InMemoryConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(ZipkinScribeCollectorProperties.class).getPort())
-        .isEqualTo(9999);
+    assertThat(context.getBean(ZipkinScribeCollectorProperties.class).getPort()).isEqualTo(9999);
   }
 
   @Configuration
   static class InMemoryConfiguration {
-    @Bean CollectorSampler sampler() {
+    @Bean
+    CollectorSampler sampler() {
       return CollectorSampler.ALWAYS_SAMPLE;
     }
 
-    @Bean CollectorMetrics metrics() {
+    @Bean
+    CollectorMetrics metrics() {
       return CollectorMetrics.NOOP_METRICS;
     }
 
-    @Bean StorageComponent storage() {
-      return new InMemoryStorage();
+    @Bean
+    StorageComponent storage() {
+      return InMemoryStorage.newBuilder().build();
     }
   }
 }

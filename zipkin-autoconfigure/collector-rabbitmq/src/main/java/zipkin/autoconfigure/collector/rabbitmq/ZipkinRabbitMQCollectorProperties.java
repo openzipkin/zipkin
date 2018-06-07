@@ -20,11 +20,9 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin.collector.rabbitmq.RabbitMQCollector;
+import zipkin2.collector.rabbitmq.RabbitMQCollector;
 
-/**
- * Properties for configuring and building a {@link RabbitMQCollector}.
- */
+/** Properties for configuring and building a {@link RabbitMQCollector}. */
 @ConfigurationProperties("zipkin.collector.rabbitmq")
 class ZipkinRabbitMQCollectorProperties {
   static final URI EMPTY_URI = URI.create("");
@@ -46,8 +44,8 @@ class ZipkinRabbitMQCollectorProperties {
   /** Flag to use SSL */
   private Boolean useSsl;
   /**
-   * RabbitMQ URI spec-compliant URI to connect to the RabbitMQ server.
-   * When used, other connection properties will be ignored.
+   * RabbitMQ URI spec-compliant URI to connect to the RabbitMQ server. When used, other connection
+   * properties will be ignored.
    */
   private URI uri;
 
@@ -125,7 +123,7 @@ class ZipkinRabbitMQCollectorProperties {
   }
 
   public RabbitMQCollector.Builder toBuilder()
-    throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException {
+      throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException {
     final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
     ConnectionFactory connectionFactory = new ConnectionFactory();
     if (concurrency != null) result.concurrency(concurrency);

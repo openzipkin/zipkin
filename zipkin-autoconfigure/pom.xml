@@ -36,14 +36,14 @@
   <modules>
     <module>ui</module>
     <module>collector-kafka</module>
-    <module>collector-kafka10</module>
     <module>collector-rabbitmq</module>
+    <module>collector-kafka08</module>
     <module>collector-scribe</module>
     <module>storage-cassandra</module>
-    <module>storage-cassandra-v1</module>
     <module>storage-elasticsearch</module>
     <module>storage-elasticsearch-aws</module>
     <module>storage-mysql-v1</module>
+    <module>storage-cassandra-v1</module>
     <module>metrics-prometheus</module>
   </modules>
 

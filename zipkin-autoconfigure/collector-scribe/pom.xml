@@ -14,7 +14,9 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -23,6 +25,7 @@
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
+  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
   <name>Auto Configuration: Scribe Collector</name>
 
@@ -32,7 +35,7 @@
 
   <dependencies>
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin-collector-scribe</artifactId>
       <exclusions>
         <!-- com.facebook.swift:swift-service brings an old version which
@@ -59,7 +62,9 @@
           <classifier>module</classifier>
           <!-- exclude dependencies already packaged in zipkin-server -->
           <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
-          <excludeGroupIds>org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson,com.google.guava</excludeGroupIds>
+          <excludeGroupIds>
+            org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson,com.google.guava
+          </excludeGroupIds>
           <!-- excludes direct dependency instead of the group id, as otherwise we'd exclude ourselves -->
           <excludeArtifactIds>zipkin</excludeArtifactIds>
         </configuration>

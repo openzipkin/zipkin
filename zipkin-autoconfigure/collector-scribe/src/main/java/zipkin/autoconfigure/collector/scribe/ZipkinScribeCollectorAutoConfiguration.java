@@ -17,10 +17,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.collector.CollectorMetrics;
-import zipkin.collector.CollectorSampler;
-import zipkin.collector.scribe.ScribeCollector;
-import zipkin.storage.StorageComponent;
+import zipkin2.collector.CollectorMetrics;
+import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.scribe.ScribeCollector;
+import zipkin2.storage.StorageComponent;
 
 /**
  * This collector accepts Scribe logs in a specified category. Each log entry is expected to contain
@@ -32,8 +32,12 @@ import zipkin.storage.StorageComponent;
 @ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", havingValue = "true")
 class ZipkinScribeCollectorAutoConfiguration {
   /** The init method will block until the scribe port is listening, or crash on port conflict */
-  @Bean(initMethod = "start") ScribeCollector scribe(ZipkinScribeCollectorProperties scribe,
-      CollectorSampler sampler, CollectorMetrics metrics, StorageComponent storage) {
+  @Bean(initMethod = "start")
+  ScribeCollector scribe(
+      ZipkinScribeCollectorProperties scribe,
+      CollectorSampler sampler,
+      CollectorMetrics metrics,
+      StorageComponent storage) {
     return scribe.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
   }
 }

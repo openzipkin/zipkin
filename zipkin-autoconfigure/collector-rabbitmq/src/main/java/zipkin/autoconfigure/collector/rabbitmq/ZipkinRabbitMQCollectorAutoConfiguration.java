@@ -23,29 +23,30 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import zipkin.collector.CollectorMetrics;
-import zipkin.collector.CollectorSampler;
-import zipkin.collector.rabbitmq.RabbitMQCollector;
-import zipkin.storage.StorageComponent;
+import zipkin2.collector.CollectorMetrics;
+import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.rabbitmq.RabbitMQCollector;
+import zipkin2.storage.StorageComponent;
 
-/**
- * Auto-configuration for {@link RabbitMQCollector}.
- */
+/** Auto-configuration for {@link RabbitMQCollector}. */
 @Configuration
 @Conditional(ZipkinRabbitMQCollectorAutoConfiguration.RabbitMQAddressesOrUriSet.class)
 @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
 class ZipkinRabbitMQCollectorAutoConfiguration {
 
-  @Bean(initMethod = "start") RabbitMQCollector rabbitMq(
-    ZipkinRabbitMQCollectorProperties properties,
-    CollectorSampler sampler, CollectorMetrics metrics, StorageComponent storage)
-    throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
+  @Bean(initMethod = "start")
+  RabbitMQCollector rabbitMq(
+      ZipkinRabbitMQCollectorProperties properties,
+      CollectorSampler sampler,
+      CollectorMetrics metrics,
+      StorageComponent storage)
+      throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
   }
 
   /**
-   * This condition passes when {@link ZipkinRabbitMQCollectorProperties#getAddresses()} or
-   * {@link ZipkinRabbitMQCollectorProperties#getUri()} is set to a non-empty value.
+   * This condition passes when {@link ZipkinRabbitMQCollectorProperties#getAddresses()} or {@link
+   * ZipkinRabbitMQCollectorProperties#getUri()} is set to a non-empty value.
    *
    * <p>This is here because the yaml defaults this property to empty like this, and Spring Boot
    * doesn't have an option to treat empty properties as unset.
@@ -56,9 +57,10 @@ class ZipkinRabbitMQCollectorAutoConfiguration {
    * }</pre>
    */
   static final class RabbitMQAddressesOrUriSet implements Condition {
-    @Override public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
+    @Override
+    public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
       return !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.addresses"))
-        || !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.uri"));
+          || !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.uri"));
     }
 
     private static boolean isEmpty(String s) {

@@ -14,49 +14,58 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.java</groupId>
-    <artifactId>zipkin-collector</artifactId>
+    <groupId>io.zipkin.zipkin2</groupId>
+    <artifactId>zipkin-collector-parent</artifactId>
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-collector-kafka</artifactId>
-  <name>Collector: Kafka</name>
+  <name>Collector: Kafka 0.10+</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <!-- This is pinned to Kafka 0.8.x client as 0.9.x brokers work with them, but not visa-versa
-         http://docs.confluent.io/2.0.0/upgrade.html -->
-    <kafka.version>0.8.2.2</kafka.version>
+    <!-- when changing this, a change to the version of kafka-junit is likely needed, too -->
+    <kafka.version>1.1.0</kafka.version>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
+      <artifactId>zipkin-collector</artifactId>
     </dependency>
 
     <dependency>
       <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.11</artifactId>
+      <artifactId>kafka-clients</artifactId>
       <version>${kafka.version}</version>
-      <exclusions>
-        <!-- don't eagerly bind slf4j -->
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
 
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-      <type>test-jar</type>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j.version}</version>
       <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.github.charithe</groupId>
+      <artifactId>kafka-junit</artifactId>
+      <!-- This version is tightly coupled to the version of kafka-clients being used.
+       https://github.com/charithe/kafka-junit -->
+      <version>4.1.1</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>org.slf4j</groupId>
+          <artifactId>log4j-over-slf4j</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 </project>

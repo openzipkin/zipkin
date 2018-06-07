@@ -5,7 +5,7 @@ This collector accepts Scribe logs in a specified category. Each log
 entry is expected to contain a single span, which is TBinaryProtocol
 big-endian, then base64 encoded. These spans are then pushed to storage.
 
-`zipkin.collector.scribe.ScribeCollector.Builder` includes defaults that will
+`zipkin2.collector.scribe.ScribeCollector.Builder` includes defaults that will
 listen on port 9410, accept log entries in the category "zipkin"
 
 ## Encoding
