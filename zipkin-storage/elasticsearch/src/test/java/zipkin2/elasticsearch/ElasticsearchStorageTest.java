@@ -31,15 +31,16 @@ import static zipkin2.TestObjects.DAY;
 public class ElasticsearchStorageTest {
   @Rule public MockWebServer es = new MockWebServer();
 
-  ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
-    .hosts(asList(es.url("").toString()))
-    .build();
+  ElasticsearchStorage storage =
+      ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
 
-  @After public void close() throws IOException {
+  @After
+  public void close() throws IOException {
     storage.close();
   }
 
-  @Test public void memoizesIndexTemplate() throws Exception {
+  @Test
+  public void memoizesIndexTemplate() throws Exception {
     es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
@@ -55,85 +56,86 @@ public class ElasticsearchStorageTest {
     es.takeRequest(); // get dependency template
 
     assertThat(es.takeRequest().getPath())
-      .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
+        .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
     assertThat(es.takeRequest().getPath())
-      .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
+        .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
   }
 
-  String healthResponse = "{\n"
-    + "  \"cluster_name\": \"elasticsearch_zipkin\",\n"
-    + "  \"status\": \"yellow\",\n"
-    + "  \"timed_out\": false,\n"
-    + "  \"number_of_nodes\": 1,\n"
-    + "  \"number_of_data_nodes\": 1,\n"
-    + "  \"active_primary_shards\": 5,\n"
-    + "  \"active_shards\": 5,\n"
-    + "  \"relocating_shards\": 0,\n"
-    + "  \"initializing_shards\": 0,\n"
-    + "  \"unassigned_shards\": 5,\n"
-    + "  \"delayed_unassigned_shards\": 0,\n"
-    + "  \"number_of_pending_tasks\": 0,\n"
-    + "  \"number_of_in_flight_fetch\": 0,\n"
-    + "  \"task_max_waiting_in_queue_millis\": 0,\n"
-    + "  \"active_shards_percent_as_number\": 50\n"
-    + "}";
+  String healthResponse =
+      "{\n"
+          + "  \"cluster_name\": \"elasticsearch_zipkin\",\n"
+          + "  \"status\": \"yellow\",\n"
+          + "  \"timed_out\": false,\n"
+          + "  \"number_of_nodes\": 1,\n"
+          + "  \"number_of_data_nodes\": 1,\n"
+          + "  \"active_primary_shards\": 5,\n"
+          + "  \"active_shards\": 5,\n"
+          + "  \"relocating_shards\": 0,\n"
+          + "  \"initializing_shards\": 0,\n"
+          + "  \"unassigned_shards\": 5,\n"
+          + "  \"delayed_unassigned_shards\": 0,\n"
+          + "  \"number_of_pending_tasks\": 0,\n"
+          + "  \"number_of_in_flight_fetch\": 0,\n"
+          + "  \"task_max_waiting_in_queue_millis\": 0,\n"
+          + "  \"active_shards_percent_as_number\": 50\n"
+          + "}";
 
-  @Test public void check() throws Exception {
+  @Test
+  public void check() throws Exception {
     es.enqueue(new MockResponse().setBody(healthResponse));
 
-    assertThat(storage.check())
-      .isEqualTo(CheckResult.OK);
+    assertThat(storage.check()).isEqualTo(CheckResult.OK);
   }
 
-  @Test public void check_oneHostDown() throws Exception {
+  @Test
+  public void check_oneHostDown() throws Exception {
     storage.close();
-    OkHttpClient client = new OkHttpClient.Builder()
-      .connectTimeout(100, TimeUnit.MILLISECONDS)
-      .build();
-    storage = ElasticsearchStorage.newBuilder(client)
-      .hosts(asList("http://1.2.3.4:" + es.getPort(), es.url("").toString()))
-      .build();
+    OkHttpClient client =
+        new OkHttpClient.Builder().connectTimeout(100, TimeUnit.MILLISECONDS).build();
+    storage =
+        ElasticsearchStorage.newBuilder(client)
+            .hosts(asList("http://1.2.3.4:" + es.getPort(), es.url("").toString()))
+            .build();
 
     es.enqueue(new MockResponse().setBody(healthResponse));
 
-    assertThat(storage.check())
-      .isEqualTo(CheckResult.OK);
+    assertThat(storage.check()).isEqualTo(CheckResult.OK);
   }
 
-  @Test public void check_ssl() throws Exception {
+  @Test
+  public void check_ssl() throws Exception {
     storage.close();
     SslClient sslClient = SslClient.localhost();
-    OkHttpClient client = new OkHttpClient.Builder()
-      .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
-      .hostnameVerifier((host, session) -> true)
-      .build();
+    OkHttpClient client =
+        new OkHttpClient.Builder()
+            .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+            .hostnameVerifier((host, session) -> true)
+            .build();
     es.useHttps(sslClient.socketFactory, false);
 
-    storage = ElasticsearchStorage.newBuilder(client)
-      .hosts(asList(es.url("").toString()))
-      .build();
+    storage = ElasticsearchStorage.newBuilder(client).hosts(asList(es.url("").toString())).build();
 
     es.enqueue(new MockResponse().setBody(healthResponse));
 
-    assertThat(storage.check())
-      .isEqualTo(CheckResult.OK);
+    assertThat(storage.check()).isEqualTo(CheckResult.OK);
 
-    assertThat(es.takeRequest().getTlsVersion())
-      .isNotNull();
+    assertThat(es.takeRequest().getTlsVersion()).isNotNull();
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void multipleSslNotYetSupported() throws Exception {
     storage.close();
     SslClient sslClient = SslClient.localhost();
-    OkHttpClient client = new OkHttpClient.Builder()
-      .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
-      .build();
+    OkHttpClient client =
+        new OkHttpClient.Builder()
+            .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+            .build();
     es.useHttps(sslClient.socketFactory, false);
 
-    storage = ElasticsearchStorage.newBuilder(client)
-      .hosts(asList("https://1.2.3.4:" + es.getPort(), es.url("").toString()))
-      .build();
+    storage =
+        ElasticsearchStorage.newBuilder(client)
+            .hosts(asList("https://1.2.3.4:" + es.getPort(), es.url("").toString()))
+            .build();
 
     storage.check();
   }

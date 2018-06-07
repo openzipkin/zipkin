@@ -77,11 +77,13 @@ final class PseudoAddressRecordSet {
       this.ipAddresses = new ArrayList<>(ipAddresses);
     }
 
-    @Override public List<InetAddress> lookup(String hostname) {
+    @Override
+    public List<InetAddress> lookup(String hostname) {
       return ipAddresses;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "StaticDns(" + ipAddresses + ")";
     }
   }
@@ -97,7 +99,8 @@ final class PseudoAddressRecordSet {
       this.actualDns = actualDns;
     }
 
-    @Override public List<InetAddress> lookup(String hostname) throws UnknownHostException {
+    @Override
+    public List<InetAddress> lookup(String hostname) throws UnknownHostException {
       List<InetAddress> result = new ArrayList<>(ipAddresses.size() + hosts.size());
       result.addAll(ipAddresses);
       for (String host : hosts) {
@@ -106,12 +109,13 @@ final class PseudoAddressRecordSet {
       return result;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "ConcatenatingDns(" + ipAddresses + "," + hosts + ")";
     }
   }
 
-  //** Start code from Guava v20 **//
+  // ** Start code from Guava v20 **//
   private static final int IPV4_PART_COUNT = 4;
   private static final int IPV6_PART_COUNT = 8;
 
@@ -125,7 +129,7 @@ final class PseudoAddressRecordSet {
    * Splitter isn't used (as that would introduce more dependencies).
    *
    * @param ipString {@code String} containing an IPv4 or IPv6 string literal, e.g. {@code
-   * "192.168.0.1"} or {@code "2001:db8::1"}
+   *     "192.168.0.1"} or {@code "2001:db8::1"}
    */
   @Nullable
   static byte[] ipStringToBytes(String ipString) {
@@ -276,5 +280,5 @@ final class PseudoAddressRecordSet {
     }
     return (short) hextet;
   }
-  //** End code from Guava v20 **//
+  // ** End code from Guava v20 **//
 }

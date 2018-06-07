@@ -52,14 +52,16 @@ public final class HttpBulkIndexer {
     flushOnWrites = es.flushOnWrites();
     if (flushOnWrites) {
       indices = new LinkedHashSet<>();
-      maybeFlush = new HttpCall.BodyConverter<Void>() {
-        @Override public Void convert(BufferedSource b) throws IOException {
-          CheckForErrors.INSTANCE.convert(b);
-          if (indices.isEmpty()) return null;
-          ElasticsearchStorage.flush(http, join(indices));
-          return null;
-        }
-      };
+      maybeFlush =
+          new HttpCall.BodyConverter<Void>() {
+            @Override
+            public Void convert(BufferedSource b) throws IOException {
+              CheckForErrors.INSTANCE.convert(b);
+              if (indices.isEmpty()) return null;
+              ElasticsearchStorage.flush(http, join(indices));
+              return null;
+            }
+          };
     } else {
       indices = null;
       maybeFlush = CheckForErrors.INSTANCE;
@@ -69,13 +71,15 @@ public final class HttpBulkIndexer {
   enum CheckForErrors implements HttpCall.BodyConverter<Void> {
     INSTANCE;
 
-    @Override public Void convert(BufferedSource b) throws IOException {
+    @Override
+    public Void convert(BufferedSource b) throws IOException {
       String content = b.readUtf8();
       if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
       return null;
     }
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
       return "CheckForErrors";
     }
   }
@@ -103,14 +107,17 @@ public final class HttpBulkIndexer {
 
   /** Creates a bulk request when there is more than one object to store */
   public HttpCall<Void> newCall() {
-    HttpUrl url = pipeline != null
-      ? http.baseUrl.newBuilder("_bulk").addQueryParameter("pipeline", pipeline).build()
-      : http.baseUrl.resolve("_bulk");
+    HttpUrl url =
+        pipeline != null
+            ? http.baseUrl.newBuilder("_bulk").addQueryParameter("pipeline", pipeline).build()
+            : http.baseUrl.resolve("_bulk");
 
-    Request request = new Request.Builder().url(url)
-      .tag(tag)
-      .post(RequestBody.create(APPLICATION_JSON, body.readByteString()))
-      .build();
+    Request request =
+        new Request.Builder()
+            .url(url)
+            .tag(tag)
+            .post(RequestBody.create(APPLICATION_JSON, body.readByteString()))
+            .build();
 
     return http.newCall(request, maybeFlush);
   }

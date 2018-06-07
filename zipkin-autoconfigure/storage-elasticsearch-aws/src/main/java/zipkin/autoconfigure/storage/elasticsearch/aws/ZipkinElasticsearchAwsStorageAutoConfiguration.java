@@ -35,12 +35,10 @@ import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import zipkin.internal.V2StorageComponent;
-import zipkin.storage.StorageComponent;
-import zipkin.storage.elasticsearch.http.ElasticsearchHttpStorage;
+import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.storage.StorageComponent;
 
 import static java.lang.String.format;
-import static zipkin.internal.Util.checkArgument;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinElasticsearchAwsStorageProperties.class)
@@ -54,24 +52,25 @@ class ZipkinElasticsearchAwsStorageAutoConfiguration {
   @Bean
   @Qualifier("zipkinElasticsearchHttp")
   Interceptor awsSignatureVersion4(
-    String region,
-    ZipkinElasticsearchAwsStorageProperties aws,
-    AWSCredentials.Provider credentials
-  ) {
+      String region,
+      ZipkinElasticsearchAwsStorageProperties aws,
+      AWSCredentials.Provider credentials) {
     return new AWSSignatureVersion4(region, "es", credentials);
   }
 
-  @Bean String region(
-    @Value("${zipkin.storage.elasticsearch.hosts:}") String hosts,
-    ZipkinElasticsearchAwsStorageProperties aws
-  ) {
+  @Bean
+  String region(
+      @Value("${zipkin.storage.elasticsearch.hosts:}") String hosts,
+      ZipkinElasticsearchAwsStorageProperties aws) {
     if ("".equals(hosts)) hosts = null;
     String domain = aws.getDomain();
     if (hosts != null && domain != null) {
       log.warning(
-          format("Expected exactly one of hosts or domain: instead saw hosts '%s' and domain '%s'."
-              + " Ignoring hosts and proceeding to look for domain. Either unset ES_HOSTS or "
-              + "ES_AWS_DOMAIN to suppress this message.", hosts, domain));
+          format(
+              "Expected exactly one of hosts or domain: instead saw hosts '%s' and domain '%s'."
+                  + " Ignoring hosts and proceeding to look for domain. Either unset ES_HOSTS or "
+                  + "ES_AWS_DOMAIN to suppress this message.",
+              hosts, domain));
     }
 
     if (aws.getRegion() != null) {
@@ -80,7 +79,7 @@ class ZipkinElasticsearchAwsStorageAutoConfiguration {
       return new DefaultAwsRegionProviderChain().getRegion();
     } else {
       String awsRegion = regionFromAwsUrls(hosts);
-      checkArgument(awsRegion != null, "Couldn't awsRegion in '%s'", hosts);
+      if (awsRegion == null) throw new IllegalArgumentException("Couldn't find region in " + hosts);
       return awsRegion;
     }
   }
@@ -92,16 +91,15 @@ class ZipkinElasticsearchAwsStorageAutoConfiguration {
     return new AWSCredentials.Provider() {
       AWSCredentialsProvider delegate = new DefaultAWSCredentialsProviderChain();
 
-      @Override public AWSCredentials get() {
+      @Override
+      public AWSCredentials get() {
         com.amazonaws.auth.AWSCredentials result = delegate.getCredentials();
-        String sessionToken = result instanceof AWSSessionCredentials
-            ? ((AWSSessionCredentials) result).getSessionToken()
-            : null;
+        String sessionToken =
+            result instanceof AWSSessionCredentials
+                ? ((AWSSessionCredentials) result).getSessionToken()
+                : null;
         return new AWSCredentials(
-            result.getAWSAccessKeyId(),
-            result.getAWSSecretKey(),
-            sessionToken
-        );
+            result.getAWSAccessKeyId(), result.getAWSSecretKey(), sessionToken);
       }
     };
   }
@@ -113,17 +111,17 @@ class ZipkinElasticsearchAwsStorageAutoConfiguration {
   @Bean
   @Conditional(AwsDomainSetCondition.class)
   StorageComponent storage(
-    String region,
-    ElasticsearchHttpStorage.Builder builder,
-    ZipkinElasticsearchAwsStorageProperties aws,
-    @Qualifier("zipkinElasticsearchHttp") OkHttpClient client
-  ) {
+      String region,
+      ElasticsearchStorage.Builder builder,
+      ZipkinElasticsearchAwsStorageProperties aws,
+      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client) {
     String domain = aws.getDomain();
 
-    ElasticsearchDomainEndpoint hosts = new ElasticsearchDomainEndpoint(
-        client, HttpUrl.parse("https://es." + region + ".amazonaws.com"), domain);
+    ElasticsearchDomainEndpoint hosts =
+        new ElasticsearchDomainEndpoint(
+            client, HttpUrl.parse("https://es." + region + ".amazonaws.com"), domain);
 
-    return V2StorageComponent.create(builder.hostsSupplier(hosts).build());
+    return builder.hostsSupplier(hosts).build();
   }
 
   static final class AwsDomainSetCondition extends SpringBootCondition {
@@ -132,17 +130,18 @@ class ZipkinElasticsearchAwsStorageAutoConfiguration {
     @Override
     public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata a) {
       String domain = context.getEnvironment().getProperty(PROPERTY_NAME);
-      return domain == null || domain.isEmpty() ?
-          ConditionOutcome.noMatch(PROPERTY_NAME + " isn't set") :
-          ConditionOutcome.match();
+      return domain == null || domain.isEmpty()
+          ? ConditionOutcome.noMatch(PROPERTY_NAME + " isn't set")
+          : ConditionOutcome.match();
     }
   }
 
   static final class AwsMagic implements Condition {
-    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
+    @Override
+    public boolean matches(ConditionContext condition, AnnotatedTypeMetadata md) {
       String hosts = condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.hosts");
-      String domain = condition.getEnvironment()
-          .getProperty("zipkin.storage.elasticsearch.aws.domain");
+      String domain =
+          condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.aws.domain");
 
       // If neither hosts nor domain, no AWS magic
       if (isEmpty(hosts) && isEmpty(domain)) return false;
@@ -158,13 +157,14 @@ class ZipkinElasticsearchAwsStorageAutoConfiguration {
       Matcher matcher = AWS_URL.matcher(url);
       if (matcher.find()) {
         String matched = matcher.group(1);
-        checkArgument(awsRegion == null,
-            "too many regions: saw '%s' and '%s'", awsRegion, matched);
+        if (awsRegion != null)
+          throw new IllegalArgumentException(
+              "too many regions: saw '" + awsRegion + "' and '" + matched + "'");
         awsRegion = matcher.group(1);
       } else {
-        checkArgument(awsRegion == null,
-            "mismatched regions; saw '%s' but no awsRegion found in '%s'", awsRegion,
-            url);
+        if (awsRegion != null)
+          throw new IllegalArgumentException(
+              "mismatched regions; saw '" + awsRegion + "' but none found in '" + url + "'");
       }
     }
     return awsRegion;

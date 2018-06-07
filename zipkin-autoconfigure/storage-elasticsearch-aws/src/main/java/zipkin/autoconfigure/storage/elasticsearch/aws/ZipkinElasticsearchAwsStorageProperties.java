@@ -24,8 +24,8 @@ class ZipkinElasticsearchAwsStorageProperties implements Serializable { // for S
   private String domain;
 
   /**
-   * The optional region to search for the domain {@link #domain}. Defaults the usual
-   * way (AWS_REGION, DEFAULT_AWS_REGION, etc.).
+   * The optional region to search for the domain {@link #domain}. Defaults the usual way
+   * (AWS_REGION, DEFAULT_AWS_REGION, etc.).
    */
   private String region;
 

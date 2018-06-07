@@ -41,7 +41,8 @@ public abstract class IndexNameFormatter {
 
   abstract ThreadLocal<SimpleDateFormat> dateFormat(); // SimpleDateFormat isn't thread-safe
 
-  @AutoValue.Builder public static abstract class Builder {
+  @AutoValue.Builder
+  public abstract static class Builder {
     public abstract Builder index(String index);
 
     public abstract Builder dateSeparator(char dateSeparator);
@@ -51,15 +52,19 @@ public abstract class IndexNameFormatter {
     abstract char dateSeparator();
 
     public final IndexNameFormatter build() {
-      return dateFormat(new ThreadLocal<SimpleDateFormat>() {
-        @Override protected SimpleDateFormat initialValue() {
-          char separator = dateSeparator();
-          SimpleDateFormat result = new SimpleDateFormat(separator == 0 ?
-            "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator));
-          result.setTimeZone(UTC);
-          return result;
-        }
-      }).autoBuild();
+      return dateFormat(
+              new ThreadLocal<SimpleDateFormat>() {
+                @Override
+                protected SimpleDateFormat initialValue() {
+                  char separator = dateSeparator();
+                  SimpleDateFormat result =
+                      new SimpleDateFormat(
+                          separator == 0 ? "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator));
+                  result.setTimeZone(UTC);
+                  return result;
+                }
+              })
+          .autoBuild();
     }
 
     abstract IndexNameFormatter autoBuild();
@@ -87,7 +92,7 @@ public abstract class IndexNameFormatter {
         current.set(Calendar.DAY_OF_YEAR, current.getActualMaximum(Calendar.DAY_OF_YEAR));
         if (current.compareTo(end) <= 0) {
           indices.add(
-            String.format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
+              String.format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
           current.add(Calendar.DATE, 1); // rollover to next year
           continue;
         } else {
@@ -97,10 +102,14 @@ public abstract class IndexNameFormatter {
         // attempt to compress a month
         current.set(Calendar.DATE, current.getActualMaximum(Calendar.DATE));
         if (current.compareTo(end) <= 0) {
-          indices.add(String.format("%s-%s%c%02d%c*", prefix,
-            current.get(Calendar.YEAR), dateSeparator(),
-            current.get(Calendar.MONTH) + 1, dateSeparator()
-          ));
+          indices.add(
+              String.format(
+                  "%s-%s%c%02d%c*",
+                  prefix,
+                  current.get(Calendar.YEAR),
+                  dateSeparator(),
+                  current.get(Calendar.MONTH) + 1,
+                  dateSeparator()));
           current.add(Calendar.DATE, 1); // rollover to next month
           continue;
         } else {

@@ -26,57 +26,66 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class PseudoAddressRecordSetTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  Dns underlying = hostname -> {
-    throw new UnsupportedOperationException();
-  };
+  Dns underlying =
+      hostname -> {
+        throw new UnsupportedOperationException();
+      };
 
-  @Test public void mixedPortsNotSupported() {
+  @Test
+  public void mixedPortsNotSupported() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage(
-      "Only one port supported with multiple hosts [http://1.1.1.1:9200, http://2.2.2.2:9201]");
+        "Only one port supported with multiple hosts [http://1.1.1.1:9200, http://2.2.2.2:9201]");
 
     PseudoAddressRecordSet.create(asList("http://1.1.1.1:9200", "http://2.2.2.2:9201"), underlying);
   }
 
-  @Test public void httpsNotSupported() {
+  @Test
+  public void httpsNotSupported() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage(
-      "Only http supported with multiple hosts [https://1.1.1.1:9200, https://2.2.2.2:9200]");
+        "Only http supported with multiple hosts [https://1.1.1.1:9200, https://2.2.2.2:9200]");
 
-    PseudoAddressRecordSet.create(asList("https://1.1.1.1:9200", "https://2.2.2.2:9200"),
-      underlying);
+    PseudoAddressRecordSet.create(
+        asList("https://1.1.1.1:9200", "https://2.2.2.2:9200"), underlying);
   }
 
-  @Test public void concatenatesIPv4List() throws UnknownHostException {
-    Dns result = PseudoAddressRecordSet.create(asList("http://1.1.1.1:9200", "http://2.2.2.2:9200"),
-      underlying);
-
-    assertThat(result).isInstanceOf(PseudoAddressRecordSet.StaticDns.class);
-    assertThat(result.lookup("foo"))
-      .containsExactly(InetAddresses.forString("1.1.1.1"), InetAddresses.forString("2.2.2.2"));
-  }
-
-  @Test public void onlyLooksUpHostnames() throws UnknownHostException {
-    underlying = hostname -> {
-      assertThat(hostname).isEqualTo("myhost");
-      return asList(InetAddresses.forString("2.2.2.2"));
-    };
-
-    Dns result = PseudoAddressRecordSet.create(asList("http://1.1.1.1:9200", "http://myhost:9200"),
-      underlying);
-
-    assertThat(result.lookup("foo"))
-      .containsExactly(InetAddresses.forString("1.1.1.1"), InetAddresses.forString("2.2.2.2"));
-  }
-
-  @Test public void concatenatesMixedIpLengths() throws UnknownHostException {
+  @Test
+  public void concatenatesIPv4List() throws UnknownHostException {
     Dns result =
-      PseudoAddressRecordSet.create(asList("http://1.1.1.1:9200", "http://[2001:db8::c001]:9200"),
-        underlying);
+        PseudoAddressRecordSet.create(
+            asList("http://1.1.1.1:9200", "http://2.2.2.2:9200"), underlying);
 
     assertThat(result).isInstanceOf(PseudoAddressRecordSet.StaticDns.class);
     assertThat(result.lookup("foo"))
-      .containsExactly(InetAddresses.forString("1.1.1.1"),
-        InetAddresses.forString("2001:db8::c001"));
+        .containsExactly(InetAddresses.forString("1.1.1.1"), InetAddresses.forString("2.2.2.2"));
+  }
+
+  @Test
+  public void onlyLooksUpHostnames() throws UnknownHostException {
+    underlying =
+        hostname -> {
+          assertThat(hostname).isEqualTo("myhost");
+          return asList(InetAddresses.forString("2.2.2.2"));
+        };
+
+    Dns result =
+        PseudoAddressRecordSet.create(
+            asList("http://1.1.1.1:9200", "http://myhost:9200"), underlying);
+
+    assertThat(result.lookup("foo"))
+        .containsExactly(InetAddresses.forString("1.1.1.1"), InetAddresses.forString("2.2.2.2"));
+  }
+
+  @Test
+  public void concatenatesMixedIpLengths() throws UnknownHostException {
+    Dns result =
+        PseudoAddressRecordSet.create(
+            asList("http://1.1.1.1:9200", "http://[2001:db8::c001]:9200"), underlying);
+
+    assertThat(result).isInstanceOf(PseudoAddressRecordSet.StaticDns.class);
+    assertThat(result.lookup("foo"))
+        .containsExactly(
+            InetAddresses.forString("1.1.1.1"), InetAddresses.forString("2001:db8::c001"));
   }
 }

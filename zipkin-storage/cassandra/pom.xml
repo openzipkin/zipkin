@@ -14,29 +14,29 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.java</groupId>
-    <artifactId>zipkin-storage</artifactId>
+    <groupId>io.zipkin.zipkin2</groupId>
+    <artifactId>zipkin-storage-parent</artifactId>
     <version>2.8.5-SNAPSHOT</version>
   </parent>
 
-  <groupId>io.zipkin.zipkin2</groupId>
-  <artifactId>zipkin-storage-cassandra-v1</artifactId>
-  <name>Storage: Cassandra (v1)</name>
+  <artifactId>zipkin-storage-cassandra</artifactId>
+  <name>Storage: Cassandra (Zipkin V2)</name>
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
-    <main.java.version>1.8</main.java.version>
-    <main.signature.artifact>java18</main.signature.artifact>
   </properties>
 
   <dependencies>
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
-      <artifactId>zipkin-storage-cassandra</artifactId>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
@@ -46,14 +46,20 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.logging.log4j</groupId>
-      <artifactId>log4j-slf4j-impl</artifactId>
-      <version>${log4j.version}</version>
-      <scope>test</scope>
+      <groupId>com.datastax.cassandra</groupId>
+      <artifactId>cassandra-driver-core</artifactId>
+      <version>${cassandra-driver-core.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>com.datastax.cassandra</groupId>
+      <artifactId>cassandra-driver-mapping</artifactId>
+      <version>${cassandra-driver-core.version}</version>
+    </dependency>
+
+    <!-- for TestObjects -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
@@ -90,9 +96,9 @@
     </dependency>
 
     <dependency>
-      <groupId>org.assertj</groupId>
-      <artifactId>assertj-guava</artifactId>
-      <version>3.1.0</version>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -102,19 +108,4 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <!-- disable retrolambda as we set language level to 1.8 -->
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>none</phase>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

@@ -36,10 +36,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import zipkin.collector.CollectorMetrics;
 import zipkin.collector.CollectorSampler;
 import zipkin.internal.V2StorageComponent;
-import zipkin.server.internal.brave.TracingStorageComponent;
 import zipkin.server.internal.brave.TracingV2StorageComponent;
-import zipkin.storage.StorageComponent;
 import zipkin2.storage.InMemoryStorage;
+import zipkin2.storage.StorageComponent;
 
 @Configuration
 public class ZipkinServerConfiguration implements WebMvcConfigurer {
@@ -95,6 +94,12 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     return new ActuateCollectorMetrics(registry);
   }
 
+  /** temporary until v2 collector is merged */
+  @Bean
+  V2StorageComponent v1StorageComponent(StorageComponent v2) {
+    return V2StorageComponent.create(v2);
+  }
+
   @Bean
   public MeterRegistryCustomizer meterRegistryCustomizer() {
     return registry -> registry.config()
@@ -128,8 +133,6 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       if (tracing == null) return bean;
       if (bean instanceof V2StorageComponent) {
         return new TracingV2StorageComponent(tracing, (V2StorageComponent) bean);
-      } else if (bean instanceof StorageComponent) {
-        return new TracingStorageComponent(tracing, (StorageComponent) bean);
       }
       return bean;
     }
@@ -147,15 +150,11 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
       @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
       @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
-      return V2StorageComponent.create(InMemoryStorage.newBuilder()
+      return InMemoryStorage.newBuilder()
         .strictTraceId(strictTraceId)
         .searchEnabled(searchEnabled)
         .maxSpanCount(maxSpans)
-        .build());
-    }
-
-    @Bean InMemoryStorage v2Storage(V2StorageComponent component) {
-      return (InMemoryStorage) component.delegate();
+        .build();
     }
   }
 

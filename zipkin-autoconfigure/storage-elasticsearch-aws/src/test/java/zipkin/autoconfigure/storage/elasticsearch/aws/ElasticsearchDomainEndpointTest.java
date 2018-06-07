@@ -26,27 +26,29 @@ public class ElasticsearchDomainEndpointTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
   @Rule public MockWebServer es = new MockWebServer();
 
-  ElasticsearchDomainEndpoint client = new ElasticsearchDomainEndpoint(
-    new OkHttpClient(),
-    es.url(""),
-    "zipkin53"
-  );
+  ElasticsearchDomainEndpoint client =
+      new ElasticsearchDomainEndpoint(new OkHttpClient(), es.url(""), "zipkin53");
 
-  @Test public void publicUrl() throws Exception {
-    es.enqueue(new MockResponse().setBody("{\n"
-      + "  \"DomainStatus\": {\n"
-      + "    \"Endpoint\": \"search-zipkin53-mhdyquzbwwzwvln6phfzr3lldi.ap-southeast-1.es.amazonaws.com\",\n"
-      + "    \"Endpoints\": null\n"
-      + "  }\n"
-      + "}"));
+  @Test
+  public void publicUrl() throws Exception {
+    es.enqueue(
+        new MockResponse()
+            .setBody(
+                "{\n"
+                    + "  \"DomainStatus\": {\n"
+                    + "    \"Endpoint\": \"search-zipkin53-mhdyquzbwwzwvln6phfzr3lldi.ap-southeast-1.es.amazonaws.com\",\n"
+                    + "    \"Endpoints\": null\n"
+                    + "  }\n"
+                    + "}"));
 
     assertThat(client.get())
-      .containsExactly(
-        "https://search-zipkin53-mhdyquzbwwzwvln6phfzr3lldi.ap-southeast-1.es.amazonaws.com");
+        .containsExactly(
+            "https://search-zipkin53-mhdyquzbwwzwvln6phfzr3lldi.ap-southeast-1.es.amazonaws.com");
   }
 
   /** Not quite sure why, but some have reported receiving no URLs at all */
-  @Test public void noUrl() throws Exception {
+  @Test
+  public void noUrl() throws Exception {
     // simplified.. URL is usually the only thing actually missing
     String body = "{\"DomainStatus\": {}}";
     es.enqueue(new MockResponse().setBody(body));
@@ -58,7 +60,8 @@ public class ElasticsearchDomainEndpointTest {
   }
 
   /** Not quite sure why, but some have reported receiving no URLs at all */
-  @Test public void unauthorizedNoMessage() throws Exception {
+  @Test
+  public void unauthorizedNoMessage() throws Exception {
     es.enqueue(new MockResponse().setResponseCode(403));
 
     thrown.expect(IllegalStateException.class);

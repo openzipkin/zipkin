@@ -32,59 +32,68 @@ import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 public class ElasticsearchSpanStoreTest {
   @Rule public MockWebServer es = new MockWebServer();
 
-  ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
-    .hosts(asList(es.url("").toString()))
-    .build();
+  ElasticsearchStorage storage =
+      ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
   ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
 
-  @After public void close() throws IOException {
+  @After
+  public void close() throws IOException {
     storage.close();
   }
 
-  @Test public void doesntTruncateTraceIdByDefault() throws Exception {
+  @Test
+  public void doesntTruncateTraceIdByDefault() throws Exception {
     es.enqueue(new MockResponse());
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
     assertThat(es.takeRequest().getBody().readUtf8())
-      .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
+        .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
   }
 
-  @Test public void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
+  @Test
+  public void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
     storage = storage.toBuilder().strictTraceId(false).build();
     spanStore = new ElasticsearchSpanStore(storage);
 
     es.enqueue(new MockResponse());
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
-    assertThat(es.takeRequest().getBody().readUtf8())
-      .contains("\"traceId\":\"3041d36dc43227fd\"");
+    assertThat(es.takeRequest().getBody().readUtf8()).contains("\"traceId\":\"3041d36dc43227fd\"");
   }
 
-  @Test public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
+  @Test
+  public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
     es.enqueue(new MockResponse().setBody(TestResponses.SERVICE_NAMES));
     spanStore.getServiceNames().execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }
 
-  @Test public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
+  @Test
+  public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
     es.enqueue(new MockResponse().setBody(TestResponses.SPAN_NAMES));
     spanStore.getSpanNames("foo").execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }
 
-  @Test public void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
-    try (ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
-      .hosts(this.storage.hostsSupplier().get())
-      .searchEnabled(false).build()) {
+  @Test
+  public void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
+    try (ElasticsearchStorage storage =
+        ElasticsearchStorage.newBuilder()
+            .hosts(this.storage.hostsSupplier().get())
+            .searchEnabled(false)
+            .build()) {
 
       // skip template check
       ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
 
-      assertThat(spanStore.getTraces(
-        QueryRequest.newBuilder().endTs(TODAY).lookback(10000L).limit(10).build()
-      ).execute()).isEmpty();
+      assertThat(
+              spanStore
+                  .getTraces(
+                      QueryRequest.newBuilder().endTs(TODAY).lookback(10000L).limit(10).build())
+                  .execute())
+          .isEmpty();
       assertThat(spanStore.getServiceNames().execute()).isEmpty();
       assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
 
@@ -97,13 +106,13 @@ public class ElasticsearchSpanStoreTest {
     long yesterday = today - TimeUnit.DAYS.toMillis(1);
 
     // 24 hrs ago always will fall into 2 days (ex. if it is 4:00pm, 24hrs ago is a different day)
-    String indexesToSearch = ""
-      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, yesterday)
-      + ","
-      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
+    String indexesToSearch =
+        ""
+            + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, yesterday)
+            + ","
+            + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
 
     RecordedRequest request = es.takeRequest();
-    assertThat(request.getPath())
-      .startsWith("/" + indexesToSearch + "/_search");
+    assertThat(request.getPath()).startsWith("/" + indexesToSearch + "/_search");
   }
 }

@@ -28,8 +28,7 @@ import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnviron
 
 public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
+  @Rule public ExpectedException thrown = ExpectedException.none();
 
   AnnotationConfigApplicationContext context;
 
@@ -44,7 +43,8 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
   public void doesntProvideAWSSignatureVersion4_whenStorageTypeNotElasticsearch() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:cassandra");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
@@ -55,10 +55,10 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
   @Test
   public void providesAWSSignatureVersion4_whenStorageTypeElasticsearchAndHostsAreAwsUrls() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context,
+    addEnvironment(
+        context,
         "zipkin.storage.type:elasticsearch",
-        "zipkin.storage.elasticsearch.hosts:https://search-domain-xyzzy.us-west-2.es.amazonaws.com"
-    );
+        "zipkin.storage.elasticsearch.hosts:https://search-domain-xyzzy.us-west-2.es.amazonaws.com");
     Access.registerElasticsearchHttp(context);
     context.register(ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
@@ -71,11 +71,11 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
   @Test
   public void providesAWSSignatureVersion4_whenStorageTypeElasticsearchAndDomain() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context,
+    addEnvironment(
+        context,
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.aws.domain:foobar",
-        "zipkin.storage.elasticsearch.aws.region:us-west-2"
-    );
+        "zipkin.storage.elasticsearch.aws.region:us-west-2");
     Access.registerElasticsearchHttp(context);
     context.register(ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
@@ -89,7 +89,8 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
   public void doesntProvidesAWSSignatureVersion4_whenStorageTypeElasticsearchAndHostsNotUrls() {
     context = new AnnotationConfigApplicationContext();
     addEnvironment(context, "zipkin.storage.type:elasticsearch");
-    context.register(PropertyPlaceholderAutoConfiguration.class,
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
@@ -100,11 +101,12 @@ public class ZipkinElasticsearchAwsStorageAutoConfigurationTest {
   @Test
   public void doesntProvideAWSSignatureVersion4_whenStorageTypeElasticsearchAndHostsNotAwsUrls() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context,
+    addEnvironment(
+        context,
         "zipkin.storage.type:elasticsearch",
-        "zipkin.storage.elasticsearch.hosts:https://localhost:9200"
-    );
-    context.register(PropertyPlaceholderAutoConfiguration.class,
+        "zipkin.storage.elasticsearch.hosts:https://localhost:9200");
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
         ZipkinElasticsearchAwsStorageAutoConfiguration.class);
     context.refresh();
 
