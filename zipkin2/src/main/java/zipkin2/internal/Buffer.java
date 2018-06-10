@@ -46,7 +46,9 @@ public final class Buffer {
   /**
    * This returns the bytes needed to transcode a UTF-16 Java String to UTF-8 bytes.
    *
-   * <p>Originally based on http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
+   * <p>Originally based on
+   * http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
+   *
    * <p>Later, ASCII run and malformed surrogate logic borrowed from okio.Utf8
    */
   public static int utf8SizeInBytes(String string) {
@@ -90,8 +92,8 @@ public final class Buffer {
   /**
    * This transcodes a UTF-16 Java String to UTF-8 bytes.
    *
-   * <p>This looks most similar to {@code io.netty.buffer.ByteBufUtil.writeUtf8(AbstractByteBuf, int, CharSequence, int)}
-   * v4.1, modified including features to address ASCII runs of text.
+   * <p>This looks most similar to {@code io.netty.buffer.ByteBufUtil.writeUtf8(AbstractByteBuf,
+   * int, CharSequence, int)} v4.1, modified including features to address ASCII runs of text.
    */
   public Buffer writeUtf8(String string) {
     for (int i = 0, len = string.length(); i < len; i++) {
@@ -105,7 +107,7 @@ public final class Buffer {
           i++;
           buf[pos++] = (byte) ch; // another 7-bit ASCII character
         }
-      } else if (ch < 0x800) {  // 11-bit character
+      } else if (ch < 0x800) { // 11-bit character
         buf[pos++] = (byte) (0xc0 | (ch >> 6));
         buf[pos++] = (byte) (0x80 | (ch & 0x3f));
       } else if (ch < 0xd800 || ch > 0xdfff) { // 16-bit character
@@ -154,24 +156,17 @@ public final class Buffer {
       negative = true;
     }
     int width =
-      v < 100000000L
-        ? v < 10000L
-        ? v < 100L
-        ? v < 10L ? 1 : 2
-        : v < 1000L ? 3 : 4
-        : v < 1000000L
-          ? v < 100000L ? 5 : 6
-          : v < 10000000L ? 7 : 8
-        : v < 1000000000000L
-          ? v < 10000000000L
-          ? v < 1000000000L ? 9 : 10
-          : v < 100000000000L ? 11 : 12
-          : v < 1000000000000000L
-            ? v < 10000000000000L ? 13
-            : v < 100000000000000L ? 14 : 15
-            : v < 100000000000000000L
-              ? v < 10000000000000000L ? 16 : 17
-              : v < 1000000000000000000L ? 18 : 19;
+        v < 100000000L
+            ? v < 10000L
+                ? v < 100L ? v < 10L ? 1 : 2 : v < 1000L ? 3 : 4
+                : v < 1000000L ? v < 100000L ? 5 : 6 : v < 10000000L ? 7 : 8
+            : v < 1000000000000L
+                ? v < 10000000000L ? v < 1000000000L ? 9 : 10 : v < 100000000000L ? 11 : 12
+                : v < 1000000000000000L
+                    ? v < 10000000000000L ? 13 : v < 100000000000000L ? 14 : 15
+                    : v < 100000000000000000L
+                        ? v < 10000000000000000L ? 16 : 17
+                        : v < 1000000000000000000L ? 18 : 19;
     return negative ? width + 1 : width; // conditionally add room for negative sign
   }
 
@@ -199,13 +194,13 @@ public final class Buffer {
   static final byte[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
   /**
-   * A base 128 varint encodes 7 bits at a time, this checks how many bytes are needed to
-   * represent the value.
+   * A base 128 varint encodes 7 bits at a time, this checks how many bytes are needed to represent
+   * the value.
    *
    * <p>See https://developers.google.com/protocol-buffers/docs/encoding#varints
    *
-   * <p>This logic is the same as {@code com.squareup.wire.ProtoWriter.varint32Size} v2.3.0
-   * which benchmarked faster than loop variants of the frequently copy/pasted VarInt.varIntSize
+   * <p>This logic is the same as {@code com.squareup.wire.ProtoWriter.varint32Size} v2.3.0 which
+   * benchmarked faster than loop variants of the frequently copy/pasted VarInt.varIntSize
    */
   public static int varintSizeInBytes(int value) {
     if ((value & (0xffffffff << 7)) == 0) return 1;
@@ -247,6 +242,29 @@ public final class Buffer {
     buf[pos++] = (byte) v;
   }
 
+  /** Inspired by {@code okio.Buffer.writeLong} */
+  public Buffer writeLongHex(long v) {
+    writeHexByte(buf, pos + 0, (byte) ((v >>> 56L) & 0xff));
+    writeHexByte(buf, pos + 2, (byte) ((v >>> 48L) & 0xff));
+    writeHexByte(buf, pos + 4, (byte) ((v >>> 40L) & 0xff));
+    writeHexByte(buf, pos + 6, (byte) ((v >>> 32L) & 0xff));
+    writeHexByte(buf, pos + 8, (byte) ((v >>> 24L) & 0xff));
+    writeHexByte(buf, pos + 10, (byte) ((v >>> 16L) & 0xff));
+    writeHexByte(buf, pos + 12, (byte) ((v >>> 8L) & 0xff));
+    writeHexByte(buf, pos + 14, (byte) (v & 0xff));
+    pos += 16;
+    return this;
+  }
+
+  static final char[] HEX_DIGITS = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+  };
+
+  static void writeHexByte(byte[] data, int pos, byte b) {
+    data[pos + 0] = (byte) HEX_DIGITS[(b >> 4) & 0xf];
+    data[pos + 1] = (byte) HEX_DIGITS[b & 0xf];
+  }
+
   void writeLongLe(long v) {
     buf[pos++] = (byte) (v & 0xff);
     buf[pos++] = (byte) ((v >> 8 & 0xff));
@@ -260,13 +278,13 @@ public final class Buffer {
 
   long readLongLe() {
     return (buf[pos++] & 0xffL)
-      | (buf[pos++] & 0xffL) << 8
-      | (buf[pos++] & 0xffL) << 16
-      | (buf[pos++] & 0xffL) << 24
-      | (buf[pos++] & 0xffL) << 32
-      | (buf[pos++] & 0xffL) << 40
-      | (buf[pos++] & 0xffL) << 48
-      | (buf[pos++] & 0xffL) << 56;
+        | (buf[pos++] & 0xffL) << 8
+        | (buf[pos++] & 0xffL) << 16
+        | (buf[pos++] & 0xffL) << 24
+        | (buf[pos++] & 0xffL) << 32
+        | (buf[pos++] & 0xffL) << 40
+        | (buf[pos++] & 0xffL) << 48
+        | (buf[pos++] & 0xffL) << 56;
   }
 
   /** This needs to be checked externally to not overrun the underlying array */
@@ -365,7 +383,7 @@ public final class Buffer {
   }
 
   public byte[] toByteArray() {
-    //assert pos == buf.length;
+    // assert pos == buf.length;
     return buf;
   }
 }

@@ -15,7 +15,6 @@ package zipkin2.codec;
 
 import java.util.List;
 import zipkin2.Span;
-import zipkin2.internal.Buffer;
 import zipkin2.internal.JsonCodec;
 import zipkin2.internal.Proto3Codec;
 import zipkin2.internal.V1JsonSpanWriter;
@@ -81,7 +80,7 @@ public enum SpanBytesEncoder implements BytesEncoder<Span> {
   },
   /** Corresponds to the Zipkin v2 json format */
   JSON_V2 {
-    final Buffer.Writer<Span> writer = new V2SpanWriter();
+    final V2SpanWriter writer = new V2SpanWriter();
 
     @Override
     public Encoding encoding() {

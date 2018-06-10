@@ -2,9 +2,9 @@
 
 This contains `ZipkinRule`, a JUnit rule to spin-up a Zipkin server during tests.
 
-ZipkinRule aims to emulate a full-featured server. For example, it presents the
-entire [Zipkin Api](http://openzipkin.github.io/zipkin-api/#/), and supports
-features like gzip compression.
+ZipkinRule aims to emulate a http collector. For example, it presents
+the v1 and v2 POST apis [Zipkin Api](http://openzipkin.github.io/zipkin-api/#/), and
+supports features like gzip compression.
 
 Usage
 ------
