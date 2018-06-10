@@ -25,6 +25,8 @@ import static com.google.gson.stream.JsonToken.BOOLEAN;
 import static com.google.gson.stream.JsonToken.NULL;
 import static com.google.gson.stream.JsonToken.STRING;
 import static java.lang.String.format;
+import static zipkin2.internal.JsonEscaper.jsonEscape;
+import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
 /**
  * This explicitly constructs instances of model classes via manual parsing for a number of reasons.
@@ -237,4 +239,26 @@ public final class JsonCodec {
     String message = format("%s reading %s from json", cause, type);
     throw new IllegalArgumentException(message, e);
   }
+
+  public static byte[] writeStrings(List<String> strings) {
+    return writeList(STRING_WRITER, strings);
+  }
+
+  static final Buffer.Writer<String> STRING_WRITER =
+      new Buffer.Writer<String>() {
+        @Override
+        public int sizeInBytes(String value) {
+          return jsonEscapedSizeInBytes(value) + 2; // For quotes
+        }
+
+        @Override
+        public void write(String value, Buffer buffer) {
+          buffer.writeByte('"').writeUtf8(jsonEscape(value)).writeByte('"');
+        }
+
+        @Override
+        public String toString() {
+          return "String";
+        }
+      };
 }

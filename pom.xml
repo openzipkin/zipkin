@@ -181,7 +181,7 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-junit</artifactId>
         <version>${project.version}</version>
       </dependency>

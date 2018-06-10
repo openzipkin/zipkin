@@ -23,6 +23,7 @@
     <version>2.9.1-SNAPSHOT</version>
   </parent>
 
+  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin-junit</artifactId>
   <name>Zipkin JUnit</name>
   <description>JUnit rule to spin-up a Zipkin server during tests</description>
@@ -36,10 +37,9 @@
       <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin</artifactId>
     </dependency>
-
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-collector</artifactId>
     </dependency>
 
     <dependency>
@@ -58,7 +58,7 @@
     </dependency>
 
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
