@@ -32,7 +32,7 @@ import zipkin2.storage.StorageComponent;
 @Configuration
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 @Conditional(ZipkinKafkaCollectorAutoConfiguration.KafkaBootstrapServersSet.class)
-class ZipkinKafkaCollectorAutoConfiguration { // makes simple type name unique for /autoconfig
+class ZipkinKafkaCollectorAutoConfiguration { // makes simple type name unique for /actuator/conditions
 
   @Bean(initMethod = "start")
   KafkaCollector kafka(
