@@ -14,7 +14,9 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>io.zipkin.java</groupId>
@@ -66,9 +68,9 @@
     <guava.version>19.0</guava.version>
     <junit.version>4.12</junit.version>
     <!-- to match powermock and spring testing -->
-    <mockito.version>1.10.19</mockito.version>
+    <mockito.version>2.18.3</mockito.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
-    <assertj.version>3.9.1</assertj.version>
+    <assertj.version>3.10.0</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
     <testcontainers.version>1.7.3</testcontainers.version>
 
@@ -599,39 +601,7 @@
           <!-- Retrolambda will rewrite lambdas as Java 6 bytecode -->
           <source>1.8</source>
           <target>1.8</target>
-          <!-- or die! com.sun.tools.javac.api.JavacTool -->
-          <fork>true</fork>
         </configuration>
-        <executions>
-          <execution>
-            <id>default-compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <!-- only use errorprone on main source tree -->
-            <configuration>
-              <compilerId>javac-with-errorprone</compilerId>
-              <forceJavacCompilerUse>true</forceJavacCompilerUse>
-              <showWarnings>true</showWarnings>
-              <compilerArgs>
-                <arg>-XepDisableWarningsInGeneratedCode</arg>
-              </compilerArgs>
-            </configuration>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.codehaus.plexus</groupId>
-            <artifactId>plexus-compiler-javac-errorprone</artifactId>
-            <version>${plexus-compiler-javac-errorprone.version}</version>
-          </dependency>
-          <dependency>
-            <groupId>com.google.errorprone</groupId>
-            <artifactId>error_prone_core</artifactId>
-            <version>${errorprone.version}</version>
-          </dependency>
-        </dependencies>
       </plugin>
 
       <!-- Explicitly disable when using java version 1.8+ or not using java -->
@@ -792,6 +762,50 @@
 
   <profiles>
     <profile>
+      <id>errorprone-not-java10</id>
+      <activation>
+        <!-- errorprone doesn't yet support java 10 https://github.com/google/error-prone/issues/860 -->
+        <jdk>[1.8,10)</jdk>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>default-compile</id>
+                <phase>compile</phase>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <!-- only use errorprone on main source tree -->
+                <configuration>
+                  <compilerId>javac-with-errorprone</compilerId>
+                  <forceJavacCompilerUse>true</forceJavacCompilerUse>
+                  <showWarnings>true</showWarnings>
+                  <compilerArgs>
+                    <arg>-XepDisableWarningsInGeneratedCode</arg>
+                  </compilerArgs>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.codehaus.plexus</groupId>
+                <artifactId>plexus-compiler-javac-errorprone</artifactId>
+                <version>${plexus-compiler-javac-errorprone.version}</version>
+              </dependency>
+              <dependency>
+                <groupId>com.google.errorprone</groupId>
+                <artifactId>error_prone_core</artifactId>
+                <version>${errorprone.version}</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>release</id>
       <build>
         <plugins>
@@ -846,16 +860,22 @@
     <profile>
       <id>netbeans</id>
       <activation>
-          <activeByDefault>true</activeByDefault>
+        <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
         <!-- NetBeans -->
-        <org-netbeans-modules-editor-indent.CodeStyle.usedProfile>project</org-netbeans-modules-editor-indent.CodeStyle.usedProfile>
-        <org-netbeans-modules-editor-indent.CodeStyle.project.indent-shift-width>2</org-netbeans-modules-editor-indent.CodeStyle.project.indent-shift-width>
-        <org-netbeans-modules-editor-indent.CodeStyle.project.spaces-per-tab>2</org-netbeans-modules-editor-indent.CodeStyle.project.spaces-per-tab>
-        <org-netbeans-modules-editor-indent.CodeStyle.project.tab-size>2</org-netbeans-modules-editor-indent.CodeStyle.project.tab-size>
-        <org-netbeans-modules-editor-indent.CodeStyle.project.text-limit-width>110</org-netbeans-modules-editor-indent.CodeStyle.project.text-limit-width>
-        <org-netbeans-modules-editor-indent.CodeStyle.project.expand-tabs>true</org-netbeans-modules-editor-indent.CodeStyle.project.expand-tabs>
+        <org-netbeans-modules-editor-indent.CodeStyle.usedProfile>project
+        </org-netbeans-modules-editor-indent.CodeStyle.usedProfile>
+        <org-netbeans-modules-editor-indent.CodeStyle.project.indent-shift-width>2
+        </org-netbeans-modules-editor-indent.CodeStyle.project.indent-shift-width>
+        <org-netbeans-modules-editor-indent.CodeStyle.project.spaces-per-tab>2
+        </org-netbeans-modules-editor-indent.CodeStyle.project.spaces-per-tab>
+        <org-netbeans-modules-editor-indent.CodeStyle.project.tab-size>2
+        </org-netbeans-modules-editor-indent.CodeStyle.project.tab-size>
+        <org-netbeans-modules-editor-indent.CodeStyle.project.text-limit-width>110
+        </org-netbeans-modules-editor-indent.CodeStyle.project.text-limit-width>
+        <org-netbeans-modules-editor-indent.CodeStyle.project.expand-tabs>true
+        </org-netbeans-modules-editor-indent.CodeStyle.project.expand-tabs>
       </properties>
     </profile>
   </profiles>
