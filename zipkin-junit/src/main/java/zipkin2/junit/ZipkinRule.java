@@ -68,7 +68,7 @@ public final class ZipkinRule implements TestRule {
           @Override
           public MockResponse peek() {
             MockResponse maybeFailure = failureQueue.peek();
-            if (maybeFailure != null) return maybeFailure;
+            if (maybeFailure != null) return maybeFailure.clone();
             return new MockResponse().setSocketPolicy(KEEP_OPEN);
           }
         };

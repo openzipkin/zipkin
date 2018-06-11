@@ -25,7 +25,6 @@ import zipkin2.Callback;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.internal.Nullable;
 import zipkin2.storage.StorageComponent;
 
 final class ZipkinDispatcher extends Dispatcher {

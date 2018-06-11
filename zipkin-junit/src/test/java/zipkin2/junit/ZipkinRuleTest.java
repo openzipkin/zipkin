@@ -37,8 +37,7 @@ import static zipkin2.TestObjects.LOTS_OF_SPANS;
 
 public class ZipkinRuleTest {
 
-  @Rule
-  public ZipkinRule zipkin = new ZipkinRule();
+  @Rule public ZipkinRule zipkin = new ZipkinRule();
 
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
   OkHttpClient client = new OkHttpClient();
@@ -50,33 +49,37 @@ public class ZipkinRuleTest {
     assertThat(postSpansV1(trace).code()).isEqualTo(202);
 
     // read the traces directly
-    assertThat(zipkin.getTraces())
-      .containsOnly(trace);
+    assertThat(zipkin.getTraces()).containsOnly(trace);
   }
 
-  @Test public void getTraces_storedViaPostVersion2_json() throws IOException {
+  @Test
+  public void getTraces_storedViaPostVersion2_json() throws IOException {
     getTraces_storedViaPostVersion2("application/json", SpanBytesEncoder.JSON_V2);
   }
 
-  @Test public void getTraces_storedViaPostVersion2_proto3() throws IOException {
+  @Test
+  public void getTraces_storedViaPostVersion2_proto3() throws IOException {
     getTraces_storedViaPostVersion2("application/x-protobuf", SpanBytesEncoder.PROTO3);
   }
 
   void getTraces_storedViaPostVersion2(String mediaType, SpanBytesEncoder encoder)
-    throws IOException {
+      throws IOException {
 
     byte[] message = encoder.encodeList(spans);
 
     // write the span to the zipkin using http api v2
-    Response response = client.newCall(new Request.Builder()
-      .url(zipkin.httpUrl() + "/api/v2/spans")
-      .post(RequestBody.create(MediaType.parse(mediaType), message)).build()
-    ).execute();
+    Response response =
+        client
+            .newCall(
+                new Request.Builder()
+                    .url(zipkin.httpUrl() + "/api/v2/spans")
+                    .post(RequestBody.create(MediaType.parse(mediaType), message))
+                    .build())
+            .execute();
     assertThat(response.code()).isEqualTo(202);
 
     // read the traces directly
-    assertThat(zipkin.getTraces())
-      .containsOnly(asList(spans.get(0)), asList(spans.get(1)));
+    assertThat(zipkin.getTraces()).containsOnly(asList(spans.get(0)), asList(spans.get(1)));
   }
 
   /** The rule is here to help debugging. Even partial spans should be returned */
@@ -87,8 +90,7 @@ public class ZipkinRuleTest {
     assertThat(postSpansV1(asList(span)).code()).isEqualTo(202);
 
     // read the traces directly
-    assertThat(zipkin.getTraces())
-      .containsOnly(asList(span));
+    assertThat(zipkin.getTraces()).containsOnly(asList(span));
   }
 
   /** The raw query can show affects like redundant rows in the data store. */
@@ -100,10 +102,8 @@ public class ZipkinRuleTest {
     zipkin.storeSpans(asList(LOTS_OF_SPANS[0]));
     zipkin.storeSpans(asList(LOTS_OF_SPANS[0]));
 
-    assertThat(zipkin.getTrace(traceId))
-      .containsExactly(LOTS_OF_SPANS[0], LOTS_OF_SPANS[0]);
+    assertThat(zipkin.getTrace(traceId)).containsExactly(LOTS_OF_SPANS[0], LOTS_OF_SPANS[0]);
   }
-
 
   @Test
   public void httpRequestCountIncrements() throws IOException {
@@ -123,8 +123,7 @@ public class ZipkinRuleTest {
     postSpansV1(asList(LOTS_OF_SPANS[0]));
     postSpansV1(asList(LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]));
 
-    assertThat(zipkin.collectorMetrics().spans())
-      .isEqualTo(3);
+    assertThat(zipkin.collectorMetrics().spans()).isEqualTo(3);
   }
 
   @Test
@@ -169,21 +168,26 @@ public class ZipkinRuleTest {
     gzipSink.close();
     ByteString gzippedJson = sink.readByteString();
 
-    client.newCall(new Request.Builder()
-      .url(zipkin.httpUrl() + "/api/v1/spans")
-      .addHeader("Content-Encoding", "gzip")
-      .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson)).build()
-    ).execute();
+    client
+        .newCall(
+            new Request.Builder()
+                .url(zipkin.httpUrl() + "/api/v1/spans")
+                .addHeader("Content-Encoding", "gzip")
+                .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson))
+                .build())
+        .execute();
 
     assertThat(zipkin.collectorMetrics().bytes()).isEqualTo(spansInJson.length);
   }
 
   Response postSpansV1(List<Span> spans) throws IOException {
     byte[] spansInJson = SpanBytesEncoder.JSON_V1.encodeList(spans);
-    String spanss = new String(spansInJson);
-    return client.newCall(new Request.Builder()
-      .url(zipkin.httpUrl() + "/api/v1/spans")
-      .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build()
-    ).execute();
+    return client
+        .newCall(
+            new Request.Builder()
+                .url(zipkin.httpUrl() + "/api/v1/spans")
+                .post(RequestBody.create(MediaType.parse("application/json"), spansInJson))
+                .build())
+        .execute();
   }
 }
