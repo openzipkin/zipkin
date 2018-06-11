@@ -15,8 +15,8 @@
 # NOTE: Travis tests Elasticsearch and MySQL using Docker, and Kafka manually. We don't redundantly test them here
 machine:
   environment:
-    # Use java 9 here and 1.8 in travis (so that we test both)
-    JAVA_HOME: /usr/lib/jvm/zulu-9-amd64
+    # Use java 10 here and 1.8 in travis (so that we test both)
+    JAVA_HOME: /usr/lib/jvm/zulu-10-amd64
     # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
     MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
 
@@ -25,7 +25,7 @@ dependencies:
     - sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 0x219BD9C9
     - sudo apt-add-repository -y "deb http://repos.azulsystems.com/ubuntu stable main"
     - sudo apt-get -y update
-    - sudo apt-get -y install zulu-9
+    - sudo apt-get -y install zulu-10
     - sudo apt-get install xsltproc
     - ./circleci/go-offline.sh
     - ./mvnw frontend:install-node-and-npm frontend:npm -pl zipkin-ui
