@@ -29,7 +29,7 @@ import zipkin2.storage.StorageComponent;
 @Configuration
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 @Conditional(KafkaZooKeeperSetCondition.class)
-class ZipkinKafkaCollectorAutoConfiguration {
+class ZipkinKafka08CollectorAutoConfiguration {
 
   /**
    * This launches a thread to run start. This prevents a several second hang, or worse crash if
