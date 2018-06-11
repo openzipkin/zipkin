@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.autoconfigure.collector.kafka10;
+package zipkin.autoconfigure.collector.kafka;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -22,16 +22,17 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
-import zipkin2.collector.kafka.KafkaCollector;
+import zipkin2.collector.kafka08.KafkaCollector;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
-public class ZipkinKafka10CollectorAutoConfigurationTest {
+public class ZipkinKafka08CollectorAutoConfigurationTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -45,43 +46,46 @@ public class ZipkinKafka10CollectorAutoConfigurationTest {
   }
 
   @Test
-  public void doesNotProvideCollectorComponent_whenBootstrapServersUnset() {
+  public void doesntProvidesCollectorComponent_whenKafkaZooKeeperUnset() {
     context = new AnnotationConfigApplicationContext();
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafka10CollectorAutoConfiguration.class,
+        ZipkinKafka08CollectorAutoConfiguration.class,
         InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(KafkaCollector.class);
+    context.getBean(Collector.class);
   }
 
   @Test
-  public void providesCollectorComponent_whenBootstrapServersEmptyString() {
+  public void providesCollectorComponent_whenZooKeeperSet() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:");
+    addEnvironment(context, "zipkin.collector.kafka.zookeeper:localhost");
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafka10CollectorAutoConfiguration.class,
-        InMemoryConfiguration.class);
-    context.refresh();
-
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(KafkaCollector.class);
-  }
-
-  @Test
-  public void providesCollectorComponent_whenBootstrapServersSet() {
-    context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:localhost:9091");
-    context.register(
-        PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafka10CollectorAutoConfiguration.class,
+        ZipkinKafka08CollectorAutoConfiguration.class,
         InMemoryConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
+  }
+
+  @Test
+  public void canOverrideProperty_topic() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(
+        context,
+        "zipkin.collector.kafka.zookeeper:localhost",
+        "zipkin.collector.kafka.topic:zapkin");
+    context.register(
+        PropertyPlaceholderAutoConfiguration.class,
+        ZipkinKafka08CollectorAutoConfiguration.class,
+        InMemoryConfiguration.class);
+    context.refresh();
+
+    assertThat(context.getBean(ZipkinKafkaCollectorProperties.class).getTopic())
+        .isEqualTo("zapkin");
   }
 
   @Configuration
