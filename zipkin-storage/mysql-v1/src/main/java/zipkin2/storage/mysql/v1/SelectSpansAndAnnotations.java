@@ -29,6 +29,7 @@ import org.jooq.SelectOffsetStep;
 import org.jooq.TableOnConditionStep;
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations;
 import zipkin2.v1.V1BinaryAnnotation;
@@ -133,41 +134,49 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     for (List<V1Span.Builder> spans : spansWithoutAnnotations.values()) {
       for (V1Span.Builder span : spans) {
         Row3<Long, Long, Long> key = row(span.traceIdHigh(), span.traceId(), span.id());
-
         if (dbAnnotations.containsKey(key)) {
           for (Record a : dbAnnotations.get(key)) {
             Endpoint endpoint = endpoint(a);
-            int type = a.getValue(ZIPKIN_ANNOTATIONS.A_TYPE);
-            if (type == -1) {
-              span.addAnnotation(
-                  a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
-                  a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-                  endpoint);
-            } else {
-              // TODO: all values!
-              switch (type) {
-                case V1BinaryAnnotation.TYPE_STRING:
-                  span.addBinaryAnnotation(
-                      a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-                      new String(a.getValue(ZIPKIN_ANNOTATIONS.A_VALUE), UTF_8),
-                      endpoint);
-                  break;
-                case V1BinaryAnnotation.TYPE_BOOLEAN:
-                  byte[] value = a.getValue(ZIPKIN_ANNOTATIONS.A_VALUE);
-                  if (value.length == 1 && value[0] == 1) { // Address
-                    span.addBinaryAnnotation(a.getValue(ZIPKIN_ANNOTATIONS.A_KEY), endpoint);
-                  }
-                  break;
-                default:
-                  // log.fine unsupported
-              }
-            }
+            processAnnotationRecord(a, span, endpoint);
           }
         }
         converter.convert(span.build(), allSpans);
       }
     }
     return allSpans;
+  }
+
+  static void processAnnotationRecord(Record a, V1Span.Builder span, @Nullable Endpoint endpoint) {
+    Integer type = a.getValue(ZIPKIN_ANNOTATIONS.A_TYPE);
+    if (type == null) return;
+    if (type == -1) {
+      span.addAnnotation(
+          a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
+          a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
+          endpoint);
+    } else {
+      switch (type) {
+        case V1BinaryAnnotation.TYPE_STRING:
+          span.addBinaryAnnotation(
+              a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
+              new String(a.getValue(ZIPKIN_ANNOTATIONS.A_VALUE), UTF_8),
+              endpoint);
+          break;
+        case V1BinaryAnnotation.TYPE_BOOLEAN:
+          // address annotations require an endpoint
+          if (endpoint == null) break;
+          String aKey = a.getValue(ZIPKIN_ANNOTATIONS.A_KEY);
+          // ensure we are only processing address annotations
+          if (!aKey.equals("sa") && !aKey.equals("ca") && !aKey.equals("ma")) break;
+          byte[] value = a.getValue(ZIPKIN_ANNOTATIONS.A_VALUE);
+          // address annotations are a single byte of 1
+          if (value == null || value.length != 1 || value[0] != 1) break;
+          span.addBinaryAnnotation(a.getValue(ZIPKIN_ANNOTATIONS.A_KEY), endpoint);
+          break;
+        default:
+          // other values unsupported
+      }
+    }
   }
 
   SelectOffsetStep<? extends Record> toTraceIdQuery(DSLContext context, QueryRequest request) {
@@ -239,7 +248,7 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
         Endpoint.newBuilder()
             .serviceName(a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME))
             .port(Schema.maybeGet(a, ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, (short) 0));
-    int ipv4 = a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4);
+    int ipv4 = maybeGet(a, ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, 0);
     if (ipv4 != 0) {
       result.parseIp( // allocation is ok here as Endpoint.ipv4Bytes would anyway
           new byte[] {
