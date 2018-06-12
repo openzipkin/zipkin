@@ -14,7 +14,9 @@
     the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -36,14 +38,13 @@
       <artifactId>zipkin-storage-cassandra</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.zipkin.brave.cassandra</groupId>
-      <artifactId>brave-instrumentation-cassandra-driver</artifactId>
-      <version>0.7.0</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
       <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin-storage-cassandra-v1</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.brave.cassandra</groupId>
+      <artifactId>brave-instrumentation-cassandra-driver</artifactId>
+      <optional>true</optional>
     </dependency>
   </dependencies>
 </project>

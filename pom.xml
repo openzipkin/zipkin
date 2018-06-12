@@ -51,6 +51,7 @@
     <okio.version>1.14.1</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
     <jooq.version>3.10.7</jooq.version>
+    <micrometer.version>1.0.4</micrometer.version>
     <spring-boot.version>2.0.2.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
@@ -457,6 +458,11 @@
             <artifactId>zipkin</artifactId>
           </exclusion>
         </exclusions>
+      </dependency>
+      <dependency>
+        <groupId>io.zipkin.brave.cassandra</groupId>
+        <artifactId>brave-instrumentation-cassandra-driver</artifactId>
+        <version>0.7.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
