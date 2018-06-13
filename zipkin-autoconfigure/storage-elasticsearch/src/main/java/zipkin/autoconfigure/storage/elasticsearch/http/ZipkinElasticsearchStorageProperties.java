@@ -158,7 +158,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     return httpLogging;
   }
 
-  public void setLogging(HttpLoggingInterceptor.Level httpLogging) {
+  public void setHttpLogging(HttpLoggingInterceptor.Level httpLogging) {
     this.httpLogging = httpLogging;
   }
 
