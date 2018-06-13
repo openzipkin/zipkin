@@ -15,6 +15,7 @@ package zipkin2.collector;
 
 import java.util.List;
 import zipkin2.Component;
+import zipkin2.collector.filter.SpanFilter;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
@@ -51,6 +52,13 @@ public abstract class CollectorComponent extends Component {
      * system. Defaults to always sample.
      */
     public abstract Builder sampler(CollectorSampler sampler);
+
+    /**
+     * {@link SpanFilter allows administrators to add filters to their spans. Defaults to no filters}
+     * @param filters
+     * @return
+     */
+    public abstract Builder filters(List<SpanFilter> filters);
 
     public abstract CollectorComponent build();
   }

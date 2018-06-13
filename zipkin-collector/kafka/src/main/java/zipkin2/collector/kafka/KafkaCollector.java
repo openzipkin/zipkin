@@ -13,6 +13,7 @@
  */
 package zipkin2.collector.kafka;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -31,6 +32,7 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.filter.SpanFilter;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
@@ -70,6 +72,12 @@ public final class KafkaCollector extends CollectorComponent {
     @Override
     public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
+      return this;
+    }
+
+    @Override
+    public CollectorComponent.Builder filters(List<SpanFilter> filters) {
+      delegate.filters(filters);
       return this;
     }
 

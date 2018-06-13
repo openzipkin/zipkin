@@ -22,6 +22,7 @@ import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.SpanBytesDecoderDetector;
 import zipkin2.codec.BytesDecoder;
+import zipkin2.collector.filter.SpanFilter;
 import zipkin2.storage.StorageComponent;
 
 import static java.lang.String.format;
@@ -48,6 +49,7 @@ public class Collector { // not final for mock
     StorageComponent storage = null;
     CollectorSampler sampler = null;
     CollectorMetrics metrics = null;
+    List<SpanFilter> filters = null;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -74,15 +76,23 @@ public class Collector { // not final for mock
       return this;
     }
 
+    /** @see {@link CollectorComponent.Builder#filters(List<SpanFilter)} */
+    public Builder filters(List<SpanFilter> filters) {
+      if (filters == null) throw new NullPointerException("filters == null");
+      this.filters = filters;
+      return this;    }
+
     public Collector build() {
       return new Collector(this);
     }
+
   }
 
   final Logger logger;
   final CollectorMetrics metrics;
   final CollectorSampler sampler;
   final StorageComponent storage;
+  final List<SpanFilter> filters;
 
   Collector(Builder builder) {
     if (builder.logger == null) throw new NullPointerException("logger == null");
@@ -91,6 +101,7 @@ public class Collector { // not final for mock
     if (builder.storage == null) throw new NullPointerException("storage == null");
     this.storage = builder.storage;
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
+    this.filters = builder.filters;
   }
 
   public void accept(List<Span> spans, Callback<Void> callback) {
@@ -133,6 +144,7 @@ public class Collector { // not final for mock
     List<Span> spans;
     try {
       spans = decodeList(decoder, serializedSpans);
+      spans = filterSpans(spans, callback);
     } catch (RuntimeException e) {
       callback.onError(errorReading(e));
       return;
@@ -144,6 +156,22 @@ public class Collector { // not final for mock
     List<Span> out = new ArrayList<>();
     if (!decoder.decodeList(serialized, out)) return Collections.emptyList();
     return out;
+  }
+
+  /**
+   * Take the list of spans and pump them through pre-configured filters
+   *
+   * @param spans
+   */
+  List<Span> filterSpans(List<Span> spans, Callback<Void> callback) {
+    List<Span> processed = spans;
+    if (filters == null) {
+      return spans;
+    }
+    for (SpanFilter filter : filters) {
+      processed = filter.process(processed, metrics, callback);
+    }
+    return processed;
   }
 
   void record(List<Span> sampled, Callback<Void> callback) {

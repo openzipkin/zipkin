@@ -30,6 +30,7 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.filter.SpanFilter;
 import zipkin2.storage.StorageComponent;
 
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
@@ -65,6 +66,12 @@ public final class RabbitMQCollector extends CollectorComponent {
     @Override
     public Builder sampler(CollectorSampler sampler) {
       this.delegate.sampler(sampler);
+      return this;
+    }
+
+    @Override
+    public CollectorComponent.Builder filters(List<SpanFilter> filters) {
+      delegate.filters(filters);
       return this;
     }
 

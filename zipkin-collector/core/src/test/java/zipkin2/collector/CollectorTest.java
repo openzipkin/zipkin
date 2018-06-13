@@ -15,14 +15,22 @@ package zipkin2.collector;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.internal.matchers.Null;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.collector.filter.SpanFilter;
 import zipkin2.storage.StorageComponent;
+
+import javax.xml.ws.http.HTTPException;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
@@ -159,5 +167,78 @@ public class CollectorTest {
     String message = collector.errorReading(exception).getMessage();
 
     assertThat(message).isEqualTo("Truncated reading spans");
+  }
+
+  /**
+   * These filters add things to spans
+   * @return
+   */
+  public static List<SpanFilter> getSpanEnrichmentFilters() {
+    SpanFilter spanUtestFilter = new SpanFilter() {
+      @Override
+      public List<Span> process(List<Span> spans, CollectorMetrics metrics, Callback<Void> callback) {
+        // For v2, we add a tag
+        return spans.stream()
+          .map(s -> s.toBuilder().putTag("utest", "V2").build())
+          .collect(Collectors.toList());
+      }
+    };
+
+    return Collections.singletonList(spanUtestFilter);
+  }
+
+  @Test
+  public void testEnrichment() {
+    CollectorMetrics mockMetrics = mock(CollectorMetrics.class);
+    collector = Collector.newBuilder(Collector.class)
+      .metrics(mockMetrics)
+      .storage(storage)
+      .filters(getSpanEnrichmentFilters()).build();
+    List<Span> enrichedSpans = collector.filterSpans(asList(CLIENT_SPAN), null);
+    assertThat(enrichedSpans.size()).isEqualTo(1);
+    Span enrichedSpan = enrichedSpans.get(0);
+    assertThat(enrichedSpan.tags()).containsKeys("utest").containsValues("V2");
+  }
+
+  /**
+   * These filters drop spans
+   * @return
+   */
+  public static List<SpanFilter> getSpanDropFilters() {
+    SpanFilter spanDropFilter = new SpanFilter() {
+      @Override
+      public List<Span> process(List<Span> spans, CollectorMetrics metrics, Callback<Void> callback) {
+        metrics.incrementSpansDropped(spans.size());
+        callback.onError(new HTTPException(429));
+        return Collections.emptyList();
+      }
+    };
+
+    return Collections.singletonList(spanDropFilter);
+  }
+
+  @Test
+  public void testSpanFilterDrop() {
+    CollectorMetrics mockMetrics = mock(CollectorMetrics.class);
+    collector = Collector.newBuilder(Collector.class)
+      .metrics(mockMetrics)
+      .storage(storage)
+      .filters(getSpanDropFilters()).build();
+
+    Callback<Void> errorCallback = new Callback<Void>() {
+      @Override
+      public void onSuccess(Void value) {
+        fail("Expected all spans to be dropped");
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        assertThat(t instanceof HTTPException);
+        HTTPException httpException = (HTTPException)t;
+        assertThat(httpException.getStatusCode()).isEqualTo(429);
+      }
+    };
+    assertThat(collector.filterSpans(asList(CLIENT_SPAN), errorCallback).size()).isEqualTo(0);
+    verify(mockMetrics).incrementSpansDropped(1);
   }
 }

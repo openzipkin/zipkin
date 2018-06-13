@@ -21,6 +21,9 @@ import io.undertow.util.HttpString;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 import java.util.zip.GZIPInputStream;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -32,7 +35,10 @@ import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.filter.SpanFilter;
 import zipkin2.storage.StorageComponent;
+
+import javax.xml.ws.http.HTTPException;
 
 /** Implements the POST /api/v1/spans and /api/v2/spans endpoints used by instrumentation. */
 @Configuration
@@ -51,13 +57,15 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
 
   @Autowired
   ZipkinHttpCollector(
-      StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
+      StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics,
+      Optional<List<SpanFilter>> filters) {
     this.metrics = metrics.forTransport("http");
     this.collector =
         Collector.newBuilder(getClass())
             .storage(storage)
             .sampler(sampler)
             .metrics(this.metrics)
+            .filters(filters.orElse(Collections.emptyList()))
             .build();
     this.JSON_V2 = new HttpCollector(SpanBytesDecoder.JSON_V2);
     this.PROTO3 = new HttpCollector(SpanBytesDecoder.PROTO3);
@@ -152,7 +160,13 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
 
   static void error(HttpServerExchange exchange, Throwable e) {
     String message = e.getMessage();
-    int code = message == null || message.startsWith("Cannot store") ? 500 : 400;
+    int code;
+    if (e instanceof HTTPException) {
+      HTTPException httpException = (HTTPException)e;
+      code = httpException.getStatusCode();
+    } else {
+      code = message == null || message.startsWith("Cannot store") ? 500 : 400;
+    }
     if (message == null) message = e.getClass().getSimpleName();
     exchange.setStatusCode(code).getResponseSender().send(message);
   }
