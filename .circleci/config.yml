@@ -1,0 +1,62 @@
+#
+# Copyright 2015-2018 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# NOTE: Travis tests Elasticsearch and MySQL using Docker, and Kafka manually. We don't redundantly test them here
+version: 2
+jobs:
+  build:
+    environment:
+      # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
+      MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
+    docker:
+      # Use java 9 here and 1.8 in travis (so that we test both)
+      - image: circleci/openjdk:9-jdk
+    steps:
+      - checkout
+
+      - restore_cache:
+          key: offline-dependencies-{{ checksum "pom.xml" }}
+
+      - run:
+          name: Download dependencies
+          command: |
+            sudo apt-get install xsltproc
+            ./circleci/go-offline.sh
+            ./mvnw frontend:install-node-and-npm frontend:npm -pl zipkin-ui
+
+      - save_cache:
+          key: offline-dependencies-{{ checksum "pom.xml" }}
+          paths:
+            - ~/.m2
+            - zipkin-ui/node_modules
+
+      - run:
+          name: Tests
+          command: |
+            # skip license on circleci due to #1512
+            ./mvnw -Dtest="*Test" -DfailIfNoTests=false test -Dlicense.skip=true
+
+      - run:
+          name: Collect test reports
+          when: always
+          command: |
+            mkdir -p /tmp/test-reports/junit/
+            find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} /tmp/test-reports/junit/ \;
+
+      - store_test_results:
+          path: /tmp/test-reports/
+
+notify:
+  webhooks:
+    - url: https://webhooks.gitter.im/e/e63be97ca10d2fbd09c3
