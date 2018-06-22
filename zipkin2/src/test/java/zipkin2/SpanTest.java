@@ -15,6 +15,7 @@ package zipkin2;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.UUID;
 import okio.Buffer;
 import org.junit.Test;
 
@@ -198,5 +199,25 @@ public class SpanTest {
   @Test(expected = IllegalArgumentException.class)
   public void idFromLong_invalid() {
     base.toBuilder().id(0);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void id_emptyInvalid() {
+    base.toBuilder().id("");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void parentId_emptyInvalid() {
+    base.toBuilder().parentId("");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void traceId_emptyInvalid() {
+    base.toBuilder().traceId("");
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void traceId_uuidInvalid() {
+    base.toBuilder().traceId(UUID.randomUUID().toString());
   }
 }
