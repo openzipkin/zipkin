@@ -403,6 +403,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
         return this;
       }
       int length = parentId.length();
+      if (length == 0) throw new IllegalArgumentException("parentId is empty");
       if (length > 16) throw new IllegalArgumentException("parentId.length > 16");
       validateHex(parentId);
       this.parentId = length < 16 ? padLeft(parentId, 16) : parentId;
@@ -416,7 +417,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
      * @see Span#id()
      */
     public Builder id(long id) {
-      if (id == 0L) throw new IllegalArgumentException("empty span ID");
+      if (id == 0L) throw new IllegalArgumentException("empty id");
       this.id = toLowerHex(id);
       return this;
     }
@@ -428,6 +429,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     public Builder id(String id) {
       if (id == null) throw new NullPointerException("id == null");
       int length = id.length();
+      if (length == 0) throw new IllegalArgumentException("id is empty");
       if (length > 16) throw new IllegalArgumentException("id.length > 16");
       validateHex(id);
       this.id = length < 16 ? padLeft(id, 16) : id;
@@ -562,6 +564,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   public static String normalizeTraceId(String traceId) {
     if (traceId == null) throw new NullPointerException("traceId == null");
     int length = traceId.length();
+    if (length == 0) throw new IllegalArgumentException("traceId is empty");
     if (length > 32) throw new IllegalArgumentException("traceId.length > 32");
     validateHex(traceId);
     if (length == 32 || length == 16) {
