@@ -170,6 +170,7 @@ public final class V2SpanConverter {
           throw new AssertionError("update kind mapping");
       }
 
+      // If we didn't find a span kind, directly or indirectly, unset the addr
       if (in.remoteEndpoint() == null) addr = null;
     }
   }
