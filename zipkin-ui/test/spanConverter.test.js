@@ -1,471 +1,728 @@
 const {SPAN_V1} = require('../js/spanConverter');
-const should = require('chai').should();
 
 describe('SPAN v1 Conversion', () => {
-  it('converts root server span', () => {
-    // let's pretend there was no caller, so we don't set shared flag
-    const spanV2 = {
-      traceId: 'a',
-      name: 'get',
-      id: 'b',
-      kind: 'SERVER',
-      timestamp: 1,
-      duration: 1,
-      localEndpoint: {
-        serviceName: 'portalservice',
-        ipv4: '10.57.50.83',
-        port: 8080
-      },
-      tags: {
-        'http.path': '/foo'
-      }
-    };
+  // endpoints from zipkin2.TestObjects
+  const frontend = {
+    serviceName: 'frontend',
+    ipv4: '127.0.0.1',
+    port: 8080
+  };
 
-    const expected = {
-      traceId: 'a',
-      id: 'b',
+  const backend = {
+    serviceName: 'backend',
+    ipv4: '192.168.99.101',
+    port: 9000
+  };
+
+  // originally zipkin2.v1.SpanConverterTest.client
+  it('converts client span', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
       name: 'get',
-      timestamp: 1,
-      duration: 1,
+      kind: 'CLIENT',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      localEndpoint: frontend,
+      remoteEndpoint: backend,
       annotations: [
         {
-          value: 'sr',
-          timestamp: 1,
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
+          value: 'ws',
+          timestamp: 1472470996238000
         },
         {
-          value: 'ss',
-          timestamp: 2,
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
+          value: 'wr',
+          timestamp: 1472470996403000
         }
       ],
-      binaryAnnotations: [
-        {
-          key: 'http.path',
-          value: '/foo',
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
-        }
-      ]
-    };
-
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
-  });
-
-  it('converts incomplete shared server span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
-      name: 'get',
-      kind: 'SERVER',
-      shared: true,
-      timestamp: 1,
-      localEndpoint: {
-        serviceName: 'portalservice',
-        ipv4: '10.57.50.83',
-        port: 8080
-      },
       tags: {
-        'http.path': '/foo'
+        'http.path': '/api',
+        'clnt/finagle.version': '6.45.0',
       }
     };
 
-    const expected = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
       name: 'get',
-      annotations: [
-        {
-          value: 'sr',
-          timestamp: 1,
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
-        }
-      ],
-      binaryAnnotations: [
-        {
-          key: 'http.path',
-          value: '/foo',
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
-        }
-      ]
-    };
-
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
-  });
-
-  it('converts client span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'get',
-      id: 'b',
-      kind: 'CLIENT',
-      timestamp: 1,
-      duration: 1,
-      localEndpoint: {
-        serviceName: 'portalservice',
-        ipv4: '10.57.50.83',
-        port: 8080
-      },
-      tags: {
-        'http.path': '/foo'
-      }
-    };
-
-    const expected = {
-      traceId: 'a',
-      id: 'b',
-      name: 'get',
-      timestamp: 1,
-      duration: 1,
+      timestamp: 1472470996199000,
+      duration: 207000,
       annotations: [
         {
           value: 'cs',
-          timestamp: 1,
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
+          timestamp: 1472470996199000,
+          endpoint: frontend
+        },
+        {
+          value: 'ws',
+          timestamp: 1472470996238000, // ts order retained
+          endpoint: frontend
+        },
+        {
+          value: 'wr',
+          timestamp: 1472470996403000,
+          endpoint: frontend
         },
         {
           value: 'cr',
-          timestamp: 2,
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
+          timestamp: 1472470996406000,
+          endpoint: frontend
         }
       ],
       binaryAnnotations: [
         {
           key: 'http.path',
-          value: '/foo',
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
+          value: '/api',
+          endpoint: frontend
+        },
+        {
+          key: 'clnt/finagle.version',
+          value: '6.45.0',
+          endpoint: frontend
+        },
+        {
+          key: 'sa',
+          value: true,
+          endpoint: backend
         }
       ]
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
   });
 
+  // originally zipkin2.v1.SpanConverterTest.SpanConverterTest.client_unfinished
   it('converts incomplete client span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
       name: 'get',
       kind: 'CLIENT',
-      timestamp: 1,
-      localEndpoint: {
-        serviceName: 'portalservice',
-        ipv4: '10.57.50.83',
-        port: 8080
-      },
-      tags: {
-        'http.path': '/foo'
-      }
+      timestamp: 1472470996199000,
+      localEndpoint: frontend,
+      annotations: [
+        {
+          value: 'ws',
+          timestamp: 1472470996238000
+        }
+      ]
     };
 
-    const expected = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
       name: 'get',
-      timestamp: 1,
+      timestamp: 1472470996199000,
       annotations: [
         {
           value: 'cs',
-          timestamp: 1,
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
+          timestamp: 1472470996199000,
+          endpoint: frontend
+        },
+        {
+          value: 'ws',
+          timestamp: 1472470996238000,
+          endpoint: frontend
+        }
+      ],
+      binaryAnnotations: [] // prefers empty array to nil
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.client_kindInferredFromAnnotation
+  it('infers cr annotation', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      localEndpoint: frontend,
+      annotations: [
+        {
+          value: 'cs',
+          timestamp: 1472470996199000
+        }
+      ]
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      annotations: [
+        {
+          value: 'cs',
+          timestamp: 1472470996199000,
+          endpoint: frontend
+        },
+        {
+          value: 'cr',
+          timestamp: 1472470996406000,
+          endpoint: frontend
+        }
+      ],
+      binaryAnnotations: []
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_cr
+  it('converts client span reporting remote endpoint with late cr', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      remoteEndpoint: backend,
+      annotations: [
+        {
+          value: 'cr',
+          timestamp: 1472470996199000
+        }
+      ]
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      annotations: [
+        {
+          value: 'cr',
+          timestamp: 1472470996199000,
+          endpoint: frontend
+        }
+      ],
+      binaryAnnotations: [
+        {
+          key: 'sa',
+          value: true,
+          endpoint: backend
+        }
+      ]
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_sa
+  it('converts late remoteEndpoint to sa', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      remoteEndpoint: backend
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: '', // TODO: check if empty name is needed elsewhere in the codebase still
+      annotations: [],
+      binaryAnnotations: [
+        {
+          key: 'sa',
+          value: true,
+          endpoint: backend
+        }
+      ]
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.noAnnotationsExceptAddresses
+  it('converts when remoteEndpoint exist without kind', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      localEndpoint: frontend,
+      remoteEndpoint: backend
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      annotations: [],
+      binaryAnnotations: [
+        {
+          key: 'lc',
+          value: '',
+          endpoint: frontend
+        },
+        {
+          key: 'sa',
+          value: true,
+          endpoint: backend
+        }
+      ]
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.server
+  it('converts root server span', () => {
+    // let's pretend there was no caller, so we don't set shared flag
+    const v2 = {
+      traceId: '1',
+      id: '2',
+      name: 'get',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      remoteEndpoint: frontend,
+      timestamp: 1472470996199000,
+      duration: 207000,
+      tags: {
+        'http.path': '/api',
+        'finagle.version': '6.45.0'
+      }
+    };
+
+    const v1 = {
+      traceId: '1',
+      id: '2',
+      name: 'get',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      annotations: [
+        {
+          value: 'sr',
+          timestamp: 1472470996199000,
+          endpoint: backend
+        },
+        {
+          value: 'ss',
+          timestamp: 1472470996406000,
+          endpoint: backend
         }
       ],
       binaryAnnotations: [
         {
           key: 'http.path',
-          value: '/foo',
-          endpoint: {
-            serviceName: 'portalservice',
-            ipv4: '10.57.50.83',
-            port: 8080
-          }
-        }
-      ]
-    };
-
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
-  });
-
-  it('converts producer span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'publish',
-      id: 'c',
-      parentId: 'b',
-      kind: 'PRODUCER',
-      timestamp: 1,
-      duration: 1,
-      localEndpoint: {serviceName: 'frontend'},
-      remoteEndpoint: {serviceName: 'rabbitmq'}
-    };
-
-    const expected = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
-      name: 'publish',
-      timestamp: 1,
-      duration: 1,
-      annotations: [
-        {value: 'ms', timestamp: 1, endpoint: {serviceName: 'frontend'}},
-        {value: 'ws', timestamp: 2, endpoint: {serviceName: 'frontend'}},
-      ],
-      binaryAnnotations: [
+          value: '/api',
+          endpoint: backend
+        },
         {
-          key: 'ma',
+          key: 'finagle.version',
+          value: '6.45.0',
+          endpoint: backend
+        },
+        {
+          key: 'ca',
           value: true,
-          endpoint: {serviceName: 'rabbitmq'}
+          endpoint: frontend
         }
       ]
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
   });
 
-  it('converts incomplete producer span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'publish',
-      id: 'c',
-      parentId: 'b',
-      kind: 'PRODUCER',
-      timestamp: 1,
-      localEndpoint: {serviceName: 'frontend'}
+  // originally zipkin2.v1.SpanConverterTest.missingEndpoints
+  it('converts span with no endpoints', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '1',
+      id: '2',
+      name: 'foo',
+      timestamp: 1472470996199000,
+      duration: 207000
     };
 
-    const expected = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
-      name: 'publish',
-      timestamp: 1,
-      annotations: [{value: 'ms', timestamp: 1, endpoint: {serviceName: 'frontend'}}],
+    const v1 = {
+      traceId: '1',
+      parentId: '1',
+      id: '2',
+      name: 'foo',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      annotations: [],
       binaryAnnotations: []
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
   });
 
-  it('converts consumer span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'next-message',
-      id: 'c',
-      parentId: 'b',
-      kind: 'CONSUMER',
-      timestamp: 1,
-      duration: 1,
-      localEndpoint: {serviceName: 'backend'},
-      remoteEndpoint: {serviceName: 'rabbitmq'}
-    };
-
-    const expected = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
-      name: 'next-message',
-      timestamp: 1,
-      duration: 1,
+  // originally zipkin2.v1.SpanConverterTest.coreAnnotation
+  it('converts v2 span retaining an sr annotation', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '1',
+      id: '2',
+      name: 'foo',
+      timestamp: 1472470996199000,
       annotations: [
-        {value: 'wr', timestamp: 1, endpoint: {serviceName: 'backend'}},
-        {value: 'mr', timestamp: 2, endpoint: {serviceName: 'backend'}},
-      ],
-      binaryAnnotations: [
         {
-          key: 'ma',
-          value: true,
-          endpoint: {serviceName: 'rabbitmq'}
+          value: 'cs',
+          timestamp: 1472470996199000
         }
       ]
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
-  });
-
-  it('converts incomplete consumer span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'next-message',
-      id: 'c',
-      parentId: 'b',
-      kind: 'CONSUMER',
-      timestamp: 1,
-      localEndpoint: {serviceName: 'backend'}
-    };
-
-    const expected = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
-      name: 'next-message',
-      timestamp: 1,
-      annotations: [{value: 'mr', timestamp: 1, endpoint: {serviceName: 'backend'}}],
+    const v1 = {
+      traceId: '1',
+      parentId: '1',
+      id: '2',
+      name: 'foo',
+      timestamp: 1472470996199000,
+      annotations: [
+        {
+          value: 'cs',
+          timestamp: 1472470996199000
+        }
+      ],
       binaryAnnotations: []
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
   });
 
-  it('converts local span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'process',
-      id: 'c',
-      parentId: 'b',
-      timestamp: 1,
-      localEndpoint: {serviceName: 'backend'}
+  // originally zipkin2.v1.SpanConverterTest.server_shared_v1_no_timestamp_duration
+  it('converts shared server span without writing timestamp and duration', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      kind: 'SERVER',
+      shared: true,
+      localEndpoint: backend,
+      timestamp: 1472470996199000,
+      duration: 207000
     };
 
-    const expected = {
-      traceId: 'a',
-      parentId: 'b',
-      id: 'c',
-      name: 'process',
-      timestamp: 1,
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      annotations: [
+        {
+          value: 'sr',
+          timestamp: 1472470996199000,
+          endpoint: backend
+        },
+        {
+          value: 'ss',
+          timestamp: 1472470996406000,
+          endpoint: backend
+        }
+      ],
+      binaryAnnotations: []
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.server_incomplete_shared
+  it('converts incomplete shared server span', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      kind: 'SERVER',
+      shared: true,
+      localEndpoint: backend,
+      timestamp: 1472470996199000
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      annotations: [
+        {
+          value: 'sr',
+          timestamp: 1472470996199000,
+          endpoint: backend
+        }
+      ],
+      binaryAnnotations: []
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ss
+  it('converts late incomplete server span with remote endpoint', () => {
+    const v2 = {
+      traceId: '1',
+      id: '2',
+      name: 'get',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      remoteEndpoint: frontend,
+      annotations: [
+        {
+          value: 'ss',
+          timestamp: 1472470996199000
+        }
+      ]
+    };
+
+    const v1 = {
+      traceId: '1',
+      id: '2',
+      name: 'get',
+      annotations: [
+        {
+          value: 'ss',
+          timestamp: 1472470996199000,
+          endpoint: backend
+        }
+      ],
+      binaryAnnotations: [
+        {
+          key: 'ca',
+          value: true,
+          endpoint: frontend
+        }
+      ]
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ca
+  it('converts late remote endpoint server span', () => {
+    const v2 = {
+      traceId: '1',
+      id: '2',
+      kind: 'SERVER',
+      remoteEndpoint: frontend
+    };
+
+    const v1 = {
+      traceId: '1',
+      id: '2',
+      name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
       binaryAnnotations: [
-        {key: 'lc', value: '', endpoint: {serviceName: 'backend'}}
-      ]
-    };
-
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1).to.deep.equal(expected);
-  });
-
-  it('should write CS/CR when no annotations exist', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'get',
-      id: 'a',
-      kind: 'CLIENT',
-      timestamp: 1,
-      duration: 2,
-      localEndpoint: {
-        serviceName: 'portalservice',
-        ipv4: '10.57.50.83',
-        port: 8080
-      }
-    };
-
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1.annotations).to.deep.equal([
-      {
-        endpoint: {
-          serviceName: 'portalservice',
-          ipv4: '10.57.50.83',
-          port: 8080
-        },
-        timestamp: 1,
-        value: 'cs'
-      },
-      {
-        endpoint: {
-          serviceName: 'portalservice',
-          ipv4: '10.57.50.83',
-          port: 8080,
-        },
-        timestamp: 3,
-        value: 'cr'
-      }
-    ]);
-  });
-
-  it('should maintain CS/CR annotation order', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'get',
-      id: 'a',
-      kind: 'CLIENT',
-      timestamp: 1,
-      duration: 2,
-      localEndpoint: {
-        serviceName: 'portalservice',
-        ipv4: '10.57.50.83',
-        port: 8080
-      },
-      annotations: [
         {
-          timestamp: 2,
-          value: 'middle'
+          key: 'ca',
+          value: true,
+          endpoint: frontend
         }
       ]
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1.annotations.map(s => s.timestamp)).to.deep.equal([1, 2, 3]);
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
   });
 
-  it('should set SA annotation on client span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      id: 'a',
-      kind: 'CLIENT',
-      remoteEndpoint: {
-        serviceName: 'there',
-        ipv4: '10.57.50.84',
-        port: 80
-      }
+  // originally zipkin2.v1.SpanConverterTest.localSpan_emptyComponent
+  it('converts local span', () => {
+    const v2 = {
+      traceId: '1',
+      id: '2',
+      name: 'local',
+      localEndpoint: {serviceName: 'frontend'},
+      timestamp: 1472470996199000,
+      duration: 207000,
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1.binaryAnnotations).to.deep.equal([
-      {
-        key: 'sa',
-        value: true,
-        endpoint: {
-          serviceName: 'there',
-          ipv4: '10.57.50.84',
-          port: 80
-        }
-      }
-    ]);
+    const v1 = {
+      traceId: '1',
+      id: '2',
+      name: 'local',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      annotations: [],
+      binaryAnnotations: [
+        {key: 'lc', value: '', endpoint: {serviceName: 'frontend'}}
+      ]
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.producer_remote
+  it('converts incomplete producer span', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'send',
+      kind: 'PRODUCER',
+      timestamp: 1472470996199000,
+      localEndpoint: frontend
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'send',
+      timestamp: 1472470996199000,
+      annotations: [
+        {value: 'ms', timestamp: 1472470996199000, endpoint: frontend}
+      ],
+      binaryAnnotations: []
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.producer_duration
+  it('converts producer span', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'send',
+      kind: 'PRODUCER',
+      localEndpoint: frontend,
+      timestamp: 1472470996199000,
+      duration: 51000
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'send',
+      timestamp: 1472470996199000,
+      duration: 51000,
+      annotations: [
+        {value: 'ms', timestamp: 1472470996199000, endpoint: frontend},
+        {value: 'ws', timestamp: 1472470996250000, endpoint: frontend}
+      ],
+      binaryAnnotations: []
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.consumer
+  it('converts incomplete consumer span', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'next-message',
+      kind: 'CONSUMER',
+      timestamp: 1472470996199000,
+      localEndpoint: backend
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'next-message',
+      timestamp: 1472470996199000,
+      annotations: [
+        {value: 'mr', timestamp: 1472470996199000, endpoint: backend}
+      ],
+      binaryAnnotations: []
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.consumer_remote
+  it('converts incomplete consumer span with remote endpoint', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'next-message',
+      kind: 'CONSUMER',
+      timestamp: 1472470996199000,
+      localEndpoint: backend,
+      remoteEndpoint: {serviceName: 'kafka'}
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'next-message',
+      timestamp: 1472470996199000,
+      annotations: [
+        {value: 'mr', timestamp: 1472470996199000, endpoint: backend}
+      ],
+      binaryAnnotations: [
+        {key: 'ma', value: true, endpoint: {serviceName: 'kafka'}}
+      ]
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.consumer_duration
+  it('converts consumer span', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'send',
+      kind: 'CONSUMER',
+      localEndpoint: backend,
+      timestamp: 1472470996199000,
+      duration: 51000
+    };
+
+    const v1 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'send',
+      timestamp: 1472470996199000,
+      duration: 51000,
+      annotations: [
+        {value: 'wr', timestamp: 1472470996199000, endpoint: backend},
+        {value: 'mr', timestamp: 1472470996250000, endpoint: backend}
+      ],
+      binaryAnnotations: []
+    };
+
+    const expected = SPAN_V1.convert(v2);
+    expect(v1).to.deep.equal(expected);
   });
 
   it('should retain ipv4 and ipv6 addresses', () => {
@@ -476,22 +733,20 @@ describe('SPAN v1 Conversion', () => {
       port: 80
     };
 
-    const spanV2 = {
-      traceId: 'a',
-      id: 'a',
-      kind: 'CLIENT',
-      timestamp: 1,
+    const v2 = {
+      traceId: '1',
+      id: '2',
       localEndpoint
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1.annotations.map(s => s.endpoint)).to.deep.equal([localEndpoint]);
+    const v1 = SPAN_V1.convert(v2);
+    expect(v1.binaryAnnotations.map(s => s.endpoint)).to.deep.equal([localEndpoint]);
   });
 
   it('should backfill empty endpoint serviceName', () => {
-    const spanV2 = {
-      traceId: 'a',
-      id: 'a',
+    const v2 = {
+      traceId: '1',
+      id: '2',
       kind: 'CLIENT',
       timestamp: 1,
       localEndpoint: {
@@ -499,34 +754,14 @@ describe('SPAN v1 Conversion', () => {
       }
     };
 
-    const spanV1 = SPAN_V1.convert(spanV2);
-    expect(spanV1.annotations.map(s => s.endpoint)).to.deep.equal([{
+    const v1 = SPAN_V1.convert(v2);
+    expect(v1.annotations.map(s => s.endpoint)).to.deep.equal([{
       serviceName: '',
       ipv6: '2001:db8::c001'
     }]);
   });
-
-  it('should not write timestamps for shared span', () => {
-    const spanV2 = {
-      traceId: 'a',
-      name: 'get',
-      id: 'a',
-      kind: 'SERVER',
-      shared: true,
-      timestamp: 1,
-      duration: 2,
-      localEndpoint: {
-        serviceName: 'portalservice',
-        ipv4: '10.57.50.83',
-        port: 8080
-      }
-    };
-
-    const spanV1 = SPAN_V1.convert(spanV2);
-    should.equal(spanV1.timestamp, undefined);
-    should.equal(spanV1.duration, undefined);
-  });
 });
+
 describe('SPAN v1 Merge', () => {
   const clientSpan = {
     traceId: 'a',

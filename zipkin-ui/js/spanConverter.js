@@ -18,16 +18,17 @@ function toV1Endpoint(endpoint) {
 }
 
 function toV1Annotation(ann, endpoint) {
-  return {
+  const res = {
     value: ann.value,
     timestamp: ann.timestamp,
-    endpoint
   };
+  if (endpoint) {
+    res.endpoint = endpoint;
+  }
+  return res;
 }
 
-// Copied from https://github.com/openzipkin/zipkin-js/blob/8018e441d01804b02d0d217f10cd82759e71e02a/packages/zipkin/src/jsonEncoder.js#L25
-// Modified to correct assumption that 'annotations' always exist and ensure
-// that 'beginAnnotation' comes first timestamp/duration should always be copied over
+// ported from zipkin2.v1.V1SpanConverter
 function convertV1(span) {
   const res = {
     traceId: span.traceId,
@@ -37,65 +38,137 @@ function convertV1(span) {
   }
   res.id = span.id;
   res.name = span.name || ''; // undefined is not allowed in v1
+  if (span.debug) {
+    res.debug = true;
+  }
+
+  // Don't report timestamp and duration on shared spans (should be server, but not necessarily)
   if (!span.shared) {
     if (span.timestamp) res.timestamp = span.timestamp;
     if (span.duration) res.duration = span.duration;
   }
 
-  const jsonEndpoint = toV1Endpoint(span.localEndpoint);
+  let startTs = span.timestamp || 0;
+  let endTs = startTs && span.duration ? startTs + span.duration : 0;
+  let msTs = 0;
+  let wsTs = 0;
+  let wrTs = 0;
+  let mrTs = 0;
 
-  let beginAnnotation;
-  let endAnnotation;
-  let addressKey;
-  let local;
-  switch (span.kind) {
+  let begin;
+  let end;
+
+  let kind = span.kind;
+
+  // scan annotations in case there are better timestamps, or inferred kind
+  (span.annotations || []).forEach((a) => {
+    switch (a.value) {
+      case 'cs':
+        kind = 'CLIENT';
+        if (a.timestamp < startTs) startTs = a.timestamp;
+        break;
+      case 'sr':
+        kind = 'SERVER';
+        if (a.timestamp < startTs) startTs = a.timestamp;
+        break;
+      case 'ss':
+        kind = 'SERVER';
+        if (a.timestamp > endTs) endTs = a.timestamp;
+        break;
+      case 'cr':
+        kind = 'CLIENT';
+        if (a.timestamp > endTs) endTs = a.timestamp;
+        break;
+      case 'ms':
+        kind = 'PRODUCER';
+        msTs = a.timestamp;
+        break;
+      case 'mr':
+        kind = 'CONSUMER';
+        mrTs = a.timestamp;
+        break;
+      case 'ws':
+        wsTs = a.timestamp;
+        break;
+      case 'wr':
+        wrTs = a.timestamp;
+        break;
+      default:
+    }
+  });
+
+  let addr = 'sa'; // default which will be unset later if needed
+
+  switch (kind) {
     case 'CLIENT':
-      beginAnnotation = span.timestamp ? 'cs' : undefined;
-      endAnnotation = 'cr';
-      addressKey = 'sa';
+      addr = 'sa';
+      begin = 'cs';
+      end = 'cr';
       break;
     case 'SERVER':
-      beginAnnotation = span.timestamp ? 'sr' : undefined;
-      endAnnotation = 'ss';
-      addressKey = 'ca';
+      addr = 'ca';
+      begin = 'sr';
+      end = 'ss';
       break;
     case 'PRODUCER':
-      beginAnnotation = span.timestamp ? 'ms' : undefined;
-      endAnnotation = 'ws';
-      addressKey = 'ma';
+      addr = 'ma';
+      begin = 'ms';
+      end = 'ws';
+      if (startTs === 0 || (msTs !== 0 && msTs < startTs)) {
+        startTs = msTs;
+      }
+      if (endTs === 0 || (wsTs !== 0 && wsTs > endTs)) {
+        endTs = wsTs;
+      }
       break;
     case 'CONSUMER':
-      if (span.timestamp && span.duration) {
-        beginAnnotation = 'wr';
-        endAnnotation = 'mr';
-      } else if (span.timestamp) {
-        beginAnnotation = 'mr';
+      addr = 'ma';
+      if (startTs === 0 || (wrTs !== 0 && wrTs < startTs)) {
+        startTs = wrTs;
       }
-      addressKey = 'ma';
+      if (endTs === 0 || (mrTs !== 0 && mrTs > endTs)) {
+        endTs = mrTs;
+      }
+      if (endTs !== 0 || wrTs !== 0) {
+        begin = 'wr';
+        end = 'mr';
+      } else {
+        begin = 'mr';
+      }
       break;
     default:
-      local = true;
   }
+
+  // If we didn't find a span kind, directly or indirectly, unset the addr
+  if (!span.remoteEndpoint) addr = undefined;
+
+  const beginAnnotation = startTs && begin;
+  const endAnnotation = endTs && end;
+  const ep = toV1Endpoint(span.localEndpoint);
 
   res.annotations = []; // prefer empty to undefined for arrays
+
+  let annotationCount = (span.annotations || []).length;
   if (beginAnnotation) {
-    res.annotations.push({
-      value: beginAnnotation,
-      timestamp: span.timestamp,
-      endpoint: jsonEndpoint
-    });
+    annotationCount++;
+    res.annotations.push(toV1Annotation({
+      value: begin,
+      timestamp: startTs
+    }, ep));
   }
 
-  (span.annotations || []).forEach((ann) =>
-    res.annotations.push(toV1Annotation(ann, jsonEndpoint))
-  );
+  (span.annotations || []).forEach((a) => {
+    if (beginAnnotation && a.value === begin) return;
+    if (endAnnotation && a.value === end) return;
+    res.annotations.push(toV1Annotation(a, ep));
+  });
 
-  if (beginAnnotation && span.duration) {
-    res.annotations.push({
-      value: endAnnotation,
-      timestamp: span.timestamp + span.duration,
-      endpoint: jsonEndpoint
-    });
+  if (endAnnotation) {
+    annotationCount++;
+    res.annotations.push(toV1Annotation({
+      value: end,
+      timestamp: endTs
+    }, ep));
   }
 
   res.binaryAnnotations = []; // prefer empty to undefined for arrays
@@ -104,27 +177,26 @@ function convertV1(span) {
     res.binaryAnnotations = keys.map(key => ({
       key,
       value: span.tags[key],
-      endpoint: jsonEndpoint
+      endpoint: ep
     }));
   }
 
-  // worst case, make a dummy local component annotation, so the span can be looked up
-  if (res.annotations.length === 0 && res.binaryAnnotations.length === 0 && local) {
-    res.binaryAnnotations.push({key: 'lc', value: '', endpoint: jsonEndpoint});
-  }
+  const writeLocalComponent = annotationCount === 0 && ep && keys.length === 0;
+  const hasRemoteEndpoint = addr && span.remoteEndpoint;
 
-  if (span.remoteEndpoint) {
+  // write an empty "lc" annotation to avoid missing the localEndpoint in an in-process span
+  if (writeLocalComponent) {
+    res.binaryAnnotations.push({key: 'lc', value: '', endpoint: ep});
+  }
+  if (hasRemoteEndpoint) {
     const address = {
-      key: addressKey,
+      key: addr,
       value: true,
       endpoint: toV1Endpoint(span.remoteEndpoint)
     };
     res.binaryAnnotations.push(address);
   }
 
-  if (span.debug) {
-    res.debug = true;
-  }
   return res;
 }
 

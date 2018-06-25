@@ -55,7 +55,7 @@ public class SpanConverterTest {
             .timestamp(1472470996199000L)
             .duration(207000L)
             .addAnnotation(1472470996199000L, "cs", FRONTEND)
-            .addAnnotation(1472470996238000L, "ws", FRONTEND)
+            .addAnnotation(1472470996238000L, "ws", FRONTEND) // ts order retained
             .addAnnotation(1472470996403000L, "wr", FRONTEND)
             .addAnnotation(1472470996406000L, "cr", FRONTEND)
             .addBinaryAnnotation("http.path", "/api", FRONTEND)
@@ -126,6 +126,56 @@ public class SpanConverterTest {
   }
 
   @Test
+  public void lateRemoteEndpoint_cr() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .name("get")
+        .kind(Kind.CLIENT)
+        .localEndpoint(FRONTEND)
+        .remoteEndpoint(BACKEND)
+        .addAnnotation(1472470996199000L, "cr")
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("get")
+        .addAnnotation(1472470996199000L, "cr", FRONTEND)
+        .addBinaryAnnotation("sa", BACKEND)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void lateRemoteEndpoint_sa() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .remoteEndpoint(BACKEND)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .addBinaryAnnotation("sa", BACKEND)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
   public void noAnnotationsExceptAddresses() {
     Span v2 =
         Span.newBuilder()
@@ -156,37 +206,6 @@ public class SpanConverterTest {
   }
 
   @Test
-  public void redundantAddressAnnotations() {
-    Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("2")
-            .id("3")
-            .kind(Kind.CLIENT)
-            .name("get")
-            .localEndpoint(FRONTEND)
-            .timestamp(1472470996199000L)
-            .duration(207000L)
-            .build();
-
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(2L)
-            .id(3L)
-            .name("get")
-            .timestamp(1472470996199000L)
-            .duration(207000L)
-            .addAnnotation(1472470996199000L, "cs", FRONTEND)
-            .addAnnotation(1472470996406000L, "cr", FRONTEND)
-            .addBinaryAnnotation("ca", FRONTEND)
-            .addBinaryAnnotation("sa", FRONTEND)
-            .build();
-
-    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
-  }
-
-  @Test
   public void server() {
     Span v2 =
         Span.newBuilder()
@@ -199,7 +218,7 @@ public class SpanConverterTest {
             .timestamp(1472470996199000L)
             .duration(207000L)
             .putTag("http.path", "/api")
-            .putTag("clnt/finagle.version", "6.45.0")
+            .putTag("finagle.version", "6.45.0")
             .build();
 
     V1Span v1 =
@@ -212,64 +231,11 @@ public class SpanConverterTest {
             .addAnnotation(1472470996199000L, "sr", BACKEND)
             .addAnnotation(1472470996406000L, "ss", BACKEND)
             .addBinaryAnnotation("http.path", "/api", BACKEND)
-            .addBinaryAnnotation("clnt/finagle.version", "6.45.0", BACKEND)
+            .addBinaryAnnotation("finagle.version", "6.45.0", BACKEND)
             .addBinaryAnnotation("ca", FRONTEND)
             .build();
 
     assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
-    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
-  }
-
-  /** Fix a v1 reported half in new style and half in old style, ex via a bridge */
-  @Test
-  public void client_missingCs() {
-    Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .id("2")
-            .name("get")
-            .kind(Kind.CLIENT)
-            .localEndpoint(FRONTEND)
-            .timestamp(1472470996199000L)
-            .duration(207000L)
-            .build();
-
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId("1")
-            .id("2")
-            .name("get")
-            .timestamp(1472470996199000L)
-            .duration(207000L)
-            .addAnnotation(1472470996406000L, "cs", FRONTEND)
-            .build();
-
-    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
-  }
-
-  @Test
-  public void server_missingSr() {
-    Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .id("2")
-            .name("get")
-            .kind(Kind.SERVER)
-            .localEndpoint(BACKEND)
-            .timestamp(1472470996199000L)
-            .duration(207000L)
-            .build();
-
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId("1")
-            .id("2")
-            .name("get")
-            .timestamp(1472470996199000L)
-            .duration(207000L)
-            .addAnnotation(1472470996406000L, "ss", BACKEND)
-            .build();
-
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -327,15 +293,70 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  /** Late flushed data on a v1 v1 */
+  @Test
+  public void server_shared_v1_no_timestamp_duration() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId('2')
+        .id("3")
+        .name("get")
+        .kind(Kind.SERVER)
+        .shared(true)
+        .localEndpoint(BACKEND)
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId("1")
+        .parentId('2')
+        .id("3")
+        .name("get")
+        .addAnnotation(1472470996199000L, "sr", BACKEND)
+        .addAnnotation(1472470996406000L, "ss", BACKEND)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void server_incomplete_shared() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId('2')
+        .id("3")
+        .name("get")
+        .kind(Kind.SERVER)
+        .shared(true)
+        .localEndpoint(BACKEND)
+        .timestamp(1472470996199000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId("1")
+        .parentId('2')
+        .id("3")
+        .name("get")
+        .addAnnotation(1472470996199000L, "sr", BACKEND)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  /** Late flushed data on a v2 span */
   @Test
   public void lateRemoteEndpoint_ss() {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
-            .parentId("1")
             .id("2")
-            .name("foo")
+            .name("get")
             .kind(Kind.SERVER)
             .localEndpoint(BACKEND)
             .remoteEndpoint(FRONTEND)
@@ -345,9 +366,8 @@ public class SpanConverterTest {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
-            .parentId(1L)
             .id(2L)
-            .name("foo")
+            .name("get")
             .addAnnotation(1472470996199000L, "ss", BACKEND)
             .addBinaryAnnotation("ca", FRONTEND)
             .build();
@@ -362,9 +382,7 @@ public class SpanConverterTest {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
-            .parentId("1")
             .id("2")
-            .name("foo")
             .kind(Kind.SERVER)
             .remoteEndpoint(FRONTEND)
             .build();
@@ -372,62 +390,8 @@ public class SpanConverterTest {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
-            .parentId(1L)
             .id(2L)
-            .name("foo")
             .addBinaryAnnotation("ca", FRONTEND)
-            .build();
-
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
-    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
-  }
-
-  @Test
-  public void lateRemoteEndpoint_cr() {
-    Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("1")
-            .id("2")
-            .name("foo")
-            .kind(Kind.CLIENT)
-            .localEndpoint(FRONTEND)
-            .remoteEndpoint(BACKEND)
-            .addAnnotation(1472470996199000L, "cr")
-            .build();
-
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(1L)
-            .id(2L)
-            .name("foo")
-            .addAnnotation(1472470996199000L, "cr", FRONTEND)
-            .addBinaryAnnotation("sa", BACKEND)
-            .build();
-
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
-    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
-  }
-
-  @Test
-  public void lateRemoteEndpoint_sa() {
-    Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("1")
-            .id("2")
-            .name("foo")
-            .remoteEndpoint(BACKEND)
-            .build();
-
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(1L)
-            .id(2L)
-            .name("foo")
-            .addBinaryAnnotation("sa", BACKEND)
             .build();
 
     assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
@@ -439,10 +403,9 @@ public class SpanConverterTest {
     Span v2 =
         Span.newBuilder()
             .traceId("1")
-            .parentId("1")
             .id("2")
             .name("local")
-            .localEndpoint(FRONTEND)
+            .localEndpoint(Endpoint.newBuilder().serviceName("frontend").build())
             .timestamp(1472470996199000L)
             .duration(207000L)
             .build();
@@ -450,13 +413,157 @@ public class SpanConverterTest {
     V1Span v1 =
         V1Span.newBuilder()
             .traceId(1L)
-            .parentId(1L)
             .id(2L)
             .name("local")
             .timestamp(1472470996199000L)
             .duration(207000L)
-            .addBinaryAnnotation("lc", "", FRONTEND)
+            .addBinaryAnnotation("lc", "", Endpoint.newBuilder().serviceName("frontend").build())
             .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void producer_remote() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .name("send")
+        .kind(Kind.PRODUCER)
+        .localEndpoint(FRONTEND)
+        .remoteEndpoint(kafka)
+        .timestamp(1472470996199000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("send")
+        .timestamp(1472470996199000L)
+        .addAnnotation(1472470996199000L, "ms", FRONTEND)
+        .addBinaryAnnotation("ma", kafka)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void producer_duration() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .name("send")
+        .kind(Kind.PRODUCER)
+        .localEndpoint(FRONTEND)
+        .timestamp(1472470996199000L)
+        .duration(51000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("send")
+        .timestamp(1472470996199000L)
+        .duration(51000L)
+        .addAnnotation(1472470996199000L, "ms", FRONTEND)
+        .addAnnotation(1472470996250000L, "ws", FRONTEND)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void consumer() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .name("next-message")
+        .kind(Kind.CONSUMER)
+        .localEndpoint(BACKEND)
+        .timestamp(1472470996199000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("next-message")
+        .timestamp(1472470996199000L)
+        .addAnnotation(1472470996199000L, "mr", BACKEND)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void consumer_remote() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .name("next-message")
+        .kind(Kind.CONSUMER)
+        .localEndpoint(BACKEND)
+        .remoteEndpoint(kafka)
+        .timestamp(1472470996199000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("next-message")
+        .timestamp(1472470996199000L)
+        .addAnnotation(1472470996199000L, "mr", BACKEND)
+        .addBinaryAnnotation("ma", kafka)
+        .build();
+
+    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void consumer_duration() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .name("next-message")
+        .kind(Kind.CONSUMER)
+        .localEndpoint(BACKEND)
+        .timestamp(1472470996199000L)
+        .duration(51000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("next-message")
+        .timestamp(1472470996199000L)
+        .duration(51000L)
+        .addAnnotation(1472470996199000L, "wr", BACKEND)
+        .addAnnotation(1472470996250000L, "mr", BACKEND)
+        .build();
 
     assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
@@ -651,148 +758,87 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
+  /** Fix a v1 reported half in new style and half in old style, ex via a bridge */
   @Test
-  public void producer_remote() {
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(2L)
-            .id(3L)
-            .name("send")
-            .timestamp(1472470996199000L)
-            .addAnnotation(1472470996199000L, "ms", FRONTEND)
-            .addBinaryAnnotation("ma", kafka)
-            .build();
-
+  public void client_missingCs() {
     Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("2")
-            .id("3")
-            .name("send")
-            .kind(Kind.PRODUCER)
-            .localEndpoint(FRONTEND)
-            .timestamp(1472470996199000L)
-            .remoteEndpoint(kafka)
-            .build();
+      Span.newBuilder()
+        .traceId("1")
+        .id("2")
+        .name("get")
+        .kind(Kind.CLIENT)
+        .localEndpoint(FRONTEND)
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId("1")
+        .id("2")
+        .name("get")
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .addAnnotation(1472470996406000L, "cs", FRONTEND)
+        .build();
+
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
   @Test
-  public void producer_duration() {
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(2L)
-            .id(3L)
-            .name("send")
-            .timestamp(1472470996199000L)
-            .duration(51000L)
-            .addAnnotation(1472470996199000L, "ms", FRONTEND)
-            .addAnnotation(1472470996250000L, "ws", FRONTEND)
-            .build();
-
+  public void server_missingSr() {
     Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("2")
-            .id("3")
-            .name("send")
-            .kind(Kind.PRODUCER)
-            .localEndpoint(FRONTEND)
-            .timestamp(1472470996199000L)
-            .duration(51000L)
-            .build();
+      Span.newBuilder()
+        .traceId("1")
+        .id("2")
+        .name("get")
+        .kind(Kind.SERVER)
+        .localEndpoint(BACKEND)
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId("1")
+        .id("2")
+        .name("get")
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .addAnnotation(1472470996406000L, "ss", BACKEND)
+        .build();
+
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
   @Test
-  public void consumer() {
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(2L)
-            .id(3L)
-            .name("send")
-            .timestamp(1472470996199000L)
-            .addAnnotation(1472470996199000L, "mr", FRONTEND)
-            .build();
-
+  public void redundantAddressAnnotations() {
     Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("2")
-            .id("3")
-            .name("send")
-            .kind(Kind.CONSUMER)
-            .localEndpoint(FRONTEND)
-            .timestamp(1472470996199000L)
-            .build();
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .kind(Kind.CLIENT)
+        .name("get")
+        .localEndpoint(FRONTEND)
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
-    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
-  }
-
-  @Test
-  public void consumer_remote() {
     V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(2L)
-            .id(3L)
-            .name("send")
-            .timestamp(1472470996199000L)
-            .addAnnotation(1472470996199000L, "mr", FRONTEND)
-            .addBinaryAnnotation("ma", kafka)
-            .build();
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("get")
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .addAnnotation(1472470996199000L, "cs", FRONTEND)
+        .addAnnotation(1472470996406000L, "cr", FRONTEND)
+        .addBinaryAnnotation("ca", FRONTEND)
+        .addBinaryAnnotation("sa", FRONTEND)
+        .build();
 
-    Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("2")
-            .id("3")
-            .name("send")
-            .kind(Kind.CONSUMER)
-            .localEndpoint(FRONTEND)
-            .remoteEndpoint(kafka)
-            .timestamp(1472470996199000L)
-            .build();
-
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
-    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
-  }
-
-  @Test
-  public void consumer_duration() {
-    V1Span v1 =
-        V1Span.newBuilder()
-            .traceId(1L)
-            .parentId(2L)
-            .id(3L)
-            .name("send")
-            .timestamp(1472470996199000L)
-            .duration(51000L)
-            .addAnnotation(1472470996199000L, "wr", FRONTEND)
-            .addAnnotation(1472470996250000L, "mr", FRONTEND)
-            .build();
-
-    Span v2 =
-        Span.newBuilder()
-            .traceId("1")
-            .parentId("2")
-            .id("3")
-            .name("send")
-            .kind(Kind.CONSUMER)
-            .localEndpoint(FRONTEND)
-            .timestamp(1472470996199000L)
-            .duration(51000L)
-            .build();
-
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
