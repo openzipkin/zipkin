@@ -291,11 +291,82 @@ function merge(left, right) {
   return res;
 }
 
+/*
+ * Instrumentation should set {@link Span#timestamp} when recording a span so that guess-work
+ * isn't needed. Since a lot of instrumentation don't, we have to make some guesses.
+ *
+ * * If there is a 'cs', use that
+ * * Fall back to 'sr'
+ * * Otherwise, return undefined
+ */
+// originally zipkin.internal.ApplyTimestampAndDuration.guessTimestamp
+function guessTimestamp(span) {
+  if (span.timestamp || !span.annotations || span.annotations.length === 0) {
+    return span.timestamp;
+  }
+  let rootServerRecv;
+  for (let i = 0; i < span.annotations.length; i++) {
+    const a = span.annotations[i];
+    if (a.value === 'cs') {
+      return a.timestamp;
+    } else if (a.value === 'sr') {
+      rootServerRecv = a.timestamp;
+    }
+  }
+  return rootServerRecv;
+}
+
+/*
+ * For RPC two-way spans, the duration between 'cs' and 'cr' is authoritative. RPC one-way spans
+ * lack a response, so the duration is between 'cs' and 'sr'. We special-case this to avoid
+ * setting incorrect duration when there's skew between the client and the server.
+ */
+// originally zipkin.internal.ApplyTimestampAndDuration.apply
+function applyTimestampAndDuration(span) {
+  // Don't overwrite authoritatively set timestamp and duration!
+  if ((span.timestamp && span.duration) || !span.annotations) {
+    return span;
+  }
+
+  // We cannot backfill duration on a span with less than two annotations. However, we can
+  // backfill timestamp.
+  const annotationLength = span.annotations.length;
+  if (annotationLength < 2) {
+    if (span.timestamp) return span;
+    const guess = guessTimestamp(span);
+    if (!guess) return span;
+    span.timestamp = guess; // eslint-disable-line no-param-reassign
+    return span;
+  }
+
+  // Prefer RPC one-way (cs -> sr) vs arbitrary annotations.
+  let first = span.annotations[0].timestamp;
+  let last = span.annotations[annotationLength - 1].timestamp;
+  span.annotations.forEach((a) => {
+    if (a.value === 'cs') {
+      first = a.timestamp;
+    } else if (a.value === 'cr') {
+      last = a.timestamp;
+    }
+  });
+
+  if (!span.timestamp) {
+    span.timestamp = first; // eslint-disable-line no-param-reassign
+  }
+  if (!span.duration && last !== first) {
+    span.duration = last - first; // eslint-disable-line no-param-reassign
+  }
+  return span;
+}
+
 module.exports.SPAN_V1 = {
-  convert(span) {
-    return convertV1(span);
+  convert(v2Span) {
+    return convertV1(v2Span);
   },
   merge(left, right) {
     return merge(left, right);
+  },
+  applyTimestampAndDuration(v1Span) {
+    return applyTimestampAndDuration(v1Span);
   }
 };

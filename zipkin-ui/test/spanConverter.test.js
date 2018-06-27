@@ -1,4 +1,5 @@
 const {SPAN_V1} = require('../js/spanConverter');
+const should = require('chai').should();
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
@@ -13,7 +14,7 @@ const backend = {
   port: 9000
 };
 
-describe('SPAN v1 Conversion', () => {
+describe('SPAN v2 -> v1 Conversion', () => {
   // originally zipkin2.v1.SpanConverterTest.client
   it('converts client span', () => {
     const v2 = {
@@ -920,5 +921,104 @@ describe('SPAN v1 Merge', () => {
     });
 
     expect(merged.name).to.equal(clientSpan.name);
+  });
+});
+
+describe('SPAN v1 apply timestamp and duration', () => {
+  const cs = {timestamp: 50000, value: 'cs', endpoint: frontend};
+  const sr = {timestamp: 70000, value: 'sr', endpoint: backend};
+  const ss = {timestamp: 80000, value: 'ss', endpoint: backend};
+  const cr = {timestamp: 100000, value: 'cr', endpoint: frontend};
+
+  // originally zipkin2.v1.SpanConverterTest.apply_onlyCs
+  it('should choose cs timestamp', () => {
+    const span = SPAN_V1.applyTimestampAndDuration({
+      traceId: '1',
+      id: '3',
+      name: '',
+      annotations: [cs]
+    });
+
+    expect(span.timestamp).to.equal(cs.timestamp);
+    should.equal(span.duration, undefined);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.apply_rpcSpan
+  it('should choose client duration in merged span', () => {
+    const span = SPAN_V1.applyTimestampAndDuration({
+      traceId: '1',
+      id: '3',
+      name: '',
+      annotations: [cs, sr, ss, cr]
+    });
+
+    expect(span.timestamp).to.equal(cs.timestamp);
+    expect(span.duration).to.equal(cr.timestamp - cs.timestamp);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.apply_serverOnly
+  it('should choose compute duration from server annotations', () => {
+    const span = SPAN_V1.applyTimestampAndDuration({
+      traceId: '1',
+      id: '3',
+      name: '',
+      annotations: [sr, ss]
+    });
+
+    expect(span.timestamp).to.equal(sr.timestamp);
+    expect(span.duration).to.equal(ss.timestamp - sr.timestamp);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.apply_oneWay
+  it('should choose compute duration for a one-way span', () => {
+    const span = SPAN_V1.applyTimestampAndDuration({
+      traceId: '1',
+      id: '3',
+      name: '',
+      annotations: [cs, sr]
+    });
+
+    expect(span.timestamp).to.equal(cs.timestamp);
+    expect(span.duration).to.equal(sr.timestamp - cs.timestamp);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.bestTimestamp_isSpanTimestamp
+  it('should choose prefer span timestamp to cs annotation', () => {
+    const span = SPAN_V1.applyTimestampAndDuration({
+      traceId: '1',
+      id: '3',
+      name: '',
+      timestamp: cs.timestamp - 1,
+      annotations: [cs]
+    });
+
+    expect(span.timestamp).to.equal(cs.timestamp - 1);
+    should.equal(span.duration, undefined);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.bestTimestamp_isNotARandomAnnotation
+  it('should not choose a random annotation for the timestamp', () => {
+    const span = SPAN_V1.applyTimestampAndDuration({
+      traceId: '1',
+      id: '3',
+      name: '',
+      annotations: [{timestamp: 50000, value: 'foo', endpoint: frontend}]
+    });
+
+    should.equal(span.timestamp, undefined);
+    should.equal(span.duration, undefined);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.bestTimestamp_isARootServerSpan
+  it('should choose cs timestamp', () => {
+    const span = SPAN_V1.applyTimestampAndDuration({
+      traceId: '1',
+      id: '3',
+      name: '',
+      annotations: [sr]
+    });
+
+    expect(span.timestamp).to.equal(sr.timestamp);
+    should.equal(span.duration, undefined);
   });
 });
