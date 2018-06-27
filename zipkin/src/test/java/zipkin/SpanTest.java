@@ -103,15 +103,15 @@ public class SpanTest {
   public void mergeWhenBinaryAnnotationsSentSeparately() {
     Span part1 = Span.builder()
         .traceId(1L)
-        .name("")
         .id(1L)
+        .name("")
         .addBinaryAnnotation(BinaryAnnotation.address(Constants.SERVER_ADDR, APP_ENDPOINT))
         .build();
 
     Span part2 = Span.builder()
         .traceId(1L)
-        .name("get")
         .id(1L)
+        .name("get")
         .timestamp(1444438900939000L)
         .duration(376000L)
         .addAnnotation(Annotation.create(1444438900939000L, Constants.SERVER_RECV, APP_ENDPOINT))

@@ -200,11 +200,26 @@ function convertV1(span) {
   return res;
 }
 
+// This guards to ensure we don't add duplicate annotations on merge
+function maybePushAnnotation(annotations, a) {
+  if (annotations.findIndex(b => a.value === b.value) === -1) {
+    annotations.push(a);
+  }
+}
+
+// This guards to ensure we don't add duplicate binary annotations on merge
+function maybePushBinaryAnnotation(binaryAnnotations, a) {
+  if (binaryAnnotations.findIndex(b => a.key === b.key) === -1) {
+    binaryAnnotations.push(a);
+  }
+}
+
 function merge(left, right) {
   const res = {
-    traceId: left.traceId,
+    traceId: right.traceId.length > 16 ? right.traceId : left.traceId,
     parentId: left.parentId,
-    id: left.id
+    id: left.id,
+    name: left.name
   };
   if (right.parentId) {
     res.parentId = right.parentId;
@@ -212,34 +227,63 @@ function merge(left, right) {
     delete(res.parentId);
   }
 
-  const leftClientSpan = left.annotations.findIndex(a => a.value === 'cr') !== -1;
-  const rightServerSpan = right.annotations.findIndex(a => a.value === 'sr') !== -1;
+  // When we move to span model 2, remove this code in favor of using Span.kind == CLIENT
+  let leftClientSpan;
+  let rightClientSpan;
+  let rightServerSpan;
+
+  res.annotations = [];
+
+  (left.annotations || []).forEach((a) => {
+    if (a.value === 'cs') leftClientSpan = true;
+    maybePushAnnotation(res.annotations, a);
+  });
+
+  (right.annotations || []).forEach((a) => {
+    if (a.value === 'cs') rightClientSpan = true;
+    if (a.value === 'sr') rightServerSpan = true;
+    maybePushAnnotation(res.annotations, a);
+  });
+
+  res.annotations.sort((l, r) => l.timestamp - r.timestamp);
+
+  res.binaryAnnotations = [];
+
+  (left.binaryAnnotations || []).forEach((b) => {
+    maybePushBinaryAnnotation(res.binaryAnnotations, b);
+  });
+
+  (right.binaryAnnotations || []).forEach((b) => {
+    maybePushBinaryAnnotation(res.binaryAnnotations, b);
+  });
 
   if (left.name === '' || left.name === 'unknown') {
     res.name = right.name;
-  } else if (right.name === '' || right.name === 'unknown') {
-    res.name = left.name;
-  } else if (leftClientSpan && rightServerSpan) {
+  } else if (leftClientSpan && rightServerSpan && right.name !== '' && right.name !== 'unknown') {
     res.name = right.name; // prefer the server's span name
-  } else {
-    res.name = left.name;
   }
 
-  if (right.timestamp) {
-    res.timestamp = right.timestamp;
+  // Single timestamp makes duration easy: just choose max
+  if (!left.timestamp || !right.timestamp || left.timestamp === right.timestamp) {
+    res.timestamp = left.timestamp ? left.timestamp : right.timestamp;
+    if (!left.duration) {
+      res.duration = right.duration;
+    } else if (right.duration) {
+      res.duration = Math.max(left.duration, right.duration);
+    } else {
+      res.duration = left.duration;
+    }
   } else {
-    delete(res.timestamp);
+    // We have 2 different timestamps. If we have client data in either one of them, use right,
+    // else set timestamp and duration to null
+    if (rightClientSpan) {
+      res.timestamp = right.timestamp;
+      res.duration = right.duration;
+    } else if (leftClientSpan) {
+      res.timestamp = left.timestamp;
+      res.duration = left.duration;
+    }
   }
-  if (right.duration) {
-    res.duration = right.duration;
-  } else {
-    delete(res.duration);
-  }
-  res.annotations = left.annotations
-                        .concat(right.annotations)
-                        .sort((l, r) => l.timestamp - r.timestamp);
-  res.binaryAnnotations = left.binaryAnnotations
-                              .concat(right.binaryAnnotations);
 
   if (right.debug) {
     res.debug = true;

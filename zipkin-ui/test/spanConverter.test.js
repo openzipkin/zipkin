@@ -1,19 +1,19 @@
 const {SPAN_V1} = require('../js/spanConverter');
 
+// endpoints from zipkin2.TestObjects
+const frontend = {
+  serviceName: 'frontend',
+  ipv4: '127.0.0.1',
+  port: 8080
+};
+
+const backend = {
+  serviceName: 'backend',
+  ipv4: '192.168.99.101',
+  port: 9000
+};
+
 describe('SPAN v1 Conversion', () => {
-  // endpoints from zipkin2.TestObjects
-  const frontend = {
-    serviceName: 'frontend',
-    ipv4: '127.0.0.1',
-    port: 8080
-  };
-
-  const backend = {
-    serviceName: 'backend',
-    ipv4: '192.168.99.101',
-    port: 9000
-  };
-
   // originally zipkin2.v1.SpanConverterTest.client
   it('converts client span', () => {
     const v2 = {
@@ -274,16 +274,8 @@ describe('SPAN v1 Conversion', () => {
       duration: 207000,
       annotations: [],
       binaryAnnotations: [
-        {
-          key: 'lc',
-          value: '',
-          endpoint: frontend
-        },
-        {
-          key: 'sa',
-          value: true,
-          endpoint: backend
-        }
+        {key: 'lc', value: '', endpoint: frontend},
+        {key: 'sa', value: true, endpoint: backend}
       ]
     };
 
@@ -764,101 +756,41 @@ describe('SPAN v1 Conversion', () => {
 
 describe('SPAN v1 Merge', () => {
   const clientSpan = {
-    traceId: 'a',
+    traceId: '1',
+    parentId: '2',
+    id: '3',
     name: 'get',
-    id: 'c',
-    parentId: 'b',
+    timestamp: 1472470996199000,
+    duration: 207000,
     annotations: [
-      {
-        endpoint: {
-          serviceName: 'baloonservice',
-          ipv4: '10.57.50.70',
-          port: 80
-        },
-        timestamp: 1,
-        value: 'cs'
-      },
-      {
-        endpoint: {
-          serviceName: 'baloonservice',
-          ipv4: '10.57.50.70',
-          port: 80,
-        },
-        timestamp: 4,
-        value: 'cr'
-      }
+      {value: 'cs', timestamp: 1472470996199000, endpoint: frontend},
+      {value: 'cr', timestamp: 1472470996406000, endpoint: frontend}
     ],
     binaryAnnotations: []
   };
   const serverSpan = {
-    traceId: 'a',
-    name: '',
-    id: 'c',
-    parentId: 'b',
+    traceId: '1',
+    parentId: '2',
+    id: '3',
+    name: 'get',
     annotations: [
-      {
-        endpoint: {
-          serviceName: 'portalservice',
-          ipv4: '10.57.50.83',
-          port: 8080
-        },
-        timestamp: 2,
-        value: 'sr'
-      },
-      {
-        endpoint: {
-          serviceName: 'portalservice',
-          ipv4: '10.57.50.83',
-          port: 8080,
-        },
-        timestamp: 3,
-        value: 'ss'
-      }
+      {value: 'sr', timestamp: 1472470996238000, endpoint: backend},
+      {value: 'ss', timestamp: 1472470996403000, endpoint: backend},
     ],
     binaryAnnotations: []
   };
   const mergedSpan = {
-    traceId: 'a',
+    traceId: '1',
+    parentId: '2',
+    id: '3',
     name: 'get',
-    id: 'c',
-    parentId: 'b',
+    timestamp: 1472470996199000,
+    duration: 207000,
     annotations: [
-      {
-        endpoint: {
-          serviceName: 'baloonservice',
-          ipv4: '10.57.50.70',
-          port: 80
-        },
-        timestamp: 1,
-        value: 'cs'
-      },
-      {
-        endpoint: {
-          serviceName: 'portalservice',
-          ipv4: '10.57.50.83',
-          port: 8080
-        },
-        timestamp: 2,
-        value: 'sr'
-      },
-      {
-        endpoint: {
-          serviceName: 'portalservice',
-          ipv4: '10.57.50.83',
-          port: 8080,
-        },
-        timestamp: 3,
-        value: 'ss'
-      },
-      {
-        endpoint: {
-          serviceName: 'baloonservice',
-          ipv4: '10.57.50.70',
-          port: 80,
-        },
-        timestamp: 4,
-        value: 'cr'
-      }
+      {value: 'cs', timestamp: 1472470996199000, endpoint: frontend},
+      {value: 'sr', timestamp: 1472470996238000, endpoint: backend},
+      {value: 'ss', timestamp: 1472470996403000, endpoint: backend},
+      {value: 'cr', timestamp: 1472470996406000, endpoint: frontend}
     ],
     binaryAnnotations: []
   };
@@ -875,24 +807,103 @@ describe('SPAN v1 Merge', () => {
     expect(merged).to.deep.equal(mergedSpan);
   });
 
+  // originally zipkin2.v1.SpanConverterTest.mergeWhenBinaryAnnotationsSentSeparately
+  it('should add late server addr', () => {
+    const merged = SPAN_V1.merge(clientSpan, {
+      traceId: '1',
+      id: '3',
+      binaryAnnotations: [{key: 'sa', value: true, endpoint: backend}]
+    });
+
+    expect(merged.binaryAnnotations).to.deep.equal([{key: 'sa', value: true, endpoint: backend}]);
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.mergePrefersServerSpanName
   it('should overwrite client name with server name', () => {
     const merged = SPAN_V1.merge(clientSpan, {
-      traceId: 'a',
-      id: 'c',
+      traceId: '1',
+      id: '3',
       name: 'get /users/:userId',
-      annotations: [{timestamp: 2, value: 'sr'}],
+      annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
       binaryAnnotations: []
     });
 
     expect(merged.name).to.equal('get /users/:userId');
   });
 
+  // originally zipkin2.v1.SpanConverterTest.timestampAndDurationMergeWithClockSkew
+  it('should merge timestamp and duration even with skew', () => {
+    const leftTimestamp = 100 * 1000;
+    const leftDuration = 35 * 1000;
+
+    const rightTimestamp = 200 * 1000;
+    const rightDuration = 30 * 1000;
+
+    const leftSpan = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      timestamp: leftTimestamp,
+      duration: leftDuration,
+      annotations: [
+        {value: 'cs', timestamp: leftTimestamp, endpoint: frontend},
+        {value: 'cr', timestamp: leftTimestamp + leftDuration, endpoint: frontend}
+      ],
+      binaryAnnotations: []
+    };
+
+    const rightSpan = {
+      traceId: '1',
+      id: '3',
+      name: 'get',
+      timestamp: rightTimestamp,
+      duration: rightDuration,
+      annotations: [
+        {value: 'sr', timestamp: rightTimestamp, endpoint: backend},
+        {value: 'ss', timestamp: rightTimestamp + rightDuration, endpoint: backend},
+      ],
+      binaryAnnotations: []
+    };
+
+    const leftFirst = SPAN_V1.merge(leftSpan, rightSpan);
+    const rightFirst = SPAN_V1.merge(rightSpan, leftSpan);
+
+    [leftFirst, rightFirst].forEach((completeSpan) => {
+      expect(completeSpan.timestamp).to.equal(leftTimestamp);
+      expect(completeSpan.duration).to.equal(leftDuration);
+
+      // ensure if server isn't propagated the parent ID, it is still ok.
+      expect(completeSpan.parentId).to.equal(leftSpan.parentId);
+    });
+  });
+
+  // originally zipkin2.v1.SpanConverterTest.mergeTraceIdHigh
+  it('should prefer 128bit trace ID', () => {
+    const left = {
+      traceId: '463ac35c9f6413ad48485a3953bb6124',
+      id: '3'
+    };
+
+    const right = {
+      traceId: '48485a3953bb6124',
+      id: '3'
+    };
+
+    const leftFirst = SPAN_V1.merge(left, right);
+    const rightFirst = SPAN_V1.merge(right, left);
+
+    [leftFirst, rightFirst].forEach((completeSpan) => {
+      expect(completeSpan.traceId).to.equal(left.traceId);
+    });
+  });
+
   it('should not overwrite client name with empty', () => {
     const merged = SPAN_V1.merge(clientSpan, {
-      traceId: 'a',
-      id: 'c',
+      traceId: '1',
+      id: '3',
       name: '',
-      annotations: [{timestamp: 2, value: 'sr'}],
+      annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
       binaryAnnotations: []
     });
 
@@ -901,10 +912,10 @@ describe('SPAN v1 Merge', () => {
 
   it('should not overwrite client name with unknown', () => {
     const merged = SPAN_V1.merge(clientSpan, {
-      traceId: 'a',
-      id: 'c',
+      traceId: '1',
+      id: '3',
       name: 'unknown',
-      annotations: [{timestamp: 2, value: 'sr'}],
+      annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
       binaryAnnotations: []
     });
 
