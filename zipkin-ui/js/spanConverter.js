@@ -40,10 +40,17 @@ function convertV1(span) {
   const res = {
     traceId: normalizeTraceId(span.traceId)
   };
-  if (span.parentId) { // instead of writing "parentId": NULL
-    res.parentId = span.parentId.padStart(16, '0');
+
+  // take care not to create self-referencing spans even if the input data is incorrect
+  const id = span.id.padStart(16, '0');
+  if (span.parentId) {
+    const parentId = span.parentId.padStart(16, '0');
+    if (parentId !== id) {
+      res.parentId = parentId;
+    }
   }
-  res.id = span.id.padStart(16, '0');
+
+  res.id = id;
   res.name = span.name || ''; // undefined is not allowed in v1
   if (span.debug) {
     res.debug = true;
@@ -227,11 +234,16 @@ function clean(span) {
     traceId: normalizeTraceId(span.traceId)
   };
 
+  // take care not to create self-referencing spans even if the input data is incorrect
+  const id = span.id.padStart(16, '0');
   if (span.parentId) {
-    res.parentId = span.parentId.padStart(16, '0');
+    const parentId = span.parentId.padStart(16, '0');
+    if (parentId !== id) {
+      res.parentId = parentId;
+    }
   }
 
-  res.id = span.id.padStart(16, '0');
+  res.id = id;
   res.name = span.name || '';
   res.annotations = span.annotations || [];
   res.annotations.sort((a, b) => a.timestamp - b.timestamp);
@@ -246,20 +258,27 @@ function merge(left, right) {
   // normalize ID lengths in case dirty input is received
   //  (this won't be the case from the normal zipkin server, as it normalizes IDs)
   const res = {
-    traceId: normalizeTraceId(right.traceId.length > 16 ? right.traceId : left.traceId),
-    parentId: left.parentId,
-    id: left.id.padStart(16, '0'),
-    name: left.name || ''
+    traceId: normalizeTraceId(right.traceId.length > 16 ? right.traceId : left.traceId)
   };
 
-  if (right.parentId) {
-    res.parentId = right.parentId;
+  // take care not to create self-referencing spans even if the input data is incorrect
+  const id = left.id.padStart(16, '0');
+  if (left.parentId) {
+    const leftParent = left.parentId.padStart(16, '0');
+    if (leftParent !== id) {
+      res.parentId = leftParent;
+    }
   }
-  if (res.parentId) {
-    res.parentId = res.parentId.padStart(16, '0');
-  } else {
-    delete(res.parentId);
+
+  if (right.parentId && !res.parentId) {
+    const rightParent = right.parentId.padStart(16, '0');
+    if (rightParent !== id) {
+      res.parentId = rightParent;
+    }
   }
+
+  res.id = id;
+  res.name = left.name || '';
 
   // When we move to span model 2, remove this code in favor of using Span.kind == CLIENT
   let leftClientSpan;

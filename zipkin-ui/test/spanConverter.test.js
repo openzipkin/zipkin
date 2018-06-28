@@ -100,6 +100,17 @@ describe('SPAN v2 -> v1 Conversion', () => {
     expect(v1).to.deep.equal(expected);
   });
 
+
+  it('should delete self-referencing parentId', () => {
+    const converted = SPAN_V1.convert({
+      traceId: '1',
+      parentId: '3', // self-referencing
+      id: '3'
+    });
+
+    should.equal(converted.parentId, undefined);
+  });
+
   // originally zipkin2.v1.SpanConverterTest.SpanConverterTest.client_unfinished
   it('converts incomplete client span', () => {
     const v2 = {
@@ -807,6 +818,16 @@ describe('SPAN v1 Merge', () => {
     expect(merged).to.deep.equal(mergedSpan);
   });
 
+  it('should delete self-referencing parentId', () => {
+    const merged = SPAN_V1.merge({
+      traceId: '1',
+      parentId: '3', // self-referencing
+      id: '3'
+    }, clientSpan);
+
+    expect(merged.parentId).to.equal(clientSpan.parentId.padStart(16, '0'));
+  });
+
   it('should merge client and server span', () => {
     const merged = SPAN_V1.merge(clientSpan, serverSpan);
 
@@ -1034,11 +1055,18 @@ describe('SPAN v1 merge by ID', () => {
       {
         traceId: '22222222222222222',
         parentId: 'a',
-        id: 'a',
+        id: 'a', // self-referencing
       }
     ]);
 
     expect(spans).to.deep.equal([
+      {
+        traceId: '00000000000000022222222222222222',
+        id: '000000000000000a',
+        name: '',
+        annotations: [],
+        binaryAnnotations: []
+      },
       {
         traceId: '00000000000000022222222222222222',
         id: '0000000000000003',
@@ -1046,14 +1074,6 @@ describe('SPAN v1 merge by ID', () => {
         timestamp: sr.timestamp,
         duration: ss.timestamp - sr.timestamp,
         annotations: [sr, ss],
-        binaryAnnotations: []
-      },
-      {
-        traceId: '00000000000000022222222222222222',
-        parentId: '000000000000000a',
-        id: '000000000000000a',
-        name: '',
-        annotations: [],
         binaryAnnotations: []
       }
     ]);
