@@ -28,15 +28,22 @@ function toV1Annotation(ann, endpoint) {
   return res;
 }
 
+function normalizeTraceId(traceId) {
+  if (traceId.length > 16) {
+    return traceId.padStart(32, '0');
+  }
+  return traceId.padStart(16, '0');
+}
+
 // ported from zipkin2.v1.V1SpanConverter
 function convertV1(span) {
   const res = {
-    traceId: span.traceId,
+    traceId: normalizeTraceId(span.traceId)
   };
   if (span.parentId) { // instead of writing "parentId": NULL
-    res.parentId = span.parentId;
+    res.parentId = span.parentId.padStart(16, '0');
   }
-  res.id = span.id;
+  res.id = span.id.padStart(16, '0');
   res.name = span.name || ''; // undefined is not allowed in v1
   if (span.debug) {
     res.debug = true;
@@ -184,7 +191,7 @@ function convertV1(span) {
   const writeLocalComponent = annotationCount === 0 && ep && keys.length === 0;
   const hasRemoteEndpoint = addr && span.remoteEndpoint;
 
-  // write an empty "lc" annotation to avoid missing the localEndpoint in an in-process span
+  // write an empty 'lc' annotation to avoid missing the localEndpoint in an in-process span
   if (writeLocalComponent) {
     res.binaryAnnotations.push({key: 'lc', value: '', endpoint: ep});
   }
@@ -214,16 +221,43 @@ function maybePushBinaryAnnotation(binaryAnnotations, a) {
   }
 }
 
-function merge(left, right) {
+// This cleans potential dirty v1 inputs, like normalizing IDs etc.
+function clean(span) {
   const res = {
-    traceId: right.traceId.length > 16 ? right.traceId : left.traceId,
-    parentId: left.parentId,
-    id: left.id,
-    name: left.name
+    traceId: normalizeTraceId(span.traceId)
   };
+
+  if (span.parentId) {
+    res.parentId = span.parentId.padStart(16, '0');
+  }
+
+  res.id = span.id.padStart(16, '0');
+  res.name = span.name || '';
+  res.annotations = span.annotations || [];
+  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
+  res.binaryAnnotations = span.binaryAnnotations || [];
+  if (span.debug) {
+    res.debug = true;
+  }
+  return res;
+}
+
+function merge(left, right) {
+  // normalize ID lengths in case dirty input is received
+  //  (this won't be the case from the normal zipkin server, as it normalizes IDs)
+  const res = {
+    traceId: normalizeTraceId(right.traceId.length > 16 ? right.traceId : left.traceId),
+    parentId: left.parentId,
+    id: left.id.padStart(16, '0'),
+    name: left.name || ''
+  };
+
   if (right.parentId) {
     res.parentId = right.parentId;
-  } else if (!res.parentId) {
+  }
+  if (res.parentId) {
+    res.parentId = res.parentId.padStart(16, '0');
+  } else {
     delete(res.parentId);
   }
 
@@ -245,7 +279,7 @@ function merge(left, right) {
     maybePushAnnotation(res.annotations, a);
   });
 
-  res.annotations.sort((l, r) => l.timestamp - r.timestamp);
+  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
 
   res.binaryAnnotations = [];
 
@@ -257,10 +291,12 @@ function merge(left, right) {
     maybePushBinaryAnnotation(res.binaryAnnotations, b);
   });
 
-  if (left.name === '' || left.name === 'unknown') {
-    res.name = right.name;
-  } else if (leftClientSpan && rightServerSpan && right.name !== '' && right.name !== 'unknown') {
-    res.name = right.name; // prefer the server's span name
+  if (right.name && right.name !== '' && right.name !== 'unknown') {
+    if (res.name === '' || res.name === 'unknown') {
+      res.name = right.name;
+    } else if (leftClientSpan && rightServerSpan) {
+      res.name = right.name; // prefer the server's span name
+    }
   }
 
   // Single timestamp makes duration easy: just choose max
@@ -359,14 +395,66 @@ function applyTimestampAndDuration(span) {
   return span;
 }
 
+// compares potentially undefined input
+function compare(a, b) {
+  if (!a && !b) return 0;
+  if (!a) return -1;
+  if (!b) return 1;
+  return (a > b) - (a < b);
+}
+
+/*
+ * v1 spans can be sent in multiple parts. Also client and server spans can share the same ID. This
+ * merges both scenarios.
+ */
+// originally zipkin.internal.MergeById.apply
+function mergeById(spans) {
+  const result = [];
+
+  if (!spans || spans.length === 0) return result;
+
+  const spanIdToSpans = {};
+  spans.forEach((s) => {
+    const id = s.id.padStart(16, '0');
+    spanIdToSpans[id] = spanIdToSpans[id] || [];
+    spanIdToSpans[id].push(s);
+  });
+
+  Object.keys(spanIdToSpans).forEach(id => {
+    const spansToMerge = spanIdToSpans[id];
+    let left = clean(spansToMerge[0]);
+    for (let i = 1; i < spansToMerge.length; i++) {
+      left = merge(left, spansToMerge[i]);
+    }
+
+    // attempt to get a timestamp so that sorting will be helpful
+    result.push(applyTimestampAndDuration(left));
+  });
+
+  // sort by timestamp, then name, root first in case of skew
+  // TODO: this should be a topological sort
+  return result.sort((a, b) => {
+    if (!a.parentId) { // a is root
+      return -1;
+    } else if (!b.parentId) { // b is root
+      return 1;
+    }
+    // Either a and b are root or neither are. In any case sort by timestamp, then name
+    return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
+  });
+}
+
 module.exports.SPAN_V1 = {
   convert(v2Span) {
     return convertV1(v2Span);
   },
-  merge(left, right) {
-    return merge(left, right);
+  merge(v1Left, v1Right) {
+    return merge(v1Left, v1Right);
   },
   applyTimestampAndDuration(v1Span) {
     return applyTimestampAndDuration(v1Span);
+  },
+  mergeById(v1Spans) {
+    return mergeById(v1Spans);
   }
 };

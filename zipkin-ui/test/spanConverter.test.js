@@ -14,6 +14,11 @@ const backend = {
   port: 9000
 };
 
+const cs = {timestamp: 50000, value: 'cs', endpoint: frontend};
+const sr = {timestamp: 70000, value: 'sr', endpoint: backend};
+const ss = {timestamp: 80000, value: 'ss', endpoint: backend};
+const cr = {timestamp: 100000, value: 'cr', endpoint: frontend};
+
 describe('SPAN v2 -> v1 Conversion', () => {
   // originally zipkin2.v1.SpanConverterTest.client
   it('converts client span', () => {
@@ -44,9 +49,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
@@ -114,9 +119,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'get',
       timestamp: 1472470996199000,
       annotations: [
@@ -157,9 +162,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
@@ -201,9 +206,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'get',
       annotations: [
         {
@@ -235,9 +240,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
       binaryAnnotations: [
@@ -267,9 +272,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
@@ -303,8 +308,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      id: '2',
+      traceId: '0000000000000001',
+      id: '0000000000000002',
       name: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
@@ -355,9 +360,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '1',
-      id: '2',
+      traceId: '0000000000000001',
+      parentId: '0000000000000001',
+      id: '0000000000000002',
       name: 'foo',
       timestamp: 1472470996199000,
       duration: 207000,
@@ -386,9 +391,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '1',
-      id: '2',
+      traceId: '0000000000000001',
+      parentId: '0000000000000001',
+      id: '0000000000000002',
       name: 'foo',
       timestamp: 1472470996199000,
       annotations: [
@@ -419,9 +424,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'get',
       annotations: [
         {
@@ -456,9 +461,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'get',
       annotations: [
         {
@@ -492,8 +497,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      id: '2',
+      traceId: '0000000000000001',
+      id: '0000000000000002',
       name: 'get',
       annotations: [
         {
@@ -525,8 +530,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      id: '2',
+      traceId: '0000000000000001',
+      id: '0000000000000002',
       name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
       binaryAnnotations: [
@@ -554,8 +559,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      id: '2',
+      traceId: '0000000000000001',
+      id: '0000000000000002',
       name: 'local',
       timestamp: 1472470996199000,
       duration: 207000,
@@ -582,9 +587,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'send',
       timestamp: 1472470996199000,
       annotations: [
@@ -611,9 +616,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'send',
       timestamp: 1472470996199000,
       duration: 51000,
@@ -641,9 +646,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'next-message',
       timestamp: 1472470996199000,
       annotations: [
@@ -670,9 +675,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'next-message',
       timestamp: 1472470996199000,
       annotations: [
@@ -701,9 +706,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = {
-      traceId: '1',
-      parentId: '2',
-      id: '3',
+      traceId: '0000000000000001',
+      parentId: '0000000000000002',
+      id: '0000000000000003',
       name: 'send',
       timestamp: 1472470996199000,
       duration: 51000,
@@ -781,9 +786,9 @@ describe('SPAN v1 Merge', () => {
     binaryAnnotations: []
   };
   const mergedSpan = {
-    traceId: '1',
-    parentId: '2',
-    id: '3',
+    traceId: '0000000000000001',
+    parentId: '0000000000000002',
+    id: '0000000000000003',
     name: 'get',
     timestamp: 1472470996199000,
     duration: 207000,
@@ -875,7 +880,7 @@ describe('SPAN v1 Merge', () => {
       expect(completeSpan.duration).to.equal(leftDuration);
 
       // ensure if server isn't propagated the parent ID, it is still ok.
-      expect(completeSpan.parentId).to.equal(leftSpan.parentId);
+      expect(completeSpan.parentId).to.equal('0000000000000002');
     });
   });
 
@@ -925,11 +930,6 @@ describe('SPAN v1 Merge', () => {
 });
 
 describe('SPAN v1 apply timestamp and duration', () => {
-  const cs = {timestamp: 50000, value: 'cs', endpoint: frontend};
-  const sr = {timestamp: 70000, value: 'sr', endpoint: backend};
-  const ss = {timestamp: 80000, value: 'ss', endpoint: backend};
-  const cr = {timestamp: 100000, value: 'cr', endpoint: frontend};
-
   // originally zipkin2.v1.SpanConverterTest.apply_onlyCs
   it('should choose cs timestamp', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
@@ -1020,5 +1020,160 @@ describe('SPAN v1 apply timestamp and duration', () => {
 
     expect(span.timestamp).to.equal(sr.timestamp);
     should.equal(span.duration, undefined);
+  });
+});
+
+describe('SPAN v1 merge by ID', () => {
+  it('should cleanup spans', () => {
+    const spans = SPAN_V1.mergeById([
+      {
+        traceId: '22222222222222222', // longer than 64-bit
+        id: '3',
+        annotations: [ss, sr] // out of order
+      },
+      {
+        traceId: '22222222222222222',
+        parentId: 'a',
+        id: 'a',
+      }
+    ]);
+
+    expect(spans).to.deep.equal([
+      {
+        traceId: '00000000000000022222222222222222',
+        id: '0000000000000003',
+        name: '',
+        timestamp: sr.timestamp,
+        duration: ss.timestamp - sr.timestamp,
+        annotations: [sr, ss],
+        binaryAnnotations: []
+      },
+      {
+        traceId: '00000000000000022222222222222222',
+        parentId: '000000000000000a',
+        id: '000000000000000a',
+        name: '',
+        annotations: [],
+        binaryAnnotations: []
+      }
+    ]);
+  });
+
+  it('should merge client and server span', () => {
+    const spans = SPAN_V1.mergeById([
+      {
+        traceId: '1',
+        id: '3',
+        name: '',
+        annotations: [sr, ss]
+      },
+      {
+        traceId: '1',
+        id: '3',
+        name: '',
+        annotations: [cs, cr]
+      }
+    ]);
+
+    expect(spans).to.deep.equal([
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000003',
+        name: '',
+        timestamp: cs.timestamp,
+        duration: cr.timestamp - cs.timestamp,
+        annotations: [cs, sr, ss, cr],
+        binaryAnnotations: []
+      }
+    ]);
+  });
+
+  it('should merge mixed length ID', () => {
+    const spans = SPAN_V1.mergeById([
+      {
+        traceId: '1111111111111111',
+        id: '3',
+        name: '',
+        annotations: [sr, ss]
+      },
+      {
+        traceId: '21111111111111111',
+        id: '3',
+        name: '',
+        annotations: [cs, cr]
+      }
+    ]);
+
+    expect(spans).to.deep.equal([
+      {
+        traceId: '00000000000000021111111111111111',
+        id: '0000000000000003',
+        name: '',
+        timestamp: cs.timestamp,
+        duration: cr.timestamp - cs.timestamp,
+        annotations: [cs, sr, ss, cr],
+        binaryAnnotations: []
+      }
+    ]);
+  });
+
+  it('should order results by timestamp then name', () => {
+    const spans = SPAN_V1.mergeById([
+      {
+        traceId: '1',
+        id: '1',
+        name: 'c',
+        timestamp: 3
+      },
+      {
+        traceId: '1',
+        id: '2',
+        name: 'b',
+        timestamp: 2
+      },
+      {
+        traceId: '1',
+        id: '3',
+        name: 'a',
+        timestamp: 2
+      }
+    ]);
+
+    expect(spans.map(s => s.id)).to.deep.equal([
+      '0000000000000003',
+      '0000000000000002',
+      '0000000000000001',
+    ]);
+  });
+
+  it('should order root first even if skewed timestamp', () => {
+    const spans = SPAN_V1.mergeById([
+      {
+        traceId: '1',
+        id: '1',
+        name: 'c',
+        timestamp: 3
+      },
+      {
+        traceId: '1',
+        id: '2',
+        parentId: '1',
+        name: 'b',
+        timestamp: 2 // happens before its parent
+      },
+      {
+        traceId: '1',
+        id: '3',
+        parentId: '1',
+        name: 'b',
+        timestamp: 3
+      }
+    ]);
+
+    expect(spans.map(s => s.id)).to.deep.equal([
+      '0000000000000001',
+      '0000000000000002',
+      '0000000000000003'
+    ]);
   });
 });
