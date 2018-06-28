@@ -4,34 +4,13 @@ import traceToMustache from '../../js/component_ui/traceToMustache';
 import _ from 'lodash';
 import {SPAN_V1} from '../spanConverter';
 
-function rootToFrontComparator(span1/* , span2*/) {
-  return span1.parentId === undefined ? -1 : 0;
-}
-
-function sort(trace) {
-  if (trace != null) {
-    trace.sort(rootToFrontComparator);
-  }
-}
-
 function ensureV1(trace) {
   if (trace == null || trace.length === 0
           || (trace[0].localEndpoint === undefined && trace[0].remoteEndpoint === undefined)) {
     return trace;
   }
 
-  const groupedById = _(trace).map(SPAN_V1.convert).groupBy('id').value();
-  const newTrace = _(groupedById).map((spans) => {
-    if (spans.length === 1) return spans[0];
-    let merged = spans[0];
-    for (let i = 1; i < spans.length; i++) {
-      merged = SPAN_V1.merge(merged, spans[i]);
-    }
-    return merged;
-  })
-  .sort((l, r) => l.timestamp || 0 - r.timestamp || 0)
-  .value();
-  return newTrace;
+  return _(trace).map(SPAN_V1.convert);
 }
 
 export default component(function uploadTrace() {
@@ -45,10 +24,8 @@ export default component(function uploadTrace() {
     reader.onload = evt => {
       let model;
       try {
-        let trace = JSON.parse(evt.target.result);
-        trace = ensureV1(trace);
-        sort(trace);
-
+        const rawTrace = JSON.parse(evt.target.result);
+        const trace = SPAN_V1.mergeById(ensureV1(rawTrace));
         const modelview = traceToMustache(trace);
         model = {modelview, trace};
       } catch (e) {
