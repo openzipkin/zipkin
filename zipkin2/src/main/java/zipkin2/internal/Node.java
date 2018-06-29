@@ -36,26 +36,28 @@ import static java.util.logging.Level.FINE;
  * @param <V> the node's value. Ex a full span or a tuple like {@code (serviceName, isLocal)}
  */
 public final class Node<V> {
-
   /** Set via {@link #addChild(Node)} */
   Node<V> parent;
-  /** mutable as some transformations, such as clock skew, adjust this. */
   V value;
   /** mutable to avoid allocating lists for childless nodes */
   List<Node<V>> children = Collections.emptyList();
-  boolean missingRootDummyNode;
+
+  Node(@Nullable V value) {
+    this.value = value;
+  }
 
   /** Returns the parent, or null if root */
   @Nullable public Node<V> parent() {
     return parent;
   }
 
-  /** Returns the value, or null if {@link #isSyntheticRootForPartialTree} */
+  /** Returns the value, or null if a synthetic root node */
   @Nullable public V value() {
     return value;
   }
 
-  public Node<V> value(V newValue) {
+  /** Mutable as some transformations, such as clock skew, adjust the current node in the tree. */
+  public Node<V> setValue(V newValue) {
     if (newValue == null) throw new NullPointerException("newValue == null");
     this.value = newValue;
     return this;
@@ -77,10 +79,6 @@ public final class Node<V> {
   /** Traverses the tree, breadth-first. */
   public Iterator<Node<V>> traverse() {
     return new BreadthFirstIterator<>(this);
-  }
-
-  public boolean isSyntheticRootForPartialTree() {
-    return missingRootDummyNode;
   }
 
   static final class BreadthFirstIterator<V> implements Iterator<Node<V>> {
@@ -181,7 +179,7 @@ public final class Node<V> {
         }
       }
 
-      Node<V> node = new Node<V>().value(value);
+      Node<V> node = new Node<>(value);
       // special-case root, and attribute missing parents to it. In
       // other words, assume that the first root is the "real" root.
       if (parentId == null && rootNode == null) {
@@ -189,10 +187,10 @@ public final class Node<V> {
         rootId = id;
         idToParent.remove(id);
       } else if (parentId == null && rootId.equals(id)) {
-        rootNode.value(mergeFunction.merge(rootNode.value, node.value));
+        rootNode.setValue(mergeFunction.merge(rootNode.value, node.value));
       } else {
         Node<V> previous = idToNode.put(id, node);
-        if (previous != null) node.value(mergeFunction.merge(previous.value, node.value));
+        if (previous != null) node.setValue(mergeFunction.merge(previous.value, node.value));
       }
     }
 
@@ -211,15 +209,14 @@ public final class Node<V> {
             if (logger.isLoggable(FINE)) {
               logger.fine("substituting dummy node for missing root span: traceId=" + traceId);
             }
-            rootNode = new Node<>();
-            rootNode.missingRootDummyNode = true;
+            rootNode = new Node<>(null);
           }
           rootNode.addChild(node);
         } else {
           parent.addChild(node);
         }
       }
-      return rootNode != null ? rootNode : new Node<>();
+      return rootNode != null ? rootNode : new Node<>(null);
     }
   }
 

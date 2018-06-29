@@ -100,13 +100,9 @@ public final class DependencyLinker {
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
     for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext(); ) {
       Node<Span> current = i.next();
-      if (current.isSyntheticRootForPartialTree()) {
-        logger.fine("skipping synthetic node for broken span tree");
-        continue;
-      }
       Span currentSpan = current.value();
       if (currentSpan == null) {
-        logger.fine("skipping null span in " + first.traceId());
+        logger.fine("skipping synthetic node for broken span tree");
         continue;
       }
       if (logger.isLoggable(FINE)) {
@@ -206,10 +202,8 @@ public final class DependencyLinker {
       if (logger.isLoggable(FINE)) {
         logger.fine("processing ancestor " + ancestor.value());
       }
-      if (!ancestor.isSyntheticRootForPartialTree()) {
-        Span maybeRemote = ancestor.value();
-        if (maybeRemote.kind() != null) return maybeRemote;
-      }
+      Span maybeRemote = ancestor.value();
+      if (maybeRemote != null && maybeRemote.kind() != null) return maybeRemote;
       ancestor = ancestor.parent();
     }
     return null;
