@@ -42,7 +42,7 @@ import static zipkin.TestObjects.DB_ENDPOINT;
 import static zipkin.TestObjects.WEB_ENDPOINT;
 import static zipkin.internal.CorrectForClockSkew.getClockSkew;
 import static zipkin.internal.CorrectForClockSkew.ipsMatch;
-import static zipkin.internal.CorrectForClockSkew.isLocalSpan;
+import static zipkin.internal.CorrectForClockSkew.isSingleHostSpan;
 
 public class CorrectForClockSkewTest {
   List<String> messages = new ArrayList<>();
@@ -76,18 +76,18 @@ public class CorrectForClockSkewTest {
 
   /**
    * Instrumentation bugs might result in spans that look like clock skew is at play. When skew
-   * appears on the same host, we assume it is an instrumentation bug (rather than make it worse
-   * by adjusting it!)
+   * appears on the same host, we assume it is an instrumentation bug (rather than make it worse by
+   * adjusting it!)
    */
   @Test
   public void getClockSkew_mustBeOnDifferentHosts() {
     Span span = Span.builder()
-        .traceId(1L).parentId(2L).id(3L).name("")
-        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(20, SERVER_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
-        .build();
+      .traceId(1L).parentId(2L).id(3L).name("")
+      .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(20, SERVER_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+      .build();
 
     assertThat(getClockSkew(span)).isNull();
   }
@@ -95,12 +95,12 @@ public class CorrectForClockSkewTest {
   @Test
   public void getClockSkew_endpointIsServer() {
     Span span = Span.builder()
-        .traceId(1L).parentId(2L).id(3L).name("")
-        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
-        .build();
+      .traceId(1L).parentId(2L).id(3L).name("")
+      .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+      .build();
 
     assertThat(getClockSkew(span).endpoint).isEqualTo(APP_ENDPOINT);
   }
@@ -112,12 +112,12 @@ public class CorrectForClockSkewTest {
   @Test
   public void getClockSkew_includesSplitTheLatency() {
     Span span = Span.builder()
-        .traceId(1L).parentId(2L).id(3L).name("")
-        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
-        .build();
+      .traceId(1L).parentId(2L).id(3L).name("")
+      .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+      .build();
 
     assertThat(getClockSkew(span).skew).isEqualTo(-15);
   }
@@ -147,12 +147,12 @@ public class CorrectForClockSkewTest {
   @Test
   public void getClockSkew_onlyWhenClientDurationIsLongerThanServer() {
     Span span = Span.builder()
-        .traceId(1L).parentId(2L).id(3L).name("")
-        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(25, CLIENT_RECV, WEB_ENDPOINT))
-        .build();
+      .traceId(1L).parentId(2L).id(3L).name("")
+      .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(25, CLIENT_RECV, WEB_ENDPOINT))
+      .build();
 
     assertThat(getClockSkew(span)).isNull();
   }
@@ -160,12 +160,12 @@ public class CorrectForClockSkewTest {
   @Test
   public void getClockSkew_basedOnServer() {
     Span span = Span.builder()
-        .traceId(1L).parentId(2L).id(3L).name("")
-        .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
-        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
-        .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
-        .build();
+      .traceId(1L).parentId(2L).id(3L).name("")
+      .addAnnotation(Annotation.create(20, CLIENT_SEND, WEB_ENDPOINT))
+      .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(20, SERVER_SEND, APP_ENDPOINT))
+      .addAnnotation(Annotation.create(40, CLIENT_RECV, WEB_ENDPOINT))
+      .build();
 
     assertThat(getClockSkew(span).endpoint).isEqualTo(APP_ENDPOINT);
   }
@@ -173,12 +173,12 @@ public class CorrectForClockSkewTest {
   @Test
   public void getClockSkew_requiresCoreAnnotationsToHaveEndpoints() {
     Span span = Span.builder()
-        .traceId(1L).parentId(2L).id(3L).name("")
-        .addAnnotation(Annotation.create(20, CLIENT_SEND, null))
-        .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, null))
-        .addAnnotation(Annotation.create(20, SERVER_SEND, null))
-        .addAnnotation(Annotation.create(40, CLIENT_RECV, null))
-        .build();
+      .traceId(1L).parentId(2L).id(3L).name("")
+      .addAnnotation(Annotation.create(20, CLIENT_SEND, null))
+      .addAnnotation(Annotation.create(10 /* skew */, SERVER_RECV, null))
+      .addAnnotation(Annotation.create(20, SERVER_SEND, null))
+      .addAnnotation(Annotation.create(40, CLIENT_RECV, null))
+      .build();
 
     assertThat(getClockSkew(span)).isNull();
   }
@@ -186,7 +186,7 @@ public class CorrectForClockSkewTest {
   @Test
   public void ipsMatch_falseWhenIpv4Different() {
     Endpoint different = ipv4.toBuilder()
-        .ipv4(1 << 24 | 2 << 16 | 3 << 8 | 4).build();
+      .ipv4(1 << 24 | 2 << 16 | 3 << 8 | 4).build();
     assertFalse(ipsMatch(different, ipv4));
     assertFalse(ipsMatch(ipv4, different));
   }
@@ -194,7 +194,7 @@ public class CorrectForClockSkewTest {
   @Test
   public void ipsMatch_falseWhenIpv6Different() throws UnknownHostException {
     Endpoint different = ipv6.toBuilder()
-        .ipv6(Inet6Address.getByName("2001:db8::c113").getAddress()).build();
+      .ipv6(Inet6Address.getByName("2001:db8::c113").getAddress()).build();
     assertFalse(ipsMatch(different, ipv6));
     assertFalse(ipsMatch(ipv6, different));
   }
@@ -215,13 +215,13 @@ public class CorrectForClockSkewTest {
 
   @Test
   public void spanWithSameEndPointIsLocalSpan() {
-    assertTrue(isLocalSpan(TestObjects.TRACE.get(0)));
+    assertTrue(isSingleHostSpan(TestObjects.TRACE.get(0)));
   }
 
   @Test
   public void spanWithLCAnnotationIsLocalSpan() {
     Span localSpan = localSpan(TestObjects.TRACE.get(0), WEB_ENDPOINT, 0, 0);
-    assertTrue(isLocalSpan(localSpan));
+    assertTrue(isSingleHostSpan(localSpan));
   }
 
   @Test
@@ -242,25 +242,74 @@ public class CorrectForClockSkewTest {
     Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
     Span local = localSpan(rpcSpan, APP_ENDPOINT, rpcSpan.timestamp + 5, 200L);
     Span local2 = localSpan(local, APP_ENDPOINT, local.timestamp + 10, 100L);
-    Span local3 = Span.builder().traceId(local2.traceId).parentId(local2.id).id(local2.id +1)
+    Span local3 = Span.builder().traceId(local2.traceId).parentId(local2.id).id(local2.id + 1)
       .name("crappylc") // missing timestamp duration and even missing endpoint
-      .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "lc",null))
+      .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "lc", null))
       .build();
 
     List<Span> adjustedSpans =
       CorrectForClockSkew.apply(asList(rpcSpan, rootSpan, local, local2, local3));
 
     Span adjustedLocal = getById(adjustedSpans, local.id);
-    assertThat(local.timestamp - skew)
-        .isEqualTo(adjustedLocal.timestamp.longValue());
+    assertThat(adjustedLocal.timestamp.longValue())
+      .isEqualTo(local.timestamp - skew);
 
     Span adjustedLocal2 = getById(adjustedSpans, local2.id);
-    assertThat(local2.timestamp - skew)
-        .isEqualTo(adjustedLocal2.timestamp.longValue());
+    assertThat(adjustedLocal2.timestamp.longValue())
+      .isEqualTo(local2.timestamp - skew);
 
     Span adjustedLocal3 = getById(adjustedSpans, local3.id);
     assertThat(adjustedLocal3)
       .isEqualTo(local3); // no change
+  }
+
+  /** instrumentation errors can result in mixed spans */
+  @Test
+  public void clockSkewIsNotPropagatedAfterMixedSpans() {
+    long networkLatency = 10L;
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
+    long skew = -50000L;
+    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
+    Span mixed = Span.builder().traceId(rpcSpan.traceId).parentId(rpcSpan.id).id(rpcSpan.id + 1)
+      .name("mixed")
+      .timestamp(rpcSpan.timestamp + 5)
+      .duration(200L)
+      .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "lc", APP_ENDPOINT))
+      .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "lc", WEB_ENDPOINT))
+      .build();
+    Span childOfMixed = localSpan(mixed, APP_ENDPOINT, mixed.timestamp + 10, 100L);
+
+    List<Span> adjustedSpans =
+      CorrectForClockSkew.apply(asList(rpcSpan, rootSpan, mixed, childOfMixed));
+
+    // mixed gets the skew correction
+    assertThat(getById(adjustedSpans, mixed.id).timestamp.longValue())
+      .isEqualTo(mixed.timestamp - skew);
+
+    // its child does not
+    assertThat(getById(adjustedSpans, childOfMixed.id))
+      .isEqualTo(childOfMixed);
+  }
+
+  /** instrumentation errors can result in mixed spans */
+  @Test
+  public void clockSkewIsNotPropagatedToNonLcSpans() {
+    long networkLatency = 10L;
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
+    long skew = -50000L;
+    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
+    Span mixed = Span.builder().traceId(rpcSpan.traceId).parentId(rpcSpan.id).id(rpcSpan.id + 1)
+      .name("not lc not rpc")
+      .timestamp(rpcSpan.timestamp + 5)
+      .duration(200L)
+      .addBinaryAnnotation(BinaryAnnotation.create("foo", "bar", APP_ENDPOINT))
+      .build();
+
+    List<Span> adjustedSpans =
+      CorrectForClockSkew.apply(asList(rpcSpan, rootSpan, mixed));
+
+    assertThat(getById(adjustedSpans, mixed.id))
+      .isEqualTo(mixed); // no change
   }
 
   @Test
@@ -277,6 +326,7 @@ public class CorrectForClockSkewTest {
       "skipping clock skew adjustment due to missing root span: traceId=0000000000000001"
     );
   }
+
   @Test
   public void skipsOnDuplicateRoot() {
     long networkLatency = 10L;
@@ -326,24 +376,24 @@ public class CorrectForClockSkewTest {
     long id = rpcSpan.id;
     Span adjustedRpcSpan = getById(adjustedSpans, id);
     assertThat(annotationTimestamps(adjustedRpcSpan, Constants.SERVER_RECV))
-        .containsExactly(rpcClientSendTs + networkLatency);
+      .containsExactly(rpcClientSendTs + networkLatency);
 
     assertThat(annotationTimestamps(adjustedRpcSpan, Constants.CLIENT_SEND))
-        .containsExactly(adjustedRpcSpan.timestamp);
+      .containsExactly(adjustedRpcSpan.timestamp);
 
     Span adjustedTierSpan =
-        getById(adjustedSpans, tierSpan.id);
+      getById(adjustedSpans, tierSpan.id);
 
     assertThat(annotationTimestamps(adjustedTierSpan, Constants.CLIENT_SEND))
-        .containsExactly(adjustedTierSpan.timestamp);
+      .containsExactly(adjustedTierSpan.timestamp);
   }
 
   static Span createRootSpan(Endpoint endPoint, long begin, long duration) {
     return Span.builder()
-        .traceId(1L).id(1L).name("root").timestamp(begin)
-        .addAnnotation(Annotation.create(begin, SERVER_RECV, endPoint))
-        .addAnnotation(Annotation.create(begin + duration, SERVER_SEND, endPoint))
-        .build();
+      .traceId(1L).id(1L).name("root").timestamp(begin)
+      .addAnnotation(Annotation.create(begin, SERVER_RECV, endPoint))
+      .addAnnotation(Annotation.create(begin + duration, SERVER_SEND, endPoint))
+      .build();
   }
 
   static Span childSpan(Span parent, Endpoint to, long begin, long duration, long skew) {
@@ -351,28 +401,28 @@ public class CorrectForClockSkewTest {
     Endpoint from = parent.annotations.get(0).endpoint;
     long networkLatency = 10L;
     return Span.builder()
-        .traceId(parent.traceId).id(spanId).parentId(parent.id)
-        .name("span" + spanId).timestamp(begin)
-        .addAnnotation(Annotation.create(begin, CLIENT_SEND, from))
-        .addAnnotation(Annotation.create(begin + skew + networkLatency, SERVER_RECV, to))
-        .addAnnotation(Annotation.create(begin + skew + duration - networkLatency, SERVER_SEND, to))
-        .addAnnotation(Annotation.create(begin + duration, CLIENT_RECV, from))
-        .build();
+      .traceId(parent.traceId).id(spanId).parentId(parent.id)
+      .name("span" + spanId).timestamp(begin)
+      .addAnnotation(Annotation.create(begin, CLIENT_SEND, from))
+      .addAnnotation(Annotation.create(begin + skew + networkLatency, SERVER_RECV, to))
+      .addAnnotation(Annotation.create(begin + skew + duration - networkLatency, SERVER_SEND, to))
+      .addAnnotation(Annotation.create(begin + duration, CLIENT_RECV, from))
+      .build();
   }
 
   static Span localSpan(Span parent, Endpoint endpoint, long begin, long duration) {
     long spanId = parent.id + 1;
     return Span.builder().traceId(parent.traceId).parentId(parent.id).id(spanId)
-        .name("lc" + spanId)
-        .timestamp(begin).duration(duration)
-        .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "lc" + spanId, endpoint))
-        .build();
+      .name("lc" + spanId)
+      .timestamp(begin).duration(duration)
+      .addBinaryAnnotation(BinaryAnnotation.create(LOCAL_COMPONENT, "lc" + spanId, endpoint))
+      .build();
   }
 
   static Stream<Long> annotationTimestamps(Span span, String annotation) {
     return span.annotations.stream()
-        .filter(a -> a.value.equals(annotation))
-        .map(a -> a.timestamp);
+      .filter(a -> a.value.equals(annotation))
+      .map(a -> a.timestamp);
   }
 
   static Span getById(List<Span> adjustedSpans, long id) {
