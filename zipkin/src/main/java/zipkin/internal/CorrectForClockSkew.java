@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 import zipkin.Annotation;
 import zipkin.BinaryAnnotation;
-import zipkin.Constants;
 import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin2.internal.Node;
@@ -41,7 +40,7 @@ public final class CorrectForClockSkew {
     final Endpoint endpoint;
     final long skew;
 
-    public ClockSkew(Endpoint endpoint, long skew) {
+    ClockSkew(Endpoint endpoint, long skew) {
       this.endpoint = endpoint;
       this.skew = skew;
     }
@@ -115,13 +114,11 @@ public final class CorrectForClockSkew {
     // Is there any skew in the current span?
     ClockSkew skew = getClockSkew(node.value());
     if (skew != null) {
-      // the current span's skew may be a different endpoint than skewFromParent, adjust again.
+      // the current span's skew may be a different endpoint than its parent, so adjust again.
       node.value(adjustTimestamps(node.value(), skew));
-    } else {
-      if (skewFromParent != null && isLocalSpan(node.value())) {
-        //Propagate skewFromParent to local spans
-        skew = skewFromParent;
-      }
+    } else if (skewFromParent != null && isSingleHostSpan(node.value())) {
+      // Assumes we are on the same host: propagate skew from our parent
+      skew = skewFromParent;
     }
     // propagate skew to any children
     for (Node<Span> child : node.children()) {
@@ -129,24 +126,27 @@ public final class CorrectForClockSkew {
     }
   }
 
-  static boolean isLocalSpan(Span span) {
-    Endpoint endPoint = null;
+  static boolean isSingleHostSpan(Span span) {
+    Endpoint endpoint = null;
     for (int i = 0, length = span.annotations.size(); i < length; i++) {
       Annotation annotation = span.annotations.get(i);
-      if (endPoint == null) {
-        endPoint = annotation.endpoint;
+      if (endpoint == null) {
+        endpoint = annotation.endpoint;
+        continue;
       }
-      if (endPoint != null && !endPoint.equals(annotation.endpoint)) {
-        return false;
+      if (!endpoint.equals(annotation.endpoint)) {
+        return false; // there's a mix of endpoints in this span
       }
     }
     for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
       BinaryAnnotation binaryAnnotation = span.binaryAnnotations.get(i);
-      if (endPoint == null) {
-        endPoint = binaryAnnotation.endpoint;
+      if (binaryAnnotation.type != BinaryAnnotation.Type.STRING) continue;
+      if (endpoint == null) {
+        endpoint = binaryAnnotation.endpoint;
+        continue;
       }
-      if (endPoint != null && !endPoint.equals(binaryAnnotation.endpoint)) {
-        return false;
+      if (!endpoint.equals(binaryAnnotation.endpoint)) {
+        return false; // there's a mix of endpoints in this span
       }
     }
     return true;
@@ -179,7 +179,7 @@ public final class CorrectForClockSkew {
     for (int i = 0, length = span.binaryAnnotations.size(); i < length; i++) {
       BinaryAnnotation b = span.binaryAnnotations.get(i);
       if (b.endpoint == null) continue;
-      if (b.key.equals(Constants.LOCAL_COMPONENT) && ipsMatch(skew.endpoint, b.endpoint)) {
+      if (b.key.equals("lc") && ipsMatch(skew.endpoint, b.endpoint)) {
         return span.toBuilder().timestamp(spanTimestamp - skew.skew).build();
       }
     }
@@ -190,10 +190,8 @@ public final class CorrectForClockSkew {
     if (skew.ipv6 != null && that.ipv6 != null) {
       if (Arrays.equals(skew.ipv6, that.ipv6)) return true;
     }
-    if (skew.ipv4 != 0 && that.ipv4 != 0 ) {
-      if (skew.ipv4 == that.ipv4) return true;
-    }
-    return false;
+    if (skew.ipv4 == 0 && that.ipv4 == 0) return false;
+    return skew.ipv4 == that.ipv4;
   }
 
   /** Use client/server annotations to determine if there's clock skew. */
@@ -201,10 +199,10 @@ public final class CorrectForClockSkew {
   static ClockSkew getClockSkew(Span span) {
     Map<String, Annotation> annotations = asMap(span.annotations);
 
-    Annotation clientSend = annotations.get(Constants.CLIENT_SEND);
-    Annotation clientRecv = annotations.get(Constants.CLIENT_RECV);
-    Annotation serverRecv = annotations.get(Constants.SERVER_RECV);
-    Annotation serverSend = annotations.get(Constants.SERVER_SEND);
+    Annotation clientSend = annotations.get("cs");
+    Annotation clientRecv = annotations.get("cr");
+    Annotation serverRecv = annotations.get("sr");
+    Annotation serverSend = annotations.get("ss");
 
     boolean oneWay = false;
     if (clientSend == null || serverRecv == null) {
@@ -246,7 +244,6 @@ public final class CorrectForClockSkew {
         return new ClockSkew(server, skew);
       }
     }
-
 
     return null;
   }
