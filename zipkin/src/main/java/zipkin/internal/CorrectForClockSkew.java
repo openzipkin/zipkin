@@ -108,14 +108,14 @@ public final class CorrectForClockSkew {
   static void adjust(Node<Span> node, @Nullable ClockSkew skewFromParent) {
     // adjust skew for the endpoint brought over from the parent span
     if (skewFromParent != null) {
-      node.value(adjustTimestamps(node.value(), skewFromParent));
+      node.setValue(adjustTimestamps(node.value(), skewFromParent));
     }
 
     // Is there any skew in the current span?
     ClockSkew skew = getClockSkew(node.value());
     if (skew != null) {
       // the current span's skew may be a different endpoint than its parent, so adjust again.
-      node.value(adjustTimestamps(node.value(), skew));
+      node.setValue(adjustTimestamps(node.value(), skew));
     } else if (skewFromParent != null && isSingleHostSpan(node.value())) {
       // Assumes we are on the same host: propagate skew from our parent
       skew = skewFromParent;
