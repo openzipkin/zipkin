@@ -325,33 +325,13 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [
-        {
-          value: 'sr',
-          timestamp: 1472470996199000,
-          endpoint: backend
-        },
-        {
-          value: 'ss',
-          timestamp: 1472470996406000,
-          endpoint: backend
-        }
+        {timestamp: 1472470996199000, value: 'sr', endpoint: backend},
+        {timestamp: 1472470996406000, value: 'ss', endpoint: backend}
       ],
       binaryAnnotations: [
-        {
-          key: 'http.path',
-          value: '/api',
-          endpoint: backend
-        },
-        {
-          key: 'finagle.version',
-          value: '6.45.0',
-          endpoint: backend
-        },
-        {
-          key: 'ca',
-          value: true,
-          endpoint: frontend
-        }
+        {key: 'http.path', value: '/api', endpoint: backend},
+        {key: 'finagle.version', value: '6.45.0', endpoint: backend},
+        {key: 'ca', value: true, endpoint: frontend}
       ]
     };
 
