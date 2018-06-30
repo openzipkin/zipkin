@@ -3,6 +3,7 @@ import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
 import traceToMustache from '../../js/component_ui/traceToMustache';
 import _ from 'lodash';
 import {SPAN_V1} from '../spanConverter';
+import {correctForClockSkew} from '../skew';
 
 function ensureV1(trace) {
   if (trace == null || trace.length === 0
@@ -25,9 +26,11 @@ export default component(function uploadTrace() {
       let model;
       try {
         const rawTrace = JSON.parse(evt.target.result);
-        const trace = SPAN_V1.mergeById(ensureV1(rawTrace));
-        const modelview = traceToMustache(trace);
-        model = {modelview, trace};
+        const v1Trace = ensureV1(rawTrace);
+        const mergedTrace = SPAN_V1.mergeById(v1Trace);
+        const clockSkewCorrectedTrace = correctForClockSkew(mergedTrace);
+        const modelview = traceToMustache(clockSkewCorrectedTrace);
+        model = {modelview, trace: rawTrace};
       } catch (e) {
         this.trigger('uiServerError',
               {desc: 'Cannot parse file', message: e});

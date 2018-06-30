@@ -74,6 +74,36 @@ public class CorrectForClockSkewTest {
     assertFalse(ipsMatch(ipv6, noIp));
   }
 
+  @Test
+  public void ipsMatch_falseWhenIpv4Different() {
+    Endpoint different = ipv4.toBuilder()
+      .ipv4(1 << 24 | 2 << 16 | 3 << 8 | 4).build();
+    assertFalse(ipsMatch(different, ipv4));
+    assertFalse(ipsMatch(ipv4, different));
+  }
+
+  @Test
+  public void ipsMatch_falseWhenIpv6Different() throws UnknownHostException {
+    Endpoint different = ipv6.toBuilder()
+      .ipv6(Inet6Address.getByName("2001:db8::c113").getAddress()).build();
+    assertFalse(ipsMatch(different, ipv6));
+    assertFalse(ipsMatch(ipv6, different));
+  }
+
+  @Test
+  public void ipsMatch_whenIpv6Match() {
+    assertTrue(ipsMatch(ipv6, ipv6));
+    assertTrue(ipsMatch(both, ipv6));
+    assertTrue(ipsMatch(ipv6, both));
+  }
+
+  @Test
+  public void ipsMatch_whenIpv4Match() {
+    assertTrue(ipsMatch(ipv4, ipv4));
+    assertTrue(ipsMatch(both, ipv4));
+    assertTrue(ipsMatch(ipv4, both));
+  }
+
   /**
    * Instrumentation bugs might result in spans that look like clock skew is at play. When skew
    * appears on the same host, we assume it is an instrumentation bug (rather than make it worse by
@@ -184,42 +214,12 @@ public class CorrectForClockSkewTest {
   }
 
   @Test
-  public void ipsMatch_falseWhenIpv4Different() {
-    Endpoint different = ipv4.toBuilder()
-      .ipv4(1 << 24 | 2 << 16 | 3 << 8 | 4).build();
-    assertFalse(ipsMatch(different, ipv4));
-    assertFalse(ipsMatch(ipv4, different));
-  }
-
-  @Test
-  public void ipsMatch_falseWhenIpv6Different() throws UnknownHostException {
-    Endpoint different = ipv6.toBuilder()
-      .ipv6(Inet6Address.getByName("2001:db8::c113").getAddress()).build();
-    assertFalse(ipsMatch(different, ipv6));
-    assertFalse(ipsMatch(ipv6, different));
-  }
-
-  @Test
-  public void ipsMatch_whenIpv6Match() {
-    assertTrue(ipsMatch(ipv6, ipv6));
-    assertTrue(ipsMatch(both, ipv6));
-    assertTrue(ipsMatch(ipv6, both));
-  }
-
-  @Test
-  public void ipsMatch_whenIpv4Match() {
-    assertTrue(ipsMatch(ipv4, ipv4));
-    assertTrue(ipsMatch(both, ipv4));
-    assertTrue(ipsMatch(ipv4, both));
-  }
-
-  @Test
-  public void spanWithSameEndPointIsLocalSpan() {
+  public void spanWithSameEndPointIsSingleHostSpan() {
     assertTrue(isSingleHostSpan(TestObjects.TRACE.get(0)));
   }
 
   @Test
-  public void spanWithLCAnnotationIsLocalSpan() {
+  public void spanWithLCAnnotationIsSingleHostSpan() {
     Span localSpan = localSpan(TestObjects.TRACE.get(0), WEB_ENDPOINT, 0, 0);
     assertTrue(isSingleHostSpan(localSpan));
   }
@@ -234,12 +234,40 @@ public class CorrectForClockSkewTest {
     assertClockSkewIsCorrectlyApplied(-50000);
   }
 
+  static void assertClockSkewIsCorrectlyApplied(long skew) {
+    long rpcClientSendTs = now + 50L;
+    long dbClientSendTimestamp = now + 60 + skew;
+
+    long rootDuration = 350L;
+    long rpcDuration = 250L;
+    long dbDuration = 40L;
+
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, rootDuration);
+    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, rpcClientSendTs, rpcDuration, skew);
+    Span tierSpan = childSpan(rpcSpan, DB_ENDPOINT, dbClientSendTimestamp, dbDuration, skew);
+
+    List<Span> adjustedSpans = CorrectForClockSkew.apply(asList(rpcSpan, rootSpan, tierSpan));
+
+    long id = rpcSpan.id;
+    Span adjustedRpcSpan = getById(adjustedSpans, id);
+    assertThat(annotationTimestamps(adjustedRpcSpan, Constants.SERVER_RECV))
+      .containsExactly(rpcClientSendTs + networkLatency);
+
+    assertThat(annotationTimestamps(adjustedRpcSpan, Constants.CLIENT_SEND))
+      .containsExactly(adjustedRpcSpan.timestamp);
+
+    Span adjustedTierSpan =
+      getById(adjustedSpans, tierSpan.id);
+
+    assertThat(annotationTimestamps(adjustedTierSpan, Constants.CLIENT_SEND))
+      .containsExactly(adjustedTierSpan.timestamp);
+  }
+
   @Test
   public void clockSkewIsPropagatedToLocalSpans() {
-    long networkLatency = 10L;
-    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
+    Span rootSpan = createRootSpan(WEB_ENDPOINT, 0, 2000L);
     long skew = -50000L;
-    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
+    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, networkLatency, 1000L, skew);
     Span local = localSpan(rpcSpan, APP_ENDPOINT, rpcSpan.timestamp + 5, 200L);
     Span local2 = localSpan(local, APP_ENDPOINT, local.timestamp + 10, 100L);
     Span local3 = Span.builder().traceId(local2.traceId).parentId(local2.id).id(local2.id + 1)
@@ -266,7 +294,6 @@ public class CorrectForClockSkewTest {
   /** instrumentation errors can result in mixed spans */
   @Test
   public void clockSkewIsNotPropagatedAfterMixedSpans() {
-    long networkLatency = 10L;
     Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
     long skew = -50000L;
     Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
@@ -294,7 +321,6 @@ public class CorrectForClockSkewTest {
   /** instrumentation errors can result in mixed spans */
   @Test
   public void clockSkewIsNotPropagatedToNonLcSpans() {
-    long networkLatency = 10L;
     Span rootSpan = createRootSpan(WEB_ENDPOINT, now, 2000L);
     long skew = -50000L;
     Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, now + networkLatency, 1000L, skew);
@@ -357,35 +383,6 @@ public class CorrectForClockSkewTest {
       "skipping circular dependency: traceId=0000000000000001, spanId=0000000000000002",
       "skipping clock skew adjustment due to data errors: traceId=0000000000000001"
     );
-  }
-
-  static void assertClockSkewIsCorrectlyApplied(long skew) {
-    long rpcClientSendTs = now + 50L;
-    long dbClientSendTimestamp = now + 60 + skew;
-
-    long rootDuration = 350L;
-    long rpcDuration = 250L;
-    long dbDuration = 40L;
-
-    Span rootSpan = createRootSpan(WEB_ENDPOINT, now, rootDuration);
-    Span rpcSpan = childSpan(rootSpan, APP_ENDPOINT, rpcClientSendTs, rpcDuration, skew);
-    Span tierSpan = childSpan(rpcSpan, DB_ENDPOINT, dbClientSendTimestamp, dbDuration, skew);
-
-    List<Span> adjustedSpans = CorrectForClockSkew.apply(asList(rpcSpan, rootSpan, tierSpan));
-
-    long id = rpcSpan.id;
-    Span adjustedRpcSpan = getById(adjustedSpans, id);
-    assertThat(annotationTimestamps(adjustedRpcSpan, Constants.SERVER_RECV))
-      .containsExactly(rpcClientSendTs + networkLatency);
-
-    assertThat(annotationTimestamps(adjustedRpcSpan, Constants.CLIENT_SEND))
-      .containsExactly(adjustedRpcSpan.timestamp);
-
-    Span adjustedTierSpan =
-      getById(adjustedSpans, tierSpan.id);
-
-    assertThat(annotationTimestamps(adjustedTierSpan, Constants.CLIENT_SEND))
-      .containsExactly(adjustedTierSpan.timestamp);
   }
 
   static Span createRootSpan(Endpoint endPoint, long begin, long duration) {
