@@ -17,6 +17,9 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.io.StreamCorruptedException;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Locale;
 import zipkin2.codec.DependencyLinkBytesDecoder;
 import zipkin2.codec.DependencyLinkBytesEncoder;
@@ -51,6 +54,26 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
     return errorCount;
   }
 
+  /**
+   * When not empty, all trace IDs on this link.
+   *
+   * <p>Note: the count of trace IDs can be less than {@link #callCount()} when a single trace
+   * makes multiple calls across the same link.
+   */
+  public List<String> callTraceIds() {
+    return callTraceIds;
+  }
+
+  /**
+   * When {@link #callTraceIds()} is not empty, all trace IDs with errors on this link.
+   *
+   * <p>Note: the count of trace IDs can be less than {@link #errorCount()} when a single trace
+   * makes multiple calls across the same link.
+   */
+  public List<String> errorTraceIds() {
+    return errorTraceIds;
+  }
+
   public Builder toBuilder() {
     return new Builder(this);
   }
@@ -58,6 +81,7 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
   public static final class Builder {
     String parent, child;
     long callCount, errorCount;
+    List<String> callTraceIds, errorTraceIds;
 
     Builder() {
     }
@@ -67,6 +91,11 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
       this.child = source.child;
       this.callCount = source.callCount;
       this.errorCount = source.errorCount;
+      this.callTraceIds =
+        source.callTraceIds.isEmpty() ? null : new ArrayList<>(source.callTraceIds);
+      this.errorTraceIds =
+        source.errorTraceIds.isEmpty() ? null : new ArrayList<>(source.errorTraceIds);
+
     }
 
     public Builder parent(String parent) {
@@ -91,6 +120,16 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
       return this;
     }
 
+    public Builder callTraceIds(List<String> callTraceIds) {
+      this.callTraceIds = callTraceIds;
+      return this;
+    }
+
+    public Builder errorTraceIds(List<String> errorTraceIds) {
+      this.errorTraceIds = errorTraceIds;
+      return this;
+    }
+
     public DependencyLink build() {
       String missing = "";
       if (parent == null) missing += " parent";
@@ -108,12 +147,17 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
   // See https://github.com/openzipkin/zipkin/issues/1879
   final String parent, child;
   final long callCount, errorCount;
+  final List<String> callTraceIds, errorTraceIds;
 
   DependencyLink(Builder builder) {
     parent = builder.parent;
     child = builder.child;
     callCount = builder.callCount;
     errorCount = builder.errorCount;
+    callTraceIds = builder.callTraceIds == null ? Collections.emptyList()
+      : new ArrayList<>(builder.callTraceIds);
+    errorTraceIds = builder.errorTraceIds == null ? Collections.emptyList()
+      : new ArrayList<>(builder.errorTraceIds);
   }
 
   @Override public boolean equals(Object o) {

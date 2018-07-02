@@ -16,8 +16,10 @@ package zipkin2.internal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
@@ -38,6 +40,8 @@ public final class DependencyLinker {
   private final Logger logger;
   private final Map<Pair, Long> callCounts = new LinkedHashMap<>();
   private final Map<Pair, Long> errorCounts = new LinkedHashMap<>();
+  private final Map<Pair, Set<String>> callTraceIds = new LinkedHashMap<>();
+  private final Map<Pair, Set<String>> errorTraceIds = new LinkedHashMap<>();
 
   public DependencyLinker() {
     this(Logger.getLogger(DependencyLinker.class.getName()));
@@ -84,10 +88,11 @@ public final class DependencyLinker {
     if (!spans.hasNext()) return this;
     Span first = spans.next();
     list.add(first);
-    if (logger.isLoggable(FINE)) logger.fine("linking trace " + first.traceId());
+    String traceId = first.traceId();
+    if (logger.isLoggable(FINE)) logger.fine("linking trace " + traceId);
 
     // Build a tree based on spanId and parentId values
-    Node.TreeBuilder<Span> builder = new Node.TreeBuilder<>(logger, MERGE_RPC, first.traceId());
+    Node.TreeBuilder<Span> builder = new Node.TreeBuilder<>(logger, MERGE_RPC, traceId);
     builder.addNode(first.parentId(), first.id(), first);
     while (spans.hasNext()) {
       Span next = spans.next();
@@ -156,7 +161,7 @@ public final class DependencyLinker {
         if (parent == null || child == null) {
           logger.fine("cannot link messaging span to its broker; skipping");
         } else {
-          addLink(parent, child, isError);
+          addLink(traceId, parent, child, isError);
         }
         continue;
       }
@@ -172,7 +177,7 @@ public final class DependencyLinker {
         // Check for this and backfill a link from the nearest remote to that service as necessary.
         if (kind == Kind.CLIENT && serviceName != null && !rpcAncestorName.equals(serviceName)) {
           logger.fine("detected missing link to client span");
-          addLink(rpcAncestorName, serviceName, false); // we don't know if there's an error here
+          addLink(traceId, rpcAncestorName, serviceName, false); // we don't know if there's an error here
         }
 
         // Local spans may be between the current node and its remote parent
@@ -191,7 +196,7 @@ public final class DependencyLinker {
         continue;
       }
 
-      addLink(parent, child, isError);
+      addLink(traceId, parent, child, isError);
     }
     return this;
   }
@@ -209,17 +214,19 @@ public final class DependencyLinker {
     return null;
   }
 
-  void addLink(String parent, String child, boolean isError) {
+  void addLink(String traceId, String parent, String child, boolean isError) {
     if (logger.isLoggable(FINE)) {
       logger.fine("incrementing " + (isError ? "error " : "") + "link " + parent + " -> " + child);
     }
     Pair key = new Pair(parent, child);
+    add(callTraceIds, key, traceId);
     if (callCounts.containsKey(key)) {
       callCounts.put(key, callCounts.get(key) + 1);
     } else {
       callCounts.put(key, 1L);
     }
     if (!isError) return;
+    add(errorTraceIds, key, traceId);
     if (errorCounts.containsKey(key)) {
       errorCounts.put(key, errorCounts.get(key) + 1);
     } else {
@@ -228,29 +235,41 @@ public final class DependencyLinker {
   }
 
   public List<DependencyLink> link() {
-    return link(callCounts, errorCounts);
+    return link(callCounts, errorCounts, callTraceIds, errorTraceIds);
   }
 
   /** links are merged by mapping to parent/child and summing corresponding links */
   public static List<DependencyLink> merge(Iterable<DependencyLink> in) {
     Map<Pair, Long> callCounts = new LinkedHashMap<>();
     Map<Pair, Long> errorCounts = new LinkedHashMap<>();
+    Map<Pair, Set<String>> callTraceIds = new LinkedHashMap<>();
+    Map<Pair, Set<String>> errorTraceIds = new LinkedHashMap<>();
 
     for (DependencyLink link : in) {
       Pair parentChild = new Pair(link.parent(), link.child());
       long callCount = callCounts.containsKey(parentChild) ? callCounts.get(parentChild) : 0L;
       callCount += link.callCount();
       callCounts.put(parentChild, callCount);
+      for (int i = 0, length = link.callTraceIds().size(); i < length; i++) {
+        add(callTraceIds, parentChild, link.callTraceIds().get(i));
+      }
       long errorCount = errorCounts.containsKey(parentChild) ? errorCounts.get(parentChild) : 0L;
       errorCount += link.errorCount();
       errorCounts.put(parentChild, errorCount);
+      for (int i = 0, length = link.errorTraceIds().size(); i < length; i++) {
+        add(callTraceIds, parentChild, link.errorTraceIds().get(i));
+      }
     }
 
-    return link(callCounts, errorCounts);
+    return link(callCounts, errorCounts, callTraceIds, errorTraceIds);
   }
 
-  static List<DependencyLink> link(Map<Pair, Long> callCounts,
-    Map<Pair, Long> errorCounts) {
+  static List<DependencyLink> link(
+    Map<Pair, Long> callCounts,
+    Map<Pair, Long> errorCounts,
+    Map<Pair, Set<String>> callTraceIds,
+    Map<Pair, Set<String>> errorTraceIds
+  ) {
     List<DependencyLink> result = new ArrayList<>(callCounts.size());
     for (Map.Entry<Pair, Long> entry : callCounts.entrySet()) {
       Pair parentChild = entry.getKey();
@@ -259,6 +278,8 @@ public final class DependencyLinker {
         .child(parentChild.right)
         .callCount(entry.getValue())
         .errorCount(errorCounts.containsKey(parentChild) ? errorCounts.get(parentChild) : 0L)
+        .callTraceIds(maybeGet(callTraceIds, parentChild))
+        .errorTraceIds(maybeGet(errorTraceIds, parentChild))
         .build());
     }
     return result;
@@ -289,5 +310,20 @@ public final class DependencyLinker {
       h$ ^= right.hashCode();
       return h$;
     }
+  }
+
+  static void add(Map<Pair, Set<String>> linkToTraceIds, Pair link, String traceId) {
+    if (linkToTraceIds.containsKey(link)) {
+      linkToTraceIds.get(link).add(traceId);
+    } else {
+      LinkedHashSet<String> traceIds = new LinkedHashSet<>();
+      traceIds.add(traceId);
+      linkToTraceIds.put(link, traceIds);
+    }
+  }
+
+  static List<String> maybeGet(Map<Pair, Set<String>> linkToTraceIds, Pair link) {
+    Set<String> result = linkToTraceIds.get(link);
+    return result == null ? null : new ArrayList<>(result);
   }
 }

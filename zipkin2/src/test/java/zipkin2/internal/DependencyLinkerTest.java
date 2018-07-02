@@ -27,6 +27,7 @@ import zipkin2.Span.Kind;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 public class DependencyLinkerTest {
   static final List<Span> TRACE = asList(
@@ -36,6 +37,7 @@ public class DependencyLinkerTest {
       .toBuilder().shared(true).build(),
     span2("a", "b", "c", Kind.CLIENT, "app", "db", true)
   );
+  static final List<String> TRACE_ID = asList(TRACE.get(0).traceId());
 
   List<String> messages = new ArrayList<>();
 
@@ -61,6 +63,33 @@ public class DependencyLinkerTest {
       DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build(),
       DependencyLink.newBuilder().parent("app").child("db").callCount(1L).errorCount(1L).build()
     );
+
+    assertThat(new DependencyLinker().putTrace(TRACE.iterator()).link())
+      .extracting("parent", "child", "callTraceIds", "errorTraceIds")
+      .containsExactly(
+        tuple("web", "app", TRACE_ID, Collections.emptyList()),
+        tuple("app", "db", TRACE_ID, TRACE_ID)
+      );
+  }
+
+  @Test
+  public void differentiatesErrorTraceIdFromNonError() {
+    DependencyLinker linker = new DependencyLinker();
+
+    linker.putTrace(asList(
+      span2("a", "a", "b", Kind.CLIENT, "web", "app", false)
+    ).iterator());
+
+    linker.putTrace(asList(
+      span2("b", "a", "b", Kind.CLIENT, "app", "db", true)
+    ).iterator());
+
+    assertThat(linker.link())
+      .extracting("parent", "child", "callTraceIds", "errorTraceIds")
+      .containsExactly(
+        tuple("web", "app", asList("000000000000000a"), Collections.emptyList()),
+        tuple("app", "db", asList("000000000000000b"), asList("000000000000000b"))
+      );
   }
 
   /**
@@ -345,6 +374,13 @@ public class DependencyLinkerTest {
         .errorCount(1L)
         .build()
     );
+
+    // only one trace ID result eventhough there are multiple calls
+    assertThat(new DependencyLinker().putTrace(trace.iterator()).link())
+      .extracting("parent", "child", "callTraceIds", "errorTraceIds")
+      .containsExactly(
+        tuple("client", "server", TRACE_ID, TRACE_ID)
+      );
   }
 
   @Test
@@ -449,6 +485,19 @@ public class DependencyLinkerTest {
         DependencyLink.newBuilder().parent("service").child("service").callCount(1L).build()
       );
     }
+
+    // now re-use the same instance and verify trace IDs are correct
+    DependencyLinker linker = new DependencyLinker();
+    for (Span span : validRootSpans) {
+      linker.putTrace(asList(span).iterator());
+    }
+
+    // shows the correct trace IDs
+    assertThat(linker.link())
+      .extracting("parent", "child", "callTraceIds")
+      .containsExactly(
+        tuple("service", "service", asList("000000000000000a", "000000000000000b"))
+      );
   }
 
   @Test
