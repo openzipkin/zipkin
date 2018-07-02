@@ -50,6 +50,19 @@ public interface SpanStore {
   Call<List<Span>> getTrace(String traceId);
 
   /**
+   * Retrieves list of spans that share a 128-bit trace id with no ordering expectation or empty if none are
+   * found.
+   *
+   * <p>When strict trace ID is disabled, spans with the same right-most 16 characters are returned
+   * even if the characters to the left are not.
+   *
+   * <p>Implementations should use {@link Span#normalizeTraceId(String)} to ensure consistency.
+   *
+   * @param traceIds a list of {@link Span#traceId() trace ID}
+   */
+  Call<List<List<Span>>> getTraces(List<String> traceIds);
+
+  /**
    * Retrieves all {@link Span#localEndpoint() local} and {@link Span#remoteEndpoint() remote}
    * {@link Endpoint#serviceName service names}, sorted lexicographically.
    */
