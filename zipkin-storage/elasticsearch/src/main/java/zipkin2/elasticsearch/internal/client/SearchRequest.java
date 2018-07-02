@@ -63,42 +63,6 @@ public final class SearchRequest {
       add(new Term(field, value));
       return this;
     }
-
-    public Filters addNestedTerms(Collection<String> nestedFields, String value) {
-      add(_nestedTermsEqual(nestedFields, value));
-      return this;
-    }
-
-    public Filters addNestedTerms(Map<String, String>... nestedTerms) {
-      if (nestedTerms.length == 1) {
-        add(mustMatchAllNestedTerms(nestedTerms[0]));
-        return this;
-      }
-      List<NestedBoolQuery> nestedBoolQueries = new ArrayList<>(nestedTerms.length);
-      for (Map<String, String> next : nestedTerms) {
-        nestedBoolQueries.add(mustMatchAllNestedTerms(next));
-      }
-      add(new SearchRequest.BoolQuery("should", nestedBoolQueries));
-      return this;
-    }
-
-    static SearchRequest.BoolQuery _nestedTermsEqual(Collection<String> nestedFields, String value) {
-      List<SearchRequest.NestedBoolQuery> conditions = new ArrayList<>();
-      for (String nestedField : nestedFields) {
-        conditions.add(new NestedBoolQuery(nestedField.substring(0, nestedField.indexOf('.')), "must",
-          new SearchRequest.Term(nestedField, value)));
-      }
-      return new SearchRequest.BoolQuery("should", conditions);
-    }
-
-    static NestedBoolQuery mustMatchAllNestedTerms(Map<String, String> next) {
-      List<Term> terms = new ArrayList<>();
-      String field = null;
-      for (Map.Entry<String, String> nestedTerm : next.entrySet()) {
-        terms.add(new Term(field = nestedTerm.getKey(), nestedTerm.getValue()));
-      }
-      return new NestedBoolQuery(field.substring(0, field.indexOf('.')), "must", terms);
-    }
   }
 
   public SearchRequest filters(Filters filters) {
@@ -109,7 +73,7 @@ public final class SearchRequest {
     return query(new Term(field, value));
   }
 
-  public SearchRequest terms(String field, List<String> values) {
+  public SearchRequest terms(String field, Collection<String> values) {
     return query(new Terms(field, values));
   }
 
@@ -135,14 +99,6 @@ public final class SearchRequest {
 
     Term(String field, String value) {
       term = Collections.singletonMap(field, value);
-    }
-  }
-
-  static class Exists {
-    final Map<String, String> exists;
-
-    Exists(String field) {
-      exists = Collections.singletonMap("field", field);
     }
   }
 
@@ -179,22 +135,6 @@ public final class SearchRequest {
 
     BoolQuery(String op, Object clause) {
       bool = Collections.singletonMap(op, clause);
-    }
-  }
-
-  static class NestedBoolQuery {
-    final Map<String, Object> nested;
-
-    NestedBoolQuery(String path, String condition, List<Term> terms) {
-      nested = new LinkedHashMap<>(2);
-      nested.put("path", path);
-      nested.put("query", new BoolQuery(condition, terms));
-    }
-
-    NestedBoolQuery(String path, String condition, Term term) {
-      nested = new LinkedHashMap<>(2);
-      nested.put("path", path);
-      nested.put("query", new BoolQuery(condition, term));
     }
   }
 }
