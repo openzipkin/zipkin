@@ -17,10 +17,14 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.utils.UUIDs;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-
+import java.util.Set;
+import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
@@ -115,23 +119,23 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     }
     for (String annotationKey : annotationKeys) {
       callsToIntersect.add(
-          spanTable
-              .newCall(request.serviceName(), annotationKey, timestampRange, traceIndexFetchSize)
-              .map(CollapseToMap.INSTANCE));
+        spanTable
+          .newCall(request.serviceName(), annotationKey, timestampRange, traceIndexFetchSize)
+          .map(CollapseToMap.INSTANCE));
     }
 
     // Bucketed calls can be expensive when service name isn't specified. This guards against abuse.
     if (request.spanName() != null || request.minDuration() != null || callsToIntersect.isEmpty()) {
       Call<Set<Entry<String, Long>>> bucketedTraceIdCall =
-          newBucketedTraceIdCall(request, timestampRange, traceIndexFetchSize);
+        newBucketedTraceIdCall(request, timestampRange, traceIndexFetchSize);
       callsToIntersect.add(bucketedTraceIdCall.map(CollapseToMap.INSTANCE));
     }
 
     if (callsToIntersect.size() == 1) {
       return callsToIntersect
-          .get(0)
-          .map(traceIdsSortedByDescTimestamp())
-          .flatMap(spans.newFlatMapper(request));
+        .get(0)
+        .map(traceIdsSortedByDescTimestamp())
+        .flatMap(spans.newFlatMapper(request));
     }
 
     // We achieve the AND goal, by intersecting each of the key sets.
@@ -145,7 +149,8 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     // TODO: refactor to share this code between different SpanStore implementations
     return getDependencies(request.endTs, request.limit).flatMap((links) -> {
       for (DependencyLink link : links) {
-        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(link.child())) {
+        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(
+          link.child())) {
           if (request.errorsOnly) {
             return getTraces(link.errorTraceIds());
           } else {
@@ -159,9 +164,9 @@ class CassandraSpanStore implements SpanStore { // not final for testing
   }
 
   /**
-   * Creates a call representing one or more queries against {@link
-   * Schema#TABLE_TRACE_BY_SERVICE_SPAN}. The result will be an aggregate if the input requests's
-   * serviceName is null or there's more than one day of data in the timestamp range.
+   * Creates a call representing one or more queries against {@link Schema#TABLE_TRACE_BY_SERVICE_SPAN}.
+   * The result will be an aggregate if the input requests's serviceName is null or there's more
+   * than one day of data in the timestamp range.
    *
    * <p>Note that when {@link QueryRequest#serviceName()} is null, the returned query composes over
    * {@link #getServiceNames()}. This means that if you have 1000 service names, you will end up
@@ -170,7 +175,7 @@ class CassandraSpanStore implements SpanStore { // not final for testing
   // TODO: smartly handle when serviceName is null. For example, rank recently written serviceNames
   // and speculatively query those first.
   Call<Set<Entry<String, Long>>> newBucketedTraceIdCall(
-      QueryRequest request, TimestampRange timestampRange, int traceIndexFetchSize) {
+    QueryRequest request, TimestampRange timestampRange, int traceIndexFetchSize) {
     // trace_by_service_span adds special empty-string span name in order to search by all
     String spanName = null != request.spanName() ? request.spanName() : "";
     Long minDuration = request.minDuration(), maxDuration = request.maxDuration();
@@ -178,7 +183,7 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     int endBucket = CassandraUtil.durationIndexBucket(timestampRange.endMillis * 1000);
     if (startBucket > endBucket) {
       throw new IllegalArgumentException(
-          "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
+        "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
     }
 
     // template input with an empty service name, potentially revisiting later
@@ -189,21 +194,21 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     List<SelectTraceIdsFromServiceSpan.Input> bucketedTraceIdInputs = new ArrayList<>();
     for (int bucket = endBucket; bucket >= startBucket; bucket--) {
       bucketedTraceIdInputs.add(
-          traceIdsFromServiceSpan.newInput(
-              serviceName,
-              spanName,
-              bucket,
-              minDuration,
-              maxDuration,
-              timestampRange,
-              traceIndexFetchSize));
+        traceIdsFromServiceSpan.newInput(
+          serviceName,
+          spanName,
+          bucket,
+          minDuration,
+          maxDuration,
+          timestampRange,
+          traceIndexFetchSize));
     }
 
     Call<Set<Entry<String, Long>>> bucketedTraceIdCall;
     if ("".equals(serviceName)) {
       // If we have no service name, we have to lookup service names before running trace ID queries
       bucketedTraceIdCall =
-          getServiceNames().flatMap(traceIdsFromServiceSpan.newFlatMapper(bucketedTraceIdInputs));
+        getServiceNames().flatMap(traceIdsFromServiceSpan.newFlatMapper(bucketedTraceIdInputs));
     } else {
       bucketedTraceIdCall = traceIdsFromServiceSpan.newCall(bucketedTraceIdInputs);
     }
