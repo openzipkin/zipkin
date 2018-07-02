@@ -72,6 +72,23 @@ final class SelectFromTraces extends ResultSetFutureCall {
       return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
     }
 
+    Call<List<List<Span>>> newCall(List<String> traceIds) {
+      Set<Long> longTraceIds = new LinkedHashSet<>();
+      Set<String> normalizedTraceIds = new LinkedHashSet<>();
+
+      for (String traceId : traceIds) {
+        traceId = Span.normalizeTraceId(traceId);
+        normalizedTraceIds.add(traceId);
+        longTraceIds.add(HexCodec.lowerHexToUnsignedLong(traceId));
+      }
+      Call<List<List<Span>>> result = new SelectFromTraces(this,
+        longTraceIds,
+        maxTraceCols
+      ).flatMap(accumulateSpans).map(groupByTraceId);
+      return strictTraceId ? result.map(StrictTraceId.filterTraces(normalizedTraceIds)) : result;
+    }
+
+
     FlatMapper<Set<Long>, List<List<Span>>> newFlatMapper(QueryRequest request) {
       return new SelectTracesByIds(this, request);
     }
