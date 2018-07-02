@@ -13,11 +13,8 @@
  */
 package zipkin2.storage;
 
-import java.io.IOException;
 import org.junit.jupiter.api.Test;
-import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.storage.ITSpanStore.requestBuilder;
@@ -73,9 +70,5 @@ public abstract class ITSearchEnabledFalse<T extends StorageComponent> extends I
     accept(CLIENT_SPAN);
 
     assertThat(names().getSpanNames(CLIENT_SPAN.localServiceName()).execute()).isEmpty();
-  }
-
-  protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
   }
 }

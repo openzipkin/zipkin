@@ -130,7 +130,7 @@ public class ZipkinQueryApiV2 {
 
   @Get("/api/v2/trace/{traceIdHex}")
   public AggregatedHttpResponse getTrace(@Param("traceIdHex") String traceIdHex) throws IOException {
-    List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
+    List<Span> trace = storage.traces().getTrace(traceIdHex).execute();
     if (trace == null) {
       return AggregatedHttpResponse.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
         traceIdHex + " not found");

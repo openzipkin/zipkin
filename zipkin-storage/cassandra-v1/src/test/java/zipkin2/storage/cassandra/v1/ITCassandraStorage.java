@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.Session;
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -35,7 +34,6 @@ import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
@@ -48,17 +46,36 @@ class ITCassandraStorage {
     new CassandraStorageExtension("openzipkin/zipkin-cassandra:2.16.2");
 
   @Nested
-  class ITSpanStore extends zipkin2.storage.ITSpanStore<CassandraStorage> {
+  class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {
     @Override protected boolean initializeStoragePerTest() {
-    return true;
-  }
+      return true;
+    }
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
+    @Override @Test @Disabled("No consumer-side span deduplication")
+    public void getTrace_deduplicates() {
+    }
+
+    @Override protected void blockWhileInFlight() {
+      ITCassandraStorage.blockWhileInFlight(storage);
+    }
+
     @Override public void clear() {
       // Just let the data pile up to prevent warnings and slowness.
+    }
+  }
+
+  @Nested
+  class ITSpanStore extends zipkin2.storage.ITSpanStore<CassandraStorage> {
+    @Override protected boolean initializeStoragePerTest() {
+      return true;
+    }
+
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
     @Override @Test @Disabled("All services query unsupported when combined with other qualifiers")
@@ -83,9 +100,6 @@ class ITCassandraStorage {
     }
 
     @Override @Test @Disabled("Duration unsupported") public void getTraces_lateDuration() {
-    }
-
-    @Override @Test @Disabled("No consumer-side span deduplication") public void deduplicates() {
     }
 
     @Test public void overFetchesToCompensateForDuplicateIndexData() throws IOException {
@@ -150,14 +164,12 @@ class ITCassandraStorage {
       assertThat(store().getTraces(queryRequest).execute()).hasSize(queryLimit);
     }
 
-    /** Makes sure the test cluster doesn't fall over on BusyPoolException */
-    @Override protected void accept(Span... spans) throws IOException {
-      // TODO: this avoids overrunning the cluster with BusyPoolException
-      for (List<Span> nextChunk : Lists.partition(asList(spans), 100)) {
-        super.accept(nextChunk.toArray(new Span[0]));
-        // Now, block until writes complete, notably so we can read them.
-        blockWhileInFlight(storage);
-      }
+    @Override protected void blockWhileInFlight() {
+      ITCassandraStorage.blockWhileInFlight(storage);
+    }
+
+    @Override public void clear() {
+      // Just let the data pile up to prevent warnings and slowness.
     }
   }
 
@@ -169,6 +181,10 @@ class ITCassandraStorage {
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+    }
+
+    @Override protected void blockWhileInFlight() {
+      ITCassandraStorage.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -186,6 +202,10 @@ class ITCassandraStorage {
       return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
+    @Override protected void blockWhileInFlight() {
+      ITCassandraStorage.blockWhileInFlight(storage);
+    }
+
     @Override public void clear() {
       // Just let the data pile up to prevent warnings and slowness.
     }
@@ -199,6 +219,10 @@ class ITCassandraStorage {
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+    }
+
+    @Override protected void blockWhileInFlight() {
+      ITCassandraStorage.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {
@@ -216,6 +240,10 @@ class ITCassandraStorage {
       return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
+    @Override protected void blockWhileInFlight() {
+      ITCassandraStorage.blockWhileInFlight(storage);
+    }
+
     @Override public void clear() {
       // Just let the data pile up to prevent warnings and slowness.
     }
@@ -229,6 +257,10 @@ class ITCassandraStorage {
 
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+    }
+
+    @Override protected void blockWhileInFlight() {
+      ITCassandraStorage.blockWhileInFlight(storage);
     }
 
     @Override public void clear() {

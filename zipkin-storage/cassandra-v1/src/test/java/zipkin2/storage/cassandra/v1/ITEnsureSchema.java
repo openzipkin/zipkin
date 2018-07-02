@@ -79,7 +79,7 @@ abstract class ITEnsureSchema {
 
       storage.spanConsumer().accept(TestObjects.TRACE).execute();
 
-      assertThat(storage.spanStore().getTrace(TestObjects.TRACE.get(0).traceId()).execute())
+      assertThat(storage.traces().getTrace(TestObjects.TRACE.get(0).traceId()).execute())
         .containsExactlyInAnyOrderElementsOf(TestObjects.TRACE);
 
       assertThat(storage.autocompleteTags().getValues("environment").execute())

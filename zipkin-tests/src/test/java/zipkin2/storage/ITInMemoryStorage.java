@@ -17,6 +17,16 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.TestInfo;
 
 class ITInMemoryStorage {
+  @Nested
+  class ITTraces extends zipkin2.storage.ITTraces<InMemoryStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return InMemoryStorage.newBuilder();
+    }
+
+    @Override public void clear() {
+      storage.clear();
+    }
+  }
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<InMemoryStorage> {

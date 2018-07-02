@@ -29,6 +29,17 @@ abstract class ITElasticsearchStorage {
   abstract ElasticsearchStorageExtension backend();
 
   @Nested
+  class ITTraces extends zipkin2.storage.ITTraces<ElasticsearchStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend().computeStorageBuilder().index(index(testInfo));
+    }
+
+    @Override public void clear() throws IOException {
+      storage.clear();
+    }
+  }
+
+  @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<ElasticsearchStorage> {
     @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend().computeStorageBuilder().index(index(testInfo));
@@ -103,5 +114,4 @@ abstract class ITElasticsearchStorage {
       storage.clear();
     }
   }
-
 }
