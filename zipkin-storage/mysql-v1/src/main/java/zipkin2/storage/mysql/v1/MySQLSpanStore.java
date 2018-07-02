@@ -22,11 +22,12 @@ import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StrictTraceId;
+import zipkin2.storage.Traces;
 
 import static zipkin2.internal.DateUtil.getDays;
 import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 
-final class MySQLSpanStore implements SpanStore, ServiceAndSpanNames {
+final class MySQLSpanStore implements SpanStore, Traces, ServiceAndSpanNames {
 
   final DataSourceCall.Factory dataSourceCallFactory;
   final Schema schema;
@@ -67,6 +68,14 @@ final class MySQLSpanStore implements SpanStore, ServiceAndSpanNames {
       dataSourceCallFactory.create(
         selectFromSpansAndAnnotationsFactory.create(traceIdHigh, traceId));
     return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
+  }
+
+  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    Call<List<List<Span>>> result = dataSourceCallFactory
+      .create(selectFromSpansAndAnnotationsFactory.create(traceIds))
+      .map(groupByTraceId);
+
+    return strictTraceId ? result.map(StrictTraceId.filterTraces(traceIds)) : result;
   }
 
   @Override public Call<List<String>> getServiceNames() {

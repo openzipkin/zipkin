@@ -28,6 +28,7 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
 
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
@@ -89,7 +90,8 @@ public final class MySQLStorage extends StorageComponent {
       return new MySQLStorage(this);
     }
 
-    Builder() {}
+    Builder() {
+    }
   }
 
   static {
@@ -136,8 +138,12 @@ public final class MySQLStorage extends StorageComponent {
     return new MySQLSpanStore(this, schema());
   }
 
+  @Override public Traces traces() {
+    return (Traces) spanStore();
+  }
+
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
-    return new MySQLSpanStore(this, schema());
+    return (ServiceAndSpanNames) spanStore();
   }
 
   @Override public AutocompleteTags autocompleteTags() {
