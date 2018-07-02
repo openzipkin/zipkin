@@ -309,26 +309,32 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
 
   @Override
   public synchronized Call<List<List<Span>>> getTraces(List<String> traceIds) {
-    List<List<Span>> traces = new ArrayList<>();
+    Set<String> normalized = new LinkedHashSet<>();
     for (String traceId : traceIds) {
-      traceId = Span.normalizeTraceId(traceId);
-      List<Span> spans = spansByTraceId(lowTraceId(traceId));
-      if (spans == null || spans.isEmpty()) continue;
-      if (!strictTraceId) {
-        traces.add(spans);
-      } else {
-        List<Span> filtered = new ArrayList<>(spans);
-        Iterator<Span> iterator = filtered.iterator();
-        while (iterator.hasNext()) {
-          if (!iterator.next().traceId().equals(traceId)) {
-            iterator.remove();
-          }
+      normalized.add(Span.normalizeTraceId(traceId));
+    }
+
+    // Our index is by lower-64 bit trace ID, so let's build trace IDs to fetch
+    Set<String> lower64Bit = new LinkedHashSet<>();
+    for (String traceId : normalized) {
+      lower64Bit.add(lowTraceId(traceId));
+    }
+
+    List<List<Span>> result = new ArrayList<>();
+    for (String lowTraceId : lower64Bit) {
+      List<Span> sameTraceId = spansByTraceId(lowTraceId);
+      if (strictTraceId) {
+        for (List<Span> trace: strictByTraceId(sameTraceId)) {
+         if (normalized.contains(trace.get(0).traceId())) {
+           result.add(trace);
+         }
         }
-        traces.add(filtered);
+      } else {
+        result.add(sameTraceId);
       }
     }
 
-    return Call.create(traces);
+    return Call.create(result);
   }
 
   @Override
