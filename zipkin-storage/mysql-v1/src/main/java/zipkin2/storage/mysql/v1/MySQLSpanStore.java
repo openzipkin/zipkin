@@ -69,6 +69,16 @@ final class MySQLSpanStore implements SpanStore {
   }
 
   @Override
+  public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    Call<List<List<Span>>> result =
+      dataSourceCallFactory
+        .create(selectFromSpansAndAnnotationsFactory.create(traceIds))
+        .map(groupByTraceId);
+
+    return strictTraceId ? result.map(StrictTraceId.filterTraces(traceIds)) : result;
+  }
+
+  @Override
   public Call<List<String>> getServiceNames() {
     return getServiceNamesCall.clone();
   }

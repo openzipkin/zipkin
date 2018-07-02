@@ -81,4 +81,34 @@ public class ITMySQLStorage {
       storage.clear();
     }
   }
+
+  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
+
+    @Override protected zipkin2.storage.StorageComponent storage() {
+      return storage.get();
+    }
+
+    @Override
+    public void clear() {
+      storage.get().clear();
+    }
+  }
+
+  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
+    @ClassRule public static LazyMySQLStorage storageRule = classRule();
+
+    MySQLStorage storage;
+
+    @Override protected zipkin2.storage.StorageComponent storage() {
+      return storage;
+    }
+
+    @Override public void clear() {
+      storage = storageRule.computeStorageBuilder()
+        .strictTraceId(false)
+        .build();
+      storage.clear();
+    }
+  }
 }
