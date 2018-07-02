@@ -308,6 +308,30 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   }
 
   @Override
+  public synchronized Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    List<List<Span>> traces = new ArrayList<>();
+    for (String traceId : traceIds) {
+      traceId = Span.normalizeTraceId(traceId);
+      List<Span> spans = spansByTraceId(lowTraceId(traceId));
+      if (spans == null || spans.isEmpty()) continue;
+      if (!strictTraceId) {
+        traces.add(spans);
+      } else {
+        List<Span> filtered = new ArrayList<>(spans);
+        Iterator<Span> iterator = filtered.iterator();
+        while (iterator.hasNext()) {
+          if (!iterator.next().traceId().equals(traceId)) {
+            iterator.remove();
+          }
+        }
+        traces.add(filtered);
+      }
+    }
+
+    return Call.create(traces);
+  }
+
+  @Override
   public synchronized Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return Call.create(new ArrayList<>(serviceToTraceIds.keySet()));
