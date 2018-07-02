@@ -13,9 +13,11 @@
  */
 package zipkin2.elasticsearch;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
@@ -29,10 +31,11 @@ import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StrictTraceId;
+import zipkin2.storage.Traces;
 
 import static java.util.Arrays.asList;
 
-final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
+final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanNames {
 
   static final String SPAN = "span";
   static final String DEPENDENCY = "dependency";
@@ -127,6 +130,22 @@ final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
 
     SearchRequest request = SearchRequest.create(asList(allSpanIndices)).term("traceId", traceId);
     return search.newCall(request, BodyConverters.SPANS);
+  }
+
+  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    Set<String> normalizedTraceIds = new LinkedHashSet<>();
+    for (String traceId : traceIds) {
+      // make sure we have a 16 or 32 character trace ID
+      traceId = Span.normalizeTraceId(traceId);
+
+      // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+      if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
+
+      normalizedTraceIds.add(traceId);
+    }
+    SearchRequest request =
+      SearchRequest.create(asList(allSpanIndices)).terms("traceId", normalizedTraceIds);
+    return search.newCall(request, BodyConverters.SPANS).map(groupByTraceId);
   }
 
   @Override public Call<List<String>> getServiceNames() {

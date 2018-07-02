@@ -42,6 +42,7 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
@@ -208,6 +209,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   @Override public SpanStore spanStore() {
     ensureIndexTemplates();
     return new ElasticsearchSpanStore(this);
+  }
+
+  @Override public Traces traces() {
+    return (Traces) spanStore();
   }
 
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
