@@ -19,6 +19,7 @@ import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.utils.UUIDs;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -199,6 +200,10 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     // make sure we have a 16 or 32 character trace ID
     String normalizedTraceId = Span.normalizeTraceId(traceId);
     return spans.newCall(normalizedTraceId);
+  }
+
+  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    return spans.newCall(traceIds);
   }
 
   @Override
