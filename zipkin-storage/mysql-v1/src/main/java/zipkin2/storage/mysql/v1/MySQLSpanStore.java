@@ -18,7 +18,11 @@ import java.util.List;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
-import zipkin2.storage.*;
+import zipkin2.storage.DependencyQueryRequest;
+import zipkin2.storage.GroupByTraceId;
+import zipkin2.storage.QueryRequest;
+import zipkin2.storage.SpanStore;
+import zipkin2.storage.StrictTraceId;
 
 import static zipkin2.internal.DateUtil.getDays;
 import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
@@ -33,12 +37,12 @@ final class MySQLSpanStore implements SpanStore {
   final DataSourceCall<List<String>> getServiceNamesCall;
 
   MySQLSpanStore(
-      DataSourceCall.Factory dataSourceCallFactory, Schema schema, boolean strictTraceId) {
+    DataSourceCall.Factory dataSourceCallFactory, Schema schema, boolean strictTraceId) {
     this.dataSourceCallFactory = dataSourceCallFactory;
     this.schema = schema;
     this.strictTraceId = strictTraceId;
     this.selectFromSpansAndAnnotationsFactory =
-        new SelectSpansAndAnnotations.Factory(schema, strictTraceId);
+      new SelectSpansAndAnnotations.Factory(schema, strictTraceId);
     this.groupByTraceId = GroupByTraceId.create(strictTraceId);
     this.getServiceNamesCall = dataSourceCallFactory.create(new SelectAnnotationServiceNames());
   }
@@ -46,9 +50,9 @@ final class MySQLSpanStore implements SpanStore {
   @Override
   public Call<List<List<Span>>> getTraces(QueryRequest request) {
     Call<List<List<Span>>> result =
-        dataSourceCallFactory
-            .create(selectFromSpansAndAnnotationsFactory.create(request))
-            .map(groupByTraceId);
+      dataSourceCallFactory
+        .create(selectFromSpansAndAnnotationsFactory.create(request))
+        .map(groupByTraceId);
 
     return strictTraceId ? result.map(StrictTraceId.filterTraces(request)) : result;
   }
@@ -61,8 +65,8 @@ final class MySQLSpanStore implements SpanStore {
     long traceId = lowerHexToUnsignedLong(hexTraceId);
 
     DataSourceCall<List<Span>> result =
-        dataSourceCallFactory.create(
-            selectFromSpansAndAnnotationsFactory.create(traceIdHigh, traceId));
+      dataSourceCallFactory.create(
+        selectFromSpansAndAnnotationsFactory.create(traceIdHigh, traceId));
     return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
   }
 
@@ -81,7 +85,8 @@ final class MySQLSpanStore implements SpanStore {
     // TODO: refactor to share this code between different SpanStore implementations
     return getDependencies(request.endTs, request.limit).flatMap((links) -> {
       for (DependencyLink link : links) {
-        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(link.child())) {
+        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(
+          link.child())) {
           if (request.errorsOnly) {
             return getTraces(link.errorTraceIds());
           } else {
@@ -112,6 +117,6 @@ final class MySQLSpanStore implements SpanStore {
       return dataSourceCallFactory.create(new SelectDependencies(schema, getDays(endTs, lookback)));
     }
     return dataSourceCallFactory.create(
-        new AggregateDependencies(schema, endTs * 1000 - lookback * 1000, endTs * 1000));
+      new AggregateDependencies(schema, endTs * 1000 - lookback * 1000, endTs * 1000));
   }
 }
