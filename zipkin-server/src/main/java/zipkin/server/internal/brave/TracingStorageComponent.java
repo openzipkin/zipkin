@@ -70,6 +70,10 @@ public final class TracingStorageComponent extends StorageComponent {
       return new TracedCall<>(tracer, delegate.getTrace(traceId), "get-trace");
     }
 
+    @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+      return new TracedCall<>(tracer, delegate.getTraces(traceIds), "get-traces");
+    }
+
     @Override
     public Call<List<String>> getServiceNames() {
       return new TracedCall<>(tracer, delegate.getServiceNames(), "get-service-names");
