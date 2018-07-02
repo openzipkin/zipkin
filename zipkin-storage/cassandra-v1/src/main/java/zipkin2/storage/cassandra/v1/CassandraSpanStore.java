@@ -153,6 +153,10 @@ public final class CassandraSpanStore implements SpanStore {
     return spans.newCall(normalizedTraceId);
   }
 
+  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    return spans.newCall(traceIds);
+  }
+
   @Override
   public Call<List<String>> getServiceNames() {
     return serviceNames.clone();
