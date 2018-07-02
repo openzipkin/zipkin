@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.DependencyLink;
@@ -67,7 +66,7 @@ import zipkin2.internal.DependencyLinker;
  * }</pre>
  */
 public final class InMemoryStorage extends StorageComponent implements SpanStore, SpanConsumer,
-  AutocompleteTags, ServiceAndSpanNames {
+  AutocompleteTags, ServiceAndSpanNames, Traces {
 
   public static Builder newBuilder() {
     return new Builder();
@@ -383,6 +382,35 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return Call.create(filtered);
   }
 
+  @Override public synchronized Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    Set<String> normalized = new LinkedHashSet<>();
+    for (String traceId : traceIds) {
+      normalized.add(Span.normalizeTraceId(traceId));
+    }
+
+    // Our index is by lower-64 bit trace ID, so let's build trace IDs to fetch
+    Set<String> lower64Bit = new LinkedHashSet<>();
+    for (String traceId : normalized) {
+      lower64Bit.add(lowTraceId(traceId));
+    }
+
+    List<List<Span>> result = new ArrayList<>();
+    for (String lowTraceId : lower64Bit) {
+      List<Span> sameTraceId = spansByTraceId(lowTraceId);
+      if (strictTraceId) {
+        for (List<Span> trace : strictByTraceId(sameTraceId)) {
+          if (normalized.contains(trace.get(0).traceId())) {
+            result.add(trace);
+          }
+        }
+      } else {
+        result.add(sameTraceId);
+      }
+    }
+
+    return Call.create(result);
+  }
+
   @Override public synchronized Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return Call.create(new ArrayList<>(serviceToTraceIds.keySet()));
@@ -555,6 +583,10 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
 
   static String lowTraceId(String traceId) {
     return traceId.length() == 32 ? traceId.substring(16) : traceId;
+  }
+
+  @Override public InMemoryStorage traces() {
+    return this;
   }
 
   @Override public InMemoryStorage spanStore() {

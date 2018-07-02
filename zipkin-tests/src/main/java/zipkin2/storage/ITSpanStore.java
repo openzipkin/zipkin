@@ -14,10 +14,8 @@
 package zipkin2.storage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
@@ -54,35 +52,6 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     // Defaults are fine.
   }
 
-  @Test void getTrace_considersBitsAbove64bit() throws IOException {
-    // 64-bit trace ID
-    Span span1 = Span.newBuilder().traceId(CLIENT_SPAN.traceId().substring(16)).id("1").build();
-    // 128-bit trace ID prefixed by above
-    Span span2 = Span.newBuilder().traceId(CLIENT_SPAN.traceId()).id("2").build();
-    // Different 128-bit trace ID prefixed by above
-    Span span3 = Span.newBuilder().traceId("1" + span1.traceId()).id("3").build();
-
-    accept(span1, span2, span3);
-
-    for (Span span : Arrays.asList(span1, span2, span3)) {
-      assertThat(store().getTrace(span.traceId()).execute())
-        .containsOnly(span);
-    }
-  }
-
-  @Test void getTrace_returnsEmptyOnNotFound() throws IOException {
-    assertThat(store().getTrace(CLIENT_SPAN.traceId()).execute())
-      .isEmpty();
-
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getTrace(CLIENT_SPAN.traceId()).execute())
-      .containsExactly(CLIENT_SPAN);
-
-    assertThat(store().getTrace(CLIENT_SPAN.traceId().substring(16)).execute())
-      .isEmpty();
-  }
-
   /** This would only happen when the store layer is bootstrapping, or has been purged. */
   @Test void allShouldWorkWhenEmpty() throws IOException {
     QueryRequest.Builder q = requestBuilder().serviceName("service");
@@ -104,10 +73,10 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
 
     // Ensure the implementation didn't accidentally do I/O at assembly time.
-    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
+    assertThat(traces().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
     call.execute();
 
-    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute())
+    assertThat(traces().getTrace(LOTS_OF_SPANS[0].traceId()).execute())
       .containsExactly(LOTS_OF_SPANS[0]);
 
     try {
@@ -123,7 +92,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   @Test void consumer_properlyImplementsCallContract_submit() throws Exception {
     Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
     // Ensure the implementation didn't accidentally do I/O at assembly time.
-    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
+    assertThat(traces().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
 
     CountDownLatch latch = new CountDownLatch(1);
     Callback<Void> callback = new Callback<Void>() {
@@ -139,7 +108,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     call.enqueue(callback);
     latch.await();
 
-    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute())
+    assertThat(traces().getTrace(LOTS_OF_SPANS[0].traceId()).execute())
       .containsExactly(LOTS_OF_SPANS[0]);
 
     try {
@@ -150,21 +119,6 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
     // no problem to clone a call
     call.clone().execute();
-  }
-
-  /**
-   * Ideally, storage backends can deduplicate identical documents as this will prevent some
-   * analysis problems such as double-counting dependency links or other statistics. While this test
-   * exists, it is known not all backends will be able to cheaply make it pass. In other words, it
-   * is optional.
-   */
-  @Test public void deduplicates() throws IOException {
-    // simulate a re-processed message
-    accept(LOTS_OF_SPANS[0]);
-    accept(LOTS_OF_SPANS[0]);
-
-    assertThat(sortTrace(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()))
-      .containsExactly(LOTS_OF_SPANS[0]);
   }
 
   @Test void getTraces_groupsTracesTogether() throws IOException {
@@ -409,7 +363,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     assertThat(store().getTraces(requestBuilder.parseAnnotationQuery("error=1").build()).execute())
       .isEmpty();
 
-    assertThat(store().getTrace(errorSpan.traceId()).execute())
+    assertThat(traces().getTrace(errorSpan.traceId()).execute())
       .contains(errorSpan);
   }
 
@@ -431,7 +385,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     // read back to ensure the data wasn't truncated
     assertThat(store().getTraces(requestBuilder().build()).execute())
       .containsExactly(asList(span));
-    assertThat(store().getTrace(span.traceId()).execute())
+    assertThat(traces().getTrace(span.traceId()).execute())
       .containsExactly(span);
   }
 
@@ -457,7 +411,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .extracting(t -> t.get(0))
       .containsExactly(spanWithProblematicData);
 
-    assertThat(store().getTrace(spanWithProblematicData.traceId()).execute())
+    assertThat(traces().getTrace(spanWithProblematicData.traceId()).execute())
       .containsExactly(spanWithProblematicData);
   }
 
@@ -481,7 +435,8 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     assertThat(store().getTraces(builder.build()).execute())
       .hasSize(traceCount);
 
-    assertThat(store().getTraces(builder.remoteServiceName(span.remoteServiceName()).build()).execute())
+    assertThat(
+      store().getTraces(builder.remoteServiceName(span.remoteServiceName()).build()).execute())
       .hasSize(traceCount);
 
     assertThat(store().getTraces(builder.spanName(span.name()).build()).execute())
@@ -701,9 +656,9 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     accept(trace1, trace1Server, trace2, trace2Server);
 
     // Sanity check
-    assertThat(store().getTrace(trace1.traceId()).execute())
+    assertThat(traces().getTrace(trace1.traceId()).execute())
       .containsExactlyInAnyOrder(trace1, trace1Server);
-    assertThat(sortTrace(store().getTrace(trace2.traceId()).execute()))
+    assertThat(sortTrace(traces().getTrace(trace2.traceId()).execute()))
       .containsExactly(trace2, trace2Server);
     assertThat(sortTraces(store().getTraces(requestBuilder().build()).execute()))
       .containsExactly(asList(trace1, trace1Server), asList(trace2, trace2Server));
@@ -834,7 +789,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     assertThat(store().getTraces(requestBuilder().build()).execute())
       .flatExtracting(t -> t)
       .containsExactlyInAnyOrder(trace);
-    assertThat(store().getTrace(trace[0].traceId()).execute())
+    assertThat(traces().getTrace(trace[0].traceId()).execute())
       .containsExactlyInAnyOrder(trace);
   }
 
@@ -860,14 +815,6 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     assertThat(sortTraces(store().getTraces(
       requestBuilder().endTs(TRACE_STARTTS + 100).lookback(200).build()
     ).execute())).containsOnly(TRACE);
-  }
-
-  protected void accept(List<Span> spans) throws IOException {
-    storage.spanConsumer().accept(spans).execute();
-  }
-
-  protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
   }
 
   void setupDurationData() throws IOException {
@@ -921,18 +868,5 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
 
   protected static QueryRequest.Builder requestBuilder() {
     return QueryRequest.newBuilder().endTs(TODAY + DAY).lookback(DAY * 2).limit(100);
-  }
-
-  static List<List<Span>> sortTraces(List<List<Span>> traces) {
-    List<List<Span>> result = new ArrayList<>();
-    for (List<Span> trace : traces) result.add(sortTrace(trace));
-    Collections.sort(result, Comparator.comparing(o -> o.get(0).traceId()));
-    return result;
-  }
-
-  static ArrayList<Span> sortTrace(List<Span> trace) {
-    ArrayList<Span> result = new ArrayList<>(trace);
-    Collections.sort(result, Comparator.comparing(Span::timestampAsLong));
-    return result;
   }
 }

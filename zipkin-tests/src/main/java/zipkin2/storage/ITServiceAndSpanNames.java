@@ -21,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
@@ -162,13 +161,5 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
     accept(CLIENT_SPAN);
 
     assertThat(names().getSpanNames("FrOnTeNd").execute()).containsExactly("get");
-  }
-
-  protected void accept(List<Span> spans) throws IOException {
-    storage.spanConsumer().accept(spans).execute();
-  }
-
-  protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
   }
 }

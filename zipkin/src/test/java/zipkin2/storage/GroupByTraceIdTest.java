@@ -37,4 +37,15 @@ public class GroupByTraceIdTest {
     assertThat(GroupByTraceId.create(true).map(spans))
       .containsExactly(asList(oneOne), asList(twoOne), asList(zeroOne));
   }
+
+  @Test public void map_modifiable() {
+    List<Span> spans = asList(oneOne, twoOne, zeroOne);
+
+    List<List<Span>> modifiable = GroupByTraceId.create(true).map(spans);
+
+    // This transform is used in cassandra v1 and filters when traces match on lower 64bits, but not
+    // the higher ones.
+    assertThat(StrictTraceId.filterTraces(asList(twoOne.traceId())).map(modifiable))
+      .containsExactly(asList(twoOne));
+  }
 }

@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.Test;
-import zipkin2.Span;
 import zipkin2.TestObjects;
 
 import static java.util.Arrays.asList;
@@ -58,9 +57,5 @@ public abstract class ITAutocompleteTags<T extends StorageComponent> extends ITS
 
     assertThat(storage.autocompleteTags().getValues("http.host").execute())
       .containsOnlyOnce("host1");
-  }
-
-  protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
   }
 }

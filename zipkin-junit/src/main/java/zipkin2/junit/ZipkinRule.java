@@ -130,7 +130,7 @@ public final class ZipkinRule implements TestRule {
   @Nullable
   public List<Span> getTrace(String traceId) {
     try {
-      return storage.spanStore().getTrace(traceId).execute();
+      return storage.traces().getTrace(traceId).execute();
     } catch (IOException e) {
       throw Platform.get().assertionError("I/O exception in in-memory storage", e);
     }

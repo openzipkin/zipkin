@@ -23,9 +23,8 @@ import zipkin2.TestObjects;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.TODAY;
 import static zipkin2.storage.ITSpanStore.requestBuilder;
-import static zipkin2.storage.ITSpanStore.sortTrace;
-import static zipkin2.storage.ITSpanStore.sortTraces;
 
 /**
  * Base test for when {@link StorageComponent.Builder#strictTraceId(boolean) strictTraceId ==
@@ -80,9 +79,12 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
   }
 
   void retrievesBy64Or128BitTraceId(List<Span> trace) throws IOException {
-    assertThat(store().getTrace(trace.get(0).traceId().substring(16)).execute())
+    // spans are in reporting order (reverse topological)
+    String traceId = trace.get(trace.size() - 1).traceId();
+
+    assertThat(traces().getTrace(traceId.substring(16)).execute())
       .containsOnlyElementsOf(trace);
-    assertThat(store().getTrace(trace.get(0).traceId()).execute())
+    assertThat(traces().getTrace(traceId).execute())
       .containsOnlyElementsOf(trace);
   }
 
@@ -105,8 +107,50 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
     return sortTrace(trace);
   }
 
-  void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
+  Span with128BitId1 = Span.newBuilder()
+    .traceId("baaaaaaaaaaaaaaaa").id("a").timestamp(TODAY * 1000).build();
+  Span with64BitId1 = Span.newBuilder()
+    .traceId("aaaaaaaaaaaaaaaa").id("b").timestamp((TODAY + 1) * 1000).build();
+  Span with128BitId2 = Span.newBuilder()
+    .traceId("21111111111111111").id("1").timestamp(TODAY * 1000).build();
+  Span with64BitId2 = Span.newBuilder()
+    .traceId("1111111111111111").id("2").timestamp((TODAY + 1) * 1000).build();
+  Span with128BitId3 = Span.newBuilder()
+    .traceId("effffffffffffffff").id("1").timestamp(TODAY * 1000).build();
+  Span with64BitId3 = Span.newBuilder()
+    .traceId("ffffffffffffffff").id("2").timestamp(TODAY * 1000).build();
+
+  /** current implementation cannot return exact form reported */
+  @Test void getTraces_retrievesBy64Or128BitTraceId() throws Exception {
+    accept(with128BitId1, with64BitId1, with128BitId2, with64BitId2, with128BitId3, with64BitId3);
+
+    List<List<Span>> trace1And3 = asList(
+      asList(with128BitId1, with64BitId1),
+      asList(with128BitId3, with64BitId3)
+    );
+
+    List<List<Span>> resultsWithBothIdLength = sortTraces(traces()
+      .getTraces(asList(
+        with128BitId1.traceId(),
+        with64BitId1.traceId(),
+        with128BitId3.traceId(),
+        with64BitId3.traceId()
+      )).execute());
+
+    assertThat(resultsWithBothIdLength).containsExactlyElementsOf(trace1And3);
+
+    List<List<Span>> resultsWith64BitIdLength = sortTraces(traces()
+      .getTraces(asList(
+        with64BitId1.traceId(), with64BitId3.traceId()
+      )).execute());
+
+    assertThat(resultsWith64BitIdLength).containsExactlyElementsOf(trace1And3);
+
+    List<List<Span>> resultsWith128BitIdLength = sortTraces(traces()
+      .getTraces(asList(
+        with128BitId1.traceId(), with128BitId3.traceId()
+      )).execute());
+
+    assertThat(resultsWith128BitIdLength).containsExactlyElementsOf(trace1And3);
   }
 }
-
