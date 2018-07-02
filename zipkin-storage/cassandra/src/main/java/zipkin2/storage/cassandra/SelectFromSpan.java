@@ -19,6 +19,7 @@ import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -92,6 +93,22 @@ final class SelectFromSpan extends ResultSetFutureCall {
 
       Call<List<Span>> result = new SelectFromSpan(this, traceIds, maxTraceCols).flatMap(readSpans);
       return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
+    }
+
+    Call<List<List<Span>>> newCall(List<String> traceIds) {
+      Set<String> normalizedTraceIds = new LinkedHashSet<>();
+      for (String traceId : traceIds) {
+        // make sure we have a 16 or 32 character trace ID
+        traceId = Span.normalizeTraceId(traceId);
+        // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+        if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
+        normalizedTraceIds.add(traceId);
+      }
+      Call<List<List<Span>>> result = new SelectFromSpan(this,
+        normalizedTraceIds,
+        maxTraceCols)
+        .flatMap(readSpans).map(groupByTraceId);
+      return strictTraceId ? result.map(StrictTraceId.filterTraces(normalizedTraceIds)) : result;
     }
 
     FlatMapper<Set<String>, List<List<Span>>> newFlatMapper(QueryRequest request) {
