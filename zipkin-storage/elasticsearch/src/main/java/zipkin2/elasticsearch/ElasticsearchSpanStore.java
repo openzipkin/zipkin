@@ -13,8 +13,12 @@
  */
 package zipkin2.elasticsearch;
 
-import java.util.*;
-
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
@@ -23,7 +27,11 @@ import zipkin2.elasticsearch.internal.client.Aggregation;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.SearchCallFactory;
 import zipkin2.elasticsearch.internal.client.SearchRequest;
-import zipkin2.storage.*;
+import zipkin2.storage.DependencyQueryRequest;
+import zipkin2.storage.GroupByTraceId;
+import zipkin2.storage.QueryRequest;
+import zipkin2.storage.SpanStore;
+import zipkin2.storage.StrictTraceId;
 
 import static java.util.Arrays.asList;
 
@@ -88,20 +96,20 @@ final class ElasticsearchSpanStore implements SpanStore {
     // be no significant difference in user experience since span start times are usually very
     // close to each other in human time.
     Aggregation traceIdTimestamp =
-        Aggregation.terms("traceId", request.limit())
-            .addSubAggregation(Aggregation.min("timestamp_millis"))
-            .orderBy("timestamp_millis", "desc");
+      Aggregation.terms("traceId", request.limit())
+        .addSubAggregation(Aggregation.min("timestamp_millis"))
+        .orderBy("timestamp_millis", "desc");
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest esRequest =
-        SearchRequest.create(indices).filters(filters).addAggregation(traceIdTimestamp);
+      SearchRequest.create(indices).filters(filters).addAggregation(traceIdTimestamp);
 
     HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
 
     Call<List<List<Span>>> result =
-        traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);
+      traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);
     return strictTraceId ? result.map(StrictTraceId.filterTraces(request)) : result;
   }
 
@@ -110,7 +118,8 @@ final class ElasticsearchSpanStore implements SpanStore {
     // TODO: refactor to share this code between different SpanStore implementations
     return getDependencies(request.endTs, request.limit).flatMap((links) -> {
       for (DependencyLink link : links) {
-        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(link.child())) {
+        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(
+          link.child())) {
           if (request.errorsOnly) {
             return getTraces(link.errorTraceIds());
           } else {
@@ -166,10 +175,10 @@ final class ElasticsearchSpanStore implements SpanStore {
     SearchRequest.Filters filters = new SearchRequest.Filters();
     filters.addRange("timestamp_millis", beginMillis, endMillis);
     SearchRequest request =
-        SearchRequest.create(indices)
-            .filters(filters)
-            .addAggregation(Aggregation.terms("localEndpoint.serviceName", Integer.MAX_VALUE))
-            .addAggregation(Aggregation.terms("remoteEndpoint.serviceName", Integer.MAX_VALUE));
+      SearchRequest.create(indices)
+        .filters(filters)
+        .addAggregation(Aggregation.terms("localEndpoint.serviceName", Integer.MAX_VALUE))
+        .addAggregation(Aggregation.terms("remoteEndpoint.serviceName", Integer.MAX_VALUE));
     return search.newCall(request, BodyConverters.KEYS);
   }
 
@@ -187,14 +196,14 @@ final class ElasticsearchSpanStore implements SpanStore {
 
     // A span name is only valid on a local endpoint, as a span name is defined locally
     SearchRequest.Filters filters =
-        new SearchRequest.Filters()
-            .addRange("timestamp_millis", beginMillis, endMillis)
-            .addTerm("localEndpoint.serviceName", serviceName.toLowerCase(Locale.ROOT));
+      new SearchRequest.Filters()
+        .addRange("timestamp_millis", beginMillis, endMillis)
+        .addTerm("localEndpoint.serviceName", serviceName.toLowerCase(Locale.ROOT));
 
     SearchRequest request =
-        SearchRequest.create(indices)
-            .filters(filters)
-            .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
+      SearchRequest.create(indices)
+        .filters(filters)
+        .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
 
     return search.newCall(request, BodyConverters.KEYS);
   }
