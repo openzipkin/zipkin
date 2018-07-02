@@ -125,7 +125,18 @@ final class Schema {
         : ZIPKIN_SPANS.TRACE_ID.eq(traceIdLow);
   }
 
+  Condition spanTraceIdCondition(Set<Pair> traceIds) {
+    return traceIdCondition(ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID, traceIds);
+  }
+
   Condition annotationsTraceIdCondition(Set<Pair> traceIds) {
+    return traceIdCondition(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZIPKIN_ANNOTATIONS.TRACE_ID, traceIds);
+  }
+
+  Condition traceIdCondition(
+    TableField<Record, Long> TRACE_ID_HIGH,
+    TableField<Record, Long> TRACE_ID, Set<Pair> traceIds
+  ) {
     boolean hasTraceIdHigh = false;
     for (Pair traceId : traceIds) {
       if (traceId.left != 0) {
@@ -139,14 +150,14 @@ final class Schema {
       for (Pair traceId128 : traceIds) {
         result[i++] = row(traceId128.left, traceId128.right);
       }
-      return row(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZIPKIN_ANNOTATIONS.TRACE_ID).in(result);
+      return row(TRACE_ID_HIGH, TRACE_ID).in(result);
     } else {
       Long[] result = new Long[traceIds.size()];
       int i = 0;
       for (Pair traceId128 : traceIds) {
         result[i++] = traceId128.right;
       }
-      return ZIPKIN_ANNOTATIONS.TRACE_ID.in(result);
+      return TRACE_ID.in(result);
     }
   }
 
