@@ -13,8 +13,11 @@
  */
 package zipkin2.storage;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import zipkin2.Call;
 import zipkin2.Span;
 
@@ -30,14 +33,19 @@ public final class StrictTraceId {
 
   /** Filters the mutable input based on the query */
   public static Call.Mapper<List<List<Span>>, List<List<Span>>> filterTraces(QueryRequest request) {
-    return new FilterTraces(request);
+    return new FilterTracesByQuery(request);
   }
 
-  static final class FilterTraces implements Call.Mapper<List<List<Span>>, List<List<Span>>> {
+  /** Filters the mutable input based on the query */
+  public static Call.Mapper<List<List<Span>>, List<List<Span>>> filterTraces(Collection<String> traceIds) {
+    return new FilterTracesByIds(traceIds);
+  }
+
+  static final class FilterTracesByQuery implements Call.Mapper<List<List<Span>>, List<List<Span>>> {
 
     final QueryRequest request;
 
-    FilterTraces(QueryRequest request) {
+    FilterTracesByQuery(QueryRequest request) {
       this.request = request;
     }
 
@@ -55,7 +63,36 @@ public final class StrictTraceId {
 
     @Override
     public String toString() {
-      return "FilterTraces{request=" + request + "}";
+      return "FilterTracesByQuery{request=" + request + "}";
+    }
+  }
+
+  static final class FilterTracesByIds implements Call.Mapper<List<List<Span>>, List<List<Span>>> {
+
+    final Set<String> traceIds;
+
+    FilterTracesByIds(Collection<String> unsanitizedIds) {
+      traceIds = new LinkedHashSet<>();
+      for (String traceId : unsanitizedIds) {
+        traceIds.add(Span.normalizeTraceId(traceId));
+      }
+    }
+
+    @Override
+    public List<List<Span>> map(List<List<Span>> input) {
+      Iterator<List<Span>> i = input.iterator();
+      while (i.hasNext()) { // Not using removeIf as that's java 8+
+        List<Span> next = i.next();
+        if (!traceIds.contains(next.get(0).traceId())) {
+          i.remove();
+        }
+      }
+      return input;
+    }
+
+    @Override
+    public String toString() {
+      return "FilterTracesByIds{traceIds=" + traceIds + "}";
     }
   }
 
