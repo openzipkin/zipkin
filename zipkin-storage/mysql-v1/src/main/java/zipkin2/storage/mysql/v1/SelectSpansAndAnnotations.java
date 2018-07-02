@@ -15,8 +15,10 @@ package zipkin2.storage.mysql.v1;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jooq.Condition;
@@ -38,6 +40,7 @@ import zipkin2.v1.V1SpanConverter;
 
 import static java.util.stream.Collectors.groupingBy;
 import static org.jooq.impl.DSL.row;
+import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 import static zipkin2.storage.mysql.v1.MySQLSpanConsumer.UTF_8;
 import static zipkin2.storage.mysql.v1.Schema.maybeGet;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
@@ -62,6 +65,25 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
         @Override
         Condition traceIdCondition(DSLContext context) {
           return schema.spanTraceIdCondition(finalTraceIdHigh, traceIdLow);
+        }
+      };
+    }
+
+    SelectSpansAndAnnotations create(List<String> traceIds) {
+      Set<Pair> traceIdPairs = new LinkedHashSet<>();
+      for (String traceId : traceIds) {
+        // make sure we have a 16 or 32 character trace ID
+        String hexTraceId = Span.normalizeTraceId(traceId);
+        traceIdPairs.add(new Pair(
+            hexTraceId.length() == 32 ? lowerHexToUnsignedLong(hexTraceId, 0) : 0L,
+            lowerHexToUnsignedLong(hexTraceId)
+          )
+        );
+      }
+      return new SelectSpansAndAnnotations(schema) {
+        @Override
+        Condition traceIdCondition(DSLContext context) {
+          return schema.spanTraceIdCondition(traceIdPairs);
         }
       };
     }
