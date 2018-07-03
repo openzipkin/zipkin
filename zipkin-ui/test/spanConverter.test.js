@@ -1036,6 +1036,14 @@ describe('SPAN v1 merge by ID', () => {
         traceId: '22222222222222222',
         parentId: 'a',
         id: 'a', // self-referencing
+      },
+      {
+        traceId: '22222222222222222',
+        parentId: 'a',
+        id: 'b',
+        timestamp: 10,
+        duration: 0, // zero duration should be scrubbed
+        binaryAnnotations: [{key: 'lc', value: ''}]
       }
     ]);
 
@@ -1055,6 +1063,15 @@ describe('SPAN v1 merge by ID', () => {
         duration: ss.timestamp - sr.timestamp,
         annotations: [sr, ss],
         binaryAnnotations: []
+      },
+      {
+        traceId: '00000000000000022222222222222222',
+        parentId: '000000000000000a',
+        id: '000000000000000b',
+        name: '',
+        timestamp: 10,
+        annotations: [],
+        binaryAnnotations: [{key: 'lc', value: ''}]
       }
     ]);
   });
