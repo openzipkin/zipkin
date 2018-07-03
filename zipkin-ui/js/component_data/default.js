@@ -3,9 +3,11 @@ import {errToStr} from '../../js/component_ui/error';
 import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
+import {SPAN_V1} from '../spanConverter';
+import {correctForClockSkew} from '../skew';
 
 export function convertToApiQuery(source) {
-  const query = source;
+  const query = Object.assign({}, source);
   // zipkin's api looks back from endTs
   if (query.lookback !== 'custom') {
     delete query.startTs;
@@ -26,6 +28,13 @@ export function convertToApiQuery(source) {
   if (query.spanName === 'all') {
     delete query.spanName;
   }
+  // delete any parameters unused on the server
+  Object.keys(query).forEach(key => {
+    if (query[key] === '') {
+      delete query[key];
+    }
+  });
+  delete query.sortOrder;
   return query;
 }
 
@@ -37,13 +46,20 @@ export default component(function DefaultData() {
       return;
     }
     const apiQuery = convertToApiQuery(query);
-    const apiURL = `api/v1/traces?${queryString.stringify(apiQuery)}`;
+    const apiURL = `api/v2/traces?${queryString.stringify(apiQuery)}`;
     $.ajax(apiURL, {
       type: 'GET',
       dataType: 'json'
     }).done(traces => {
+      const summaries = traces.map(raw => {
+        const v1Trace = raw.map(SPAN_V1.convert);
+        const mergedTrace = SPAN_V1.mergeById(v1Trace);
+        const clockSkewCorrectedTrace = correctForClockSkew(mergedTrace);
+        return traceSummary(clockSkewCorrectedTrace);
+      });
+
       const modelview = {
-        traces: traceSummariesToMustache(apiQuery.serviceName, traces.map(traceSummary)),
+        traces: traceSummariesToMustache(apiQuery.serviceName, summaries),
         apiURL,
         rawResponse: traces
       };
