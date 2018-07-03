@@ -39,7 +39,7 @@ public class ITEnableZipkinServer {
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Test public void writeSpans_noContentTypeIsJson() throws Exception {
-    Response response = get("/api/v1/services");
+    Response response = get("/api/v2/services");
 
     assertThat(response.code())
       .isEqualTo(200);

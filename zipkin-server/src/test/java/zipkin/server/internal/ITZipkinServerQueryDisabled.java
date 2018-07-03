@@ -45,7 +45,6 @@ public class ITZipkinServerQueryDisabled {
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Test public void queryRelatedEndpoints404() throws Exception {
-    assertThat(get("/api/v1/traces").code()).isEqualTo(404);
     assertThat(get("/api/v2/traces").code()).isEqualTo(404);
     assertThat(get("/index.html").code()).isEqualTo(404);
 

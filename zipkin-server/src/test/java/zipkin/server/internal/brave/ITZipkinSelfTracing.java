@@ -49,15 +49,6 @@ public class ITZipkinSelfTracing {
   }
 
   @Test
-  public void getIsTraced_v1() throws Exception {
-    assertThat(get("v1").body().string()).isEqualTo("[]");
-
-    Thread.sleep(1000);
-
-    assertThat(get("v1").body().string()).isEqualTo("[\"zipkin-server\"]");
-  }
-
-  @Test
   public void getIsTraced_v2() throws Exception {
     assertThat(get("v2").body().string()).isEqualTo("[]");
 
@@ -72,7 +63,7 @@ public class ITZipkinSelfTracing {
 
     Thread.sleep(1000);
 
-    assertThat(get("v1").body().string()).isEqualTo("[\"zipkin-server\"]");
+    assertThat(get("v2").body().string()).isEqualTo("[\"zipkin-server\"]");
   }
 
   @Test

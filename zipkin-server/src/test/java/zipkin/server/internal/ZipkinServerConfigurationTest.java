@@ -71,12 +71,10 @@ public class ZipkinServerConfigurationTest {
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
-      ZipkinQueryApiV1.class,
       ZipkinQueryApiV2.class
     );
     context.refresh();
 
-    assertThat(context.getBean(ZipkinQueryApiV1.class)).isNotNull();
     assertThat(context.getBean(ZipkinQueryApiV2.class)).isNotNull();
   }
 
@@ -86,16 +84,9 @@ public class ZipkinServerConfigurationTest {
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
-      ZipkinQueryApiV1.class,
       ZipkinQueryApiV2.class
     );
     context.refresh();
-
-    try {
-      context.getBean(ZipkinQueryApiV1.class);
-      failBecauseExceptionWasNotThrown(NoSuchBeanDefinitionException.class);
-    } catch (NoSuchBeanDefinitionException e) {
-    }
 
     try {
       context.getBean(ZipkinQueryApiV2.class);

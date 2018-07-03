@@ -22,11 +22,10 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin.Annotation;
-import zipkin.Codec;
-import zipkin.Endpoint;
-import zipkin.Span;
-import zipkin.internal.Util;
+import zipkin2.Endpoint;
+import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.codec.SpanBytesDecoder;
 
 import static org.junit.Assert.assertEquals;
 
@@ -39,21 +38,22 @@ public class StrictTraceIdFalseTest {
 
   @Test
   public void canSearchByLower64Bits() throws IOException {
-    Span span = Span.builder().traceIdHigh(1L).traceId(2L).id(2L).name("test-span")
-        .addAnnotation(Annotation.create(System.currentTimeMillis() * 1000L, "hello",
-            Endpoint.create("foo-service", 127 << 24 | 1))).build();
+    Span span = Span.newBuilder().traceId("463ac35c9f6413ad48485a3953bb6124").id("a")
+      .name("test-span")
+      .localEndpoint(Endpoint.newBuilder().serviceName("foo-service").build())
+      .addAnnotation(System.currentTimeMillis() * 1000L, "hello").build();
 
-    byte[] spansInJson = Codec.JSON.writeSpans(Collections.singletonList(span));
+    byte[] spansInJson = SpanBytesEncoder.JSON_V2.encodeList(Collections.singletonList(span));
 
     client.newCall(new Request.Builder()
-        .url("http://localhost:" + zipkin.port() + "/api/v1/spans")
+        .url("http://localhost:" + zipkin.port() + "/api/v2/spans")
         .post(RequestBody.create(MediaType.parse("application/json"), spansInJson)).build())
         .execute();
 
     Response response = client.newCall(new Request.Builder()
-        .url("http://localhost:" + zipkin.port() + "/api/v1/trace/" + Util.toLowerHex(span.traceId))
+        .url("http://localhost:" + zipkin.port() + "/api/v2/trace/" + span.traceId())
         .build()).execute();
 
-    assertEquals(span, Codec.JSON.readSpans(response.body().bytes()).get(0));
+    assertEquals(span, SpanBytesDecoder.JSON_V2.decodeList(response.body().bytes()).get(0));
   }
 }
