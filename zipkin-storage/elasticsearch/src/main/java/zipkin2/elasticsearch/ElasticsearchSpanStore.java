@@ -13,11 +13,8 @@
  */
 package zipkin2.elasticsearch;
 
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
+
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
@@ -26,10 +23,7 @@ import zipkin2.elasticsearch.internal.client.Aggregation;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.SearchCallFactory;
 import zipkin2.elasticsearch.internal.client.SearchRequest;
-import zipkin2.storage.GroupByTraceId;
-import zipkin2.storage.QueryRequest;
-import zipkin2.storage.SpanStore;
-import zipkin2.storage.StrictTraceId;
+import zipkin2.storage.*;
 
 import static java.util.Arrays.asList;
 
@@ -109,6 +103,24 @@ final class ElasticsearchSpanStore implements SpanStore {
     Call<List<List<Span>>> result =
         traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);
     return strictTraceId ? result.map(StrictTraceId.filterTraces(request)) : result;
+  }
+
+  @Override
+  public Call<List<List<Span>>> getTraces(DependencyQueryRequest request) {
+    // TODO: refactor to share this code between different SpanStore implementations
+    return getDependencies(request.endTs, request.limit).flatMap((links) -> {
+      for (DependencyLink link : links) {
+        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(link.child())) {
+          if (request.errorsOnly) {
+            return getTraces(link.errorTraceIds());
+          } else {
+            return getTraces(link.callTraceIds());
+          }
+        }
+      }
+
+      return Call.create(Collections.emptyList());
+    });
   }
 
   @Override
