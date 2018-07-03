@@ -37,6 +37,16 @@ public interface SpanStore {
   Call<List<List<Span>>> getTraces(QueryRequest request);
 
   /**
+   * Retrieves spans grouped by trace ID where the trace includes spans between the given dependencies.
+   *
+   * <p>When strict trace ID is disabled, spans are grouped by the right-most 16 characters of the
+   * trace ID.
+   *
+   * @param request a query request
+   */
+  Call<List<List<Span>>> getTraces(DependencyQueryRequest request);
+
+  /**
    * Retrieves spans that share a 128-bit trace id with no ordering expectation or empty if none are
    * found.
    *

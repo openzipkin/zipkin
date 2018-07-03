@@ -17,19 +17,16 @@ import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.utils.UUIDs;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.storage.DependencyQueryRequest;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
@@ -141,6 +138,24 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     IntersectKeySets intersectedTraceIds = new IntersectKeySets(callsToIntersect);
     // @xxx the sorting by timestamp desc is broken here^
     return intersectedTraceIds.flatMap(spans.newFlatMapper(request));
+  }
+
+  @Override
+  public Call<List<List<Span>>> getTraces(DependencyQueryRequest request) {
+    // TODO: refactor to share this code between different SpanStore implementations
+    return getDependencies(request.endTs, request.limit).flatMap((links) -> {
+      for (DependencyLink link : links) {
+        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(link.child())) {
+          if (request.errorsOnly) {
+            return getTraces(link.errorTraceIds());
+          } else {
+            return getTraces(link.callTraceIds());
+          }
+        }
+      }
+
+      return Call.create(Collections.emptyList());
+    });
   }
 
   /**

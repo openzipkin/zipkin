@@ -20,10 +20,7 @@ import java.util.List;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
-import zipkin2.storage.QueryRequest;
-import zipkin2.storage.SpanConsumer;
-import zipkin2.storage.SpanStore;
-import zipkin2.storage.StorageComponent;
+import zipkin2.storage.*;
 
 // public for use in ZipkinServerConfiguration
 public final class TracingStorageComponent extends StorageComponent {
@@ -62,6 +59,11 @@ public final class TracingStorageComponent extends StorageComponent {
 
     @Override
     public Call<List<List<Span>>> getTraces(QueryRequest request) {
+      return new TracedCall<>(tracer, delegate.getTraces(request), "get-traces");
+    }
+
+    @Override
+    public Call<List<List<Span>>> getTraces(DependencyQueryRequest request) {
       return new TracedCall<>(tracer, delegate.getTraces(request), "get-traces");
     }
 
