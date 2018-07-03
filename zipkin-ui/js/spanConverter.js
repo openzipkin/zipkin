@@ -245,6 +245,8 @@ function clean(span) {
 
   res.id = id;
   res.name = span.name || '';
+  if (span.timestamp) res.timestamp = span.timestamp;
+  if (span.duration) res.duration = span.duration;
   res.annotations = span.annotations || [];
   res.annotations.sort((a, b) => a.timestamp - b.timestamp);
   res.binaryAnnotations = span.binaryAnnotations || [];
@@ -320,7 +322,7 @@ function merge(left, right) {
 
   // Single timestamp makes duration easy: just choose max
   if (!left.timestamp || !right.timestamp || left.timestamp === right.timestamp) {
-    res.timestamp = left.timestamp ? left.timestamp : right.timestamp;
+    res.timestamp = left.timestamp || right.timestamp;
     if (!left.duration) {
       res.duration = right.duration;
     } else if (right.duration) {
