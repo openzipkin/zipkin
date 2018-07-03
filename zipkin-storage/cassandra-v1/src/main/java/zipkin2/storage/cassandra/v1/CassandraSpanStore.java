@@ -17,16 +17,16 @@ import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.ContiguousSet;
 import com.google.common.collect.Range;
-import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+
+import java.util.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
 import zipkin2.Call.FlatMapper;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.storage.DependencyQueryRequest;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.cassandra.internal.call.AggregateCall;
@@ -144,6 +144,24 @@ public final class CassandraSpanStore implements SpanStore {
     }
 
     return traceIdCall.flatMap(spans.newFlatMapper(request));
+  }
+
+  @Override
+  public Call<List<List<Span>>> getTraces(DependencyQueryRequest request) {
+    // TODO: refactor to share this code between different SpanStore implementations
+    return getDependencies(request.endTs, request.limit).flatMap((links) -> {
+      for (DependencyLink link : links) {
+        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(link.child())) {
+          if (request.errorsOnly) {
+            return getTraces(link.errorTraceIds());
+          } else {
+            return getTraces(link.callTraceIds());
+          }
+        }
+      }
+
+      return Call.create(Collections.emptyList());
+    });
   }
 
   @Override

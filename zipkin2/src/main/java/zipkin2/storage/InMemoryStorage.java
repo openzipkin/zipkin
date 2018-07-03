@@ -238,6 +238,23 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return Call.create(result);
   }
 
+  @Override
+  public synchronized Call<List<List<Span>>> getTraces(DependencyQueryRequest request) {
+    return getDependencies(request.endTs, request.limit).flatMap((links) -> {
+      for (DependencyLink link : links) {
+        if (request.parentServiceName.equals(link.parent()) && request.childServiceName.equals(link.child())) {
+          if (request.errorsOnly) {
+            return getTraces(link.errorTraceIds());
+          } else {
+            return getTraces(link.callTraceIds());
+          }
+        }
+      }
+
+      return Call.create(Collections.emptyList());
+    });
+  }
+
   static Collection<List<Span>> strictByTraceId(List<Span> next) {
     Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
     for (Span span : next) {

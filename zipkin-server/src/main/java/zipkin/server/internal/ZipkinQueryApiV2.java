@@ -36,6 +36,7 @@ import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Nullable;
+import zipkin2.storage.DependencyQueryRequest;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
@@ -115,6 +116,30 @@ public class ZipkinQueryApiV2 {
             .lookback(lookback != null ? lookback : defaultLookback)
             .limit(limit)
             .build();
+
+    List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();
+    return new String(writeTraces(SpanBytesEncoder.JSON_V2, traces), UTF_8);
+  }
+
+  // TODO: name this something better
+  @RequestMapping(value = "/tracesX", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
+  public String getTracesX(
+    @RequestParam(value = "parentServiceName") String parentServiceName,
+    @RequestParam(value = "childServiceName") String childServiceName,
+    @Nullable @RequestParam(value = "endTs", required = false) Long endTs,
+    @Nullable @RequestParam(value = "lookback", required = false) Long lookback,
+    @RequestParam(value = "limit", defaultValue = "10") int limit,
+    @Nullable @RequestParam(value = "errorOnly") Boolean errorOnly)
+    throws IOException {
+    DependencyQueryRequest queryRequest =
+      DependencyQueryRequest.newBuilder()
+        .parentServiceName(parentServiceName)
+        .childServiceName(childServiceName)
+        .endTs(endTs != null ? endTs : System.currentTimeMillis())
+        .lookback(lookback != null ? lookback : defaultLookback)
+        .limit(limit)
+        .errorsOnly(errorOnly != null ? errorOnly : false)
+        .build();
 
     List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();
     return new String(writeTraces(SpanBytesEncoder.JSON_V2, traces), UTF_8);
