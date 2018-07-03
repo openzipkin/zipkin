@@ -87,11 +87,6 @@
       <artifactId>zipkin-collector</artifactId>
     </dependency>
 
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-    </dependency>
-
     <!-- Static content for the web UI -->
     <dependency>
       <groupId>${project.groupId}</groupId>
@@ -221,7 +216,7 @@
     </dependency>
 
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.zipkin2</groupId>
       <artifactId>zipkin</artifactId>
       <type>test-jar</type>
       <scope>test</scope>

@@ -38,7 +38,7 @@ zipkin:
     enabled: ${QUERY_ENABLED:true}
     # 1 day in millis
     lookback: ${QUERY_LOOKBACK:86400000}
-    # The Cache-Control max-age (seconds) for /api/v1/services and /api/v1/spans
+    # The Cache-Control max-age (seconds) for /api/v2/services and /api/v2/spans
     names-max-age: 300
     # CORS allowed-origins.
     allowed-origins: "*"
@@ -166,7 +166,7 @@ logging:
   level:
     # Silence Invalid method name: '__can__finagle__trace__v3__'
     com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
-#     # investigate /api/v1/dependencies or /api/v2/dependencies
+#     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)
 #     com.datastax.driver.core.QueryLogger: 'TRACE'
@@ -174,10 +174,10 @@ logging:
 #     com.datastax.driver.core.Message: 'TRACE'
 #     # log reason behind http collector dropped messages
 #     zipkin.server.ZipkinHttpCollector: 'DEBUG'
-#     zipkin.collector.kafka.KafkaCollector: 'DEBUG'
-#     zipkin.collector.kafka10.KafkaCollector: 'DEBUG'
-#     zipkin.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
-#     zipkin.collector.scribe.ScribeCollector: 'DEBUG'
+#     zipkin2.collector.kafka.KafkaCollector: 'DEBUG'
+#     zipkin2.collector.kafka08.KafkaCollector: 'DEBUG'
+#     zipkin2.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
+#     zipkin2.collector.scribe.ScribeCollector: 'DEBUG'
 
 management:
   endpoints:

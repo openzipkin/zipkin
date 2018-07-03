@@ -33,7 +33,7 @@ public class DoesntCrashWhenCassandraIsDownTest {
   public void startsButReturns500QueryingStorage() {
     try {
       HttpURLConnection connection = (HttpURLConnection)
-          URI.create("http://localhost:" + zipkin.port() + "/api/v1/services").toURL()
+          URI.create("http://localhost:" + zipkin.port() + "/api/v2/services").toURL()
               .openConnection();
 
       assertEquals(500, connection.getResponseCode());

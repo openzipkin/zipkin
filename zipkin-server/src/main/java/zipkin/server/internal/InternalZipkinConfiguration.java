@@ -21,7 +21,6 @@ import zipkin.server.internal.brave.TracingConfiguration;
 @Import({
   ZipkinServerConfiguration.class,
   TracingConfiguration.class,
-  ZipkinQueryApiV1.class,
   ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class
 })

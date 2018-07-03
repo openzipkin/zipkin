@@ -14,6 +14,7 @@
 package zipkin.minimal;
 
 import java.io.IOException;
+import java.util.Collections;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -24,11 +25,11 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
-import zipkin.Annotation;
-import zipkin.Codec;
-import zipkin.Endpoint;
-import zipkin.Span;
 import zipkin.server.ZipkinServer;
+import zipkin2.Endpoint;
+import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.codec.SpanBytesDecoder;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -46,22 +47,25 @@ public class ZipkinServerTest {
 
   @Test public void readsBackSpanName() throws Exception {
     String service = "web";
-    Endpoint endpoint = Endpoint.create(service, 127 << 24 | 1, 80);
-    Annotation ann = Annotation.create(System.currentTimeMillis() * 1000, "sr", endpoint);
-    Span span = Span.builder().id(1L).traceId(1L).name("get").addAnnotation(ann).build();
+    Span span = Span.newBuilder().traceId("463ac35c9f6413ad48485a3953bb6124").id("a")
+      .name("test-span")
+      .localEndpoint(Endpoint.newBuilder().serviceName(service).build())
+      .addAnnotation(System.currentTimeMillis() * 1000L, "hello").build();
+
+    byte[] spansInJson = SpanBytesEncoder.JSON_V2.encodeList(Collections.singletonList(span));
 
     // write the span to the server
-    Response post = post("/api/v1/spans", Codec.JSON.writeSpans(asList(span)));
+    Response post = post("/api/v2/spans", spansInJson);
     assertThat(post.isSuccessful()).isTrue();
 
     // sleep as the the storage operation is async
     Thread.sleep(1000);
 
     // read back the span name, given its service
-    Response get = get("/api/v1/spans?serviceName=" + service);
+    Response get = get("/api/v2/spans?serviceName=" + service);
     assertThat(get.isSuccessful()).isTrue();
     assertThat(get.body().string())
-      .isEqualTo("[\"" + span.name + "\"]");
+      .isEqualTo("[\"" + span.name() + "\"]");
   }
 
   private Response get(String path) throws IOException {
