@@ -29,7 +29,6 @@
           </h3>
         </div>
         <div class="modal-body">
-
           <div class="container">
             <div class="row">
               <div class="col-sm-6">
@@ -56,7 +55,6 @@
             <div id="dependencyModalParent">[parent]</div>
             <div class=""><span class="glyphicon glyphicon-arrow-down"></span></div>
             <div id="dependencyModalChild">[child]</div>
-
           </h3>
         </div>
         <div class="modal-body">
@@ -78,6 +76,31 @@
             </tr>
             </tbody>
           </table>
+          <div class="panel panel-default">
+            <div class="panel-heading">          
+              <h4 text-center> Filter Traces </h4>
+            </div>
+            <div class="panel-body">
+              <form role="form" id="filterForm">
+              <div class="form-group" >
+                <label for="limit" data-i18n="traces.limit">Limit</label>
+                <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limitd}}">
+              </div>
+              <div class="form-group" >
+                <label class="radio-inline">
+                  <input type="radio" name="optradio">All
+                </label>
+                <label class="radio-inline">
+                  <input type="radio" name="optradio">Errors only
+                </label>
+              </div>
+              <div>
+                <button type="submit" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Filter Traces</button>
+              </div>
+              <div id="traces-test" />
+              </form>
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -69,11 +69,26 @@ function renderServiceDataModal(event, data) {
 
   $modal.modal('show');
   $('#dependencyModal').modal('hide');
+
+  const $filterButton = $('#filterForm');
+  $filterButton.click(ev => {
+    ev.preventDefault();
+    this.trigger(document, 'filterLinkDataRequested', {
+      serviceName: data.child
+    });
+  });
 }
+
 
 export default component(function serviceDataModal() {
   this.showServiceDataModal = function(event, data) {
     this.trigger(document, 'serviceDataRequested', {
+      serviceName: data.serviceName
+    });
+  };
+
+  this.showTracesForLinkedServices = function(event, data) {
+    this.trigger(document, 'filterLinkDataRequested', {
       serviceName: data.serviceName
     });
   };
@@ -85,11 +100,16 @@ export default component(function serviceDataModal() {
       callCount: data.callCount
     });
   };
-
+  this.renderItems = function(ev, data) {
+    $('#traces-test').text(JSON.stringify(data));
+  }
   this.after('initialize', function() {
     this.on(document, 'showServiceDataModal', this.showServiceDataModal);
     this.on(document, 'showDependencyModal', this.showDependencyModal);
     this.on(document, 'serviceDataReceived', renderServiceDataModal);
     this.on(document, 'parentChildDataReceived', renderDependencyModal);
+    // this.on(document, 'filterLinkDataRequested', this.showTracesForLinkedServices);
+    this.on(document, 'filterLinkDataRecieved', this.renderItems);
+
   });
 });

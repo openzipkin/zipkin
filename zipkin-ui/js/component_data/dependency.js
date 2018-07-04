@@ -1,6 +1,7 @@
 import {component} from 'flightjs';
 import moment from 'moment';
 import $ from 'jquery';
+import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
 
 export default component(function dependency() {
   let services = {};
@@ -27,6 +28,23 @@ export default component(function dependency() {
       }
     });
   };
+
+  this.filterDependency = function (document, parent, child, endTs, lookback, limit, error){
+    const apiURL = `api/v1/traces`;
+    $.ajax(apiURL, {
+      type: 'GET',
+      dataType: 'json'
+    }).done(traces => {
+      const traceView = {
+        traces: traceSummariesToMustache("all", traces.map(traceSummary)),
+        apiURL,
+        rawResponse: traces
+      };
+      this.trigger('filterLinkDataRecieved', traceView);
+    }).fail(e => {
+      this.trigger('defaultPageModelView', {traces: "No traces to"});
+    });
+  }
 
   this.buildServiceData = function(links) {
     services = {};
@@ -62,6 +80,9 @@ export default component(function dependency() {
       });
     });
 
+    this.on(document, 'filterLinkDataRequested', function(event, {parent, child, endTs, lookback, limit, error}) {
+      this.filterDependency(document, parent, child, parent, child, endTs, lookback, limit, error);
+    });
     const endTs = document.getElementById('endTs').value || moment().valueOf();
     const startTs = document.getElementById('startTs').value;
     let lookback;
