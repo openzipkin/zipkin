@@ -130,7 +130,7 @@
                 <pojos>false</pojos>
               </generate>
               <database>
-                <name>org.jooq.util.mysql.MySQLDatabase</name>
+                <name>org.jooq.meta.mysql.MySQLDatabase</name>
                 <includes>.*</includes>
                 <excludes />
                 <inputSchema>zipkin</inputSchema>
