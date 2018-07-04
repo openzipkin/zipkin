@@ -24,7 +24,10 @@ import zipkin.storage.StorageComponent;
  * transport and store ones it has sampled.
  *
  * <p>Call {@link #start()} to start collecting spans.
+ *
+ * @deprecated use {@code zipkin2.collector.CollectorComponent} from io.zipkin.zipkin2:zipkin-collector
  */
+@Deprecated
 public interface CollectorComponent extends Component {
 
   /**

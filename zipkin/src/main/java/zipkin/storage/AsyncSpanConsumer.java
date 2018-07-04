@@ -23,7 +23,10 @@ import zipkin.Span;
  * storage after applying sampling policy.
  *
  * <p>This accepts a {@link Callback <Void>} to allow bridging to async libraries.
+ *
+ * @deprecated use {@link zipkin2.storage.SpanConsumer}
  */
+@Deprecated
 // @FunctionalInterface
 public interface AsyncSpanConsumer {
 

@@ -25,7 +25,10 @@ import static zipkin.internal.Util.checkNotNull;
  *
  * <p>Components are lazy with regards to I/O. They can be injected directly to other components so
  * as to avoid crashing the application graph if a network service is unavailable.
+ *
+ * @deprecated use {@link zipkin2.Component}
  */
+@Deprecated
 public interface Component extends Closeable {
 
   /**
