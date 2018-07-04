@@ -13,13 +13,12 @@
  */
 package zipkin2.internal;
 
+import com.google.common.io.BaseEncoding;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.CodedOutputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import org.apache.commons.codec.DecoderException;
-import org.apache.commons.codec.binary.Hex;
 import org.assertj.core.data.MapEntry;
 import org.junit.Test;
 import zipkin2.codec.SpanBytesDecoder;
@@ -234,11 +233,7 @@ public class Proto3CodecInteropTest {
   }
 
   static ByteString decodeHex(String s) {
-    try {
-      return ByteString.copyFrom(Hex.decodeHex(s.toCharArray()));
-    } catch (DecoderException e) {
-      throw new AssertionError(e);
-    }
+    return ByteString.copyFrom(BaseEncoding.base16().lowerCase().decode(s));
   }
 
   static byte[] writeSpan(Span span) throws IOException {
