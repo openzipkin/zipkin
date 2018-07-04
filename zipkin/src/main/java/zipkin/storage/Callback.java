@@ -21,7 +21,10 @@ import zipkin.internal.Nullable;
  * <p>This is a bridge to async libraries such as CompletableFuture complete, completeExceptionally.
  *
  * <p>Implementations will call either {@link #onSuccess} or {@link #onError}, but not both.
+ *
+ * @deprecated use {@link zipkin2.Callback}
  */
+@Deprecated
 public interface Callback<V> {
 
   Callback<Void> NOOP = new Callback<Void>() {

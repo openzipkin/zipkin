@@ -24,7 +24,7 @@
   </parent>
 
   <artifactId>zipkin</artifactId>
-  <name>Zipkin</name>
+  <name>Zipkin Core Library (Deprecated)</name>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>

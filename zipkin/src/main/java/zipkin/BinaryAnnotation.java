@@ -34,7 +34,10 @@ import static zipkin.internal.Util.equal;
  * server side of the same key. For example, the key "http.path" might be different on the client and
  * server side due to rewriting, like "/api/v1/myresource" vs "/myresource. Via the host field, you
  * can see the different points of view, which often help in debugging.
+ *
+ * @deprecated use {@link zipkin2.Span#tags()}
  */
+@Deprecated
 public final class BinaryAnnotation implements Comparable<BinaryAnnotation> {
 
   /** A subset of thrift base types, except BYTES. */

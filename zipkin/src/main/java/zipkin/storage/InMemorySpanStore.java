@@ -64,7 +64,10 @@ import static zipkin.internal.Util.sortedList;
  *    biz --> ( GET )
  *    foo --> ( GET, POST )
  * }</pre>
+ *
+ * @deprecated use {@link zipkin2.storage.InMemoryStorage}
  */
+@Deprecated
 public final class InMemorySpanStore implements SpanStore {
   /**
    * Primary source of data is this map, which includes spans ordered descending by timestamp. All

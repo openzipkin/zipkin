@@ -25,7 +25,7 @@
 
   <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin</artifactId>
-  <name>Zipkin v2</name>
+  <name>Zipkin Core Library</name>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>

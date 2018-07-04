@@ -44,7 +44,10 @@ import static zipkin.internal.Util.writeHexLong;
  *
  * <p>Span identifiers are packed into longs, but should be treated opaquely. ID encoding is
  * 16 or 32 character lower-hex, to avoid signed interpretation.
+ *
+ * @deprecated use {@link zipkin2.Span}
  */
+@Deprecated
 public final class Span implements Comparable<Span>, Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 

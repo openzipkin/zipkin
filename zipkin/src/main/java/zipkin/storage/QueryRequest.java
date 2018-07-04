@@ -41,7 +41,10 @@ import static zipkin.internal.Util.checkArgument;
  * <p> Time units of {@link #endTs} and {@link #lookback} are milliseconds as opposed to
  * microseconds, the grain of {@link Span#timestamp}. Milliseconds is a more familiar and supported
  * granularity for query, index and windowing functions.
+ *
+ * @deprecated use {@link zipkin2.storage.QueryRequest}
  */
+@Deprecated
 public final class QueryRequest {
 
   /**
