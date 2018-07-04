@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.benchmarks;
+package zipkin2.collector;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
@@ -32,8 +32,6 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin.server.internal.ActuateCollectorMetrics;
-import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.InMemoryCollectorMetrics;
 
 @Measurement(iterations = 80, time = 1)
 @Warmup(iterations = 20, time = 1)
@@ -42,8 +40,7 @@ import zipkin2.collector.InMemoryCollectorMetrics;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Threads(1)
-public class MetricsBenchmarks
-{
+public class MetricsBenchmarks {
   static final int LONG_SPAN = 5000;
   static final int MEDIUM_SPAN = 1000;
   static final int SHORT_SPAN = 500;
@@ -81,19 +78,17 @@ public class MetricsBenchmarks
     return incrementBytes(actuateCollectorMetrics, SHORT_SPAN);
   }
 
-  private int incrementBytes(CollectorMetrics collectorMetrics, int bytes)
-  {
+  private int incrementBytes(CollectorMetrics collectorMetrics, int bytes) {
     collectorMetrics.incrementBytes(bytes);
     return bytes;
   }
 
   // Convenience main entry-point
-  public static void main(String[] args) throws RunnerException
-  {
+  public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-        .include(".*" + MetricsBenchmarks.class.getSimpleName() + ".*")
-        .threads(40)
-        .build();
+      .include(".*" + MetricsBenchmarks.class.getSimpleName() + ".*")
+      .threads(40)
+      .build();
 
     new Runner(opt).run();
   }
