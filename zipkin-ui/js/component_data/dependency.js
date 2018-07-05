@@ -30,7 +30,7 @@ export default component(function dependency() {
   };
 
   this.filterDependency = function (document, parent, child, endTs, lookback, limit, error){
-    const apiURL = `api/v1/traces`;
+    const apiURL = `api/v1/traces?serviceName=${parent}&spanName=all&lookback=604800000`;
     $.ajax(apiURL, {
       type: 'GET',
       dataType: 'json'
@@ -40,6 +40,7 @@ export default component(function dependency() {
         apiURL,
         rawResponse: traces
       };
+      //this.trigger('defaultPageModelView', traceView);
       this.trigger('filterLinkDataRecieved', traceView);
     }).fail(e => {
       this.trigger('defaultPageModelView', {traces: "No traces to"});

@@ -47,7 +47,7 @@
   </div>
 
   <div class="modal" id="dependencyModal" tabindex="-1">
-    <div class="modal-dialog">
+    <div class="modal-dialog" style="min-width: 80%">
       <div class="modal-content">
         <div class="modal-header">
           <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
@@ -95,10 +95,10 @@
                 </label>
               </div>
               <div>
-                <button type="submit" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Filter Traces</button>
+                <button type="submit" id="filterTraceBtn" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Filter Traces</button>
               </div>
-              <div id="traces-test" />
               </form>
+              <ul id="traces" />
             </div>
           </div>
         </div>

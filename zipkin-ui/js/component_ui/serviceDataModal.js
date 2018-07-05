@@ -2,6 +2,8 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import bootstrap // eslint-disable-line no-unused-vars
     from 'bootstrap-sass/assets/javascripts/bootstrap.js';
+import TracesUI from './traces';
+import {tracesTemplate} from '../templates';
 
 function renderDependencyModal(event, data) {
   const $modal = $('#dependencyModal');
@@ -70,11 +72,11 @@ function renderServiceDataModal(event, data) {
   $modal.modal('show');
   $('#dependencyModal').modal('hide');
 
-  const $filterButton = $('#filterForm');
+  const $filterButton = $('#filterTraceBtn');
   $filterButton.click(ev => {
     ev.preventDefault();
     this.trigger(document, 'filterLinkDataRequested', {
-      serviceName: data.child
+      parent: data.serviceName
     });
   });
 }
@@ -100,8 +102,25 @@ export default component(function serviceDataModal() {
       callCount: data.callCount
     });
   };
-  this.renderItems = function(ev, data) {
-    $('#traces-test').text(JSON.stringify(data));
+  this.renderItems = function(event, modelView) {
+    //$('#traces-test').text(JSON.stringify(data));
+    event.preventDefault();
+    event.stopPropagation();
+    $('#traces').html(tracesTemplate({
+      limit,
+      startTs,
+      endTs,
+      // serviceName,
+      // annotationQuery,
+      // queryWasPerformed,
+      // contextRoot,
+      // count: modelView.traces.length,
+      // sortOrderOptions: sortOptions,
+      // sortOrderSelected: sortSelected(sortOrder),
+      // apiURL: modelView.apiURL,
+      ...modelView
+    }));
+    TracesUI.attachTo('#traces');
   }
   this.after('initialize', function() {
     this.on(document, 'showServiceDataModal', this.showServiceDataModal);
