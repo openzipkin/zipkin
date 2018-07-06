@@ -8,7 +8,7 @@ export default component(function serviceNames() {
       type: 'GET',
       dataType: 'json'
     }).done(names => {
-      this.trigger('dataServiceNames', {names, lastServiceName});
+      this.trigger('dataServiceNames', {names: names.sort(), lastServiceName});
     }).fail(e => {
       this.trigger('uiServerError', getError('cannot load service names', e));
     });

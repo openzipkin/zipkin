@@ -15,7 +15,7 @@ export default component(function dependency() {
       type: 'GET',
       dataType: 'json',
       success: links => {
-        this.links = links;
+        this.links = links.sort((a, b) => a.parent - b.parent || a.child - b.child);
         this.buildServiceData(links);
         this.trigger('dependencyDataReceived', links);
       },
