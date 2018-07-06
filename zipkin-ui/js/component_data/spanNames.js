@@ -12,7 +12,7 @@ export default component(function spanNames() {
       type: 'GET',
       dataType: 'json'
     }).done(spans => {
-      this.trigger('dataSpanNames', {spans});
+      this.trigger('dataSpanNames', {spans: spans.sort()});
     }).fail(e => {
       this.trigger('uiServerError', getError('cannot load span names', e));
     });
