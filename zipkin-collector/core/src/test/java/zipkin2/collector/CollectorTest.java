@@ -76,11 +76,11 @@ public class CollectorTest {
 
   @Test
   public void acceptSpansCallback_toStringIncludesSpanIds() {
-    Span span2 = CLIENT_SPAN.toBuilder().id("2").build();
-    when(collector.idString(span2)).thenReturn("2");
+    Span span2 = CLIENT_SPAN.toBuilder().id("3").build();
+    when(collector.idString(span2)).thenReturn("3");
 
     assertThat(collector.acceptSpansCallback(asList(CLIENT_SPAN, span2)))
-        .hasToString("AcceptSpans([1, 2])");
+        .hasToString("AcceptSpans([1, 3])");
   }
 
   @Test

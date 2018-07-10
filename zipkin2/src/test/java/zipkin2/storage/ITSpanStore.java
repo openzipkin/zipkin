@@ -14,7 +14,9 @@
 package zipkin2.storage;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -29,6 +31,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.TestObjects.TRACE;
+import static zipkin2.TestObjects.TRACE_STARTTS;
 
 /**
  * Base test for {@link SpanStore}.
@@ -75,16 +79,16 @@ public abstract class ITSpanStore {
     assertThat(store().getTraces(requestBuilder().build()).execute())
       .hasSize(20);
 
-    assertThat(store().getTraces(requestBuilder()
-      .limit(10).build()).execute())
+    assertThat(sortTraces(store().getTraces(requestBuilder()
+      .limit(10).build()).execute()))
       .containsExactly(lateTraces);
 
-    assertThat(store().getTraces(requestBuilder()
-      .endTs(TODAY + gapBetweenSpans).lookback(gapBetweenSpans).build()).execute())
+    assertThat(sortTraces(store().getTraces(requestBuilder()
+      .endTs(TODAY + gapBetweenSpans).lookback(gapBetweenSpans).build()).execute()))
       .containsExactly(lateTraces);
 
-    assertThat(store().getTraces(requestBuilder()
-      .endTs(TODAY).build()).execute())
+    assertThat(sortTraces(store().getTraces(requestBuilder()
+      .endTs(TODAY).build()).execute()))
       .containsExactly(earlyTraces);
   }
 
@@ -128,7 +132,7 @@ public abstract class ITSpanStore {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
-      .minDuration(CLIENT_SPAN.duration() + 1)
+      .minDuration(CLIENT_SPAN.durationAsLong() + 1)
       .build()).execute()).isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
@@ -163,6 +167,16 @@ public abstract class ITSpanStore {
       .contains(CLIENT_SPAN.name());
   }
 
+  /** Ensure complete traces are aggregated, even if they complete after endTs */
+  @Test
+  public void getTraces_endTsInsideTheTrace() throws IOException {
+    accept(TRACE);
+
+    assertThat(sortTraces(store().getTraces(
+      requestBuilder().endTs(TRACE_STARTTS + 100).lookback(200).build()
+    ).execute())).containsOnly(TRACE);
+  }
+
   @Test public void getServiceNames_includesLocalServiceName() throws Exception {
     assertThat(store().getServiceNames().execute())
       .isEmpty();
@@ -173,11 +187,28 @@ public abstract class ITSpanStore {
       .contains(CLIENT_SPAN.localServiceName());
   }
 
+  protected void accept(List<Span> spans) throws IOException {
+    storage().spanConsumer().accept(spans).execute();
+  }
+
   protected void accept(Span... spans) throws IOException {
     storage().spanConsumer().accept(asList(spans)).execute();
   }
 
   static QueryRequest.Builder requestBuilder() {
     return QueryRequest.newBuilder().endTs(TODAY + DAY).lookback(DAY * 2).limit(100);
+  }
+
+  static List<List<Span>> sortTraces(List<List<Span>> traces) {
+    List<List<Span>> result = new ArrayList<>();
+    for (List<Span> trace : traces) result.add(sortTrace(trace));
+    Collections.sort(result, Comparator.comparing(o -> o.get(0).traceId()));
+    return result;
+  }
+
+  static ArrayList<Span> sortTrace(List<Span> trace) {
+    ArrayList<Span> result = new ArrayList<>(trace);
+    Collections.sort(result, Comparator.comparing(Span::timestampAsLong));
+    return result;
   }
 }

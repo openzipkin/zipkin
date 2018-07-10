@@ -125,7 +125,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     return new StoreSpansCall(calls);
   }
 
-  private static long guessTimestamp(Span span) {
+  static long guessTimestamp(Span span) {
     Preconditions.checkState(
         0L == span.timestampAsLong(), "method only for when span has no timestamp");
     for (Annotation annotation : span.annotations()) {

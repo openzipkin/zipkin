@@ -11,78 +11,67 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch.integration;
+package zipkin2.storage.cassandra.v1;
 
-import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import zipkin2.Span;
-import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.InternalForTests;
 import zipkin2.storage.StorageComponent;
 
-import static zipkin2.elasticsearch.integration.ElasticsearchStorageRule.index;
+import static zipkin2.storage.cassandra.v1.InternalForTests.dropKeyspace;
+import static zipkin2.storage.cassandra.v1.InternalForTests.keyspace;
+import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks;
 
 @RunWith(Enclosed.class)
-public class ITElasticsearchStorageV5 {
+public class ITCassandraStorage {
 
-  static ElasticsearchStorageRule classRule() {
-    return new ElasticsearchStorageRule("openzipkin/zipkin-elasticsearch5:2.4.6",
-      "test_elasticsearch3");
+  static CassandraStorageRule classRule() {
+    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.4.6", "test_cassandra3");
   }
 
   public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
-    @ClassRule public static ElasticsearchStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageRule backend = classRule();
     @Rule public TestName testName = new TestName();
 
-    ElasticsearchStorage storage;
+    @Override @Test @Ignore("Multiple services unsupported") public void getTraces_tags() {
+    }
+
+    @Override @Test @Ignore("Duration unsupported") public void getTraces_minDuration() {
+    }
+
+    @Override @Test @Ignore("Duration unsupported") public void getTraces_maxDuration() {
+    }
+
+    CassandraStorage storage;
 
     @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName)).build();
+      storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
     }
 
     @Override protected StorageComponent storage() {
       return storage;
     }
 
-    @Before @Override public void clear() throws IOException {
-      storage.clear();
-    }
-  }
-
-  public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
-    @ClassRule public static ElasticsearchStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
-    ElasticsearchStorage storage;
-
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName))
-        .searchEnabled(false).build();
-    }
-
-    @Override protected StorageComponent storage() {
-      return storage;
-    }
-
-    @Before @Override public void clear() throws IOException {
-      storage.clear();
+    @Before @Override public void clear() {
+      dropKeyspace(backend.session(), keyspace(testName));
     }
   }
 
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
-    @ClassRule public static ElasticsearchStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageRule backend = classRule();
     @Rule public TestName testName = new TestName();
 
-    ElasticsearchStorage storage;
+    CassandraStorage storage;
 
     @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName)).build();
+      storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
     }
 
     @Override protected StorageComponent storage() {
@@ -95,11 +84,11 @@ public class ITElasticsearchStorageV5 {
      */
     @Override protected void processDependencies(List<Span> spans) throws Exception {
       aggregateLinks(spans).forEach(
-        (midnight, links) -> InternalForTests.writeDependencyLinks(storage, links, midnight));
+        (midnight, links) -> writeDependencyLinks(storage, links, midnight));
     }
 
-    @Before @Override public void clear() throws IOException {
-      storage.clear();
+    @Before @Override public void clear() {
+      dropKeyspace(backend.session(), keyspace(testName));
     }
   }
 }

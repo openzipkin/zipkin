@@ -30,15 +30,29 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class InternalForTests {
 
   public static void writeDependencyLinks(
-      CassandraStorage storage, List<DependencyLink> links, long midnightUTC) {
+    CassandraStorage storage, List<zipkin2.DependencyLink> links, long midnightUTC) {
+    for (zipkin2.DependencyLink link : links) {
+      Insert statement =
+        QueryBuilder.insertInto(Schema.TABLE_DEPENDENCY)
+          .value("day", LocalDate.fromMillisSinceEpoch(midnightUTC))
+          .value("parent", link.parent())
+          .value("child", link.child())
+          .value("calls", link.callCount())
+          .value("errors", link.errorCount());
+      storage.session().execute(statement);
+    }
+  }
+
+  public static void writeDependencyLinksV1(
+    CassandraStorage storage, List<DependencyLink> links, long midnightUTC) {
     for (DependencyLink link : links) {
       Insert statement =
-          QueryBuilder.insertInto(Schema.TABLE_DEPENDENCY)
-              .value("day", LocalDate.fromMillisSinceEpoch(midnightUTC))
-              .value("parent", link.parent)
-              .value("child", link.child)
-              .value("calls", link.callCount)
-              .value("errors", link.errorCount);
+        QueryBuilder.insertInto(Schema.TABLE_DEPENDENCY)
+          .value("day", LocalDate.fromMillisSinceEpoch(midnightUTC))
+          .value("parent", link.parent)
+          .value("child", link.child)
+          .value("calls", link.callCount)
+          .value("errors", link.errorCount);
       storage.session().execute(statement);
     }
   }
@@ -49,10 +63,10 @@ public class InternalForTests {
 
   public static long rowCountForTraceByServiceSpan(CassandraStorage storage) {
     return storage
-        .session()
-        .execute("SELECT COUNT(*) from " + Schema.TABLE_TRACE_BY_SERVICE_SPAN)
-        .one()
-        .getLong(0);
+      .session()
+      .execute("SELECT COUNT(*) from " + Schema.TABLE_TRACE_BY_SERVICE_SPAN)
+      .one()
+      .getLong(0);
   }
 
   public static SpanConsumer withoutStrictTraceId(CassandraStorage storage) {

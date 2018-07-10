@@ -61,6 +61,6 @@ abstract class CassandraDependenciesTest extends DependenciesTest {
 
     // This gets or derives a timestamp from the spans
     long midnight = midnightUTC(guessTimestamp(MergeById.apply(spans).get(0)) / 1000);
-    InternalForTests.writeDependencyLinks(storage, links, midnight);
+    InternalForTests.writeDependencyLinksV1(storage, links, midnight);
   }
 }

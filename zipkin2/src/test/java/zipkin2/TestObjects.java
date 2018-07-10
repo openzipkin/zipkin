@@ -15,9 +15,12 @@ package zipkin2;
 
 import java.nio.charset.Charset;
 import java.util.Calendar;
+import java.util.List;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+
+import static java.util.Arrays.asList;
 
 public final class TestObjects {
   public static final Charset UTF_8 = Charset.forName("UTF-8");
@@ -33,6 +36,8 @@ public final class TestObjects {
       Endpoint.newBuilder().serviceName("frontend").ip("127.0.0.1").build();
   public static final Endpoint BACKEND =
       Endpoint.newBuilder().serviceName("backend").ip("192.168.99.101").port(9000).build();
+  public static final Endpoint DB =
+      Endpoint.newBuilder().serviceName("db").ip("2001:db8::c001").port(3036).build();
 
   /** For bucketed data floored to the day. For example, dependency links. */
   public static long midnightUTC(long epochMillis) {
@@ -46,20 +51,55 @@ public final class TestObjects {
   }
 
   public static final Span CLIENT_SPAN =
-      Span.newBuilder()
-          .traceId("7180c278b62e8f6a216a2aea45d08fc9")
-          .parentId("6b221d5bc9e6496c")
-          .id("5b4185666d50f68b")
-          .name("get")
-          .kind(Span.Kind.CLIENT)
-          .localEndpoint(FRONTEND)
-          .remoteEndpoint(BACKEND)
-          .timestamp((TODAY - 207) * 1000L)
-          .duration(207 * 1000L)
-          .addAnnotation((TODAY - 100) * 1000L, "foo")
-          .putTag("http.path", "/api")
-          .putTag("clnt/finagle.version", "6.45.0")
-          .build();
+    Span.newBuilder()
+      .traceId("7180c278b62e8f6a216a2aea45d08fc9")
+      .parentId("1")
+      .id("2")
+      .name("get")
+      .kind(Span.Kind.CLIENT)
+      .localEndpoint(FRONTEND)
+      .remoteEndpoint(BACKEND)
+      .timestamp((TODAY + 50L) * 1000L)
+      .duration(200 * 1000L)
+      .addAnnotation((TODAY + 100) * 1000L, "foo")
+      .putTag("http.path", "/api")
+      .putTag("clnt/finagle.version", "6.45.0")
+      .build();
+  public static final List<Span> TRACE = asList(
+    Span.newBuilder().traceId(CLIENT_SPAN.traceId()).id("1")
+      .name("get")
+      .kind(Span.Kind.SERVER)
+      .localEndpoint(FRONTEND)
+      .timestamp(TODAY * 1000L)
+      .duration(350 * 1000L)
+      .build(),
+    CLIENT_SPAN,
+    Span.newBuilder().traceId(CLIENT_SPAN.traceId())
+      .parentId(CLIENT_SPAN.parentId()).id(CLIENT_SPAN.id()).shared(true)
+      .name("get")
+      .kind(Span.Kind.SERVER)
+      .localEndpoint(BACKEND)
+      .timestamp((TODAY + 100L) * 1000L)
+      .duration(150 * 1000L)
+      .build(),
+    Span.newBuilder()
+      .traceId(CLIENT_SPAN.traceId())
+      .parentId("2")
+      .id("3")
+      .name("query")
+      .kind(Span.Kind.CLIENT)
+      .localEndpoint(BACKEND)
+      .remoteEndpoint(DB)
+      .timestamp((TODAY + 150L) * 1000L)
+      .duration(50 * 1000L)
+      .addAnnotation((TODAY + 190) * 1000L, "⻩")
+      .putTag("error", "\uD83D\uDCA9")
+      .build()
+  );
+  // storage query units are milliseconds, while trace data is microseconds
+  public static final long TRACE_DURATION = TRACE.get(0).durationAsLong() / 1000;
+  public static final long TRACE_STARTTS = TRACE.get(0).timestampAsLong() / 1000;
+  public static final long TRACE_ENDTS = TRACE_STARTTS + TRACE_DURATION;
 
   static final Span.Builder spanBuilder = spanBuilder();
 
