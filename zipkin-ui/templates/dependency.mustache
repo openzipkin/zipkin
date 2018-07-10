@@ -81,21 +81,21 @@
               <h4 text-center> Filter Traces </h4>
             </div>
             <div class="panel-body">
-              <form role="form" id="filterForm">
-              <div class="form-group" >
+              <form role='form' id="filterForm">
+              <div class="form-group">
                 <label for="limit" data-i18n="traces.limit">Limit</label>
-                <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limitd}}">
+                <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limit}}">
               </div>
-              <div class="form-group" >
+              <div class="form-group" id="errorradio">
                 <label class="radio-inline">
-                  <input type="radio" name="optradio">All
+                  <input id="alltrace" type="radio" name="alltrace">All Traces
                 </label>
                 <label class="radio-inline">
-                  <input type="radio" name="optradio">Errors only
+                  <input id="erroronly" type="radio" name="erroronly">Errors only
                 </label>
               </div>
               <div>
-                <button type="submit" id="filterTraceBtn" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Filter Traces</button>
+                <button type="button" id="filterTraceBtn" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Filter Traces</button>
               </div>
               </form>
               <ul id="traces" />

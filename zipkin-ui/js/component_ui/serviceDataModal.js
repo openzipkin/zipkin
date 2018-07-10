@@ -1,7 +1,7 @@
 import {component} from 'flightjs';
 import $ from 'jquery';
 import bootstrap // eslint-disable-line no-unused-vars
-    from 'bootstrap-sass/assets/javascripts/bootstrap.js';
+from 'bootstrap-sass/assets/javascripts/bootstrap.js';
 import TracesUI from './traces';
 import {tracesTemplate} from '../templates';
 
@@ -22,7 +22,6 @@ function renderDependencyModal(event, data) {
       serviceName: data.child
     });
   });
-
   $modal.find('#dependencyModalParent').html($parentElement);
   $modal.find('#dependencyModalChild').html($childElement);
   $modal.find('#dependencyCallCount').text(data.callCount);
@@ -71,18 +70,15 @@ function renderServiceDataModal(event, data) {
 
   $modal.modal('show');
   $('#dependencyModal').modal('hide');
-
-  const $filterButton = $('#filterTraceBtn');
-  $filterButton.click(ev => {
-    ev.preventDefault();
-    this.trigger(document, 'filterLinkDataRequested', {
-      parent: data.serviceName
-    });
-  });
 }
 
-
 export default component(function serviceDataModal() {
+  this.attributes({
+    filterForm: '#filterForm',
+    selectlimit: ':input[name=limit]',
+    selecterorr: '#errorradio :selected'
+  });
+
   this.showServiceDataModal = function(event, data) {
     this.trigger(document, 'serviceDataRequested', {
       serviceName: data.serviceName
@@ -103,32 +99,33 @@ export default component(function serviceDataModal() {
     });
   };
   this.renderItems = function(event, modelView) {
-    //$('#traces-test').text(JSON.stringify(data));
     event.preventDefault();
     event.stopPropagation();
     $('#traces').html(tracesTemplate({
-      limit,
-      startTs,
-      endTs,
-      // serviceName,
-      // annotationQuery,
-      // queryWasPerformed,
-      // contextRoot,
-      // count: modelView.traces.length,
-      // sortOrderOptions: sortOptions,
-      // sortOrderSelected: sortSelected(sortOrder),
-      // apiURL: modelView.apiURL,
       ...modelView
     }));
     TracesUI.attachTo('#traces');
-  }
+  };
+
+  this.filterLinkDependency = function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    // TODO: Find a better way to get the filter values
+    this.trigger(document, 'filterLinkDataRequested', {
+      limit: document.getElementById('limit').value,
+      error: document.getElementById('erroronly').checked || false,
+      parentService: document.getElementById('dependencyModalParent').children[0].text,
+      childService: document.getElementById('dependencyModalChild').children[0].text
+    });
+  };
   this.after('initialize', function() {
     this.on(document, 'showServiceDataModal', this.showServiceDataModal);
     this.on(document, 'showDependencyModal', this.showDependencyModal);
     this.on(document, 'serviceDataReceived', renderServiceDataModal);
     this.on(document, 'parentChildDataReceived', renderDependencyModal);
-    // this.on(document, 'filterLinkDataRequested', this.showTracesForLinkedServices);
+    this.on('#filterTraceBtn', 'click', {
+      filterForm: this.filterLinkDependency,
+    });
     this.on(document, 'filterLinkDataRecieved', this.renderItems);
-
   });
 });

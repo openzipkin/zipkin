@@ -100,6 +100,16 @@ public final class QueryRequest {
   /** Maximum number of traces to return. Defaults to 10 */
   public final int limit;
 
+
+  @Nullable
+  public final String parentServiceName;
+
+  @Nullable
+  public final String childServiceName;
+
+  public final boolean fetchErrors;
+
+
   /**
    * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
    *
@@ -133,11 +143,17 @@ public final class QueryRequest {
       Long maxDuration,
       long endTs,
       long lookback,
-      int limit) {
+      int limit,
+      String parentServiceName,
+      String childServiceName,
+      boolean fetchErrors) {
     checkArgument(serviceName == null || !serviceName.isEmpty(), "serviceName was empty");
     checkArgument(spanName == null || !spanName.isEmpty(), "spanName was empty");
     checkArgument(endTs > 0, "endTs should be positive, in epoch microseconds: was %d", endTs);
     checkArgument(limit > 0, "limit should be positive: was %d", limit);
+    this.parentServiceName = parentServiceName != null ? parentServiceName.toLowerCase() : null;
+    this.childServiceName = childServiceName !=null ? childServiceName.toLowerCase() : null;
+    this.fetchErrors = fetchErrors;
     this.serviceName = serviceName != null? serviceName.toLowerCase() : null;
     this.spanName = spanName != null ? spanName.toLowerCase() : null;
     this.annotations = annotations;
@@ -179,6 +195,9 @@ public final class QueryRequest {
   }
 
   public static final class Builder {
+    private String parentServiceName;
+    private String childServiceName;
+    private boolean fetchErrors;
     private String serviceName;
     private String spanName;
     private List<String> annotations = new ArrayList<>();
@@ -193,6 +212,9 @@ public final class QueryRequest {
     }
 
     Builder(QueryRequest source) {
+      this.parentServiceName = source.parentServiceName;
+      this.childServiceName = source.childServiceName;
+      this.fetchErrors = source.fetchErrors;
       this.serviceName = source.serviceName;
       this.spanName = source.spanName;
       this.annotations = source.annotations;
@@ -283,6 +305,23 @@ public final class QueryRequest {
       return this;
     }
 
+    /** @see QueryRequest#parentServiceName */
+    public Builder parent(String parentServiceName){
+      this.parentServiceName = parentServiceName;
+      return this;
+    }
+
+    /** @see QueryRequest#childServiceName */
+    public Builder child(String childServiceName){
+      this.childServiceName = childServiceName;
+      return this;
+    }
+    /** @see QueryRequest#fetchErrors */
+    public Builder error(boolean fetchErrors){
+      this.fetchErrors = fetchErrors;
+      return this;
+    }
+
     public QueryRequest build() {
       long selectedEndTs = endTs == null ? System.currentTimeMillis() : endTs;
       return new QueryRequest(
@@ -294,7 +333,10 @@ public final class QueryRequest {
           maxDuration,
           selectedEndTs,
           Math.min(lookback == null ? selectedEndTs : lookback, selectedEndTs),
-          limit == null ? 10 : limit);
+          limit == null ? 10 : limit,
+          parentServiceName,
+          childServiceName,
+          fetchErrors);
     }
   }
 
@@ -320,7 +362,14 @@ public final class QueryRequest {
     }
     if (o instanceof QueryRequest) {
       QueryRequest that = (QueryRequest) o;
-      return ((this.serviceName == null) ? (that.serviceName == null) : this.serviceName.equals(that.serviceName))
+      return ((this.parentServiceName == null) ? (that.parentServiceName == null) : this.parentServiceName.equals
+        (that.parentServiceName))
+          && ((this.childServiceName == null) ? (that.childServiceName == null) : this
+        .childServiceName.equals
+        (that.childServiceName))
+          && (this.fetchErrors == that.fetchErrors)
+          && ((this.serviceName == null) ? (that.serviceName == null) : this.serviceName.equals
+        (that.serviceName))
           && ((this.spanName == null) ? (that.spanName == null) : this.spanName.equals(that.spanName))
           && ((this.annotations == null) ? (that.annotations == null) : this.annotations.equals(that.annotations))
           && ((this.binaryAnnotations == null) ? (that.binaryAnnotations == null) : this.binaryAnnotations.equals(that.binaryAnnotations))

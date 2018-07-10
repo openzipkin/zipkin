@@ -87,6 +87,9 @@ public class ZipkinQueryApiV1 {
 
   @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
   public String getTraces(
+      @RequestParam(value = "parent", required = false) String parentServiceName,
+      @RequestParam(value = "child", required = false) String childServiceName,
+      @RequestParam(value = "fetchError", required = false) boolean fetchError,
       @RequestParam(value = "serviceName", required = false) String serviceName,
       @RequestParam(value = "spanName", defaultValue = "all") String spanName,
       @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
@@ -96,6 +99,9 @@ public class ZipkinQueryApiV1 {
       @RequestParam(value = "lookback", required = false) Long lookback,
       @RequestParam(value = "limit", required = false) Integer limit) {
     QueryRequest queryRequest = QueryRequest.builder()
+        .parent(parentServiceName)
+        .child(childServiceName)
+        .error(fetchError)
         .serviceName(serviceName)
         .spanName(spanName)
         .parseAnnotationQuery(annotationQuery)
