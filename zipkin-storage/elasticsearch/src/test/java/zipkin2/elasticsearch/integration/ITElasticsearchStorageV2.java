@@ -14,13 +14,16 @@
 package zipkin2.elasticsearch.integration;
 
 import java.io.IOException;
+import java.util.List;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
+import zipkin2.Span;
 import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.InternalForTests;
 import zipkin2.storage.StorageComponent;
 
 import static zipkin2.elasticsearch.integration.ElasticsearchStorageRule.index;
@@ -31,6 +34,25 @@ public class ITElasticsearchStorageV2 {
   static ElasticsearchStorageRule classRule() {
     return new ElasticsearchStorageRule("openzipkin/zipkin-elasticsearch:2.4.6",
       "test_elasticsearch3");
+  }
+
+  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
+    @ClassRule public static ElasticsearchStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    ElasticsearchStorage storage;
+
+    @Before public void connect() {
+      storage = backend.computeStorageBuilder().index(index(testName)).build();
+    }
+
+    @Override protected StorageComponent storage() {
+      return storage;
+    }
+
+    @Before @Override public void clear() throws IOException {
+      storage.clear();
+    }
   }
 
   public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
@@ -46,6 +68,34 @@ public class ITElasticsearchStorageV2 {
 
     @Override protected StorageComponent storage() {
       return storage;
+    }
+
+    @Before @Override public void clear() throws IOException {
+      storage.clear();
+    }
+  }
+
+  public static class ITDependencies extends zipkin2.storage.ITDependencies {
+    @ClassRule public static ElasticsearchStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    ElasticsearchStorage storage;
+
+    @Before public void connect() {
+      storage = backend.computeStorageBuilder().index(index(testName)).build();
+    }
+
+    @Override protected StorageComponent storage() {
+      return storage;
+    }
+
+    /**
+     * The current implementation does not include dependency aggregation. It includes retrieval of
+     * pre-aggregated links, usually made via zipkin-dependencies
+     */
+    @Override protected void processDependencies(List<Span> spans) throws Exception {
+      aggregateLinks(spans).forEach(
+        (midnight, links) -> InternalForTests.writeDependencyLinks(storage, links, midnight));
     }
 
     @Before @Override public void clear() throws IOException {

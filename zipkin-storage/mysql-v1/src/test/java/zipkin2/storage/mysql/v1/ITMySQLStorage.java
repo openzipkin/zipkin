@@ -13,7 +13,12 @@
  */
 package zipkin2.storage.mysql.v1;
 
+import java.sql.Connection;
+import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
+import org.jooq.DSLContext;
+import org.jooq.Query;
 import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
@@ -21,8 +26,10 @@ import zipkin.Span;
 import zipkin.internal.MergeById;
 import zipkin.internal.V2StorageComponent;
 import zipkin.storage.StorageComponent;
+import zipkin2.DependencyLink;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 
 @RunWith(Enclosed.class)
 public class ITMySQLStorage {
@@ -56,6 +63,19 @@ public class ITMySQLStorage {
     }
   }
 
+  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
+
+    @Override protected zipkin2.storage.StorageComponent storage() {
+      return storage.get();
+    }
+
+    @Override
+    public void clear() {
+      storage.get().clear();
+    }
+  }
+
   public static class StrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
     @ClassRule public static LazyMySQLStorage storageRule = classRule();
 
@@ -75,10 +95,58 @@ public class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage = storageRule.computeStorageBuilder()
-        .strictTraceId(false)
-        .build();
+      storage = storageRule.computeStorageBuilder().strictTraceId(false).build();
       storage.clear();
+    }
+  }
+
+  public static class ITDependenciesPreAggregated extends zipkin2.storage.ITDependencies {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
+
+    @Override protected zipkin2.storage.StorageComponent storage() {
+      return storage.get();
+    }
+
+    /**
+     * The current implementation does not include dependency aggregation. It includes retrieval of
+     * pre-aggregated links, usually made via zipkin-dependencies
+     */
+    @Override protected void processDependencies(List<zipkin2.Span> spans) throws Exception {
+      try (Connection conn = storage.get().datasource.getConnection()) {
+        DSLContext context = storage.get().context.get(conn);
+
+        // batch insert the rows at timestamp midnight
+        List<Query> inserts = new ArrayList<>();
+        aggregateLinks(spans).forEach((midnight, links) -> {
+          Date day = new Date(midnight);
+          for (DependencyLink link : links) {
+            inserts.add(context.insertInto(ZIPKIN_DEPENDENCIES)
+              .set(ZIPKIN_DEPENDENCIES.DAY, day)
+              .set(ZIPKIN_DEPENDENCIES.PARENT, link.parent())
+              .set(ZIPKIN_DEPENDENCIES.CHILD, link.child())
+              .set(ZIPKIN_DEPENDENCIES.CALL_COUNT, link.callCount())
+              .set(ZIPKIN_DEPENDENCIES.ERROR_COUNT, link.errorCount())
+              .onDuplicateKeyIgnore());
+          }
+        });
+        context.batch(inserts).execute();
+      }
+    }
+
+    @Override public void clear() {
+      storage.get().clear();
+    }
+  }
+
+  public static class ITDependenciesOnDemand extends zipkin2.storage.ITDependencies {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
+
+    @Override protected zipkin2.storage.StorageComponent storage() {
+      return storage.get();
+    }
+
+    @Override public void clear() {
+      storage.get().clear();
     }
   }
 }

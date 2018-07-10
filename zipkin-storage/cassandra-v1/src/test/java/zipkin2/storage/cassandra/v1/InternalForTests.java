@@ -32,6 +32,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class InternalForTests {
 
   public static void writeDependencyLinks(
+    CassandraStorage storage, List<zipkin2.DependencyLink> links, long midnightUTC) {
+    Dependencies deps = Dependencies.create(midnightUTC, midnightUTC /* ignored */, links);
+    ByteBuffer thrift = deps.toThrift();
+    Insert statement =
+      QueryBuilder.insertInto("dependencies")
+        .value("day", new Date(midnightUTC))
+        .value("dependencies", thrift);
+    storage.session().execute(statement);
+  }
+
+  public static void writeDependencyLinksV1(
       CassandraStorage storage, List<zipkin.DependencyLink> links, long midnightUTC) {
     List<zipkin2.DependencyLink> converted = new ArrayList<>();
     for (zipkin.DependencyLink link : links) {
@@ -43,13 +54,7 @@ public class InternalForTests {
               .errorCount(link.errorCount)
               .build());
     }
-    Dependencies deps = Dependencies.create(midnightUTC, midnightUTC /* ignored */, converted);
-    ByteBuffer thrift = deps.toThrift();
-    Insert statement =
-        QueryBuilder.insertInto("dependencies")
-            .value("day", new Date(midnightUTC))
-            .value("dependencies", thrift);
-    storage.session().execute(statement);
+    writeDependencyLinks(storage, converted, midnightUTC);
   }
 
   public static Session session(CassandraStorage storage) {

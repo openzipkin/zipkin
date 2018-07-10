@@ -48,7 +48,7 @@ public class V2SpanWriterTest {
     writer.write(CLIENT_SPAN, buf);
 
     assertThat(new String(buf.toByteArray(), "UTF-8"))
-      .contains("{\"timestamp\":" + (TODAY - 100) * 1000L + ",\"value\":\"foo\"}");
+      .contains("{\"timestamp\":" + (TODAY + 100) * 1000L + ",\"value\":\"foo\"}");
   }
 
   @Test public void omitsEmptySpanName() throws IOException {
