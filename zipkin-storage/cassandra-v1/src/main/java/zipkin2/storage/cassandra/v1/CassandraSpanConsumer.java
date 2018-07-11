@@ -97,6 +97,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
     }
 
     indexer.index(spansToIndex.build(), calls);
+    if (calls.size() == 1) return calls.get(0).map(r -> null);
     return new StoreSpansCall(calls);
   }
 

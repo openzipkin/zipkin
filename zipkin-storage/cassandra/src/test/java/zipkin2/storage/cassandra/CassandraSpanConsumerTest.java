@@ -37,14 +37,14 @@ public class CassandraSpanConsumerTest {
   CassandraSpanConsumer consumer = spanConsumer(CassandraStorage.newBuilder());
 
   Span spanWithoutAnnotationsOrTags =
-      Span.newBuilder()
-          .traceId("a")
-          .id("1")
-          .name("get")
-          .localEndpoint(FRONTEND)
-          .timestamp(1472470996199000L)
-          .duration(207000L)
-          .build();
+    Span.newBuilder()
+      .traceId("a")
+      .id("1")
+      .name("get")
+      .localEndpoint(FRONTEND)
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .build();
 
   @Test
   public void emptyInput_emptyCall() {
@@ -55,16 +55,16 @@ public class CassandraSpanConsumerTest {
   @Test
   public void doesntSetTraceIdHigh_128() {
     Span span =
-        spanWithoutAnnotationsOrTags
-            .toBuilder()
-            .traceId("77fcac3d4c5be8d2a037812820c65f28")
-            .build();
+      spanWithoutAnnotationsOrTags
+        .toBuilder()
+        .traceId("77fcac3d4c5be8d2a037812820c65f28")
+        .build();
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertSpan)
-        .extracting("input.trace_id_high", "input.trace_id")
-        .containsExactly(tuple(null, span.traceId()));
+      .filteredOn(c -> c instanceof InsertSpan)
+      .extracting("input.trace_id_high", "input.trace_id")
+      .containsExactly(tuple(null, span.traceId()));
   }
 
   @Test
@@ -73,9 +73,9 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertSpan)
-        .extracting("input.trace_id_high", "input.trace_id")
-        .containsExactly(tuple(null, span.traceId()));
+      .filteredOn(c -> c instanceof InsertSpan)
+      .extracting("input.trace_id_high", "input.trace_id")
+      .containsExactly(tuple(null, span.traceId()));
   }
 
   @Test
@@ -83,16 +83,16 @@ public class CassandraSpanConsumerTest {
     consumer = spanConsumer(CassandraStorage.newBuilder().strictTraceId(false));
 
     Span span =
-        spanWithoutAnnotationsOrTags
-            .toBuilder()
-            .traceId("77fcac3d4c5be8d2a037812820c65f28")
-            .build();
+      spanWithoutAnnotationsOrTags
+        .toBuilder()
+        .traceId("77fcac3d4c5be8d2a037812820c65f28")
+        .build();
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertSpan)
-        .extracting("input.trace_id_high", "input.trace_id")
-        .containsExactly(tuple("77fcac3d4c5be8d2", "a037812820c65f28"));
+      .filteredOn(c -> c instanceof InsertSpan)
+      .extracting("input.trace_id_high", "input.trace_id")
+      .containsExactly(tuple("77fcac3d4c5be8d2", "a037812820c65f28"));
   }
 
   @Test
@@ -102,9 +102,9 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertServiceSpan)
-        .extracting("input.service", "input.span")
-        .containsExactly(tuple(FRONTEND.serviceName(), span.name()));
+      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .extracting("input.service", "input.span")
+      .containsExactly(tuple(FRONTEND.serviceName(), span.name()));
   }
 
   @Test
@@ -114,10 +114,10 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertServiceSpan)
-        .extracting("input.service", "input.span")
-        .containsExactly(
-            tuple(BACKEND.serviceName(), span.name()), tuple(FRONTEND.serviceName(), span.name()));
+      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .extracting("input.service", "input.span")
+      .containsExactly(
+        tuple(BACKEND.serviceName(), span.name()), tuple(FRONTEND.serviceName(), span.name()));
   }
 
   @Test
@@ -127,18 +127,17 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertServiceSpan)
-        .extracting("input.service", "input.span")
-        .containsExactly(tuple(FRONTEND.serviceName(), ""));
+      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .extracting("input.service", "input.span")
+      .containsExactly(tuple(FRONTEND.serviceName(), ""));
   }
 
   @Test
   public void serviceSpanKeys_emptyWhenNoEndpoints() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().localEndpoint(null).build();
 
-    StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-
-    assertEnclosedCalls(call).filteredOn(c -> c instanceof InsertServiceSpan).isEmpty();
+    assertThat(consumer.accept(singletonList(span)))
+      .isNotInstanceOf(StoreSpansCall.class);
   }
 
   /**
@@ -152,10 +151,10 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
-        .extracting("input.service", "input.span")
-        .containsExactly(
-            tuple(FRONTEND.serviceName(), span.name()), tuple(FRONTEND.serviceName(), ""));
+      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
+      .extracting("input.service", "input.span")
+      .containsExactly(
+        tuple(FRONTEND.serviceName(), span.name()), tuple(FRONTEND.serviceName(), ""));
   }
 
   @Test
@@ -165,9 +164,9 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
-        .extracting("input.duration")
-        .containsOnly(span.duration() / 1000L);
+      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
+      .extracting("input.duration")
+      .containsOnly(span.duration() / 1000L);
   }
 
   @Test
@@ -177,9 +176,9 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
-        .extracting("input.duration")
-        .containsOnly(0L);
+      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
+      .extracting("input.duration")
+      .containsOnly(0L);
   }
 
   @Test
@@ -189,9 +188,9 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
-        .extracting("input.service", "input.span")
-        .isEmpty();
+      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
+      .extracting("input.service", "input.span")
+      .isEmpty();
   }
 
   @Test
@@ -201,10 +200,10 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
-        .hasSize(2)
-        .extracting("input.service")
-        .doesNotContain(BACKEND.serviceName());
+      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
+      .hasSize(2)
+      .extracting("input.service")
+      .doesNotContain(BACKEND.serviceName());
   }
 
   @Test
@@ -214,18 +213,17 @@ public class CassandraSpanConsumerTest {
     StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-        .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
-        .extracting("input.service", "input.span")
-        .containsExactly(tuple(FRONTEND.serviceName(), ""));
+      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
+      .extracting("input.service", "input.span")
+      .containsExactly(tuple(FRONTEND.serviceName(), ""));
   }
 
   @Test
   public void traceByServiceSpan_emptyWhenNoEndpoints() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().localEndpoint(null).build();
 
-    StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-
-    assertEnclosedCalls(call).filteredOn(c -> c instanceof InsertTraceByServiceSpan).isEmpty();
+    assertThat(consumer.accept(singletonList(span)))
+      .isNotInstanceOf(StoreSpansCall.class);
   }
 
   @Test
@@ -233,34 +231,31 @@ public class CassandraSpanConsumerTest {
     consumer = spanConsumer(CassandraStorage.newBuilder().searchEnabled(false));
 
     Span span =
-        spanWithoutAnnotationsOrTags
-            .toBuilder()
-            .addAnnotation(TODAY, "annotation")
-            .putTag("foo", "bar")
-            .duration(10000L)
-            .build();
+      spanWithoutAnnotationsOrTags
+        .toBuilder()
+        .addAnnotation(TODAY, "annotation")
+        .putTag("foo", "bar")
+        .duration(10000L)
+        .build();
 
-    StoreSpansCall call = (StoreSpansCall) consumer.accept(singletonList(span));
-
-    assertEnclosedCalls(call)
-        .hasSize(1)
-        .filteredOn(c -> c instanceof InsertSpan)
-        .extracting("input.annotation_query")
-        .allSatisfy(q -> assertThat(q).isNull());
+    assertThat(consumer.accept(singletonList(span)))
+      .extracting("delegate.input.annotation_query")
+      .allSatisfy(q -> assertThat(q).isNull());
   }
 
   static AbstractListAssert<
-          ?, List<? extends Call<ResultSet>>, Call<ResultSet>, ObjectAssert<Call<ResultSet>>>
-      assertEnclosedCalls(StoreSpansCall call) {
+    ?, List<? extends Call<ResultSet>>, Call<ResultSet>, ObjectAssert<Call<ResultSet>>>
+  assertEnclosedCalls(StoreSpansCall call) {
     return assertThat(call)
-        .extracting("calls")
-        .flatExtracting(calls -> (Collection<Call<ResultSet>>) calls);
+      .extracting("calls")
+      .flatExtracting(calls -> (Collection<Call<ResultSet>>) calls);
   }
 
   static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {
     return new CassandraSpanConsumer(
-        builder
-            .sessionFactory(mock(CassandraStorage.SessionFactory.class, Mockito.RETURNS_MOCKS))
-            .build()) {};
+      builder
+        .sessionFactory(mock(CassandraStorage.SessionFactory.class, Mockito.RETURNS_MOCKS))
+        .build()) {
+    };
   }
 }

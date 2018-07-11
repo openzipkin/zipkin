@@ -209,7 +209,7 @@ class CassandraSpanStore implements SpanStore { // not final for testing
 
   @Override
   public Call<List<String>> getSpanNames(String serviceName) {
-    if (!searchEnabled) return Call.emptyList();
+    if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
     return spanNames.create(serviceName);
   }
 

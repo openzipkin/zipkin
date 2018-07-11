@@ -32,13 +32,14 @@ final class SelectSpanNames implements Function<DSLContext, List<String>> {
   @Override
   public List<String> apply(DSLContext context) {
     return context
-        .selectDistinct(ZIPKIN_SPANS.NAME)
-        .from(ZIPKIN_SPANS)
-        .join(ZIPKIN_ANNOTATIONS)
-        .on(schema.joinCondition(ZIPKIN_ANNOTATIONS))
-        .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(serviceName))
-        .orderBy(ZIPKIN_SPANS.NAME)
-        .fetch(ZIPKIN_SPANS.NAME);
+      .selectDistinct(ZIPKIN_SPANS.NAME)
+      .from(ZIPKIN_SPANS)
+      .join(ZIPKIN_ANNOTATIONS)
+      .on(schema.joinCondition(ZIPKIN_ANNOTATIONS))
+      .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(serviceName))
+      .and(ZIPKIN_SPANS.NAME.notEqual(""))
+      .orderBy(ZIPKIN_SPANS.NAME)
+      .fetch(ZIPKIN_SPANS.NAME);
   }
 
   @Override
