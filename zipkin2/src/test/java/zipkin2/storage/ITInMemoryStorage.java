@@ -44,6 +44,18 @@ public class ITInMemoryStorage {
     }
   }
 
+  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
+    InMemoryStorage storage = InMemoryStorage.newBuilder().strictTraceId(false).build();
+
+    @Override protected InMemoryStorage storage() {
+      return storage;
+    }
+
+    @Override public void clear() throws IOException {
+      // no need.. the test rule does this
+    }
+  }
+
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
     InMemoryStorage storage = InMemoryStorage.newBuilder().build();
 

@@ -75,6 +75,25 @@ public class ITElasticsearchStorageV6 {
     }
   }
 
+  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
+    @ClassRule public static ElasticsearchStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    ElasticsearchStorage storage;
+
+    @Before public void connect() {
+      storage = backend.computeStorageBuilder().index(index(testName)).strictTraceId(false).build();
+    }
+
+    @Override protected StorageComponent storage() {
+      return storage;
+    }
+
+    @Before @Override public void clear() throws IOException {
+      storage.clear();
+    }
+  }
+
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
     @ClassRule public static ElasticsearchStorageRule backend = classRule();
     @Rule public TestName testName = new TestName();
