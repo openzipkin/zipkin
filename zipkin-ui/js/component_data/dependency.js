@@ -87,7 +87,8 @@ export default component(function dependency() {
     this.getDependency(endTs, lookback);
     this.on(document, 'filterLinkDataRequested',
     function(event, {parentService, childService, limit, error, serviceName}) {
-      this.filterDependency(parentService, childService, endTs, lookback, limit, error, serviceName);
+      this.filterDependency(parentService, childService, endTs,
+        lookback, limit, error, serviceName);
     });
   });
 
