@@ -39,13 +39,15 @@ final class ThriftEndpointCodec {
 
       if (thriftField.isEqualTo(IPV4)) {
         int ipv4 = bytes.getInt();
-        result.parseIp( // allocation is ok here as Endpoint.ipv4Bytes would anyway
+        if (ipv4 != 0) {
+          result.parseIp( // allocation is ok here as Endpoint.ipv4Bytes would anyway
             new byte[] {
               (byte) (ipv4 >> 24 & 0xff),
               (byte) (ipv4 >> 16 & 0xff),
               (byte) (ipv4 >> 8 & 0xff),
               (byte) (ipv4 & 0xff)
             });
+        }
       } else if (thriftField.isEqualTo(PORT)) {
         result.port(bytes.getShort());
       } else if (thriftField.isEqualTo(SERVICE_NAME)) {

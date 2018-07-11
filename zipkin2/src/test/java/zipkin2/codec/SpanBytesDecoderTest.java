@@ -24,6 +24,7 @@ import zipkin2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
+import static zipkin2.TestObjects.TRACE;
 import static zipkin2.codec.SpanBytesEncoderTest.LOCAL_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.SPAN;
@@ -124,6 +125,20 @@ public class SpanBytesDecoderTest {
     thrown.expectMessage("Truncated: length 101 > bytes remaining 3 reading List<Span> from proto3");
 
     SpanBytesDecoder.PROTO3.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
+  }
+
+  @Test
+  public void traceRoundTrip_JSON_V2() {
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
+
+    assertThat(SpanBytesDecoder.JSON_V2.decodeList(message)).isEqualTo(TRACE);
+  }
+
+  @Test
+  public void traceRoundTrip_PROTO3() {
+    byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
+
+    assertThat(SpanBytesDecoder.PROTO3.decodeList(message)).isEqualTo(TRACE);
   }
 
   @Test public void spansRoundTrip_JSON_V2() {
