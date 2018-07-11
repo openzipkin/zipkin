@@ -89,7 +89,10 @@ final class SelectSpanNames extends ResultSetFutureCall {
 
     @Override
     protected BiConsumer<Row, List<String>> accumulator() {
-      return (row, list) -> list.add(row.getString("span"));
+      return (row, list) -> {
+        String result = row.getString("span");
+        if (!result.isEmpty()) list.add(result);
+      };
     }
 
     @Override

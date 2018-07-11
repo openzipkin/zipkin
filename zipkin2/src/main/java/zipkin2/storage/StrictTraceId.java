@@ -46,9 +46,7 @@ public final class StrictTraceId {
       Iterator<List<Span>> i = input.iterator();
       while (i.hasNext()) { // Not using removeIf as that's java 8+
         List<Span> next = i.next();
-        if (next.get(0).traceId().length() > 16 && !request.test(next)) {
-          i.remove();
-        }
+        if (!request.test(next)) i.remove();
       }
       return input;
     }
@@ -72,9 +70,7 @@ public final class StrictTraceId {
       Iterator<Span> i = input.iterator();
       while (i.hasNext()) { // Not using removeIf as that's java 8+
         Span next = i.next();
-        if (!next.traceId().equals(traceId)) {
-          i.remove();
-        }
+        if (!next.traceId().equals(traceId)) i.remove();
       }
       return input;
     }
@@ -83,5 +79,8 @@ public final class StrictTraceId {
     public String toString() {
       return "FilterSpans{traceId=" + traceId + "}";
     }
+  }
+
+  StrictTraceId() {
   }
 }

@@ -122,6 +122,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
         calls.add(insertTraceByServiceSpan.create(serviceSpan));
       }
     }
+    if (calls.size() == 1) return calls.get(0).map(r -> null);
     return new StoreSpansCall(calls);
   }
 

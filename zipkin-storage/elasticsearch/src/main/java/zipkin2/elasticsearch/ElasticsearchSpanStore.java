@@ -145,9 +145,7 @@ final class ElasticsearchSpanStore implements SpanStore {
 
   @Override
   public Call<List<String>> getSpanNames(String serviceName) {
-    if (!searchEnabled) return Call.emptyList();
-
-    if ("".equals(serviceName)) return Call.emptyList();
+    if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
 
     long endMillis = System.currentTimeMillis();
     long beginMillis = endMillis - namesLookback;

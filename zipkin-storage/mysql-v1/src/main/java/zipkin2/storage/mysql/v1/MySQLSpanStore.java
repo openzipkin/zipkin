@@ -75,7 +75,7 @@ final class MySQLSpanStore implements SpanStore {
 
   @Override
   public Call<List<String>> getSpanNames(String serviceName) {
-    if (serviceName == null) return Call.emptyList();
+    if (serviceName.isEmpty()) return Call.emptyList();
 
     return dataSourceCallFactory.create(new SelectSpanNames(schema, serviceName));
   }

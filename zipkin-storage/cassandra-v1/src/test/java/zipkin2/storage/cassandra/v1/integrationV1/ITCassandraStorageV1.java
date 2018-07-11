@@ -31,7 +31,7 @@ public class ITCassandraStorageV1 {
 
   static CassandraStorageRule classRule() {
     return new CassandraStorageRule(
-        "openzipkin/zipkin-cassandra:2.4.6", "test_cassandra3_zipkinv1");
+        "openzipkin/zipkin-cassandra:2.10.1", "test_cassandra3_zipkinv1");
   }
 
   public static class DependenciesTest extends CassandraDependenciesTest {

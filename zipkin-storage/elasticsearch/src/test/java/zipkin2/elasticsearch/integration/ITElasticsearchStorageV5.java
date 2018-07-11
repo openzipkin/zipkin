@@ -17,7 +17,9 @@ import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
@@ -32,7 +34,7 @@ import static zipkin2.elasticsearch.integration.ElasticsearchStorageRule.index;
 public class ITElasticsearchStorageV5 {
 
   static ElasticsearchStorageRule classRule() {
-    return new ElasticsearchStorageRule("openzipkin/zipkin-elasticsearch5:2.4.6",
+    return new ElasticsearchStorageRule("openzipkin/zipkin-elasticsearch5:2.10.1",
       "test_elasticsearch3");
   }
 
@@ -48,6 +50,10 @@ public class ITElasticsearchStorageV5 {
 
     @Override protected StorageComponent storage() {
       return storage;
+    }
+
+    // we don't map this in elasticsearch
+    @Test @Ignore @Override public void getSpanNames_mapsNameToRemoteServiceName() {
     }
 
     @Before @Override public void clear() throws IOException {

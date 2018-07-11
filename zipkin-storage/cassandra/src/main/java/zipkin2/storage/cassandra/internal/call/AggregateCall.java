@@ -31,7 +31,8 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   final List<Call<I>> calls;
 
   protected AggregateCall(List<Call<I>> calls) {
-    assert !calls.isEmpty() : "do not create single-element aggregates";
+    assert !calls.isEmpty() : "do not create empty aggregate calls";
+    assert calls.size() > 1 : "do not create single-element aggregates";
     this.calls = calls;
   }
 

@@ -160,6 +160,7 @@ public final class CassandraSpanStore implements SpanStore {
 
   @Override
   public Call<List<String>> getSpanNames(String serviceName) {
+    if (serviceName.isEmpty()) return Call.emptyList();
     return spanNames.create(serviceName);
   }
 

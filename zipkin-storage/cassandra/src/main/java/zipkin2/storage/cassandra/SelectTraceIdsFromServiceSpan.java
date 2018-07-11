@@ -23,6 +23,7 @@ import com.datastax.driver.core.utils.UUIDs;
 import com.google.auto.value.AutoValue;
 import java.util.AbstractMap;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
@@ -131,6 +132,7 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
     }
 
     Call<Set<Entry<String, Long>>> newCall(List<Input> inputs) {
+      if (inputs.isEmpty()) return Call.create(Collections.emptySet());
       if (inputs.size() == 1) return newCall(inputs.get(0));
 
       List<Call<Set<Entry<String, Long>>>> bucketedTraceIdCalls = new ArrayList<>();
@@ -174,6 +176,7 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
           bucketedTraceIdCalls.add(newCall(scopedInputs));
         }
 
+        if (bucketedTraceIdCalls.isEmpty()) return Call.create(Collections.emptySet());
         if (bucketedTraceIdCalls.size() == 1) return bucketedTraceIdCalls.get(0);
         return new AggregateIntoSet<>(bucketedTraceIdCalls);
       }
