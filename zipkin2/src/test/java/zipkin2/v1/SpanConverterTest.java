@@ -964,4 +964,36 @@ public class SpanConverterTest {
 
     assertThat(v1SpanConverter.convert(v1)).containsExactly(first, second);
   }
+
+  /**
+   * This emulates a situation in mysql where the row representing a span has the client's timestamp
+   */
+  @Test
+  public void parsesSharedFlagFromRPCSpan() {
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("get")
+        .timestamp(10)
+        .addAnnotation(20, "sr", BACKEND)
+        .addAnnotation(30, "ss", BACKEND)
+        .build();
+
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .name("get")
+        .kind(Kind.SERVER)
+        .shared(true)
+        .localEndpoint(BACKEND)
+        .timestamp(20)
+        .duration(10L)
+        .build();
+
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
 }

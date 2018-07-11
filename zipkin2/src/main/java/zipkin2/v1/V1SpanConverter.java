@@ -19,9 +19,7 @@ import java.util.List;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
-import zipkin2.internal.JsonCodec;
 import zipkin2.internal.Nullable;
-import zipkin2.internal.V1JsonSpanReader;
 
 /**
  * Allows you to split a v1 span when necessary. This can be the case when reading merged
@@ -133,7 +131,12 @@ public final class V1SpanConverter {
 
     // Span v1 format did not have a shared flag. By convention, span.timestamp being absent
     // implied shared. When we only see the server-side, carry this signal over.
-    if (cs == null && (sr != null && source.timestamp == 0)) {
+    if (cs == null && sr != null &&
+      // We use a signal of either the authoritative timestamp being unset, or the duration is unset
+      // eventhough we have the server send result. The latter clarifies an edge case in MySQL
+      // where a span row is shared between client and server. The presence of timestamp in this
+      // case could be due to the client-side of that RPC.
+      (source.timestamp == 0 || (ss != null && source.duration == 0))) {
       forEndpoint(source, sr.endpoint).shared(true);
     }
 
