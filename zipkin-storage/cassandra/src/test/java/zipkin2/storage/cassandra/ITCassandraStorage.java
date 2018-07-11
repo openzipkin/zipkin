@@ -85,6 +85,26 @@ public class ITCassandraStorage {
     }
   }
 
+  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
+    @ClassRule public static CassandraStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    CassandraStorage storage;
+
+    @Before public void connect() {
+      storage =
+        backend.computeStorageBuilder().keyspace(keyspace(testName)).strictTraceId(false).build();
+    }
+
+    @Override protected StorageComponent storage() {
+      return storage;
+    }
+
+    @Before @Override public void clear() {
+      dropKeyspace(backend.session(), keyspace(testName));
+    }
+  }
+
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
     @ClassRule public static CassandraStorageRule backend = classRule();
     @Rule public TestName testName = new TestName();

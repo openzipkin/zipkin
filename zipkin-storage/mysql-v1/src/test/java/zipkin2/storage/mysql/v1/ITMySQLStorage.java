@@ -38,36 +38,11 @@ public class ITMySQLStorage {
     return new LazyMySQLStorage("2.4.6");
   }
 
-  public static class DependenciesTest extends zipkin.storage.DependenciesTest {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected StorageComponent storage() {
-      return V2StorageComponent.create(storage.get());
-    }
-
-    @Override public void clear() {
-      storage.get().clear();
-    }
-  }
-
   public static class SpanStoreTest extends zipkin.storage.SpanStoreTest {
     @ClassRule public static LazyMySQLStorage storage = classRule();
 
     @Override protected StorageComponent storage() {
       return V2StorageComponent.create(storage.get());
-    }
-
-    @Override
-    public void clear() {
-      storage.get().clear();
-    }
-  }
-
-  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected zipkin2.storage.StorageComponent storage() {
-      return storage.get();
     }
 
     @Override
@@ -92,6 +67,46 @@ public class ITMySQLStorage {
         .containsOnlyElementsOf(trace);
       assertThat(store().getTrace(trace.get(0).traceIdHigh, trace.get(0).traceId))
         .containsOnlyElementsOf(trace);
+    }
+
+    @Override public void clear() {
+      storage = storageRule.computeStorageBuilder().strictTraceId(false).build();
+      storage.clear();
+    }
+  }
+
+  public static class DependenciesTest extends zipkin.storage.DependenciesTest {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
+
+    @Override protected StorageComponent storage() {
+      return V2StorageComponent.create(storage.get());
+    }
+
+    @Override public void clear() {
+      storage.get().clear();
+    }
+  }
+
+  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
+
+    @Override protected zipkin2.storage.StorageComponent storage() {
+      return storage.get();
+    }
+
+    @Override
+    public void clear() {
+      storage.get().clear();
+    }
+  }
+
+  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
+    @ClassRule public static LazyMySQLStorage storageRule = classRule();
+
+    private MySQLStorage storage;
+
+    @Override protected zipkin2.storage.StorageComponent storage() {
+      return storage;
     }
 
     @Override public void clear() {
