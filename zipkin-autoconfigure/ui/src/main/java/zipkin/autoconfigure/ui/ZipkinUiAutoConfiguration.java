@@ -174,7 +174,7 @@ class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
 
   /** Make sure users who aren't familiar with /zipkin get to the right path */
   @RequestMapping(value = "/", method = GET)
-  public void redirectRoot(HttpServletResponse response) throws IOException {
+  public void redirectRoot(HttpServletResponse response) {
     // return 'Location: ./zipkin/' header (this wouldn't work with ModelAndView's 'redirect:./zipkin/')
     response.setHeader(HttpHeaders.LOCATION, "./zipkin/");
     response.setStatus(HttpStatus.FOUND.value());

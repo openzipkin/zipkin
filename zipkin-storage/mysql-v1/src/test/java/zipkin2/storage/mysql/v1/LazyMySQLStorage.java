@@ -18,12 +18,10 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
 import org.mariadb.jdbc.MariaDbDataSource;
-import zipkin.internal.LazyCloseable;
 
 import static org.junit.Assume.assumeTrue;
-import static zipkin.internal.Util.envOr;
 
-public class LazyMySQLStorage extends LazyCloseable<MySQLStorage> implements TestRule {
+public class LazyMySQLStorage implements TestRule {
 
   final String version;
 
@@ -33,7 +31,11 @@ public class LazyMySQLStorage extends LazyCloseable<MySQLStorage> implements Tes
     this.version = version;
   }
 
-  @Override protected MySQLStorage compute() {
+  MySQLStorage storage;
+  MySQLStorage get() {
+    // tests don't have race conditions as they aren't run multithreaded
+    if (storage != null) return storage;
+
     try {
       container = new ZipkinMySQLContainer(version);
       container.start();
@@ -43,7 +45,7 @@ public class LazyMySQLStorage extends LazyCloseable<MySQLStorage> implements Tes
     }
 
     // TODO call .check()
-    return computeStorageBuilder().build();
+    return storage = computeStorageBuilder().build();
   }
 
   public MySQLStorage.Builder computeStorageBuilder() {
@@ -73,10 +75,8 @@ public class LazyMySQLStorage extends LazyCloseable<MySQLStorage> implements Tes
         .executor(Runnable::run);
   }
 
-  @Override public void close() {
+  void close() {
     try {
-      MySQLStorage storage = maybeNull();
-
       if (storage != null) storage.close();
     } finally {
       if (container != null) container.stop();
@@ -95,5 +95,13 @@ public class LazyMySQLStorage extends LazyCloseable<MySQLStorage> implements Tes
         }
       }
     };
+  }
+
+  static int envOr(String key, int fallback) {
+    return System.getenv(key) != null ? Integer.parseInt(System.getenv(key)) : fallback;
+  }
+
+  static String envOr(String key, String fallback) {
+    return System.getenv(key) != null ? System.getenv(key) : fallback;
   }
 }

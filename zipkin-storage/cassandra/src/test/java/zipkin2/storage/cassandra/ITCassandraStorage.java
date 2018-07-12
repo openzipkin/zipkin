@@ -41,7 +41,6 @@ import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.storage.cassandra.InternalForTests.dropKeyspace;
 import static zipkin2.storage.cassandra.InternalForTests.keyspace;
-import static zipkin2.storage.cassandra.InternalForTests.session;
 import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 
 @RunWith(Enclosed.class)
@@ -154,7 +153,7 @@ public class ITCassandraStorage {
 
     @Test public void doesntCreateIndexes() {
       KeyspaceMetadata metadata =
-        session(storage).getCluster().getMetadata().getKeyspace(keyspace(testName));
+        storage.session().getCluster().getMetadata().getKeyspace(keyspace(testName));
 
       assertThat(metadata.getTable("trace_by_service_span")).isNull();
       assertThat(metadata.getTable("span_by_service")).isNull();

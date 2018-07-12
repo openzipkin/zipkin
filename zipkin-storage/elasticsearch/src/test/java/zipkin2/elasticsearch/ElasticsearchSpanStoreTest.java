@@ -37,7 +37,7 @@ public class ElasticsearchSpanStoreTest {
   ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
 
   @After
-  public void close() throws IOException {
+  public void close() {
     storage.close();
   }
 

@@ -64,7 +64,7 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @After
-  public void close() throws IOException {
+  public void close() {
     storage.close();
   }
 
@@ -153,7 +153,7 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   @Test
-  public void prefixWithTimestampMillisAndQuery_readable() throws Exception {
+  public void prefixWithTimestampMillisAndQuery_readable() {
     Span span =
         Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
 

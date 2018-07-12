@@ -18,11 +18,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.java</groupId>
+    <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>parent</artifactId>
     <version>2.10.2-SNAPSHOT</version>
   </parent>
 
+  <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
+  <groupId>io.zipkin.java</groupId>
   <artifactId>zipkin-ui</artifactId>
   <name>Zipkin UI</name>
   <description>Repackages Zipkin UI jar until its source moves to this repository</description>

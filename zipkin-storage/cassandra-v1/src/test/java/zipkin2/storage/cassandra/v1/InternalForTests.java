@@ -13,26 +13,22 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.Host;
-import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.common.util.concurrent.Uninterruptibles;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import org.junit.rules.TestName;
+import zipkin2.DependencyLink;
 import zipkin2.internal.Dependencies;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class InternalForTests {
+class InternalForTests {
 
-  public static void writeDependencyLinks(
-    CassandraStorage storage, List<zipkin2.DependencyLink> links, long midnightUTC) {
+  static void writeDependencyLinks(
+    CassandraStorage storage, List<DependencyLink> links, long midnightUTC) {
     Dependencies deps = Dependencies.create(midnightUTC, midnightUTC /* ignored */, links);
     ByteBuffer thrift = deps.toThrift();
     Insert statement =
@@ -42,63 +38,12 @@ public class InternalForTests {
     storage.session().execute(statement);
   }
 
-  public static void writeDependencyLinksV1(
-      CassandraStorage storage, List<zipkin.DependencyLink> links, long midnightUTC) {
-    List<zipkin2.DependencyLink> converted = new ArrayList<>();
-    for (zipkin.DependencyLink link : links) {
-      converted.add(
-          zipkin2.DependencyLink.newBuilder()
-              .parent(link.parent)
-              .child(link.child)
-              .callCount(link.callCount)
-              .errorCount(link.errorCount)
-              .build());
-    }
-    writeDependencyLinks(storage, converted, midnightUTC);
-  }
-
-  public static Session session(CassandraStorage storage) {
-    return storage.session();
-  }
-
-  public static void ensureExists(String keyspace, Session session) {
-    Schema.ensureExists(keyspace, session);
-  }
-
-  public static boolean hasUpgrade1_defaultTtl(KeyspaceMetadata metadata) {
-    return Schema.hasUpgrade1_defaultTtl(metadata);
-  }
-
-  public static void applyCqlFile(String keyspace, Session session, String resource) {
-    Schema.applyCqlFile(keyspace, session, resource);
-  }
-
-  public static void blockWhileInFlight(CassandraStorage storage) {
-    // Now, block until writes complete, notably so we can read them.
-    Session.State state = storage.session().getState();
-    refresh:
-    while (true) {
-      for (Host host : state.getConnectedHosts()) {
-        if (state.getInFlightQueries(host) > 0) {
-          Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
-          state = storage.session().getState();
-          continue refresh;
-        }
-      }
-      break;
-    }
-  }
-
-  public static int indexFetchMultiplier(CassandraStorage storage) {
-    return storage.indexFetchMultiplier;
-  }
-
-  public static String keyspace(TestName testName) {
+  static String keyspace(TestName testName) {
     String result = testName.getMethodName().toLowerCase();
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
   }
 
-  public static void dropKeyspace(Session session, String keyspace) {
+  static void dropKeyspace(Session session, String keyspace) {
     session.execute("DROP KEYSPACE IF EXISTS " + keyspace);
     assertThat(session.getCluster().getMetadata().getKeyspace(keyspace)).isNull();
   }

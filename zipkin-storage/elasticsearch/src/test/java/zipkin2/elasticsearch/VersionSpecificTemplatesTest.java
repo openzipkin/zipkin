@@ -34,7 +34,7 @@ public class VersionSpecificTemplatesTest {
   VersionSpecificTemplates client = new VersionSpecificTemplates(storage);
 
   @After
-  public void close() throws IOException {
+  public void close() {
     storage.close();
   }
 
@@ -58,7 +58,7 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(client.getVersion(storage.http())).isEqualTo(1.7f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(1.7f);
   }
 
   @Test
@@ -79,7 +79,7 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(client.getVersion(storage.http())).isEqualTo(2.4f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(2.4f);
   }
 
   @Test
@@ -101,7 +101,7 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(client.getVersion(storage.http())).isEqualTo(5.0f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(5.0f);
   }
 
   @Test
@@ -123,6 +123,6 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(client.getVersion(storage.http())).isEqualTo(6.0f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(6.0f);
   }
 }

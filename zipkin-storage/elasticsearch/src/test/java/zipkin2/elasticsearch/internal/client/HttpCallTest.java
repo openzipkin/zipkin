@@ -40,7 +40,7 @@ public class HttpCallTest {
   Request request = new Request.Builder().url(http.baseUrl).build();
 
   @After
-  public void close() throws IOException {
+  public void close() {
     http.close();
   }
 

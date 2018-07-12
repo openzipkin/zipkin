@@ -14,7 +14,6 @@
 package zipkin2.elasticsearch.integration;
 
 import com.google.common.io.Closer;
-import java.io.IOException;
 import java.util.Arrays;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
@@ -43,7 +42,7 @@ public class ElasticsearchStorageRule extends ExternalResource {
   }
 
   @Override
-  protected void before() throws Throwable {
+  protected void before() {
     try {
       LOGGER.info("Starting docker image " + image);
       container =
@@ -70,7 +69,7 @@ public class ElasticsearchStorageRule extends ExternalResource {
     }
   }
 
-  void tryToInitializeSession() throws IOException {
+  void tryToInitializeSession() {
     ElasticsearchStorage result = computeStorageBuilder().build();
     CheckResult check = result.check();
     if (!check.ok()) {

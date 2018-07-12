@@ -44,7 +44,7 @@ abstract class ITSpanConsumer {
     accept(storage.spanConsumer(), TestObjects.CLIENT_SPAN);
 
     assertThat(
-      InternalForTests.session(storage)
+      storage.session()
         .execute("SELECT blobastext(annotation) from annotations_index")
         .all())
       .extracting(r -> r.getString(0))
@@ -96,7 +96,7 @@ abstract class ITSpanConsumer {
   }
 
   long rowCount(String table) {
-    return InternalForTests.session(storage)
+    return storage.session()
       .execute("SELECT COUNT(*) from " + table)
       .one()
       .getLong(0);

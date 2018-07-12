@@ -21,6 +21,7 @@
     </xsl:copy>
   </xsl:template>
 
+  <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
   <xsl:template match="pom:dependency[pom:groupId = 'io.zipkin.java']" />
   <xsl:template match="pom:dependency[pom:groupId = 'io.zipkin.zipkin2']" />
   <xsl:template match="pom:dependency[pom:groupId = '${project.groupId}']" />

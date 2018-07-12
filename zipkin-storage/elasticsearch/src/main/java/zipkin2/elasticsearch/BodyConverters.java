@@ -29,7 +29,7 @@ public final class BodyConverters {
   static final HttpCall.BodyConverter<Object> NULL =
       new HttpCall.BodyConverter<Object>() {
         @Override
-        public Object convert(BufferedSource content) throws IOException {
+        public Object convert(BufferedSource content) {
           return null;
         }
       };

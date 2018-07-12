@@ -49,23 +49,9 @@
       <scope>test</scope>
     </dependency>
 
+    <!-- for integration tests -->
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
-    <!-- add v1 dependency for integration tests -->
-    <dependency>
-      <groupId>io.zipkin.java</groupId>
-      <artifactId>zipkin</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
