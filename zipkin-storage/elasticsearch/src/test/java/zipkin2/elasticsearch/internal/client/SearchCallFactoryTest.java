@@ -32,13 +32,13 @@ public class SearchCallFactoryTest {
     new SearchCallFactory(new HttpCall.Factory(new OkHttpClient(), es.url("")));
 
   @After
-  public void close() throws IOException {
+  public void close() {
     client.http.ok.dispatcher().executorService().shutdownNow();
   }
 
   /** Declaring queries alphabetically helps simplify amazon signature logic */
   @Test
-  public void lenientSearchOrdersQueryAlphabetically() throws Exception {
+  public void lenientSearchOrdersQueryAlphabetically() {
     es.enqueue(new MockResponse());
 
     assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null)

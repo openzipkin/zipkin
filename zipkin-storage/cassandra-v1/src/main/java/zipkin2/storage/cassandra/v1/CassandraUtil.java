@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.google.common.base.Function;
 import com.google.common.collect.ImmutableList;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -124,20 +123,6 @@ final class CassandraUtil {
     Arrays.sort(array);
     List result = Arrays.asList(array);
     return Collections.unmodifiableList(result);
-  }
-
-  enum KeySet implements Function<Map<Object, ?>, Set<Object>> {
-    INSTANCE;
-
-    @Override
-    public Set<Object> apply(@Nullable Map<Object, ?> input) {
-      return input.keySet();
-    }
-
-    @Override
-    public String toString() {
-      return "Map::keySet";
-    }
   }
 
   static final Random RAND = new Random(System.nanoTime());

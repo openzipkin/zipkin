@@ -53,7 +53,7 @@ public class InsertServiceSpanFactoryTest {
   Input next = executor.newInput("service2", "span");
 
   @Test
-  public void expiresWhenTtlPasses() throws Exception {
+  public void expiresWhenTtlPasses() {
     executor.nanoTime = 0;
 
     // first call happens for real
@@ -168,7 +168,7 @@ public class InsertServiceSpanFactoryTest {
   }
 
   @Test
-  public void expiresWhenTtlPasses_initiallyNegative() throws Exception {
+  public void expiresWhenTtlPasses_initiallyNegative() {
     executor.nanoTime = -TimeUnit.SECONDS.toNanos(1);
 
     assertThat(executor.create(first)).isInstanceOf(InsertServiceSpan.class);

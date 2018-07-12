@@ -51,7 +51,7 @@ final class BasicAuthInterceptor implements Interceptor {
     return response;
   }
 
-  private Request appendBasicAuthHeaderParameters(Request input) throws IOException {
+  private Request appendBasicAuthHeaderParameters(Request input) {
 
     Request.Builder builder = input.newBuilder();
     return builder.header("authorization", basicCredentials).build();

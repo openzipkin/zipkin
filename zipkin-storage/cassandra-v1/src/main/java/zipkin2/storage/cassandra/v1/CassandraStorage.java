@@ -322,6 +322,8 @@ public final class CassandraStorage extends StorageComponent {
   @Override
   public CheckResult check() {
     if (closeCalled) throw new IllegalStateException("closed");
+    CassandraSpanConsumer maybeConsumer = spanConsumer;
+    if (maybeConsumer != null) maybeConsumer.clear();
     try {
       session.get().execute(QueryBuilder.select("trace_id").from("traces").limit(1));
     } catch (RuntimeException e) {

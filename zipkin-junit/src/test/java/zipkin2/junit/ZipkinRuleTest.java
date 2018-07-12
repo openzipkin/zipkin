@@ -96,7 +96,7 @@ public class ZipkinRuleTest {
 
   /** The raw query can show affects like redundant rows in the data store. */
   @Test
-  public void storeSpans_readbackRaw() throws IOException {
+  public void storeSpans_readbackRaw() {
     String traceId = LOTS_OF_SPANS[0].traceId();
 
     // write the span to zipkin directly
@@ -128,7 +128,7 @@ public class ZipkinRuleTest {
   }
 
   @Test
-  public void postSpans_disconnectDuringBody() throws IOException {
+  public void postSpans_disconnectDuringBody() {
     zipkin.enqueueFailure(HttpFailure.disconnectDuringBody());
 
     try {

@@ -117,12 +117,12 @@ public class ITRabbitMQCollector {
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */
   @Test
-  public void skipsOnSpanConsumerException() throws Exception {
+  public void skipsOnSpanConsumerException() {
     // TODO: reimplement
   }
 
   @Test
-  public void messagesDistributedAcrossMultipleThreadsSuccessfully() throws Exception {
+  public void messagesDistributedAcrossMultipleThreadsSuccessfully() {
     // TODO: reimplement
   }
 }

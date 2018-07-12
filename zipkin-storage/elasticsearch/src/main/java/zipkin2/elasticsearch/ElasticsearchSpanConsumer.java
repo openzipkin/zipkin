@@ -37,13 +37,9 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
   private static final int INDEX_CHARS_LIMIT = 256;
 
   final ElasticsearchStorage es;
-  final IndexNameFormatter indexNameFormatter;
-  final boolean searchEnabled;
 
   ElasticsearchSpanConsumer(ElasticsearchStorage es) {
     this.es = es;
-    this.indexNameFormatter = es.indexNameFormatter();
-    this.searchEnabled = es.searchEnabled();
   }
 
   @Override

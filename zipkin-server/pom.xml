@@ -18,11 +18,14 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.java</groupId>
+    <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>parent</artifactId>
     <version>2.10.2-SNAPSHOT</version>
   </parent>
 
+  <!-- Group ID left alone due to folks downloading it with curl from maven central.
+       TODO: setup a maven redirect -->
+  <groupId>io.zipkin.java</groupId>
   <artifactId>zipkin-server</artifactId>
   <name>Zipkin Server</name>
 
@@ -89,15 +92,17 @@
 
     <!-- Static content for the web UI -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-ui</artifactId>
+      <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <!-- Cassandra backend -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
+      <version>${project.version}</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -135,8 +140,9 @@
 
     <!-- Cassandra 3 backend -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
+      <version>${project.version}</version>
       <optional>true</optional>
       <exclusions>
         <exclusion>
@@ -152,35 +158,39 @@
 
     <!-- Elasticsearch http -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
+      <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <!-- MySQL backend -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
+      <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <!-- Kafka Collector -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
+      <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <!-- RabbitMQ Collector -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
+      <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <!--Prometheus metrics-->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-autoconfigure-metrics-prometheus</artifactId>
       <version>${project.version}</version>
     </dependency>

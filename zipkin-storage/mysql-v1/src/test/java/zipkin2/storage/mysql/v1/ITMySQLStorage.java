@@ -22,13 +22,9 @@ import org.jooq.Query;
 import org.junit.ClassRule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
-import zipkin.Span;
-import zipkin.internal.MergeById;
-import zipkin.internal.V2StorageComponent;
-import zipkin.storage.StorageComponent;
 import zipkin2.DependencyLink;
+import zipkin2.storage.StorageComponent;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 
 @RunWith(Enclosed.class)
@@ -38,59 +34,10 @@ public class ITMySQLStorage {
     return new LazyMySQLStorage("2.10.1");
   }
 
-  public static class SpanStoreTest extends zipkin.storage.SpanStoreTest {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected StorageComponent storage() {
-      return V2StorageComponent.create(storage.get());
-    }
-
-    @Override
-    public void clear() {
-      storage.get().clear();
-    }
-  }
-
-  public static class StrictTraceIdFalseTest extends zipkin.storage.StrictTraceIdFalseTest {
-    @ClassRule public static LazyMySQLStorage storageRule = classRule();
-
-    private MySQLStorage storage;
-
-    @Override protected StorageComponent storage() {
-      return V2StorageComponent.create(storage);
-    }
-
-    /** current implementation cannot return exact form reported */
-    @Override public void getTrace_retrievesBy64Or128BitTraceId() {
-      List<Span> trace = MergeById.apply(accept128BitTrace(storage()));
-      assertThat(store().getTrace(0L, trace.get(0).traceId))
-        .containsOnlyElementsOf(trace);
-      assertThat(store().getTrace(trace.get(0).traceIdHigh, trace.get(0).traceId))
-        .containsOnlyElementsOf(trace);
-    }
-
-    @Override public void clear() {
-      storage = storageRule.computeStorageBuilder().strictTraceId(false).build();
-      storage.clear();
-    }
-  }
-
-  public static class DependenciesTest extends zipkin.storage.DependenciesTest {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected StorageComponent storage() {
-      return V2StorageComponent.create(storage.get());
-    }
-
-    @Override public void clear() {
-      storage.get().clear();
-    }
-  }
-
   public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
     @ClassRule public static LazyMySQLStorage storage = classRule();
 
-    @Override protected zipkin2.storage.StorageComponent storage() {
+    @Override protected StorageComponent storage() {
       return storage.get();
     }
 
@@ -105,7 +52,7 @@ public class ITMySQLStorage {
 
     private MySQLStorage storage;
 
-    @Override protected zipkin2.storage.StorageComponent storage() {
+    @Override protected StorageComponent storage() {
       return storage;
     }
 
@@ -118,7 +65,7 @@ public class ITMySQLStorage {
   public static class ITDependenciesPreAggregated extends zipkin2.storage.ITDependencies {
     @ClassRule public static LazyMySQLStorage storage = classRule();
 
-    @Override protected zipkin2.storage.StorageComponent storage() {
+    @Override protected StorageComponent storage() {
       return storage.get();
     }
 
@@ -156,7 +103,7 @@ public class ITMySQLStorage {
   public static class ITDependenciesOnDemand extends zipkin2.storage.ITDependencies {
     @ClassRule public static LazyMySQLStorage storage = classRule();
 
-    @Override protected zipkin2.storage.StorageComponent storage() {
+    @Override protected StorageComponent storage() {
       return storage.get();
     }
 

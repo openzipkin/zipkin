@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.java</groupId>
+    <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>parent</artifactId>
     <version>@project.version@</version>
     <relativePath>../../../..</relativePath>

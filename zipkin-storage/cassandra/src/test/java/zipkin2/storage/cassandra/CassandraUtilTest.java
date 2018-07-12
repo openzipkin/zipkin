@@ -72,7 +72,7 @@ public class CassandraUtilTest {
   }
 
   @Test
-  public void annotationKeys_skipsTagsLongerThan256chars() throws Exception {
+  public void annotationKeys_skipsTagsLongerThan256chars() {
     // example long value
     String arn =
         "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
@@ -90,7 +90,7 @@ public class CassandraUtilTest {
   }
 
   @Test
-  public void annotationKeys_skipsAnnotationsLongerThan256chars() throws Exception {
+  public void annotationKeys_skipsAnnotationsLongerThan256chars() {
     // example long value
     String arn =
         "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
@@ -105,7 +105,7 @@ public class CassandraUtilTest {
   }
 
   @Test
-  public void annotationKeys_skipsAllocationWhenNoValidInput() throws Exception {
+  public void annotationKeys_skipsAllocationWhenNoValidInput() {
     // example too long value
     String url =
         "http://webservices.amazon.com/onca/xml?AWSAccessKeyId=AKIAIOSFODNN7EXAMPLE&AssociateTag=mytag-20&ItemId=0679722769&Operation=ItemLookup&ResponseGroup=Images%2CItemAttributes%2COffers%2CReviews&Service=AWSECommerceService&Timestamp=2014-08-18T12%3A00%3A00Z&Version=2013-08-01&Signature=j7bZM0LXZ9eXeZruTqWm2DIvDYVUU3wxPPpp%2BiXxzQc%3D";

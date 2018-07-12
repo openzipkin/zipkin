@@ -98,7 +98,7 @@ final class JsonAdapters {
         }
 
         @Override
-        public void toJson(JsonWriter writer, @Nullable Span value) throws IOException {
+        public void toJson(JsonWriter writer, @Nullable Span value) {
           throw new UnsupportedOperationException();
         }
       };
@@ -130,7 +130,7 @@ final class JsonAdapters {
         }
 
         @Override
-        public void toJson(JsonWriter writer, @Nullable Annotation value) throws IOException {
+        public void toJson(JsonWriter writer, @Nullable Annotation value) {
           throw new UnsupportedOperationException();
         }
       };
@@ -176,7 +176,7 @@ final class JsonAdapters {
         }
 
         @Override
-        public void toJson(JsonWriter writer, @Nullable Endpoint value) throws IOException {
+        public void toJson(JsonWriter writer, @Nullable Endpoint value) {
           throw new UnsupportedOperationException();
         }
       }.nullSafe();
@@ -210,7 +210,7 @@ final class JsonAdapters {
         }
 
         @Override
-        public void toJson(JsonWriter writer, @Nullable DependencyLink value) throws IOException {
+        public void toJson(JsonWriter writer, @Nullable DependencyLink value) {
           throw new UnsupportedOperationException();
         }
       };

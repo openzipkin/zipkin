@@ -43,7 +43,7 @@ public class DeduplicatingCallTest {
   TestDeduplicatingCall.Factory callFactory = new TestDeduplicatingCall.Factory(delegate);
 
   @Test
-  public void expiresWhenTtlPasses() throws Exception {
+  public void expiresWhenTtlPasses() {
     Futures.immediateFuture(mock(ResultSet.class));
 
     callFactory.nanoTime = 0;
@@ -147,10 +147,10 @@ public class DeduplicatingCallTest {
   }
 
   @Test
-  public void expiresWhenTtlPasses_initiallyNegative() throws Exception {
+  public void expiresWhenTtlPasses_initiallyNegative() {
     callFactory.nanoTime = -TimeUnit.SECONDS.toNanos(1);
 
-    Call<ResultSet> firstFuture = callFactory.create("foo");
+    callFactory.create("foo");
     assertThat(callFactory.create("foo")).isEqualTo(constant);
 
     // A second after the first call, we should try again

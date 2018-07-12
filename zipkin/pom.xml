@@ -18,13 +18,13 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.java</groupId>
+    <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>parent</artifactId>
     <version>2.10.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin</artifactId>
-  <name>Zipkin Core Library (Deprecated)</name>
+  <name>Zipkin Core Library</name>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
@@ -33,17 +33,6 @@
   </properties>
 
   <dependencies>
-    <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
-      <artifactId>zipkin</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.auto.value</groupId>
-      <artifactId>auto-value</artifactId>
-      <scope>provided</scope>
-    </dependency>
-
     <dependency>
       <groupId>org.jvnet</groupId>
       <artifactId>animal-sniffer-annotation</artifactId>
@@ -77,6 +66,11 @@
       <version>${powermock.version}</version>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>com.esotericsoftware.kryo</groupId>
+      <artifactId>kryo</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
@@ -103,11 +97,6 @@
             <configuration>
               <shadeTestJar>false</shadeTestJar>
               <minimizeJar>true</minimizeJar>
-              <artifactSet>
-                <excludes>
-                  <exclude>io.zipkin.zipkin2:zipkin</exclude>
-                </excludes>
-              </artifactSet>
               <filters>
                 <filter>
                   <artifact>com.google.code.gson:gson</artifact>
@@ -122,13 +111,13 @@
               <relocations>
                 <relocation>
                   <pattern>com.google.gson</pattern>
-                  <shadedPattern>zipkin.internal.gson</shadedPattern>
+                  <shadedPattern>zipkin2.internal.gson</shadedPattern>
                 </relocation>
               </relocations>
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
-                    <Automatic-Module-Name>zipkin</Automatic-Module-Name>
+                    <Automatic-Module-Name>zipkin2</Automatic-Module-Name>
                   </manifestEntries>
                 </transformer>
               </transformers>

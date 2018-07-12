@@ -35,7 +35,7 @@ public class ElasticsearchStorageTest {
       ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
 
   @After
-  public void close() throws IOException {
+  public void close() {
     storage.close();
   }
 
@@ -81,14 +81,14 @@ public class ElasticsearchStorageTest {
           + "}";
 
   @Test
-  public void check() throws Exception {
+  public void check() {
     es.enqueue(new MockResponse().setBody(healthResponse));
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
   }
 
   @Test
-  public void check_oneHostDown() throws Exception {
+  public void check_oneHostDown() {
     storage.close();
     OkHttpClient client =
         new OkHttpClient.Builder().connectTimeout(100, TimeUnit.MILLISECONDS).build();
@@ -123,7 +123,7 @@ public class ElasticsearchStorageTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void multipleSslNotYetSupported() throws Exception {
+  public void multipleSslNotYetSupported() {
     storage.close();
     SslClient sslClient = SslClient.localhost();
     OkHttpClient client =

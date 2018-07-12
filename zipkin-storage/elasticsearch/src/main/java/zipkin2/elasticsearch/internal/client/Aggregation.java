@@ -20,19 +20,11 @@ import java.util.Map;
 public class Aggregation {
   transient final String field;
   AggTerms terms;
-  Map<String, String> nested;
   Map<String, String> min;
   Map<String, Aggregation> aggs;
 
   Aggregation(String field) {
     this.field = field;
-  }
-
-  public static Aggregation nestedTerms(String field) {
-    Aggregation result = new Aggregation(field);
-    result.nested = Collections.singletonMap("path", field.substring(0, field.indexOf('.')));
-    result.addSubAggregation(terms(field, Integer.MAX_VALUE));
-    return result;
   }
 
   public static Aggregation terms(String field, int size) {

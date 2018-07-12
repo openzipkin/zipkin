@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class ZipkinKafkaCollectorPropertiesTest {
   @Test
-  public void stringPropertiesConvertEmptyStringsToNull() throws Exception {
+  public void stringPropertiesConvertEmptyStringsToNull() {
     final ZipkinKafkaCollectorProperties properties = new ZipkinKafkaCollectorProperties();
     properties.setBootstrapServers("");
     properties.setGroupId("");

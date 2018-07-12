@@ -36,15 +36,6 @@ public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>>
     this.defaultValue = Collections.emptyList();
   }
 
-  SearchResultConverter(JsonAdapter<T> adapter, List<T> defaultValue) {
-    this.adapter = adapter;
-    this.defaultValue = defaultValue;
-  }
-
-  public SearchResultConverter<T> defaultToNull() {
-    return new SearchResultConverter<>(adapter, null);
-  }
-
   @Override public List<T> convert(BufferedSource content) throws IOException {
     JsonReader hits = enterPath(JsonReader.of(content), "hits", "hits");
     if (hits == null || hits.peek() != JsonReader.Token.BEGIN_ARRAY) return defaultValue;

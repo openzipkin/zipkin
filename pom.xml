@@ -17,13 +17,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.zipkin.java</groupId>
+  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>parent</artifactId>
   <version>2.10.2-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
-    <module>zipkin2</module>
     <module>zipkin</module>
     <module>zipkin-ui</module>
     <module>zipkin-junit</module>
@@ -169,19 +168,6 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin</artifactId>
-        <type>test-jar</type>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-junit</artifactId>
         <version>${project.version}</version>
@@ -194,56 +180,14 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-cassandra</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-storage-cassandra</artifactId>
         <version>${project.version}</version>
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-cassandra3</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-storage-mysql-v1</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-mysql</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-storage-elasticsearch</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-metrics-prometheus</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-ui</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-ui</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -255,19 +199,7 @@
 
       <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-autoconfigure-collector-kafka08</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-collector-kafka</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-collector-kafka</artifactId>
         <version>${project.version}</version>
       </dependency>
 
@@ -278,25 +210,20 @@
       </dependency>
 
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-collector-scribe</artifactId>
         <version>${project.version}</version>
       </dependency>
 
+      <!-- Group ID left alone due to folks downloading it with curl from maven central.
+           TODO: setup a maven redirect -->
       <dependency>
-        <groupId>${project.groupId}</groupId>
-        <artifactId>zipkin-autoconfigure-collector-scribe</artifactId>
+        <groupId>io.zipkin.java</groupId>
+        <artifactId>zipkin-ui</artifactId>
         <version>${project.version}</version>
       </dependency>
-
       <dependency>
-        <groupId>${project.groupId}</groupId>
+        <groupId>io.zipkin.java</groupId>
         <artifactId>zipkin-server</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -832,7 +759,7 @@
             <version>${maven-javadoc-plugin.version}</version>
             <configuration>
               <failOnError>false</failOnError>
-              <excludePackageNames>zipkin.internal,zipkin.internal.*</excludePackageNames>
+              <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
               <!-- hush pedantic warnings: we don't put param and return on everything! -->
               <doclint>none</doclint>
             </configuration>
