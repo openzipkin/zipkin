@@ -148,6 +148,9 @@ server:
     mime-types: application/json,application/javascript,text/css,image/svg
 
 spring:
+  jmx:
+     # reduce startup time by excluding unexposed JMX service
+     enabled: false
   mvc:
     favicon:
       # zipkin has its own favicon
