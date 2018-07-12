@@ -18,7 +18,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>io.zipkin.java.integration-tests</groupId>
+  <groupId>io.zipkin.zipkin2</groupId>
   <version>@project.version@</version>
   <artifactId>execjar</artifactId>
   <name>execjar</name>
@@ -39,6 +39,7 @@
     </dependency>
 
     <dependency>
+      <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
       <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-server</artifactId>
       <version>${project.version}</version>

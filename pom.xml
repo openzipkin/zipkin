@@ -215,14 +215,14 @@
         <version>${project.version}</version>
       </dependency>
 
-      <!-- Group ID left alone due to folks downloading it with curl from maven central.
-           TODO: setup a maven redirect -->
       <dependency>
+        <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
         <groupId>io.zipkin.java</groupId>
         <artifactId>zipkin-ui</artifactId>
         <version>${project.version}</version>
       </dependency>
       <dependency>
+        <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
         <groupId>io.zipkin.java</groupId>
         <artifactId>zipkin-server</artifactId>
         <version>${project.version}</version>

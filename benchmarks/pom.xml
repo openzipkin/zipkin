@@ -61,6 +61,7 @@
     </dependency>
 
     <dependency>
+      <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
       <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-server</artifactId>
       <version>${project.version}</version>
