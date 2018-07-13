@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  zipkin.autoconfigure.collector.rabbitmq.ZipkinRabbitMQCollectorAutoConfiguration
+  zipkin2.autoconfigure.collector.rabbitmq.ZipkinRabbitMQCollectorAutoConfiguration

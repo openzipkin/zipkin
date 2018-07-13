@@ -24,8 +24,8 @@ import org.junit.Rule;
 import org.junit.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.codec.SpanBytesDecoder;
+import zipkin2.codec.SpanBytesEncoder;
 
 import static org.junit.Assert.assertEquals;
 

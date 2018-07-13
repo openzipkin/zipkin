@@ -31,7 +31,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import zipkin.server.internal.ActuateCollectorMetrics;
+import zipkin2.server.internal.ActuateCollectorMetrics;
 
 @Measurement(iterations = 80, time = 1)
 @Warmup(iterations = 20, time = 1)

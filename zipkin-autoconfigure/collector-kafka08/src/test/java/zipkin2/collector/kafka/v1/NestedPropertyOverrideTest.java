@@ -15,7 +15,7 @@ package zipkin2.collector.kafka08;
 
 import org.junit.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.autoconfigure.collector.kafka.Access;
+import zipkin2.autoconfigure.collector.kafka08.Access;
 import zipkin2.storage.InMemoryStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;

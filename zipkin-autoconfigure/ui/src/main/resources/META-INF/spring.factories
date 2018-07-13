@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-zipkin.autoconfigure.ui.ZipkinUiAutoConfiguration
+zipkin2.autoconfigure.ui.ZipkinUiAutoConfiguration

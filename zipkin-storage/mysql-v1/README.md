@@ -7,7 +7,7 @@ The implementation uses JOOQ to generate MySQL SQL commands. It is only tested o
 
 See the [schema DDL](src/main/resources/mysql.sql).
 
-`zipkin.storage.mysql.MySQLStorage.Builder` includes defaults that will
+`zipkin2.storage.mysql.v1.MySQLStorage.Builder` includes defaults that will
 operate against a given Datasource.
 
 ## Testing this component

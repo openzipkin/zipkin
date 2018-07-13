@@ -21,7 +21,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin.autoconfigure.collector.kafka10.Access;
+import zipkin2.autoconfigure.collector.kafka.Access;
 
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 

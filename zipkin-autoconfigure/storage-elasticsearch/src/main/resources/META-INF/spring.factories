@@ -1,4 +1,4 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchOkHttpAutoConfiguration,\
-zipkin.autoconfigure.storage.elasticsearch.http.ZipkinElasticsearchStorageAutoConfiguration,\
-zipkin.autoconfigure.storage.elasticsearch.http.TracingZipkinElasticsearchStorageAutoConfiguration
+zipkin2.autoconfigure.storage.elasticsearch.ZipkinElasticsearchOkHttpAutoConfiguration,\
+zipkin2.autoconfigure.storage.elasticsearch.ZipkinElasticsearchStorageAutoConfiguration,\
+zipkin2.autoconfigure.storage.elasticsearch.TracingZipkinElasticsearchStorageAutoConfiguration
