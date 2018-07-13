@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-zipkin.autoconfigure.collector.scribe.ZipkinScribeCollectorAutoConfiguration
+zipkin2.autoconfigure.collector.scribe.ZipkinScribeCollectorAutoConfiguration

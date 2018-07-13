@@ -5,9 +5,9 @@ This CQL-based Cassandra 2.2+ storage component includes a `GuavaSpanStore` and 
 
 The implementation uses the [Datastax Java Driver 3.x](https://github.com/datastax/java-driver).
 Duration queries are not supported in this implementation. If you need to
-search by duration, please use [zipkin-storage-cassandra3](../cassandra3)
+search by duration, please use [zipkin-storage-cassandra](../cassandra)
 
-`zipkin.storage.cassandra.CassandraStorage.Builder` includes defaults that will
+`zipkin2.storage.cassandra.v1.CassandraStorage.Builder` includes defaults that will
 operate against a local Cassandra installation.
 
 ## Logging
@@ -20,7 +20,7 @@ See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/
 This module conditionally runs integration tests against a local Cassandra instance.
 
 Tests are configured to automatically access Cassandra started with its defaults.
-To ensure tests execute, download a Cassandra 2.2-3.4 distribution, extract it, and run `bin/cassandra`. 
+To ensure tests execute, download a Cassandra 2.2-3.4 distribution, extract it, and run `bin/cassandra`.
 
 If you run tests via Maven or otherwise when Cassandra is not running,
 you'll notice tests are silently skipped.

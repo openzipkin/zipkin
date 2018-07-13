@@ -19,7 +19,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import org.springframework.context.annotation.Import;
-import zipkin.server.internal.InternalZipkinConfiguration;
+import zipkin2.server.internal.InternalZipkinConfiguration;
 
 /**
  * @deprecated Custom servers are possible, but not supported by the community. Please use our

@@ -10,7 +10,7 @@ For information about running this collector as a module in Zipkin server, see
 [zipkin-autoconfigure/collector-kafka10](../../zipkin-autoconfigure/collector-kafka10/).
 
 When using this collector as a library outside of Zipkin server,
-[zipkin.collector.kafka10.KafkaCollector.Builder](src/main/java/zipkin/collector/kafka10/KafkaCollector.java)
+[zipkin2.collector.kafka.KafkaCollector.Builder](src/main/java/zipkin2/collector/kafka/KafkaCollector.java)
 includes defaults that will operate against a Kafka topic name `zipkin`.
 
 ## Encoding spans into Kafka messages

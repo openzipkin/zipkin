@@ -15,10 +15,11 @@ package zipkin.server;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-import zipkin.server.internal.RegisterZipkinHealthIndicators;
+import zipkin2.server.internal.EnableZipkinServer;
+import zipkin2.server.internal.RegisterZipkinHealthIndicators;
 
 @SpringBootApplication
-@zipkin.server.internal.EnableZipkinServer
+@EnableZipkinServer
 public class ZipkinServer {
 
   public static void main(String[] args) {

@@ -176,7 +176,7 @@ logging:
 #     # log cassandra trace propagation
 #     com.datastax.driver.core.Message: 'TRACE'
 #     # log reason behind http collector dropped messages
-#     zipkin.server.ZipkinHttpCollector: 'DEBUG'
+#     zipkin2.server.ZipkinHttpCollector: 'DEBUG'
 #     zipkin2.collector.kafka.KafkaCollector: 'DEBUG'
 #     zipkin2.collector.kafka08.KafkaCollector: 'DEBUG'
 #     zipkin2.collector.rabbitmq.RabbitMQCollector: 'DEBUG'

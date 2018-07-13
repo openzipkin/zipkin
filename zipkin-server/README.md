@@ -51,7 +51,7 @@ By default, zipkin writes log messages to the console at INFO level and above. Y
 For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
 ```bash
-$ java -jar zipkin.jar --logging.level.zipkin=DEBUG --logging.level.zipkin2=DEBUG
+$ java -jar zipkin.jar --logging.level.zipkin2=DEBUG
 ```
 
 Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.
@@ -361,7 +361,7 @@ and removed once the transition is complete.
 See https://github.com/openzipkin/b3-propagation/issues/6 for the status
 of known open source libraries on 128-bit trace identifiers.
 
-See `zipkin.storage.StorageComponent.Builder` for even more details!
+See `zipkin2.storage.StorageComponent.Builder` for even more details!
 
 ## Running with Docker
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.

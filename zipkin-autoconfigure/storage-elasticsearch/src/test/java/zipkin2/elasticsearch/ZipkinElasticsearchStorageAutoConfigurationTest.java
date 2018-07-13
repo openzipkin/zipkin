@@ -26,7 +26,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin.autoconfigure.storage.elasticsearch.http.Access;
+import zipkin2.autoconfigure.storage.elasticsearch.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
@@ -358,7 +358,7 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
         .extracting(i -> i.getClass().getName())
-        .contains("zipkin.autoconfigure.storage.elasticsearch.http.BasicAuthInterceptor");
+        .contains("zipkin2.autoconfigure.storage.elasticsearch.http.BasicAuthInterceptor");
   }
 
   @Test
