@@ -42,7 +42,7 @@ public class ZipkinMySQLContainer extends GenericContainer<ZipkinMySQLContainer>
       @Override
       protected void waitUntilReady() {
         Unreliables.retryUntilTrue(1, TimeUnit.MINUTES, () -> {
-          if (!container.isRunning()) {
+          if (container == null || !container.isRunning()) {
             throw new ContainerLaunchException("Container failed to start");
           }
 

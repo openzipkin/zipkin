@@ -358,7 +358,7 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
     assertThat(context.getBean(OkHttpClient.class).networkInterceptors())
         .extracting(i -> i.getClass().getName())
-        .contains("zipkin2.autoconfigure.storage.elasticsearch.http.BasicAuthInterceptor");
+        .contains("zipkin2.autoconfigure.storage.elasticsearch.BasicAuthInterceptor");
   }
 
   @Test
