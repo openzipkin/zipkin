@@ -109,7 +109,7 @@ public final class V1SpanConverter {
       // special-case loopback: We need to make sure on loopback there are two span2s
       Span.Builder client = forEndpoint(source, cs.endpoint);
       Span.Builder server;
-      if (closeEnough(cs.endpoint, sr.endpoint)) {
+      if (hasSameServiceName(cs.endpoint, sr.endpoint)) {
         client.kind(Kind.CLIENT);
         // fork a new span for the server side
         server = newSpanBuilder(source, sr.endpoint).kind(Kind.SERVER);
@@ -145,7 +145,7 @@ public final class V1SpanConverter {
       // special-case loopback: We need to make sure on loopback there are two span2s
       Span.Builder producer = forEndpoint(source, ms.endpoint);
       Span.Builder consumer;
-      if (closeEnough(ms.endpoint, mr.endpoint)) {
+      if (hasSameServiceName(ms.endpoint, mr.endpoint)) {
         producer.kind(Kind.PRODUCER);
         // fork a new span for the consumer side
         consumer = newSpanBuilder(source, mr.endpoint).kind(Kind.CONSUMER);
@@ -234,41 +234,41 @@ public final class V1SpanConverter {
       currentSpan.putTag(b.key, b.stringValue);
     }
 
+    boolean noCoreAnnotations = cs == null && cr == null && ss == null && sr == null;
     // special-case when we are missing core annotations, but we have both address annotations
-    if ((cs == null && sr == null) && (ca != null && sa != null)) {
-      forEndpoint(source, ca).remoteEndpoint(sa);
+    if (noCoreAnnotations && (ca != null || sa != null)) {
+      if (ca != null && sa != null) {
+        forEndpoint(source, ca).remoteEndpoint(sa);
+      } else if (sa != null) {
+        // "sa" is a default for a remote address, don't make it a client span
+        forEndpoint(source, null).remoteEndpoint(sa);
+      } else { // ca != null: treat it like a server
+        forEndpoint(source, null).kind(Kind.SERVER).remoteEndpoint(ca);
+      }
       return;
     }
 
-    if (sa != null) {
-      if (cs != null && !closeEnough(sa, cs.endpoint)) {
+    V1Annotation server = sr != null ? sr : ss;
+    if (ca != null && server != null && !ca.equals(server.endpoint)) {
+      // Finagle adds a "ca" annotation on server spans for the client-port on the socket, but with
+      // the same service name as "sa". Removing the service name prevents creating loopback links.
+      if (hasSameServiceName(ca, server.endpoint)) {
+        ca = ca.toBuilder().serviceName(null).build();
+      }
+      forEndpoint(source, server.endpoint).remoteEndpoint(ca);
+    }
+    if (sa != null) { // client span
+      if (cs != null) {
         forEndpoint(source, cs.endpoint).remoteEndpoint(sa);
-      } else if (cr != null && !closeEnough(sa, cr.endpoint)) {
+      } else if (cr != null) {
         forEndpoint(source, cr.endpoint).remoteEndpoint(sa);
-      } else if (cs == null && cr == null && sr == null && ss == null) {
-        // "sa" is a default for a remote address, don't make it a client span
-        forEndpoint(source, null).remoteEndpoint(sa);
       }
     }
-
-    if (ca != null) {
-      if (sr != null && !closeEnough(ca, sr.endpoint)) {
-        forEndpoint(source, sr.endpoint).remoteEndpoint(ca);
-      }
-      if (ss != null && !closeEnough(ca, ss.endpoint)) {
-        forEndpoint(source, ss.endpoint).remoteEndpoint(ca);
-      } else if (cs == null && cr == null && sr == null && ss == null) { // no core annotations
-        forEndpoint(source, null).kind(Kind.SERVER).remoteEndpoint(ca);
-      }
-    }
-
-    if (ma != null) {
-      if (ms != null && !closeEnough(ma, ms.endpoint)) {
-        forEndpoint(source, ms.endpoint).remoteEndpoint(ma);
-      }
-      if (mr != null && !closeEnough(ma, mr.endpoint)) {
-        forEndpoint(source, mr.endpoint).remoteEndpoint(ma);
-      }
+    if (ma != null) { // messaging span
+      // Intentionally process messaging endpoints separately in case someone accidentally shared
+      // a messaging span. This will ensure both sides have the address of the broker.
+      if (ms != null) forEndpoint(source, ms.endpoint).remoteEndpoint(ma);
+      if (mr != null) forEndpoint(source, mr.endpoint).remoteEndpoint(ma);
     }
   }
 
@@ -287,7 +287,8 @@ public final class V1SpanConverter {
     if (localEndpoint == null) {
       builder.localEndpoint(e);
       return true;
-    } else return closeEnough(localEndpoint, e);
+    }
+    return hasSameServiceName(localEndpoint, e);
   }
 
   Span.Builder newSpanBuilder(V1Span source, Endpoint e) {
@@ -303,7 +304,7 @@ public final class V1SpanConverter {
     }
   }
 
-  static boolean closeEnough(Endpoint left, Endpoint right) {
+  static boolean hasSameServiceName(Endpoint left, @Nullable Endpoint right) {
     return equal(left.serviceName(), right.serviceName());
   }
 
