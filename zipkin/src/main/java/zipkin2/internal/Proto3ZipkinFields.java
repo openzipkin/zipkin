@@ -41,7 +41,6 @@ final class Proto3ZipkinFields {
   static final Logger LOG = Logger.getLogger(Proto3ZipkinFields.class.getName());
   /** This is the only field in the ListOfSpans type */
   static final SpanField SPAN = new SpanField();
-  static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
   static class EndpointField extends LengthDelimitedField<Endpoint> {
     static final int SERVICE_NAME_KEY = (1 << 3) | WIRETYPE_LENGTH_DELIMITED;
@@ -59,7 +58,6 @@ final class Proto3ZipkinFields {
     }
 
     @Override int sizeOfValue(Endpoint value) {
-      if (EMPTY_ENDPOINT.equals(value)) return 0;
       int result = 0;
       result += SERVICE_NAME.sizeInBytes(value.serviceName());
       result += IPV4.sizeInBytes(value.ipv4Bytes());
@@ -99,8 +97,7 @@ final class Proto3ZipkinFields {
             logAndSkip(buffer, nextKey);
         }
       }
-      Endpoint result = builder.build();
-      return EMPTY_ENDPOINT.equals(result) ? null : result;
+      return builder.build();
     }
   }
 
