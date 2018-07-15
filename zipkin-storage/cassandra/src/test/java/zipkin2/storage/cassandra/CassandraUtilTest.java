@@ -13,7 +13,9 @@
  */
 package zipkin2.storage.cassandra;
 
+import com.datastax.driver.core.LocalDate;
 import com.google.common.collect.ImmutableMap;
+import java.util.Date;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.junit.Rule;
@@ -21,8 +23,10 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Span;
 import zipkin2.TestObjects;
+import zipkin2.internal.DateUtil;
 import zipkin2.storage.QueryRequest;
 
+import static java.util.concurrent.TimeUnit.DAYS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 
@@ -144,5 +148,12 @@ public class CassandraUtilTest {
     } catch (AssertionError e) {
       assertThat(sortedTraceIds).containsExactly("c", "a", "b");
     }
+  }
+
+  @Test
+  public void getDays_consistentWithDateUtil() {
+    assertThat(CassandraUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)))
+      .extracting(d -> new Date(d.getMillisSinceEpoch()))
+      .containsExactlyElementsOf(DateUtil.getDays(DAYS.toMillis(2), DAYS.toMillis(1)));
   }
 }
