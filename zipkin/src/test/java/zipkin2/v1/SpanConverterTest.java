@@ -811,8 +811,11 @@ public class SpanConverterTest {
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
-  @Test
-  public void redundantAddressAnnotations() {
+  /**
+   * Intentionally create service loopback endpoints as dependency linker can correct it later if
+   * incorrect, provided the server is instrumented.
+   */
+  @Test public void redundantAddressAnnotations_client() {
     Span v2 =
       Span.newBuilder()
         .traceId("1")
@@ -821,6 +824,7 @@ public class SpanConverterTest {
         .kind(Kind.CLIENT)
         .name("get")
         .localEndpoint(FRONTEND)
+        .remoteEndpoint(FRONTEND)
         .timestamp(1472470996199000L)
         .duration(207000L)
         .build();
@@ -837,6 +841,77 @@ public class SpanConverterTest {
         .addAnnotation(1472470996406000L, "cr", FRONTEND)
         .addBinaryAnnotation("ca", FRONTEND)
         .addBinaryAnnotation("sa", FRONTEND)
+        .build();
+
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  /**
+   * On server spans, ignore service name on remote address binary annotation that appear loopback
+   * based on the service name. This could happen when finagle service labels are used incorrectly,
+   * which as common in early instrumentation.
+   *
+   * <p>This prevents an uncorrectable scenario which results in extra (loopback) links on server
+   * spans.
+   */
+  @Test
+  public void redundantServiceNameOnAddressAnnotations_server() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .kind(Kind.SERVER)
+        .name("get")
+        .localEndpoint(FRONTEND)
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("get")
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .addAnnotation(1472470996199000L, "sr", FRONTEND)
+        .addAnnotation(1472470996406000L, "ss", FRONTEND)
+        .addBinaryAnnotation("ca", FRONTEND)
+        .addBinaryAnnotation("sa", FRONTEND)
+        .build();
+
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  @Test
+  public void redundantServiceNameOnAddressAnnotations_serverRetainsClientSocket() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .parentId("2")
+        .id("3")
+        .kind(Kind.SERVER)
+        .name("get")
+        .localEndpoint(BACKEND)
+        .remoteEndpoint(FRONTEND.toBuilder().serviceName(null).build())
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1L)
+        .parentId(2L)
+        .id(3L)
+        .name("get")
+        .timestamp(1472470996199000L)
+        .duration(207000L)
+        .addAnnotation(1472470996199000L, "sr", BACKEND)
+        .addAnnotation(1472470996406000L, "ss", BACKEND)
+        .addBinaryAnnotation("ca", FRONTEND.toBuilder().serviceName("backend").build())
+        .addBinaryAnnotation("sa", BACKEND)
         .build();
 
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
@@ -921,6 +996,26 @@ public class SpanConverterTest {
             .build();
 
     assertThat(v1SpanConverter.convert(v1)).containsExactly(producer, consumer);
+  }
+
+  @Test
+  public void onlyAddressAnnotations() {
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId(1)
+        .parentId(2)
+        .id(3)
+        .name("rpc")
+        .addBinaryAnnotation("ca", FRONTEND)
+        .addBinaryAnnotation("sa", BACKEND)
+        .build();
+
+    Span v2 = Span.newBuilder().traceId("1").parentId("2").id("3").name("rpc")
+      .localEndpoint(FRONTEND)
+      .remoteEndpoint(BACKEND)
+      .build();
+
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
   @Test
