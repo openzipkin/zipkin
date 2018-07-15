@@ -16,26 +16,23 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.LocalDate;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
-import java.util.TimeZone;
 import java.util.TreeMap;
-import java.util.concurrent.TimeUnit;
 import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.internal.DateUtil;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 
 final class CassandraUtil {
-  static final TimeZone UTC = TimeZone.getTimeZone("UTC");
-
   /**
    * Zipkin's {@link QueryRequest#annotationQuery()} are equals match. Not all tag serviceSpanKeys
    * are lookup serviceSpanKeys. For example, {@code sql.query} isn't something that is likely to be
@@ -125,25 +122,10 @@ final class CassandraUtil {
   }
 
   static List<LocalDate> getDays(long endTs, @Nullable Long lookback) {
-    long to = midnightUTC(endTs);
-    long startMillis = endTs - (lookback != null ? lookback : endTs);
-    long from = startMillis <= 0 ? 0 : midnightUTC(startMillis); // >= 1970
-
-    List<LocalDate> days = new ArrayList<>();
-    for (long time = from; time <= to; time += TimeUnit.DAYS.toMillis(1)) {
-      days.add(LocalDate.fromMillisSinceEpoch(time));
+    List<LocalDate> result = new ArrayList<>();
+    for (Date javaDate : DateUtil.getDays(endTs, lookback)) {
+      result.add(LocalDate.fromMillisSinceEpoch(javaDate.getTime()));
     }
-    return days;
-  }
-
-  /** For bucketed data floored to the day. For example, dependency links. */
-  static long midnightUTC(long epochMillis) {
-    Calendar day = Calendar.getInstance(UTC);
-    day.setTimeInMillis(epochMillis);
-    day.set(Calendar.MILLISECOND, 0);
-    day.set(Calendar.SECOND, 0);
-    day.set(Calendar.MINUTE, 0);
-    day.set(Calendar.HOUR_OF_DAY, 0);
-    return day.getTimeInMillis();
+    return result;
   }
 }
