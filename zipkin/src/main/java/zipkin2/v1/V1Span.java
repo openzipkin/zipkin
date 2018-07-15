@@ -34,6 +34,7 @@ import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
  */
 @Deprecated
 public final class V1Span {
+  static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
   /** When non-zero, the trace containing this span uses 128-bit trace identifiers. */
   public long traceIdHigh() {
@@ -158,7 +159,8 @@ public final class V1Span {
     ArrayList<V1BinaryAnnotation> binaryAnnotations;
     Boolean debug;
 
-    Builder() {}
+    Builder() {
+    }
 
     public Builder clear() {
       traceId = traceIdHigh = id = 0;
@@ -238,13 +240,16 @@ public final class V1Span {
     /** @see V1Span#annotations() */
     public Builder addAnnotation(long timestamp, String value, @Nullable Endpoint endpoint) {
       if (annotations == null) annotations = new ArrayList<>(4);
+      if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
       annotations.add(new V1Annotation(timestamp, value, endpoint));
       return this;
     }
 
     /** Creates an address annotation, which is the same as {@link Span#remoteEndpoint()} */
     public Builder addBinaryAnnotation(String address, Endpoint endpoint) {
-      if (endpoint == null) throw new NullPointerException("endpoint == null");
+      // Ignore empty endpoints rather than crashing v1 parsers on bad address data
+      if (endpoint == null || EMPTY_ENDPOINT.equals(endpoint)) return this;
+
       if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(address, null, endpoint));
       return this;
@@ -254,11 +259,11 @@ public final class V1Span {
      * Creates a tag annotation, which is the same as {@link Span#tags()} except duplicating the
      * endpoint.
      *
-     * <p>A special case is when the key is "lc" and value is empty: This substitutes for the {@link
-     * Span#localEndpoint()}.
+     * <p>A key of "lc" and empty value substitutes for {@link Span#localEndpoint()}.
      */
     public Builder addBinaryAnnotation(String key, String value, Endpoint endpoint) {
       if (value == null) throw new NullPointerException("value == null");
+      if (EMPTY_ENDPOINT.equals(endpoint)) endpoint = null;
       if (binaryAnnotations == null) binaryAnnotations = new ArrayList<>(4);
       binaryAnnotations.add(new V1BinaryAnnotation(key, value, endpoint));
       return this;

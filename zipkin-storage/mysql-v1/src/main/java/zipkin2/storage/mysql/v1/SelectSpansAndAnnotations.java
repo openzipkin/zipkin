@@ -44,8 +44,6 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotatio
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Span>> {
-  static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
-
   static final class Factory {
     final Schema schema;
     final boolean strictTraceId;
@@ -259,7 +257,6 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
           });
     }
     result.parseIp(Schema.maybeGet(a, ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, null));
-    Endpoint ep = result.build();
-    return !EMPTY_ENDPOINT.equals(ep) ? ep : null;
+    return result.build();
   }
 }

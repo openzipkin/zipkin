@@ -58,6 +58,7 @@ import static zipkin2.Endpoint.HEX_DIGITS;
 //@Immutable
 public final class Span implements Serializable { // for Spark and Flink jobs
   static final Charset UTF_8 = Charset.forName("UTF-8");
+  static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
   static final int FLAG_DEBUG = 1 << 1;
   static final int FLAG_DEBUG_SET = 1 << 2;
@@ -478,12 +479,14 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
     /** @see Span#localEndpoint */
     public Builder localEndpoint(@Nullable Endpoint localEndpoint) {
+      if (EMPTY_ENDPOINT.equals(localEndpoint)) localEndpoint = null;
       this.localEndpoint = localEndpoint;
       return this;
     }
 
     /** @see Span#remoteEndpoint */
     public Builder remoteEndpoint(@Nullable Endpoint remoteEndpoint) {
+      if (EMPTY_ENDPOINT.equals(remoteEndpoint)) remoteEndpoint = null;
       this.remoteEndpoint = remoteEndpoint;
       return this;
     }

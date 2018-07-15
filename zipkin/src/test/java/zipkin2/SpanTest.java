@@ -35,6 +35,16 @@ public class SpanTest {
       .isEqualTo("463ac35c9f6413ad48485a3953bb6124");
   }
 
+  @Test public void localEndpoint_emptyToNull() {
+    assertThat(base.toBuilder().localEndpoint(Endpoint.newBuilder().build()).localEndpoint)
+      .isNull();
+  }
+
+  @Test public void remoteEndpoint_emptyToNull() {
+    assertThat(base.toBuilder().remoteEndpoint(Endpoint.newBuilder().build()).remoteEndpoint)
+      .isNull();
+  }
+
   @Test public void spanNamesLowercase() {
     assertThat(base.toBuilder().name("GET").build().name())
       .isEqualTo("get");

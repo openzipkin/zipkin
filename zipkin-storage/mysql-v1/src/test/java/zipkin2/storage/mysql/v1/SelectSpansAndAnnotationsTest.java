@@ -112,21 +112,6 @@ public class SelectSpansAndAnnotationsTest {
   }
 
   @Test
-  public void endpoint_nulls() {
-    Record4<String, Integer, Short, byte[]> endpointRecord = endpointRecord(null, null, null, null);
-
-    assertThat(SelectSpansAndAnnotations.endpoint(endpointRecord)).isNull();
-  }
-
-  @Test
-  public void endpoint_emptyToNull() {
-    Record4<String, Integer, Short, byte[]> endpointRecord =
-        endpointRecord("", 0, (short) 0, new byte[0]);
-
-    assertThat(SelectSpansAndAnnotations.endpoint(endpointRecord)).isNull();
-  }
-
-  @Test
   public void endpoint_justIpv4() {
     Record4<String, Integer, Short, byte[]> endpointRecord =
         endpointRecord("", 127 << 24 | 1, (short) 0, new byte[0]);
