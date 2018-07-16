@@ -49,7 +49,7 @@ final class ThriftEndpointCodec {
             });
         }
       } else if (thriftField.isEqualTo(PORT)) {
-        result.port(bytes.getShort());
+        result.port(bytes.getShort() & 0xFFFF);
       } else if (thriftField.isEqualTo(SERVICE_NAME)) {
         result.serviceName(ThriftCodec.readUtf8(bytes));
       } else if (thriftField.isEqualTo(IPV6)) {

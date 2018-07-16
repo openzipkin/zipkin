@@ -21,6 +21,7 @@ import zipkin2.Span.Kind;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
+import static zipkin2.TestObjects.TODAY;
 
 public class SpanConverterTest {
   Endpoint kafka = Endpoint.newBuilder().serviceName("kafka").build();
@@ -236,6 +237,46 @@ public class SpanConverterTest {
             .build();
 
     assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
+  }
+
+  /** This shows a historical finagle span, which has client-side socket info. */
+  @Test
+  public void server_clientAddress() {
+    Span v2 =
+      Span.newBuilder()
+        .traceId("1")
+        .id("2")
+        .name("get")
+        .kind(Kind.SERVER)
+        .localEndpoint(BACKEND)
+        .remoteEndpoint(FRONTEND.toBuilder().port(63840).build())
+        .timestamp(TODAY)
+        .duration(207000L)
+        .addAnnotation(TODAY + 500L,
+          "Gc(9,0.PSScavenge,2015-09-17 12:37:02 +0000,304.milliseconds+762.microseconds)")
+        .putTag("srv/finagle.version", "6.28.0")
+        .shared(true)
+        .build();
+
+    V1Span v1 =
+      V1Span.newBuilder()
+        .traceId("1")
+        .id("2")
+        .name("get")
+        .addAnnotation(v2.timestampAsLong(), "sr", v2.localEndpoint())
+        .addAnnotation(
+          v2.timestampAsLong() + 500L,
+          "Gc(9,0.PSScavenge,2015-09-17 12:37:02 +0000,304.milliseconds+762.microseconds)",
+          v2.localEndpoint())
+        .addAnnotation(v2.timestampAsLong() + v2.durationAsLong(), "ss", v2.localEndpoint())
+        // Sometimes, finagle does not add port info on binary annotations/tags, but does elsewhere
+        .addBinaryAnnotation("srv/finagle.version", "6.28.0",
+          v2.localEndpoint().toBuilder().port(0).build())
+        .addBinaryAnnotation("sa", v2.localEndpoint())
+        .addBinaryAnnotation("ca", v2.remoteEndpoint())
+        .build();
+
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
