@@ -13,6 +13,7 @@
  */
 package zipkin2.internal;
 
+import java.nio.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Endpoint;
@@ -24,6 +25,7 @@ import static zipkin2.Span.Kind.CLIENT;
 import static zipkin2.Span.Kind.CONSUMER;
 import static zipkin2.Span.Kind.PRODUCER;
 import static zipkin2.Span.Kind.SERVER;
+import static zipkin2.internal.ThriftField.TYPE_I16;
 import static zipkin2.internal.ThriftField.TYPE_I32;
 import static zipkin2.internal.ThriftField.TYPE_I64;
 import static zipkin2.internal.ThriftField.TYPE_LIST;
@@ -43,6 +45,23 @@ public class V1ThriftSpanWriterTest {
     Buffer endpointBuffer = new Buffer(ThriftEndpointCodec.sizeInBytes(endpoint));
     ThriftEndpointCodec.write(endpoint, endpointBuffer);
     endpointBytes = endpointBuffer.toByteArray();
+  }
+
+
+  @Test
+  public void endpoint_highPort() {
+    int highPort = 63840;
+    Endpoint endpoint = Endpoint.newBuilder().ip("127.0.0.1").port(63840).build();
+    Buffer endpointBuffer = new Buffer(ThriftEndpointCodec.sizeInBytes(endpoint));
+    ThriftEndpointCodec.write(endpoint, endpointBuffer);
+    byte[] buff = endpointBuffer.toByteArray();
+
+    assertThat(buff)
+      .containsSequence(TYPE_I32, 0, 1, 127, 0, 0, 1) // ipv4
+      .containsSequence(TYPE_I16, 0, 2, (highPort >> 8) & 0xFF, highPort & 0xFF); // port
+
+    assertThat(ThriftEndpointCodec.read(ByteBuffer.wrap(buff)).portAsInt())
+      .isEqualTo(highPort);
   }
 
   @Test
