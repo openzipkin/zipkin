@@ -44,10 +44,12 @@ export function maybeMarkTransientError(row, anno) {
 export function formatAnnotationValue(value) {
   const type = $.type(value);
   if (type === 'object' || type === 'array' || value == null) {
-    return escapeHtml(JSON.stringify(value));
-  } else {
-    return escapeHtml(value.toString()); // prevents false from coercing to empty!
+    return `<pre><code>${escapeHtml(JSON.stringify(value, null, 2))}</code></pre>`;
   }
+  const result = value.toString();
+  // Preformat if the text includes newlines
+  return result.indexOf('\n') === -1 ? escapeHtml(result)
+    : `<pre><code>${escapeHtml(result)}</code></pre>`;
 }
 
 // Binary annotations are tags, and sometimes the values are large, for example
