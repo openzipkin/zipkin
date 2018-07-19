@@ -38,18 +38,15 @@ export function maybeMarkTransientError(row, anno) {
 // end up becoming javascript objects later. For this reason, we have to guard
 // and stringify as necessary.
 
-// annotations are named events which shouldn't hold json. If someone passed
-// json, format as a single line. That way the rows corresponding to timestamps
-// aren't disrupted.
+// annotations are named events which can hold json. If someone passed
+// json, wrap it with <pre><code> to display it properly on UI.
+// That way the rows corresponding to timestamps aren't disrupted.
 export function formatAnnotationValue(value) {
   const type = $.type(value);
   if (type === 'object' || type === 'array' || value == null) {
     return `<pre><code>${escapeHtml(JSON.stringify(value, null, 2))}</code></pre>`;
   }
-  const result = value.toString();
-  // Preformat if the text includes newlines
-  return result.indexOf('\n') === -1 ? escapeHtml(result)
-    : `<pre><code>${escapeHtml(result)}</code></pre>`;
+  return escapeHtml(value.toString());
 }
 
 // Binary annotations are tags, and sometimes the values are large, for example
