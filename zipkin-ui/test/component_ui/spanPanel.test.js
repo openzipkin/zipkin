@@ -59,18 +59,18 @@ describe('formatAnnotationValue', () => {
 
   it('should format object as one-line json', () => {
     formatAnnotationValue({foo: 'bar'}).should.equal(
-      '{&quot;foo&quot;:&quot;bar&quot;}'
+      '<pre><code>{&quot;foo&quot;:&quot;bar&quot;}</code></pre>'
     );
   });
 
   it('should format array as one-line json', () => {
     formatAnnotationValue([{foo: 'bar'}, {baz: 'qux'}]).should.equal(
-      '[{&quot;foo&quot;:&quot;bar&quot;},{&quot;baz&quot;:&quot;qux&quot;}]'
+      '<pre><code>[{&quot;foo&quot;:&quot;bar&quot;},{&quot;baz&quot;:&quot;qux&quot;}]</code></pre>'
     );
   });
 
   it('should format null as json', () => {
-    formatAnnotationValue(null).should.equal('null');
+    formatAnnotationValue(null).should.equal('<pre><code>null</code></pre>');
   });
 
   it('should escape html', () => {
