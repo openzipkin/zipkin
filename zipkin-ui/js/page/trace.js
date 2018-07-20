@@ -42,7 +42,7 @@ const TracePageComponent = component(function TracePage() {
         this.trigger('uiRequestJsonPanel', {
           title: `Trace ${this.attr.traceId}`,
           obj: data.trace,
-          link: `${contextRoot}api/v1/trace/${this.attr.traceId}`
+          link: `${contextRoot}api/v2/trace/${this.attr.traceId}`
         });
       });
 
