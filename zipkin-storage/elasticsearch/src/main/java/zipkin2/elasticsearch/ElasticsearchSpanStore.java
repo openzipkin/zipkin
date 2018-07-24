@@ -88,7 +88,6 @@ final class ElasticsearchSpanStore implements SpanStore {
 
     SearchRequest esRequest =
         SearchRequest.create(indices).filters(filters);
-
     Call<List<Span>> spanResult= search.newCall(esRequest, BodyConverters.SPANS);
     //convert to List<List<Span>>,each list has only one span
     Call<List<List<Span>>> result =spanResult.map(spanList->{
@@ -172,28 +171,4 @@ final class ElasticsearchSpanStore implements SpanStore {
 
     return search.newCall(SearchRequest.create(indices), BodyConverters.DEPENDENCY_LINKS);
   }
-
-  static final class GetSpansByTraceId implements Call.FlatMapper<List<String>, List<Span>> {
-    final SearchCallFactory search;
-    final List<String> indices;
-
-    GetSpansByTraceId(SearchCallFactory search, List<String> indices) {
-      this.search = search;
-      this.indices = indices;
-    }
-
-    @Override
-    public Call<List<Span>> map(List<String> input) {
-      if (input.isEmpty()) return Call.emptyList();
-
-      SearchRequest getTraces = SearchRequest.create(indices).terms("traceId", input);
-      return search.newCall(getTraces, BodyConverters.SPANS);
-    }
-
-    @Override
-    public String toString() {
-      return "GetSpansByTraceId{indices=" + indices + "}";
-    }
-  }
-
 }
