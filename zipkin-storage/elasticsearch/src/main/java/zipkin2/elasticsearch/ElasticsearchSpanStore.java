@@ -13,21 +13,18 @@
  */
 package zipkin2.elasticsearch;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.Aggregation;
-import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.SearchCallFactory;
 import zipkin2.elasticsearch.internal.client.SearchRequest;
 import zipkin2.storage.GroupByTraceId;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
-import zipkin2.storage.StrictTraceId;
+
+import java.util.*;
 
 import static java.util.Arrays.asList;
 
@@ -63,6 +60,8 @@ final class ElasticsearchSpanStore implements SpanStore {
     long beginMillis = Math.max(endMillis - request.lookback(), EARLIEST_MS);
 
     SearchRequest.Filters filters = new SearchRequest.Filters();
+    //only search for SERVER span,which is simpler and faster than aggregation
+    filters.addTerm("kind", "SERVER");
     filters.addRange("timestamp_millis", beginMillis, endMillis);
     if (request.serviceName() != null) {
       filters.addTerm("localEndpoint.serviceName", request.serviceName());
@@ -84,29 +83,24 @@ final class ElasticsearchSpanStore implements SpanStore {
       filters.addRange("duration", request.minDuration(), request.maxDuration());
     }
 
-    // We need to filter to traces that contain at least one span that matches the request,
-    // but the zipkin API is supposed to order traces by first span, regardless of if it was
-    // filtered or not. This is not possible without either multiple, heavyweight queries
-    // or complex multiple indexing, defeating much of the elegance of using elasticsearch for this.
-    // So we fudge and order on the first span among the filtered spans - in practice, there should
-    // be no significant difference in user experience since span start times are usually very
-    // close to each other in human time.
-    Aggregation traceIdTimestamp =
-        Aggregation.terms("traceId", request.limit())
-            .addSubAggregation(Aggregation.min("timestamp_millis"))
-            .orderBy("timestamp_millis", "desc");
-
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest esRequest =
-        SearchRequest.create(indices).filters(filters).addAggregation(traceIdTimestamp);
+        SearchRequest.create(indices).filters(filters);
 
-    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
-
-    Call<List<List<Span>>> result =
-        traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);
-    return strictTraceId ? result.map(StrictTraceId.filterTraces(request)) : result;
+    Call<List<Span>> spanResult= search.newCall(esRequest, BodyConverters.SPANS);
+    //convert to List<List<Span>>,each list has only one span
+    Call<List<List<Span>>> result =spanResult.map(spanList->{
+      List<List<Span>> mapperList=new LinkedList<>();
+      for (Span span : spanList) {
+        List<Span> singleSpanList=new LinkedList<>();
+        singleSpanList.add(span);
+        mapperList.add(singleSpanList);
+      }
+      return mapperList;
+    });
+    return result;
   }
 
   @Override
@@ -201,4 +195,5 @@ final class ElasticsearchSpanStore implements SpanStore {
       return "GetSpansByTraceId{indices=" + indices + "}";
     }
   }
+
 }
