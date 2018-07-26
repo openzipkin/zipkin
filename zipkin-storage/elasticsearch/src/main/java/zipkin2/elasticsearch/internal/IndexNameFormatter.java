@@ -23,7 +23,10 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
 import java.util.TimeZone;
+import zipkin2.internal.DateUtil;
 import zipkin2.internal.Nullable;
+
+import static java.lang.String.format;
 
 @AutoValue
 public abstract class IndexNameFormatter {
@@ -87,50 +90,67 @@ public abstract class IndexNameFormatter {
     String prefix = prefix(type);
     List<String> indices = new ArrayList<>();
     while (current.compareTo(end) <= 0) {
-      if (current.get(Calendar.MONTH) == 0 && current.get(Calendar.DATE) == 1) {
+      if (current.get(Calendar.MONTH) == 0 && current.get(Calendar.DAY_OF_MONTH) == 1) {
         // attempt to compress a year
         current.set(Calendar.DAY_OF_YEAR, current.getActualMaximum(Calendar.DAY_OF_YEAR));
         if (current.compareTo(end) <= 0) {
-          indices.add(
-              String.format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
-          current.add(Calendar.DATE, 1); // rollover to next year
+          indices.add(format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
+          current.add(Calendar.DAY_OF_MONTH, 1); // rollover to next year
           continue;
         } else {
           current.set(Calendar.DAY_OF_YEAR, 1); // rollback to first of the year
         }
-      } else if (current.get(Calendar.DATE) == 1) {
+      } else if (current.get(Calendar.DAY_OF_MONTH) == 1) {
         // attempt to compress a month
-        current.set(Calendar.DATE, current.getActualMaximum(Calendar.DATE));
+        current.set(Calendar.DAY_OF_MONTH, current.getActualMaximum(Calendar.DAY_OF_MONTH));
         if (current.compareTo(end) <= 0) {
-          indices.add(
-              String.format(
-                  "%s-%s%c%02d%c*",
-                  prefix,
-                  current.get(Calendar.YEAR),
-                  dateSeparator(),
-                  current.get(Calendar.MONTH) + 1,
-                  dateSeparator()));
-          current.add(Calendar.DATE, 1); // rollover to next month
+          indices.add(formatIndexPattern("%s-%s%c%02d%c*", current, prefix));
+          current.add(Calendar.DAY_OF_MONTH, 1); // rollover to next month
           continue;
-        } else {
-          current.set(Calendar.DATE, 1); // rollback to first of the month
         }
+        current.set(Calendar.DAY_OF_MONTH, 9); // try to compress days 0-9
+        if (current.compareTo(end) <= 0) {
+          indices.add(formatIndexPattern("%s-%s%c%02d%c0*", current, prefix));
+          current.add(Calendar.DAY_OF_MONTH, 1); // rollover to day 10
+          continue;
+        }
+        current.set(Calendar.DAY_OF_MONTH, 1); // set back to day 1
+      } else if (current.get(Calendar.DAY_OF_MONTH) == 10) {
+        current.set(Calendar.DAY_OF_MONTH, 19); // try to compress days 10-19
+        if (current.compareTo(end) <= 0) {
+          indices.add(formatIndexPattern("%s-%s%c%02d%c1*", current, prefix));
+          current.add(Calendar.DAY_OF_MONTH, 1); // rollover to day 20
+          continue;
+        }
+        current.set(Calendar.DAY_OF_MONTH, 10); // set back to day 10
+      } else if (current.get(Calendar.DAY_OF_MONTH) == 20) {
+        current.set(Calendar.DAY_OF_MONTH, 29); // try to compress days 20-29
+        if (current.compareTo(end) <= 0) {
+          indices.add(formatIndexPattern("%s-%s%c%02d%c2*", current, prefix));
+          current.add(Calendar.DAY_OF_MONTH, 1); // rollover to day 30
+          continue;
+        }
+        current.set(Calendar.DAY_OF_MONTH, 20); // set back to day 20
       }
       indices.add(formatTypeAndTimestamp(type, current.getTimeInMillis()));
-      current.add(Calendar.DATE, 1);
+      current.add(Calendar.DAY_OF_MONTH, 1);
     }
     return indices;
   }
 
+  String formatIndexPattern(String format, GregorianCalendar current, String prefix) {
+    return format(
+      format,
+      prefix,
+      current.get(Calendar.YEAR),
+      dateSeparator(),
+      current.get(Calendar.MONTH) + 1,
+      dateSeparator());
+  }
+
   static GregorianCalendar midnightUTC(long epochMillis) {
     GregorianCalendar result = new GregorianCalendar(UTC);
-    Calendar day = Calendar.getInstance(UTC);
-    day.setTimeInMillis(epochMillis);
-    day.set(Calendar.MILLISECOND, 0);
-    day.set(Calendar.SECOND, 0);
-    day.set(Calendar.MINUTE, 0);
-    day.set(Calendar.HOUR_OF_DAY, 0);
-    result.setTimeInMillis(day.getTimeInMillis());
+    result.setTimeInMillis(DateUtil.midnightUTC(epochMillis));
     return result;
   }
 
