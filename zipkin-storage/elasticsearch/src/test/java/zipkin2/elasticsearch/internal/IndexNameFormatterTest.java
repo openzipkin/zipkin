@@ -222,4 +222,55 @@ public class IndexNameFormatterTest {
             "zipkin:span-2017.*",
             "zipkin:span-2018.01.01");
   }
+
+  @Test
+  public void indexNameForTimestampRange_compressesTens() throws ParseException {
+    formatter = formatter.toBuilder().dateSeparator('.').build();
+    long start = iso8601.parse("2016-10-01T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-10-30T01:01:01Z").getTime();
+
+    assertThat(formatter.formatTypeAndRange("span", start, end))
+      .containsExactly(
+        "zipkin:span-2016.10.0*",
+        "zipkin:span-2016.10.1*",
+        "zipkin:span-2016.10.2*",
+        "zipkin:span-2016.10.30");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_compressesTens_startingAtNine() throws ParseException {
+    formatter = formatter.toBuilder().dateSeparator('.').build();
+    long start = iso8601.parse("2016-10-09T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-10-30T01:01:01Z").getTime();
+
+    assertThat(formatter.formatTypeAndRange("span", start, end))
+      .containsExactly(
+        "zipkin:span-2016.10.09",
+        "zipkin:span-2016.10.1*",
+        "zipkin:span-2016.10.2*",
+        "zipkin:span-2016.10.30");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_compressesTens_startingAtNineteen() throws ParseException {
+    formatter = formatter.toBuilder().dateSeparator('.').build();
+    long start = iso8601.parse("2016-10-19T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-10-30T01:01:01Z").getTime();
+
+    assertThat(formatter.formatTypeAndRange("span", start, end))
+      .containsExactly(
+        "zipkin:span-2016.10.19",
+        "zipkin:span-2016.10.2*",
+        "zipkin:span-2016.10.30");
+  }
+
+  @Test
+  public void indexNameForTimestampRange_compressesTens_not30DayMonth() throws ParseException {
+    formatter = formatter.toBuilder().dateSeparator('.').build();
+    long start = iso8601.parse("2016-06-01T01:01:01Z").getTime();
+    long end = iso8601.parse("2016-06-30T01:01:01Z").getTime();
+
+    assertThat(formatter.formatTypeAndRange("span", start, end))
+      .containsExactly("zipkin:span-2016.06.*");
+  }
 }
