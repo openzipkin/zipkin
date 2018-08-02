@@ -32,7 +32,7 @@ export default component(function traceFilters() {
   };
 
   this.updateTraces = function(ev, data) {
-    this.$node.find('.filter-current').text(data.traces.size());
+    this.$node.find('.filter-current').text(data.traces.length);
   };
 
   this.updateSortOrder = function(ev) {

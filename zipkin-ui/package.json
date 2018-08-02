@@ -17,7 +17,7 @@
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "bootstrap-datepicker": "^1.6.0",
+    "bootstrap-datepicker": "^1.8.0",
     "bootstrap-sass": "^3.3.6",
     "chosen-npm": "^1.4.2",
     "crossroads": "^0.12.2",

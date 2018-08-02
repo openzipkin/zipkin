@@ -35,8 +35,7 @@ export default component(function timeStamp() {
   this.after('initialize', function() {
     this.init();
     this.on(this.$time, 'change', this.timeChanged);
-    this.$date
-      .datepicker({format: 'yyyy-mm-dd'})
-      .on('changeDate', this.dateChanged.bind(this));
+    this.$date.datepicker({format: 'yyyy-mm-dd'});
+    this.on(this.$date, 'changeDate', this.dateChanged.bind(this));
   });
 });
