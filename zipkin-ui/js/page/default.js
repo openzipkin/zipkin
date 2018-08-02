@@ -91,7 +91,9 @@ const DefaultPageComponent = component(function DefaultPage() {
       i18nInit('traces');
 
       $('.timeago').timeago();
-
+      // Need to initialize the datepicker when the UI refershes. Can be optimized
+      this.$date = this.$node.find('.date-input');
+      this.$date.datepicker({format: 'yyyy-mm-dd'});
       this.$node.find('#rawResultsJsonLink').click(e => {
         e.preventDefault();
         this.trigger('uiRequestJsonPanel', {title: 'Search Results',
