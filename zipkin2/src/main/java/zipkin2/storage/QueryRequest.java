@@ -98,6 +98,22 @@ public final class QueryRequest {
     return limit;
   }
 
+  /** Parent service name to fetch for the link dependency */
+  @Nullable
+  public String parentServiceName(){
+    return parentServiceName;
+  }
+
+  /** Child service name to fetch for the link dependency */
+  @Nullable
+  public String childServiceName(){
+    return childServiceName;
+  }
+
+  /** Only return {@link Span} which has error */
+  public boolean fetchErrors(){
+    return fetchErrors;
+  }
   /**
    * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
    *
@@ -126,11 +142,12 @@ public final class QueryRequest {
   }
 
   public static final class Builder {
-    String serviceName, spanName;
+    String serviceName, spanName, parentServiceName, childServiceName;
     Map<String, String> annotationQuery = Collections.emptyMap();
     Long minDuration, maxDuration;
     long endTs, lookback;
     int limit;
+    boolean fetchErrors;
 
     Builder(QueryRequest source) {
       serviceName = source.serviceName;
@@ -141,6 +158,9 @@ public final class QueryRequest {
       endTs = source.endTs;
       lookback = source.lookback;
       limit = source.limit;
+      parentServiceName = source.parentServiceName;
+      childServiceName = source.childServiceName;
+      fetchErrors = source.fetchErrors;
     }
 
     /** @see QueryRequest#serviceName() */
@@ -216,15 +236,34 @@ public final class QueryRequest {
       return this;
     }
 
+    /** @see QueryRequest#parentServiceName */
+    public Builder parentServiceName(String parentServiceName){
+      this.parentServiceName = parentServiceName;
+      return this;
+    }
+
+    /** @see QueryRequest#childServiceName */
+    public Builder childServiceName(String childServiceName){
+      this.childServiceName = childServiceName;
+      return this;
+    }
+    /** @see QueryRequest#fetchErrors */
+    public Builder fetchErrors(boolean fetchErrors){
+      this.fetchErrors = fetchErrors;
+      return this;
+    }
     public final QueryRequest build() {
       // coerce service and span names to lowercase
       if (serviceName != null) serviceName = serviceName.toLowerCase(Locale.ROOT);
       if (spanName != null) spanName = spanName.toLowerCase(Locale.ROOT);
-
+      if (parentServiceName != null) parentServiceName = parentServiceName.toLowerCase(Locale.ROOT);
+      if (childServiceName != null) childServiceName = childServiceName.toLowerCase(Locale.ROOT);
       // remove any accidental empty strings
       annotationQuery.remove("");
       if ("".equals(serviceName)) serviceName = null ;
       if ("".equals(spanName) || "all".equals(spanName)) spanName = null;
+      if ("".equals(parentServiceName)) parentServiceName = null ;
+      if ("".equals(childServiceName)) childServiceName = null ;
 
       if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
       if (limit <= 0) throw new IllegalArgumentException("limit <= 0");
@@ -246,7 +285,10 @@ public final class QueryRequest {
         maxDuration,
         endTs,
         lookback,
-        limit
+        limit,
+        parentServiceName,
+        childServiceName,
+        fetchErrors
       );
     }
 
@@ -321,11 +363,12 @@ public final class QueryRequest {
   }
 
 
-  final String serviceName, spanName;
+  final String serviceName, spanName, parentServiceName, childServiceName;
   final Map<String, String> annotationQuery;
   final Long minDuration, maxDuration;
   final long endTs, lookback;
   final int limit;
+  final boolean fetchErrors;
 
   QueryRequest(
     @Nullable String serviceName,
@@ -335,7 +378,10 @@ public final class QueryRequest {
     @Nullable Long maxDuration,
     long endTs,
     long lookback,
-    int limit) {
+    int limit,
+    @Nullable String parentServiceName,
+    @Nullable String childServiceName,
+    boolean fetchErrors) {
     this.serviceName = serviceName;
     this.spanName = spanName;
     this.annotationQuery = annotationQuery;
@@ -344,19 +390,27 @@ public final class QueryRequest {
     this.endTs = endTs;
     this.lookback = lookback;
     this.limit = limit;
+    this.parentServiceName = parentServiceName;
+    this.childServiceName = childServiceName;
+    this.fetchErrors = fetchErrors;
   }
 
-  @Override
-  public String toString() {
-    return "QueryRequest{"
-      + "serviceName=" + serviceName + ", "
-      + "spanName=" + spanName + ", "
-      + "annotationQuery=" + annotationQuery + ", "
-      + "minDuration=" + minDuration + ", "
-      + "maxDuration=" + maxDuration + ", "
-      + "endTs=" + endTs + ", "
-      + "lookback=" + lookback + ", "
-      + "limit=" + limit
-      + "}";
+  @Override public String toString() {
+    return "QueryRequest{" +
+      "parentServiceName='" + parentServiceName + '\'' +
+      ", childServiceName='" + childServiceName + '\'' +
+      ", fetchErrors=" + fetchErrors +
+      ", serviceName='" + serviceName + '\'' +
+      ", spanName='" + spanName + '\'' +
+      ", parentServiceName='" + parentServiceName + '\'' +
+      ", childServiceName='" + childServiceName + '\'' +
+      ", annotationQuery=" + annotationQuery +
+      ", minDuration=" + minDuration +
+      ", maxDuration=" + maxDuration +
+      ", endTs=" + endTs +
+      ", lookback=" + lookback +
+      ", limit=" + limit +
+      ", fetchErrors=" + fetchErrors +
+      '}';
   }
 }
