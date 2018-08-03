@@ -50,8 +50,8 @@
     <okio.version>1.14.1</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
     <jooq.version>3.11.2</jooq.version>
-    <micrometer.version>1.0.5</micrometer.version>
-    <spring-boot.version>2.0.3.RELEASE</spring-boot.version>
+    <micrometer.version>1.0.6</micrometer.version>
+    <spring-boot.version>2.0.4.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
