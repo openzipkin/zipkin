@@ -13,22 +13,25 @@ var webpackConfig = {
         __dirname + '/css/style-loader.js'
     ],
     resolve: {
-        modulesDirectories: ['node_modules']
+        modules: ['node_modules']
     },
     module: {
-        loaders: [{
+        rules: [{
             test: /\.js$/,
             exclude: /node_modules/,
-            loader: 'babel'
+            use: 'babel-loader'
         }, {
             test: /\.mustache$/,
-            loader: 'mustache'
+            use: 'mustache-loader'
         }, {
             test: /.scss$/,
-            loader: ExtractTextPlugin.extract('style-loader', 'css-loader?sourceMap!sass-loader?sourceMap')
+            use: ExtractTextPlugin.extract({
+              fallback: 'style-loader',
+              use: 'css-loader?sourceMap!sass-loader?sourceMap'
+            })
         }, {
             test: /\.woff2?$|\.ttf$|\.eot$|\.svg|\.png$/,
-            loader: 'file'
+            use: 'file-loader'
         }]
     },
     output: {
