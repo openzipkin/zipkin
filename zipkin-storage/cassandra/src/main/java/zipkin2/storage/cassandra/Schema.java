@@ -101,7 +101,7 @@ final class Schema {
   static KeyspaceMetadata ensureExists(String keyspace, boolean searchEnabled, Session session) {
     session.getCluster().getMetadata().getAllHosts().forEach((host) -> {
       Preconditions.checkState(
-              0 < VersionNumber.parse("3.11.3").compareTo(host.getCassandraVersion()),
+              0 <= VersionNumber.parse("3.11.3").compareTo(host.getCassandraVersion()),
               "All Cassandra nodes must be running 3.11.3+");
     });
     KeyspaceMetadata result = session.getCluster().getMetadata().getKeyspace(keyspace);
