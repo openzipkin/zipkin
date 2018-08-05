@@ -304,14 +304,14 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     // Now decide which address family to parse.
     if (hasColon) {
       if (hasDot) {
-        int lastColon = ipString.lastIndexOf(':');
-        if (!isValidIpV4Address(ipString, lastColon + 1, ipString.length())) {
+        int lastColonIndex = ipString.lastIndexOf(':');
+        if (!isValidIpV4Address(ipString, lastColonIndex + 1, ipString.length())) {
           return IpFamily.Unknown;
         }
-        if (lastColon == 1 && ipString.charAt(0) == ':') {// compressed like ::1.2.3.4
+        if (lastColonIndex == 1 && ipString.charAt(0) == ':') {// compressed like ::1.2.3.4
           return IpFamily.IPv4Embedded;
         }
-        if (lastColon != 6 || ipString.charAt(0) != ':' || ipString.charAt(1) != ':') {
+        if (lastColonIndex != 6 || ipString.charAt(0) != ':' || ipString.charAt(1) != ':') {
           return IpFamily.Unknown;
         }
         for (int i = 2; i < 6; i++) {
