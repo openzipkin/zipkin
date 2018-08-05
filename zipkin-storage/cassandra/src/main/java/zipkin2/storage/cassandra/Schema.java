@@ -24,7 +24,6 @@ import com.datastax.driver.core.TypeCodec;
 import com.datastax.driver.core.VersionNumber;
 import com.datastax.driver.core.exceptions.InvalidTypeException;
 import com.datastax.driver.mapping.annotations.UDT;
-import com.google.common.base.Preconditions;
 import com.google.common.io.CharStreams;
 import com.google.common.net.InetAddresses;
 import java.io.IOException;
@@ -39,6 +38,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
+
+import static com.google.common.base.Preconditions.checkState;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
@@ -56,7 +57,7 @@ final class Schema {
   private Schema() {}
 
   static Metadata readMetadata(Session session) {
-    KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(session);
+    KeyspaceMetadata keyspaceMetadata = ensureKeyspaceMetadata(session, session.getLoggedKeyspace());
 
     Map<String, String> replication = keyspaceMetadata.getReplication();
     if ("SimpleStrategy".equals(replication.get("class"))) {
@@ -67,7 +68,7 @@ final class Schema {
       ConsistencyLevel cl =
           session.getCluster().getConfiguration().getQueryOptions().getConsistencyLevel();
 
-      Preconditions.checkState(
+      checkState(
           ConsistencyLevel.ONE == cl, "Do not define `local_dc` and use SimpleStrategy");
     }
     String compactionClass =
@@ -84,27 +85,30 @@ final class Schema {
     }
   }
 
-  static KeyspaceMetadata getKeyspaceMetadata(Session session) {
-    String keyspace = session.getLoggedKeyspace();
-    Cluster cluster = session.getCluster();
-    KeyspaceMetadata keyspaceMetadata = cluster.getMetadata().getKeyspace(keyspace);
-
+  static KeyspaceMetadata ensureKeyspaceMetadata(Session session, String keyspace) {
+    KeyspaceMetadata keyspaceMetadata = getKeyspaceMetadata(session, keyspace);
     if (keyspaceMetadata == null) {
       throw new IllegalStateException(
-          String.format(
-              "Cannot read keyspace metadata for give keyspace: %s and cluster: %s",
-              keyspace, cluster.getClusterName()));
+        String.format(
+          "Cannot read keyspace metadata for keyspace: %s and cluster: %s",
+          keyspace, session.getCluster().getClusterName()));
     }
     return keyspaceMetadata;
   }
 
+  static KeyspaceMetadata getKeyspaceMetadata(Session session, String keyspace) {
+    Cluster cluster = session.getCluster();
+    com.datastax.driver.core.Metadata metadata = cluster.getMetadata();
+    for (Host host : metadata.getAllHosts()) {
+      checkState(
+        0 >= VersionNumber.parse("3.11.3").compareTo(host.getCassandraVersion()),
+        "All Cassandra nodes must be running 3.11.3+");
+    }
+    return metadata.getKeyspace(keyspace);
+  }
+
   static KeyspaceMetadata ensureExists(String keyspace, boolean searchEnabled, Session session) {
-    session.getCluster().getMetadata().getAllHosts().forEach((host) -> {
-      Preconditions.checkState(
-              0 <= VersionNumber.parse("3.11.3").compareTo(host.getCassandraVersion()),
-              "All Cassandra nodes must be running 3.11.3+");
-    });
-    KeyspaceMetadata result = session.getCluster().getMetadata().getKeyspace(keyspace);
+    KeyspaceMetadata result = getKeyspaceMetadata(session, keyspace);
     if (result == null || result.getTable(Schema.TABLE_SPAN) == null) {
       LOG.info("Installing schema {} for keyspace {}", SCHEMA_RESOURCE, keyspace);
       applyCqlFile(keyspace, session, SCHEMA_RESOURCE);
@@ -113,7 +117,7 @@ final class Schema {
         applyCqlFile(keyspace, session, INDEX_RESOURCE);
       }
       // refresh metadata since we've installed the schema
-      result = session.getCluster().getMetadata().getKeyspace(keyspace);
+      result = ensureKeyspaceMetadata(session, keyspace);
     }
     return result;
   }
