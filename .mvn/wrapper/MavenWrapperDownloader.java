@@ -28,7 +28,7 @@ public class MavenWrapperDownloader {
      * Default URL to download the maven-wrapper.jar from, if no 'downloadUrl' is provided.
      */
     private static final String DEFAULT_DOWNLOAD_URL =
-            "https://repo.maven.apache.org/maven2/io/takari/maven-wrapper/0.4.0/maven-wrapper-0.4.0.jar";
+            "https://repo.maven.apache.org/maven2/io/takari/maven-wrapper/0.4.2/maven-wrapper-0.4.2.jar";
 
     /**
      * Path to the maven-wrapper.properties file, which might contain a downloadUrl property to
