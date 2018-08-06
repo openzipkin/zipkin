@@ -1,6 +1,6 @@
 /* eslint-disable prefer-template */
 import {component} from 'flightjs';
-import chosen from 'chosen-npm/public/chosen.jquery.js'; // eslint-disable-line no-unused-vars
+import 'chosen-js';
 import $ from 'jquery';
 import queryString from 'query-string';
 
@@ -30,7 +30,7 @@ export default component(function spanName() {
     this.$node.chosen({
       search_contains: true
     });
-    this.$node.next('.chosen-container').css('width', '100%');
+    this.$node.next('.chosen-container');
 
     this.on(document, 'dataSpanNames', this.updateSpans);
   });

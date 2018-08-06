@@ -1,18 +1,18 @@
-<div class="well well-sm">
-  <form role="form" id="submitForm">
-    <div class="row">
+<div class="card border-dark mb-3 w-90">
+  <form role="form" id="submitForm" class="card-body">
+    <div class="form-row">
       <div class="form-group col-md-3">
         <label for="timeStamp" data-i18n="traces.servicename">Service Name</label>
         <div class="clearfix">
-          <select data-placeholder="Service Name" class="form-control input-sm" name="serviceName" id="serviceName">
-        </select>
+          <select data-placeholder="Service Name" class="form-control form-control-chosen" name="serviceName" id="serviceName">
+          </select>
         </div>
       </div>
 
       <div class="form-group col-md-3">
         <label for="timeStamp" data-i18n="traces.spanname">Span Name</label>
         <div class="clearfix">
-          <select data-placeholder="Span Name" class="form-control input-sm" name="spanName" id="spanName">
+          <select data-placeholder="Span Name" class="form-control-chosen" name="spanName" id="spanName">
           </select>
         </div>
       </div>
@@ -20,7 +20,7 @@
       <div class="form-group col-md-6">
         <label for="lookback" data-i18n="traces.lookback">Lookback</label>
         <div class="clearfix">
-          <select class="form-control input-sm" name="lookback" id="lookback">
+          <select class="form-control" name="lookback" id="lookback">
             <option value="3600000" data-i18n="traces.lookback.1hour">1 hour</option>
             <option value="10800000" data-i18n="traces.lookback.3hours">3 hours</option>
             <option value="21600000" data-i18n="traces.lookback.6hours">6 hours</option>
@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <div class="row" id="custom-lookback" style="display: none;">
+    <div class="form-row" id="custom-lookback" style="display: none;">
       <div class="col-md-6"></div>
 
       <div id="start-ts" class="form-group col-md-3">
@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <div class="row">
+    <div class="form-row">
       <div class="form-group col-md-6">
         <label for="annotationQuery" data-i18n="traces.annotationQuery">Annotations Query</label>
         <div class="clearfix">
@@ -66,21 +66,28 @@
         </div>
       </div>
 
-      <div class="form-group col-md-3">
+      <div class="form-group col-md-2">
         <label for="minDuration" data-i18n="traces.duration">Duration (μs) >=</label>
         <input class="form-control input-sm" id="minDuration" name="minDuration" type="text" value="{{minDuration}}">
       </div>
 
-      <div class="form-group col-md-3">
+      <div class="form-group col-md-2">
         <label for="limit" data-i18n="traces.limit">Limit</label>
         <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limit}}">
       </div>
+      <div class="form-group col-md-2">
+        <label for="sortOrder" data-i18n="traces.sort">Sort</label>
+        <select class="sort-order js-sort-order form-control" form="submitForm" name="sortOrder" id="sortOrder">
+          {{#sortOrderOptions}}
+            <option value="{{value}}" {{sortOrderSelected}} data-i18n="{{value}}">{{text}}</option>{{/sortOrderOptions}}
+        </select>
+      </div>
     </div>
 
-    <div class="row">
-      <div class="col-md-6">
+    <div class="form-row">
+      <div class="col-md-12">
         <div class="btn-toolbar">
-          <button type="submit" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Find Traces</button>
+          <button type="submit" class="btn btn-secondary btn-lg btn-block" data-i18n="traces.findBtn">Find Traces</button>
           <button type="button" class="btn btn-default btn-lg info-request">
             <span class="glyphicon glyphicon-question-sign"></span>
           </button>
@@ -89,18 +96,10 @@
 
       <div class="col-md-3">
       </div>
-
-      <div class="form-group col-md-3">
-        <label for="sortOrder" data-i18n="traces.sort">Sort</label>
-        <select class="sort-order js-sort-order form-control input-sm" form="submitForm" name="sortOrder" id="sortOrder">
-          {{#sortOrderOptions}}
-            <option value="{{value}}" {{sortOrderSelected}} data-i18n="{{value}}">{{text}}</option>{{/sortOrderOptions}}
-        </select>
-      </div>
     </div>
 
     {{#queryWasPerformed}}
-    <div id="trace-filters" class="row">
+    <div id="trace-filters" class="form-row">
       <div class="col-md-3">
         <div>
           Showing:  <span class="filter-current">{{count}}</span>

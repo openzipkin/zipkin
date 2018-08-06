@@ -1,8 +1,9 @@
 import {component} from 'flightjs';
 import Cookies from 'js-cookie';
 import $ from 'jquery';
-import chosen from 'chosen-npm/public/chosen.jquery.js'; // eslint-disable-line no-unused-vars
 import queryString from 'query-string';
+
+import 'chosen-js';
 
 export default component(function serviceName() {
   this.onChange = function() {
@@ -40,7 +41,7 @@ export default component(function serviceName() {
     this.triggerChange(name);
 
     this.$node.chosen({search_contains: true});
-    this.$node.next('.chosen-container').css('width', '100%');
+    this.$node.next('.chosen-container');
 
     this.on('change', this.onChange);
     this.on(document, 'dataServiceNames', this.updateServiceNameDropdown);
