@@ -88,25 +88,6 @@
       </extension>
     </extensions>
     <plugins>
-      <plugin>
-        <inherited>true</inherited>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-compile</id>
-            <phase>compile</phase>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-            <configuration>
-              <!-- Disable errorprone because JMH generated classes don't add a generated annotation -->
-              <compilerArgs>
-                <arg>-XepDisableAllChecks</arg>
-              </compilerArgs>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <!-- disable retrolambda as we allow language level 1.8 benchmark classes -->
       <plugin>
         <groupId>net.orfjackal.retrolambda</groupId>
@@ -181,4 +162,37 @@
       </plugin>
     </plugins>
   </build>
+  <profiles>
+    <profile>
+      <!-- disable errorprone on JMH source tree -->
+      <id>error-prone-off</id>
+      <activation>
+        <!-- error-prone isn't happy in jdk 10 yet https://github.com/google/error-prone/issues/860#issuecomment-396154710 -->
+        <jdk>[1.8,10)</jdk>
+        <activeByDefault>false</activeByDefault>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>default-compile</id>
+                <phase>compile</phase>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+                <configuration>
+                  <compilerId>javac-with-errorprone</compilerId>
+                  <compilerArgs>
+                    <arg>-XepDisableAllChecks</arg>
+                  </compilerArgs>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
