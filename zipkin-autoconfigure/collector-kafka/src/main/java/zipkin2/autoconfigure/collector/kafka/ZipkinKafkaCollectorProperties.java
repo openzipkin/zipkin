@@ -30,6 +30,8 @@ class ZipkinKafkaCollectorProperties {
   private Integer streams;
   /** Additional Kafka consumer configuration. */
   private Map<String, String> overrides = new LinkedHashMap<>();
+  /** Block on storage **/
+  private boolean blockOnStorage = false;
 
   public String getBootstrapServers() {
     return bootstrapServers;
@@ -71,6 +73,14 @@ class ZipkinKafkaCollectorProperties {
     this.overrides = overrides;
   }
 
+  public boolean isBlockOnStorage() {
+    return blockOnStorage;
+  }
+
+  public void setBlockOnStorage(boolean blockOnStorage) {
+    this.blockOnStorage = blockOnStorage;
+  }
+
   public KafkaCollector.Builder toBuilder() {
     final KafkaCollector.Builder result = KafkaCollector.builder();
     if (bootstrapServers != null) result.bootstrapServers(bootstrapServers);
@@ -78,6 +88,7 @@ class ZipkinKafkaCollectorProperties {
     if (topic != null) result.topic(topic);
     if (streams != null) result.streams(streams);
     if (overrides != null) result.overrides(overrides);
+    result.blockOnStorage(blockOnStorage);
     return result;
   }
 

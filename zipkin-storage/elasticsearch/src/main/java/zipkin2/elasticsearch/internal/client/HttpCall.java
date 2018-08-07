@@ -90,6 +90,15 @@ public final class HttpCall<V> extends Call<V> {
     call.enqueue(new V2CallbackAdapter<>(semaphore, bodyConverter, delegate));
   }
 
+  @Override public void  blockingEnqueue(Callback<V> callback) {
+    try {
+      semaphore.acquire();
+      call.enqueue(new V2CallbackAdapter<>(semaphore, bodyConverter, callback));
+    } catch (InterruptedException e) {
+      callback.onError(e);
+    }
+  }
+
   @Override public void cancel() {
     call.cancel();
   }

@@ -20,6 +20,8 @@ import zipkin2.collector.scribe.ScribeCollector;
 class ZipkinScribeCollectorProperties {
   private String category = "zipkin";
   private int port = 9410;
+  /** Block on storage **/
+  private boolean blockOnStorage = false;
 
   public String getCategory() {
     return category;
@@ -37,7 +39,15 @@ class ZipkinScribeCollectorProperties {
     this.port = port;
   }
 
+  public boolean isBlockOnStorage() {
+    return blockOnStorage;
+  }
+
+  public void setBlockOnStorage(boolean blockOnStorage) {
+    this.blockOnStorage = blockOnStorage;
+  }
+
   public ScribeCollector.Builder toBuilder() {
-    return ScribeCollector.newBuilder().category(category).port(port);
+    return ScribeCollector.newBuilder().category(category).port(port).blockOnStorage(blockOnStorage);
   }
 }

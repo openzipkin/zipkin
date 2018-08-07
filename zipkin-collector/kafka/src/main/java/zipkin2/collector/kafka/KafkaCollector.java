@@ -74,6 +74,12 @@ public final class KafkaCollector extends CollectorComponent {
     }
 
     @Override
+    public Builder blockOnStorage(boolean blockOnStorage) {
+      delegate.blockOnStorage(blockOnStorage);
+      return this;
+    }
+
+    @Override
     public Builder metrics(CollectorMetrics metrics) {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("kafka");

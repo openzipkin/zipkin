@@ -76,6 +76,12 @@ public final class RabbitMQCollector extends CollectorComponent {
       return this;
     }
 
+    @Override
+    public Builder blockOnStorage(boolean blockOnStorage) {
+      delegate.blockOnStorage(blockOnStorage);
+      return this;
+    }
+
     public Builder addresses(List<String> addresses) {
       this.addresses = convertAddresses(addresses);
       return this;

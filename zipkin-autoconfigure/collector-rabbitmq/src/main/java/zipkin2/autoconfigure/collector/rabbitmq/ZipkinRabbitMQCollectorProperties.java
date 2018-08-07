@@ -48,6 +48,8 @@ class ZipkinRabbitMQCollectorProperties {
    * properties will be ignored.
    */
   private URI uri;
+  /** Block on storage **/
+  private boolean blockOnStorage = false;
 
   public List<String> getAddresses() {
     return addresses;
@@ -122,6 +124,14 @@ class ZipkinRabbitMQCollectorProperties {
     this.uri = uri;
   }
 
+  public boolean isBlockOnStorage() {
+    return blockOnStorage;
+  }
+
+  public void setBlockOnStorage(boolean blockOnStorage) {
+    this.blockOnStorage = blockOnStorage;
+  }
+
   public RabbitMQCollector.Builder toBuilder()
       throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException {
     final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
@@ -140,6 +150,7 @@ class ZipkinRabbitMQCollectorProperties {
       if (useSsl != null && useSsl) connectionFactory.useSslProtocol();
     }
     result.connectionFactory(connectionFactory);
+    result.blockOnStorage(blockOnStorage);
     return result;
   }
 }

@@ -48,6 +48,7 @@ public class Collector { // not final for mock
     StorageComponent storage = null;
     CollectorSampler sampler = null;
     CollectorMetrics metrics = null;
+    boolean blockOnStorage = false;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -74,6 +75,12 @@ public class Collector { // not final for mock
       return this;
     }
 
+    /** @see {@link CollectorComponent.Builder#blockOnStorage(boolean)} */
+    public Builder blockOnStorage(boolean blockOnStorage) {
+      this.blockOnStorage = blockOnStorage;
+      return this;
+    }
+
     public Collector build() {
       return new Collector(this);
     }
@@ -83,6 +90,7 @@ public class Collector { // not final for mock
   final CollectorMetrics metrics;
   final CollectorSampler sampler;
   final StorageComponent storage;
+  final boolean blockOnStorage;
 
   Collector(Builder builder) {
     if (builder.logger == null) throw new NullPointerException("logger == null");
@@ -91,6 +99,7 @@ public class Collector { // not final for mock
     if (builder.storage == null) throw new NullPointerException("storage == null");
     this.storage = builder.storage;
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
+    this.blockOnStorage = builder.blockOnStorage;
   }
 
   public void accept(List<Span> spans, Callback<Void> callback) {
@@ -147,7 +156,11 @@ public class Collector { // not final for mock
   }
 
   void record(List<Span> sampled, Callback<Void> callback) {
-    storage.spanConsumer().accept(sampled).enqueue(callback);
+    if(blockOnStorage) {
+      storage.spanConsumer().accept(sampled).blockingEnqueue(callback);
+    } else {
+      storage.spanConsumer().accept(sampled).enqueue(callback);
+    }
   }
 
   String idString(Span span) {

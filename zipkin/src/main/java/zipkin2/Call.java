@@ -163,6 +163,14 @@ public abstract class Call<V> implements Cloneable {
   public abstract void enqueue(Callback<V> callback);
 
   /**
+   * Blocks enqueue request when lock is supported by the implementation.
+   * @see #enqueue(Callback)
+   *
+   * @param callback the callback.
+   */
+  public abstract void blockingEnqueue(Callback<V> callback);
+
+  /**
    * Requests to cancel this call, even if some implementations may not support it. For example, a
    * blocking call is sometimes not cancelable.
    */
@@ -393,6 +401,10 @@ public abstract class Call<V> implements Cloneable {
       } else {
         this.doEnqueue(callback);
       }
+    }
+
+    public void  blockingEnqueue(Callback<V> callback) {
+      enqueue(callback);
     }
 
     protected abstract void doEnqueue(Callback<V> callback);
