@@ -1,4 +1,4 @@
-<div class="card border-dark mb-3 w-90">
+<div class="card bg-light text-dark border-dark mb-3 w-90">
   <form role="form" id="submitForm" class="card-body">
     <div class="form-row">
       <div class="form-group col-md-3">
@@ -86,21 +86,16 @@
 
     <div class="form-row">
       <div class="col-md-12">
-        <div class="btn-toolbar">
-          <button type="submit" class="btn btn-secondary btn-lg btn-block" data-i18n="traces.findBtn">Find Traces</button>
-          <button type="button" class="btn btn-default btn-lg info-request">
-            <span class="glyphicon glyphicon-question-sign"></span>
-          </button>
-        </div>
-      </div>
-
-      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Find Traces</button>
+        <button type="button" class="btn btn-outline-info info-request">
+          <span class="fa fa-question-circle"></span>
+        </button>
       </div>
     </div>
 
     {{#queryWasPerformed}}
-    <div id="trace-filters" class="form-row">
-      <div class="col-md-3">
+    <div id="trace-filters" class="row">
+      <div class="col-md-11">
         <div>
           Showing:  <span class="filter-current">{{count}}</span>
           of <span class="filter-total">{{count}}</span>
@@ -108,12 +103,12 @@
 
         <div class="service-tags">
           Services:
-          <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
+          <span class='badge badge-info' data-service-name="{{serviceName}}">{{serviceName}}</span>
         </div>
       </div>
 
-      <div class="json-badge-container">
-        <a href='{{apiURL}}' id='rawResultsJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a>
+      <div class="col-md-1 float-right">
+        <a href='{{apiURL}}' id='rawResultsJsonLink'><span class='btn btn-sm btn-secondary'>JSON</span></a>
       </div>
     </div>
     {{/queryWasPerformed}}
@@ -126,7 +121,7 @@
   </div>
 {{/queryError}}
 {{^queryWasPerformed}}
-  <div class="alert alert-info" id="help-msg">
+  <div class="alert alert-primary" id="help-msg">
     <p data-i18n="traces.des">Please select the criteria for your trace lookup.</p>
   </div>
 {{/queryWasPerformed}}
@@ -148,7 +143,7 @@
         </a>
         <div class="trace-details services">
           {{#serviceDurations}}
-            <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}}
+            <span class="badge badge-success service-filter-label" data-service-name="{{name}}">{{name}}
               x{{count}} {{max}}ms</span>
           {{/serviceDurations}}
         </div>
@@ -161,12 +156,14 @@
 {{/queryWasPerformed}}
 
 <!-- help panel for different lookup options -->
-<div class="modal fade" id="infoPanel" tabindex="-1">
+<div class="modal fade" id="infoPanel" tabindex="-1" role="dialog"  aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title" data-i18n="modal.title">How to find a trace</h4>
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body">
         <p data-i18n="modal.p1">So you want to find some traces, huh? You've come to the right place!</p>
@@ -215,7 +212,6 @@
           we return traces before that point in time up until the limit number of results.</p>
       </div>
     </div>
-  </div>
 </div>
 
 <div class='modal fade' id='jsonPanel' tabindex='-1'>

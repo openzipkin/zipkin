@@ -9,20 +9,19 @@
             <li class="nav-item" data-route="dependency"><a class="nav-link"  href="{{contextRoot}}dependency/" data-i18n="nav.dep">Dependencies</a></li>
           </ul>
         </div>
-                  <form id="traceIdQueryForm" class="form-inline my-2 my-lg-0">
+          <form id="traceIdQueryForm" class="form-inline my-2 my-lg-0">
             <input class="form-control mr-sm-2" type="search" aria-label="Search" id="traceIdQuery" name="traceIdQuery" placeholder='Go to trace' data-i18n='nav.search'>
             <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
           </form>
     </nav>
-
+  <div class="container-fluid">
     <div id="errorPanel" class="alert alert-danger">
     </div>
 
     <div class='content border-dark mb-3'></div>
 
     <div id='fullPageSpinner'>
-      <div class='progress progress-striped active'>
-        <div class='progress-bar' style='width: 100%'>Working...</div>
+      <div class='fa-circle-notch fa-spin active'>
       </div>
     </div>
 
@@ -38,4 +37,4 @@
         </button>
       </div>
     </div>
-
+</div>

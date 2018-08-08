@@ -1,4 +1,4 @@
-<div id='trace-controls' class='row well well-sm'>
+<div id='trace-controls' class='row card border-dark mb-3 w-90'>
 
   <form class="form-inline" role="form">
     <div class="form-group">
@@ -7,11 +7,11 @@
   </form>
 
   {{#traceId}}
-  <ul class='nav nav-pills'>
-    <li class=''><a href='#'><strong data-i18n="trace.duration">Duration:</strong> <span class='badge'>{{duration}}</span></a></li>
-    <li class=''><a href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge'>{{services}}</span></a></li>
-    <li class=''><a href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge'>{{depth}}</span></a></li>
-    <li class=''><a href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge'>{{totalSpans}}</span></a></li>
+  <ul class='nav nav-pills nav-justified'>
+    <li class='nav-item'><a href='#'><strong data-i18n="trace.duration">Duration:</strong> <span class='badge'>{{duration}}</span></a></li>
+    <li class='nav-item'><a href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge'>{{services}}</span></a></li>
+    <li class='nav-item'><a href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge'>{{depth}}</span></a></li>
+    <li class='nav-item'><a href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge'>{{totalSpans}}</span></a></li>
     {{#logsUrl}}
     <li class='navbar-right'><a href='{{ logsUrl }}' id='traceLogsLink'><span class='btn btn-primary btn-xs badge'>Logs</span></a></li>
     {{/logsUrl}}
@@ -33,7 +33,7 @@
 
   <div class='trace-details services'>
   {{#serviceCounts}}
-    <span class='label label-default service-filter-label service-tag-filtered' data-service-name='{{name}}'>{{name}} x{{count}}</span>
+    <span class='badge badge-success service-filter-label service-tag-filtered' data-service-name='{{name}}'>{{name}} x{{count}}</span>
   {{/serviceCounts}}
   </div>
   {{/traceId}}
