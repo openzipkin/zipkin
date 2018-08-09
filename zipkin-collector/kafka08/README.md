@@ -1,4 +1,4 @@
-# collector-kafka
+# collector-kafka08
 
 ## KafkaCollector
 This collector polls a Kafka 8.2.2+ topic for messages that contain

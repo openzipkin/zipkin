@@ -1,4 +1,4 @@
-# collector-kafka10
+# collector-kafka
 
 ## KafkaCollector
 This collector is implemented as a Kafka consumer supporting Kafka brokers running
