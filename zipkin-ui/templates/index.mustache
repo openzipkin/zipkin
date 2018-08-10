@@ -1,18 +1,18 @@
-<div class="well well-sm">
-  <form role="form" id="submitForm">
-    <div class="row">
+<div class="card bg-light text-dark border-dark mb-3 w-90">
+  <form role="form" id="submitForm" class="card-body">
+    <div class="form-row">
       <div class="form-group col-md-3">
         <label for="timeStamp" data-i18n="traces.servicename">Service Name</label>
         <div class="clearfix">
-          <select data-placeholder="Service Name" class="form-control input-sm" name="serviceName" id="serviceName">
-        </select>
+          <select data-placeholder="Service Name" class="form-control form-control-chosen" name="serviceName" id="serviceName">
+          </select>
         </div>
       </div>
 
       <div class="form-group col-md-3">
         <label for="timeStamp" data-i18n="traces.spanname">Span Name</label>
         <div class="clearfix">
-          <select data-placeholder="Span Name" class="form-control input-sm" name="spanName" id="spanName">
+          <select data-placeholder="Span Name" class="form-control-chosen" name="spanName" id="spanName">
           </select>
         </div>
       </div>
@@ -20,7 +20,7 @@
       <div class="form-group col-md-6">
         <label for="lookback" data-i18n="traces.lookback">Lookback</label>
         <div class="clearfix">
-          <select class="form-control input-sm" name="lookback" id="lookback">
+          <select class="form-control" name="lookback" id="lookback">
             <option value="3600000" data-i18n="traces.lookback.1hour">1 hour</option>
             <option value="10800000" data-i18n="traces.lookback.3hours">3 hours</option>
             <option value="21600000" data-i18n="traces.lookback.6hours">6 hours</option>
@@ -34,7 +34,7 @@
       </div>
     </div>
 
-    <div class="row" id="custom-lookback" style="display: none;">
+    <div class="form-row" id="custom-lookback" style="display: none;">
       <div class="col-md-6"></div>
 
       <div id="start-ts" class="form-group col-md-3">
@@ -56,7 +56,7 @@
       </div>
     </div>
 
-    <div class="row">
+    <div class="form-row">
       <div class="form-group col-md-6">
         <label for="annotationQuery" data-i18n="traces.annotationQuery">Annotations Query</label>
         <div class="clearfix">
@@ -66,42 +66,36 @@
         </div>
       </div>
 
-      <div class="form-group col-md-3">
+      <div class="form-group col-md-2">
         <label for="minDuration" data-i18n="traces.duration">Duration (μs) >=</label>
         <input class="form-control input-sm" id="minDuration" name="minDuration" type="text" value="{{minDuration}}">
       </div>
 
-      <div class="form-group col-md-3">
+      <div class="form-group col-md-2">
         <label for="limit" data-i18n="traces.limit">Limit</label>
         <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limit}}">
       </div>
-    </div>
-
-    <div class="row">
-      <div class="col-md-6">
-        <div class="btn-toolbar">
-          <button type="submit" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Find Traces</button>
-          <button type="button" class="btn btn-default btn-lg info-request">
-            <span class="glyphicon glyphicon-question-sign"></span>
-          </button>
-        </div>
-      </div>
-
-      <div class="col-md-3">
-      </div>
-
-      <div class="form-group col-md-3">
+      <div class="form-group col-md-2">
         <label for="sortOrder" data-i18n="traces.sort">Sort</label>
-        <select class="sort-order js-sort-order form-control input-sm" form="submitForm" name="sortOrder" id="sortOrder">
+        <select class="sort-order js-sort-order form-control" form="submitForm" name="sortOrder" id="sortOrder">
           {{#sortOrderOptions}}
             <option value="{{value}}" {{sortOrderSelected}} data-i18n="{{value}}">{{text}}</option>{{/sortOrderOptions}}
         </select>
       </div>
     </div>
 
+    <div class="form-row">
+      <div class="col-md-12">
+        <button type="submit" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Find Traces</button>
+        <button type="button" class="btn btn-outline-info info-request">
+          <span class="fa fa-question-circle"></span>
+        </button>
+      </div>
+    </div>
+
     {{#queryWasPerformed}}
     <div id="trace-filters" class="row">
-      <div class="col-md-3">
+      <div class="col-md-11">
         <div>
           Showing:  <span class="filter-current">{{count}}</span>
           of <span class="filter-total">{{count}}</span>
@@ -109,12 +103,14 @@
 
         <div class="service-tags">
           Services:
-          <span class='label service-tag-filtered' data-service-name="{{serviceName}}">{{serviceName}}</span>
+          <span class='badge badge-info' data-service-name="{{serviceName}}">{{serviceName}}</span>
         </div>
       </div>
 
-      <div class="json-badge-container">
-        <a href='{{apiURL}}' id='rawResultsJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a>
+      <div class="col-md-1 float-right">
+        <a href='{{apiURL}}' class="btn btn-sm btn-secondary" id='rawResultsJsonLink'>JSON
+          <span class="fa fa-download"></span>
+        </a>
       </div>
     </div>
     {{/queryWasPerformed}}
@@ -127,7 +123,7 @@
   </div>
 {{/queryError}}
 {{^queryWasPerformed}}
-  <div class="alert alert-info" id="help-msg">
+  <div class="alert alert-primary" id="help-msg">
     <p data-i18n="traces.des">Please select the criteria for your trace lookup.</p>
   </div>
 {{/queryWasPerformed}}
@@ -149,7 +145,7 @@
         </a>
         <div class="trace-details services">
           {{#serviceDurations}}
-            <span class="label label-default service-filter-label" data-service-name="{{name}}">{{name}}
+            <span class="badge badge-success service-filter-label" data-service-name="{{name}}">{{name}}
               x{{count}} {{max}}ms</span>
           {{/serviceDurations}}
         </div>
@@ -162,12 +158,14 @@
 {{/queryWasPerformed}}
 
 <!-- help panel for different lookup options -->
-<div class="modal fade" id="infoPanel" tabindex="-1">
+<div class="modal fade" id="infoPanel" tabindex="-1" role="dialog"  aria-hidden="true">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
         <h4 class="modal-title" data-i18n="modal.title">How to find a trace</h4>
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class="modal-body">
         <p data-i18n="modal.p1">So you want to find some traces, huh? You've come to the right place!</p>
@@ -216,7 +214,6 @@
           we return traces before that point in time up until the limit number of results.</p>
       </div>
     </div>
-  </div>
 </div>
 
 <div class='modal fade' id='jsonPanel' tabindex='-1'>

@@ -1,42 +1,28 @@
-    <div id='navbar' class='navbar navbar-inverse' role='navigation'>
-      <div class='container'>
-        <div class='navbar-header'>
-          <a class='navbar-brand' href='{{contextRoot}}'>
-            Zipkin<span class='muted' style='font-size: .75em; padding-left: 10px;' data-i18n="nav.inves">Investigate system behavior</span>
+  <nav class='navbar navbar-expand-lg navbar-dark bg-dark'>
+          <a class='navbar-brand ml-5' href='{{contextRoot}}'>
+          <img src="https://zipkin.io/public/img/zipkin-logo-200x119.jpg" width="60" height="40" class="d-inline-block align-top rounded" alt=""/>
+            <span class='font-weight-light navbar-text' style="font-size: .75em;" data-i18n="nav.inves">Investigate system behavior</span>
           </a>
-        </div>
-        <div class="navbar-left">
-          <ul class="nav navbar-nav">
-            <li data-route="index"><a href="{{contextRoot}}" data-i18n="nav.find">Find a trace</a></li>
-            <li data-route="traceViewer"><a href="{{contextRoot}}traceViewer" data-i18n="nav.viewSaved">View Saved Trace</a></li>
-            <li data-route="dependency"><a href="{{contextRoot}}dependency/" data-i18n="nav.dep">Dependencies</a></li>
+        <div class="collapse navbar-collapse">
+          <ul class="navbar-nav mr-auto">
+            <li class="nav-item" data-route="index"><a class="nav-link"  href="{{contextRoot}}" data-i18n="nav.find">Find a trace</a></li>
+            <li class="nav-item" data-route="traceViewer"><a class="nav-link"  href="{{contextRoot}}traceViewer" data-i18n="nav.viewSaved">View Saved Trace</a></li>
+            <li class="nav-item" data-route="dependency"><a class="nav-link"  href="{{contextRoot}}dependency/" data-i18n="nav.dep">Dependencies</a></li>
           </ul>
         </div>
-        <div class="navbar-right" style="width: 30%">
-          <div class="navbar-right" style='padding-left: 15px'>
-            <p class="navbar-text muted" id="environment"></p>
-          </div>
-          <form id="traceIdQueryForm" class="form-inline" role="form">
-            <div class="navbar-right" style="float: right">
-              <div class="row well-sm clearfix">
-                  <input type="text" class="form-control input-sm" id="traceIdQuery" name="traceIdQuery" placeholder='Go to trace' data-i18n='nav.search'>
-              </div>
-            </div>
+          <form id="traceIdQueryForm" class="form-inline my-2 my-lg-0 mr-5">
+            <input class="form-control mr-sm-2" type="search" aria-label="Search" id="traceIdQuery" name="traceIdQuery" placeholder='Go to trace' data-i18n='nav.search'>
+            <button class="btn btn-outline-success my-2 my-sm-0" type="submit">Search</button>
           </form>
-        </div><!--/.nav-collapse -->
-      </div>
-    </div>
-
+    </nav>
+  <div class="container-fluid">
     <div id="errorPanel" class="alert alert-danger">
     </div>
 
-    <div class='container'>
-      <div class='content'></div>
-    </div>
+    <div class='content border-dark mb-3'></div>
 
     <div id='fullPageSpinner'>
-      <div class='progress progress-striped active'>
-        <div class='progress-bar' style='width: 100%'>Working...</div>
+      <div class='fa-circle-notch fa-spin active'>
       </div>
     </div>
 
@@ -52,4 +38,4 @@
         </button>
       </div>
     </div>
-
+</div>

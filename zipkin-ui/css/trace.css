@@ -95,11 +95,11 @@
 }
 
 #trace-container .span .time-marker-0 { left: 0; }
-#trace-container .span .time-marker-1 { left: 20%; }
-#trace-container .span .time-marker-2 { left: 40%; }
-#trace-container .span .time-marker-3 { left: 60%; }
-#trace-container .span .time-marker-4 { left: 80%; }
-#trace-container .span .time-marker-5 { left: 99.5%; }
+#trace-container .span .time-marker-1 { left: 19%; }
+#trace-container .span .time-marker-2 { left: 38%; }
+#trace-container .span .time-marker-3 { left: 57%; }
+#trace-container .span .time-marker-4 { left: 76%; }
+#trace-container .span .time-marker-5 { left: 95%; }
 
 #trace-container .span .duration {
   position: absolute;
@@ -203,7 +203,7 @@
   margin-right: 5px;
 }
 
-.save {
+/* .save {
   opacity: 0.2;
-}
+} */
 

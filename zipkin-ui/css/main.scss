@@ -1,30 +1,20 @@
-// Import Twitter Bootstrap
-$icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
-@import "~bootstrap-sass/assets/stylesheets/bootstrap";
-
-// We need to wait for this bug to be fixed: https://github.com/harvesthq/chosen/issues/2484
-// @import "~chosen-npm/dist/chosen.css";
-// workaround for now is to commit the css into our project:
-@import "../libs/chosen/chosen.css";
-
+@import "~bootstrap/scss/bootstrap.scss";
+@import "~bootstrap4c-chosen/dist/css/component-chosen.min.css";
 @import "~bootstrap-datepicker/dist/css/bootstrap-datepicker3.css";
+$fa-font-path: "~font-awesome/fonts" !default;
+@import "~font-awesome/scss/font-awesome.scss";    
 
 @import "dependency";
 @import "summary";
 @import "trace";
 @import "traces";
 
-.container {
-  width: 90%;
-  margin: 0 5%;
-}
-
 .content {
-  padding-top: 20px;
+  padding: 2%;
 }
 
 .chosen-container .chosen-single {
-  height: 30px;
+  height: 38px;
 }
 
 .service-filter-label {
@@ -73,4 +63,3 @@ $icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
   right: 0;
   z-index: 100;
 }
-

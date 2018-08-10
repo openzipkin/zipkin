@@ -1,36 +1,43 @@
-<div id='trace-controls' class='row well well-sm'>
-  <ul class='nav nav-pills'>
-    <li class=''><a href='#'><strong data-i18n="trace.duration">Duration:</strong> <span class='badge'>{{duration}}</span></a></li>
-    <li class=''><a href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge'>{{services}}</span></a></li>
-    <li class=''><a href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge'>{{depth}}</span></a></li>
-    <li class=''><a href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge'>{{totalSpans}}</span></a></li>
+<div id='trace-controls' class='card w-90 mb-4 bg-light'>
+<div class="clearfix m-3">
+<div class='row justify-content-start'>
+    <div class='col-md-2'><div href='#'><strong data-i18n="trace.duration">Duration:</strong> <span class='badge badge-dark'>{{duration}}</span></div></div>
+    <div class='col-md-2'><div href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge badge-dark'>{{services}}</span></div></div>
+    <div class='col-md-2'><div href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge badge-dark'>{{depth}}</span></div></div>
+    <div class='col-md-2'><div href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge badge-dark'>{{totalSpans}}</span></div></div>
     {{#logsUrl}}
-    <li class='navbar-right'><a href='{{ logsUrl }}' id='traceLogsLink'><span class='btn btn-primary btn-xs badge'>Logs</span></a></li>
+    <div class='col-md-2'><div href='{{ logsUrl }}' id='traceLogsLink'><span class='btn btn-sm btn-secondary'>Logs</span></div></div>
     {{/logsUrl}}
-    <li class='navbar-right'><a href='{{ contextRoot }}api/v2/trace/{{ traceId }}' id='traceJsonLink'><span class='btn btn-primary btn-xs badge'>JSON</span></a></li>
-  </ul>
-
-  <form class='form-inline' role='form'>
-    <div class='btn-group btn-group-sm' id='filterAllServices'>
-      <button type='button' class='btn btn-default active' value='uiExpandAllSpans' data-i18n="trace.expand">Expand All</button>
-      <button type='button' class='btn btn-default' value='uiCollapseAllSpans' data-i18n="trace.collapse">Collapse All</button>
+</div>
+  
+  <form class='form-row mt-3' role='form'>
+    <div class='form-group col-md-3' id='filterAllServices'>
+      <button type='button' class='btn btn-primary active' value='uiExpandAllSpans' data-i18n="trace.expand">Expand All</button>
+      <button type='button' class='btn btn-primary' value='uiCollapseAllSpans' data-i18n="trace.collapse">Collapse All</button>
     </div>
-    <select data-placeholder='Filter Service Search' class='form-control input-sm' name='serviceFilterSearch' id='serviceFilterSearch'>
-      <option value=''></option>
-      {{#serviceCounts}}
-      <option value='{{name}}'>{{name}}</option>
-      {{/serviceCounts}}
-    </select>
+    <div class="form-group col-md-2">
+      <select data-placeholder='Filter Service Search' class='form-control' name='serviceFilterSearch' id='serviceFilterSearch'>
+        <option value=''></option>
+        {{#serviceCounts}}
+        <option value='{{name}}'>{{name}}</option>
+        {{/serviceCounts}}
+      </select>
+    </div>
   </form>
-
+    <div class="float-right">
+      <span class='btn btn-sm btn-secondary' href='{{ contextRoot }}api/v2/trace/{{ traceId }}' id='traceJsonLink'>JSON
+        <span class="fa fa-download"></span>
+      </span> 
+    </div>
   <div class='trace-details services'>
   {{#serviceCounts}}
-    <span class='label label-default service-filter-label service-tag-filtered' data-service-name='{{name}}'>{{name}} x{{count}}</span>
+    <span class='badge badge-info service-filter-label service-tag-filtered' data-service-name='{{name}}'>{{name}} x{{count}}</span>
   {{/serviceCounts}}
   </div>
+ </div>
 </div>
 
-<div class='row' id='trace-container'>
+<div id='trace-container' class="w-100" style='overflow: hidden;'>
   <div id='timeLabel' class='span'>
     <div class='handle'>Services</div>
     <div class='duration-container'>
@@ -63,12 +70,12 @@
       </div>
     </div>
 
-    <div class='duration-container'>
+    <div class='duration-container row'>
       {{#timeMarkers}}
-      <div class='time-marker time-marker-{{index}}'>.</div>
+      <div class='col time-marker time-marker-{{index}}'>.</div>
       {{/timeMarkers}}
 
-      <div class='duration' style='left: {{left}}%; width: {{width}}%'>
+      <div class='duration ml-3' style='left: {{left}}%; width: {{width}}%'>
         {{durationStr}} : {{spanName}}
         {{#annotations}}
         <div class='annotation{{#isCore}} core{{/isCore}}'
@@ -97,17 +104,21 @@
   {{/spans}}
 </div>
 
-<div class='modal fade' id='spanPanel' tabindex='-1'>
+<div class='modal fade' id='spanPanel' tabindex='-1' role="dialog"  aria-hidden="true">
   <div class='modal-dialog modal-lg'>
     <div class='modal-content'>
       <div class='modal-header'>
-        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
         <h4 class='modal-title'></h4>
-        <h5>AKA: <span class='service-names'></span></h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
       <div class='modal-body'>
-        <table id='annotations' class='table table-striped'>
-          <thead><tr>
+       <div class="card">
+        <h6 class="card-body">AKA: <span class='service-names container'></span></h6>
+       </div> 
+        <table id='annotations' class='table table-striped table-sm table-bordered'>
+          <thead class="table-info"><tr>
             <th>Date Time</th>
             <th>Relative Time</th>
             <th>Annotation</th>
@@ -123,8 +134,8 @@
           </tbody>
         </table>
 
-        <table id='binaryAnnotations' class='table table-striped'>
-          <thead><tr>
+        <table id='binaryAnnotations' class='table table-striped table-sm table-bordered'>
+          <thead class="table-info"><tr>
             <th>Key</th>
             <th>Value</th>
           </tr></thead>
@@ -136,12 +147,14 @@
           </tbody>
         </table>
 
-        <button class="btn btn-info btn-xs pull-right" type="button" data-toggle="collapse"
-                data-target="#moreInfo" aria-expanded="false" aria-controls="moreInfo" data-i18n="trace.more">More Info</button>
+        <button class="btn btn-info btn-sm pull-right mt-1" type="button" data-toggle="collapse"
+                data-target="#moreInfo" aria-expanded="false" aria-controls="moreInfo" data-i18n="trace.more">More Info
+                <span class="fa fa-chevron-circle-down"></span>
+        </button>
         <hr/>
         <div class='clearfix'></div>
         <div id='moreInfo' class='collapse'>
-          <table class='table table-striped'>
+          <table class='table table-striped table-sm table-bordered'>
             <tbody>
               <tr>
                 <td class='key' data-key='key'></td>
@@ -155,7 +168,7 @@
   </div>
 </div>
 
-<div class='row  hidden' id='trace-container-backup'>
+<div class='row' id='trace-container-backup' hidden>
   <div id='timeLabel-backup' class='span'>
     <div class='handle'>Services</div>
     <div class='duration-container'>
@@ -221,16 +234,23 @@
   {{/spansBackup}}
 </div>
 
-<div class='modal fade' id='jsonPanel' tabindex='-1'>
+<div class='modal fade' id='jsonPanel' tabindex='-1' role="dialog"  aria-hidden="true">
   <div class='modal-dialog modal-lg'>
     <div class='modal-content'>
-      <div class='modal-header'>
-        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-        <a href='#' class='save'><span class='glyphicon glyphicon-save' aria-hidden='true' aria-label='save'></span></a>
+      <div class='modal-header bg-light'>
         <h4 class='modal-title'></h4>
+        <a href='#' class='save ml-5 btn btn-outline-dark'>
+          <span class='fa fa-download fa-2x' style="color: black;" aria-hidden='true' aria-label='save'></span>
+        </a>
+        <a class='copy btn btn-outline-dark' id="copy2clipboard">
+          <span class='fa fa-copy fa-2x' style="color: black;" aria-hidden='true' aria-label='save'></span>
+        </a>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-      <div class='modal-body'>
-        <pre></pre>
+      <div class='modal-body bg-dark'>
+        <pre><code class="text-light" id="trace-json-content"/></pre>
       </div>
     </div>
   </div>

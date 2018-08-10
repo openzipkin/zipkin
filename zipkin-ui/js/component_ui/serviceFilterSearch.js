@@ -1,5 +1,5 @@
 import {component} from 'flightjs';
-import chosen from 'chosen-npm/public/chosen.jquery.js'; // eslint-disable-line no-unused-vars
+import 'chosen-js';
 
 export default component(function serviceNameFilter() {
   this.onChange = function(e, params) {
