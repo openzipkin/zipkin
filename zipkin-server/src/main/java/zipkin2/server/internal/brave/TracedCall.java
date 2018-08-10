@@ -56,11 +56,6 @@ final class TracedCall<V> extends Call<V> {
   }
 
   @Override
-  public void blockingEnqueue(Callback<V> callback) {
-    delegate.blockingEnqueue(callback);
-  }
-
-  @Override
   public void cancel() {
     delegate.cancel();
   }

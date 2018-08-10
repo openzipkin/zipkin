@@ -13,11 +13,14 @@
  */
 package zipkin2.collector;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
+
+import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.SpanBytesDecoderDetector;
@@ -157,7 +160,13 @@ public class Collector { // not final for mock
 
   void record(List<Span> sampled, Callback<Void> callback) {
     if(blockOnStorage) {
-      storage.spanConsumer().accept(sampled).blockingEnqueue(callback);
+      try {
+        storage.spanConsumer().accept(sampled).execute();
+        callback.onSuccess(null);
+      } catch (IOException | RuntimeException | Error e) {
+        // TODO: retry on error?
+        callback.onError(e);
+      }
     } else {
       storage.spanConsumer().accept(sampled).enqueue(callback);
     }
