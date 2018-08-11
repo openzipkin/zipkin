@@ -66,12 +66,6 @@ public final class ScribeCollector extends CollectorComponent {
       return this;
     }
 
-    @Override
-    public Builder blockOnStorage(boolean blockOnStorage) {
-      delegate.blockOnStorage(blockOnStorage);
-      return this;
-    }
-
     /** Category zipkin spans will be consumed from. Defaults to "zipkin" */
     public Builder category(String category) {
       if (category == null) throw new NullPointerException("category == null");

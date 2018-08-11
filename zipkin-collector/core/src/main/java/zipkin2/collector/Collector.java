@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 import java.util.logging.Logger;
 
 import zipkin2.Call;
@@ -52,6 +53,7 @@ public class Collector { // not final for mock
     CollectorSampler sampler = null;
     CollectorMetrics metrics = null;
     boolean blockOnStorage = false;
+    int maxStorageRequests = 64;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -78,9 +80,13 @@ public class Collector { // not final for mock
       return this;
     }
 
-    /** @see {@link CollectorComponent.Builder#blockOnStorage(boolean)} */
     public Builder blockOnStorage(boolean blockOnStorage) {
       this.blockOnStorage = blockOnStorage;
+      return this;
+    }
+
+    public Builder maxStorageRequests(int maxStorageRequests) {
+      this.maxStorageRequests = maxStorageRequests;
       return this;
     }
 
@@ -93,7 +99,7 @@ public class Collector { // not final for mock
   final CollectorMetrics metrics;
   final CollectorSampler sampler;
   final StorageComponent storage;
-  final boolean blockOnStorage;
+  final Semaphore semaphore;
 
   Collector(Builder builder) {
     if (builder.logger == null) throw new NullPointerException("logger == null");
@@ -102,7 +108,11 @@ public class Collector { // not final for mock
     if (builder.storage == null) throw new NullPointerException("storage == null");
     this.storage = builder.storage;
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
-    this.blockOnStorage = builder.blockOnStorage;
+    if(builder.blockOnStorage) {
+      semaphore = new Semaphore(builder.maxStorageRequests);
+    } else {
+      semaphore = null;
+    }
   }
 
   public void accept(List<Span> spans, Callback<Void> callback) {
@@ -159,13 +169,15 @@ public class Collector { // not final for mock
   }
 
   void record(List<Span> sampled, Callback<Void> callback) {
-    if(blockOnStorage) {
+    if(semaphore != null) {
       try {
+        semaphore.acquire();
         storage.spanConsumer().accept(sampled).execute();
         callback.onSuccess(null);
-      } catch (IOException | RuntimeException | Error e) {
-        // TODO: retry on error?
+      } catch (RuntimeException | IOException | InterruptedException e) {
         callback.onError(e);
+      } finally {
+        semaphore.release();
       }
     } else {
       storage.spanConsumer().accept(sampled).enqueue(callback);

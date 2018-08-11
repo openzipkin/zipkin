@@ -50,6 +50,8 @@ class ZipkinRabbitMQCollectorProperties {
   private URI uri;
   /** Block on storage **/
   private boolean blockOnStorage = false;
+  /** Max storage requests **/
+  private Integer maxStorageRequests;
 
   public List<String> getAddresses() {
     return addresses;
@@ -132,6 +134,15 @@ class ZipkinRabbitMQCollectorProperties {
     this.blockOnStorage = blockOnStorage;
   }
 
+  public Integer getMaxStorageRequests() {
+    return maxStorageRequests;
+  }
+
+  public void setMaxStorageRequests(Integer maxStorageRequests) {
+    this.maxStorageRequests = maxStorageRequests;
+  }
+
+
   public RabbitMQCollector.Builder toBuilder()
       throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException {
     final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
@@ -151,6 +162,7 @@ class ZipkinRabbitMQCollectorProperties {
     }
     result.connectionFactory(connectionFactory);
     result.blockOnStorage(blockOnStorage);
+    result.maxStorageRequests(maxStorageRequests);
     return result;
   }
 }

@@ -52,13 +52,6 @@ public abstract class CollectorComponent extends Component {
      */
     public abstract Builder sampler(CollectorSampler sampler);
 
-    /**
-     * Turns on/off block on storage feature
-     * @param blockOnStorage true to turn on feature, false otherwise.
-     * @return fluent instance
-     */
-    public abstract Builder blockOnStorage(boolean blockOnStorage);
-
     public abstract CollectorComponent build();
   }
 }

@@ -22,8 +22,10 @@ zipkin:
       group-id: ${KAFKA_GROUP_ID:zipkin}
       # Count of consumer threads consuming the topic
       streams: ${KAFKA_STREAMS:1}
-      # Block on storage feature, not available for every storage implementation
+      # Block on storage feature
       blockOnStorage: ${KAFKA_BLOCK_ON_STORAGE:false}
+      # Max number of concurrent storage insertions
+      maxStorageRequests: ${KAFKA_MAX_STORAGE_REQUESTS:32}
     rabbitmq:
       # RabbitMQ server address list (comma-separated list of host:port)
       addresses: ${RABBIT_ADDRESSES:}
@@ -36,8 +38,10 @@ zipkin:
       virtual-host: ${RABBIT_VIRTUAL_HOST:/}
       useSsl: ${RABBIT_USE_SSL:false}
       uri: ${RABBIT_URI:}
-      # Block on storage feature, not available for every storage implementation
-      blockOnStorage: ${KAFKA_BLOCK_ON_STORAGE:false}
+      # Block on storage feature
+      blockOnStorage: ${RABBIT_BLOCK_ON_STORAGE:false}
+      # Max number of concurrent storage insertions
+      maxStorageRequests: ${RABBIT_MAX_STORAGE_REQUESTS:32}
   query:
     enabled: ${QUERY_ENABLED:true}
     # 1 day in millis

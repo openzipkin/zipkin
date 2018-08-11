@@ -28,6 +28,8 @@ class ZipkinKafkaCollectorProperties {
   private Map<String, String> overrides = new LinkedHashMap<>();
   /** Block on storage **/
   private boolean blockOnStorage = false;
+  /** Max storage requests **/
+  private Integer maxStorageRequests;
 
   public String getTopic() {
     return topic;
@@ -85,6 +87,14 @@ class ZipkinKafkaCollectorProperties {
     this.blockOnStorage = blockOnStorage;
   }
 
+  public Integer getMaxStorageRequests() {
+    return maxStorageRequests;
+  }
+
+  public void setMaxStorageRequests(Integer maxStorageRequests) {
+    this.maxStorageRequests = maxStorageRequests;
+  }
+
   public KafkaCollector.Builder toBuilder() {
     return KafkaCollector.builder()
         .topic(topic)
@@ -93,6 +103,7 @@ class ZipkinKafkaCollectorProperties {
         .streams(streams)
         .maxMessageSize(maxMessageSize)
         .overrides(overrides)
-        .blockOnStorage(blockOnStorage);
+        .blockOnStorage(blockOnStorage)
+        .maxStorageRequests(maxStorageRequests);
   }
 }

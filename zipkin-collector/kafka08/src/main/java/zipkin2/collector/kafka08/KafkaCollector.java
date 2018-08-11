@@ -67,9 +67,13 @@ public final class KafkaCollector extends CollectorComponent {
       return this;
     }
 
-    @Override
     public Builder blockOnStorage(boolean blockOnStorage) {
       delegate.blockOnStorage(blockOnStorage);
+      return this;
+    }
+
+    public Builder maxStorageRequests(int maxStorageRequests) {
+      delegate.maxStorageRequests(maxStorageRequests);
       return this;
     }
 
