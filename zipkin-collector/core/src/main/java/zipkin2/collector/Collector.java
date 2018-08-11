@@ -53,7 +53,7 @@ public class Collector { // not final for mock
     CollectorSampler sampler = null;
     CollectorMetrics metrics = null;
     boolean blockOnStorage = false;
-    int maxStorageRequests = 64;
+    Integer maxStorageRequests = 32;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -85,7 +85,7 @@ public class Collector { // not final for mock
       return this;
     }
 
-    public Builder maxStorageRequests(int maxStorageRequests) {
+    public Builder maxStorageRequests(Integer maxStorageRequests) {
       this.maxStorageRequests = maxStorageRequests;
       return this;
     }

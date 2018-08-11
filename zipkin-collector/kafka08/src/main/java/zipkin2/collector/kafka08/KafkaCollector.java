@@ -72,7 +72,7 @@ public final class KafkaCollector extends CollectorComponent {
       return this;
     }
 
-    public Builder maxStorageRequests(int maxStorageRequests) {
+    public Builder maxStorageRequests(Integer maxStorageRequests) {
       delegate.maxStorageRequests(maxStorageRequests);
       return this;
     }
