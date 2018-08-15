@@ -21,6 +21,7 @@ import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -119,21 +120,14 @@ public class KafkaCollectorTest {
   /**
    * If the Kafka broker(s) specified in the connection string are not available, the Kafka consumer
    * library will attempt to reconnect indefinitely. The Kafka consumer will not throw an exception
-   * and does not expose the status of its connection to the Kafka broker(s) in its API. The only
-   * control over this behavior provided is setting the delay between reconnection attempts. This is
-   * controlled through the consumer config property "reconnect.backoff.ms", which defaults to a
-   * value of 50.
+   * and does not expose the status of its connection to the Kafka broker(s) in its API.
    *
-   * <p>In this case, "unavailable" means that the Kafka consumer cannot establish a connection to
-   * at least one of the hostname/IP and port combinations provided in the bootstrap brokers list.
-   *
-   * <p>There is an opportunity to improve visibility by having {@link KafkaCollector#check()}
-   * interrogate the metrics provided by the Kafka consumer (see {@link
-   * org.apache.kafka.clients.consumer.KafkaConsumer#metrics()}) to determine whether connectivity
-   * to Kafka appears to be up based on observed activity.
+   * An AdminClient API instance has been added to the connector to validate that connection with
+   * Kafka is available in every health check. This AdminClient reuses Consumer's properties to
+   * Connect to the cluster, and request a Cluster description to validate communication with Kafka.
    */
   @Test
-  public void reconnectsIndefinitelyAndReportsHealthyWhenKafkaUnavailable() throws Exception {
+  public void reconnectsIndefinitelyAndReportsUnhealthyWhenKafkaUnavailable() throws Exception {
     KafkaCollector.Builder builder =
         builder("fail_invalid_bootstrap_servers")
             .bootstrapServers("localhost:" + InstanceSpec.getRandomPort());
@@ -141,7 +135,7 @@ public class KafkaCollectorTest {
     try (KafkaCollector collector = builder.build()) {
       collector.start();
       Thread.sleep(TimeUnit.SECONDS.toMillis(1));
-      assertThat(collector.check().ok()).isTrue();
+      assertThat(collector.check().error()).isInstanceOf(TimeoutException.class);
     }
   }
 
