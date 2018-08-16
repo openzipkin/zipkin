@@ -175,7 +175,7 @@ public final class KafkaCollector extends CollectorComponent {
       KafkaFuture<String> maybeClusterId = getAdminClient().describeCluster().clusterId();
       maybeClusterId.get(1, TimeUnit.SECONDS);
       return CheckResult.OK;
-    } catch (RuntimeException | TimeoutException | ExecutionException | InterruptedException e) {
+    } catch (Exception e) {
       return CheckResult.failed(e);
     }
   }
