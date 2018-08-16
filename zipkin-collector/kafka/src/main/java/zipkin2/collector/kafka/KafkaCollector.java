@@ -153,8 +153,8 @@ public final class KafkaCollector extends CollectorComponent {
   }
 
   final LazyKafkaWorkers kafkaWorkers;
-  private final Properties properties;
-  private AdminClient adminClient;
+  final Properties properties;
+  AdminClient adminClient;
 
   KafkaCollector(Builder builder) {
     kafkaWorkers = new LazyKafkaWorkers(builder);
