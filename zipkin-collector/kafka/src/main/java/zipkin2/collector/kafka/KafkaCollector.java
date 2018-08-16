@@ -154,7 +154,7 @@ public final class KafkaCollector extends CollectorComponent {
 
   final LazyKafkaWorkers kafkaWorkers;
   final Properties properties;
-  AdminClient adminClient;
+  volatile AdminClient adminClient;
 
   KafkaCollector(Builder builder) {
     kafkaWorkers = new LazyKafkaWorkers(builder);
@@ -172,13 +172,23 @@ public final class KafkaCollector extends CollectorComponent {
     try {
       CheckResult failure = kafkaWorkers.failure.get(); // check the kafka workers didn't quit
       if (failure != null) return failure;
-      if (adminClient == null) adminClient = AdminClient.create(properties);
-      KafkaFuture<String> maybeClusterId = adminClient.describeCluster().clusterId();
+      KafkaFuture<String> maybeClusterId = getAdminClient().describeCluster().clusterId();
       maybeClusterId.get(1, TimeUnit.SECONDS);
       return CheckResult.OK;
     } catch (RuntimeException | TimeoutException | ExecutionException | InterruptedException e) {
       return CheckResult.failed(e);
     }
+  }
+
+  AdminClient getAdminClient() {
+    if (adminClient == null) {
+      synchronized (this) {
+        if (adminClient == null) {
+          adminClient = AdminClient.create(properties);
+        }
+      }
+    }
+    return adminClient;
   }
 
   @Override
