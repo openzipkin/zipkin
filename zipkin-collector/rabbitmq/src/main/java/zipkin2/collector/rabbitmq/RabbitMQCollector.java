@@ -26,10 +26,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
 import zipkin2.Callback;
 import zipkin2.CheckResult;
-import zipkin2.collector.Collector;
-import zipkin2.collector.CollectorComponent;
-import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.*;
 import zipkin2.storage.StorageComponent;
 
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
@@ -55,6 +52,7 @@ public final class RabbitMQCollector extends CollectorComponent {
     ConnectionFactory connectionFactory = new ConnectionFactory();
     Address[] addresses;
     int concurrency = 1;
+    ConcurrencyLimiter limiter;
 
     @Override
     public Builder storage(StorageComponent storage) {
@@ -100,6 +98,12 @@ public final class RabbitMQCollector extends CollectorComponent {
     }
 
     @Override
+    public Builder limiter(ConcurrencyLimiter limiter) {
+      this.limiter = limiter;
+      return this;
+    }
+
+    @Override
     public RabbitMQCollector build() {
       return new RabbitMQCollector(this);
     }
@@ -107,10 +111,12 @@ public final class RabbitMQCollector extends CollectorComponent {
 
   final String queue;
   final LazyInit connection;
+  final ConcurrencyLimiter limiter;
 
   RabbitMQCollector(Builder builder) {
     this.queue = builder.queue;
     this.connection = new LazyInit(builder);
+    this.limiter = builder.limiter;
   }
 
   @Override
@@ -133,6 +139,7 @@ public final class RabbitMQCollector extends CollectorComponent {
   @Override
   public void close() throws IOException {
     connection.close();
+    limiter.close();
   }
 
   /** Lazy creates a connection and a queue before starting consumers */

@@ -18,10 +18,7 @@ import com.facebook.swift.service.ThriftServer;
 import com.facebook.swift.service.ThriftServerConfig;
 import com.facebook.swift.service.ThriftServiceProcessor;
 import zipkin2.CheckResult;
-import zipkin2.collector.Collector;
-import zipkin2.collector.CollectorComponent;
-import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.*;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
@@ -76,6 +73,12 @@ public final class ScribeCollector extends CollectorComponent {
     /** The port to listen on. Defaults to 9410 */
     public Builder port(int port) {
       this.port = port;
+      return this;
+    }
+
+    @Override
+    public Builder limiter(ConcurrencyLimiter limiter) {
+      // Ignore
       return this;
     }
 

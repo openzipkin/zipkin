@@ -52,6 +52,15 @@ public abstract class CollectorComponent extends Component {
      */
     public abstract Builder sampler(CollectorSampler sampler);
 
+    /**
+     * Apply limits based on concurrency during sample record. Storage signals over capacity with a
+     * RejectedExecutionException.
+     *
+     * @param limiter limiter
+     * @return fluent builder instance.
+     */
+    public abstract Builder limiter(ConcurrencyLimiter limiter);
+
     public abstract CollectorComponent build();
   }
 }

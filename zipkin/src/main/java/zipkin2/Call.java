@@ -151,6 +151,9 @@ public abstract class Call<V> implements Cloneable {
    * <p>Eventhough this is a blocking call, implementations may honor calls to {@linkplain
    * #cancel()} from a different thread.
    *
+   * When {@link java.util.concurrent.RejectedExecutionException} if thrown by storage, and
+   * concurrency limit is active, collector will wait and try not to drop spans.
+   *
    * @return a success value. Null is unexpected, except when {@code V} is {@linkplain Void}.
    */
   public abstract V execute() throws IOException;

@@ -13,6 +13,7 @@
  */
 package zipkin2.collector;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -48,6 +49,7 @@ public class Collector { // not final for mock
     StorageComponent storage = null;
     CollectorSampler sampler = null;
     CollectorMetrics metrics = null;
+    ConcurrencyLimiter limiter = null;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -74,6 +76,13 @@ public class Collector { // not final for mock
       return this;
     }
 
+    /** @see {@link CollectorComponent.Builder#limiter(ConcurrencyLimiter)} */
+    public Builder limiter(ConcurrencyLimiter limiter) {
+      if (limiter == null) throw new NullPointerException("limiter == null");
+      this.limiter = limiter;
+      return this;
+    }
+
     public Collector build() {
       return new Collector(this);
     }
@@ -83,6 +92,7 @@ public class Collector { // not final for mock
   final CollectorMetrics metrics;
   final CollectorSampler sampler;
   final StorageComponent storage;
+  final ConcurrencyLimiter limiter;
 
   Collector(Builder builder) {
     if (builder.logger == null) throw new NullPointerException("logger == null");
@@ -91,6 +101,7 @@ public class Collector { // not final for mock
     if (builder.storage == null) throw new NullPointerException("storage == null");
     this.storage = builder.storage;
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
+    this.limiter = builder.limiter;
   }
 
   public void accept(List<Span> spans, Callback<Void> callback) {
@@ -147,7 +158,20 @@ public class Collector { // not final for mock
   }
 
   void record(List<Span> sampled, Callback<Void> callback) {
-    storage.spanConsumer().accept(sampled).enqueue(callback);
+    if(limiter != null) {
+
+      limiter.execute(() -> {
+        try {
+          storage.spanConsumer().accept(sampled).execute();
+          callback.onSuccess(null);
+        } catch (IOException e) {
+          callback.onError(e);
+        }
+      });
+
+    } else {
+      storage.spanConsumer().accept(sampled).enqueue(callback);
+    }
   }
 
   String idString(Span span) {

@@ -16,6 +16,7 @@ package zipkin2.autoconfigure.collector.kafka08;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import zipkin2.collector.ConcurrencyLimiterProperties;
 import zipkin2.collector.kafka08.KafkaCollector;
 
 @ConfigurationProperties("zipkin.collector.kafka")
@@ -25,6 +26,7 @@ class ZipkinKafkaCollectorProperties {
   private String groupId = "zipkin";
   private int streams = 1;
   private int maxMessageSize = 1024 * 1024;
+  private ConcurrencyLimiterProperties concurrencyLimiter;
   private Map<String, String> overrides = new LinkedHashMap<>();
 
   public String getTopic() {
@@ -67,6 +69,14 @@ class ZipkinKafkaCollectorProperties {
     this.maxMessageSize = maxMessageSize;
   }
 
+  public ConcurrencyLimiterProperties getConcurrencyLimiter() {
+    return concurrencyLimiter;
+  }
+
+  public void setConcurrencyLimiter(ConcurrencyLimiterProperties concurrencyLimiter) {
+    this.concurrencyLimiter = concurrencyLimiter;
+  }
+
   public Map<String, String> getOverrides() {
     return overrides;
   }
@@ -76,12 +86,21 @@ class ZipkinKafkaCollectorProperties {
   }
 
   public KafkaCollector.Builder toBuilder() {
-    return KafkaCollector.builder()
-        .topic(topic)
-        .zookeeper(zookeeper)
-        .groupId(groupId)
-        .streams(streams)
-        .maxMessageSize(maxMessageSize)
-        .overrides(overrides);
+
+    final KafkaCollector.Builder result = KafkaCollector.builder();
+
+    result
+      .topic(topic)
+      .zookeeper(zookeeper)
+      .groupId(groupId)
+      .streams(streams)
+      .maxMessageSize(maxMessageSize)
+      .overrides(overrides);
+
+    if(concurrencyLimiter != null) {
+      result.limiter(concurrencyLimiter.build());
+    }
+
+    return result;
   }
 }

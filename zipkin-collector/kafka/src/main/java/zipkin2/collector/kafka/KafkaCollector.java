@@ -27,10 +27,7 @@ import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.CheckResult;
-import zipkin2.collector.Collector;
-import zipkin2.collector.CollectorComponent;
-import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.*;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
@@ -60,6 +57,7 @@ public final class KafkaCollector extends CollectorComponent {
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
     String topic = "zipkin";
     int streams = 1;
+    ConcurrencyLimiter limiter;
 
     @Override
     public Builder storage(StorageComponent storage) {
@@ -78,6 +76,12 @@ public final class KafkaCollector extends CollectorComponent {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("kafka");
       delegate.metrics(this.metrics);
+      return this;
+    }
+
+    @Override
+    public Builder limiter(ConcurrencyLimiter limiter) {
+      this.limiter = limiter;
       return this;
     }
 
@@ -148,9 +152,11 @@ public final class KafkaCollector extends CollectorComponent {
   }
 
   final LazyKafkaWorkers kafkaWorkers;
+  final ConcurrencyLimiter limiter;
 
   KafkaCollector(Builder builder) {
     kafkaWorkers = new LazyKafkaWorkers(builder);
+    limiter = builder.limiter;
   }
 
   @Override
@@ -173,6 +179,7 @@ public final class KafkaCollector extends CollectorComponent {
   @Override
   public void close() {
     kafkaWorkers.close();
+    limiter.close();
   }
 
   static final class LazyKafkaWorkers {

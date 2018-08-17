@@ -64,6 +64,7 @@
     <!-- Be careful to set this as a provided dep, so that it doesn't interfere with dependencies
          from other projects. For example, cassandra and spring boot set guava versions -->
     <guava.version>19.0</guava.version>
+    <netflix.concurrency.limits.version>0.0.49</netflix.concurrency.limits.version>
     <junit.version>4.12</junit.version>
     <powermock.version>2.0.0-beta.5</powermock.version>
     <mockito.version>2.21.0</mockito.version>
@@ -396,6 +397,14 @@
         <artifactId>brave-instrumentation-cassandra-driver</artifactId>
         <version>0.8.0</version>
       </dependency>
+
+      <!-- Collector concurrency limits -->
+      <dependency>
+        <groupId>com.netflix.concurrency-limits</groupId>
+        <artifactId>concurrency-limits-core</artifactId>
+        <version>${netflix.concurrency.limits.version}</version>
+      </dependency>
+
     </dependencies>
   </dependencyManagement>
 

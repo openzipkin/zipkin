@@ -32,6 +32,13 @@
   </properties>
 
   <dependencies>
+
+    <!-- Concurrency limits -->
+    <dependency>
+      <groupId>com.netflix.concurrency-limits</groupId>
+      <artifactId>concurrency-limits-core</artifactId>
+    </dependency>
+
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
