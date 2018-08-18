@@ -23,7 +23,8 @@ import zipkin2.server.internal.brave.TracingConfiguration;
   TracingConfiguration.class,
   ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class,
-  MetricsHealthController.class
+  MetricsHealthController.class,
+  ConcurrencyLimiterConfiguration.class
 })
 public class InternalZipkinConfiguration {
 }

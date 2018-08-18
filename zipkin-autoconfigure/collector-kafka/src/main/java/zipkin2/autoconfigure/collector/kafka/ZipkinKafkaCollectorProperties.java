@@ -17,7 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.collector.kafka.KafkaCollector;
-import zipkin2.collector.ConcurrencyLimiterProperties;
 
 @ConfigurationProperties("zipkin.collector.kafka")
 class ZipkinKafkaCollectorProperties {
@@ -29,8 +28,6 @@ class ZipkinKafkaCollectorProperties {
   private String topic;
   /** Number of Kafka consumer threads to run. */
   private Integer streams;
-  /** Concurrency limiter. */
-  private ConcurrencyLimiterProperties concurrencyLimiter;
 
   /** Additional Kafka consumer configuration. */
   private Map<String, String> overrides = new LinkedHashMap<>();
@@ -75,14 +72,6 @@ class ZipkinKafkaCollectorProperties {
     this.overrides = overrides;
   }
 
-  public ConcurrencyLimiterProperties getConcurrencyLimiter() {
-    return concurrencyLimiter;
-  }
-
-  public void setConcurrencyLimiter(ConcurrencyLimiterProperties concurrencyLimiter) {
-    this.concurrencyLimiter = concurrencyLimiter;
-  }
-
   public KafkaCollector.Builder toBuilder() {
     final KafkaCollector.Builder result = KafkaCollector.builder();
     if (bootstrapServers != null) result.bootstrapServers(bootstrapServers);
@@ -90,10 +79,6 @@ class ZipkinKafkaCollectorProperties {
     if (topic != null) result.topic(topic);
     if (streams != null) result.streams(streams);
     if (overrides != null) result.overrides(overrides);
-
-    if(concurrencyLimiter != null) {
-      result.limiter(concurrencyLimiter.build());
-    }
 
     return result;
   }

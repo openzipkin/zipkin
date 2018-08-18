@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.ConcurrencyLimiter;
 import zipkin2.collector.kafka08.KafkaCollector;
 import zipkin2.storage.StorageComponent;
 
@@ -40,9 +41,10 @@ class ZipkinKafka08CollectorAutoConfiguration {
       ZipkinKafkaCollectorProperties kafka,
       CollectorSampler sampler,
       CollectorMetrics metrics,
-      StorageComponent storage) {
+      StorageComponent storage,
+      ConcurrencyLimiter limiter) {
     final KafkaCollector result =
-        kafka.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+        kafka.toBuilder().sampler(sampler).metrics(metrics).storage(storage).limiter(limiter).build();
 
     // don't use @Bean(initMethod = "start") as it can crash the process if zookeeper is down
     Thread start =

@@ -1,3 +1,4 @@
+
 /*
  * Copyright 2015-2018 The OpenZipkin Authors
  *
@@ -11,7 +12,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.collector;
+package zipkin2.server.internal;
 
 import com.netflix.concurrency.limits.Limit;
 import com.netflix.concurrency.limits.Limiter;
@@ -19,9 +20,12 @@ import com.netflix.concurrency.limits.limit.FixedLimit;
 import com.netflix.concurrency.limits.limiter.BlockingLimiter;
 import com.netflix.concurrency.limits.limiter.DefaultLimiter;
 import com.netflix.concurrency.limits.strategy.SimpleStrategy;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import zipkin2.collector.ConcurrencyLimiter;
 
 import java.util.concurrent.TimeUnit;
 
+@ConfigurationProperties("zipkin.collector.concurrency.limiter")
 public class ConcurrencyLimiterProperties {
 
   private Integer concurrency = 1;

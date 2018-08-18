@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.ConcurrencyLimiter;
 import zipkin2.collector.kafka.KafkaCollector;
 import zipkin2.storage.StorageComponent;
 
@@ -36,11 +37,12 @@ class ZipkinKafkaCollectorAutoConfiguration { // makes simple type name unique f
 
   @Bean(initMethod = "start")
   KafkaCollector kafka(
-      ZipkinKafkaCollectorProperties properties,
-      CollectorSampler sampler,
-      CollectorMetrics metrics,
-      StorageComponent storage) {
-    return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+    ZipkinKafkaCollectorProperties properties,
+    CollectorSampler sampler,
+    CollectorMetrics metrics,
+    StorageComponent storage,
+    ConcurrencyLimiter limiter) {
+    return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).limiter(limiter).build();
   }
 
   /**

@@ -32,6 +32,7 @@ import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.ConcurrencyLimiter;
 import zipkin2.storage.StorageComponent;
 
 /** Implements the POST /api/v1/spans and /api/v2/spans endpoints used by instrumentation. */
@@ -49,16 +50,19 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
   final Receiver.ErrorCallback errorCallback;
   private HttpHandler next;
 
-  @Autowired
+  @Autowired(required = false)
   ZipkinHttpCollector(
-      StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
+      StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics, ConcurrencyLimiter limiter) {
     this.metrics = metrics.forTransport("http");
-    this.collector =
-        Collector.newBuilder(getClass())
-            .storage(storage)
-            .sampler(sampler)
-            .metrics(this.metrics)
-            .build();
+
+    Collector.Builder builder = Collector.newBuilder(getClass())
+      .storage(storage)
+      .sampler(sampler)
+      .metrics(this.metrics);
+    if(limiter != null) {
+      builder.limiter(limiter);
+    }
+    this.collector = builder.build();
     this.JSON_V2 = new HttpCollector(SpanBytesDecoder.JSON_V2);
     this.PROTO3 = new HttpCollector(SpanBytesDecoder.PROTO3);
     this.JSON_V1 = new HttpCollector(SpanBytesDecoder.JSON_V1);

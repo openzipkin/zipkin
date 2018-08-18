@@ -20,7 +20,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin2.collector.ConcurrencyLimiterProperties;
 import zipkin2.collector.rabbitmq.RabbitMQCollector;
 
 /** Properties for configuring and building a {@link RabbitMQCollector}. */
@@ -49,8 +48,6 @@ class ZipkinRabbitMQCollectorProperties {
    * properties will be ignored.
    */
   private URI uri;
-  /** Concurrency limiter. */
-  private ConcurrencyLimiterProperties concurrencyLimiter;
 
   public List<String> getAddresses() {
     return addresses;
@@ -125,14 +122,6 @@ class ZipkinRabbitMQCollectorProperties {
     this.uri = uri;
   }
 
-  public ConcurrencyLimiterProperties getConcurrencyLimiter() {
-    return concurrencyLimiter;
-  }
-
-  public void setConcurrencyLimiter(ConcurrencyLimiterProperties concurrencyLimiter) {
-    this.concurrencyLimiter = concurrencyLimiter;
-  }
-
   public RabbitMQCollector.Builder toBuilder()
       throws KeyManagementException, NoSuchAlgorithmException, URISyntaxException {
     final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
@@ -149,9 +138,6 @@ class ZipkinRabbitMQCollectorProperties {
       if (username != null) connectionFactory.setUsername(username);
       if (virtualHost != null) connectionFactory.setVirtualHost(virtualHost);
       if (useSsl != null && useSsl) connectionFactory.useSslProtocol();
-    }
-    if(concurrencyLimiter != null) {
-      result.limiter(concurrencyLimiter.build());
     }
     result.connectionFactory(connectionFactory);
     return result;

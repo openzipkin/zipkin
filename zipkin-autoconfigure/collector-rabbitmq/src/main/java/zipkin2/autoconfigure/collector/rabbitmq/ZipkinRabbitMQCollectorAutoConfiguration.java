@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.ConcurrencyLimiter;
 import zipkin2.collector.rabbitmq.RabbitMQCollector;
 import zipkin2.storage.StorageComponent;
 
@@ -36,12 +37,13 @@ class ZipkinRabbitMQCollectorAutoConfiguration {
 
   @Bean(initMethod = "start")
   RabbitMQCollector rabbitMq(
-      ZipkinRabbitMQCollectorProperties properties,
-      CollectorSampler sampler,
-      CollectorMetrics metrics,
-      StorageComponent storage)
+    ZipkinRabbitMQCollectorProperties properties,
+    CollectorSampler sampler,
+    CollectorMetrics metrics,
+    StorageComponent storage,
+    ConcurrencyLimiter limiter)
       throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
-    return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+    return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).limiter(limiter).build();
   }
 
   /**
