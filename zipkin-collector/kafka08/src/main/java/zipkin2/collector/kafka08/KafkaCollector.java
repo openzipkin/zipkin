@@ -207,7 +207,9 @@ public final class KafkaCollector extends CollectorComponent {
   public void close() {
     streams.close();
     connector.close();
-    limiter.close();
+    if(limiter != null) {
+      limiter.close();
+    }
   }
 
   static final class LazyStreams {

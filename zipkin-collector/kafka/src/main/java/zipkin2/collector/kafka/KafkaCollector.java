@@ -179,7 +179,9 @@ public final class KafkaCollector extends CollectorComponent {
   @Override
   public void close() {
     kafkaWorkers.close();
-    limiter.close();
+    if(limiter != null) {
+      limiter.close();
+    }
   }
 
   static final class LazyKafkaWorkers {

@@ -139,7 +139,9 @@ public final class RabbitMQCollector extends CollectorComponent {
   @Override
   public void close() throws IOException {
     connection.close();
-    limiter.close();
+    if(limiter != null) {
+      limiter.close();
+    }
   }
 
   /** Lazy creates a connection and a queue before starting consumers */
