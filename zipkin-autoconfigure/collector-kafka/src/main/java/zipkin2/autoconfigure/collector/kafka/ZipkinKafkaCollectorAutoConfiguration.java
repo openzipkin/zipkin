@@ -13,6 +13,7 @@
  */
 package zipkin2.autoconfigure.collector.kafka;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -41,7 +42,7 @@ class ZipkinKafkaCollectorAutoConfiguration { // makes simple type name unique f
     CollectorSampler sampler,
     CollectorMetrics metrics,
     StorageComponent storage,
-    ConcurrencyLimiter limiter) {
+    @Autowired(required = false) ConcurrencyLimiter limiter) {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).limiter(limiter).build();
   }
 

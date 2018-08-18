@@ -50,9 +50,9 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
   final Receiver.ErrorCallback errorCallback;
   private HttpHandler next;
 
-  @Autowired(required = false)
+  @Autowired
   ZipkinHttpCollector(
-      StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics, ConcurrencyLimiter limiter) {
+      StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics, @Autowired(required = false) ConcurrencyLimiter limiter) {
     this.metrics = metrics.forTransport("http");
 
     Collector.Builder builder = Collector.newBuilder(getClass())

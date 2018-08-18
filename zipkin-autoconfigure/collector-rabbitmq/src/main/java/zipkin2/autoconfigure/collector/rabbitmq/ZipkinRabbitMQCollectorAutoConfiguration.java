@@ -16,6 +16,8 @@ package zipkin2.autoconfigure.collector.rabbitmq;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -41,7 +43,7 @@ class ZipkinRabbitMQCollectorAutoConfiguration {
     CollectorSampler sampler,
     CollectorMetrics metrics,
     StorageComponent storage,
-    ConcurrencyLimiter limiter)
+    @Autowired(required = false) ConcurrencyLimiter limiter)
       throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).limiter(limiter).build();
   }

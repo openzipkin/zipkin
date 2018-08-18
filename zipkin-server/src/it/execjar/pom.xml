@@ -37,6 +37,13 @@
       <version>3.10.0</version>
       <scope>test</scope>
     </dependency>
+    <!-- Concurrency limits -->
+    <dependency>
+      <groupId>com.netflix.concurrency-limits</groupId>
+      <artifactId>concurrency-limits-core</artifactId>
+      <version>0.0.49</version>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
