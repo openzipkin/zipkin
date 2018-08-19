@@ -16,11 +16,16 @@ package zipkin2.collector.kafka;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigException;
 import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
@@ -148,9 +153,12 @@ public final class KafkaCollector extends CollectorComponent {
   }
 
   final LazyKafkaWorkers kafkaWorkers;
+  final Properties properties;
+  volatile AdminClient adminClient;
 
   KafkaCollector(Builder builder) {
     kafkaWorkers = new LazyKafkaWorkers(builder);
+    properties = builder.properties;
   }
 
   @Override
@@ -164,15 +172,29 @@ public final class KafkaCollector extends CollectorComponent {
     try {
       CheckResult failure = kafkaWorkers.failure.get(); // check the kafka workers didn't quit
       if (failure != null) return failure;
+      KafkaFuture<String> maybeClusterId = getAdminClient().describeCluster().clusterId();
+      maybeClusterId.get(1, TimeUnit.SECONDS);
       return CheckResult.OK;
-    } catch (RuntimeException e) {
+    } catch (Exception e) {
       return CheckResult.failed(e);
     }
+  }
+
+  AdminClient getAdminClient() {
+    if (adminClient == null) {
+      synchronized (this) {
+        if (adminClient == null) {
+          adminClient = AdminClient.create(properties);
+        }
+      }
+    }
+    return adminClient;
   }
 
   @Override
   public void close() {
     kafkaWorkers.close();
+    if (adminClient != null) adminClient.close(1, TimeUnit.SECONDS);
   }
 
   static final class LazyKafkaWorkers {
