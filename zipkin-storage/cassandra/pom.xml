@@ -28,6 +28,9 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
+
+    <!-- error-prone doesn't like generated code -->
+    <errorprone.args>-XepDisableWarningsInGeneratedCode</errorprone.args>
   </properties>
 
   <dependencies>
@@ -37,6 +40,10 @@
       <version>${project.version}</version>
     </dependency>
 
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value-annotations</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>

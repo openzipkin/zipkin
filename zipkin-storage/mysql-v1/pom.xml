@@ -28,18 +28,15 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
+
+    <!-- error-prone doesn't like generated code -->
+    <errorprone.args>-XepDisableWarningsInGeneratedCode</errorprone.args>
   </properties>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.google.auto.value</groupId>
-      <artifactId>auto-value</artifactId>
-      <scope>provided</scope>
     </dependency>
 
     <dependency>
