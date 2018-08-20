@@ -13,18 +13,17 @@
  */
 package zipkin2.elasticsearch;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.internal.tls.SslClient;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import zipkin2.CheckResult;
 
 import static java.util.Arrays.asList;
+import static okhttp3.tls.internal.TlsUtil.localhost;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 
@@ -105,13 +104,12 @@ public class ElasticsearchStorageTest {
   @Test
   public void check_ssl() throws Exception {
     storage.close();
-    SslClient sslClient = SslClient.localhost();
     OkHttpClient client =
         new OkHttpClient.Builder()
-            .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+            .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
             .hostnameVerifier((host, session) -> true)
             .build();
-    es.useHttps(sslClient.socketFactory, false);
+    es.useHttps(localhost().sslSocketFactory(), false);
 
     storage = ElasticsearchStorage.newBuilder(client).hosts(asList(es.url("").toString())).build();
 
@@ -125,12 +123,11 @@ public class ElasticsearchStorageTest {
   @Test(expected = IllegalArgumentException.class)
   public void multipleSslNotYetSupported() {
     storage.close();
-    SslClient sslClient = SslClient.localhost();
     OkHttpClient client =
         new OkHttpClient.Builder()
-            .sslSocketFactory(sslClient.socketFactory, sslClient.trustManager)
+          .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
             .build();
-    es.useHttps(sslClient.socketFactory, false);
+    es.useHttps(localhost().sslSocketFactory(), false);
 
     storage =
         ElasticsearchStorage.newBuilder(client)

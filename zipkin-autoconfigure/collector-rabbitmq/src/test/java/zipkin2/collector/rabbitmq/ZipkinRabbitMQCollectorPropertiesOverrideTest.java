@@ -81,6 +81,6 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
 
     assertThat(Access.collectorBuilder(context))
         .extracting(builderExtractor)
-        .containsExactly(value);
+        .isEqualTo(value);
   }
 }

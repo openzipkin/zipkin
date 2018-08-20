@@ -28,6 +28,9 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
+
+    <!-- error-prone doesn't like generated code -->
+    <errorprone.args>-XepDisableWarningsInGeneratedCode</errorprone.args>
   </properties>
 
   <dependencies>
@@ -36,6 +39,10 @@
       <artifactId>zipkin-storage-cassandra</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>com.google.auto.value</groupId>
+      <artifactId>auto-value-annotations</artifactId>
+    </dependency>
     <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
@@ -75,7 +82,7 @@
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-guava</artifactId>
-      <version>3.1.0</version>
+      <version>3.2.0</version>
       <scope>test</scope>
     </dependency>
 

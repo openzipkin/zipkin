@@ -74,6 +74,6 @@ public class ZipkinKafkaCollectorPropertiesOverrideTest {
 
     Assertions.assertThat(Access.collectorBuilder(context))
         .extracting(builderExtractor)
-        .containsExactly(value);
+        .isEqualTo(value);
   }
 }
