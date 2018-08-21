@@ -1,8 +1,10 @@
 @import "~bootstrap/scss/bootstrap.scss";
 @import "~bootstrap4c-chosen/dist/css/component-chosen.min.css";
 @import "~bootstrap-datepicker/dist/css/bootstrap-datepicker3.css";
-$fa-font-path: "~font-awesome/fonts" !default;
-@import "~font-awesome/scss/font-awesome.scss";    
+$fa-font-path: "~@fortawesome/fontawesome-free/webfonts" !default;
+@import "~@fortawesome/fontawesome-free/scss/fontawesome.scss";    
+@import "~@fortawesome/fontawesome-free/scss/regular.scss";    
+@import "~@fortawesome/fontawesome-free/scss/solid.scss";    
 
 @import "dependency";
 @import "summary";
