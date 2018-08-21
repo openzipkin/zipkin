@@ -16,7 +16,12 @@
     <div class='col-md-2'><div href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge badge-dark'>{{depth}}</span></div></div>
     <div class='col-md-2'><div href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge badge-dark'>{{totalSpans}}</span></div></div>
     {{#logsUrl}}
-    <div class='col-md-2'><div href='{{ logsUrl }}' id='traceLogsLink'><span class='btn btn-sm btn-secondary'>Logs</span></div></div>
+    <div class='col-md-2'><div id='traceLogsLink'>
+      <a class='btn btn-sm btn-secondary'  href='{{ logsUrl }}' target="_blank" role="button">Logs
+        <span class="fas fa-external-link-square-alt"></span>
+      </a>
+    </div>
+    </div>
     {{/logsUrl}}
 </div>
   
@@ -43,7 +48,7 @@
 </div>
 {{/traceId}}
 {{#traceId}}
-<div id='trace-container' class="w-100" style='overflow: hidden;'>
+<div id='trace-container' class="w-100">
   <div id='timeLabel' class='span'>
     <div class='handle'>Services</div>
     <div class='duration-container'>
@@ -155,7 +160,7 @@
 
         <button class="btn btn-info btn-sm pull-right mt-1" type="button" data-toggle="collapse"
                 data-target="#moreInfo" aria-expanded="false" aria-controls="moreInfo" data-i18n="trace.more">More Info
-                <span class="fa fa-chevron-circle-down"></span>
+                <span class="fas fa-chevron-circle-down"></span>
         </button>
         <hr/>
         <div class='clearfix'></div>
