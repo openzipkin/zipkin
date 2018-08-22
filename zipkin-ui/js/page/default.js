@@ -96,9 +96,11 @@ const DefaultPageComponent = component(function DefaultPage() {
       this.$date.datepicker({format: 'yyyy-mm-dd'});
       this.$node.find('#rawResultsJsonLink').click(e => {
         e.preventDefault();
-        this.trigger('uiRequestJsonPanel', {title: 'Search Results',
-                                            obj: modelView.rawResponse,
-                                            link: modelView.apiURL});
+        this.trigger('uiRequestJsonPanel', {
+          title: 'Search Results',
+          obj: modelView.rawResponse,
+          link: modelView.apiURL
+        });
       });
     });
 
