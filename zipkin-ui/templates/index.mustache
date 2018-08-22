@@ -108,7 +108,7 @@
       </div>
 
       <div class="col-md-1 float-right">
-        <a href='{{apiURL}}' class="btn btn-sm btn-secondary" id='rawResultsJsonLink'>JSON
+        <a href="{{apiURL}}"" class="btn btn-sm btn-secondary" role="button" id="rawResultsJsonLink">JSON
           <span class="fas fa-download"></span>
         </a>
       </div>
@@ -214,19 +214,29 @@
           we return traces before that point in time up until the limit number of results.</p>
       </div>
     </div>
+  </div>
 </div>
 
-<div class='modal fade' id='jsonPanel' tabindex='-1'>
+
+<div class='modal fade' id='jsonPanel' tabindex='-1' role="dialog"  aria-hidden="true">
   <div class='modal-dialog modal-lg'>
     <div class='modal-content'>
-      <div class='modal-header'>
-        <button type='button' class='close' data-dismiss='modal' aria-hidden='true'>&times;</button>
-        <a href='#' class='save'><span class='glyphicon glyphicon-save' aria-hidden='true' aria-label='save'></span></a>
+      <div class='modal-header bg-light'>
         <h4 class='modal-title'></h4>
+        <a href='#' class='save ml-5 btn btn-outline-dark'>
+          <span class='fa fa-download fa-2x' style="color: black;" aria-hidden='true' aria-label='save'></span>
+        </a>
+        <a class='copy btn btn-outline-dark' id="copy2clipboard">
+          <span class='fa fa-copy fa-2x' style="color: black;" aria-hidden='true' aria-label='save'></span>
+        </a>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
       </div>
-      <div class='modal-body'>
-        <pre></pre>
+      <div class='modal-body bg-dark'>
+        <pre><code class="text-light" id="trace-json-content"/></pre>
       </div>
     </div>
   </div>
 </div>
+
