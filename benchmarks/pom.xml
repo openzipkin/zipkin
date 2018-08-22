@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>parent</artifactId>
-    <version>2.11.3-SNAPSHOT</version>
+    <version>2.11.3</version>
   </parent>
 
   <artifactId>benchmarks</artifactId>
@@ -173,7 +173,7 @@
               <!-- instead of javac-with-errorprone -->
               <compilerId>javac</compilerId>
               <!-- scrub errorprone compiler args -->
-              <compilerArgs/>
+              <compilerArgs />
             </configuration>
           </execution>
         </executions>
