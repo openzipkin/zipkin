@@ -59,7 +59,7 @@ Ex.
 ```java
 // this won't create network connections
 storage = ElasticsearchStorage.newBuilder()
-                              .hosts(asList("http:/myelastic:9200")).build();
+                              .hosts(asList("http://myelastic:9200")).build();
 
 // prepare a call
 traceCall = storage.spanStore().getTrace("d3d200866a77cc59");
