@@ -637,7 +637,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   final long timestamp, duration; // zero means null, saving 2 object references
   final Endpoint localEndpoint, remoteEndpoint;
   final List<Annotation> annotations;
-  final Map<String, String> tags;
+  final Map<String, String> tags = new LinkedHashMap<>();
   final int flags; // bit field for timestamp and duration, saving 2 object references
 
   Span(Builder builder) {
@@ -651,7 +651,9 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     localEndpoint = builder.localEndpoint;
     remoteEndpoint = builder.remoteEndpoint;
     annotations = sortedList(builder.annotations);
-    tags = builder.tags == null ? Collections.emptyMap() : new LinkedHashMap<>(builder.tags);
+    if (builder.tags != null) {
+      tags.putAll(builder.tags);
+    }
     flags = builder.flags;
   }
 
