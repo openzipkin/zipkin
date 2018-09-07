@@ -28,7 +28,7 @@
     "js-cookie": "^2.1.0",
     "lodash": "^4.5.0",
     "moment": "^2.11.2",
-    "npm": "^6.3.0",
+    "npm": "^6.4.1",
     "query-string": "^3.0.0",
     "timeago": "^1.5.1"
   },
@@ -49,7 +49,7 @@
     "file-loader": "^0.8.5",
     "html-webpack-plugin": "^3.2.0",
     "jquery-i18n-properties": "^1.2.7",
-    "karma": "^2.0.5",
+    "karma": "^3.0.0",
     "karma-babel-preprocessor": "^7.0.0",
     "karma-chai": "^0.1.0",
     "karma-mocha": "^1.3.0",
