@@ -69,10 +69,12 @@
     data-error-type='{{errorType}}'
   >
     <div class='handle'>
-      <div class='service-name' style='margin-left: {{depth}}px'>
+    <span class="d-inline-block" tabindex="0" data-toggle="tooltip" title={{serviceName}}>
+      <div class='service-name text-truncate' style='margin-left: {{depth}}px'>
         <span class='expander'>+</span>
         {{serviceName}}
       </div>
+    </span>
     </div>
 
     <div class='duration-container row'>

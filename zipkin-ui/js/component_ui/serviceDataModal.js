@@ -1,7 +1,7 @@
 import {component} from 'flightjs';
 import $ from 'jquery';
 import bootstrap // eslint-disable-line no-unused-vars
-  from 'bootstrap/dist/js/bootstrap.js';
+  from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
 function renderDependencyModal(event, data) {
   const $modal = $('#dependencyModal');
