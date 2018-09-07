@@ -29,7 +29,6 @@
     "lodash": "^4.5.0",
     "moment": "^2.11.2",
     "npm": "^6.3.0",
-    "popper.js": "^1.14.4",
     "query-string": "^3.0.0",
     "timeago": "^1.5.1"
   },

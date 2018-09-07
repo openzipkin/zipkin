@@ -68,6 +68,7 @@
   background: #0084b4;
   color: #fff;
   padding: 2px;
+  max-width: 13em;
 }
 
 #trace-container .span .duration-container {

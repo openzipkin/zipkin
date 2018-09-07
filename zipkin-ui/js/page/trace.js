@@ -15,7 +15,9 @@ import {contextRoot} from '../publicPath';
 const TracePageComponent = component(function TracePage() {
   this.after('initialize', function() {
     window.document.title = 'Zipkin - Traces';
-
+    $('body').tooltip({
+      selector: '[data-toggle="tooltip"]'
+    });
     TraceData.attachTo(document, {
       traceId: this.attr.traceId,
       logsUrl: this.attr.config('logsUrl')
