@@ -61,7 +61,7 @@
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>2.2.6</mariadb-java-client.version>
+    <mariadb-java-client.version>2.3.0</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>3.2.0</HikariCP.version>
     <log4j.version>2.11.1</log4j.version>
@@ -406,7 +406,7 @@
       <dependency>
         <groupId>io.zipkin.brave.cassandra</groupId>
         <artifactId>brave-instrumentation-cassandra-driver</artifactId>
-        <version>0.8.1</version>
+        <version>0.9.0</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
