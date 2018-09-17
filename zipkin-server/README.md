@@ -213,6 +213,11 @@ The following apply when `STORAGE_TYPE` is set to `mysql`:
     * `MYSQL_MAX_CONNECTIONS`: Maximum concurrent connections, defaults to 10
     * `MYSQL_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
 
+Alternatively you can use `MYSQL_JDBC_URL` and specify the complete JDBC url yourself. Note that the URL constructed by
+using the separate settings above will also include the following parameters: 
+`?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8`. If you specify the JDBC url yourself, add
+these parameters as well.
+
 Example usage:
 
 ```bash

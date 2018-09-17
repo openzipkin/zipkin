@@ -17,11 +17,13 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.io.Serializable;
 import javax.sql.DataSource;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("zipkin.storage.mysql")
 class ZipkinMySQLStorageProperties implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
+  private String jdbcUrl;
   private String host = "localhost";
   private int port = 3306;
   private String username;
@@ -29,6 +31,14 @@ class ZipkinMySQLStorageProperties implements Serializable { // for Spark jobs
   private String db = "zipkin";
   private int maxActive = 10;
   private boolean useSsl;
+
+  public String getJdbcUrl() {
+    return jdbcUrl;
+  }
+
+  public void setJdbcUrl(String jdbcUrl) {
+    this.jdbcUrl = jdbcUrl;
+  }
 
   public String getHost() {
     return host;
@@ -87,18 +97,27 @@ class ZipkinMySQLStorageProperties implements Serializable { // for Spark jobs
   }
 
   public DataSource toDataSource() {
-    StringBuilder url = new StringBuilder("jdbc:mysql://");
+    HikariDataSource result = new HikariDataSource();
+    result.setDriverClassName("org.mariadb.jdbc.Driver");
+    result.setJdbcUrl(determineJdbcUrl());
+    result.setMaximumPoolSize(getMaxActive());
+    result.setUsername(getUsername());
+    result.setPassword(getPassword());
+    return result;
+  }
+
+  private String determineJdbcUrl() {
+    if (StringUtils.hasText(getJdbcUrl())) {
+      return getJdbcUrl();
+    }
+
+    StringBuilder url = new StringBuilder();
+    url.append("jdbc:mysql://");
     url.append(getHost()).append(":").append(getPort());
     url.append("/").append(getDb());
     url.append("?autoReconnect=true");
     url.append("&useSSL=").append(isUseSsl());
     url.append("&useUnicode=yes&characterEncoding=UTF-8");
-    HikariDataSource result = new HikariDataSource();
-    result.setDriverClassName("org.mariadb.jdbc.Driver");
-    result.setJdbcUrl(url.toString());
-    result.setMaximumPoolSize(getMaxActive());
-    result.setUsername(getUsername());
-    result.setPassword(getPassword());
-    return result;
+    return url.toString();
   }
 }
