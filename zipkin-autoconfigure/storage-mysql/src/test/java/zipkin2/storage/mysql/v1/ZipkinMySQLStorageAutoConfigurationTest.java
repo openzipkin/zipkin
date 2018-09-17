@@ -88,4 +88,31 @@ public class ZipkinMySQLStorageAutoConfigurationTest {
 
     assertThat(context.getBean(MySQLStorage.class).strictTraceId).isFalse();
   }
+
+  @Test
+  public void usesJdbcUrl_whenPresent() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:mysql");
+    addEnvironment(context, "zipkin.storage.mysql.jdbc-url:jdbc:mysql://host1,host2,host3/zipkin");
+    Access.registerMySQL(context);
+    context.refresh();
+
+    assertThat(context.getBean(HikariDataSource.class).getJdbcUrl()).isEqualTo("jdbc:mysql://host1,host2,host3/zipkin");
+  }
+
+  @Test
+  public void usesRegularConfig_whenBlank() {
+    context = new AnnotationConfigApplicationContext();
+    addEnvironment(context, "zipkin.storage.type:mysql");
+    addEnvironment(context, "zipkin.storage.mysql.jdbc-url:");
+    addEnvironment(context, "zipkin.storage.mysql.host:host");
+    addEnvironment(context, "zipkin.storage.mysql.port:3306");
+    addEnvironment(context, "zipkin.storage.mysql.username:root");
+    addEnvironment(context, "zipkin.storage.mysql.password:secret");
+    addEnvironment(context, "zipkin.storage.mysql.db:zipkin");
+    Access.registerMySQL(context);
+    context.refresh();
+
+    assertThat(context.getBean(HikariDataSource.class).getJdbcUrl()).isEqualTo("jdbc:mysql://host:3306/zipkin?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8");
+  }
 }
