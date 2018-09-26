@@ -232,6 +232,12 @@ describe('correctForClockSkew', () => {
     ipv6: '2001:db8::c001'
   };
 
+  it('IPs should not match when undefined', () => {
+    expect(ipsMatch(undefined, undefined)).to.equal(false);
+    expect(ipsMatch(undefined, ipv4)).to.equal(false);
+    expect(ipsMatch(ipv4, undefined)).to.equal(false);
+  });
+
   it('IPs should not match unless both sides have an IP', () => {
     const noIp = {serviceName: 'foo'};
     expect(ipsMatch(noIp, ipv4)).to.equal(false);

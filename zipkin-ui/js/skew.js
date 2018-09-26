@@ -182,6 +182,7 @@ class ClockSkew {
 }
 
 function ipsMatch(a, b) {
+  if (!a || !b) return false;
   if (a.ipv6 && b.ipv6 && a.ipv6 === b.ipv6) {
     return true;
   }
