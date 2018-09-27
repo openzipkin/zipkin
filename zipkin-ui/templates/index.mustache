@@ -138,10 +138,12 @@
             <span class="bar-label">{{durationStr}}</span>
             <span class="bar-label">{{totalSpans}} spans</span>
           </div>
+          {{#servicePercentage}}
           <div class="bar-block">
             <span class="bar-graphic" style="width:{{servicePercentage}}%;"></span>
             <span class="bar-label">{{serviceName}} {{servicePercentage}}%</span>
           </div>
+          {{/servicePercentage}}
         </a>
         <div class="trace-details services">
           {{#serviceDurations}}
