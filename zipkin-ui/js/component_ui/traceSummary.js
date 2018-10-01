@@ -233,19 +233,19 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
       const duration = t.duration / 1000;
       const groupedTimestamps = getGroupedTimestamps(t);
       const serviceDurations = getServiceDurations(groupedTimestamps);
-
+      let servicePercentage;
       let serviceTime;
       if (!serviceName || !groupedTimestamps[serviceName]) {
         serviceTime = 0;
       } else {
         serviceTime = totalServiceTime(groupedTimestamps[serviceName]);
+        servicePercentage = parseInt(
+          parseFloat(serviceTime) / parseFloat(t.duration) * 100,
+        10);
       }
 
       const startTs = formatDate(t.timestamp, utc);
       const durationStr = mkDurationStr(t.duration);
-      const servicePercentage = parseInt(
-          parseFloat(serviceTime) / parseFloat(t.duration) * 100,
-        10);
       const width = parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10);
       const infoClass = t.errorType === 'none' ? '' : `trace-error-${t.errorType}`;
 
