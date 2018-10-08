@@ -2,6 +2,7 @@ import {component} from 'flightjs';
 import Cookies from 'js-cookie';
 import $ from 'jquery';
 import queryString from 'query-string';
+import _ from 'lodash';
 
 import 'chosen-js';
 
@@ -18,7 +19,9 @@ export default component(function serviceName() {
   this.updateServiceNameDropdown = function(ev, data) {
     $('#serviceName').empty();
     this.$node.append($($.parseHTML('<option value="all">all</option>')));
-
+    if (data.names) {
+      data.names.sort();
+    }
     $.each(data.names, (i, item) => {
       $('<option>').val(item).text(item).appendTo('#serviceName');
     });
