@@ -64,16 +64,6 @@
               <arguments>install</arguments>
             </configuration>
           </execution>
-          <!-- https://github.com/karma-runner/karma-phantomjs-launcher/issues/120#issuecomment-296924189 -->
-          <execution>
-            <id>npm rebuild phantomjs-prebuilt</id>
-            <goals>
-              <goal>npm</goal>
-            </goals>
-            <configuration>
-              <arguments>rebuild phantomjs-prebuilt</arguments>
-            </configuration>
-          </execution>
           <execution>
             <id>npm lint</id>
             <goals>

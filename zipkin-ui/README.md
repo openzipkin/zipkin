@@ -38,7 +38,11 @@ An example to run with npm would be `proxy=http://myzipkininstance.com:9411/zipk
 
 ## What's the easiest way to develop against this locally?
 
-The maven install process already downloads everything needed to do development,
+There is one requirement not currently filled in our build. You need a recent
+version of Chrome (>= 59) installed. If the build doesn't detect this, you can
+explicitly assign a location with the variable [CHROME_BIN](https://github.com/karma-runner/karma-chrome-launcher).
+
+The maven install process downloads everything else needed to do development,
 so you don't need to install node/npm or whatever. Instead, you can use the
 `./npm.sh` shell script to perform npm operations. Here's how you launch zipkin
 server and webapp to work together:
