@@ -1050,18 +1050,18 @@ describe('SPAN v1 merge by ID', () => {
     expect(spans).to.deep.equal([
       {
         traceId: '00000000000000022222222222222222',
-        id: '000000000000000a',
-        name: '',
-        annotations: [],
-        binaryAnnotations: []
-      },
-      {
-        traceId: '00000000000000022222222222222222',
         id: '0000000000000003',
         name: '',
         timestamp: sr.timestamp,
         duration: ss.timestamp - sr.timestamp,
         annotations: [sr, ss],
+        binaryAnnotations: []
+      },
+      {
+        traceId: '00000000000000022222222222222222',
+        id: '000000000000000a',
+        name: '',
+        annotations: [],
         binaryAnnotations: []
       },
       {
@@ -1138,28 +1138,31 @@ describe('SPAN v1 merge by ID', () => {
     const spans = SPAN_V1.mergeById([
       {
         traceId: '1',
-        id: '1',
+        parentId: '1',
+        id: '2',
         name: 'c',
         timestamp: 3
       },
       {
         traceId: '1',
-        id: '2',
+        parentId: '1',
+        id: '3',
         name: 'b',
         timestamp: 2
       },
       {
         traceId: '1',
-        id: '3',
+        parentId: '1',
+        id: '4',
         name: 'a',
         timestamp: 2
       }
     ]);
 
     expect(spans.map(s => s.id)).to.deep.equal([
+      '0000000000000004',
       '0000000000000003',
       '0000000000000002',
-      '0000000000000001',
     ]);
   });
 

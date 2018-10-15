@@ -18,7 +18,7 @@ module.exports = function(config) {
       captureConsole: true
     },
 
-    browsers: ['PhantomJS'],
+    browsers: ['ChromeHeadless'],
 
     webpack: {
       devtool: 'inline-source-map',
@@ -52,12 +52,8 @@ module.exports = function(config) {
       require('karma-webpack'),
       require('karma-mocha'),
       require('karma-chai'),
-      require('karma-phantomjs-launcher'),
+      require('karma-chrome-launcher'),
       require('karma-sourcemap-loader')
-    ],
-
-    phantomjsLauncher: {
-      exitOnResourceError: true
-    }
+    ]
   });
 };
