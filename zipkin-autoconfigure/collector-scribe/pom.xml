@@ -88,6 +88,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <!-- to prevent class not found in tests -->
             <configuration>
+              <forkCount>0</forkCount>
               <argLine>--add-modules java.xml.bind</argLine>
             </configuration>
           </plugin>
