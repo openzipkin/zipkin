@@ -20,8 +20,8 @@ jobs:
       # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
       MAVEN_OPTS: -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn
     docker:
-      # Use java 10 here and 1.8 in travis (so that we test both)
-      - image: circleci/openjdk:10-jdk
+      # Use java 11 here and 1.8 in travis (so that we test both)
+      - image: circleci/openjdk:11-jdk
     steps:
       - checkout
 
