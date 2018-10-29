@@ -193,7 +193,10 @@
   word-break: break-all;
   max-width: 75%;
 }
-
+#spanPanel #annotations td.value {
+  word-break: break-all;
+  max-width: 75%;
+}
 #spanPanel #debugInfo td.value {
   word-break: break-all;
   max-width: 75%;
