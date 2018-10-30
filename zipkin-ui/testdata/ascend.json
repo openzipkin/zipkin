@@ -1,0 +1,151 @@
+[
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "parentId": "ef86c83c0a05a6d6",
+        "id": "ecc00062ceef4bf0",
+        "kind": "CLIENT",
+        "name": "get",
+        "timestamp": 1531282088548312,
+        "duration": 20333,
+        "localEndpoint": {
+            "serviceName": "mobile-gateway",
+            "ipv4": "172.17.0.13"
+        },
+        "tags": {
+            "http.method": "GET",
+            "http.path": "/content/personal"
+        }
+    },
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "parentId": "ecc00062ceef4bf0",
+        "id": "c21c6c51ac71b3ba",
+        "kind": "CLIENT",
+        "name": "get",
+        "timestamp": 1531282088556600,
+        "duration": 8965,
+        "localEndpoint": {
+            "serviceName": "content-service",
+            "ipv4": "172.17.0.10"
+        },
+        "tags": {
+            "http.method": "GET",
+            "http.path": "/api/v1/banners/10000001502"
+        }
+    },
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "parentId": "ef86c83c0a05a6d6",
+        "id": "ecc00062ceef4bf0",
+        "kind": "SERVER",
+        "name": "get /content/personal",
+        "timestamp": 1531282088552037,
+        "duration": 15888,
+        "localEndpoint": {
+            "serviceName": "content-service",
+            "ipv4": "172.17.0.10"
+        },
+        "remoteEndpoint": {
+            "ipv4": "10.230.16.208",
+            "port": 3400
+        },
+        "tags": {
+            "http.method": "GET",
+            "http.path": "/content/personal",
+            "mvc.controller.class": "GenericController",
+            "mvc.controller.method": "getPersonalGeneric"
+        },
+        "shared": true
+    },
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "parentId": "ef86c83c0a05a6d6",
+        "id": "52b1ab4956917c39",
+        "kind": "CLIENT",
+        "name": "get",
+        "timestamp": 1531282088533834,
+        "duration": 14077,
+        "localEndpoint": {
+            "serviceName": "mobile-gateway",
+            "ipv4": "172.17.0.13"
+        },
+        "tags": {
+            "http.method": "GET",
+            "http.path": "/auth-service/v1/authentications/"
+        }
+    },
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "parentId": "ef86c83c0a05a6d6",
+        "id": "52b1ab4956917c39",
+        "kind": "SERVER",
+        "name": "http:/parent/auth-service/v1/authentications/",
+        "timestamp": 1531282088553000,
+        "duration": 4157,
+        "localEndpoint": {
+            "serviceName": "auth-service",
+            "ipv4": "172.17.0.9",
+            "port": 8080
+        },
+        "tags": {
+            "http.host": "auth-service-alp",
+            "http.method": "GET",
+            "http.path": "/auth-service/v1/authentications/",
+            "http.url": "http://auth-service-alp/auth-service/v1/authentications/",
+            "mvc.controller.class": "AuthenticationController",
+            "mvc.controller.method": "authenticationsWithAuthorizationHeader",
+            "spring.instance_id": "bb52cfc01466:auth-service"
+        },
+        "shared": true
+    },
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "id": "ef86c83c0a05a6d6",
+        "kind": "SERVER",
+        "name": "get",
+        "timestamp": 1531282088533035,
+        "duration": 38793,
+        "localEndpoint": {
+            "serviceName": "mobile-gateway",
+            "ipv4": "172.17.0.13"
+        },
+        "remoteEndpoint": {
+            "ipv4": "110.170.201.178",
+            "port": 39308
+        },
+        "tags": {
+            "http.method": "GET",
+            "http.path": "/mobile-gateway/content/personal"
+        }
+    },
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "parentId": "52b1ab4956917c39",
+        "id": "80c0d1d62f437a1b",
+        "name": "extend-token-life",
+        "timestamp": 1531282088553000,
+        "duration": 1291,
+        "localEndpoint": {
+            "serviceName": "auth-service",
+            "ipv4": "172.17.0.9",
+            "port": 8080
+        },
+        "tags": {
+            "class": "AuthenticationService",
+            "lc": "async",
+            "method": "extendToken"
+        }
+    },
+    {
+        "traceId": "ef86c83c0a05a6d6",
+        "parentId": "ecc00062ceef4bf0",
+        "id": "e6422f7ff7d78099",
+        "name": "hystrix",
+        "timestamp": 1531282088555338,
+        "duration": 863,
+        "localEndpoint": {
+            "serviceName": "content-service",
+            "ipv4": "172.17.0.10"
+        }
+    }
+]
