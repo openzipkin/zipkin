@@ -1,0 +1,73 @@
+[
+  {
+    "traceId": "5aab74dbb904746bb33447baae403ed6",
+    "parentId": "05e3ac9a4f6e3b90",
+    "id": "e457b5a2e4d86bd1",
+    "kind": "CONSUMER",
+    "name": "next-message",
+    "timestamp": 1521186011929043,
+    "duration": 14,
+    "localEndpoint": {
+      "serviceName": "backend",
+      "ipv4": "192.168.0.10"
+    },
+    "remoteEndpoint": {
+      "serviceName": "rabbitmq"
+    },
+    "tags": {
+      "rabbit.exchange": "",
+      "rabbit.queue": "backend",
+      "rabbit.routing_key": "backend"
+    }
+  },
+  {
+    "traceId": "5aab74dbb904746bb33447baae403ed6",
+    "parentId": "e457b5a2e4d86bd1",
+    "id": "4ad2db84ac76def7",
+    "name": "on-message",
+    "timestamp": 1521186011929105,
+    "duration": 371,
+    "localEndpoint": {
+      "serviceName": "backend",
+      "ipv4": "192.168.0.10"
+    }
+  },
+  {
+    "traceId": "5aab74dbb904746bb33447baae403ed6",
+    "parentId": "b33447baae403ed6",
+    "id": "05e3ac9a4f6e3b90",
+    "kind": "PRODUCER",
+    "name": "publish",
+    "timestamp": 1521186011927475,
+    "duration": 13,
+    "localEndpoint": {
+      "serviceName": "frontend",
+      "ipv4": "192.168.0.10"
+    },
+    "remoteEndpoint": {
+      "serviceName": "rabbitmq"
+    }
+  },
+  {
+    "traceId": "5aab74dbb904746bb33447baae403ed6",
+    "id": "b33447baae403ed6",
+    "kind": "SERVER",
+    "name": "get /",
+    "timestamp": 1521186011926119,
+    "duration": 2839,
+    "localEndpoint": {
+      "serviceName": "frontend",
+      "ipv4": "192.168.0.10"
+    },
+    "remoteEndpoint": {
+      "ipv6": "::1",
+      "port": 54602
+    },
+    "tags": {
+      "http.method": "GET",
+      "http.path": "/",
+      "mvc.controller.class": "Frontend",
+      "mvc.controller.method": "callBackend"
+    }
+  }
+]
