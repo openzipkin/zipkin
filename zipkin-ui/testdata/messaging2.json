@@ -1,0 +1,200 @@
+[
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "0153a596db406c83",
+      "id": "939e2fdc360a1201",
+      "kind": "CLIENT",
+      "name": "post",
+      "timestamp": 1540799213008149,
+      "duration": 779592,
+      "localEndpoint": {
+        "serviceName": "transfer-service",
+        "ipv4": "172.17.0.7"
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "/core-service/transfer"
+      }
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "0153a596db406c83",
+      "id": "dfdfa6bdfc538d3e",
+      "name": "push-topic-s-n-s",
+      "timestamp": 1540799213922806,
+      "duration": 79027,
+      "localEndpoint": {
+        "serviceName": "transfer-service",
+        "ipv4": "172.17.0.7"
+      },
+      "tags": {
+        "class": "P2PSnsPushTopicService",
+        "method": "pushTopicSNS"
+      }
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "id": "0d1a94ebc9256244",
+      "kind": "SERVER",
+      "name": "post",
+      "timestamp": 1540799212976024,
+      "duration": 29051,
+      "localEndpoint": {
+        "serviceName": "mobile-gateway",
+        "ipv4": "172.17.0.12"
+      },
+      "remoteEndpoint": {
+        "ipv4": "110.170.201.178",
+        "port": 7978
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "/mobile-gateway/transfer-service/transactions/5698ba57-f2f6-44e9-90f8-987e10353ed8/"
+      }
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "0d1a94ebc9256244",
+      "id": "dca1d27152851c1c",
+      "kind": "SERVER",
+      "name": "http:/parent/auth-service/v1/authentications/",
+      "timestamp": 1540799212978000,
+      "duration": 4057,
+      "localEndpoint": {
+        "serviceName": "auth-service",
+        "ipv4": "172.17.0.8",
+        "port": 8080
+      },
+      "tags": {
+        "http.host": "auth-service",
+        "http.method": "GET",
+        "http.path": "/auth-service/v1/authentications/",
+        "http.url": "http://auth-service/v1/authentications/",
+        "mvc.controller.class": "AuthenticationController",
+        "mvc.controller.method": "authenticationsWithAuthorizationHeader",
+        "spring.instance_id": "69805c144e6c:auth-service"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "dca1d27152851c1c",
+      "id": "26242947380ec944",
+      "name": "extend-token",
+      "timestamp": 1540799212978000,
+      "duration": 1241,
+      "localEndpoint": {
+        "serviceName": "auth-service",
+        "ipv4": "172.17.0.8",
+        "port": 8080
+      },
+      "tags": {
+        "class": "AuthenticationService",
+        "lc": "async",
+        "method": "extendToken"
+      }
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "0153a596db406c83",
+      "id": "c779d4ff1adfc8f9",
+      "kind": "CLIENT",
+      "name": "get",
+      "timestamp": 1540799213788437,
+      "duration": 132879,
+      "localEndpoint": {
+        "serviceName": "transfer-service",
+        "ipv4": "172.17.0.7"
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "/internal-api/v1/customers/profiles-basic/agent/tryhxd090jhjhj90ccvsedr38288"
+      }
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "0153a596db406111",
+      "id": "3df9ceef91bbc631",
+      "kind": "PRODUCER",
+      "name": "publish",
+      "timestamp": 1540799213922139,
+      "duration": 12,
+      "localEndpoint": {
+        "serviceName": "transfer-service",
+        "ipv4": "172.17.0.7"
+      },
+      "remoteEndpoint": {
+        "serviceName": "rabbitmq"
+      }
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "0d1a94ebc9256244",
+      "id": "99a4a9084091114d",
+      "kind": "CLIENT",
+      "name": "post",
+      "timestamp": 1540799212983049,
+      "duration": 21813,
+      "localEndpoint": {
+        "serviceName": "mobile-gateway",
+        "ipv4": "172.17.0.12"
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "/transfer-service/transactions/5698ba57-f2f6-44e9-90f8-987e10353ed8/"
+      }
+    },
+    {
+      "traceId": "0d1a94ebc9256244",
+      "parentId": "0153a596db406c83",
+      "id": "693fb64c3cf75cf3",
+      "name": "send-confirm-transfer",
+      "timestamp": 1540799213921929,
+      "duration": 2555791,
+      "localEndpoint": {
+        "serviceName": "transfer-service",
+        "ipv4": "172.17.0.7"
+      },
+      "tags": {
+        "class": "EmailService",
+        "method": "sendConfirmTransfer"
+      }
+    },
+    {
+        "traceId": "0d1a94ebc9256244",
+        "parentId": "0153a596db406111",
+        "id": "3df9ceef91bbc777",
+        "kind": "CONSUMER",
+        "name": "consume",
+        "timestamp": 1540799214963929,
+        "duration": 40,
+        "localEndpoint": {
+          "serviceName": "notification-service",
+          "ipv4": "172.17.0.7"
+        },
+        "remoteEndpoint": {
+          "serviceName": "rabbitmq"
+        },
+        "tags": {
+            "rabbit.exchange": "notification-exchange",
+            "rabbit.queue": "notification"
+          }
+      },
+      {
+        "traceId": "0d1a94ebc9256244",
+        "parentId": "3df9ceef91bbc777",
+        "id": "99a4a9084092224d",
+        "kind": "CLIENT",
+        "name": "post",
+        "timestamp": 1540799214993929,
+        "duration": 15860,
+        "localEndpoint": {
+          "serviceName": "notification-service",
+          "ipv4": "172.17.0.14"
+        },
+        "tags": {
+          "http.method": "POST",
+          "http.path": "/notification-service/send"
+        }
+      }
+  ]
