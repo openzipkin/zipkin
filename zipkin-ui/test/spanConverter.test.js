@@ -1029,6 +1029,7 @@ describe('SPAN v1 merge by ID', () => {
     const spans = SPAN_V1.mergeById([
       {
         traceId: '22222222222222222', // longer than 64-bit
+        parentId: 'a',
         id: '3',
         annotations: [ss, sr] // out of order
       },
@@ -1041,22 +1042,13 @@ describe('SPAN v1 merge by ID', () => {
         traceId: '22222222222222222',
         parentId: 'a',
         id: 'b',
-        timestamp: 10,
+        timestamp: sr.timestamp,
         duration: 0, // zero duration should be scrubbed
         binaryAnnotations: [{key: 'lc', value: ''}]
       }
     ]);
 
     expect(spans).to.deep.equal([
-      {
-        traceId: '00000000000000022222222222222222',
-        id: '0000000000000003',
-        name: '',
-        timestamp: sr.timestamp,
-        duration: ss.timestamp - sr.timestamp,
-        annotations: [sr, ss],
-        binaryAnnotations: []
-      },
       {
         traceId: '00000000000000022222222222222222',
         id: '000000000000000a',
@@ -1067,9 +1059,19 @@ describe('SPAN v1 merge by ID', () => {
       {
         traceId: '00000000000000022222222222222222',
         parentId: '000000000000000a',
+        id: '0000000000000003',
+        name: '',
+        timestamp: sr.timestamp,
+        duration: ss.timestamp - sr.timestamp,
+        annotations: [sr, ss],
+        binaryAnnotations: []
+      },
+      {
+        traceId: '00000000000000022222222222222222',
+        parentId: '000000000000000a',
         id: '000000000000000b',
         name: '',
-        timestamp: 10,
+        timestamp: sr.timestamp,
         annotations: [],
         binaryAnnotations: [{key: 'lc', value: ''}]
       }
