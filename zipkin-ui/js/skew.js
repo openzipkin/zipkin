@@ -214,6 +214,7 @@ function adjustTimestamps(span, skew) {
       result.timestamp = annotationTimestamp - skew.skew;
     }
     result.annotations = annotations;
+    result.annotations.sort((a, b) => a.timestamp - b.timestamp);
     return result;
   }
   // Search for a local span on the skewed endpoint
