@@ -4,7 +4,6 @@ import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
 import {SPAN_V1} from '../spanConverter';
-import {correctForClockSkew} from '../skew';
 
 export function convertToApiQuery(source) {
   const query = Object.assign({}, source);
@@ -54,8 +53,7 @@ export default component(function DefaultData() {
       const summaries = traces.map(raw => {
         const v1Trace = raw.map(SPAN_V1.convert);
         const mergedTrace = SPAN_V1.mergeById(v1Trace);
-        const clockSkewCorrectedTrace = correctForClockSkew(mergedTrace);
-        return traceSummary(clockSkewCorrectedTrace);
+        return traceSummary(mergedTrace);
       });
 
       const modelview = {
