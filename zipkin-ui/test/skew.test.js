@@ -174,7 +174,7 @@ function createRootSpan(endpoint, begin, duration) {
 function childSpan(parent, to, begin, duration, skew) {
   const spanId = parent.id + 1;
   const from = parent.annotations[0].endpoint;
-  return {
+  const res = {
     traceId: parent.traceId,
     parentId: parent.id,
     id: spanId,
@@ -186,6 +186,8 @@ function childSpan(parent, to, begin, duration, skew) {
       {timestamp: begin + duration, value: 'cr', endpoint: from}
     ]
   };
+  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
+  return res;
 }
 
 function localSpan(parent, endpoint, begin, duration) {
@@ -428,6 +430,9 @@ describe('correctForClockSkew', () => {
     const adjustedRpcSpan = adjustedSpans.find((s) => s.id === rpcSpan.id);
     expect(annotationTimestamp(adjustedRpcSpan, 'sr')).to.equal(rpcClientSendTs + networkLatency);
     expect(annotationTimestamp(adjustedRpcSpan, 'cs')).to.equal(adjustedRpcSpan.timestamp);
+    // ensure annotations are sorted after skew adjustment
+    expect(adjustedRpcSpan.annotations.map(a => a.value)).to.deep.equal(['cs', 'sr', 'ss', 'cr']);
+
 
     const adjustedTierSpan = adjustedSpans.find((s) => s.id === tierSpan.id);
     expect(annotationTimestamp(adjustedTierSpan, 'cs')).to.equal(adjustedTierSpan.timestamp);
