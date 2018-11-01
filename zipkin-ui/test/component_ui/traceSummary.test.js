@@ -312,19 +312,24 @@ describe('traceSummariesToMustache', () => {
     traceId: 'cafedead',
     timestamp: start,
     duration: 20000,
-    spanTimestamps: [{
-      name: 'A',
-      timestamp: start,
-      duration: 10000
-    }, {
-      name: 'B',
-      timestamp: start + 1000,
-      duration: 20000
-    }, {
-      name: 'B',
-      timestamp: start + 1000,
-      duration: 15000
-    }],
+    groupedTimestamps: {
+      A: [
+        {
+          timestamp: start,
+          duration: 10000
+        }
+      ],
+      B: [
+        {
+          timestamp: start + 1000,
+          duration: 20000
+        },
+        {
+          timestamp: start + 1000,
+          duration: 15000
+        }
+      ]
+    },
     endpoints: [ep1, ep2]
   };
 
@@ -371,8 +376,29 @@ describe('traceSummariesToMustache', () => {
   });
 
   it('should calculate the width in percent', () => {
-    const model = traceSummariesToMustache(null, [summary]);
+    const summary1 = {
+      traceId: 'cafebaby',
+      timestamp: start,
+      duration: 2000,
+      groupedTimestamps: {
+        A: [{timestamp: start + 1, duration: 2000}]
+      },
+      endpoints: [ep1]
+    };
+    const summary2 = {
+      traceId: 'cafedead',
+      timestamp: start,
+      duration: 20000,
+      groupedTimestamps: {
+        A: [{timestamp: start, duration: 20000}]
+      },
+      endpoints: [ep1]
+    };
+
+    // Model is ordered by duration, and the width should be relative (percentage)
+    const model = traceSummariesToMustache(null, [summary1, summary2]);
     model[0].width.should.equal(100);
+    model[1].width.should.equal(10);
   });
 
   it('should pass on timestamp', () => {

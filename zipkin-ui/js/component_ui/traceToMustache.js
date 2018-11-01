@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import {
   traceSummary,
-  getGroupedTimestamps,
   getServiceDurations,
   getServiceNames,
   getServiceName,
@@ -91,11 +90,11 @@ export function formatEndpoint({ipv4, ipv6, port, serviceName}) {
 }
 
 export default function traceToMustache(trace, logsUrl = undefined) {
-  const summary = traceSummary(trace);
-  const traceId = summary.traceId;
-  const duration = mkDurationStr(summary.duration);
-  const groupedTimestamps = getGroupedTimestamps(summary);
-  const serviceDurations = getServiceDurations(groupedTimestamps);
+  const t = traceSummary(trace);
+  const traceId = t.traceId;
+  const duration = t.duration;
+  const serviceDurations = getServiceDurations(t.groupedTimestamps);
+
   const services = serviceDurations.length || 0;
   const serviceCounts = _(serviceDurations).sortBy('name').value();
   const groupByParentId = _(trace).groupBy((s) => s.parentId).value();
@@ -109,7 +108,7 @@ export default function traceToMustache(trace, logsUrl = undefined) {
     (rootSpan) => childrenToList(createSpanTreeEntry(rootSpan, trace))).map((span) => {
       const spanStartTs = span.timestamp || traceTimestamp;
       const spanDepth = spanDepths[span.id] || 1;
-      const width = (span.duration || 0) / summary.duration * 100;
+      const width = (span.duration || 0) / duration * 100;
       let errorType = 'none';
 
       const binaryAnnotations = (span.binaryAnnotations || [])
@@ -157,7 +156,7 @@ export default function traceToMustache(trace, logsUrl = undefined) {
         serviceName: getServiceName(span) || '',
         duration: span.duration,
         durationStr: mkDurationStr(span.duration),
-        left: parseFloat(spanStartTs - traceTimestamp) / parseFloat(summary.duration) * 100,
+        left: parseFloat(spanStartTs - traceTimestamp) / parseFloat(duration) * 100,
         width: width < 0.1 ? 0.1 : width,
         depth: (spanDepth + 1) * 5,
         depthClass: (spanDepth - 1) % 6,
@@ -179,13 +178,13 @@ export default function traceToMustache(trace, logsUrl = undefined) {
 
   const totalSpans = spans.length;
   const timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
-      .map((p, index) => ({index, time: mkDurationStr(summary.duration * p)}));
+      .map((p, index) => ({index, time: mkDurationStr(duration * p)}));
   const timeMarkersBackup = timeMarkers;
   const spansBackup = spans;
 
   return {
     traceId,
-    duration,
+    duration: mkDurationStr(duration),
     services,
     depth,
     totalSpans,
