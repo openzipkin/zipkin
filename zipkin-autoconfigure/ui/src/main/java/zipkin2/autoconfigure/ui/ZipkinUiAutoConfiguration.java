@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
@@ -72,7 +73,7 @@ import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @EnableConfigurationProperties(ZipkinUiProperties.class)
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 @RestController
-class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
+class ZipkinUiAutoConfiguration {
 
   @Autowired
   ZipkinUiProperties ui;
@@ -96,36 +97,15 @@ class ZipkinUiAutoConfiguration extends WebMvcConfigurerAdapter {
     soup.head().getElementsByTag("base").attr("href", baseTagValue);
     return soup.html();
   }
-
-  @Override
-  public void addResourceHandlers(ResourceHandlerRegistry registry) {
-    registry.addResourceHandler("/zipkin/**")
-        .addResourceLocations("classpath:/zipkin-ui/")
-        .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));
-  }
-
-  /**
-   * This opts out of adding charset to png resources.
-   *
-   * <p>By default, {@linkplain CharacterEncodingFilter} adds a charset qualifier to all resources,
-   * which helps, as javascript assets include extended character sets. However, the filter also
-   * adds charset to well-known binary ones like png. This creates confusing content types, such as
-   * "image/png;charset=UTF-8".
-   *
-   * See https://github.com/spring-projects/spring-boot/issues/5459
-   */
   @Bean
-  @Order(Ordered.HIGHEST_PRECEDENCE)
-  public CharacterEncodingFilter characterEncodingFilter() {
-    CharacterEncodingFilter filter = new CharacterEncodingFilter() {
+  public WebMvcConfigurer resourceConfigurer() {
+    return new WebMvcConfigurer() {
       @Override
-      protected boolean shouldNotFilter(HttpServletRequest request) {
-        return request.getServletPath().endsWith(".png");
-      }
+      public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/zipkin/**")
+          .addResourceLocations("classpath:/zipkin-ui/")
+          .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));      }
     };
-    filter.setEncoding("UTF-8");
-    filter.setForceEncoding(true);
-    return filter;
   }
 
   @RequestMapping(value = "/zipkin/config.json", method = GET)
