@@ -18,11 +18,11 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.autoconfigure.storage.cassandra.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinCassandraStorageAutoConfigurationTest {
 
@@ -40,7 +40,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   @Test
   public void doesntProvidesStorageComponent_whenStorageTypeNotCassandra() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.storage.type:elasticsearch");
+    TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerCassandra(context);
     context.refresh();
 
@@ -51,7 +51,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   @Test
   public void providesStorageComponent_whenStorageTypeCassandra() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.storage.type:cassandra");
+    TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
     Access.registerCassandra(context);
     context.refresh();
 
@@ -61,11 +61,10 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   @Test
   public void canOverridesProperty_contactPoints() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(
-        context,
+    TestPropertyValues.of(
         "zipkin.storage.type:cassandra",
         "zipkin.storage.cassandra.contact-points:host1,host2" // note snake-case supported
-        );
+        ).applyTo(context);
     Access.registerCassandra(context);
     context.refresh();
 
@@ -75,7 +74,7 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   @Test
   public void strictTraceId_defaultsToTrue() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.storage.type:cassandra");
+    TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
     Access.registerCassandra(context);
     context.refresh();
     assertThat(context.getBean(CassandraStorage.class).strictTraceId).isTrue();
@@ -84,8 +83,10 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
   @Test
   public void strictTraceId_canSetToFalse() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.storage.type:cassandra");
-    addEnvironment(context, "zipkin.storage.strict-trace-id:false");
+    TestPropertyValues.of(
+      "zipkin.storage.type:cassandra",
+      "zipkin.storage.strict-trace-id:false")
+    .applyTo(context);
     Access.registerCassandra(context);
     context.refresh();
 

@@ -18,11 +18,11 @@ import org.junit.Test;
 import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinPrometheusMetricsAutoConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -55,7 +55,7 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
   }
 
   @Test public void overrideMetricName() {
-    addEnvironment(context, "management.metrics.web.server.requests-metric-name:foo");
+    TestPropertyValues.of("management.metrics.web.server.requests-metric-name:foo").applyTo(context);
     refresh();
 
     assertThat(context.getBean(ZipkinPrometheusMetricsAutoConfiguration.class).metricName)

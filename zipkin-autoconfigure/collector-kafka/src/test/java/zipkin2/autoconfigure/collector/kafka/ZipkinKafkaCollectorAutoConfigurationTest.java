@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +30,6 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinKafkaCollectorAutoConfigurationTest {
 
@@ -60,7 +60,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
   @Test
   public void providesCollectorComponent_whenBootstrapServersEmptyString() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:");
+    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:").applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafkaCollectorAutoConfiguration.class,
@@ -74,7 +74,7 @@ public class ZipkinKafkaCollectorAutoConfigurationTest {
   @Test
   public void providesCollectorComponent_whenBootstrapServersSet() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.kafka.bootstrap-servers:localhost:9091");
+    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9091").applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafkaCollectorAutoConfiguration.class,

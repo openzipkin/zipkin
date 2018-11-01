@@ -14,21 +14,20 @@
 package zipkin2.collector.kafka08;
 
 import org.junit.Test;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.autoconfigure.collector.kafka08.Access;
 import zipkin2.storage.InMemoryStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class NestedPropertyOverrideTest {
   @Test
   public void overrideWithNestedProperties() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-    addEnvironment(
-        context,
+    TestPropertyValues.of(
         "zipkin.collector.kafka.zookeeper:localhost",
-        "zipkin.collector.kafka.overrides.auto.offset.reset:largest");
+        "zipkin.collector.kafka.overrides.auto.offset.reset:largest").applyTo(context);
     Access.registerKafkaProperties(context);
     context.refresh();
 

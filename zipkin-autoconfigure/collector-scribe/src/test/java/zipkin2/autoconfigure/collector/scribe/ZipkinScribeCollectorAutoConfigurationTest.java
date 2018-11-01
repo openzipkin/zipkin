@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +30,6 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinScribeCollectorAutoConfigurationTest {
 
@@ -61,7 +61,7 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   @Test
   public void providesCollectorComponent_whenEnabled() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.scribe.enabled:true");
+    TestPropertyValues.of("zipkin.collector.scribe.enabled:true").applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinScribeCollectorAutoConfiguration.class,
@@ -74,8 +74,10 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   @Test
   public void canOverrideProperty_port() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(
-        context, "zipkin.collector.scribe.enabled:true", "zipkin.collector.scribe.port:9999");
+    TestPropertyValues.of(
+        "zipkin.collector.scribe.enabled:true",
+        "zipkin.collector.scribe.port:9999")
+    .applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinScribeCollectorAutoConfiguration.class,

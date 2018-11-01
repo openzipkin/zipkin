@@ -23,6 +23,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +32,6 @@ import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinServerConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -54,7 +54,7 @@ public class ZipkinServerConfigurationTest {
 
   @Test(expected = NoSuchBeanDefinitionException.class)
   public void httpCollector_canDisable() {
-    addEnvironment(context, "zipkin.collector.http.enabled:false");
+    TestPropertyValues.of("zipkin.collector.http.enabled:false").applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -79,7 +79,7 @@ public class ZipkinServerConfigurationTest {
   }
 
   @Test public void query_canDisable() {
-    addEnvironment(context, "zipkin.query.enabled:false");
+    TestPropertyValues.of("zipkin.query.enabled:false").applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -96,7 +96,7 @@ public class ZipkinServerConfigurationTest {
   }
 
   @Test public void selfTracing_canEnable() {
-    addEnvironment(context, "zipkin.self-tracing.enabled:true");
+    TestPropertyValues.of("zipkin.self-tracing.enabled:true").applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -109,7 +109,7 @@ public class ZipkinServerConfigurationTest {
   }
 
   @Test public void search_canDisable() {
-    addEnvironment(context, "zipkin.storage.search-enabled:false");
+    TestPropertyValues.of("zipkin.storage.search-enabled:false").applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,

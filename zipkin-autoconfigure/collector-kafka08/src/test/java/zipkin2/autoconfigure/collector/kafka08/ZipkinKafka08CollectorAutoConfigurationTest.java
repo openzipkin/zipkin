@@ -19,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +31,6 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinKafka08CollectorAutoConfigurationTest {
 
@@ -61,7 +61,7 @@ public class ZipkinKafka08CollectorAutoConfigurationTest {
   @Test
   public void providesCollectorComponent_whenZooKeeperSet() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.kafka.zookeeper:localhost");
+    TestPropertyValues.of("zipkin.collector.kafka.zookeeper:localhost").applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafka08CollectorAutoConfiguration.class,
@@ -74,10 +74,10 @@ public class ZipkinKafka08CollectorAutoConfigurationTest {
   @Test
   public void canOverrideProperty_topic() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(
-        context,
+    TestPropertyValues.of(
         "zipkin.collector.kafka.zookeeper:localhost",
-        "zipkin.collector.kafka.topic:zapkin");
+        "zipkin.collector.kafka.topic:zapkin")
+    .applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinKafka08CollectorAutoConfiguration.class,

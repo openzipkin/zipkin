@@ -21,6 +21,7 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -29,7 +30,6 @@ import org.springframework.http.MediaType;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinUiAutoConfigurationTest {
 
@@ -172,7 +172,7 @@ public class ZipkinUiAutoConfigurationTest {
   private static AnnotationConfigApplicationContext createContextWithOverridenProperty(
     String pair) {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, pair);
+    TestPropertyValues.of(pair).applyTo(context);
     context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
     context.refresh();
     return context;
