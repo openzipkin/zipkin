@@ -20,11 +20,11 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.autoconfigure.collector.rabbitmq.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 @RunWith(Parameterized.class)
 public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
@@ -75,7 +75,7 @@ public class ZipkinRabbitMQCollectorPropertiesOverrideTest {
 
   @Test
   public void propertyTransferredToCollectorBuilder() throws Exception {
-    addEnvironment(context, property + ":" + value);
+    TestPropertyValues.of(property + ":" + value).applyTo(context);
     Access.registerRabbitMQProperties(context);
     context.refresh();
 

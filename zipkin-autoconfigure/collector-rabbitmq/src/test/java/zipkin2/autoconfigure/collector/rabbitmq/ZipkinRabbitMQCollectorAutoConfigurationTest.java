@@ -20,6 +20,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,7 +31,6 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 public class ZipkinRabbitMQCollectorAutoConfigurationTest {
 
@@ -61,8 +61,10 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
   @Test
   public void doesNotProvideCollectorComponent_whenAddressesAndUriIsEmptyString() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(
-        context, "zipkin.collector.rabbitmq.addresses:", "zipkin.collector.rabbitmq.uri:");
+    TestPropertyValues.of(
+      "zipkin.collector.rabbitmq.addresses:",
+      "zipkin.collector.rabbitmq.uri:")
+    .applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinRabbitMQCollectorAutoConfiguration.class,
@@ -77,7 +79,7 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
   @Ignore
   public void providesCollectorComponent_whenAddressesSet() {
     context = new AnnotationConfigApplicationContext();
-    addEnvironment(context, "zipkin.collector.rabbitmq.addresses=localhost:5672");
+    TestPropertyValues.of("zipkin.collector.rabbitmq.addresses=localhost:5672").applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
         ZipkinRabbitMQCollectorAutoConfiguration.class,

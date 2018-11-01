@@ -57,7 +57,7 @@
         <version>${spring-boot.version}</version>
         <configuration>
           <layoutFactory implementation="zipkin.layout.ZipkinLayoutFactory">
-            <name>custom</name>
+            <name>zipkin</name>
           </layoutFactory>
           <classifier>module</classifier>
           <!-- exclude dependencies already packaged in zipkin-server -->
@@ -72,7 +72,7 @@
           <dependency>
             <groupId>io.zipkin.layout</groupId>
             <artifactId>zipkin-layout-factory</artifactId>
-            <version>0.0.2</version>
+            <version>0.0.3</version>
           </dependency>
         </dependencies>
       </plugin>

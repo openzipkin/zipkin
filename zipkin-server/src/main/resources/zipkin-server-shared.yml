@@ -160,6 +160,9 @@ spring:
     exclude:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  # Added this to override the default bean definition as the CharacterEncodingFilter bean already
+  # available from HttpEncodingAutoConfiguration
+  main.allow-bean-definition-overriding: true
 info:
   zipkin:
     version: "@project.version@"

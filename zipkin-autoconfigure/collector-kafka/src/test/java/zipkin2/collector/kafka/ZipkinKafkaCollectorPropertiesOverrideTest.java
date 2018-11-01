@@ -20,10 +20,9 @@ import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
+import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.autoconfigure.collector.kafka.Access;
-
-import static org.springframework.boot.test.util.EnvironmentTestUtils.addEnvironment;
 
 @RunWith(Parameterized.class)
 public class ZipkinKafkaCollectorPropertiesOverrideTest {
@@ -68,7 +67,7 @@ public class ZipkinKafkaCollectorPropertiesOverrideTest {
 
   @Test
   public void propertyTransferredToCollectorBuilder() {
-    addEnvironment(context, property + ":" + value);
+    TestPropertyValues.of(property + ":" + value).applyTo(context);
     Access.registerKafkaProperties(context);
     context.refresh();
 
