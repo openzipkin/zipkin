@@ -1,9 +1,7 @@
 import {component} from 'flightjs';
 import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
 import traceToMustache from '../../js/component_ui/traceToMustache';
-import _ from 'lodash';
 import {SPAN_V1} from '../spanConverter';
-import {correctForClockSkew} from '../skew';
 
 function ensureV1(trace) {
   if (trace == null || trace.length === 0
@@ -11,7 +9,7 @@ function ensureV1(trace) {
     return trace;
   }
 
-  return _(trace).map(SPAN_V1.convert);
+  return SPAN_V1.convertTrace(trace);
 }
 
 export default component(function uploadTrace() {
@@ -26,10 +24,8 @@ export default component(function uploadTrace() {
       let model;
       try {
         const rawTrace = JSON.parse(evt.target.result);
-        const v1Trace = ensureV1(rawTrace);
-        const mergedTrace = SPAN_V1.mergeById(v1Trace);
-        const clockSkewCorrectedTrace = correctForClockSkew(mergedTrace);
-        const modelview = traceToMustache(clockSkewCorrectedTrace);
+        const v1Trace = ensureV1(rawTrace); // We don't need to convert if it is already a v1 trace
+        const modelview = traceToMustache(v1Trace);
         model = {modelview, trace: rawTrace};
       } catch (e) {
         this.trigger('uiServerError',

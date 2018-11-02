@@ -147,27 +147,31 @@ function endpointEquals(e1, e2) {
     && e1.port === e2.port && e1.serviceName === e2.serviceName;
 }
 
-export function traceSummary(spans = []) {
-  if (spans.length === 0 || !spans[0].timestamp) {
-    return null;
-  } else {
-    const duration = traceDuration(spans) || 0;
-    const endpoints = _(spans).flatMap(endpointsForSpan).uniqWith(endpointEquals).value();
-    const traceId = spans[0].traceId;
-    const timestamp = spans[0].timestamp;
-    const groupedTimestamps = getGroupedTimestamps(spans);
-    const errorType = getTraceErrorType(spans);
-    const totalSpans = spans.length;
-    return {
-      traceId,
-      timestamp,
-      duration,
-      groupedTimestamps,
-      endpoints,
-      errorType,
-      totalSpans
-    };
+// Returns null on empty or when missing a timestamp
+export function traceSummary(trace = []) {
+  if (trace.length === 0) {
+    throw new Error('Trace was empty');
   }
+  if (!trace[0].timestamp) {
+    throw new Error('Trace is missing a timestamp');
+  }
+
+  const traceId = trace[0].traceId;
+  const timestamp = trace[0].timestamp;
+  const duration = traceDuration(trace) || 0;
+  const groupedTimestamps = getGroupedTimestamps(trace);
+  const endpoints = _(trace).flatMap(endpointsForSpan).uniqWith(endpointEquals).value();
+  const errorType = getTraceErrorType(trace);
+  const totalSpans = trace.length;
+  return {
+    traceId,
+    timestamp,
+    duration,
+    groupedTimestamps,
+    endpoints,
+    errorType,
+    totalSpans
+  };
 }
 
 export function totalServiceTime(stamps, acc = 0) {
@@ -216,54 +220,39 @@ export function mkDurationStr(duration) {
   }
 }
 
-function removeEmptyFromArray(array) {
-  const newArray = [];
-  for (let i = 0; i < array.length; i++) {
-    if (array[i]) {
-      newArray.push(array[i]);
-    }
-  }
-  return newArray;
-}
-
 export function traceSummariesToMustache(serviceName = null, traceSummaries, utc = false) {
-  if (traceSummaries.length === 0) {
-    return [];
-  } else {
-    const traceSummariesCleaned = removeEmptyFromArray(traceSummaries);
-    const maxDuration = Math.max(...traceSummariesCleaned.map((s) => s.duration));
+  const maxDuration = Math.max(...traceSummaries.map((s) => s.duration));
 
-    return traceSummariesCleaned.map((t) => {
-      const timestamp = t.timestamp;
-      const duration = t.duration;
-      const groupedTimestamps = t.groupedTimestamps;
+  return traceSummaries.map((t) => {
+    const timestamp = t.timestamp;
+    const duration = t.duration;
+    const groupedTimestamps = t.groupedTimestamps;
 
-      const res = {
-        traceId: t.traceId,
-        startTs: formatDate(timestamp, utc),
-        timestamp,
-        duration: duration / 1000,
-        durationStr: mkDurationStr(duration),
-        width: parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10),
-        totalSpans: t.totalSpans,
-        serviceDurations: getServiceDurations(groupedTimestamps),
-        infoClass: t.errorType === 'none' ? '' : `trace-error-${t.errorType}`
-      };
+    const res = {
+      traceId: t.traceId,
+      startTs: formatDate(timestamp, utc),
+      timestamp,
+      duration: duration / 1000,
+      durationStr: mkDurationStr(duration),
+      width: parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10),
+      totalSpans: t.totalSpans,
+      serviceDurations: getServiceDurations(groupedTimestamps),
+      infoClass: t.errorType === 'none' ? '' : `trace-error-${t.errorType}`
+    };
 
-      // Only add a service percentage when there is a duration for it
-      if (serviceName && groupedTimestamps[serviceName]) {
-        const serviceTime = totalServiceTime(groupedTimestamps[serviceName]);
-        res.servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(duration) * 100, 10);
-      }
+    // Only add a service percentage when there is a duration for it
+    if (serviceName && groupedTimestamps[serviceName]) {
+      const serviceTime = totalServiceTime(groupedTimestamps[serviceName]);
+      res.servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(duration) * 100, 10);
+    }
 
-      return res;
-    }).sort((t1, t2) => {
-      const durationComparison = t2.duration - t1.duration;
-      if (durationComparison === 0) {
-        return t1.traceId.localeCompare(t2.traceId);
-      } else {
-        return durationComparison;
-      }
-    });
-  }
+    return res;
+  }).sort((t1, t2) => {
+    const durationComparison = t2.duration - t1.duration;
+    if (durationComparison === 0) {
+      return t1.traceId.localeCompare(t2.traceId);
+    } else {
+      return durationComparison;
+    }
+  });
 }
