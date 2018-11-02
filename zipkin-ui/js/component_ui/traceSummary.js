@@ -108,11 +108,19 @@ export function getServiceName(span) {
   return allServiceNames.length === 0 ? null : allServiceNames[0];
 }
 
-function getSpanTimestamps(spans) {
-  return _(spans).flatMap((span) => getServiceNames(span).map((serviceName) => ({
+export function getGroupedTimestamps(spans) {
+  const spanTimestamps = _(spans).flatMap((span) => getServiceNames(span).map((serviceName) => ({
     name: serviceName,
     timestamp: span.timestamp,
     duration: span.duration
+  }))).value();
+
+  const serviceToNameTimestampDurations = _(spanTimestamps).groupBy((sts) => sts.name).value();
+
+  // wash out the redundant name. TODO: rewrite this whole method as it seems easier imperatively
+  return _(serviceToNameTimestampDurations).mapValues((ntds) => ntds.map((ntd) => ({
+    timestamp: ntd.timestamp,
+    duration: ntd.duration
   }))).value();
 }
 
@@ -147,14 +155,14 @@ export function traceSummary(spans = []) {
     const endpoints = _(spans).flatMap(endpointsForSpan).uniqWith(endpointEquals).value();
     const traceId = spans[0].traceId;
     const timestamp = spans[0].timestamp;
-    const spanTimestamps = getSpanTimestamps(spans);
+    const groupedTimestamps = getGroupedTimestamps(spans);
     const errorType = getTraceErrorType(spans);
     const totalSpans = spans.length;
     return {
       traceId,
       timestamp,
       duration,
-      spanTimestamps,
+      groupedTimestamps,
       endpoints,
       errorType,
       totalSpans
@@ -186,10 +194,6 @@ function formatDate(timestamp, utc) {
     m = m.utc();
   }
   return m.format('MM-DD-YYYYTHH:mm:ss.SSSZZ');
-}
-
-export function getGroupedTimestamps(summary) {
-  return _(summary.spanTimestamps).groupBy((sts) => sts.name).value();
 }
 
 export function getServiceDurations(groupedTimestamps) {
@@ -227,40 +231,32 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
     return [];
   } else {
     const traceSummariesCleaned = removeEmptyFromArray(traceSummaries);
-    const maxDuration = Math.max(...traceSummariesCleaned.map((s) => s.duration)) / 1000;
+    const maxDuration = Math.max(...traceSummariesCleaned.map((s) => s.duration));
 
     return traceSummariesCleaned.map((t) => {
-      const duration = t.duration / 1000;
-      const groupedTimestamps = getGroupedTimestamps(t);
-      const serviceDurations = getServiceDurations(groupedTimestamps);
-      let servicePercentage;
-      let serviceTime;
-      if (!serviceName || !groupedTimestamps[serviceName]) {
-        serviceTime = 0;
-      } else {
-        serviceTime = totalServiceTime(groupedTimestamps[serviceName]);
-        servicePercentage = parseInt(
-          parseFloat(serviceTime) / parseFloat(t.duration) * 100,
-        10);
+      const timestamp = t.timestamp;
+      const duration = t.duration;
+      const groupedTimestamps = t.groupedTimestamps;
+
+      const res = {
+        traceId: t.traceId,
+        startTs: formatDate(timestamp, utc),
+        timestamp,
+        duration: duration / 1000,
+        durationStr: mkDurationStr(duration),
+        width: parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10),
+        totalSpans: t.totalSpans,
+        serviceDurations: getServiceDurations(groupedTimestamps),
+        infoClass: t.errorType === 'none' ? '' : `trace-error-${t.errorType}`
+      };
+
+      // Only add a service percentage when there is a duration for it
+      if (serviceName && groupedTimestamps[serviceName]) {
+        const serviceTime = totalServiceTime(groupedTimestamps[serviceName]);
+        res.servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(duration) * 100, 10);
       }
 
-      const startTs = formatDate(t.timestamp, utc);
-      const durationStr = mkDurationStr(t.duration);
-      const width = parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10);
-      const infoClass = t.errorType === 'none' ? '' : `trace-error-${t.errorType}`;
-
-      return {
-        traceId: t.traceId,
-        startTs,
-        timestamp: t.timestamp,
-        duration,
-        durationStr,
-        servicePercentage,
-        totalSpans: t.totalSpans,
-        serviceDurations,
-        width,
-        infoClass
-      };
+      return res;
     }).sort((t1, t2) => {
       const durationComparison = t2.duration - t1.duration;
       if (durationComparison === 0) {

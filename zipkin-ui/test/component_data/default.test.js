@@ -66,28 +66,28 @@ describe('rawTraceToSummary', () => {
       traceId: '1e223ff1f80f1c69',
       timestamp: 1470150004071068,
       duration: 99411,
-      spanTimestamps: [
-        {
-          name: 'servicea',
-          timestamp: 1470150004071068,
-          duration: 99411
-        },
-        {
-          name: 'servicea',
-          timestamp: 1470150004074202,
-          duration: 94539
-        },
-        {
-          name: 'serviceb',
-          timestamp: 1470150004074202,
-          duration: 94539
-        },
-        {
-          name: 'serviceb',
-          timestamp: 1470150004074684,
-          duration: 65000
-        }
-      ],
+      groupedTimestamps: {
+        servicea: [
+          {
+            timestamp: 1470150004071068,
+            duration: 99411
+          },
+          {
+            timestamp: 1470150004074202,
+            duration: 94539
+          }
+        ],
+        serviceb: [
+          {
+            timestamp: 1470150004074202,
+            duration: 94539
+          },
+          {
+            timestamp: 1470150004074684,
+            duration: 65000
+          }
+        ]
+      },
       endpoints: [
         {
           serviceName: 'servicea',

@@ -58,9 +58,9 @@ export default component(function DefaultData() {
       type: 'GET',
       dataType: 'json'
     }).done(traces => {
-      const summaries = traces.map(raw => rawTraceToSummary(raw));
+      const traceSummaries = traces.map(raw => rawTraceToSummary(raw));
       const modelview = {
-        traces: traceSummariesToMustache(apiQuery.serviceName, summaries),
+        traces: traceSummariesToMustache(apiQuery.serviceName, traceSummaries),
         apiURL,
         rawResponse: traces
       };
