@@ -145,6 +145,7 @@ public class CassandraStorageRule extends ExternalResource {
 
   static Cluster getCluster(InetSocketAddress contactPoint) {
     return Cluster.builder()
+        .withoutJMXReporting()
         .addContactPointsWithPorts(contactPoint)
         .withRetryPolicy(ZipkinRetryPolicy.INSTANCE)
         .withPoolingOptions(new PoolingOptions().setMaxConnectionsPerHost(HostDistance.LOCAL, 1))
