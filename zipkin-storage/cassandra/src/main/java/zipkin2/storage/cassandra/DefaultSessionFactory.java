@@ -86,7 +86,7 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
 
   // Visible for testing
   static Cluster buildCluster(CassandraStorage cassandra) {
-    Cluster.Builder builder = Cluster.builder();
+    Cluster.Builder builder = Cluster.builder().withoutJMXReporting();
     List<InetSocketAddress> contactPoints = parseContactPoints(cassandra);
     int defaultPort = findConnectPort(contactPoints);
     builder.addContactPointsWithPorts(contactPoints);
