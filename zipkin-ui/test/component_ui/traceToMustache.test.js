@@ -58,20 +58,17 @@ describe('traceToMustache', () => {
     modelview.logsUrl.should.equal(logsUrl);
   });
 
-  it('should show service counts', () => {
+  it('should show service name and span counts', () => {
     const modelview = traceToMustache(trace);
-    modelview.serviceCounts.should.eql([{
-      name: 'service1',
-      count: 1,
-      max: 0
+    modelview.serviceNameAndSpanCounts.should.eql([{
+      serviceName: 'service1',
+      spanCount: 1
     }, {
-      name: 'service2',
-      count: 2,
-      max: 0
+      serviceName: 'service2',
+      spanCount: 2
     }, {
-      name: 'service3',
-      count: 1,
-      max: 0
+      serviceName: 'service3',
+      spanCount: 1
     }]);
   });
 

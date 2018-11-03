@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import {
   traceSummary,
-  getServiceDurations,
+  getServiceNameAndSpanCounts,
   getServiceNames,
   getServiceName,
   mkDurationStr
@@ -93,10 +93,9 @@ export default function traceToMustache(trace, logsUrl = undefined) {
   const t = traceSummary(trace);
   const traceId = t.traceId;
   const duration = t.duration;
-  const serviceDurations = getServiceDurations(t.groupedTimestamps);
+  const serviceNameAndSpanCounts = getServiceNameAndSpanCounts(t.groupedTimestamps);
 
-  const services = serviceDurations.length || 0;
-  const serviceCounts = _(serviceDurations).sortBy('name').value();
+  const services = serviceNameAndSpanCounts.length || 0;
   const groupByParentId = _(trace).groupBy((s) => s.parentId).value();
 
   const traceTimestamp = trace[0].timestamp || 0;
@@ -176,7 +175,7 @@ export default function traceToMustache(trace, logsUrl = undefined) {
     }
   ).value();
 
-  const totalSpans = spans.length;
+  const spanCount = spans.length;
   const timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
       .map((p, index) => ({index, time: mkDurationStr(duration * p)}));
   const timeMarkersBackup = timeMarkers;
@@ -187,8 +186,8 @@ export default function traceToMustache(trace, logsUrl = undefined) {
     duration: mkDurationStr(duration),
     services,
     depth,
-    totalSpans,
-    serviceCounts,
+    spanCount,
+    serviceNameAndSpanCounts,
     timeMarkers,
     timeMarkersBackup,
     spans,

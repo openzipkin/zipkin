@@ -83,9 +83,9 @@ describe('traceSummary', () => {
     summary.duration.should.equal(400);
   });
 
-  it('should get total spans count', () => {
+  it('should get span count', () => {
     const summary = traceSummary(trace);
-    summary.totalSpans.should.equal(trace.length);
+    summary.spanCount.should.equal(trace.length);
   });
 });
 
@@ -356,16 +356,16 @@ describe('traceSummariesToMustache', () => {
     model[0].duration.should.equal(20);
   });
 
-  it('should get service durations', () => {
+  it('should get service summaries, ordered descending by max span duration', () => {
     const model = traceSummariesToMustache(null, [summary]);
-    model[0].serviceDurations.should.eql([{
-      name: 'A',
-      count: 1,
-      max: 10
+    model[0].serviceSummaries.should.eql([{
+      serviceName: 'B',
+      spanCount: 2,
+      maxSpanDurationStr: '20ms'
     }, {
-      name: 'B',
-      count: 2,
-      max: 20
+      serviceName: 'A',
+      spanCount: 1,
+      maxSpanDurationStr: '10ms'
     }]);
   });
 
@@ -386,7 +386,7 @@ describe('traceSummariesToMustache', () => {
 
   it('should format duration', () => {
     const model = traceSummariesToMustache(null, [summary]);
-    model[0].durationStr.should.equal('20.000ms');
+    model[0].durationStr.should.equal('20ms');
   });
 
   it('should calculate the width in percent', () => {
@@ -420,7 +420,7 @@ describe('traceSummariesToMustache', () => {
     model[0].timestamp.should.equal(summary.timestamp);
   });
 
-  it('should get correct totalSpans', () => {
+  it('should get correct spanCount', () => {
     const spans = [{
       traceId: 'd397ce70f5192a8b',
       name: 'get',
@@ -456,7 +456,7 @@ describe('traceSummariesToMustache', () => {
     }];
     const testSummary = traceSummary(spans);
     const model = traceSummariesToMustache(null, [testSummary])[0];
-    model.totalSpans.should.equal(1);
+    model.spanCount.should.equal(1);
   });
 
   it('should order traces by duration and tie-break using trace id', () => {
@@ -506,6 +506,10 @@ describe('mkDurationStr', () => {
 
   it('should format ms', () => {
     mkDurationStr(1500).should.equal('1.500ms');
+  });
+
+  it('should format exact ms', () => {
+    mkDurationStr(15000).should.equal('15ms');
   });
 
   it('should format seconds', () => {
