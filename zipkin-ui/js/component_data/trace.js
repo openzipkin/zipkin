@@ -3,13 +3,19 @@ import $ from 'jquery';
 import {getError} from '../../js/component_ui/error';
 import traceToMustache from '../../js/component_ui/traceToMustache';
 import {SPAN_V1} from '../spanConverter';
-import {correctForClockSkew} from '../skew';
 
 export function toContextualLogsUrl(logsUrl, traceId) {
   if (logsUrl) {
     return logsUrl.replace('{traceId}', traceId);
   }
   return logsUrl;
+}
+
+// Converts the response into data for trace.mustache. Missing required data will raise an error.
+export function convertSuccessResponse(rawResponse, logsUrl) {
+  const v1Trace = SPAN_V1.convertTrace(rawResponse);
+  const modelview = traceToMustache(v1Trace, logsUrl);
+  return {modelview, trace: rawResponse};
 }
 
 export default component(function TraceData() {
@@ -20,14 +26,9 @@ export default component(function TraceData() {
       type: 'GET',
       dataType: 'json'
     }).done(raw => {
-      const v1Trace = raw.map(SPAN_V1.convert);
-      const mergedTrace = SPAN_V1.mergeById(v1Trace);
-      const clockSkewCorrectedTrace = correctForClockSkew(mergedTrace);
-      const modelview = traceToMustache(clockSkewCorrectedTrace, logsUrl);
-      this.trigger('tracePageModelView', {modelview, trace: raw});
+      this.trigger('tracePageModelView', convertSuccessResponse(raw, logsUrl));
     }).fail(e => {
-      this.trigger('uiServerError',
-                   getError(`Cannot load trace ${this.attr.traceId}`, e));
+      this.trigger('uiServerError', getError(`Cannot load trace ${traceId}`, e));
     });
   });
 });

@@ -1,3 +1,5 @@
+import {correctForClockSkew} from './skew';
+
 function toV1Endpoint(endpoint) {
   if (endpoint === undefined) {
     return undefined;
@@ -466,6 +468,12 @@ function mergeById(spans) {
 }
 
 module.exports.SPAN_V1 = {
+  // Temporary convenience function until functionality is ported to v2
+  convertTrace(v2Trace) {
+    const v1Trace = v2Trace.map(convertV1);
+    const mergedTrace = mergeById(v1Trace);
+    return correctForClockSkew(mergedTrace);
+  },
   convert(v2Span) {
     return convertV1(v2Span);
   },

@@ -50,12 +50,26 @@ describe('traceSummary', () => {
 
   const trace = [span1, span2, span3, span4];
 
-  it('should return null when no spans exist', () => {
-    expect(traceSummary([])).to.equal(null);
+  it('should throw error on empty trace', () => {
+    let error;
+    try {
+      traceSummary([]);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).to.eql('Trace was empty');
   });
 
-  it('should return null when no annotations are present', () => {
-    expect(traceSummary([span5])).to.equal(null);
+  it('should throw error on trace missing timestamp', () => {
+    let error;
+    try {
+      traceSummary([span5]);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).to.eql('Trace is missing a timestamp');
   });
 
   it('dedupes duplicate endpoints', () => {
@@ -338,8 +352,8 @@ describe('traceSummariesToMustache', () => {
   });
 
   it('should convert duration from micros to millis', () => {
-    const model = traceSummariesToMustache(null, [{duration: 3000}]);
-    model[0].duration.should.equal(3);
+    const model = traceSummariesToMustache(null, [{timestamp: start, duration: 20000}]);
+    model[0].duration.should.equal(20);
   });
 
   it('should get service durations', () => {

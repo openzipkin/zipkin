@@ -4,7 +4,6 @@ import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
 import {SPAN_V1} from '../spanConverter';
-import {correctForClockSkew} from '../skew';
 
 export function convertToApiQuery(source) {
   const query = Object.assign({}, source);
@@ -38,17 +37,29 @@ export function convertToApiQuery(source) {
   return query;
 }
 
-export function rawTraceToSummary(raw) {
-  const v1Trace = raw.map(SPAN_V1.convert);
-  const mergedTrace = SPAN_V1.mergeById(v1Trace);
-  const clockSkewCorrectedTrace = correctForClockSkew(mergedTrace);
-  return traceSummary(clockSkewCorrectedTrace);
+// Converts the response into data for index.mustache. Traces missing required data are skipped.
+export function convertSuccessResponse(rawResponse, serviceName, apiURL, utc = false) {
+  const summaries = [];
+  rawResponse.forEach((raw) => {
+    const v1Trace = SPAN_V1.convertTrace(raw);
+    if (v1Trace.length > 0 && v1Trace[0].timestamp) {
+      summaries.push(traceSummary(v1Trace));
+    }
+  });
+
+  // Take the summaries and convert them to template parameters for index.mustache
+  let traces = [];
+  if (summaries.length > 0) {
+    traces = traceSummariesToMustache(serviceName, summaries, utc);
+  }
+  return {traces, apiURL, rawResponse};
 }
 
 export default component(function DefaultData() {
   this.after('initialize', function() {
     const query = queryString.parse(window.location.search);
-    if (!query.serviceName) {
+    const serviceName = query.serviceName;
+    if (!serviceName) {
       this.trigger('defaultPageModelView', {traces: []});
       return;
     }
@@ -57,17 +68,10 @@ export default component(function DefaultData() {
     $.ajax(apiURL, {
       type: 'GET',
       dataType: 'json'
-    }).done(traces => {
-      const traceSummaries = traces.map(raw => rawTraceToSummary(raw));
-      const modelview = {
-        traces: traceSummariesToMustache(apiQuery.serviceName, traceSummaries),
-        apiURL,
-        rawResponse: traces
-      };
-      this.trigger('defaultPageModelView', modelview);
+    }).done(rawTraces => {
+      this.trigger('defaultPageModelView', convertSuccessResponse(rawTraces, serviceName, apiURL));
     }).fail(e => {
-      this.trigger('defaultPageModelView', {traces: [],
-                                            queryError: errToStr(e)});
+      this.trigger('defaultPageModelView', {traces: [], queryError: errToStr(e)});
     });
   });
 });
