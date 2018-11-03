@@ -28,7 +28,8 @@ describe('convertSuccessResponse', () => {
   });
 
   it('should include service percentage from the URL', () => {
-    const urlIncludingServiceName = '/api/v2/traces?serviceName=backend&spanName=all&endTs=1459169770000';
+    const urlIncludingServiceName =
+      '/api/v2/traces?serviceName=backend&spanName=all&endTs=1459169770000';
 
     const expectedTemplate = {
       traceId: 'bb1f0e21882325b8',

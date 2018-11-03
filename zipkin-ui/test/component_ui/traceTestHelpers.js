@@ -77,7 +77,7 @@ export const errorTrace = [{
     serviceName: 'backend',
     ipv4: '172.17.0.9'
   },
-  tags: { error: 'request failed' }
+  tags: {error: 'request failed'}
 }];
 
 // from ../tracedata/skew.json as we can't figure out how to read file with headless chrome env
