@@ -110,15 +110,15 @@ export function getServiceName(span) {
 
 export function getGroupedTimestamps(spans) {
   const spanTimestamps = _(spans).flatMap((span) => getServiceNames(span).map((serviceName) => ({
-    name: serviceName,
+    serviceName,
     timestamp: span.timestamp,
     duration: span.duration
   }))).value();
 
-  const serviceToNameTimestampDurations = _(spanTimestamps).groupBy((sts) => sts.name).value();
+  const grouped = _(spanTimestamps).groupBy((sts) => sts.serviceName).value();
 
   // wash out the redundant name. TODO: rewrite this whole method as it seems easier imperatively
-  return _(serviceToNameTimestampDurations).mapValues((ntds) => ntds.map((ntd) => ({
+  return _(grouped).mapValues((ntds) => ntds.map((ntd) => ({
     timestamp: ntd.timestamp,
     duration: ntd.duration
   }))).value();
@@ -162,7 +162,7 @@ export function traceSummary(trace = []) {
   const groupedTimestamps = getGroupedTimestamps(trace);
   const endpoints = _(trace).flatMap(endpointsForSpan).uniqWith(endpointEquals).value();
   const errorType = getTraceErrorType(trace);
-  const totalSpans = trace.length;
+  const spanCount = trace.length;
   return {
     traceId,
     timestamp,
@@ -170,7 +170,7 @@ export function traceSummary(trace = []) {
     groupedTimestamps,
     endpoints,
     errorType,
-    totalSpans
+    spanCount
   };
 }
 
@@ -200,24 +200,42 @@ function formatDate(timestamp, utc) {
   return m.format('MM-DD-YYYYTHH:mm:ss.SSSZZ');
 }
 
-export function getServiceDurations(groupedTimestamps) {
-  return _(groupedTimestamps).toPairs().map(([name, sts]) => ({
-    name,
-    count: sts.length,
-    max: parseInt(Math.max(...sts.map(t => t.duration)) / 1000, 10)
-  })).sortBy('name').value();
-}
-
 export function mkDurationStr(duration) {
   if (duration === 0 || typeof duration === 'undefined') {
     return '';
   } else if (duration < 1000) {
-    return `${duration}μ`;
+    return `${duration.toFixed(0)}μ`;
   } else if (duration < 1000000) {
+    if (duration % 1000 === 0) { // Sometimes spans are in milliseconds resolution
+      return `${(duration / 1000).toFixed(0)}ms`;
+    }
     return `${(duration / 1000).toFixed(3)}ms`;
   } else {
     return `${(duration / 1000000).toFixed(3)}s`;
   }
+}
+
+export function getServiceNameAndSpanCounts(groupedTimestamps) {
+  return _(groupedTimestamps).toPairs().map(([serviceName, sts]) => ({
+    serviceName,
+    spanCount: sts.length
+  })).sortBy('serviceName').value();
+}
+
+// maxSpanDurationStr is only used in index.mustache
+export function getServiceSummaries(groupedTimestamps) {
+  return _(groupedTimestamps).toPairs()
+    .map(([serviceName, sts]) => ({
+      serviceName,
+      spanCount: sts.length,
+      maxSpanDuration: Math.max(...sts.map(t => t.duration))
+    }))
+    .orderBy(['maxSpanDuration', 'serviceName'], ['desc', 'asc'])
+    .map(summary => ({
+      serviceName: summary.serviceName,
+      spanCount: summary.spanCount,
+      maxSpanDurationStr: mkDurationStr(summary.maxSpanDuration)
+    })).value();
 }
 
 export function traceSummariesToMustache(serviceName = null, traceSummaries, utc = false) {
@@ -235,8 +253,8 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
       duration: duration / 1000,
       durationStr: mkDurationStr(duration),
       width: parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10),
-      totalSpans: t.totalSpans,
-      serviceDurations: getServiceDurations(groupedTimestamps),
+      spanCount: t.spanCount,
+      serviceSummaries: getServiceSummaries(groupedTimestamps),
       infoClass: t.errorType === 'none' ? '' : `trace-error-${t.errorType}`
     };
 

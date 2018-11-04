@@ -70,7 +70,7 @@ const DefaultPageComponent = component(function DefaultPage() {
         annotationQuery,
         queryWasPerformed,
         contextRoot,
-        count: modelView.traces.length,
+        traceCount: modelView.traces.length,
         sortOrderOptions: sortOptions,
         sortOrderSelected: sortSelected(sortOrder),
         apiURL: modelView.apiURL,

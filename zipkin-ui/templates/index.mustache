@@ -97,8 +97,8 @@
     <div id="trace-filters" class="row">
       <div class="col-md-11">
         <div>
-          Showing:  <span class="filter-current">{{count}}</span>
-          of <span class="filter-total">{{count}}</span>
+          Showing:  <span class="filter-current">{{traceCount}}</span>
+          of <span class="filter-total">{{traceCount}}</span>
         </div>
 
         <div class="service-tags">
@@ -136,7 +136,7 @@
           <div class="bar-block">
             <span class="bar-graphic" style="width:{{width}}%;"></span>
             <span class="bar-label">{{durationStr}}</span>
-            <span class="bar-label">{{totalSpans}} spans</span>
+            <span class="bar-label">{{spanCount}} spans</span>
           </div>
           {{#servicePercentage}}
           <div class="bar-block">
@@ -146,10 +146,10 @@
           {{/servicePercentage}}
         </a>
         <div class="trace-details services">
-          {{#serviceDurations}}
-            <span class="badge badge-success service-filter-label" data-service-name="{{name}}">{{name}}
-              x{{count}} {{max}}ms</span>
-          {{/serviceDurations}}
+          {{#serviceSummaries}}
+            <span class="badge badge-success service-filter-label" data-service-name="{{serviceName}}">
+            {{serviceName}} x{{spanCount}} {{maxSpanDurationStr}}</span>
+          {{/serviceSummaries}}
         </div>
         <div class="trace-details timestamp pull-right">
           <time class="label timeago" datetime="{{startTs}}">{{startTs}}</time>

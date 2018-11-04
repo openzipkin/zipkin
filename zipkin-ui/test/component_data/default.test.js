@@ -13,10 +13,10 @@ describe('convertSuccessResponse', () => {
       duration: 168.731,
       durationStr: '168.731ms',
       width: 100,
-      totalSpans: 2,
-      serviceDurations: [
-        {name: 'backend', count: 1, max: 111},
-        {name: 'frontend', count: 2, max: 168}
+      spanCount: 2,
+      serviceSummaries: [
+        {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
+        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '111.121ms'}
       ],
       infoClass: ''
     };
@@ -38,10 +38,10 @@ describe('convertSuccessResponse', () => {
       duration: 168.731,
       durationStr: '168.731ms',
       width: 100,
-      totalSpans: 2,
-      serviceDurations: [
-        {name: 'backend', count: 1, max: 111},
-        {name: 'frontend', count: 2, max: 168}
+      spanCount: 2,
+      serviceSummaries: [
+        {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
+        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '111.121ms'}
       ],
       infoClass: '',
       servicePercentage: 65
@@ -61,9 +61,9 @@ describe('convertSuccessResponse', () => {
       duration: 0.017,
       durationStr: '17μ',
       width: 100,
-      totalSpans: 1,
-      serviceDurations: [
-        {name: 'backend', count: 1, max: 0} // TODO: figure out what max means
+      spanCount: 1,
+      serviceSummaries: [
+        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '17μ'}
       ],
       infoClass: 'trace-error-critical'
     };
@@ -106,10 +106,10 @@ describe('convertSuccessResponse', () => {
       duration: 99.411,
       durationStr: '99.411ms',
       width: 100,
-      totalSpans: 3,
-      serviceDurations: [
-        {name: 'servicea', count: 2, max: 99},
-        {name: 'serviceb', count: 2, max: 94}
+      spanCount: 3,
+      serviceSummaries: [
+        {serviceName: 'servicea', spanCount: 2, maxSpanDurationStr: '99.411ms'},
+        {serviceName: 'serviceb', spanCount: 2, maxSpanDurationStr: '94.539ms'}
       ],
       infoClass: '',
       servicePercentage: 95

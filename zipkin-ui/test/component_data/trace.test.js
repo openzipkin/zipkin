@@ -212,10 +212,10 @@ describe('convertSuccessResponse', () => {
       duration: '168.731ms',
       services: 2,
       depth: 2,
-      totalSpans: 2,
-      serviceCounts: [
-        {name: 'backend', count: 1, max: 111},
-        {name: 'frontend', count: 2, max: 168}
+      spanCount: 2,
+      serviceNameAndSpanCounts: [
+        {serviceName: 'backend', spanCount: 1},
+        {serviceName: 'frontend', spanCount: 2}
       ],
       timeMarkers,
       timeMarkersBackup: timeMarkers, // TODO: what is backup and why??
@@ -262,10 +262,10 @@ describe('convertSuccessResponse', () => {
 
     const timeMarkers = [
       {index: 0, time: ''},
-      {index: 1, time: '3.4000000000000004μ'},
-      {index: 2, time: '6.800000000000001μ'},
-      {index: 3, time: '10.2μ'},
-      {index: 4, time: '13.600000000000001μ'},
+      {index: 1, time: '3μ'},
+      {index: 2, time: '7μ'},
+      {index: 3, time: '10μ'},
+      {index: 4, time: '14μ'},
       {index: 5, time: '17μ'}
     ];
 
@@ -274,9 +274,9 @@ describe('convertSuccessResponse', () => {
       duration: '17μ',
       services: 1,
       depth: 1,
-      totalSpans: 1,
-      serviceCounts: [
-        {name: 'backend', count: 1, max: 0}
+      spanCount: 1,
+      serviceNameAndSpanCounts: [
+        {serviceName: 'backend', spanCount: 1}
       ],
       timeMarkers,
       timeMarkersBackup: timeMarkers, // TODO: what is backup and why??
@@ -419,7 +419,7 @@ describe('convertSuccessResponse', () => {
         serviceNames: 'serviceb',
         serviceName: 'serviceb',
         duration: 65000,
-        durationStr: '65.000ms',
+        durationStr: '65ms',
         left: 3.6374244298920644,
         width: 65.3851183470642,
         depth: 20,
@@ -454,10 +454,10 @@ describe('convertSuccessResponse', () => {
       duration: '99.411ms',
       services: 2,
       depth: 3,
-      totalSpans: 3,
-      serviceCounts: [
-        {name: 'servicea', count: 2, max: 99},
-        {name: 'serviceb', count: 2, max: 94}
+      spanCount: 3,
+      serviceNameAndSpanCounts: [
+        {serviceName: 'servicea', spanCount: 2},
+        {serviceName: 'serviceb', spanCount: 2}
       ],
       timeMarkers,
       timeMarkersBackup: timeMarkers,
