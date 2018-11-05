@@ -111,7 +111,7 @@ export function getServiceName(span) {
 export function getGroupedTimestamps(spans) {
   const spanTimestamps = _(spans).flatMap((span) => getServiceNames(span).map((serviceName) => ({
     serviceName,
-    timestamp: span.timestamp,
+    timestamp: span.timestamp, // only used by totalServiceTime
     duration: span.duration
   }))).value();
 
@@ -174,6 +174,7 @@ export function traceSummary(trace = []) {
   };
 }
 
+// Used to create servicePercentage for index.mustache when a service is selected
 export function totalServiceTime(stamps, acc = 0) {
   // This is a recursive function that performs arithmetic on duration
   // If duration is undefined, it will infinitely recurse. Filter out that case

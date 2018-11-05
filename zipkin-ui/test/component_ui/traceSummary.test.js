@@ -4,10 +4,13 @@ import {
   getTraceErrorType,
   traceSummariesToMustache,
   mkDurationStr,
-  totalServiceTime
+  totalServiceTime,
+  traceDuration
 } from '../../js/component_ui/traceSummary';
 import {Constants} from '../../js/component_ui/traceConstants';
-import {endpoint, annotation, binaryAnnotation, span} from './traceTestHelpers';
+import {SPAN_V1} from '../../js/spanConverter';
+import {annotation, binaryAnnotation, endpoint, span} from './traceTestHelpers';
+import {httpTrace, messagingTrace, skewedTrace} from './traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
 
@@ -538,5 +541,23 @@ describe('totalServiceTime', () => {
     // when json form of span is missing the duration key
     const undefinedDuration = {name: 'zipkin-web', timestamp: time1.timestamp, duration: undefined};
     totalServiceTime([time1, time2, time3, undefinedDuration]).should.equal(6000);
+  });
+});
+
+describe('traceDuration', () => {
+  it('should return root span duration of synchronous trace', () => {
+    const rootSpan = httpTrace.find(span => !span.parentId);
+    traceDuration(httpTrace).should.equal(rootSpan.duration);
+    traceDuration(SPAN_V1.convertTrace(httpTrace)).should.equal(rootSpan.duration);
+  });
+
+  it('should return correct duration for a skewed async trace', () => {
+    traceDuration(skewedTrace).should.equal(161718);
+    traceDuration(SPAN_V1.convertTrace(skewedTrace)).should.equal(99411);
+  });
+
+  it('should return the distance from the earliest event to the end of the last', () => {
+    traceDuration(messagingTrace).should.equal(3357);
+    traceDuration(SPAN_V1.convertTrace(messagingTrace)).should.equal(3357);
   });
 });
