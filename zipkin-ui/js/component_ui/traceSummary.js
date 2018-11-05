@@ -27,7 +27,7 @@ export function traceDuration(spans) {
   const timestamps = _(spans).flatMap(makeList).sort().value();
 
   if (timestamps.length < 2) {
-    return null;
+    return 0;
   } else {
     const first = _.head(timestamps);
     const last = _.last(timestamps);
@@ -124,7 +124,6 @@ export function getGroupedTimestamps(spans) {
   }))).value();
 }
 
-
 // returns 'critical' if one of the spans has an ERROR binary annotation, else
 // returns 'transient' if one of the spans has an ERROR annotation, else
 // returns 'none'
@@ -158,7 +157,7 @@ export function traceSummary(trace = []) {
 
   const traceId = trace[0].traceId;
   const timestamp = trace[0].timestamp;
-  const duration = traceDuration(trace) || 0;
+  const duration = traceDuration(trace);
   const groupedTimestamps = getGroupedTimestamps(trace);
   const endpoints = _(trace).flatMap(endpointsForSpan).uniqWith(endpointEquals).value();
   const errorType = getTraceErrorType(trace);
@@ -175,22 +174,37 @@ export function traceSummary(trace = []) {
 }
 
 // Used to create servicePercentage for index.mustache when a service is selected
-export function totalServiceTime(stamps, acc = 0) {
-  // This is a recursive function that performs arithmetic on duration
-  // If duration is undefined, it will infinitely recurse. Filter out that case
-  const filtered = stamps.filter((s) => s.duration);
+export function totalServiceTime(timestampAndDuration) {
+  const filtered = _(timestampAndDuration)
+    .filter((s) => s.duration) // filter out anything we can't make an interval out of
+    .sortBy('timestamp').value(); // to merge intervals, we need the input sorted
+
   if (filtered.length === 0) {
-    return acc;
-  } else {
-    const ts = _(filtered).minBy((s) => s.timestamp);
-    const [current, next] = _(filtered)
-        .partition((t) =>
-          t.timestamp >= ts.timestamp
-          && t.timestamp + t.duration <= ts.timestamp + ts.duration)
-        .value();
-    const endTs = Math.max(...current.map((t) => t.timestamp + t.duration));
-    return totalServiceTime(next, acc + (endTs - ts.timestamp));
+    return 0;
   }
+  if (filtered.length === 1) {
+    return filtered[0].duration;
+  }
+
+  let result = filtered[0].duration;
+  let currentIntervalEnd = filtered[0].timestamp + filtered[0].duration;
+
+  for (let i = 1; i < filtered.length; i++) {
+    const next = filtered[i];
+    const nextIntervalEnd = next.timestamp + next.duration;
+
+    if (nextIntervalEnd <= currentIntervalEnd) { // we are still in the interval
+      continue;
+    } else if (next.timestamp <= currentIntervalEnd) { // we extending the interval
+      result += nextIntervalEnd - currentIntervalEnd;
+      currentIntervalEnd = nextIntervalEnd;
+    } else { // this is a new interval
+      result += next.duration;
+      currentIntervalEnd = nextIntervalEnd;
+    }
+  }
+
+  return result;
 }
 
 function formatDate(timestamp, utc) {

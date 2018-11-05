@@ -8,9 +8,7 @@ import {
   traceDuration
 } from '../../js/component_ui/traceSummary';
 import {Constants} from '../../js/component_ui/traceConstants';
-import {SPAN_V1} from '../../js/spanConverter';
 import {annotation, binaryAnnotation, endpoint, span} from './traceTestHelpers';
-import {httpTrace, messagingTrace, skewedTrace} from './traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
 
@@ -521,43 +519,78 @@ describe('mkDurationStr', () => {
 });
 
 describe('totalServiceTime', () => {
-  const time1 = {name: 'service', timestamp: 1456447911000000, duration: 1000};
-  const time2 = {name: 'service', timestamp: 1456447912000000, duration: 2000};
-  const time3 = {name: 'service', timestamp: 1456447913000000, duration: 3000};
-
   it('should return zero on empty input', () => {
     totalServiceTime([]).should.equal(0);
   });
 
-  it('should return duration on single input', () => {
-    totalServiceTime([time1]).should.equal(time1.duration);
+  it('should return only duration when single input', () => {
+    totalServiceTime([{timestamp: 10, duration: 200}]).should.equal(200);
   });
 
-  it('should sum on multiple inputs', () => {
-    totalServiceTime([time1, time2, time3]).should.equal(6000);
+  it('should return root span duration when no children complete after root', () => {
+    const rootLongest = [
+      {timestamp: 1, duration: 300},
+      {timestamp: 10, duration: 200},
+      {timestamp: 20, duration: 210}
+    ];
+    totalServiceTime(rootLongest).should.equal(300);
   });
 
-  it('shouldnt infinitely recurse when duration is undefined', () => {
-    // when json form of span is missing the duration key
-    const undefinedDuration = {name: 'zipkin-web', timestamp: time1.timestamp, duration: undefined};
-    totalServiceTime([time1, time2, time3, undefinedDuration]).should.equal(6000);
+  it('should return the total time in a service and not the time not in service', () => {
+    const asyncTrace = [
+      {timestamp: 1, duration: 300},
+      {timestamp: 11, duration: 200}, // enclosed by above
+      {timestamp: 390, duration: 20},
+      {timestamp: 400, duration: 30}, // overlaps with above
+    ];
+    totalServiceTime(asyncTrace).should.equal(300 + ((400 + 30) - 390));
+  });
+
+  it('should ignore input missing duration', () => {
+    const rootLongest = [
+      {timestamp: 1, duration: 300},
+      {timestamp: 10}, // incomplete span
+      {timestamp: 20, duration: 210}
+    ];
+    totalServiceTime(rootLongest).should.equal(300);
   });
 });
 
 describe('traceDuration', () => {
-  it('should return root span duration of synchronous trace', () => {
-    const rootSpan = httpTrace.find(span => !span.parentId);
-    traceDuration(httpTrace).should.equal(rootSpan.duration);
-    traceDuration(SPAN_V1.convertTrace(httpTrace)).should.equal(rootSpan.duration);
+  it('should return zero on empty input', () => {
+    traceDuration([]).should.equal(0);
   });
 
-  it('should return correct duration for a skewed async trace', () => {
-    traceDuration(skewedTrace).should.equal(161718);
-    traceDuration(SPAN_V1.convertTrace(skewedTrace)).should.equal(99411);
+  it('should return only duration when single input', () => {
+    traceDuration([{timestamp: 10, duration: 200}]).should.equal(200);
+  });
+
+  it('should return root span duration when no children complete after root', () => {
+    const rootLongest = [
+      {timestamp: 1, duration: 300},
+      {timestamp: 10, duration: 200},
+      {timestamp: 20, duration: 210}
+    ];
+    traceDuration(rootLongest).should.equal(300);
   });
 
   it('should return the distance from the earliest event to the end of the last', () => {
-    traceDuration(messagingTrace).should.equal(3357);
-    traceDuration(SPAN_V1.convertTrace(messagingTrace)).should.equal(3357);
+    // In a messaging or async trace, the child span can start well after the first completes
+    const asyncTrace = [
+      {timestamp: 1, duration: 300},
+      {timestamp: 11, duration: 200},
+      {timestamp: 390, duration: 20},
+      {timestamp: 400, duration: 30},
+    ];
+    traceDuration(asyncTrace).should.equal(400 + 30 - 1);
+  });
+
+  it('should ignore input missing duration', () => {
+    const rootLongest = [
+      {timestamp: 1, duration: 300},
+      {timestamp: 10}, // incomplete span
+      {timestamp: 20, duration: 210}
+    ];
+    traceDuration(rootLongest).should.equal(300);
   });
 });
