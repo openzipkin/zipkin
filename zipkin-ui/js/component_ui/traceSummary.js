@@ -111,7 +111,7 @@ export function getServiceName(span) {
 export function getGroupedTimestamps(spans) {
   const spanTimestamps = _(spans).flatMap((span) => getServiceNames(span).map((serviceName) => ({
     serviceName,
-    timestamp: span.timestamp, // only used by totalServiceTime
+    timestamp: span.timestamp, // only used by totalDuration
     duration: span.duration
   }))).value();
 
@@ -173,9 +173,11 @@ export function traceSummary(trace = []) {
   };
 }
 
-// Used to create servicePercentage for index.mustache when a service is selected
-export function totalServiceTime(timestampAndDuration) {
-  const filtered = _(timestampAndDuration)
+// This returns a total duration by merging all overlapping intervals found in the the input.
+//
+// This is used to create servicePercentage for index.mustache when a service is selected
+export function totalDuration(timestampAndDurations) {
+  const filtered = _(timestampAndDurations)
     .filter((s) => s.duration) // filter out anything we can't make an interval out of
     .sortBy('timestamp').value(); // to merge intervals, we need the input sorted
 
@@ -275,7 +277,7 @@ export function traceSummariesToMustache(serviceName = null, traceSummaries, utc
 
     // Only add a service percentage when there is a duration for it
     if (serviceName && groupedTimestamps[serviceName]) {
-      const serviceTime = totalServiceTime(groupedTimestamps[serviceName]);
+      const serviceTime = totalDuration(groupedTimestamps[serviceName]);
       res.servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(duration) * 100, 10);
     }
 

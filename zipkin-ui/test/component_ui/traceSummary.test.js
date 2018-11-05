@@ -4,7 +4,7 @@ import {
   getTraceErrorType,
   traceSummariesToMustache,
   mkDurationStr,
-  totalServiceTime,
+  totalDuration,
   traceDuration
 } from '../../js/component_ui/traceSummary';
 import {Constants} from '../../js/component_ui/traceConstants';
@@ -518,13 +518,13 @@ describe('mkDurationStr', () => {
   });
 });
 
-describe('totalServiceTime', () => {
+describe('totalDuration', () => {
   it('should return zero on empty input', () => {
-    totalServiceTime([]).should.equal(0);
+    totalDuration([]).should.equal(0);
   });
 
   it('should return only duration when single input', () => {
-    totalServiceTime([{timestamp: 10, duration: 200}]).should.equal(200);
+    totalDuration([{timestamp: 10, duration: 200}]).should.equal(200);
   });
 
   it('should return root span duration when no children complete after root', () => {
@@ -533,7 +533,7 @@ describe('totalServiceTime', () => {
       {timestamp: 10, duration: 200},
       {timestamp: 20, duration: 210}
     ];
-    totalServiceTime(rootLongest).should.equal(300);
+    totalDuration(rootLongest).should.equal(300);
   });
 
   it('should return the total time in a service and not the time not in service', () => {
@@ -543,7 +543,7 @@ describe('totalServiceTime', () => {
       {timestamp: 390, duration: 20},
       {timestamp: 400, duration: 30}, // overlaps with above
     ];
-    totalServiceTime(asyncTrace).should.equal(300 + ((400 + 30) - 390));
+    totalDuration(asyncTrace).should.equal(300 + ((400 + 30) - 390));
   });
 
   it('should ignore input missing duration', () => {
@@ -552,7 +552,7 @@ describe('totalServiceTime', () => {
       {timestamp: 10}, // incomplete span
       {timestamp: 20, duration: 210}
     ];
-    totalServiceTime(rootLongest).should.equal(300);
+    totalDuration(rootLongest).should.equal(300);
   });
 });
 
