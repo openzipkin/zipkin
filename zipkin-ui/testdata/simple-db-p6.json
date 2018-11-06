@@ -1,0 +1,102 @@
+[
+  {
+    "traceId": "19f84f102048e047",
+    "parentId": "19f84f102048e047",
+    "id": "5d532ef6fed52445",
+    "kind": "CLIENT",
+    "name": "insert",
+    "timestamp": 1541485537488973,
+    "duration": 2033,
+    "localEndpoint": {
+      "serviceName": "bootifulmeters",
+      "ipv4": "172.23.250.16"
+    },
+    "remoteEndpoint": {
+      "serviceName": "app_db"
+    },
+    "tags": {
+      "sql.query": "insert into revinfo (rev, revtstmp) values (null, 1541485537483)"
+    }
+  },
+  {
+    "traceId": "19f84f102048e047",
+    "parentId": "19f84f102048e047",
+    "id": "e4efd924fec0624c",
+    "kind": "CLIENT",
+    "name": "insert",
+    "timestamp": 1541485537470563,
+    "duration": 2414,
+    "localEndpoint": {
+      "serviceName": "bootifulmeters",
+      "ipv4": "172.23.250.16"
+    },
+    "remoteEndpoint": {
+      "serviceName": "app_db"
+    },
+    "tags": {
+      "sql.query": "insert into api_book (book_price, book_title, book_id) values (12.25, 'Cloud Native Java', 10001)"
+    }
+  },
+  {
+    "traceId": "19f84f102048e047",
+    "parentId": "19f84f102048e047",
+    "id": "8b1e63c0f49a81f7",
+    "kind": "CLIENT",
+    "name": "call",
+    "timestamp": 1541485537391810,
+    "duration": 6051,
+    "localEndpoint": {
+      "serviceName": "bootifulmeters",
+      "ipv4": "172.23.250.16"
+    },
+    "remoteEndpoint": {
+      "serviceName": "app_db"
+    },
+    "tags": {
+      "sql.query": "call next value for hibernate_sequence"
+    }
+  },
+  {
+    "traceId": "19f84f102048e047",
+    "id": "19f84f102048e047",
+    "kind": "SERVER",
+    "name": "http:/book",
+    "timestamp": 1541485537291342,
+    "duration": 252016,
+    "localEndpoint": {
+      "serviceName": "bootifulmeters",
+      "ipv4": "172.23.250.16"
+    },
+    "remoteEndpoint": {
+      "ipv6": "::1",
+      "port": 53367
+    },
+    "tags": {
+      "http.host": "localhost",
+      "http.method": "POST",
+      "http.path": "/book",
+      "http.url": "http://localhost:9777/book",
+      "mvc.controller.class": "AppController",
+      "mvc.controller.method": "postBook"
+    }
+  },
+  {
+    "traceId": "19f84f102048e047",
+    "parentId": "19f84f102048e047",
+    "id": "544e854ede87b217",
+    "kind": "CLIENT",
+    "name": "insert",
+    "timestamp": 1541485537498305,
+    "duration": 1118,
+    "localEndpoint": {
+      "serviceName": "bootifulmeters",
+      "ipv4": "172.23.250.16"
+    },
+    "remoteEndpoint": {
+      "serviceName": "app_db"
+    },
+    "tags": {
+      "sql.query": "insert into api_book_aud (revtype, book_price, book_title, book_id, rev) values (0, 12.25, 'Cloud Native Java', 10001, 97)"
+    }
+  }
+]
