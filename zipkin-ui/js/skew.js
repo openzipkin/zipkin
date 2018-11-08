@@ -241,7 +241,7 @@ function oneWaySkew(serverRecv, clientSend) {
 }
 
 // Uses client/server annotations to determine if there's clock skew.
-function getClockSkew(span) {
+function getClockSkew(parent, span) {
   let clientSend;
   let serverRecv;
   let serverSend;
@@ -264,6 +264,21 @@ function getClockSkew(span) {
       default:
     }
   });
+
+  // This may be a single-host span. Look for the parent
+  if (serverRecv && !clientSend && parent) {
+    (parent.annotations || []).forEach((a) => {
+      switch (a.value) {
+        case 'cs':
+          clientSend = a;
+          break;
+        case 'cr':
+          clientRecv = a;
+          break;
+        default:
+      }
+    });
+  }
 
   let oneWay = false;
   if (!clientSend || !serverRecv) {
@@ -351,8 +366,11 @@ function adjust(node, skewFromParent) {
     node.setValue(adjustTimestamps(node.value, skewFromParent));
   }
 
-  // Is there any skew in the current span?
-  let skew = getClockSkew(node.value);
+  // An RPC span can share an ID (have the same ID) or be split across parent and child
+  // We only look for skew between a client and the server
+  const parentVal = node.parent ? node.parent.value : undefined;
+  let skew = getClockSkew(parentVal, node.value);
+
   if (skew) {
     // the current span's skew may be a different endpoint than its parent, so adjust again.
     node.setValue(adjustTimestamps(node.value, skew));

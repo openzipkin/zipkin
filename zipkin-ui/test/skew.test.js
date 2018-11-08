@@ -283,7 +283,7 @@ describe('correctForClockSkew', () => {
         {timestamp: 40, value: 'cr', endpoint: frontend}
       ]
     };
-    should.equal(getClockSkew(skewedSameHost), undefined);
+    should.equal(getClockSkew(undefined, skewedSameHost), undefined);
   });
 
   /*
@@ -297,7 +297,7 @@ describe('correctForClockSkew', () => {
     const cr = {timestamp: 40, value: 'cr', endpoint: frontend};
     const skewedRpc = {traceId: '1', id: '1', annotations: [cs, sr, ss, cr]};
 
-    const skew = getClockSkew(skewedRpc);
+    const skew = getClockSkew(undefined, skewedRpc);
 
     // Skew correction pushes the server side forward, so the skew endpoint is the server
     expect(skew.endpoint).to.equal(sr.endpoint);
@@ -311,13 +311,26 @@ describe('correctForClockSkew', () => {
     );
   });
 
+  it('corrects skew on single-host spans', () => {
+    const cs = {timestamp: 20, value: 'cs', endpoint: frontend};
+    const sr = {timestamp: 10 /* skew */, value: 'sr', endpoint: backend};
+    const ss = {timestamp: 20, value: 'ss', endpoint: backend};
+    const cr = {timestamp: 40, value: 'cr', endpoint: frontend};
+
+    const skewedRpc = {traceId: '1', id: '1', annotations: [cs, sr, ss, cr]};
+    const skewedClient = {traceId: '1', id: '1', annotations: [cs, cr]};
+    const skewedServer = {traceId: '1', id: '2', annotations: [sr, ss]};
+
+    expect(getClockSkew(skewedClient, skewedServer)).to.eql(getClockSkew(undefined, skewedRpc));
+  });
+
   // Sets the server to 1us past the client
   it('skew on one-way spans assumes latency is at least 1us', () => {
     const cs = {timestamp: 20, value: 'cs', endpoint: frontend};
     const sr = {timestamp: 10 /* skew */, value: 'sr', endpoint: backend};
     const skewedOneWay = {traceId: '1', id: '1', annotations: [cs, sr]};
 
-    const skew = getClockSkew(skewedOneWay);
+    const skew = getClockSkew(undefined, skewedOneWay);
 
     expect(skew.skew).to.equal(
       sr.timestamp - cs.timestamp // how much sr is behind
@@ -333,7 +346,7 @@ describe('correctForClockSkew', () => {
     const cr = {timestamp: 25, value: 'cr', endpoint: frontend};
     const skewedAsyncRpc = {traceId: '1', id: '1', annotations: [cs, sr, ss, cr]};
 
-    const skew = getClockSkew(skewedAsyncRpc);
+    const skew = getClockSkew(undefined, skewedAsyncRpc);
 
     expect(skew.skew).to.equal(
       sr.timestamp - cs.timestamp // how much sr is behind
@@ -352,7 +365,7 @@ describe('correctForClockSkew', () => {
         {timestamp: 40, value: 'cr'}
       ]
     };
-    should.equal(getClockSkew(skewedButNoendpoints), undefined);
+    should.equal(getClockSkew(undefined, skewedButNoendpoints), undefined);
   });
 
   it('span with the mixed endpoints is not single-host', () => {
@@ -409,6 +422,30 @@ describe('correctForClockSkew', () => {
     expect(adjusted.length).to.equal(1);
     expect(adjusted[0].annotations).to.deep.equal([
       {timestamp: 20, value: 'cs', endpoint: frontend},
+      {timestamp: 21 /* pushed 1us later */, value: 'sr', endpoint: backend}
+    ]);
+  });
+
+  it('should correct single-host one-way RPC spans', () => {
+    const trace = [
+      {
+        traceId: '1',
+        id: '1',
+        annotations: [{timestamp: 20, value: 'cs', endpoint: frontend}]
+      },
+      {
+        traceId: '1',
+        parentId: '1',
+        id: '2',
+        annotations: [{timestamp: 10 /* skew */, value: 'sr', endpoint: backend}]
+      }
+    ];
+
+    const adjusted = correctForClockSkew(trace);
+
+    expect(adjusted.length).to.equal(2);
+    expect(adjusted[0]).to.eql(trace[0]);
+    expect(adjusted[1].annotations).to.deep.equal([
       {timestamp: 21 /* pushed 1us later */, value: 'sr', endpoint: backend}
     ]);
   });
