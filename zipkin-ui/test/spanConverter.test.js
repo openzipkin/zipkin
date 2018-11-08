@@ -1025,59 +1025,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
 });
 
 describe('SPAN v1 merge by ID', () => {
-  it('should cleanup spans', () => {
-    const spans = SPAN_V1.mergeById([
-      {
-        traceId: '22222222222222222', // longer than 64-bit
-        parentId: 'a',
-        id: '3',
-        annotations: [ss, sr] // out of order
-      },
-      {
-        traceId: '22222222222222222',
-        parentId: 'a',
-        id: 'a', // self-referencing
-      },
-      {
-        traceId: '22222222222222222',
-        parentId: 'a',
-        id: 'b',
-        timestamp: sr.timestamp,
-        duration: 0, // zero duration should be scrubbed
-        binaryAnnotations: [{key: 'lc', value: ''}]
-      }
-    ]);
-
-    expect(spans).to.deep.equal([
-      {
-        traceId: '00000000000000022222222222222222',
-        id: '000000000000000a',
-        name: '',
-        annotations: [],
-        binaryAnnotations: []
-      },
-      {
-        traceId: '00000000000000022222222222222222',
-        parentId: '000000000000000a',
-        id: '0000000000000003',
-        name: '',
-        timestamp: sr.timestamp,
-        duration: ss.timestamp - sr.timestamp,
-        annotations: [sr, ss],
-        binaryAnnotations: []
-      },
-      {
-        traceId: '00000000000000022222222222222222',
-        parentId: '000000000000000a',
-        id: '000000000000000b',
-        name: '',
-        timestamp: sr.timestamp,
-        annotations: [],
-        binaryAnnotations: [{key: 'lc', value: ''}]
-      }
-    ]);
-  });
-
   it('should merge client and server span', () => {
     const spans = SPAN_V1.mergeById([
       {
@@ -1139,23 +1086,23 @@ describe('SPAN v1 merge by ID', () => {
   it('should order results by timestamp then name', () => {
     const spans = SPAN_V1.mergeById([
       {
-        traceId: '1',
-        parentId: '1',
-        id: '2',
+        traceId: '0000000000000001',
+        parentId: '0000000000000001',
+        id: '0000000000000002',
         name: 'c',
         timestamp: 3
       },
       {
-        traceId: '1',
-        parentId: '1',
-        id: '3',
+        traceId: '0000000000000001',
+        parentId: '0000000000000001',
+        id: '0000000000000003',
         name: 'b',
         timestamp: 2
       },
       {
-        traceId: '1',
-        parentId: '1',
-        id: '4',
+        traceId: '0000000000000001',
+        parentId: '0000000000000001',
+        id: '0000000000000004',
         name: 'a',
         timestamp: 2
       }
@@ -1171,22 +1118,22 @@ describe('SPAN v1 merge by ID', () => {
   it('should order root first even if skewed timestamp', () => {
     const spans = SPAN_V1.mergeById([
       {
-        traceId: '1',
-        id: '1',
+        traceId: '0000000000000001',
+        id: '0000000000000001',
         name: 'c',
         timestamp: 3
       },
       {
-        traceId: '1',
-        id: '2',
-        parentId: '1',
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        parentId: '0000000000000001',
         name: 'b',
         timestamp: 2 // happens before its parent
       },
       {
-        traceId: '1',
-        id: '3',
-        parentId: '1',
+        traceId: '0000000000000001',
+        id: '0000000000000003',
+        parentId: '0000000000000001',
         name: 'b',
         timestamp: 3
       }

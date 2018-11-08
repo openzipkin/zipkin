@@ -1,4 +1,5 @@
 import {correctForClockSkew} from './skew';
+import {compare, normalizeTraceId} from './spanCleaner';
 
 function toV1Endpoint(endpoint) {
   if (endpoint === undefined) {
@@ -28,13 +29,6 @@ function toV1Annotation(ann, endpoint) {
     res.endpoint = endpoint;
   }
   return res;
-}
-
-function normalizeTraceId(traceId) {
-  if (traceId.length > 16) {
-    return traceId.padStart(32, '0');
-  }
-  return traceId.padStart(16, '0');
 }
 
 // ported from zipkin2.v1.V1SpanConverter
@@ -230,34 +224,6 @@ function maybePushBinaryAnnotation(binaryAnnotations, a) {
   }
 }
 
-// This cleans potential dirty v1 inputs, like normalizing IDs etc.
-function clean(span) {
-  const res = {
-    traceId: normalizeTraceId(span.traceId)
-  };
-
-  // take care not to create self-referencing spans even if the input data is incorrect
-  const id = span.id.padStart(16, '0');
-  if (span.parentId) {
-    const parentId = span.parentId.padStart(16, '0');
-    if (parentId !== id) {
-      res.parentId = parentId;
-    }
-  }
-
-  res.id = id;
-  res.name = span.name || '';
-  if (span.timestamp) res.timestamp = span.timestamp;
-  if (span.duration) res.duration = span.duration;
-  res.annotations = span.annotations || [];
-  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
-  res.binaryAnnotations = span.binaryAnnotations || [];
-  if (span.debug) {
-    res.debug = true;
-  }
-  return res;
-}
-
 function merge(left, right) {
   // normalize ID lengths in case dirty input is received
   //  (this won't be the case from the normal zipkin server, as it normalizes IDs)
@@ -418,14 +384,6 @@ function applyTimestampAndDuration(span) {
   return span;
 }
 
-// compares potentially undefined input
-function compare(a, b) {
-  if (!a && !b) return 0;
-  if (!a) return -1;
-  if (!b) return 1;
-  return (a > b) - (a < b);
-}
-
 /*
  * v1 spans can be sent in multiple parts. Also client and server spans can share the same ID. This
  * merges both scenarios.
@@ -445,7 +403,7 @@ function mergeById(spans) {
 
   Object.keys(spanIdToSpans).forEach(id => {
     const spansToMerge = spanIdToSpans[id];
-    let left = clean(spansToMerge[0]);
+    let left = spansToMerge[0];
     for (let i = 1; i < spansToMerge.length; i++) {
       left = merge(left, spansToMerge[i]);
     }

@@ -1,6 +1,7 @@
 import {component} from 'flightjs';
 import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
 import traceToMustache from '../../js/component_ui/traceToMustache';
+import {mergeV2ById} from '../spanCleaner';
 import {SPAN_V1} from '../spanConverter';
 
 function ensureV1(trace) {
@@ -9,7 +10,7 @@ function ensureV1(trace) {
     return trace;
   }
 
-  return SPAN_V1.convertTrace(trace);
+  return SPAN_V1.convertTrace(mergeV2ById(trace));
 }
 
 export default component(function uploadTrace() {
