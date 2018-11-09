@@ -282,4 +282,28 @@ describe('mergeV2ById', () => {
       '0000000000000003'
     ]);
   });
+
+  // in the case of shared spans, root could be a client
+  it('should order earliest root first', () => {
+    const spans = mergeV2ById([
+      {
+        traceId: '1111111111111111',
+        id: '0000000000000001',
+        name: 'server',
+        timestamp: 1,
+        shared: true
+      },
+      {
+        traceId: '1111111111111111',
+        id: '0000000000000001',
+        name: 'client',
+        timestamp: 1
+      }
+    ]);
+
+    expect(spans.map(s => s.name)).to.deep.equal([
+      'client',
+      'server'
+    ]);
+  });
 });
