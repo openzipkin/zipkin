@@ -140,7 +140,9 @@ export function mergeV2ById(trace) {
   // sort by timestamp, then name, root first in case of skew
   // TODO: this should be a topological sort
   return result.sort((a, b) => {
-    if (!a.parentId) { // a is root
+    if (!a.parentId && !b.parentId) { // both are root
+      return a.shared ? 1 : -1; // shared is server, so comes after client
+    } if (!a.parentId) { // a is root
       return -1;
     } else if (!b.parentId) { // b is root
       return 1;
