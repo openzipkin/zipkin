@@ -1,908 +1,831 @@
 [
-    {
-        "traceId": "0562809467078eab",
-        "id": "0562809467078eab",
-        "name": "poll",
+  {
+    "traceId": "0562809467078eab",
+    "id": "0562809467078eab",
+    "name": "poll",
+    "timestamp": 1541405397200023,
+    "duration": 26,
+    "annotations": [
+      {
         "timestamp": 1541405397200023,
-        "duration": 26,
-        "annotations": [
-            {
-                "timestamp": 1541405397200023,
-                "value": "wr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397200049,
-                "value": "mr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
+        "value": "wr"
+      },
+      {
+        "timestamp": 1541405397200049,
+        "value": "mr"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "id": "0562809467078eab",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397200023,
+    "duration": 26,
+    "localEndpoint": {
+      "serviceName": "servicea"
     },
-    {
-        "traceId": "0562809467078eab",
-        "id": "09fdf808ef0d60c0",
-        "name": "on-message",
-        "parentId": "0562809467078eab",
-        "timestamp": 1541405397200002,
-        "duration": 252090,
-        "binaryAnnotations": [
-            {
-                "key": "lc",
-                "value": "",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
+    "remoteEndpoint": {
+      "serviceName": "kafka"
     },
-    {
-        "traceId": "0562809467078eab",
-        "id": "e73d7bc0194a76e0",
-        "name": "on-message",
-        "parentId": "0562809467078eab",
-        "timestamp": 1541405397452002,
-        "duration": 223097,
-        "binaryAnnotations": [
-            {
-                "key": "lc",
-                "value": "",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "d1b4806e7e9eed25",
-        "name": "on-message",
-        "parentId": "0562809467078eab",
-        "timestamp": 1541405397675002,
-        "duration": 171798,
-        "binaryAnnotations": [
-            {
-                "key": "lc",
-                "value": "",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "5141af930f03274e",
-        "name": "handle",
-        "parentId": "09fdf808ef0d60c0",
-        "timestamp": 1541405397413496,
-        "duration": 866,
-        "binaryAnnotations": [
-            {
-                "key": "class",
-                "value": "Projector",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "method",
-                "value": "handle",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "2e22a0564764943a",
-        "name": "send",
-        "parentId": "09fdf808ef0d60c0",
-        "timestamp": 1541405397450652,
-        "duration": 1471,
-        "annotations": [
-            {
-                "timestamp": 1541405397450652,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397452123,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.key",
-                "value": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "26bd982d53f50d1f",
-        "name": "send",
-        "parentId": "09fdf808ef0d60c0",
-        "timestamp": 1541405397451227,
-        "duration": 102480,
-        "annotations": [
-            {
-                "timestamp": 1541405397451227,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397553707,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.key",
-                "value": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "kafka.topic",
-                "value": "central.messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "556955e15da195f5",
-        "name": "handle",
-        "parentId": "e73d7bc0194a76e0",
-        "timestamp": 1541405397655018,
-        "duration": 1255,
-        "binaryAnnotations": [
-            {
-                "key": "class",
-                "value": "Projector",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "method",
-                "value": "handle",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "5133caca649f802b",
-        "name": "send",
-        "parentId": "e73d7bc0194a76e0",
-        "timestamp": 1541405397674703,
-        "duration": 1035,
-        "annotations": [
-            {
-                "timestamp": 1541405397674703,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397675738,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.key",
-                "value": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "b7808dc69c7726f2",
-        "name": "send",
-        "parentId": "e73d7bc0194a76e0",
-        "timestamp": 1541405397674873,
-        "duration": 957,
-        "annotations": [
-            {
-                "timestamp": 1541405397674873,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397675830,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.key",
-                "value": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "kafka.topic",
-                "value": "central.messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "97a1159e0eb74759",
-        "name": "handle",
-        "parentId": "d1b4806e7e9eed25",
-        "timestamp": 1541405397827569,
-        "duration": 774,
-        "binaryAnnotations": [
-            {
-                "key": "class",
-                "value": "Projector",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "method",
-                "value": "handle",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "085a9df516127e50",
-        "name": "send",
-        "parentId": "d1b4806e7e9eed25",
-        "timestamp": 1541405397846422,
-        "duration": 1259,
-        "annotations": [
-            {
-                "timestamp": 1541405397846422,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397847681,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.key",
-                "value": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "5bc03264c704f245",
-        "name": "send",
-        "parentId": "d1b4806e7e9eed25",
-        "timestamp": 1541405397846576,
-        "duration": 803,
-        "annotations": [
-            {
-                "timestamp": 1541405397846576,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397847379,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.key",
-                "value": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "kafka.topic",
-                "value": "central.messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "79145dc8245c2899",
-        "name": "send",
-        "parentId": "5141af930f03274e",
-        "timestamp": 1541405397414201,
-        "duration": 3268,
-        "annotations": [
-            {
-                "timestamp": 1541405397414201,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397417469,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "command-messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "b4a2a87ee7f003bc",
-        "name": "poll",
-        "parentId": "2e22a0564764943a",
-        "timestamp": 1541405397452008,
-        "duration": 1,
-        "annotations": [
-            {
-                "timestamp": 1541405397452008,
-                "value": "wr",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            },
-            {
-                "timestamp": 1541405397452009,
-                "value": "mr",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "e0473dc3d8732e8b",
-        "name": "poll",
-        "parentId": "2e22a0564764943a",
-        "timestamp": 1541405397847007,
-        "duration": 1,
-        "annotations": [
-            {
-                "timestamp": 1541405397847007,
-                "value": "wr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397847008,
-                "value": "mr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "e2feae695b1d1a6a",
-        "name": "send",
-        "parentId": "556955e15da195f5",
-        "timestamp": 1541405397655722,
-        "duration": 937,
-        "annotations": [
-            {
-                "timestamp": 1541405397655722,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397656659,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "command-messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "a5524eec8147b1da",
-        "name": "poll",
-        "parentId": "5133caca649f802b",
-        "timestamp": 1541405397676009,
-        "duration": 1,
-        "annotations": [
-            {
-                "timestamp": 1541405397676009,
-                "value": "wr",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            },
-            {
-                "timestamp": 1541405397676010,
-                "value": "mr",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "08e980b0e786309b",
-        "name": "poll",
-        "parentId": "5133caca649f802b",
-        "timestamp": 1541405397848003,
-        "duration": 1,
-        "annotations": [
-            {
-                "timestamp": 1541405397848003,
-                "value": "wr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397848004,
-                "value": "mr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "b42b60c5c19ce714",
-        "name": "send",
-        "parentId": "97a1159e0eb74759",
-        "timestamp": 1541405397827998,
-        "duration": 746,
-        "annotations": [
-            {
-                "timestamp": 1541405397827998,
-                "value": "ms",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397828744,
-                "value": "ws",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "command-messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "bad2ddec9d33837b",
-        "name": "poll",
-        "parentId": "085a9df516127e50",
-        "timestamp": 1541405397848002,
-        "duration": 1,
-        "annotations": [
-            {
-                "timestamp": 1541405397848002,
-                "value": "wr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "timestamp": 1541405397848003,
-                "value": "mr",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "519d27c657334615",
-        "name": "poll",
-        "parentId": "085a9df516127e50",
-        "timestamp": 1541405397848005,
-        "duration": 1,
-        "annotations": [
-            {
-                "timestamp": 1541405397848005,
-                "value": "wr",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            },
-            {
-                "timestamp": 1541405397848006,
-                "value": "mr",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            }
-        ],
-        "binaryAnnotations": [
-            {
-                "key": "kafka.topic",
-                "value": "messages",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            },
-            {
-                "key": "ma",
-                "value": true,
-                "endpoint": {
-                    "serviceName": "kafka"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "2f77d5b0b8e0de35",
-        "name": "on-message",
-        "parentId": "b4a2a87ee7f003bc",
-        "timestamp": 1541405397453001,
-        "duration": 310,
-        "binaryAnnotations": [
-            {
-                "key": "error",
-                "value": "some error",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "d77b1306b69e39a5",
-        "name": "on-message",
-        "parentId": "e0473dc3d8732e8b",
-        "timestamp": 1541405397848002,
-        "duration": 149,
-        "binaryAnnotations": [
-            {
-                "key": "lc",
-                "value": "",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "4a64a63e4b58e665",
-        "name": "on-message",
-        "parentId": "a5524eec8147b1da",
-        "timestamp": 1541405397676001,
-        "duration": 265,
-        "binaryAnnotations": [
-            {
-                "key": "error",
-                "value": "some error",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "630c1215f2e430a7",
-        "name": "on-message",
-        "parentId": "08e980b0e786309b",
-        "timestamp": 1541405397849002,
-        "duration": 65,
-        "binaryAnnotations": [
-            {
-                "key": "lc",
-                "value": "",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "d5d4778b19cf7e93",
-        "name": "on-message",
-        "parentId": "bad2ddec9d33837b",
-        "timestamp": 1541405397849001,
-        "duration": 45,
-        "binaryAnnotations": [
-            {
-                "key": "lc",
-                "value": "",
-                "endpoint": {
-                    "serviceName": "serviceA"
-                }
-            }
-        ]
-    },
-    {
-        "traceId": "0562809467078eab",
-        "id": "568b33e6af8a225a",
-        "name": "on-message",
-        "parentId": "519d27c657334615",
-        "timestamp": 1541405397848001,
-        "duration": 251,
-        "binaryAnnotations": [
-            {
-                "key": "error",
-                "value": "",
-                "endpoint": {
-                    "serviceName": "serviceB"
-                }
-            }
-        ]
+    "tags": {
+      "kafka.topic": "messages"
     }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "09fdf808ef0d60c0",
+    "name": "on-message",
+    "timestamp": 1541405397200002,
+    "duration": 252090
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "09fdf808ef0d60c0",
+    "name": "on-message",
+    "timestamp": 1541405397200002,
+    "duration": 252090,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "e73d7bc0194a76e0",
+    "name": "on-message",
+    "timestamp": 1541405397452002,
+    "duration": 223097
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "e73d7bc0194a76e0",
+    "name": "on-message",
+    "timestamp": 1541405397452002,
+    "duration": 223097,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "d1b4806e7e9eed25",
+    "name": "on-message",
+    "timestamp": 1541405397675002,
+    "duration": 171798
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "d1b4806e7e9eed25",
+    "name": "on-message",
+    "timestamp": 1541405397675002,
+    "duration": 171798,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "5141af930f03274e",
+    "name": "handle",
+    "timestamp": 1541405397413496,
+    "duration": 866
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "5141af930f03274e",
+    "name": "handle",
+    "timestamp": 1541405397413496,
+    "duration": 866,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "tags": {
+      "class": "Projector",
+      "method": "handle"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "2e22a0564764943a",
+    "name": "send",
+    "timestamp": 1541405397450652,
+    "duration": 1471,
+    "annotations": [
+      {
+        "timestamp": 1541405397450652,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397452123,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "2e22a0564764943a",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397450652,
+    "duration": 1471,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "26bd982d53f50d1f",
+    "name": "send",
+    "timestamp": 1541405397451227,
+    "duration": 102480,
+    "annotations": [
+      {
+        "timestamp": 1541405397451227,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397553707,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "26bd982d53f50d1f",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397451227,
+    "duration": 102480,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "central.messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "556955e15da195f5",
+    "name": "handle",
+    "timestamp": 1541405397655018,
+    "duration": 1255
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "556955e15da195f5",
+    "name": "handle",
+    "timestamp": 1541405397655018,
+    "duration": 1255,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "tags": {
+      "class": "Projector",
+      "method": "handle"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "5133caca649f802b",
+    "name": "send",
+    "timestamp": 1541405397674703,
+    "duration": 1035,
+    "annotations": [
+      {
+        "timestamp": 1541405397674703,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397675738,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "5133caca649f802b",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397674703,
+    "duration": 1035,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "b7808dc69c7726f2",
+    "name": "send",
+    "timestamp": 1541405397674873,
+    "duration": 957,
+    "annotations": [
+      {
+        "timestamp": 1541405397674873,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397675830,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "b7808dc69c7726f2",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397674873,
+    "duration": 957,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "central.messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "97a1159e0eb74759",
+    "name": "handle",
+    "timestamp": 1541405397827569,
+    "duration": 774
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "97a1159e0eb74759",
+    "name": "handle",
+    "timestamp": 1541405397827569,
+    "duration": 774,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "tags": {
+      "class": "Projector",
+      "method": "handle"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "085a9df516127e50",
+    "name": "send",
+    "timestamp": 1541405397846422,
+    "duration": 1259,
+    "annotations": [
+      {
+        "timestamp": 1541405397846422,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397847681,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "085a9df516127e50",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397846422,
+    "duration": 1259,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "5bc03264c704f245",
+    "name": "send",
+    "timestamp": 1541405397846576,
+    "duration": 803,
+    "annotations": [
+      {
+        "timestamp": 1541405397846576,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397847379,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "5bc03264c704f245",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397846576,
+    "duration": 803,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "central.messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5141af930f03274e",
+    "id": "79145dc8245c2899",
+    "name": "send",
+    "timestamp": 1541405397414201,
+    "duration": 3268,
+    "annotations": [
+      {
+        "timestamp": 1541405397414201,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397417469,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5141af930f03274e",
+    "id": "79145dc8245c2899",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397414201,
+    "duration": 3268,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "command-messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "2e22a0564764943a",
+    "id": "b4a2a87ee7f003bc",
+    "name": "poll",
+    "timestamp": 1541405397452008,
+    "duration": 1,
+    "annotations": [
+      {
+        "timestamp": 1541405397452008,
+        "value": "wr"
+      },
+      {
+        "timestamp": 1541405397452009,
+        "value": "mr"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "2e22a0564764943a",
+    "id": "b4a2a87ee7f003bc",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397452008,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "2e22a0564764943a",
+    "id": "e0473dc3d8732e8b",
+    "name": "poll",
+    "timestamp": 1541405397847007,
+    "duration": 1,
+    "annotations": [
+      {
+        "timestamp": 1541405397847007,
+        "value": "wr"
+      },
+      {
+        "timestamp": 1541405397847008,
+        "value": "mr"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "2e22a0564764943a",
+    "id": "e0473dc3d8732e8b",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397847007,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "556955e15da195f5",
+    "id": "e2feae695b1d1a6a",
+    "name": "send",
+    "timestamp": 1541405397655722,
+    "duration": 937,
+    "annotations": [
+      {
+        "timestamp": 1541405397655722,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397656659,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "556955e15da195f5",
+    "id": "e2feae695b1d1a6a",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397655722,
+    "duration": 937,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "command-messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5133caca649f802b",
+    "id": "a5524eec8147b1da",
+    "name": "poll",
+    "timestamp": 1541405397676009,
+    "duration": 1,
+    "annotations": [
+      {
+        "timestamp": 1541405397676009,
+        "value": "wr"
+      },
+      {
+        "timestamp": 1541405397676010,
+        "value": "mr"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5133caca649f802b",
+    "id": "a5524eec8147b1da",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397676009,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5133caca649f802b",
+    "id": "08e980b0e786309b",
+    "name": "poll",
+    "timestamp": 1541405397848003,
+    "duration": 1,
+    "annotations": [
+      {
+        "timestamp": 1541405397848003,
+        "value": "wr"
+      },
+      {
+        "timestamp": 1541405397848004,
+        "value": "mr"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5133caca649f802b",
+    "id": "08e980b0e786309b",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397848003,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "97a1159e0eb74759",
+    "id": "b42b60c5c19ce714",
+    "name": "send",
+    "timestamp": 1541405397827998,
+    "duration": 746,
+    "annotations": [
+      {
+        "timestamp": 1541405397827998,
+        "value": "ms"
+      },
+      {
+        "timestamp": 1541405397828744,
+        "value": "ws"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "97a1159e0eb74759",
+    "id": "b42b60c5c19ce714",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397827998,
+    "duration": 746,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "command-messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "085a9df516127e50",
+    "id": "bad2ddec9d33837b",
+    "name": "poll",
+    "timestamp": 1541405397848002,
+    "duration": 1,
+    "annotations": [
+      {
+        "timestamp": 1541405397848002,
+        "value": "wr"
+      },
+      {
+        "timestamp": 1541405397848003,
+        "value": "mr"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e0473dc3d8732e8b",
+    "id": "d77b1306b69e39a5",
+    "name": "on-message",
+    "timestamp": 1541405397848002,
+    "duration": 149
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "085a9df516127e50",
+    "id": "bad2ddec9d33837b",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397848002,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e0473dc3d8732e8b",
+    "id": "d77b1306b69e39a5",
+    "name": "on-message",
+    "timestamp": 1541405397848002,
+    "duration": 149,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "085a9df516127e50",
+    "id": "519d27c657334615",
+    "name": "poll",
+    "timestamp": 1541405397848005,
+    "duration": 1,
+    "annotations": [
+      {
+        "timestamp": 1541405397848005,
+        "value": "wr"
+      },
+      {
+        "timestamp": 1541405397848006,
+        "value": "mr"
+      }
+    ]
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "085a9df516127e50",
+    "id": "519d27c657334615",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397848005,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "b4a2a87ee7f003bc",
+    "id": "2f77d5b0b8e0de35",
+    "name": "on-message",
+    "timestamp": 1541405397453001,
+    "duration": 310
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "b4a2a87ee7f003bc",
+    "id": "2f77d5b0b8e0de35",
+    "name": "on-message",
+    "timestamp": 1541405397453001,
+    "duration": 310,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "tags": {
+      "error": "some error"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "a5524eec8147b1da",
+    "id": "4a64a63e4b58e665",
+    "name": "on-message",
+    "timestamp": 1541405397676001,
+    "duration": 265
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "a5524eec8147b1da",
+    "id": "4a64a63e4b58e665",
+    "name": "on-message",
+    "timestamp": 1541405397676001,
+    "duration": 265,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "tags": {
+      "error": "some error"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "08e980b0e786309b",
+    "id": "630c1215f2e430a7",
+    "name": "on-message",
+    "timestamp": 1541405397849002,
+    "duration": 65
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "08e980b0e786309b",
+    "id": "630c1215f2e430a7",
+    "name": "on-message",
+    "timestamp": 1541405397849002,
+    "duration": 65,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "bad2ddec9d33837b",
+    "id": "d5d4778b19cf7e93",
+    "name": "on-message",
+    "timestamp": 1541405397849001,
+    "duration": 45
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "bad2ddec9d33837b",
+    "id": "d5d4778b19cf7e93",
+    "name": "on-message",
+    "timestamp": 1541405397849001,
+    "duration": 45,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "519d27c657334615",
+    "id": "568b33e6af8a225a",
+    "name": "on-message",
+    "timestamp": 1541405397848001,
+    "duration": 251
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "519d27c657334615",
+    "id": "568b33e6af8a225a",
+    "name": "on-message",
+    "timestamp": 1541405397848001,
+    "duration": 251,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "tags": {
+      "error": ""
+    }
+  }
 ]
