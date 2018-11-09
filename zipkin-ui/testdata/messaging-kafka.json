@@ -1,0 +1,448 @@
+[
+  {
+    "traceId": "0562809467078eab",
+    "id": "0562809467078eab",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397200023,
+    "duration": 26,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "09fdf808ef0d60c0",
+    "name": "on-message",
+    "timestamp": 1541405397200002,
+    "duration": 252090,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "e73d7bc0194a76e0",
+    "name": "on-message",
+    "timestamp": 1541405397452002,
+    "duration": 223097,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "0562809467078eab",
+    "id": "d1b4806e7e9eed25",
+    "name": "on-message",
+    "timestamp": 1541405397675002,
+    "duration": 171798,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "5141af930f03274e",
+    "name": "handle",
+    "timestamp": 1541405397413496,
+    "duration": 866,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "tags": {
+      "class": "Projector",
+      "method": "handle"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "2e22a0564764943a",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397450652,
+    "duration": 1471,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "09fdf808ef0d60c0",
+    "id": "26bd982d53f50d1f",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397451227,
+    "duration": 102480,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "central.messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "556955e15da195f5",
+    "name": "handle",
+    "timestamp": 1541405397655018,
+    "duration": 1255,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "tags": {
+      "class": "Projector",
+      "method": "handle"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "5133caca649f802b",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397674703,
+    "duration": 1035,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e73d7bc0194a76e0",
+    "id": "b7808dc69c7726f2",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397674873,
+    "duration": 957,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "central.messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "97a1159e0eb74759",
+    "name": "handle",
+    "timestamp": 1541405397827569,
+    "duration": 774,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "tags": {
+      "class": "Projector",
+      "method": "handle"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "085a9df516127e50",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397846422,
+    "duration": 1259,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "d1b4806e7e9eed25",
+    "id": "5bc03264c704f245",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397846576,
+    "duration": 803,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.key": "e1b2f8b5-dd1e-11e8-93d1-0050568b53f5",
+      "kafka.topic": "central.messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5141af930f03274e",
+    "id": "79145dc8245c2899",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397414201,
+    "duration": 3268,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "command-messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "2e22a0564764943a",
+    "id": "b4a2a87ee7f003bc",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397452008,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "2e22a0564764943a",
+    "id": "e0473dc3d8732e8b",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397847007,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "556955e15da195f5",
+    "id": "e2feae695b1d1a6a",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397655722,
+    "duration": 937,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "command-messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5133caca649f802b",
+    "id": "a5524eec8147b1da",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397676009,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "5133caca649f802b",
+    "id": "08e980b0e786309b",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397848003,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "97a1159e0eb74759",
+    "id": "b42b60c5c19ce714",
+    "kind": "PRODUCER",
+    "name": "send",
+    "timestamp": 1541405397827998,
+    "duration": 746,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "command-messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "085a9df516127e50",
+    "id": "bad2ddec9d33837b",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397848002,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "e0473dc3d8732e8b",
+    "id": "d77b1306b69e39a5",
+    "name": "on-message",
+    "timestamp": 1541405397848002,
+    "duration": 149,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "085a9df516127e50",
+    "id": "519d27c657334615",
+    "kind": "CONSUMER",
+    "name": "poll",
+    "timestamp": 1541405397848005,
+    "duration": 1,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "remoteEndpoint": {
+      "serviceName": "kafka"
+    },
+    "tags": {
+      "kafka.topic": "messages"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "b4a2a87ee7f003bc",
+    "id": "2f77d5b0b8e0de35",
+    "name": "on-message",
+    "timestamp": 1541405397453001,
+    "duration": 310,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "tags": {
+      "error": "some error"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "a5524eec8147b1da",
+    "id": "4a64a63e4b58e665",
+    "name": "on-message",
+    "timestamp": 1541405397676001,
+    "duration": 265,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "tags": {
+      "error": "some error"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "08e980b0e786309b",
+    "id": "630c1215f2e430a7",
+    "name": "on-message",
+    "timestamp": 1541405397849002,
+    "duration": 65,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "bad2ddec9d33837b",
+    "id": "d5d4778b19cf7e93",
+    "name": "on-message",
+    "timestamp": 1541405397849001,
+    "duration": 45,
+    "localEndpoint": {
+      "serviceName": "servicea"
+    }
+  },
+  {
+    "traceId": "0562809467078eab",
+    "parentId": "519d27c657334615",
+    "id": "568b33e6af8a225a",
+    "name": "on-message",
+    "timestamp": 1541405397848001,
+    "duration": 251,
+    "localEndpoint": {
+      "serviceName": "serviceb"
+    },
+    "tags": {
+      "error": ""
+    }
+  }
+]
