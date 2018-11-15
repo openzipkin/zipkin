@@ -283,7 +283,7 @@ public final class V1Span {
   @Override
   public boolean equals(Object o) {
     if (o == this) return true;
-    if (!(o instanceof Span)) return false;
+    if (!(o instanceof V1Span)) return false;
     V1Span that = (V1Span) o;
     return traceIdHigh == that.traceIdHigh
         && traceId == that.traceId

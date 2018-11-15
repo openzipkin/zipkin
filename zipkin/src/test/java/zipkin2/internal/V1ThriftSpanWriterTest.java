@@ -263,7 +263,7 @@ public class V1ThriftSpanWriterTest {
   @Test
   public void writesParentAnd128BitTraceId() {
     writer.write(
-        span.toBuilder().traceId("00000000000000010000000000000002").parentId("3").id("4").build(),
+        Span.newBuilder().traceId("00000000000000010000000000000002").parentId("3").id("4").build(),
         buf);
 
     assertThat(buf.toByteArray())

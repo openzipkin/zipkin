@@ -78,7 +78,7 @@ public final class Annotation implements Comparable<Annotation>, Serializable { 
     if (o == this) return true;
     if (!(o instanceof Annotation)) return false;
     Annotation that = (Annotation) o;
-    return (timestamp == that.timestamp()) && (value.equals(that.value()));
+    return timestamp == that.timestamp() && value.equals(that.value());
   }
 
   @Override public int hashCode() {

@@ -36,9 +36,9 @@ import static zipkin2.Endpoint.HEX_DIGITS;
  * which nest to form a latency tree. Spans are in the same trace when they share the same trace ID.
  * The {@link #parentId} field establishes the position of one span in the tree.
  *
- * <p>The root span is where {@link #parentId} is null and usually has the longest {@link #duration}
- * in the trace. However, nested asynchronous work can materialize as child spans whose duration
- * exceed the root span.
+ * <p>The root span is where {@link #parentId} is null and usually has the longest {@link
+ * #duration} in the trace. However, nested asynchronous work can materialize as child spans whose
+ * duration exceed the root span.
  *
  * <p>Spans usually represent remote activity such as RPC calls, or messaging producers and
  * consumers. However, they can also represent in-process activity in any position of the trace. For
@@ -50,8 +50,8 @@ import static zipkin2.Endpoint.HEX_DIGITS;
  *
  * <h3>Relationship to {@code zipkin.Span}</h3>
  *
- * <p>This type is intended to replace use of {@code zipkin.Span}. Particularly, tracers represent a
- * single-host view of an operation. By making one endpoint implicit for all data, this type does
+ * <p>This type is intended to replace use of {@code zipkin.Span}. Particularly, tracers represent
+ * a single-host view of an operation. By making one endpoint implicit for all data, this type does
  * not need to repeat endpoints on each data like {@code zipkin.Span} does. This results in simpler
  * and smaller data.
  */
@@ -70,8 +70,8 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   /**
    * Trace identifier, set on all spans within it.
    *
-   * <p>Encoded as 16 or 32 lowercase hex characters corresponding to 64 or 128 bits. For example, a
-   * 128bit trace ID looks like {@code 4e441824ec2b6a44ffdc9bb9a6453df3}.
+   * <p>Encoded as 16 or 32 lowercase hex characters corresponding to 64 or 128 bits. For example,
+   * a 128bit trace ID looks like {@code 4e441824ec2b6a44ffdc9bb9a6453df3}.
    *
    * <p>Some systems downgrade trace identifiers to 64bit by dropping the left-most 16 characters.
    * For example, {@code 4e441824ec2b6a44ffdc9bb9a6453df3} becomes {@code ffdc9bb9a6453df3}.
@@ -141,8 +141,9 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   /**
    * Epoch microseconds of the start of this span, possibly absent if this an incomplete span.
    *
-   * <p>This value should be set directly by instrumentation, using the most precise value possible.
-   * For example, {@code gettimeofday} or multiplying {@link System#currentTimeMillis} by 1000.
+   * <p>This value should be set directly by instrumentation, using the most precise value
+   * possible. For example, {@code gettimeofday} or multiplying {@link System#currentTimeMillis} by
+   * 1000.
    *
    * <p>There are three known edge-cases where this could be reported absent:
    *
@@ -174,9 +175,9 @@ public final class Span implements Serializable { // for Spark and Flink jobs
    * Measurement in microseconds of the critical path, if known. Durations of less than one
    * microsecond must be rounded up to 1 microsecond.
    *
-   * <p>This value should be set directly, as opposed to implicitly via annotation timestamps. Doing
-   * so encourages precision decoupled from problems of clocks, such as skew or NTP updates causing
-   * time to move backwards.
+   * <p>This value should be set directly, as opposed to implicitly via annotation timestamps.
+   * Doing so encourages precision decoupled from problems of clocks, such as skew or NTP updates
+   * causing time to move backwards.
    *
    * <p>If this field is persisted as unset, zipkin will continue to work, except duration query
    * support will be implementation-specific. Similarly, setting this field non-atomically is
@@ -346,6 +347,42 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       flags = source.flags;
     }
 
+    /**
+     * Used to merge multiple incomplete spans representing the same operation on the same host. Do
+     * not use this to merge spans that occur on different hosts.
+     */
+    public Builder merge(Span source) {
+      if (traceId == null) traceId = source.traceId;
+      if (id == null) id = source.id;
+      if (parentId == null) parentId = source.parentId;
+      if (kind == null) kind = source.kind;
+      if (name == null) name = source.name;
+      if (timestamp == 0L) timestamp = source.timestamp;
+      if (duration == 0L) duration = source.duration;
+      if (localEndpoint == null) {
+        localEndpoint = source.localEndpoint;
+      } else {
+        localEndpoint = localEndpoint.toBuilder().merge(source.localEndpoint).build();
+      }
+      if (remoteEndpoint == null) {
+        remoteEndpoint = source.remoteEndpoint;
+      } else {
+        remoteEndpoint = remoteEndpoint.toBuilder().merge(source.remoteEndpoint).build();
+      }
+      if (!source.annotations.isEmpty()) {
+        if (annotations == null) {
+          annotations = new ArrayList<>(source.annotations.size());
+        }
+        annotations.addAll(source.annotations);
+      }
+      if (!source.tags.isEmpty()) {
+        if (tags == null) tags = new TreeMap<>();
+        tags.putAll(source.tags);
+      }
+      flags = flags | source.flags;
+      return this;
+    }
+
     @Nullable public Kind kind() {
       return kind;
     }
@@ -406,8 +443,11 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       int length = parentId.length();
       if (length == 0) throw new IllegalArgumentException("parentId is empty");
       if (length > 16) throw new IllegalArgumentException("parentId.length > 16");
-      validateHex(parentId);
-      this.parentId = length < 16 ? padLeft(parentId, 16) : parentId;
+      if (validateHexAndReturnZeroPrefix(parentId) == length) {
+        this.parentId = null;
+      } else {
+        this.parentId = length < 16 ? padLeft(parentId, 16) : parentId;
+      }
       return this;
     }
 
@@ -432,7 +472,9 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       int length = id.length();
       if (length == 0) throw new IllegalArgumentException("id is empty");
       if (length > 16) throw new IllegalArgumentException("id.length > 16");
-      validateHex(id);
+      if (validateHexAndReturnZeroPrefix(id) == 16) {
+        throw new IllegalArgumentException("id is all zeros");
+      }
       this.id = length < 16 ? padLeft(id, 16) : id;
       return this;
     }
@@ -521,7 +563,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     /** @see Span#debug */
     public Builder debug(@Nullable Boolean debug) {
       if (debug != null) return debug((boolean) debug);
-      flags &= ~FLAG_DEBUG_SET;
+      flags &= ~(FLAG_DEBUG_SET | FLAG_DEBUG);
       return this;
     }
 
@@ -539,7 +581,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     /** @see Span#shared */
     public Builder shared(@Nullable Boolean shared) {
       if (shared != null) return shared((boolean) shared);
-      flags &= ~FLAG_SHARED_SET;
+      flags &= ~(FLAG_SHARED_SET | FLAG_SHARED);
       return this;
     }
 
@@ -569,8 +611,10 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     int length = traceId.length();
     if (length == 0) throw new IllegalArgumentException("traceId is empty");
     if (length > 32) throw new IllegalArgumentException("traceId.length > 32");
-    validateHex(traceId);
+    int zeros = validateHexAndReturnZeroPrefix(traceId);
+    if (zeros == length) throw new IllegalArgumentException("traceId is all zeros");
     if (length == 32 || length == 16) {
+      if (length == 32 && zeros >= 16) return traceId.substring(16);
       return traceId;
     } else if (length < 16) {
       return padLeft(traceId, 16);
@@ -611,13 +655,21 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     data[pos + 1] = HEX_DIGITS[b & 0xf];
   }
 
-  static void validateHex(String id) {
+  static int validateHexAndReturnZeroPrefix(String id) {
+    int zeros = 0;
+    boolean inZeroPrefix = id.charAt(0) == '0';
     for (int i = 0, length = id.length(); i < length; i++) {
       char c = id.charAt(i);
       if ((c < '0' || c > '9') && (c < 'a' || c > 'f')) {
         throw new IllegalArgumentException(id + " should be lower-hex encoded with no prefix");
       }
+      if (c != '0') {
+        inZeroPrefix = false;
+      } else if (inZeroPrefix) {
+        zeros++;
+      }
     }
+    return zeros;
   }
 
   static <T extends Comparable<? super T>> List<T> sortedList(@Nullable List<T> in) {
@@ -652,7 +704,8 @@ public final class Span implements Serializable { // for Spark and Flink jobs
 
   Span(Builder builder) {
     traceId = builder.traceId;
-    parentId = builder.parentId;
+    // prevent self-referencing spans
+    parentId = builder.id.equals(builder.parentId) ? null : builder.parentId;
     id = builder.id;
     kind = builder.kind;
     name = builder.name;
@@ -669,20 +722,20 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     if (o == this) return true;
     if (!(o instanceof Span)) return false;
     Span that = (Span) o;
-    return (traceId.equals(that.traceId))
-      && ((parentId == null) ? (that.parentId == null) : parentId.equals(that.parentId))
-      && (id.equals(that.id))
-      && ((kind == null) ? (that.kind == null) : kind.equals(that.kind))
-      && ((name == null) ? (that.name == null) : name.equals(that.name))
-      && (timestamp == that.timestamp)
-      && (duration == that.duration)
-      && ((localEndpoint == null)
-      ? (that.localEndpoint == null) : localEndpoint.equals(that.localEndpoint))
-      && ((remoteEndpoint == null)
-      ? (that.remoteEndpoint == null) : remoteEndpoint.equals(that.remoteEndpoint))
-      && (annotations.equals(that.annotations))
-      && (tags.equals(that.tags))
-      && (flags == that.flags);
+    return traceId.equals(that.traceId)
+      && (parentId == null ? that.parentId == null : parentId.equals(that.parentId))
+      && id.equals(that.id)
+      && (kind == null ? that.kind == null : kind.equals(that.kind))
+      && (name == null ? that.name == null : name.equals(that.name))
+      && timestamp == that.timestamp
+      && duration == that.duration
+      && (localEndpoint == null
+      ? that.localEndpoint == null : localEndpoint.equals(that.localEndpoint))
+      && (remoteEndpoint == null
+      ? that.remoteEndpoint == null : remoteEndpoint.equals(that.remoteEndpoint))
+      && annotations.equals(that.annotations)
+      && tags.equals(that.tags)
+      && flags == that.flags;
   }
 
   @Override public int hashCode() {
