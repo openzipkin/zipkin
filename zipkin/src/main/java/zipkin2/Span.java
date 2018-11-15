@@ -379,7 +379,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
         pos += 16;
       }
       writeHexLong(result, pos, low);
-      this.traceId =  new String(result);
+      this.traceId = new String(result);
       return this;
     }
 
@@ -625,7 +625,17 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     if (in.size() == 1) return Collections.singletonList(in.get(0));
     Object[] array = in.toArray();
     Arrays.sort(array);
-    List result = Arrays.asList(array);
+
+    // dedupe
+    int j = 0, i = 1;
+    while (i < array.length) {
+      if (!array[i].equals(array[j])) {
+        array[++j] = array[i];
+      }
+      i++;
+    }
+
+    List result = Arrays.asList(i == j + 1 ? array : Arrays.copyOf(array, j + 1));
     return Collections.unmodifiableList(result);
   }
 
