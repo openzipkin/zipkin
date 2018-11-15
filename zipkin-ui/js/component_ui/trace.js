@@ -35,7 +35,7 @@ export function showSpans(spans, parents, children, selectedSpans) {
 }
 
 function hideSpan(span) {
-  if (span.inFilters > 0 || span.openChildren > 0 || span.openParents > 0) return;
+  if (span.openChildren > 0 || span.openParents > 0) return;
   span.hide();
 }
 
