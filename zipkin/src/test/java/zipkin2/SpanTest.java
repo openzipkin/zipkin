@@ -63,6 +63,22 @@ public class SpanTest {
     );
   }
 
+  @Test public void annotationsDedupe() {
+    Span span = base.toBuilder()
+      .addAnnotation(2L, "foo")
+      .addAnnotation(2L, "foo")
+      .addAnnotation(1L, "foo")
+      .addAnnotation(2L, "foo")
+      .addAnnotation(3L, "foo")
+      .build();
+
+    assertThat(span.annotations()).containsExactly(
+      Annotation.create(1L, "foo"),
+      Annotation.create(2L, "foo"),
+      Annotation.create(3L, "foo")
+    );
+  }
+
   @Test public void putTagOverwritesValue() {
     Span span = base.toBuilder()
       .putTag("foo", "bar")
