@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import org.junit.Test;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
@@ -93,20 +92,6 @@ public class DependencyLinkerTest {
 
     assertThat(messages)
       .contains("linking trace 000000000000000a");
-  }
-
-  @Test
-  public void dropsSelfReferencingSpans() {
-    List<Span> trace = TRACE.stream()
-      .map(s -> s.toBuilder().parentId(s.parentId() != null ? s.id() : null).build())
-      .collect(Collectors.toList());
-
-    assertThat(new DependencyLinker(logger).putTrace(trace.iterator()).link()).isEmpty();
-
-    assertThat(messages).contains(
-      "skipping circular dependency: traceId=000000000000000a, spanId=000000000000000b",
-      "skipping circular dependency: traceId=000000000000000a, spanId=000000000000000c"
-    );
   }
 
   @Test

@@ -120,10 +120,10 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
     if (o == this) return true;
     if (!(o instanceof DependencyLink)) return false;
     DependencyLink that = (DependencyLink) o;
-      return (parent.equals(that.parent))
-        && (child.equals(that.child))
-        && (callCount == that.callCount)
-        && (errorCount == that.errorCount);
+    return parent.equals(that.parent)
+      && child.equals(that.child)
+      && callCount == that.callCount
+      && errorCount == that.errorCount;
   }
 
   @Override public int hashCode() {

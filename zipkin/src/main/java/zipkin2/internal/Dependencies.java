@@ -120,7 +120,7 @@ public final class Dependencies {
     if (o == this) return true;
     if (!(o instanceof Dependencies)) return false;
     Dependencies that = (Dependencies) o;
-    return (startTs == that.startTs) && (endTs == that.endTs) && (links.equals(that.links));
+    return startTs == that.startTs && endTs == that.endTs && links.equals(that.links);
   }
 
   @Override

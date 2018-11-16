@@ -267,9 +267,9 @@ public final class Buffer {
 
   void writeLongLe(long v) {
     buf[pos++] = (byte) (v & 0xff);
-    buf[pos++] = (byte) ((v >> 8 & 0xff));
-    buf[pos++] = (byte) ((v >> 16 & 0xff));
-    buf[pos++] = (byte) ((v >> 24 & 0xff));
+    buf[pos++] = (byte) ((v >> 8) & 0xff);
+    buf[pos++] = (byte) ((v >> 16) & 0xff);
+    buf[pos++] = (byte) ((v >> 24) & 0xff);
     buf[pos++] = (byte) ((v >> 32) & 0xff);
     buf[pos++] = (byte) ((v >> 40) & 0xff);
     buf[pos++] = (byte) ((v >> 48) & 0xff);

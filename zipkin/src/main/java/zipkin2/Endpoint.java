@@ -118,6 +118,16 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       port = source.port;
     }
 
+    Builder merge(Endpoint source) {
+      if (serviceName == null) serviceName = source.serviceName;
+      if (ipv4 == null) ipv4 = source.ipv4;
+      if (ipv6 == null) ipv6 = source.ipv6;
+      if (ipv4Bytes == null) ipv4Bytes = source.ipv4Bytes;
+      if (ipv6Bytes == null) ipv6Bytes = source.ipv6Bytes;
+      if (port == 0) port = source.port;
+      return this;
+    }
+
     /** @see Endpoint#serviceName */
     public Builder serviceName(@Nullable String serviceName) {
       this.serviceName = serviceName == null || serviceName.isEmpty()
