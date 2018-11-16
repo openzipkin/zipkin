@@ -321,6 +321,66 @@ describe('mergeV2ById', () => {
     ]);
   });
 
+  /*
+   * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.
+   *
+   * See https://github.com/openzipkin/zipkin/pull/1745
+   */
+  it('should backfill missing parent id on shared span', () => {
+    const spans = mergeV2ById([
+      {
+        traceId: 'a',
+        id: 'a',
+        kind: 'SERVER',
+        localEndpoint: {serviceName: 'frontend'}
+      },
+      {
+        traceId: 'a',
+        parentId: 'a',
+        id: 'b',
+        kind: 'CLIENT',
+        localEndpoint: {serviceName: 'frontend'}
+      },
+      {
+        traceId: 'a',
+        id: 'b',
+        kind: 'SERVER',
+        localEndpoint: {serviceName: 'backend'},
+        shared: true
+      }
+    ]);
+
+    expect(spans).to.deep.equal([
+      {
+        traceId: '000000000000000a',
+        id: '000000000000000a',
+        kind: 'SERVER',
+        localEndpoint: {serviceName: 'frontend'},
+        annotations: [],
+        tags: {}
+      },
+      {
+        traceId: '000000000000000a',
+        parentId: '000000000000000a',
+        id: '000000000000000b',
+        kind: 'CLIENT',
+        localEndpoint: {serviceName: 'frontend'},
+        annotations: [],
+        tags: {}
+      },
+      {
+        traceId: '000000000000000a',
+        parentId: '000000000000000a',
+        id: '000000000000000b',
+        kind: 'SERVER',
+        localEndpoint: {serviceName: 'backend'},
+        annotations: [],
+        tags: {},
+        shared: true
+      }
+    ]);
+  });
+
   // some instrumentation send 64-bit length, while others 128-bit or padded.
   it('should merge mixed-length IDs', () => {
     const spans = mergeV2ById([
@@ -360,6 +420,66 @@ describe('mergeV2ById', () => {
         id: '000000000000000c',
         annotations: [],
         tags: {}
+      }
+    ]);
+  });
+
+  /* Let's pretend people use crappy data, but only on the first hop. */
+  it('should merge when missing endpoints', () => {
+    const spans = mergeV2ById([
+      {
+        traceId: 'a',
+        id: 'a',
+        tags: {'span.kind': 'SERVER', service: 'frontend'}
+      },
+      {
+        traceId: 'a',
+        parentId: 'a',
+        id: 'b',
+        timestamp: 1,
+        tags: {'span.kind': 'CLIENT', service: 'frontend'}
+      },
+      {
+        traceId: 'a',
+        parentId: 'a',
+        id: 'b',
+        kind: 'SERVER',
+        localEndpoint: {serviceName: 'backend'},
+        shared: true
+      },
+      {
+        traceId: 'a',
+        parentId: 'a',
+        id: 'b',
+        duration: 10
+      }
+    ]);
+
+    expect(spans).to.deep.equal([
+      {
+        traceId: '000000000000000a',
+        id: '000000000000000a',
+        annotations: [],
+        tags: {'span.kind': 'SERVER', service: 'frontend'}
+      },
+      {
+        traceId: '000000000000000a',
+        parentId: '000000000000000a',
+        id: '000000000000000b',
+        timestamp: 1,
+        duration: 10,
+        annotations: [],
+        tags: {'span.kind': 'CLIENT', service: 'frontend'}
+      },
+      {
+        traceId: '000000000000000a',
+        parentId: '000000000000000a',
+        id: '000000000000000b',
+        kind: 'SERVER',
+        localEndpoint: {serviceName: 'backend'},
+        annotations: [],
+        tags: {},
+        shared: true
       }
     ]);
   });

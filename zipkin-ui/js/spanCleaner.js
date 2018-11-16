@@ -108,8 +108,8 @@ export function compare(a, b) {
  */
 function compareEndpoint(left, right) {
   // handle nulls first
-  if (!left) return !right ? 0 : -1;
-  if (!right) return 1;
+  if (undefined === left) return -1;
+  if (undefined === right) return 1;
 
   const byService = compare(left.serviceName, right.serviceName);
   if (byService !== 0) return byService;
@@ -118,15 +118,19 @@ function compareEndpoint(left, right) {
   return compare(left.ipv6, right.ipv6);
 }
 
-function cleanupComparator(left, right) {
-  const bySpanId = left.id - right.id;
-  if (bySpanId !== 0) return bySpanId;
-  let byShared;
-  if (left.shared === right.shared) {
-    byShared = 0;
+// false or null first (client first)
+function compareShared(left, right) {
+  if (left === right) {
+    return 0;
   } else {
-    byShared = left.shared ? 1 : -1; // false first (client first)
+    return left ? 1 : -1;
   }
+}
+
+function cleanupComparator(left, right) {
+  const bySpanId = compare(left.id, right.id);
+  if (bySpanId !== 0) return bySpanId;
+  const byShared = compareShared(left.shared, right.shared);
   if (byShared !== 0) return byShared;
   return compareEndpoint(left.localEndpoint, right.localEndpoint);
 }
@@ -218,6 +222,7 @@ export function mergeV2ById(spans) {
       return 1;
     }
     // Either a and b are root or neither are. In any case sort by timestamp, then name
-    return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
+    return compareShared(a.shared, b.shared) ||
+      compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
   });
 }
