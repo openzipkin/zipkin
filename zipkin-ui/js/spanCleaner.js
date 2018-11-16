@@ -40,7 +40,10 @@ function clean(span) {
   if (isEndpoint(span.remoteEndpoint)) res.remoteEndpoint = span.remoteEndpoint;
 
   res.annotations = span.annotations || [];
-  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
+  if (res.annotations.length > 1) {
+    res.annotations = _(_.unionWith(res.annotations, _.isEqual))
+            .sortBy('timestamp', 'value').value();
+  }
 
   res.tags = span.tags || {};
 
@@ -50,7 +53,8 @@ function clean(span) {
   return res;
 }
 
-function merge(left, right) {
+// exposed for testing. assumes spans are already clean
+export function merge(left, right) {
   const res = {
     traceId: right.traceId.length > 16 ? right.traceId : left.traceId
   };
@@ -80,9 +84,8 @@ function merge(left, right) {
   } else if (right.annotations.length === 0) {
     res.annotations = left.annotations;
   } else {
-    res.annotations = _(left.annotations.concat(right.annotations))
-      .sortBy('timestamp', 'value')
-      .sortedUniqBy('timestamp', 'value').value();
+    res.annotations = _(_.unionWith(left.annotations, right.annotations, _.isEqual))
+      .sortBy('timestamp', 'value').value();
   }
 
   res.tags = Object.assign({}, left.tags, right.tags);

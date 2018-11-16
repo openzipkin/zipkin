@@ -1,4 +1,4 @@
-const {mergeV2ById} = require('../js/spanCleaner');
+const {merge, mergeV2ById} = require('../js/spanCleaner');
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
@@ -42,6 +42,214 @@ const serverSpan = {
   tags: {},
   shared: true
 };
+const oneOfEach = { // has every field set
+  traceId: '7180c278b62e8f6a216a2aea45d08fc9',
+  parentId: '0000000000000001',
+  id: '0000000000000002',
+  kind: 'SERVER',
+  name: 'get',
+  timestamp: 1,
+  duration: 3,
+  localEndpoint: backend,
+  remoteEndpoint: frontend,
+  annotations: [{timestamp: 2, value: 'foo'}],
+  tags: {'http.path': '/api'},
+  shared: true,
+  debug: true
+};
+
+describe('merge', () => {
+  it('should work on redundant data', () => {
+    const merged = merge(oneOfEach, oneOfEach);
+    expect(merged).to.deep.equal(oneOfEach);
+  });
+
+  it('should merge flags', () => {
+    const merged = merge(
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [],
+        tags: {},
+        shared: true
+      },
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [],
+        tags: {},
+        debug: true
+      }
+    );
+
+    expect(merged).to.deep.equal({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      annotations: [],
+      tags: {},
+      debug: true,
+      shared: true
+    });
+  });
+
+  it('should merge annotations', () => {
+    const merged = merge(
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [{timestamp: 1, value: 'a'}, {timestamp: 1, value: 'b'}],
+        tags: {}
+      },
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [{timestamp: 1, value: 'b'}, {timestamp: 1, value: 'c'}],
+        tags: {}
+      }
+    );
+
+    expect(merged).to.deep.equal({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      annotations: [
+        {timestamp: 1, value: 'a'},
+        {timestamp: 1, value: 'b'},
+        {timestamp: 1, value: 'c'}
+      ],
+      tags: {}
+    });
+  });
+
+  it('should merge tags', () => {
+    const merged = merge(
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [],
+        tags: {1: 'a', 2: 'a'}
+      },
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [],
+        tags: {2: 'a', 3: 'a'}
+      }
+    );
+
+    expect(merged).to.deep.equal({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      annotations: [],
+      tags: {1: 'a', 2: 'a', 3: 'a'}
+    });
+  });
+
+  it('should merge local endpoint', () => {
+    const merged = merge(
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [],
+        tags: {}
+      },
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        localEndpoint: frontend,
+        annotations: [],
+        tags: {}
+      }
+    );
+
+    expect(merged).to.deep.equal({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      localEndpoint: frontend,
+      annotations: [],
+      tags: {}
+    });
+  });
+
+  it('should merge local endpoint - partial', () => {
+    const merged = merge(
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        localEndpoint: {serviceName: 'a'},
+        annotations: [],
+        tags: {}
+      },
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        localEndpoint: {ipv4: '192.168.99.101'},
+        annotations: [],
+        tags: {}
+      }
+    );
+
+    expect(merged).to.deep.equal({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      localEndpoint: {serviceName: 'a', ipv4: '192.168.99.101'},
+      annotations: [],
+      tags: {}
+    });
+  });
+
+  it('should merge remote endpoint', () => {
+    const merged = merge(
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        annotations: [],
+        tags: {}
+      },
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        remoteEndpoint: frontend,
+        annotations: [],
+        tags: {}
+      }
+    );
+
+    expect(merged).to.deep.equal({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      remoteEndpoint: frontend,
+      annotations: [],
+      tags: {}
+    });
+  });
+
+  it('should merge remote endpoint - partial', () => {
+    const merged = merge(
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        remoteEndpoint: {serviceName: 'a'},
+        annotations: [],
+        tags: {}
+      },
+      {
+        traceId: '0000000000000001',
+        id: '0000000000000002',
+        remoteEndpoint: {ipv4: '192.168.99.101'},
+        annotations: [],
+        tags: {}
+      }
+    );
+
+    expect(merged).to.deep.equal({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      remoteEndpoint: {serviceName: 'a', ipv4: '192.168.99.101'},
+      annotations: [],
+      tags: {}
+    });
+  });
+});
 
 describe('mergeV2ById', () => {
   it('should cleanup spans', () => {
@@ -193,7 +401,11 @@ describe('mergeV2ById', () => {
       {
         traceId: '1111111111111111',
         id: '000000000000000a',
-        annotations: [{timestamp: 2, value: 'b'}, {timestamp: 1, value: 'a'}]
+        annotations: [
+          {timestamp: 2, value: 'b'},
+          {timestamp: 2, value: 'b'},
+          {timestamp: 1, value: 'a'}
+        ]
       },
       {
         traceId: '1111111111111111',

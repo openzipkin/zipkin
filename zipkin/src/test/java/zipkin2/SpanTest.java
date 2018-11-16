@@ -230,6 +230,12 @@ public class SpanTest {
       .isEqualToComparingFieldByField(builder);
   }
 
+  @Test public void builder_merge_redundant() {
+    Span merged = oneOfEach.toBuilder().merge(oneOfEach).build();
+
+    assertThat(merged).isEqualToComparingFieldByField(oneOfEach);
+  }
+
   @Test public void builder_merge_flags() {
     assertThat(Span.newBuilder().shared(true).merge(base.toBuilder().debug(true).build()).build())
       .isEqualToComparingFieldByField(base.toBuilder().shared(true).debug(true).build());
@@ -242,11 +248,11 @@ public class SpanTest {
   }
 
   @Test public void builder_merge_annotations_concat() {
-    Span merged = Span.newBuilder().addAnnotation(1, "a")
-      .merge(base.toBuilder().addAnnotation(2, "a").build()).build();
+    Span merged = Span.newBuilder().addAnnotation(1, "a").addAnnotation(1, "b")
+      .merge(base.toBuilder().addAnnotation(1, "b").addAnnotation(1, "c").build()).build();
 
     assertThat(merged).isEqualToComparingFieldByField(
-      base.toBuilder().addAnnotation(1, "a").addAnnotation(2, "a").build()
+      base.toBuilder().addAnnotation(1, "a").addAnnotation(1, "b").addAnnotation(1, "c").build()
     );
   }
 
@@ -257,25 +263,16 @@ public class SpanTest {
   }
 
   @Test public void builder_merge_tags_concat() {
-    Span merged = Span.newBuilder().putTag("1", "a")
-      .merge(base.toBuilder().putTag("2", "a").build()).build();
+    Span merged = Span.newBuilder().putTag("1", "a").putTag("2", "a")
+      .merge(base.toBuilder().putTag("2", "a").putTag("3", "a").build()).build();
 
     assertThat(merged).isEqualToComparingFieldByField(
-      base.toBuilder().putTag("1", "a").putTag("2", "a").build()
+      base.toBuilder().putTag("1", "a").putTag("2", "a").putTag("3", "a").build()
     );
   }
 
   @Test public void builder_merge_localEndpoint() {
     Span merged = Span.newBuilder()
-      .merge(base.toBuilder().localEndpoint(FRONTEND).build()).build();
-
-    assertThat(merged).isEqualToComparingFieldByField(
-      base.toBuilder().localEndpoint(FRONTEND).build()
-    );
-  }
-
-  @Test public void builder_merge_localEndpoint_redundant() {
-    Span merged = Span.newBuilder().localEndpoint(FRONTEND)
       .merge(base.toBuilder().localEndpoint(FRONTEND).build()).build();
 
     assertThat(merged).isEqualToComparingFieldByField(
@@ -306,15 +303,6 @@ public class SpanTest {
 
   @Test public void builder_merge_remoteEndpoint() {
     Span merged = Span.newBuilder()
-      .merge(base.toBuilder().remoteEndpoint(FRONTEND).build()).build();
-
-    assertThat(merged).isEqualToComparingFieldByField(
-      base.toBuilder().remoteEndpoint(FRONTEND).build()
-    );
-  }
-
-  @Test public void builder_merge_remoteEndpoint_redundant() {
-    Span merged = Span.newBuilder().remoteEndpoint(FRONTEND)
       .merge(base.toBuilder().remoteEndpoint(FRONTEND).build()).build();
 
     assertThat(merged).isEqualToComparingFieldByField(
