@@ -124,6 +124,7 @@ public class TraceTest {
     );
   }
 
+  // Same as above, but the late reported data has no parent id or endpoint
   @Test public void putsRandomDataOnFirstSpanWithEndpoint() {
     List<Span> trace = asList(
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
@@ -132,7 +133,7 @@ public class TraceTest {
         .timestamp(1L).addAnnotation(3L, "brave.flush").build(),
       span("a", "a", "b", Kind.SERVER, "backend", "1.2.3.4", true),
       span("a", "a", "b", Kind.SERVER, "backend", "1.2.3.5", true),
-      span("a", "a", "b", null, "frontend", null, false).toBuilder()
+      span("a", "a", "b", null, null, null, false).toBuilder()
         .duration(10L).build()
     );
 
