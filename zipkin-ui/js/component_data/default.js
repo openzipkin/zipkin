@@ -8,6 +8,14 @@ import {SPAN_V1} from '../spanConverter';
 
 export function convertToApiQuery(source) {
   const query = Object.assign({}, source);
+
+  if (query.minDuration) {
+    const match = query.minDuration.match(/^(\d+)(ms|s)$/i);
+    if (match) {
+      query.minDuration = match[1] * (match[2] === 'ms' ? 1000 : Math.pow(1000, 2));
+    }
+  }
+
   // zipkin's api looks back from endTs
   if (query.lookback !== 'custom') {
     delete query.startTs;
