@@ -5,14 +5,15 @@
     <div class='col-md-2'><div href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge badge-dark'>{{services}}</span></div></div>
     <div class='col-md-2'><div href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge badge-dark'>{{depth}}</span></div></div>
     <div class='col-md-2'><div href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge badge-dark'>{{spanCount}}</span></div></div>
-    {{#logsUrl}}
-    <div class='col-md-2'><div id='traceLogsLink'>
-      <a class='btn btn-sm btn-secondary'  href='{{ logsUrl }}' target="_blank" role="button">Logs
-        <span class="fas fa-external-link-square-alt"></span>
-      </a>
+    <div class='col-md-2'>
+      {{#logsUrl}}
+      <div id='traceLogsLink'>
+        <a class='btn btn-sm btn-secondary'  href='{{ logsUrl }}' target="_blank" role="button">Logs
+          <span class="fas fa-external-link-square-alt"></span>
+        </a>
+      </div>
+      {{/logsUrl}}
     </div>
-    </div>
-    {{/logsUrl}}
     <div class="col-md-2">
       <span class='btn btn-sm btn-secondary' href='{{ contextRoot }}api/v2/trace/{{ traceId }}' id='traceJsonLink'>JSON
         <span class="fas fa-download"></span>
