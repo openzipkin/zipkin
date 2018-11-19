@@ -167,7 +167,11 @@ describe('convertToApiQuery', () => {
 });
 
 describe('convertDurationToMicrosecond', () => {
-  it('should make "μs" 1 times ', () => {
+  it('should make "us" 1 times', () => {
+    convertDurationToMicrosecond('12345us').should.equal('12345');
+  });
+
+  it('should make "μs" 1 times', () => {
     convertDurationToMicrosecond('12345μs').should.equal('12345');
   });
 

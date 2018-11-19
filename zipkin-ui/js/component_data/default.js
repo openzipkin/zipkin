@@ -7,10 +7,11 @@ import {mergeV2ById} from '../spanCleaner';
 import {SPAN_V1} from '../spanConverter';
 
 export function convertDurationToMicrosecond(duration) {
-  const match = duration.match(/^(\d+)(μs|ms|s)$/i);
+  const match = duration.match(/^(\d+)(us|μs|ms|s)$/i);
   if (match) {
     const unit = match[2];
     switch (unit) {
+      case 'us':
       case 'μs':
         return match[1];
       case 'ms':
