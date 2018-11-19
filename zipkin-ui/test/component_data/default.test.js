@@ -1,4 +1,6 @@
-import {convertSuccessResponse, convertToApiQuery} from '../../js/component_data/default';
+import {
+  convertSuccessResponse, convertToApiQuery, convertDurationToMicrosecond,
+} from '../../js/component_data/default';
 import {errorTrace, httpTrace, skewedTrace} from '../component_ui/traceTestHelpers';
 import queryString from 'query-string';
 
@@ -161,5 +163,23 @@ describe('convertToApiQuery', () => {
 
     should.not.exist(parsed.lookback);
     should.not.exist(parsed.startTs);
+  });
+});
+
+describe('convertDurationToMicrosecond', () => {
+  it('should make "μs" 1 times ', () => {
+    convertDurationToMicrosecond('12345μs').should.equal('12345');
+  });
+
+  it('should make "ms" 1000 times', () => {
+    convertDurationToMicrosecond('12345ms').should.equal('12345000');
+  });
+
+  it('should make "s" 1000000 times', () => {
+    convertDurationToMicrosecond('12345s').should.equal('12345000000');
+  });
+
+  it('should return as it is, otherwise', () => {
+    convertDurationToMicrosecond('12345').should.equal('12345');
   });
 });

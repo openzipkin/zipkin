@@ -6,8 +6,31 @@ import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSumma
 import {mergeV2ById} from '../spanCleaner';
 import {SPAN_V1} from '../spanConverter';
 
+export function convertDurationToMicrosecond(duration) {
+  const match = duration.match(/^(\d+)(μs|ms|s)$/i);
+  if (match) {
+    const unit = match[2];
+    switch (unit) {
+      case 'μs':
+        return match[1];
+      case 'ms':
+        return String((Number(match[1]) * 1000));
+      case 's':
+        return String((Number(match[1]) * Math.pow(1000, 2)));
+      default:
+        // Do nothing
+    }
+  }
+  return duration;
+}
+
 export function convertToApiQuery(source) {
   const query = Object.assign({}, source);
+
+  if (query.minDuration) {
+    query.minDuration = convertDurationToMicrosecond(query.minDuration);
+  }
+
   // zipkin's api looks back from endTs
   if (query.lookback !== 'custom') {
     delete query.startTs;
