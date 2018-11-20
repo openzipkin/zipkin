@@ -339,6 +339,8 @@ export default component(function trace() {
       self.triggerForAllServices('uiAddServiceNameFilter');
     });
     self.actingOnAll = false;
+    $('#expandAll').addClass('active');
+    $('#collapseAll').removeClass('active');
   };
 
   this.collapseAllSpans = function() {
@@ -357,8 +359,21 @@ export default component(function trace() {
       self.triggerForAllServices('uiRemoveServiceNameFilter');
     });
     self.actingOnAll = false;
+    $('#expandAll').removeClass('active');
+    $('#collapseAll').addClass('active');
   };
 
+
+  this.showRootSpan = function() {
+    const self = this;
+    $.each(self.spans, (id, $span) => {
+      if ($span.isRoot) {
+        $span.expanded = false;
+        $span.$expander.text('+');
+        $span.show();
+      }
+    });
+  };
   /* This method modifies the span container view. It zooms in the span view
    * for selected time duration. Spans starting with in the selected time
    * duration are highlighted with span name in red color.
@@ -476,6 +491,7 @@ export default component(function trace() {
     this.on(document, 'uiCollapseAllSpans', this.collapseAllSpans);
     this.on(document, 'uiZoomInSpans', this.zoomInSpans);
     this.on(document, 'uiZoomOutSpans', this.zoomOutSpans);
+    this.on(document, 'uiRootSpans', this.showRootSpan);
 
     const self = this;
     const initData = initSpans(self.$node);
@@ -493,7 +509,7 @@ export default component(function trace() {
     if (serviceName !== undefined) {
       this.trigger(document, 'uiAddServiceNameFilter', {value: serviceName});
     } else {
-      this.trigger(document, 'uiExpandAllSpans');
+      this.trigger(document, 'uiRootSpans');
     }
 
     i18nInit('trace');
