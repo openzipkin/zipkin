@@ -28,6 +28,16 @@ import static zipkin2.storage.ITSpanStore.requestBuilder;
 
 public class StrictTraceIdTest {
 
+  @Test public void filterTraces_skipsOnNoClash() {
+    Span oneOne = Span.newBuilder().traceId(1, 1).id(1).build();
+    Span oneTwo = Span.newBuilder().traceId(1, 2).id(1).build();
+    List<List<Span>> traces = asList(asList(oneOne), asList(oneTwo));
+
+    assertThat(StrictTraceId.filterTraces(
+      requestBuilder().spanName("11").build()
+    ).map(traces)).isSameAs(traces);
+  }
+
   @Test public void filterTraces_onSpanName() {
     assertThat(StrictTraceId.filterTraces(
       requestBuilder().spanName("11").build()
@@ -73,5 +83,19 @@ public class StrictTraceIdTest {
       span1.toBuilder().traceId("1" + span1.traceId()).name("3").putTag("foo", "3").build();
 
     return new ArrayList<>(asList(asList(span1), asList(span2), asList(span3)));
+  }
+
+  @Test public void hasClashOnLowerTraceId() {
+    Span oneOne = Span.newBuilder().traceId(1, 1).id(1).build();
+    Span twoOne = Span.newBuilder().traceId(2, 1).id(1).build();
+    Span zeroOne = Span.newBuilder().traceId(0, 1).id(1).build();
+    Span oneTwo = Span.newBuilder().traceId(1, 2).id(1).build();
+
+    assertThat(StrictTraceId.hasClashOnLowerTraceId(asList(asList(oneOne), asList(oneTwo))))
+      .isFalse();
+    assertThat(StrictTraceId.hasClashOnLowerTraceId(asList(asList(oneOne), asList(twoOne))))
+      .isTrue();
+    assertThat(StrictTraceId.hasClashOnLowerTraceId(asList(asList(oneOne), asList(zeroOne))))
+      .isTrue();
   }
 }
