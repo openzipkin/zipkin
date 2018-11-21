@@ -14,7 +14,9 @@
 package zipkin2.storage;
 
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import zipkin2.Call;
 import zipkin2.Span;
 
@@ -28,7 +30,11 @@ public final class StrictTraceId {
     return new FilterSpans(traceId);
   }
 
-  /** Filters the mutable input based on the query */
+  /**
+   * Filters the mutable input client-side when there's a clash on lower 64-bits of a trace ID.
+   *
+   * @see FilterTraces
+   */
   public static Call.Mapper<List<List<Span>>, List<List<Span>>> filterTraces(QueryRequest request) {
     return new FilterTraces(request);
   }
@@ -41,8 +47,9 @@ public final class StrictTraceId {
       this.request = request;
     }
 
-    @Override
-    public List<List<Span>> map(List<List<Span>> input) {
+    @Override public List<List<Span>> map(List<List<Span>> input) {
+      if (!hasClashOnLowerTraceId(input)) return input;
+
       Iterator<List<Span>> i = input.iterator();
       while (i.hasNext()) { // Not using removeIf as that's java 8+
         List<Span> next = i.next();
@@ -51,10 +58,36 @@ public final class StrictTraceId {
       return input;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "FilterTraces{request=" + request + "}";
     }
+  }
+
+  /** Returns true if any trace clashes on the right-most 16 characters of the trace ID */
+  // Concretely, Netflix have a special index template for a multi-tag, "fit.sessionId". If we
+  // blindly filtered without seeing if we had to, a match that works on the server side would
+  // fail client side. Normally, we wouldn't special case like this, but not filtering unless
+  // necessary is also more efficient.
+  static boolean hasClashOnLowerTraceId(List<List<Span>> input) {
+    int traceCount = input.size();
+    if (traceCount <= 1) return false;
+
+    // NOTE: It is probably more efficient to do clever sorting and peeking here, but the call site
+    // is query side, which is not in the critical path of user code. A set is much easier to grok.
+    Set<String> traceIdLows = new LinkedHashSet<>();
+    boolean clash = false;
+    for (int i = 0; i < traceCount; i++) {
+      String traceId = lowerTraceId(input.get(i).get(0).traceId());
+      if (!traceIdLows.add(traceId)) {
+        clash = true;
+        break;
+      }
+    }
+    return clash;
+  }
+
+  static String lowerTraceId(String traceId) {
+    return traceId.length() == 16 ? traceId : traceId.substring(16);
   }
 
   static final class FilterSpans implements Call.Mapper<List<Span>, List<Span>> {
