@@ -34,11 +34,6 @@ export function showSpans(spans, parents, children, selectedSpans) {
   family.forEach(id => spans[id].show());
 }
 
-function hideSpan(span) {
-  if (span.inFilters > 0 || span.openChildren > 0 || span.openParents > 0) return;
-  span.hide();
-}
-
 // extracted for testing. this code mutates spans and selectedSpans
 export function hideSpans(spans, parents, children, selectedSpans, childrenOnly) {
   const family = new Set();
@@ -47,7 +42,7 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
 
     if (!childrenOnly && $selected.inFilters === 0) {
       $selected.removeClass('highlight');
-      hideSpan($selected);
+      $selected.hide();
     }
 
     $selected.expanded = false;
@@ -55,7 +50,8 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
 
     $.each(children[$selected.id], (j, cId) => {
       family.add(cId);
-      spans[cId].openParents -= 1;
+      // Decrement only when there is an open parent
+      if (spans[cId].openParents >= 1) spans[cId].openParents -= 1;
     });
     if (!childrenOnly) {
       $.each(parents[$selected.id], (j, pId) => {
@@ -69,7 +65,8 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
       });
     }
   });
-  family.forEach(id => hideSpan(spans[id]));
+  family.forEach(id => hideSpans(spans, parents, children, [spans[id]], true));
+  family.forEach(id => spans[id].hide());
 }
 
 function spanChildren($span) {
@@ -172,7 +169,7 @@ export default component(function trace() {
     const spans = this.getSpansByService(data.value).map(function() {
       return self.spans[$(this).data('id')];
     });
-    this.expandSpans(spans);
+    this.expandSpans(new Set(spans));
   };
 
   this.expandSpans = function(spans) {
@@ -185,7 +182,7 @@ export default component(function trace() {
     const spans = this.getSpansByService(data.value).map(function() {
       return self.spans[$(this).data('id')];
     });
-    this.collapseSpans(spans);
+    this.collapseSpans(new Set(spans));
   };
 
   this.collapseSpans = function(spans, childrenOnly) {
@@ -366,6 +363,7 @@ export default component(function trace() {
 
   this.showRootSpan = function() {
     const self = this;
+    self.actingOnAll = true;
     $.each(self.spans, (id, $span) => {
       if ($span.isRoot) {
         $span.expanded = false;

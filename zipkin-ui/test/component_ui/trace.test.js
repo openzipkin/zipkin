@@ -126,7 +126,7 @@ describe('hideSpans', () => {
     span1.openParents.should.equal(0);
     span1.openChildren.should.equal(0);
 
-    span2.hidden.should.equal(false);
+    span2.hidden.should.equal(true);
 
     span3.hidden.should.equal(true);
     span3.openParents.should.equal(0);
@@ -184,6 +184,43 @@ describe('hideSpans', () => {
     span.hidden.should.equal(true);
     span.openParents.should.equal(0);
     span.openChildren.should.equal(0);
+  });
+
+  it('hides properly during the nested more than four levels', () => {
+    const span1 = traceDetailSpan('0000000000000001');
+    const span2 = traceDetailSpan('0000000000000002');
+    const span3 = traceDetailSpan('0000000000000003');
+    const span4 = traceDetailSpan('0000000000000004');
+    const spans = {
+      '0000000000000001': span1,
+      '0000000000000002': span2,
+      '0000000000000003': span3,
+      '0000000000000004': span4
+    };
+    const parents = {
+      '0000000000000001': [],
+      '0000000000000002': ['0000000000000001'],
+      '0000000000000003': ['0000000000000002'],
+      '0000000000000004': ['0000000000000003']
+    };
+    const children = {
+      '0000000000000001': ['0000000000000002'],
+      '0000000000000002': ['0000000000000003'],
+      '0000000000000003': ['0000000000000004'],
+      '0000000000000004': []
+    };
+
+
+    showSpans(spans, parents, children, spans);
+    hideSpans(spans, parents, children, {0: span3});
+    span4.hidden.should.equal(true); // Checks closing parent closes child as well
+    span3.hidden.should.equal(true);
+    hideSpans(spans, parents, children, {0: span2});
+    span2.hidden.should.equal(true);
+    hideSpans(spans, parents, children, {0: span1});
+    span1.hidden.should.equal(true);
+    span1.shown.should.equal(false);
+    span1.expanded.should.equal(false);
   });
 });
 
