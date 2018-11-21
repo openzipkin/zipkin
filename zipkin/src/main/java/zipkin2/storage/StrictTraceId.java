@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Set;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.internal.FilterTraces;
 
 /**
  * Storage implementation often need to re-check query results when {@link
@@ -36,30 +37,27 @@ public final class StrictTraceId {
    * @see FilterTraces
    */
   public static Call.Mapper<List<List<Span>>, List<List<Span>>> filterTraces(QueryRequest request) {
-    return new FilterTraces(request);
+    return new FilterTracesIfClashOnLowerTraceId(request);
   }
 
-  static final class FilterTraces implements Call.Mapper<List<List<Span>>, List<List<Span>>> {
-
+  static final class FilterTracesIfClashOnLowerTraceId
+    implements Call.Mapper<List<List<Span>>, List<List<Span>>> {
     final QueryRequest request;
 
-    FilterTraces(QueryRequest request) {
+    FilterTracesIfClashOnLowerTraceId(QueryRequest request) {
       this.request = request;
     }
 
     @Override public List<List<Span>> map(List<List<Span>> input) {
-      if (!hasClashOnLowerTraceId(input)) return input;
-
-      Iterator<List<Span>> i = input.iterator();
-      while (i.hasNext()) { // Not using removeIf as that's java 8+
-        List<Span> next = i.next();
-        if (!request.test(next)) i.remove();
+      if (hasClashOnLowerTraceId(input)) {
+        return FilterTraces.create(request).map(input);
       }
       return input;
     }
 
-    @Override public String toString() {
-      return "FilterTraces{request=" + request + "}";
+    @Override
+    public String toString() {
+      return "FilterTracesIfClashOnLowerTraceId{request=" + request + "}";
     }
   }
 

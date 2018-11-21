@@ -38,8 +38,7 @@ public final class GroupByTraceId implements Call.Mapper<List<Span>, List<List<S
     this.strictTraceId = strictTraceId;
   }
 
-  @Override
-  public List<List<Span>> map(List<Span> input) {
+  @Override public List<List<Span>> map(List<Span> input) {
     if (input.isEmpty()) return Collections.emptyList();
 
     Map<String, List<Span>> groupedByTraceId = new LinkedHashMap<>();
@@ -54,8 +53,7 @@ public final class GroupByTraceId implements Call.Mapper<List<Span>, List<List<S
     return new ArrayList<>(groupedByTraceId.values());
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "GroupByTraceId{strictTraceId=" + strictTraceId + "}";
   }
 }

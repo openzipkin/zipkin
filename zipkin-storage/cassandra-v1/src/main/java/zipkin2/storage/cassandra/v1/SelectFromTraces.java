@@ -28,6 +28,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.internal.FilterTraces;
 import zipkin2.internal.HexCodec;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.V1ThriftSpanReader;
@@ -111,7 +112,9 @@ final class SelectFromTraces extends ResultSetFutureCall {
     SelectTracesByIds(Factory factory, QueryRequest request) {
       this.factory = factory;
       this.limit = request.limit();
-      this.filter = factory.strictTraceId ? StrictTraceId.filterTraces(request) : null;
+      // Cassandra always looks up traces by 64-bit trace ID, so we have to unconditionally filter
+      // when strict trace ID is enabled.
+      this.filter = factory.strictTraceId ? FilterTraces.create(request) : null;
     }
 
     @Override

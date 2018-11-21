@@ -106,6 +106,8 @@ final class ElasticsearchSpanStore implements SpanStore {
 
     Call<List<List<Span>>> result =
         traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);
+    // Elasticsearch lookup by trace ID is by the full 128-bit length, but there's still a chance of
+    // clash on lower-64 bit. When strict trace ID is enabled, we only filter client-side on clash.
     return strictTraceId ? result.map(StrictTraceId.filterTraces(request)) : result;
   }
 
