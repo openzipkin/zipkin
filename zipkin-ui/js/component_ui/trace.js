@@ -446,7 +446,6 @@ export default component(function trace() {
   };
 
   this.after('initialize', function() {
-
     this.on('click', this.handleClick);
     this.on('mousedown', this.handleMouseDown);
     this.on(document, 'uiExpandAllSpans', this.expandAllSpans);
