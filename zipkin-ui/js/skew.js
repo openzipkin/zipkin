@@ -1,15 +1,16 @@
+import {mergeV2ById} from './spanCleaner';
+
 /*
- * Convenience type representing a tree. This is here because multiple facets in zipkin require
- * traversing the trace tree. For example, looking at network boundaries to correct clock skew, or
- * counting requests imply visiting the tree.
+ * Convenience type representing a trace tree. Multiple Zipkin features require a trace tree. For
+ * example, looking at network boundaries to correct clock skew and aggregating requests paths imply
+ * visiting the tree.
  */
-// originally zipkin2.internal.Node.java
-class Node {
-  constructor(value) {
+// originally zipkin2.internal.SpanNode.java
+class SpanNode {
+  constructor(span) {
     this._parent = undefined; // no default
-    this._value = value; // undefined is possible when this is a synthetic root node
+    this._span = span; // undefined is possible when this is a synthetic root node
     this._children = [];
-    this._missingRootDummyNode = false;
   }
 
   // Returns the parent, or undefined if root.
@@ -17,9 +18,13 @@ class Node {
     return this._parent;
   }
 
-  // Returns the value, or undefined if a synthetic root node
-  get value() {
-    return this._value;
+  _setParent(newParent) {
+    this._parent = newParent;
+  }
+
+  // Returns the span, or undefined if a synthetic root node
+  get span() {
+    return this._span;
   }
 
   // Returns the children of this node
@@ -28,22 +33,20 @@ class Node {
   }
 
   // Mutable as some transformations, such as clock skew, adjust the current node in the tree.
-  setValue(newValue) {
-    if (!newValue) throw new Error('newValue was undefined');
-    this._value = newValue;
+  setSpan(span) {
+    if (!span) throw new Error('span was undefined');
+    this._span = span;
   }
 
-  _setParent(newParent) {
-    this._parent = newParent;
-  }
-
+  // Adds the child IFF it isn't already a child.
   addChild(child) {
+    if (!child) throw new Error('child was undefined');
     if (child === this) throw new Error(`circular dependency on ${this.toString()}`);
     child._setParent(this);
     this._children.push(child);
   }
 
-  // Returns an array of values resulting from a breadth-first traversal at this node
+  // Returns an array of spans resulting from a breadth-first traversal at this node
   traverse() {
     const result = [];
     const queue = [this];
@@ -51,8 +54,8 @@ class Node {
     while (queue.length > 0) {
       const current = queue.shift();
 
-      // when there's a synthetic root span, the value could be undefined
-      if (current.value) result.push(current.value);
+      // when there's a synthetic root span, the span could be undefined
+      if (current.span) result.push(current.span);
 
       const children = current.children;
       for (let i = 0; i < children.length; i++) {
@@ -63,105 +66,170 @@ class Node {
   }
 
   toString() {
-    if (this._value) return `Node(${JSON.stringify(this._value)})`;
-    return 'Node()';
+    if (this._span) return `SpanNode(${JSON.stringify(this._span)})`;
+    return 'SpanNode()';
   }
 }
 
-/*
- * Some operations do not require the entire span object. This creates a tree given (parent id,
- * id) pairs.
- */
-class TreeBuilder {
+// In javascript, dict keys can't be objects
+function keyString(id, shared = false, endpoint) {
+  const sharedV = shared === true;
+  const endpointString = endpoint ? JSON.stringify(endpoint) : 'x';
+  return `${id}-${sharedV}-${endpointString}`;
+}
+
+class SpanNodeBuilder {
   constructor(params) {
-    const {traceId, debug = false} = params;
-    this._mergeFunction = (existing, update) => existing || update; // first non null
-    if (!traceId) throw new Error('traceId was undefined');
-    this._traceId = traceId;
+    const {debug = false} = params;
     this._debug = debug;
-    this._rootId = undefined;
-    this._rootNode = undefined;
-    this._entries = [];
-      // Nodes representing the trace tree
-    this._idToNode = {};
-      // Collect the parent-child relationships between all spans.
-    this._idToParent = {};
+    this._rootSpan = undefined;
+    this._keyToNode = {};
+    this._spanToParent = {};
   }
 
-  // Returns false after logging on debug if the value couldn't be added
-  addNode(parentId, id, value) {
-    if (parentId && parentId === id) {
-      if (this._debug) {
-        /* eslint-disable no-console */
-        console.log(`skipping circular dependency: traceId=${this._traceId}, spanId=${id}`);
-      }
-      return false;
+  /*
+   * We index spans by (id, shared, localEndpoint) before processing them. This latter fields
+   * (shared, endpoint) are important because in zipkin (specifically B3), a server can share
+   * (re-use) the same ID as its client. This impacts processing quite a bit when multiple servers
+   * share one span ID.
+   *
+   * In a Zipkin trace, a parent (client) and child (server) can share the same ID if in an
+   * RPC. If two different servers respond to the same client, the only way for us to tell which
+   * is which is by endpoint. Our goal is to retain full paths across multiple endpoints. Even
+   * though instrumentation should be configured in such a way that a client never sends the same
+   * span ID to multiple servers, it can happen. Accordingly, we index defensively including any
+   * endpoint data that might be available.
+   */
+  _index(span) {
+    let idKey;
+    let parentKey;
+    const shared = span.shared === true; // guards against undefined
+
+    if (shared) {
+      // we need to classify a shared span by its endpoint in case multiple servers respond to the
+      // same ID sent by the client.
+      idKey = keyString(span.id, true, span.localEndpoint);
+      // the parent of a server span is a client, which is not ambiguous for a given span ID.
+      parentKey = keyString(span.id);
+    } else {
+      idKey = keyString(span.id, shared);
+      if (span.parentId) parentKey = keyString(span.parentId);
     }
-    this._idToParent[id] = parentId;
-    this._entries.push({parentId, id, value});
-    return true;
+
+    this._spanToParent[idKey] = parentKey;
   }
 
-  _processNode(entry) {
-    let parentId = entry.parentId ? entry.parentId : this._idToParent[entry.id];
-    const id = entry.id;
-    const value = entry.value;
+  /**
+   * Processing is taking a span and placing it at the most appropriate place in the trace tree.
+   * For example, if this is a server span, it would be a different node, and a child of its client
+   * even if they share the same span ID.
+   *
+   * Processing is defensive of typical problems in span reporting, such as depth-first. For
+   * example, depth-first reporting implies you can see spans missing their parent. Hence, the
+   * result of processing all spans can be a virtual root node.
+   */
+  _process(span) {
+    const endpoint = span.localEndpoint;
+    const key = keyString(span.id, span.shared, span.localEndpoint);
+    const noEndpointKey = endpoint ? keyString(span.id, span.shared) : key;
 
-    if (!parentId) {
-      if (this._rootId) {
+    let parent;
+    if (span.shared === true) {
+      // Shared is a server span. It will very likely be on a different endpoint than the client.
+      // Clients are not ambiguous by ID, so we don't need to qualify by endpoint.
+      parent = keyString(span.id);
+    } else if (span.parentId) {
+      // We are not a root span, and not a shared server span. Proceed in most specific to least.
+
+      // We could be the child of a shared server span (ex a local (intermediate) span on the same
+      // endpoint). This is the most specific case, so we try this first.
+      parent = keyString(span.parentId, true, endpoint);
+      if (this._spanToParent[parent]) {
+        this._spanToParent[noEndpointKey] = parent;
+      } else {
+        // If there's no shared parent, fall back to normal case which is unqualified beyond ID.
+        parent = keyString(span.parentId);
+      }
+    } else { // we are root or don't know our parent
+      if (this._rootSpan) {
         if (this._debug) {
           const prefix = 'attributing span missing parent to root';
           /* eslint-disable no-console */
           console.log(
-            `${prefix}: traceId=${this._traceId}, rootSpanId=${this._rootId}, spanId=${id}`
+            `${prefix}: traceId=${span.traceId}, rootId=${this._rootSpan.span.id}, id=${span.id}`
           );
         }
-        parentId = this._rootId;
-        this._idToParent[id] = parentId;
-      } else {
-        this._rootId = id;
       }
     }
 
-    const node = new Node(value);
+    const node = new SpanNode(span);
     // special-case root, and attribute missing parents to it. In
     // other words, assume that the first root is the "real" root.
-    if (!parentId && !this._rootNode) {
-      this._rootNode = node;
-      this._rootId = id;
-    } else if (!parentId && this._rootId === id) {
-      this._rootNode.setValue(this._mergeFunction(this._rootNode.value, node.value));
+    if (!parent && !this._rootSpan) {
+      this._rootSpan = node;
+      delete this._spanToParent[noEndpointKey];
+    } else if (span.shared === true) {
+      // In the case of shared server span, we need to address it both ways, in case intermediate
+      // spans are lacking endpoint information.
+      this._keyToNode[key] = node;
+      this._keyToNode[noEndpointKey] = node;
     } else {
-      const previous = this._idToNode[id];
-      this._idToNode[id] = node;
-      if (previous) node.setValue(this._mergeFunction(previous.value, node.value));
+      this._keyToNode[noEndpointKey] = node;
     }
   }
 
-  // Builds a tree from calls to addNode, or returns an empty tree.
-  build() {
-    this._entries.forEach((n) => this._processNode(n));
-    if (!this._rootNode) {
-      if (this._debug) {
-        /* eslint-disable no-console */
-        console.log(`substituting dummy node for missing root span: traceId=${this._traceId}`);
-      }
-      this._rootNode = new Node();
+  /*
+   * Builds a trace tree by merging and processing the input or returns an empty tree.
+   *
+   * While the input can be incomplete or redundant, they must all be a part of the same trace
+   * (e.g. all share the same trace ID).
+   */
+  build(spans) {
+    if (spans.length === 0) throw new Error('spans were empty');
+
+    // In order to make a tree, we need clean data. This will merge any duplicates so that we
+    // don't have redundant leaves on the tree.
+    const cleaned = mergeV2ById(spans);
+    const length = cleaned.length;
+    const traceId = cleaned[0].traceId;
+
+    if (this._debug) {
+      /* eslint-disable no-console */
+      console.log(`building trace tree: traceId=${traceId}`);
     }
 
-    // Materialize the tree using parent - child relationships
-    Object.keys(this._idToParent).forEach(id => {
-      if (id === this._rootId) return; // don't re-process root
+    // Next, index all the spans so that we can understand any relationships.
+    for (let i = 0; i < length; i++) {
+      this._index(cleaned[i]);
+    }
 
-      const node = this._idToNode[id];
-      const parent = this._idToNode[this._idToParent[id]];
-      if (!parent) { // handle headless
-        this._rootNode.addChild(node);
+    // Now that we've index references to all spans, we can revise any parent-child relationships.
+    // Notably, by now, we can tell which is the root-most.
+    for (let i = 0; i < length; i++) {
+      this._process(cleaned[i]);
+    }
+
+    if (!this._rootSpan) {
+      if (this._debug) {
+        /* eslint-disable no-console */
+        console.log(`substituting dummy node for missing root span: traceId=${traceId}`);
+      }
+      this._rootSpan = new SpanNode();
+    }
+
+    // At this point, we have the most reliable parent-child relationships and can allocate spans
+    // corresponding the the best place in the trace tree.
+    Object.keys(this._spanToParent).forEach(key => {
+      const child = this._keyToNode[key];
+      const parent = this._keyToNode[this._spanToParent[key]];
+
+      if (!parent) { // Handle headless by attaching spans missing parents to root
+        this._rootSpan.addChild(child);
       } else {
-        parent.addChild(node);
+        parent.addChild(child);
       }
     });
-    return this._rootNode;
+    return this._rootSpan;
   }
 }
 
@@ -192,107 +260,40 @@ function ipsMatch(a, b) {
 
 // If any annotation has an IP with skew associated, adjust accordingly.
 function adjustTimestamps(span, skew) {
-  const spanTimestamp = span.timestamp;
+  if (!ipsMatch(skew.endpoint, span.localEndpoint)) return span;
 
-  let annotations;
-  let annotationTimestamp;
-  const annotationLength = span.annotations ? span.annotations.length : 0;
+  const result = Object.assign({}, span);
+  if (span.timestamp) result.timestamp = span.timestamp - skew.skew;
+  const annotationLength = span.annotations.length;
+  if (annotationLength > 0) result.annotations = [];
   for (let i = 0; i < annotationLength; i++) {
     const a = span.annotations[i];
-    if (!a.endpoint) continue;
-    if (ipsMatch(skew.endpoint, a.endpoint)) {
-      if (!annotations) annotations = span.annotations.slice(0);
-      if (spanTimestamp && a.timestamp === spanTimestamp) {
-        annotationTimestamp = a.timestamp;
-      }
-      annotations[i] = {timestamp: a.timestamp - skew.skew, value: a.value, endpoint: a.endpoint};
-    }
+    result.annotations[i] = {timestamp: a.timestamp - skew.skew, value: a.value};
   }
-  if (annotations) {
-    const result = Object.assign({}, span);
-    if (annotationTimestamp) {
-      result.timestamp = annotationTimestamp - skew.skew;
-    }
-    result.annotations = annotations;
-    result.annotations.sort((a, b) => a.timestamp - b.timestamp);
-    return result;
-  }
-  // Search for a local span on the skewed endpoint
-  if (!spanTimestamp) return span; // We can't adjust something lacking a timestamp
-  const binaryAnnotations = span.binaryAnnotations || [];
-  for (let i = 0; i < binaryAnnotations.length; i++) {
-    const b = binaryAnnotations[i];
-    if (!b.endpoint) continue;
-    if (b.key === 'lc' && ipsMatch(skew.endpoint, b.endpoint)) {
-      const result = Object.assign({}, span);
-      result.timestamp = spanTimestamp - skew.skew;
-      return result;
-    }
-  }
-  return span;
+  return result;
 }
 
-function oneWaySkew(serverRecv, clientSend) {
-  const latency = serverRecv.timestamp - clientSend.timestamp;
-  // the only way there is skew is when the client appears to be after the server
-  if (latency > 0) return undefined;
-  // We can't currently do better than push the client and server apart by minimum duration (1)
-  return new ClockSkew({endpoint: serverRecv.endpoint, skew: latency - 1});
-}
+/* Uses span kind to determine if there's clock skew. */
+function getClockSkew(node) {
+  const parent = node.parent ? node.parent.span : undefined;
+  const child = node.span;
+  if (!parent) return undefined;
 
-// Uses client/server annotations to determine if there's clock skew.
-function getClockSkew(parent, span) {
-  let clientSend;
-  let serverRecv;
-  let serverSend;
-  let clientRecv;
-
-  (span.annotations || []).forEach((a) => {
-    switch (a.value) {
-      case 'cs':
-        clientSend = a;
-        break;
-      case 'sr':
-        serverRecv = a;
-        break;
-      case 'ss':
-        serverSend = a;
-        break;
-      case 'cr':
-        clientRecv = a;
-        break;
-      default:
-    }
-  });
-
-  // This may be a single-host span. Look for the parent
-  if (serverRecv && !clientSend && parent) {
-    (parent.annotations || []).forEach((a) => {
-      switch (a.value) {
-        case 'cs':
-          clientSend = a;
-          break;
-        case 'cr':
-          clientRecv = a;
-          break;
-        default:
-      }
-    });
-  }
+  // skew is only detectable client to server
+  if (parent.kind !== 'CLIENT' || child.kind !== 'SERVER') return undefined;
 
   let oneWay = false;
-  if (!clientSend || !serverRecv) {
-    return undefined;
-  } else if (!serverSend || !clientRecv) {
-    oneWay = true;
-  }
+  const clientTimestamp = parent.timestamp;
+  const serverTimestamp = child.timestamp;
+  if (!clientTimestamp || !serverTimestamp) return undefined;
 
-  let server = serverRecv.endpoint;
-  if (!server && !oneWay) server = serverSend.endpoint;
+  const clientDuration = parent.duration;
+  const serverDuration = child.duration;
+  if (!clientDuration || !serverDuration) oneWay = true;
+
+  const server = child.localEndpoint;
   if (!server) return undefined;
-
-  let client = clientSend.endpoint;
-  if (!client && !oneWay) client = clientRecv.endpoint;
+  const client = parent.localEndpoint;
   if (!client) return undefined;
 
   // There's no skew if the RPC is going to itself
@@ -300,81 +301,46 @@ function getClockSkew(parent, span) {
 
   let latency;
   if (oneWay) {
-    return oneWaySkew(serverRecv, clientSend);
+    latency = serverTimestamp - clientTimestamp;
+    // the only way there is skew is when the client appears to be after the server
+    if (latency > 0) return undefined;
+    // We can't currently do better than push the client and server apart by minimum duration (1)
+    return new ClockSkew({endpoint: server, skew: latency - 1});
   } else {
-    const clientDuration = clientRecv.timestamp - clientSend.timestamp;
-    const serverDuration = serverSend.timestamp - serverRecv.timestamp;
-    // In best case, we assume latency is half the difference between the client and server
-    // duration.
-    //
-    // If the server duration is longer than client, we can't do that: so we use the same approach
-    // as one-way.
+    // If the client finished before the server (async), we still know the server must have happened
+    // after the client. So, push 1us.
     if (clientDuration < serverDuration) {
-      return oneWaySkew(serverRecv, clientSend);
+      return new ClockSkew({endpoint: server, skew: serverTimestamp - clientTimestamp - 1});
     }
 
+    // We assume latency is half the difference between the client and server duration.
     latency = (clientDuration - serverDuration) / 2;
+
     // We can't see skew when send happens before receive
     if (latency < 0) return undefined;
 
-    const skew = serverRecv.timestamp - latency - clientSend.timestamp;
-    if (skew !== 0) {
-      return new ClockSkew({endpoint: server, skew});
-    }
+    const skew = serverTimestamp - latency - clientTimestamp;
+    if (skew !== 0) return new ClockSkew({endpoint: server, skew});
   }
-
   return undefined;
 }
 
-function isSingleHostSpan(span) {
-  const annotations = span.annotations || [];
-  const binaryAnnotations = span.binaryAnnotations || [];
-
-  // using normal for loop as it allows us to return out of the function
-  let endpoint;
-  for (let i = 0; i < annotations.length; i++) {
-    const annotation = annotations[i];
-    if (!endpoint) {
-      endpoint = annotation.endpoint;
-      continue;
-    }
-    if (!ipsMatch(endpoint, annotation.endpoint)) {
-      return false; // there's a mix of endpoints in this span
-    }
-  }
-  for (let i = 0; i < binaryAnnotations.length; i++) {
-    const binaryAnnotation = binaryAnnotations[i];
-    if (binaryAnnotation.type || binaryAnnotation.value === true) continue;
-    if (!endpoint) {
-      endpoint = binaryAnnotation.endpoint;
-      continue;
-    }
-    if (!ipsMatch(endpoint, binaryAnnotation.endpoint)) {
-      return false; // there's a mix of endpoints in this span
-    }
-  }
-  return true;
-}
-
 /*
- * Recursively adjust the timestamps on the span tree. Root span is the reference point, all
+ * Recursively adjust the timestamps on the span trace. Root span is the reference point, all
  * children's timestamps gets adjusted based on that span's timestamps.
  */
 function adjust(node, skewFromParent) {
   // adjust skew for the endpoint brought over from the parent span
   if (skewFromParent) {
-    node.setValue(adjustTimestamps(node.value, skewFromParent));
+    node.setSpan(adjustTimestamps(node.span, skewFromParent));
   }
 
-  // An RPC span can share an ID (have the same ID) or be split across parent and child
-  // We only look for skew between a client and the server
-  const parentVal = node.parent ? node.parent.value : undefined;
-  let skew = getClockSkew(parentVal, node.value);
-
+  // Is there any skew in the current span?
+  let skew = getClockSkew(node);
   if (skew) {
     // the current span's skew may be a different endpoint than its parent, so adjust again.
-    node.setValue(adjustTimestamps(node.value, skew));
-  } else if (skewFromParent && isSingleHostSpan(node.value)) {
+    node.setSpan(adjustTimestamps(node.span, skew));
+  } else if (skewFromParent) {
     // Assumes we are on the same host: propagate skew from our parent
     skew = skewFromParent;
   }
@@ -385,54 +351,42 @@ function adjust(node, skewFromParent) {
 function correctForClockSkew(spans, debug = false) {
   if (spans.length === 0) return spans;
 
-  const traceId = spans[0].traceId;
-  let rootSpanId;
-  const treeBuilder = new TreeBuilder({traceId, debug});
+  const trace = new SpanNodeBuilder({debug}).build(spans);
 
-  let dataError = false;
-  spans.forEach(next => {
-    if (!next.parentId) {
-      if (rootSpanId) {
-        if (debug) {
-          const prefix = 'skipping redundant root span';
-          /* eslint-disable no-console */
-          console.log(
-            `${prefix}: traceId=${traceId}, rootSpanId=${rootSpanId}, spanId=${next.id}`
-          );
-        }
-        dataError = true;
-        return;
-      }
-      rootSpanId = next.id;
-    }
-    if (!treeBuilder.addNode(next.parentId, next.id, next)) {
-      dataError = true;
-    }
-  });
-
-  if (!rootSpanId) {
+  if (!trace.span) {
     if (debug) {
-      console.log(`skipping clock skew adjustment due to missing root span: traceId=${traceId}`);
-    }
-    return spans;
-  } else if (dataError) {
-    if (debug) {
-      console.log(`skipping clock skew adjustment due to data errors: traceId=${traceId}`);
+      /* eslint-disable no-console */
+      console.log(
+        `skipping clock skew adjustment due to missing root span: traceId=${spans[0].traceId}`
+      );
     }
     return spans;
   }
 
-  const tree = treeBuilder.build();
-  adjust(tree);
-  return tree.traverse();
+  const childrenOfRoot = trace.children;
+  for (let i = 0; i < childrenOfRoot.length; i++) {
+    const next = childrenOfRoot[i].span;
+    if (next.parentId || next.shared === true) continue;
+
+    const traceId = next.traceId;
+    const spanId = next.id;
+    const rootSpanId = trace.span.id;
+    /* eslint-disable no-console */
+    console.log(
+      `skipping redundant root span: traceId=${traceId}, rootSpanId=${rootSpanId}, spanId=${spanId}`
+    );
+    return spans;
+  }
+
+  adjust(trace);
+  return trace.traverse();
 }
 
 
 module.exports = {
-  Node,
-  TreeBuilder,
+  SpanNode,
+  SpanNodeBuilder,
   ipsMatch, // for testing
-  isSingleHostSpan, // for testing
   getClockSkew, // for testing
   correctForClockSkew
 };

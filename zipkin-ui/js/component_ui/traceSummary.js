@@ -2,13 +2,11 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-import {Constants} from './traceConstants';
-
 function endpointsForSpan(span) {
-  return _.union(
-    (span.annotations || []).map(a => a.endpoint),
-    (span.binaryAnnotations || []).map(a => a.endpoint)
-  ).filter(h => h != null);
+  const result = [];
+  if (span.localEndpoint) result.push(span.localEndpoint);
+  if (span.remoteEndpoint) result.push(span.remoteEndpoint);
+  return result;
 }
 
 // What's the total duration of the spans in this trace?
@@ -35,7 +33,7 @@ export function traceDuration(spans) {
   }
 }
 
-export function getServiceNames(span) {
+function getServiceNames(span) {
   return _(endpointsForSpan(span))
       .map((ep) => ep.serviceName)
       .filter((name) => name != null && name !== '')
@@ -58,17 +56,17 @@ export function getGroupedTimestamps(spans) {
   }))).value();
 }
 
-// returns 'critical' if one of the spans has an ERROR binary annotation, else
+// returns 'critical' if one of the spans has an error tag, else
 // returns 'transient' if one of the spans has an ERROR annotation, else
 // returns 'none'
 export function getTraceErrorType(spans) {
   let traceType = 'none';
   for (let i = 0; i < spans.length; i++) {
     const span = spans[i];
-    if (_(span.binaryAnnotations || []).findIndex(ann => ann.key === Constants.ERROR) !== -1) {
+    if (span.tags.error !== undefined) { // empty error tag is ok
       return 'critical';
     } else if (traceType === 'none' &&
-               _(span.annotations || []).findIndex(ann => ann.value === Constants.ERROR) !== -1) {
+               _(span.annotations).findIndex(ann => ann.value === 'error') !== -1) {
       traceType = 'transient';
     }
   }

@@ -2,9 +2,9 @@ import _ from 'lodash';
 import {
   traceSummary,
   getServiceNameAndSpanCounts,
-  getServiceNames,
   mkDurationStr
 } from './traceSummary';
+import {SPAN_V1} from '../spanConverter';
 import {Constants, ConstantNames} from './traceConstants';
 
 export function getRootSpans(spans) {
@@ -14,6 +14,20 @@ export function getRootSpans(spans) {
 
 function compareSpan(s1, s2) {
   return (s1.timestamp || 0) - (s2.timestamp || 0);
+}
+
+function endpointsForSpan(span) {
+  return _.union(
+    (span.annotations || []).map(a => a.endpoint),
+    (span.binaryAnnotations || []).map(a => a.endpoint)
+  ).filter(h => h != null);
+}
+
+function getServiceNames(span) {
+  return _(endpointsForSpan(span))
+      .map((ep) => ep.serviceName)
+      .filter((name) => name != null && name !== '')
+      .uniq().value();
 }
 
 function childrenToList(entry) {
@@ -154,8 +168,9 @@ export function getServiceName(span) { // export for testing
   return allServiceNames.length === 0 ? null : allServiceNames[0];
 }
 
-export default function traceToMustache(trace, logsUrl = undefined) {
-  const t = traceSummary(trace);
+export default function traceToMustache(v2Trace, logsUrl = undefined) {
+  const trace = SPAN_V1.convertTrace(v2Trace);
+  const t = traceSummary(v2Trace);
   const traceId = t.traceId;
   const duration = t.duration;
   const serviceNameAndSpanCounts = getServiceNameAndSpanCounts(t.groupedTimestamps);

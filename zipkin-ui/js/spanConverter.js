@@ -1,4 +1,3 @@
-import {correctForClockSkew} from './skew';
 import {compare, normalizeTraceId} from './spanCleaner';
 
 function toV1Endpoint(endpoint) {
@@ -429,8 +428,7 @@ module.exports.SPAN_V1 = {
   // Temporary convenience function until functionality is ported to v2
   convertTrace(v2Trace) {
     const v1Trace = v2Trace.map(convertV1);
-    const mergedTrace = mergeById(v1Trace);
-    return correctForClockSkew(mergedTrace);
+    return mergeById(v1Trace);
   },
   convert(v2Span) {
     return convertV1(v2Span);

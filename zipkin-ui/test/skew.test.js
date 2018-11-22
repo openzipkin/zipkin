@@ -1,43 +1,31 @@
 const {
-  Node,
-  TreeBuilder,
+  SpanNode,
+  SpanNodeBuilder,
   ipsMatch,
-  getClockSkew,
-  isSingleHostSpan,
-  correctForClockSkew
+  getClockSkew
 } = require('../js/skew');
+import {clean, mergeV2ById} from '../js/spanCleaner';
 const should = require('chai').should();
 
-// originally zipkin2.internal.NodeTest.java
-describe('Node', () => {
-  it('should construct without a value', () => {
-    const value = {traceId: '1', id: '1'};
-    const node = new Node(value);
+// originally zipkin2.internal.SpanNodeTest.java
+describe('SpanNode', () => {
+  it('should construct without a span', () => {
+    const span = {traceId: '1', id: '1'};
+    const node = new SpanNode(span);
 
-    expect(node.value).to.equal(value);
+    expect(node.span).to.equal(span);
   });
 
-  it('should construct without a value', () => {
-    const node = new Node();
+  it('should construct without a span', () => {
+    const node = new SpanNode();
 
-    should.equal(node.value, undefined);
+    should.equal(node.span, undefined);
   });
 
-  it('should not allow setting an undefined value', () => {
-    const node = new Node();
+  it('should not allow setting an undefined span', () => {
+    const node = new SpanNode();
 
-    expect(() => node.setValue()).to.throw('newValue was undefined');
-  });
-
-  it('should not allow creating a cycle', () => {
-    const fake = new Node();
-
-    expect(() => fake.addChild(fake)).to.throw('circular dependency on Node()');
-
-    const node = new Node({traceId: '1', id: '1'});
-
-    expect(() => node.addChild(node))
-      .to.throw('circular dependency on Node({"traceId":"1","id":"1"})');
+    expect(() => node.setSpan()).to.throw('span was undefined');
   });
 
   /*
@@ -50,54 +38,52 @@ describe('Node', () => {
    *     e f g     h
    */
   it('should traverse breadth first', () => {
-    const a = new Node('a');
-    const b = new Node('b');
-    const c = new Node('c');
-    const d = new Node('d');
+    const a = new SpanNode({traceId: '1', id: 'a'});
+    const b = new SpanNode({traceId: '1', id: 'b'});
+    const c = new SpanNode({traceId: '1', id: 'c'});
+    const d = new SpanNode({traceId: '1', id: 'd'});
     // root(a) has children b, c, d
     a.addChild(b);
     a.addChild(c);
     a.addChild(d);
-    const e = new Node('e');
-    const f = new Node('f');
-    const g = new Node('g');
+    const e = new SpanNode({traceId: '1', id: 'e'});
+    const f = new SpanNode({traceId: '1', id: 'f'});
+    const g = new SpanNode({traceId: '1', id: '1'});
     // child(b) has children e, f, g
     b.addChild(e);
     b.addChild(f);
     b.addChild(g);
-    const h = new Node('h');
+    const h = new SpanNode({traceId: '1', id: '2'});
     // f has no children
     // child(g) has child h
     g.addChild(h);
 
-    expect(a.traverse()).to.deep.equal([
-      'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'
+    expect(a.traverse().map(s => s.id)).to.deep.equal([
+      'a', 'b', 'c', 'd', 'e', 'f', '1', '2'
     ]);
   });
 });
 
-// originally zipkin2.internal.NodeTest.java
-describe('TreeBuilder', () => {
+// originally zipkin2.internal.SpanNodeTest.java
+describe('SpanNodeBuilder', () => {
   // Makes sure that the trace tree is constructed based on parent-child, not by parameter order.
   it('should construct a trace tree', () => {
-    const trace = [
+    const trace = mergeV2ById([
       {traceId: 'a', id: 'a'},
       {traceId: 'a', parentId: 'a', id: 'b'},
       {traceId: 'a', parentId: 'b', id: 'c'},
-    ];
-
-    const treeBuilder = new TreeBuilder({traceId: 'a'});
+      {traceId: 'a', parentId: 'c', id: 'd'}
+    ]);
 
     // TRACE is sorted with root span first, lets reverse them to make
     // sure the trace is stitched together by id.
-    trace.slice(0).reverse().forEach((span) => treeBuilder.addNode(span.parentId, span.id, span));
+    const root = new SpanNodeBuilder({}).build(trace.slice(0).reverse());
 
-    const root = treeBuilder.build();
-    expect(root.value).to.equal(trace[0]);
-    expect(root.children.map(n => n.value)).to.deep.equal([trace[1]]);
+    expect(root.span).to.deep.equal(trace[0]);
+    expect(root.children.map(n => n.span)).to.deep.equal([trace[1]]);
 
     const child = root.children[0];
-    expect(child.children.map(n => n.value)).to.deep.equal([trace[2]]);
+    expect(child.children.map(n => n.span)).to.deep.equal([trace[2]]);
   });
 
   // input should be merged, but this ensures we are fine anyway
@@ -108,103 +94,57 @@ describe('TreeBuilder', () => {
       {traceId: 'a', id: 'a'}
     ];
 
-    const treeBuilder = new TreeBuilder({traceId: 'a'});
-    trace.forEach((span) => treeBuilder.addNode(span.parentId, span.id, span));
-    const root = treeBuilder.build();
+    const root = new SpanNodeBuilder({}).build(trace);
 
-    expect(root.value).to.equal(trace[0]);
+    expect(root.span).to.deep.equal(clean(trace[0]));
     expect(root.children.length).to.equal(0);
   });
 
   it('should allocate spans missing parents to root', () => {
-    const trace = [
+    const trace = mergeV2ById([
       {traceId: 'a', id: 'b'},
       {traceId: 'a', parentId: 'b', id: 'c'},
       {traceId: 'a', parentId: 'b', id: 'd'},
       {traceId: 'a', id: 'e'},
       {traceId: 'a', id: 'f'}
-    ];
+    ]);
 
-    const treeBuilder = new TreeBuilder({traceId: 'a'});
-    trace.forEach((span) => treeBuilder.addNode(span.parentId, span.id, span));
-    const root = treeBuilder.build();
+    const root = new SpanNodeBuilder({}).build(trace);
 
     expect(root.traverse()).to.deep.equal(trace);
-    expect(root.children.map(n => n.value)).to.deep.equal(trace.slice(1));
+    expect(root.span.id).to.eql('000000000000000f');
+    expect(root.children.map(n => n.span.id)).to.deep.equal(
+      ['000000000000000e', '000000000000000b']
+    );
   });
 
   // spans are often reported depth-first, so it is possible to not have a root yet
   it('should construct a trace missing a root span', () => {
-    const trace = [
+    const trace = mergeV2ById([
       {traceId: 'a', parentId: 'a', id: 'b'},
       {traceId: 'a', parentId: 'a', id: 'c'},
       {traceId: 'a', parentId: 'a', id: 'd'}
-    ];
+    ]);
 
-    const treeBuilder = new TreeBuilder({traceId: 'a'});
-    trace.forEach((span) => treeBuilder.addNode(span.parentId, span.id, span));
-    const root = treeBuilder.build();
+    const root = new SpanNodeBuilder({}).build(trace);
 
-    should.equal(root.value, undefined);
+    should.equal(root.span, undefined);
     expect(root.traverse()).to.deep.equal(trace);
   });
 
   // input should be well formed, but this ensures we are fine anyway
   it('should skip on cycle', () => {
-    const treeBuilder = new TreeBuilder({traceId: 'a'});
-    expect(treeBuilder.addNode('b', 'b', {traceId: 'a', parentId: 'b', id: 'b'}))
-      .to.equal(false);
+    const trace = [
+      {traceId: 'a', parentId: 'b', id: 'b'},
+    ];
+
+    const root = new SpanNodeBuilder({}).build(trace);
+
+    expect(root.span).to.deep.equal(
+          {traceId: '000000000000000a', id: '000000000000000b', annotations: [], tags: {}});
+    expect(root.children.length).to.equal(0);
   });
 });
-
-const networkLatency = 10;
-
-function createRootSpan(endpoint, begin, duration) {
-  return {
-    traceId: '1',
-    id: '1',
-    timestamp: begin,
-    annotations: [
-      {timestamp: begin, value: 'sr', endpoint},
-      {timestamp: begin + duration, value: 'ss', endpoint}
-    ]
-  };
-}
-
-function childSpan(parent, to, begin, duration, skew) {
-  const spanId = parent.id + 1;
-  const from = parent.annotations[0].endpoint;
-  const res = {
-    traceId: parent.traceId,
-    parentId: parent.id,
-    id: spanId,
-    timestamp: begin,
-    annotations: [
-      {timestamp: begin, value: 'cs', endpoint: from},
-      {timestamp: begin + skew + networkLatency, value: 'sr', endpoint: to},
-      {timestamp: begin + skew + duration - networkLatency, value: 'ss', endpoint: to},
-      {timestamp: begin + duration, value: 'cr', endpoint: from}
-    ]
-  };
-  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
-  return res;
-}
-
-function localSpan(parent, endpoint, begin, duration) {
-  const spanId = parent.id + 1;
-  return {
-    traceId: parent.traceId,
-    parentId: parent.id,
-    id: spanId,
-    timestamp: begin,
-    duration,
-    binaryAnnotations: [{key: 'lc', value: '', endpoint}]
-  };
-}
-
-function annotationTimestamp(span, annotation) {
-  return span.annotations.find(a => a.value === annotation).timestamp;
-}
 
 // originally zipkin2.internal.CorrectForClockSkewTest.java
 describe('correctForClockSkew', () => {
@@ -219,12 +159,6 @@ describe('correctForClockSkew', () => {
     serviceName: 'backend',
     ipv4: '192.168.99.101',
     port: 9000
-  };
-
-  const db = {
-    serviceName: 'db',
-    ipv4: '2001:db8::c001',
-    port: 3306
   };
 
   const ipv6 = {ipv6: '2001:db8::c001'};
@@ -273,17 +207,54 @@ describe('correctForClockSkew', () => {
    * adjusting it!)
    */
   it('clock skew should only correct across different hosts', () => {
-    const skewedSameHost = {
+    const parent = new SpanNode(clean({
       traceId: '1',
-      id: '1',
-      annotations: [
-        {timestamp: 20, value: 'cs', endpoint: frontend},
-        {timestamp: 10 /* skew */, value: 'sr', endpoint: frontend},
-        {timestamp: 20, value: 'ss', endpoint: frontend},
-        {timestamp: 40, value: 'cr', endpoint: frontend}
-      ]
-    };
-    should.equal(getClockSkew(undefined, skewedSameHost), undefined);
+      parentId: '2',
+      id: '3',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      timestamp: 20,
+      duration: 20
+    }));
+    const child = new SpanNode(clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'SERVER',
+      localEndpoint: frontend,
+      timestamp: 10, // skew
+      duration: 10,
+      shared: true
+    }));
+    parent.addChild(child);
+
+    should.equal(getClockSkew(child), undefined);
+  });
+
+  it('clock skew should be attributed to the server endpoint', () => {
+    const parent = new SpanNode(clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      timestamp: 20,
+      duration: 20
+    }));
+    const child = new SpanNode(clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      timestamp: 10, // skew
+      duration: 10,
+      shared: true
+    }));
+    parent.addChild(child);
+
+    // Skew correction pushes the server side forward, so the skew endpoint is the server
+    expect(getClockSkew(child).endpoint).to.deep.equal(backend);
   });
 
   /*
@@ -291,332 +262,90 @@ describe('correctForClockSkew', () => {
    * duration and the client duration.
    */
   it('skew includes half the difference of client and server duration', () => {
-    const cs = {timestamp: 20, value: 'cs', endpoint: frontend};
-    const sr = {timestamp: 10 /* skew */, value: 'sr', endpoint: backend};
-    const ss = {timestamp: 20, value: 'ss', endpoint: backend};
-    const cr = {timestamp: 40, value: 'cr', endpoint: frontend};
-    const skewedRpc = {traceId: '1', id: '1', annotations: [cs, sr, ss, cr]};
+    const client = clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      timestamp: 20,
+      duration: 20
+    });
+    const server = clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      timestamp: 10, // skew
+      duration: 10,
+      shared: true
+    });
+    const parent = new SpanNode(client);
+    const child = new SpanNode(server);
+    parent.addChild(child);
 
-    const skew = getClockSkew(undefined, skewedRpc);
-
-    // Skew correction pushes the server side forward, so the skew endpoint is the server
-    expect(skew.endpoint).to.equal(sr.endpoint);
-
-    // client duration = 20, server duration = 10: center the server by splitting what's left
-    const clientDuration = cr.timestamp - cs.timestamp;
-    const serverDuration = ss.timestamp - sr.timestamp;
-    expect(skew.skew).to.equal(
-      sr.timestamp - cs.timestamp // how much sr is behind
-      - (clientDuration - serverDuration) / 2 // center the server by splitting what's left
+    expect(getClockSkew(child).skew).to.equal(
+      server.timestamp - client.timestamp // how much the server is behind
+      - (client.duration - server.duration) / 2 // center the server by splitting what's left
     );
-  });
-
-  it('corrects skew on single-host spans', () => {
-    const cs = {timestamp: 20, value: 'cs', endpoint: frontend};
-    const sr = {timestamp: 10 /* skew */, value: 'sr', endpoint: backend};
-    const ss = {timestamp: 20, value: 'ss', endpoint: backend};
-    const cr = {timestamp: 40, value: 'cr', endpoint: frontend};
-
-    const skewedRpc = {traceId: '1', id: '1', annotations: [cs, sr, ss, cr]};
-    const skewedClient = {traceId: '1', id: '1', annotations: [cs, cr]};
-    const skewedServer = {traceId: '1', id: '2', annotations: [sr, ss]};
-
-    expect(getClockSkew(skewedClient, skewedServer)).to.eql(getClockSkew(undefined, skewedRpc));
   });
 
   // Sets the server to 1us past the client
   it('skew on one-way spans assumes latency is at least 1us', () => {
-    const cs = {timestamp: 20, value: 'cs', endpoint: frontend};
-    const sr = {timestamp: 10 /* skew */, value: 'sr', endpoint: backend};
-    const skewedOneWay = {traceId: '1', id: '1', annotations: [cs, sr]};
+    const client = clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      timestamp: 20
+    });
+    const server = clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      timestamp: 10, // skew
+      shared: true
+    });
+    const parent = new SpanNode(client);
+    const child = new SpanNode(server);
+    parent.addChild(child);
 
-    const skew = getClockSkew(undefined, skewedOneWay);
-
-    expect(skew.skew).to.equal(
-      sr.timestamp - cs.timestamp // how much sr is behind
+    expect(getClockSkew(child).skew).to.equal(
+      server.timestamp - client.timestamp // how much server is behind
       - 1 // assume it takes at least 1us to get to the server
     );
   });
 
   // It is still impossible to reach the server before the client sends a request.
   it('skew on async server spans assumes latency is at least 1us', () => {
-    const cs = {timestamp: 20, value: 'cs', endpoint: frontend};
-    const sr = {timestamp: 10 /* skew */, value: 'sr', endpoint: backend};
-    const ss = {timestamp: 20, value: 'ss', endpoint: backend}; // server latency is double client
-    const cr = {timestamp: 25, value: 'cr', endpoint: frontend};
-    const skewedAsyncRpc = {traceId: '1', id: '1', annotations: [cs, sr, ss, cr]};
+    const client = clean({
+      traceId: '1',
+      id: '2',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      timestamp: 20,
+      duration: 5 // stops before server does
+    });
+    const server = clean({
+      traceId: '1',
+      id: '2',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      timestamp: 10, // skew
+      duration: 10,
+      shared: true
+    });
+    const parent = new SpanNode(client);
+    const child = new SpanNode(server);
+    parent.addChild(child);
 
-    const skew = getClockSkew(undefined, skewedAsyncRpc);
-
-    expect(skew.skew).to.equal(
-      sr.timestamp - cs.timestamp // how much sr is behind
+    expect(getClockSkew(child).skew).to.equal(
+      server.timestamp - client.timestamp // how much server is behind
       - 1 // assume it takes at least 1us to get to the server
     );
-  });
-
-  it('clock skew requires endpoints', () => {
-    const skewedButNoendpoints = {
-      traceId: '1',
-      id: '1',
-      annotations: [
-        {timestamp: 20, value: 'cs'},
-        {timestamp: 10 /* skew */, value: 'sr'},
-        {timestamp: 20, value: 'ss'},
-        {timestamp: 40, value: 'cr'}
-      ]
-    };
-    should.equal(getClockSkew(undefined, skewedButNoendpoints), undefined);
-  });
-
-  it('span with the mixed endpoints is not single-host', () => {
-    const span = {
-      traceId: '1',
-      id: '1',
-      annotations: [
-        {timestamp: 20, value: 'cs', endpoint: frontend},
-        {timestamp: 40, value: 'sr', endpoint: backend}
-      ]
-    };
-
-    expect(isSingleHostSpan(span)).to.equal(false);
-  });
-
-  it('span with the same endpoint is single-host', () => {
-    const span = {
-      traceId: '1',
-      id: '1',
-      annotations: [
-        {timestamp: 20, value: 'cs', endpoint: frontend},
-        {timestamp: 40, value: 'cr', endpoint: frontend}
-      ]
-    };
-
-    expect(isSingleHostSpan(span)).to.equal(true);
-  });
-
-  it('span with lc binary annotation is single-host', () => {
-    const span = {
-      traceId: '1',
-      id: '1',
-      binaryAnnotations: [{key: 'lc', value: '', endpoint: frontend}]
-    };
-
-    expect(isSingleHostSpan(span)).to.equal(true);
-  });
-
-  // Sets the server to 1us past the client
-  it('should correct a one-way RPC span', () => {
-    const trace = [
-      {
-        traceId: '1',
-        id: '1',
-        annotations: [
-          {timestamp: 20, value: 'cs', endpoint: frontend},
-          {timestamp: 10 /* skew */, value: 'sr', endpoint: backend}
-        ]
-      }
-    ];
-
-    const adjusted = correctForClockSkew(trace);
-
-    expect(adjusted.length).to.equal(1);
-    expect(adjusted[0].annotations).to.deep.equal([
-      {timestamp: 20, value: 'cs', endpoint: frontend},
-      {timestamp: 21 /* pushed 1us later */, value: 'sr', endpoint: backend}
-    ]);
-  });
-
-  it('should correct single-host one-way RPC spans', () => {
-    const trace = [
-      {
-        traceId: '1',
-        id: '1',
-        annotations: [{timestamp: 20, value: 'cs', endpoint: frontend}]
-      },
-      {
-        traceId: '1',
-        parentId: '1',
-        id: '2',
-        annotations: [{timestamp: 10 /* skew */, value: 'sr', endpoint: backend}]
-      }
-    ];
-
-    const adjusted = correctForClockSkew(trace);
-
-    expect(adjusted.length).to.equal(2);
-    expect(adjusted[0]).to.eql(trace[0]);
-    expect(adjusted[1].annotations).to.deep.equal([
-      {timestamp: 21 /* pushed 1us later */, value: 'sr', endpoint: backend}
-    ]);
-  });
-
-  function assertClockSkewIsCorrectlyApplied(skew) {
-    const rpcClientSendTs = 50;
-    const dbClientSendTimestamp = 60 + skew;
-
-    const rootDuration = 350;
-    const rpcDuration = 250;
-    const dbDuration = 40;
-
-    const rootSpan = createRootSpan(frontend, 0, rootDuration);
-    const rpcSpan = childSpan(rootSpan, backend, rpcClientSendTs, rpcDuration, skew);
-    const tierSpan = childSpan(rpcSpan, db, dbClientSendTimestamp, dbDuration, skew);
-
-    const adjustedSpans = correctForClockSkew([rootSpan, rpcSpan, tierSpan]);
-
-    const adjustedRpcSpan = adjustedSpans.find((s) => s.id === rpcSpan.id);
-    expect(annotationTimestamp(adjustedRpcSpan, 'sr')).to.equal(rpcClientSendTs + networkLatency);
-    expect(annotationTimestamp(adjustedRpcSpan, 'cs')).to.equal(adjustedRpcSpan.timestamp);
-    // ensure annotations are sorted after skew adjustment
-    expect(adjustedRpcSpan.annotations.map(a => a.value)).to.deep.equal(['cs', 'sr', 'ss', 'cr']);
-
-
-    const adjustedTierSpan = adjustedSpans.find((s) => s.id === tierSpan.id);
-    expect(annotationTimestamp(adjustedTierSpan, 'cs')).to.equal(adjustedTierSpan.timestamp);
-  }
-
-  it('should correct an rpc when server sends after client receive', () => {
-    assertClockSkewIsCorrectlyApplied(50000);
-  });
-
-  it('should correct an rpc when server sends after client send', () => {
-    assertClockSkewIsCorrectlyApplied(-50000);
-  });
-
-  it('should propagate skew to local spans', () => {
-    const rootSpan = createRootSpan(frontend, 0, 2000);
-    const skew = -50000;
-    const rpcSpan = childSpan(rootSpan, backend, networkLatency, 1000, skew);
-    const local = localSpan(rpcSpan, backend, rpcSpan.timestamp + 5, 200);
-    const local2 = localSpan(local, backend, local.timestamp + 10, 100);
-    const local3 = { // missing timestamp duration and even missing endpoint
-      traceId: local2.traceId,
-      parentId: local2.id,
-      id: local2.id + 1,
-      binaryAnnotations: [{key: 'lc', value: ''}]
-    };
-
-    const adjustedSpans = correctForClockSkew([rootSpan, rpcSpan, local, local2, local3]);
-
-    const adjustedLocal = adjustedSpans.find((s) => s.id === local.id);
-    expect(adjustedLocal.timestamp).to.equal(local.timestamp - skew);
-
-    const adjustedLocal2 = adjustedSpans.find((s) => s.id === local2.id);
-    expect(adjustedLocal2.timestamp).to.equal(local2.timestamp - skew);
-
-    const adjustedLocal3 = adjustedSpans.find((s) => s.id === local3.id);
-    expect(adjustedLocal3).to.equal(local3); // no change
-  });
-
-  // instrumentation errors can result in mixed spans
-  it('should not propagate skew past mixed endpoint local spans', () => {
-    const rootSpan = createRootSpan(frontend, 0, 2000);
-    const skew = -50000;
-    const rpcSpan = childSpan(rootSpan, backend, networkLatency, 1000, skew);
-    const mixed = {
-      traceId: rpcSpan.traceId,
-      parentId: rpcSpan.id,
-      id: rpcSpan.id + 1,
-      timestamp: rpcSpan.timestamp + 5,
-      duration: 200,
-      binaryAnnotations: [
-        {key: 'lc', value: '', endpoint: frontend},
-        {key: 'lc', value: '', endpoint: backend} // invalid!
-      ]
-    };
-    const childOfMixed = localSpan(mixed, backend, mixed.timestamp + 10, 100);
-
-    const adjustedSpans = correctForClockSkew([rootSpan, rpcSpan, mixed, childOfMixed]);
-
-    // mixed gets the skew correction
-    const adjustedMixed = adjustedSpans.find((s) => s.id === mixed.id);
-    expect(adjustedMixed.timestamp).to.equal(mixed.timestamp - skew);
-
-    // its child does not
-    const adjustedChildOfMixed = adjustedSpans.find((s) => s.id === childOfMixed.id);
-    expect(adjustedChildOfMixed).to.equal(childOfMixed);
-  });
-
-  // a v1 span missing RPC annotations and also missing an "lc" tag shouldn't be affected
-  it('should not propagate skew to unidentified spans', () => {
-    const rootSpan = createRootSpan(frontend, 0, 2000);
-    const skew = -50000;
-    const rpcSpan = childSpan(rootSpan, backend, networkLatency, 1000, skew);
-    const notRpcNotLc = {
-      traceId: rpcSpan.traceId,
-      parentId: rpcSpan.id,
-      id: rpcSpan.id + 1,
-      timestamp: rpcSpan.timestamp + 5,
-      duration: 200,
-      binaryAnnotations: [
-        {key: 'foo', value: 'bar', endpoint: frontend} // not lc
-      ]
-    };
-
-    const adjustedSpans = correctForClockSkew([rootSpan, rpcSpan, notRpcNotLc]);
-
-    // ambiguous span is left alone
-    const adjustedNotRpcNotLc = adjustedSpans.find((s) => s.id === notRpcNotLc.id);
-    expect(adjustedNotRpcNotLc).to.equal(notRpcNotLc);
-  });
-
-  it('should skip adjustment on missing root span', () => {
-    const trace = [
-      {
-        traceId: '1',
-        id: '2',
-        parentId: '1',
-        annotations: [
-          {timestamp: 20, value: 'cs', endpoint: frontend},
-          {timestamp: 10 /* skew */, value: 'sr', endpoint: backend}
-        ]
-      }
-    ];
-
-    const adjusted = correctForClockSkew(trace);
-
-    expect(adjusted).to.deep.equal(trace);
-  });
-
-  it('should skip adjustment on duplicate root span', () => {
-    const trace = [
-      {
-        traceId: '1',
-        id: '1',
-        annotations: [
-          {timestamp: 20, value: 'cs', endpoint: frontend},
-          {timestamp: 10 /* skew */, value: 'sr', endpoint: backend}
-        ]
-      },
-      {
-        traceId: '1',
-        id: '2', // missing parent ID
-        annotations: [
-          {timestamp: 20, value: 'cs', endpoint: frontend},
-          {timestamp: 10 /* skew */, value: 'sr', endpoint: backend}
-        ]
-      }
-    ];
-
-    const adjusted = correctForClockSkew(trace);
-
-    expect(adjusted).to.deep.equal(trace);
-  });
-
-  it('should skip adjustment on cycle', () => {
-    const trace = [
-      {
-        traceId: '1',
-        id: '1',
-        parentId: '1',
-        annotations: [
-          {timestamp: 20, value: 'cs', endpoint: frontend},
-          {timestamp: 10 /* skew */, value: 'sr', endpoint: backend}
-        ]
-      }
-    ];
-
-    const adjusted = correctForClockSkew(trace);
-    expect(adjusted).to.deep.equal(trace);
   });
 });

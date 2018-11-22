@@ -15,7 +15,7 @@ function isEndpoint(endpoint) {
 }
 
 // This cleans potential dirty v2 inputs, like normalizing IDs etc. It does not affect the input
-function clean(span) {
+export function clean(span) {
   const res = {
     traceId: normalizeTraceId(span.traceId)
   };

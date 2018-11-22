@@ -15,11 +15,11 @@ describe('convertSuccessResponse', () => {
       duration: 168.731,
       durationStr: '168.731ms',
       width: 100,
-      spanCount: 2, // TODO: correct: the span count is by ID when it should be by distinct span
+      spanCount: 3,
       serviceSummaries: [
+        // Where both sides are instrumented, this prefers server duration.
         {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
-        // TODO: correct. The backend server duration should be here not client!
-        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '111.121ms'}
+        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '26.326ms'}
       ],
       infoClass: ''
     };
@@ -41,13 +41,13 @@ describe('convertSuccessResponse', () => {
       duration: 168.731,
       durationStr: '168.731ms',
       width: 100,
-      spanCount: 2,
+      spanCount: 3,
       serviceSummaries: [
         {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
-        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '111.121ms'}
+        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '26.326ms'}
       ],
       infoClass: '',
-      servicePercentage: 65
+      servicePercentage: 15 // what percentage of total duration was in backend?
     };
 
     const rawResponse = [httpTrace];
@@ -109,13 +109,13 @@ describe('convertSuccessResponse', () => {
       duration: 99.411,
       durationStr: '99.411ms',
       width: 100,
-      spanCount: 3,
+      spanCount: 4,
       serviceSummaries: [
         {serviceName: 'servicea', spanCount: 2, maxSpanDurationStr: '99.411ms'},
-        {serviceName: 'serviceb', spanCount: 2, maxSpanDurationStr: '94.539ms'}
+        {serviceName: 'serviceb', spanCount: 2, maxSpanDurationStr: '93.577ms'}
       ],
       infoClass: '',
-      servicePercentage: 95
+      servicePercentage: 94
     };
 
     const rawResponse = [skewedTrace];
