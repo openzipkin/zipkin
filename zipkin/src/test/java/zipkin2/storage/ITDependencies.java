@@ -669,7 +669,7 @@ public abstract class ITDependencies {
       long midnightOfTrace = flooredTraceTimestamp(trace);
       DependencyLinker linker = midnightToLinker.get(midnightOfTrace);
       if (linker == null) midnightToLinker.put(midnightOfTrace, (linker = new DependencyLinker()));
-      linker.putTrace(trace.iterator());
+      linker.putTrace(trace);
     }
     Map<Long, List<DependencyLink>> result = new LinkedHashMap<>();
     midnightToLinker.forEach((midnight, linker) -> result.put(midnight, linker.link()));

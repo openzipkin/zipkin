@@ -47,59 +47,19 @@ public final class DependencyLinker {
     this.logger = logger;
   }
 
-  static final Node.MergeFunction<Span> MERGE_RPC = new MergeRpc();
-
-  static final class MergeRpc implements Node.MergeFunction<Span> {
-    @Override public Span merge(@Nullable Span left, @Nullable Span right) {
-      if (left == null) return right;
-      if (right == null) return left;
-      if (left.kind() == null) {
-        return copyError(left, right);
-      }
-      if (right.kind() == null) {
-        return copyError(right, left);
-      }
-      Span server = left.kind() == Kind.SERVER ? left : right;
-      Span client = left.equals(server) ? right : left;
-      if (server.remoteServiceName() != null) {
-        return copyError(client, server);
-      }
-      return copyError(client, server).toBuilder().remoteEndpoint(client.localEndpoint()).build();
-    }
-
-    static Span copyError(Span maybeError, Span result) {
-      String error = maybeError.tags().get("error");
-      if (error != null) {
-        return result.toBuilder().putTag("error", error).build();
-      }
-      return result;
-    }
-  }
-
   /**
    * @param spans spans where all spans have the same trace id
    */
-  public DependencyLinker putTrace(Iterator<Span> spans) {
-    if (!spans.hasNext()) return this;
-    Span first = spans.next();
-    if (logger.isLoggable(FINE)) logger.fine("linking trace " + first.traceId());
-
-    // Build a tree based on spanId and parentId values
-    Node.TreeBuilder<Span> builder = new Node.TreeBuilder<>(logger, MERGE_RPC, first.traceId());
-    builder.addNode(first.parentId(), first.id(), first);
-    while (spans.hasNext()) {
-      Span next = spans.next();
-      builder.addNode(next.parentId(), next.id(), next);
-    }
-
-    Node<Span> tree = builder.build();
+  public DependencyLinker putTrace(List<Span> spans) {
+    if (spans.isEmpty()) return this;
+    SpanNode traceTree = new SpanNode.Builder(logger).build(spans);
 
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
-    for (Iterator<Node<Span>> i = tree.traverse(); i.hasNext(); ) {
-      Node<Span> current = i.next();
-      Span currentSpan = current.value();
+    for (Iterator<SpanNode> i = traceTree.traverse(); i.hasNext(); ) {
+      SpanNode current = i.next();
+      Span currentSpan = current.span();
       if (currentSpan == null) {
-        logger.fine("skipping synthetic node for broken span tree");
+        logger.fine("skipping fake root node for broken span tree");
         continue;
       }
       if (logger.isLoggable(FINE)) {
@@ -107,8 +67,9 @@ public final class DependencyLinker {
       }
 
       Kind kind = currentSpan.kind();
+      // When processing links to a client span, we prefer the server's name. If we have no child
+      // spans, we proceed to use the name the client chose.
       if (Kind.CLIENT.equals(kind) && !current.children().isEmpty()) {
-        logger.fine("deferring link to rpc child span");
         continue;
       }
 
@@ -119,7 +80,7 @@ public final class DependencyLinker {
         if (serviceName != null && remoteServiceName != null) {
           kind = Kind.CLIENT;
         } else {
-          logger.fine("non-rpc span; skipping");
+          logger.fine("non remote span; skipping");
           continue;
         }
       }
@@ -131,9 +92,9 @@ public final class DependencyLinker {
         case CONSUMER:
           child = serviceName;
           parent = remoteServiceName;
-          if (current == tree) { // we are the root-most span.
+          if (current == traceTree) { // we are the root-most span.
             if (parent == null) {
-              logger.fine("root's peer is unknown; skipping");
+              logger.fine("root's client is unknown; skipping");
               continue;
             }
           }
@@ -158,33 +119,29 @@ public final class DependencyLinker {
         continue;
       }
 
-      if (logger.isLoggable(FINE) && parent == null) {
-        logger.fine("cannot determine parent, looking for first server ancestor");
-      }
-
-      Span rpcAncestor = findRpcAncestor(current);
-      String rpcAncestorName;
-      if (rpcAncestor != null && (rpcAncestorName = rpcAncestor.localServiceName()) != null) {
+      // Local spans may be between the current node and its remote parent
+      Span remoteAncestor = firstRemoteAncestor(current);
+      String remoteAncestorName;
+      if (remoteAncestor != null && (remoteAncestorName = remoteAncestor.localServiceName()) != null) {
         // Some users accidentally put the remote service name on client annotations.
         // Check for this and backfill a link from the nearest remote to that service as necessary.
-        if (kind == Kind.CLIENT && serviceName != null && !rpcAncestorName.equals(serviceName)) {
+        if (kind == Kind.CLIENT && serviceName != null && !remoteAncestorName.equals(serviceName)) {
           logger.fine("detected missing link to client span");
-          addLink(rpcAncestorName, serviceName, false); // we don't know if there's an error here
+          addLink(remoteAncestorName, serviceName, false); // we don't know if there's an error here
         }
 
-        // Local spans may be between the current node and its remote parent
-        if (parent == null) parent = rpcAncestorName;
+        if (kind == Kind.SERVER || parent == null) parent = remoteAncestorName;
 
         // When an RPC is split between spans, we skip the child (server side). If our parent is a
         // client, we need to check it for errors.
-        if (!isError && Kind.CLIENT.equals(rpcAncestor.kind()) &&
-          currentSpan.parentId() != null && currentSpan.parentId().equals(rpcAncestor.id())) {
-          isError = rpcAncestor.tags().containsKey("error");
+        if (!isError && Kind.CLIENT.equals(remoteAncestor.kind()) &&
+          currentSpan.parentId() != null && currentSpan.parentId().equals(remoteAncestor.id())) {
+          isError = remoteAncestor.tags().containsKey("error");
         }
       }
 
       if (parent == null || child == null) {
-        logger.fine("cannot find server ancestor; skipping");
+        logger.fine("cannot find remote ancestor; skipping");
         continue;
       }
 
@@ -193,14 +150,14 @@ public final class DependencyLinker {
     return this;
   }
 
-  Span findRpcAncestor(Node<Span> current) {
-    Node<Span> ancestor = current.parent();
+  Span firstRemoteAncestor(SpanNode current) {
+    SpanNode ancestor = current.parent();
     while (ancestor != null) {
-      if (logger.isLoggable(FINE)) {
-        logger.fine("processing ancestor " + ancestor.value());
+      Span maybeRemote = ancestor.span();
+      if (maybeRemote != null && maybeRemote.kind() != null) {
+        if (logger.isLoggable(FINE)) logger.fine("found remote ancestor " + maybeRemote);
+        return maybeRemote;
       }
-      Span maybeRemote = ancestor.value();
-      if (maybeRemote != null && maybeRemote.kind() != null) return maybeRemote;
       ancestor = ancestor.parent();
     }
     return null;
