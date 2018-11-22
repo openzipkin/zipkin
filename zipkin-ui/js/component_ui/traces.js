@@ -22,7 +22,6 @@ export default component(function traces() {
   };
 
   this.after('initialize', function() {
-
     this.$traces = this.$node.find('.trace');
     this.$traces.each(function() {
       const $this = $(this);
