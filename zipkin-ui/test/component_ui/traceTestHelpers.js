@@ -1,3 +1,11 @@
+export const frontend = {
+  serviceName: 'frontend',
+  ipv4: '172.17.0.13'
+};
+export const backend = {
+  serviceName: 'backend',
+  ipv4: '172.17.0.9'
+};
 export const httpTrace = [
   {
     traceId: 'bb1f0e21882325b8',
@@ -7,10 +15,7 @@ export const httpTrace = [
     name: 'get',
     timestamp: 1541138169297572,
     duration: 111121,
-    localEndpoint: {
-      serviceName: 'frontend',
-      ipv4: '172.17.0.13'
-    },
+    localEndpoint: frontend,
     annotations: [
       {value: 'ws', timestamp: 1541138169337695},
       {value: 'wr', timestamp: 1541138169368570}
@@ -27,10 +32,7 @@ export const httpTrace = [
     name: 'get /',
     timestamp: 1541138169255688,
     duration: 168731,
-    localEndpoint: {
-      serviceName: 'frontend',
-      ipv4: '172.17.0.13'
-    },
+    localEndpoint: frontend,
     remoteEndpoint: {
       ipv6: '110.170.201.178',
       port: 63678
@@ -50,10 +52,7 @@ export const httpTrace = [
     name: 'get /api',
     timestamp: 1541138169377997,
     duration: 26326,
-    localEndpoint: {
-      serviceName: 'backend',
-      ipv4: '172.17.0.9'
-    },
+    localEndpoint: backend,
     remoteEndpoint: {
       ipv4: '172.17.0.13',
       port: 63679
@@ -73,10 +72,7 @@ export const errorTrace = [{
   id: '1e223ff1f80f1c69',
   timestamp: 1541138169377997,
   duration: 17,
-  localEndpoint: {
-    serviceName: 'backend',
-    ipv4: '172.17.0.9'
-  },
+  localEndpoint: backend,
   tags: {error: 'request failed'}
 }];
 
@@ -118,8 +114,7 @@ export const skewedTrace = [
     localEndpoint: {
       serviceName: 'servicea',
       ipv4: '127.0.0.0'
-    },
-    shared: true
+    }
   },
   {
     traceId: '1e223ff1f80f1c69',
@@ -135,40 +130,6 @@ export const skewedTrace = [
     }
   }
 ];
-
-export function endpoint(ipv4, port, serviceName) {
-  return {ipv4, port, serviceName};
-}
-
-export function annotation(timestamp, value, ep) {
-  return {timestamp, value, endpoint: ep};
-}
-
-export function binaryAnnotation(key, value, ep) {
-  return {key, value, endpoint: ep};
-}
-
-export function span(traceId,
-                     name,
-                     id,
-                     parentId = null,
-                     timestamp = null,
-                     duration = null,
-                     annotations = [],
-                     binaryAnnotations = [],
-                     debug = false) {
-  return {
-    traceId,
-    name,
-    id,
-    parentId,
-    timestamp,
-    duration,
-    annotations,
-    binaryAnnotations,
-    debug
-  };
-}
 
 export function traceDetailSpan(id) {
   const expanderText = [];

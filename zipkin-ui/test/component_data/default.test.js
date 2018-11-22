@@ -15,9 +15,10 @@ describe('convertSuccessResponse', () => {
       duration: 168.731,
       durationStr: '168.731ms',
       width: 100,
-      spanCount: 2,
+      spanCount: 2, // TODO: correct: the span count is by ID when it should be by distinct span
       serviceSummaries: [
         {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
+        // TODO: correct. The backend server duration should be here not client!
         {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '111.121ms'}
       ],
       infoClass: ''

@@ -3,7 +3,6 @@ import {
   traceSummary,
   getServiceNameAndSpanCounts,
   getServiceNames,
-  getServiceName,
   mkDurationStr
 } from './traceSummary';
 import {Constants, ConstantNames} from './traceConstants';
@@ -87,6 +86,72 @@ export function formatEndpoint({ipv4, ipv6, port, serviceName}) {
   } else {
     return serviceName || '';
   }
+}
+
+function findServiceNameForBinaryAnnotation(span, key) {
+  const binaryAnnotation = _(span.binaryAnnotations || []).find((ann) =>
+            ann.key === key
+            && ann.endpoint != null
+            && ann.endpoint.serviceName != null
+            && ann.endpoint.serviceName !== '');
+  return binaryAnnotation ? binaryAnnotation.endpoint.serviceName : null;
+}
+
+function findServiceNameForAnnotation(span, values) {
+  const annotation = _(span.annotations || []).find((ann) =>
+            values.indexOf(ann.value) !== -1
+            && ann.endpoint != null
+            && ann.endpoint.serviceName != null
+            && ann.endpoint.serviceName !== '');
+  return annotation ? annotation.endpoint.serviceName : null;
+}
+
+export function getServiceName(span) { // export for testing
+  // Most authoritative is the label of the server's endpoint
+  const serverAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.SERVER_ADDR);
+  if (serverAddressServiceName) {
+    return serverAddressServiceName;
+  }
+
+  // Next, the label of any server annotation, logged by an instrumented server
+  const serverAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_SERVER);
+  if (serverAnnotationServiceName) {
+    return serverAnnotationServiceName;
+  }
+
+  // Next, the label of any messaging annotation, logged by an instrumented producer or consumer
+  const messageAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_MESSAGE);
+  if (messageAnnotationServiceName) {
+    return messageAnnotationServiceName;
+  }
+
+  // Next is the label of the client's endpoint
+  const clientAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.CLIENT_ADDR);
+  if (clientAddressServiceName) {
+    return clientAddressServiceName;
+  }
+
+  // Next is the label of any client annotation, logged by an instrumented client
+  const clientAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_CLIENT);
+  if (clientAnnotationServiceName) {
+    return clientAnnotationServiceName;
+  }
+
+  // Next is the label of the broker's endpoint
+  const brokerAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.MESSAGE_ADDR);
+  if (brokerAddressServiceName) {
+    return brokerAddressServiceName;
+  }
+
+  // Then is the label of the local component's endpoint
+  const localServiceName = findServiceNameForBinaryAnnotation(span, Constants.LOCAL_COMPONENT);
+  if (localServiceName) {
+    return localServiceName;
+  }
+
+  // Finally, anything so that the service name isn't blank!
+  const allServiceNames = getServiceNames(span);
+  return allServiceNames.length === 0 ? null : allServiceNames[0];
 }
 
 export default function traceToMustache(trace, logsUrl = undefined) {
