@@ -102,11 +102,11 @@ describe('SpanNodeBuilder', () => {
 
   it('should allocate spans missing parents to root', () => {
     const trace = mergeV2ById([
-      {traceId: 'a', id: 'b'},
-      {traceId: 'a', parentId: 'b', id: 'c'},
-      {traceId: 'a', parentId: 'b', id: 'd'},
-      {traceId: 'a', id: 'e'},
-      {traceId: 'a', id: 'f'}
+      {traceId: 'a', id: 'b', timestamp: 1},
+      {traceId: 'a', parentId: 'b', id: 'c', timestamp: 2},
+      {traceId: 'a', parentId: 'b', id: 'd', timestamp: 3},
+      {traceId: 'a', id: 'e', timestamp: 4},
+      {traceId: 'a', id: 'f', timestamp: 5}
     ]);
 
     const root = new SpanNodeBuilder({}).build(trace);
