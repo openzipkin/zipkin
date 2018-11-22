@@ -13,6 +13,7 @@
  */
 package zipkin2.storage.mysql.v1;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -73,8 +74,12 @@ final class AggregateDependencies implements Function<DSLContext, List<Dependenc
 
     DependencyLinker linker = new DependencyLinker();
 
+    List<Span> nextTrace = new ArrayList<>();
     while (traces.hasNext()) {
-      linker.putTrace(traces.next());
+      Iterator<Span> i = traces.next();
+      while (i.hasNext()) nextTrace.add(i.next());
+      linker.putTrace(nextTrace);
+      nextTrace.clear();
     }
 
     return linker.link();

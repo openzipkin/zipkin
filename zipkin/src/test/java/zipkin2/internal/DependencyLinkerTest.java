@@ -56,7 +56,7 @@ public class DependencyLinkerTest {
 
   @Test
   public void linksSpans() {
-    assertThat(new DependencyLinker().putTrace(TRACE.iterator()).link()).containsExactly(
+    assertThat(new DependencyLinker().putTrace(TRACE).link()).containsExactly(
       DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build(),
       DependencyLink.newBuilder().parent("app").child("db").callCount(1L).errorCount(1L).build()
     );
@@ -80,7 +80,7 @@ public class DependencyLinkerTest {
     // trace is actually reported in reverse order
     Collections.reverse(trace);
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsExactly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsExactly(
       DependencyLink.newBuilder().parent("arn").child("link").callCount(1L).build()
     );
   }
@@ -88,10 +88,10 @@ public class DependencyLinkerTest {
   /** In case of a late error, we should know which trace ID is being processed */
   @Test
   public void logsTraceId() {
-    new DependencyLinker(logger).putTrace(TRACE.iterator());
+    new DependencyLinker(logger).putTrace(TRACE);
 
     assertThat(messages)
-      .contains("linking trace 000000000000000a");
+      .contains("building trace tree: traceId=000000000000000a");
   }
 
   @Test
@@ -101,7 +101,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.CONSUMER, "consumer", "kafka", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("kafka").child("consumer").callCount(1L).build()
     );
   }
@@ -113,7 +113,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.CONSUMER, "consumer", null, false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("producer").child("kafka").callCount(1L).build()
     );
   }
@@ -125,7 +125,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.CONSUMER, "consumer", "kafka", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("producer").child("kafka").callCount(1L).build(),
       DependencyLink.newBuilder().parent("kafka").child("consumer").callCount(1L).build()
     );
@@ -138,7 +138,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.CONSUMER, "consumer", "kafka2", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("producer").child("kafka1").callCount(1L).build(),
       DependencyLink.newBuilder().parent("kafka2").child("consumer").callCount(1L).build()
     );
@@ -152,7 +152,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.CONSUMER, "consumer", null, false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link())
+    assertThat(new DependencyLinker().putTrace(trace).link())
       .isEmpty();
   }
 
@@ -164,7 +164,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.SERVER, "server", null, false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("producer").child("server").callCount(1L).build()
     );
   }
@@ -181,7 +181,7 @@ public class DependencyLinkerTest {
         .toBuilder().shared(true).build()
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("producer").child("server").callCount(1L).build()
     );
   }
@@ -197,7 +197,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.CONSUMER, "consumer", null, false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link())
+    assertThat(new DependencyLinker().putTrace(trace).link())
       .isEmpty();
   }
 
@@ -214,7 +214,7 @@ public class DependencyLinkerTest {
     );
 
     for (Span span : validRootSpans) {
-      assertThat(new DependencyLinker().putTrace(asList(span).iterator()).link()).containsOnly(
+      assertThat(new DependencyLinker().putTrace(asList(span)).link()).containsOnly(
         DependencyLink.newBuilder().parent("client").child("server").callCount(1L).build()
       );
     }
@@ -228,7 +228,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "c", Kind.CLIENT, null, "server", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("client").child("server").callCount(2L).build()
     );
   }
@@ -241,8 +241,8 @@ public class DependencyLinkerTest {
     );
 
     assertThat(new DependencyLinker()
-      .putTrace(trace.iterator())
-      .putTrace(trace.iterator()).link()).containsOnly(
+      .putTrace(trace)
+      .putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("client").child("server").callCount(2L).build()
     );
   }
@@ -258,8 +258,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.SERVER, "server", null, false)
     );
 
-    assertThat(new DependencyLinker()
-      .putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("client").child("server").callCount(1L).build()
     );
   }
@@ -271,7 +270,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.SERVER, "server", null, true)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder()
         .parent("client")
         .child("server")
@@ -289,7 +288,7 @@ public class DependencyLinkerTest {
         .toBuilder().shared(true).build()
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder()
         .parent("client")
         .child("server")
@@ -306,12 +305,9 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.SERVER, "server", null, false)
     );
 
-    assertThat(new DependencyLinker(logger).putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker(logger).putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("client").child("server").callCount(1L).build()
     );
-
-    assertThat(messages).contains("deferring link to rpc child span");
-    messages.clear();
   }
 
   @Test
@@ -322,7 +318,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "c", Kind.SERVER, "server", "client", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder()
         .parent("client")
         .child("server")
@@ -340,11 +336,9 @@ public class DependencyLinkerTest {
       span2("a", "a", "c", Kind.SERVER, "server", null, false)
     );
 
-    assertThat(new DependencyLinker(logger).putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker(logger).putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("client").child("server").callCount(2L).build()
     );
-
-    assertThat(messages).contains("deferring link to rpc child span");
   }
 
   /**
@@ -361,7 +355,7 @@ public class DependencyLinkerTest {
       span2("a", "b", "d", Kind.CLIENT, "server", null, false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("client").child("server").callCount(2L).build()
     );
   }
@@ -376,7 +370,7 @@ public class DependencyLinkerTest {
       span2("a", "b", "d", Kind.CLIENT, "server", null, true)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("client").child("server").callCount(2L).build()
     );
   }
@@ -390,7 +384,7 @@ public class DependencyLinkerTest {
       span2("a", "b", "d", Kind.CLIENT, "bar", "baz", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("foo").child("bar").callCount(2L).build(),
       DependencyLink.newBuilder().parent("bar").child("baz").callCount(2L).errorCount(1L).build()
     );
@@ -401,7 +395,7 @@ public class DependencyLinkerTest {
     List<Span> trace = asList(
       span2("a", "b", "c", Kind.CLIENT, "foo", "bar", true)
     );
-    new DependencyLinker(logger).putTrace(trace.iterator()).link();
+    new DependencyLinker(logger).putTrace(trace).link();
 
     assertThat(messages).contains(
       "incrementing error link foo -> bar"
@@ -416,7 +410,7 @@ public class DependencyLinkerTest {
         .toBuilder().addAnnotation(1L, "error").build()
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("foo").child("bar").callCount(1L).build()
     );
   }
@@ -430,7 +424,7 @@ public class DependencyLinkerTest {
     );
 
     for (Span span : validRootSpans) {
-      assertThat(new DependencyLinker().putTrace(asList(span).iterator()).link()).containsOnly(
+      assertThat(new DependencyLinker().putTrace(asList(span)).link()).containsOnly(
         DependencyLink.newBuilder().parent("service").child("service").callCount(1L).build()
       );
     }
@@ -444,7 +438,7 @@ public class DependencyLinkerTest {
       span2("a", "b", "c", null, "app", "db", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("some-client").child("web").callCount(1L).build(),
       DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build(),
       DependencyLink.newBuilder().parent("app").child("db").callCount(1L).build()
@@ -459,7 +453,7 @@ public class DependencyLinkerTest {
       span2("a", "b", "c", null, "app", "db", false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("some-client").child("web").callCount(1L).build(),
       DependencyLink.newBuilder().parent("web").child("app").callCount(1L).errorCount(1L).build(),
       DependencyLink.newBuilder().parent("app").child("db").callCount(1L).build()
@@ -480,7 +474,7 @@ public class DependencyLinkerTest {
 
     for (Span span : incompleteRootSpans) {
       assertThat(new DependencyLinker(logger)
-        .putTrace(asList(span).iterator()).link())
+        .putTrace(asList(span)).link())
         .isEmpty();
     }
   }
@@ -494,11 +488,11 @@ public class DependencyLinkerTest {
     );
 
     assertThat(new DependencyLinker(logger)
-      .putTrace(trace.iterator()).link())
+      .putTrace(trace).link())
       .isEmpty();
 
     assertThat(messages).contains(
-      "skipping synthetic node for broken span tree"
+      "skipping fake root node for broken span tree"
     );
   }
 
@@ -510,12 +504,12 @@ public class DependencyLinkerTest {
       span2("a", "b", "c", Kind.SERVER, "service2", null, false)
     );
 
-    assertThat(new DependencyLinker(logger).putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker(logger).putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("service1").child("service2").callCount(1L).build()
     );
 
     assertThat(messages).contains(
-      "skipping synthetic node for broken span tree"
+      "skipping fake root node for broken span tree"
     );
   }
 
@@ -527,7 +521,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.SERVER, "app", null, false)
     );
 
-    assertThat(new DependencyLinker().putTrace(singleHostSpans.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(singleHostSpans).link()).containsOnly(
       DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build()
     );
   }
@@ -539,7 +533,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.SERVER, "app", null, false)
     );
 
-    assertThat(new DependencyLinker().putTrace(trace.iterator()).link()).containsOnly(
+    assertThat(new DependencyLinker().putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("web").child("app").callCount(1L).errorCount(1L).build()
     );
   }
@@ -552,7 +546,7 @@ public class DependencyLinkerTest {
       span2("a", "a", "b", Kind.CLIENT, "app", null, false)
     );
 
-    assertThat(new DependencyLinker(logger).putTrace(singleHostSpans.iterator()).link())
+    assertThat(new DependencyLinker(logger).putTrace(singleHostSpans).link())
       .containsOnly(DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build());
 
     assertThat(messages).contains(
