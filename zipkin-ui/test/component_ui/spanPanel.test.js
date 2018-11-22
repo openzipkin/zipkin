@@ -1,13 +1,10 @@
-import {Constants} from '../../js/component_ui/traceConstants';
 import {
   maybeMarkTransientError,
   formatAnnotationValue,
   formatBinaryAnnotationValue,
   isDupeBinaryAnnotation
 } from '../../js/component_ui/spanPanel';
-import {endpoint, annotation} from './traceTestHelpers';
-
-const ep = endpoint(123, 123, 'service1');
+import {frontend} from './traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
 
@@ -18,14 +15,14 @@ describe('maybeMarkTransientError', () => {
   };
 
   it('should not add class when annotation is not error', () => {
-    const anno = annotation(100, Constants.CLIENT_SEND, ep);
+    const anno = {timestamp: 100, value: 'cs', endpoint: frontend};
 
     maybeMarkTransientError(row, anno);
     row.className.should.equal('');
   });
 
   it('should add class when annotation is error', () => {
-    const anno = annotation(100, Constants.ERROR, ep);
+    const anno = {timestamp: 100, value: 'error', endpoint: frontend};
 
     maybeMarkTransientError(row, anno);
     row.className.should.equal('anno-error-transient');
@@ -33,11 +30,11 @@ describe('maybeMarkTransientError', () => {
 
   // uses an actual value from Finagle
   it('should add class when annotation matches error', () => {
-    const anno = annotation(
-      100,
-      'Server Send Error: TimeoutException: socket timed out',
-      ep
-    );
+    const anno = {
+      timestamp: 100,
+      value: 'Server Send Error: TimeoutException: socket timed out',
+      endpoint: frontend
+    };
 
     maybeMarkTransientError(row, anno);
     row.className.should.equal('anno-error-transient');

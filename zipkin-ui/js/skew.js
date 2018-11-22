@@ -288,11 +288,11 @@ function getClockSkew(parent, span) {
   }
 
   let server = serverRecv.endpoint;
-  if (!server && oneWay) server = serverSend.endpoint;
+  if (!server && !oneWay) server = serverSend.endpoint;
   if (!server) return undefined;
 
   let client = clientSend.endpoint;
-  if (!client && oneWay) client = clientRecv.endpoint;
+  if (!client && !oneWay) client = clientRecv.endpoint;
   if (!client) return undefined;
 
   // There's no skew if the RPC is going to itself

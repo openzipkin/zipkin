@@ -1,56 +1,70 @@
 import {
   traceSummary,
-  getServiceName,
+  getGroupedTimestamps,
   getTraceErrorType,
   traceSummariesToMustache,
   mkDurationStr,
   totalDuration,
   traceDuration
 } from '../../js/component_ui/traceSummary';
-import {Constants} from '../../js/component_ui/traceConstants';
-import {annotation, binaryAnnotation, endpoint, span} from './traceTestHelpers';
+import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
+import {mergeV2ById} from '../../js/spanCleaner';
+import {SPAN_V1} from '../../js/spanConverter';
 
 chai.config.truncateThreshold = 0;
 
+const v1HttpTrace = SPAN_V1.convertTrace(mergeV2ById(httpTrace));
 
-const ep1 = endpoint(123, 123, 'service1');
-const ep2 = endpoint(456, 456, 'service2');
-const ep3 = endpoint(666, 666, 'service2');
-const ep4 = endpoint(777, 777, 'service3');
-const ep5 = endpoint(888, 888, 'service3');
+describe('getGroupedTimestamps', () => {
+  it('should classify durations local to the endpoint', () => {
+    getGroupedTimestamps(v1HttpTrace).should.eql(
+      {
+        frontend: [
+          {timestamp: 1541138169255688, duration: 168731},
+          {timestamp: 1541138169297572, duration: 111121}
+        ],
+        backend: [
+          // TODO: correct. The backend server duration should be here not client!
+          {timestamp: 1541138169297572, duration: 111121}
+        ]
+      }
+    );
+  });
+
+  // Ex netflix sometimes add annotations with no duration
+  it('should backfill incomplete duration as zero instead of undefined', () => {
+    const testTrace = SPAN_V1.convertTrace([
+      {
+        traceId: '2480ccca8df0fca5',
+        id: '2480ccca8df0fca5',
+        kind: 'CLIENT',
+        timestamp: 1541138169297572,
+        duration: 111121,
+        localEndpoint: frontend
+      },
+      {
+        traceId: '2480ccca8df0fca5',
+        parentId: '2480ccca8df0fca5',
+        id: 'bf396325699c84bf',
+        timestamp: 1541138169377997,
+        localEndpoint: backend,
+      }
+    ]);
+
+    getGroupedTimestamps(testTrace).should.eql(
+      {
+        frontend: [
+          {timestamp: 1541138169297572, duration: 111121}
+        ],
+        backend: [
+          {timestamp: 1541138169377997, duration: 0}
+        ]
+      }
+    );
+  });
+});
 
 describe('traceSummary', () => {
-  const annotations1 = [
-    annotation(100, Constants.CLIENT_SEND, ep1),
-    annotation(150, Constants.CLIENT_RECEIVE, ep1)
-  ];
-  const annotations2 = [
-    annotation(200, Constants.CLIENT_SEND, ep2),
-    annotation(250, Constants.CLIENT_RECEIVE, ep2)
-  ];
-  const annotations3 = [
-    annotation(300, Constants.CLIENT_SEND, ep2),
-    annotation(350, Constants.CLIENT_RECEIVE, ep3)
-  ];
-  const annotations4 = [
-    annotation(400, Constants.CLIENT_SEND, ep4),
-    annotation(500, Constants.CLIENT_RECEIVE, ep5)
-  ];
-
-  const span1Id = '666';
-  const span2Id = '777';
-  const span3Id = '888';
-  const span4Id = '999';
-  const span5Id = '1111';
-
-  const span1 = span(12345, 'methodcall1', span1Id, null, 100, 50, annotations1);
-  const span2 = span(12345, 'methodcall2', span2Id, span1Id, 200, 50, annotations2);
-  const span3 = span(12345, 'methodcall2', span3Id, span2Id, 300, 50, annotations3);
-  const span4 = span(12345, 'methodcall2', span4Id, span3Id, 400, 100, annotations4);
-  const span5 = span(12345, 'methodcall4', span5Id, span4Id);
-
-  const trace = [span1, span2, span3, span4];
-
   it('should throw error on empty trace', () => {
     let error;
     try {
@@ -65,7 +79,10 @@ describe('traceSummary', () => {
   it('should throw error on trace missing timestamp', () => {
     let error;
     try {
-      traceSummary([span5]);
+      traceSummary([{
+        traceId: '1e223ff1f80f1c69',
+        id: 'bf396325699c84bf'
+      }]);
     } catch (err) {
       error = err;
     }
@@ -73,341 +90,178 @@ describe('traceSummary', () => {
     expect(error.message).to.eql('Trace is missing a timestamp');
   });
 
-  it('dedupes duplicate endpoints', () => {
-    const summary = traceSummary(trace);
-    summary.endpoints.should.eql([ep1, ep2, ep3, ep4, ep5]);
-  });
-
   it('calculates timestamp and duration', () => {
-    const summary = traceSummary(trace);
-    summary.timestamp.should.equal(100);
-    summary.duration.should.equal(400);
+    const summary = traceSummary(v1HttpTrace);
+    const rootSpan = httpTrace.find(s => s.traceId === s.id);
+    summary.timestamp.should.equal(rootSpan.timestamp);
+    summary.duration.should.equal(rootSpan.duration);
   });
 
   it('should get span count', () => {
-    const summary = traceSummary(trace);
-    summary.spanCount.should.equal(trace.length);
-  });
-});
-
-describe('get service name of a span', () => {
-  it('should get service name from server addr', () => {
-    const testSpan = {
-      binaryAnnotations: [{
-        key: Constants.SERVER_ADDR,
-        value: '1',
-        endpoint: {
-          serviceName: 'user-service'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('user-service');
-  });
-
-  it('should get service name from broker addr', () => {
-    const testSpan = {
-      binaryAnnotations: [{
-        key: Constants.MESSAGE_ADDR,
-        value: '1',
-        endpoint: {
-          serviceName: 'kafka'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('kafka');
-  });
-
-  it('should get service name from some server annotation', () => {
-    const testSpan = {
-      annotations: [{
-        value: Constants.SERVER_RECEIVE_FRAGMENT,
-        endpoint: {
-          serviceName: 'test-service'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('test-service');
-  });
-
-  it('should get service name from producer annotation', () => {
-    const testSpan = {
-      annotations: [{
-        value: Constants.MESSAGE_SEND,
-        endpoint: {
-          serviceName: 'test-service'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('test-service');
-  });
-
-  it('should get service name from consumer annotation', () => {
-    const testSpan = {
-      annotations: [{
-        value: Constants.MESSAGE_RECEIVE,
-        endpoint: {
-          serviceName: 'test-service'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('test-service');
-  });
-
-  it('should get service name from client addr', () => {
-    const testSpan = {
-      binaryAnnotations: [{
-        key: Constants.CLIENT_ADDR,
-        value: 'something',
-        endpoint: {
-          serviceName: 'my-service'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('my-service');
-  });
-
-  it('should get service name from client annotation', () => {
-    const testSpan = {
-      annotations: [{
-        value: Constants.CLIENT_SEND,
-        endpoint: {
-          serviceName: 'abc-service'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('abc-service');
-  });
-
-  it('should get service name from local component annotation', () => {
-    const testSpan = {
-      binaryAnnotations: [{
-        key: Constants.LOCAL_COMPONENT,
-        value: 'something',
-        endpoint: {
-          serviceName: 'localservice'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('localservice');
-  });
-
-  it('should get service name from any binary annotation', () => {
-    const testSpan = {
-      binaryAnnotations: [{
-        key: 'user',
-        value: 'grpc-client-example',
-        endpoint: {
-          serviceName: 'echecklist-localdev'
-        }
-      }]
-    };
-    getServiceName(testSpan).should.equal('echecklist-localdev');
-  });
-
-  it('should handle no annotations', () => {
-    expect(getServiceName({})).to.equal(null);
+    const summary = traceSummary(v1HttpTrace);
+    // TODO: correct: the span count is by ID when it should be by distinct span
+    summary.spanCount.should.equal(httpTrace.length - 1);
   });
 });
 
 describe('getTraceErrorType', () => {
-  const annotationsNoError = [
-    annotation(100, Constants.CLIENT_SEND, ep1),
-    annotation(150, Constants.CLIENT_RECEIVE, ep1)
-  ];
-
-  const annotationsHasError = [
-    annotation(100, Constants.CLIENT_SEND, ep1),
-    annotation(150, Constants.CLIENT_RECEIVE, ep1),
-    annotation(200, Constants.ERROR, ep1)
-  ];
-
-  const binaryAnnotationsNoError = [
-    binaryAnnotation('key', 'value', ep1)
-  ];
-
-  const binaryAnnotationsHasError = [
-    binaryAnnotation('key', 'value', ep1),
-    binaryAnnotation(Constants.ERROR, 'bad stuff happened', ep1)
-  ];
-
-  it('should return none if annotations and binary annotations are null', () => {
-    const testSpans = [
-      span(12345, 'name', 12345)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('none');
+  it('should return none if annotations and tags are empty', () => {
+    const spans = [{
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [],
+      binaryAnnotations: []
+    }];
+    expect(getTraceErrorType(spans)).to.equal('none');
   });
 
-  it('should return none if annotations and binary annotations are null', () => {
-    const testSpans = [
-      span(12345, 'name', 12345),
-      span(12346, 'name', 12346)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('none');
+  it('should return none if ann=noError and tag=noError', () => {
+    const spans = [{
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'not'}],
+      binaryAnnotations: [{key: 'not', value: 'error'}]
+    }];
+    expect(getTraceErrorType(spans)).to.equal('none');
   });
 
-  it('should return none if ann=noError and binAnn=null', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           null, binaryAnnotationsNoError)
+  it('should return none if second span has ann=noError and tag=noError', () => {
+    const spans = [
+      {
+        traceId: '1e223ff1f80f1c69',
+        id: '1e223ff1f80f1c69',
+        annotations: [],
+        binaryAnnotations: []
+      },
+      {
+        traceId: '1e223ff1f80f1c69',
+        parentId: '1e223ff1f80f1c69',
+        id: 'bf396325699c84bf',
+        annotations: [{timestamp: 1, value: 'not'}],
+        binaryAnnotations: [{key: 'not', value: 'error'}]
+      }
     ];
-    expect(getTraceErrorType(testSpans)).to.equal('none');
+    expect(getTraceErrorType(spans)).to.equal('none');
   });
 
-  it('should return none if ann=noError and binAnn=null', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           annotationsNoError, binaryAnnotationsNoError)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('none');
+  it('should return critical if ann empty and tag=error', () => {
+    const spans = [{
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [],
+      binaryAnnotations: [{key: 'error', value: ''}]
+    }];
+    expect(getTraceErrorType(spans)).to.equal('critical');
   });
 
-  it('should return none if second span has ann=noError and binAnn=noError', () => {
-    const testSpans = [
-      span(123456, 'name', 123456),
-      span(12345, 'name', 12345, null, null, null,
-           annotationsNoError, binaryAnnotationsNoError)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('none');
+  it('should return critical if ann=noError and tag=error', () => {
+    const spans = [{
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'not'}],
+      binaryAnnotations: [{key: 'error', value: ''}]
+    }];
+    expect(getTraceErrorType(spans)).to.equal('critical');
   });
 
-  it('should return critical if ann=null and bin=error', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           null, binaryAnnotationsHasError)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('critical');
+  it('should return critical if ann=error and tag=error', () => {
+    const spans = [{
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'error'}],
+      binaryAnnotations: [{key: 'error', value: ''}]
+    }];
+    expect(getTraceErrorType(spans)).to.equal('critical');
   });
 
-  it('should return critical if ann=noError and bin=error', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           annotationsNoError, binaryAnnotationsHasError)
+  it('should return critical if span1 has ann=error and span2 has tag=error', () => {
+    const spans = [
+      {
+        traceId: '1e223ff1f80f1c69',
+        id: '1e223ff1f80f1c69',
+        annotations: [{timestamp: 1, value: 'error'}],
+        binaryAnnotations: []
+      },
+      {
+        traceId: '1e223ff1f80f1c69',
+        parentId: '1e223ff1f80f1c69',
+        id: 'bf396325699c84bf',
+        annotations: [],
+        binaryAnnotations: [{key: 'error', value: ''}]
+      }
     ];
-    expect(getTraceErrorType(testSpans)).to.equal('critical');
+    expect(getTraceErrorType(spans)).to.equal('critical');
   });
 
-  it('should return critical if ann=error and bin=error', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           annotationsHasError, binaryAnnotationsHasError)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('critical');
-  });
-
-  it('should return critical if span1 has ann=error and span2 has binAnn=error', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           annotationsHasError, null),
-      span(123456, 'name', 123456, null, null, null,
-            null, binaryAnnotationsHasError)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('critical');
-  });
-
-  it('should return transient if ann=error and bin=null', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           annotationsHasError, null)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('transient');
-  });
-
-  it('should return transient if ann=error and bin=noError', () => {
-    const testSpans = [
-      span(12345, 'name', 12345, null, null, null,
-           annotationsHasError, binaryAnnotationsNoError)
-    ];
-    expect(getTraceErrorType(testSpans)).to.equal('transient');
+  it('should return transient if ann=error and tag noError', () => {
+    const spans = [{
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'error'}],
+      binaryAnnotations: [{key: 'not', value: 'error'}]
+    }];
+    expect(getTraceErrorType(spans)).to.equal('transient');
   });
 });
 
 describe('traceSummariesToMustache', () => {
-  const start = 1456447911000000;
-  const summary = {
-    traceId: 'cafedead',
-    timestamp: start,
-    duration: 20000,
-    groupedTimestamps: {
-      A: [
-        {
-          timestamp: start,
-          duration: 10000
-        }
-      ],
-      B: [
-        {
-          timestamp: start + 1000,
-          duration: 20000
-        },
-        {
-          timestamp: start + 1000,
-          duration: 15000
-        }
-      ]
-    },
-    endpoints: [ep1, ep2]
-  };
+  const summary = traceSummary(v1HttpTrace);
 
   it('should return empty list for empty list', () => {
     traceSummariesToMustache(null, []).should.eql([]);
   });
 
   it('should convert duration from micros to millis', () => {
-    const model = traceSummariesToMustache(null, [{timestamp: start, duration: 20000}]);
+    const model = traceSummariesToMustache(null, [{timestamp: 1, duration: 20000}]);
     model[0].duration.should.equal(20);
   });
 
   it('should get service summaries, ordered descending by max span duration', () => {
     const model = traceSummariesToMustache(null, [summary]);
-    model[0].serviceSummaries.should.eql([{
-      serviceName: 'B',
-      spanCount: 2,
-      maxSpanDurationStr: '20ms'
-    }, {
-      serviceName: 'A',
-      spanCount: 1,
-      maxSpanDurationStr: '10ms'
-    }]);
+    model[0].serviceSummaries.should.eql([
+      {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
+      // TODO: correct. The backend server duration should be here not client!
+      {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '111.121ms'}
+    ]);
   });
 
   it('should pass on the trace id', () => {
-    const model = traceSummariesToMustache('A', [summary]);
+    const model = traceSummariesToMustache('backend', [summary]);
     model[0].traceId.should.equal(summary.traceId);
   });
 
   it('should get service percentage', () => {
-    const model = traceSummariesToMustache('A', [summary]);
-    model[0].servicePercentage.should.equal(50);
+    const model = traceSummariesToMustache('backend', [summary]);
+    model[0].servicePercentage.should.equal(65);
   });
 
   it('should format start time', () => {
     const model = traceSummariesToMustache(null, [summary], true);
-    model[0].startTs.should.equal('02-26-2016T00:51:51.000+0000');
+    model[0].startTs.should.equal('11-02-2018T05:56:09.255+0000');
   });
 
   it('should format duration', () => {
     const model = traceSummariesToMustache(null, [summary]);
-    model[0].durationStr.should.equal('20ms');
+    model[0].durationStr.should.equal('168.731ms');
   });
 
   it('should calculate the width in percent', () => {
+    const start = 1;
     const summary1 = {
       traceId: 'cafebaby',
       timestamp: start,
       duration: 2000,
       groupedTimestamps: {
-        A: [{timestamp: start + 1, duration: 2000}]
-      },
-      endpoints: [ep1]
+        backend: [{timestamp: start + 1, duration: 2000}]
+      }
     };
     const summary2 = {
       traceId: 'cafedead',
       timestamp: start,
       duration: 20000,
       groupedTimestamps: {
-        A: [{timestamp: start, duration: 20000}]
-      },
-      endpoints: [ep1]
+        backend: [{timestamp: start, duration: 20000}]
+      }
     };
 
     // Model is ordered by duration, and the width should be relative (percentage)
@@ -422,42 +276,9 @@ describe('traceSummariesToMustache', () => {
   });
 
   it('should get correct spanCount', () => {
-    const spans = [{
-      traceId: 'd397ce70f5192a8b',
-      name: 'get',
-      id: 'd397ce70f5192a8b',
-      timestamp: 1457160374149000,
-      duration: 2000,
-      annotations: [{
-        timestamp: 1457160374149000,
-        value: 'sr',
-        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
-      }, {
-        timestamp: 1457160374151000,
-        value: 'ss',
-        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
-      }],
-      binaryAnnotations: [{
-        key: 'http.path',
-        value: '/api/v1/services',
-        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1'}
-      }, {
-        key: 'srv/finagle.version',
-        value: '6.33.0',
-        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1'}
-      }, {
-        key: 'sa',
-        value: true,
-        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
-      }, {
-        key: 'ca',
-        value: true,
-        endpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 56828}
-      }]
-    }];
-    const testSummary = traceSummary(spans);
+    const testSummary = traceSummary(v1HttpTrace);
     const model = traceSummariesToMustache(null, [testSummary])[0];
-    model.spanCount.should.equal(1);
+    model.spanCount.should.equal(2); // TODO: correct as this is distinct IDs not spans!
   });
 
   it('should order traces by duration and tie-break using trace id', () => {

@@ -42,72 +42,6 @@ export function getServiceNames(span) {
       .uniq().value();
 }
 
-function findServiceNameForBinaryAnnotation(span, key) {
-  const binaryAnnotation = _(span.binaryAnnotations || []).find((ann) =>
-            ann.key === key
-            && ann.endpoint != null
-            && ann.endpoint.serviceName != null
-            && ann.endpoint.serviceName !== '');
-  return binaryAnnotation ? binaryAnnotation.endpoint.serviceName : null;
-}
-
-function findServiceNameForAnnotation(span, values) {
-  const annotation = _(span.annotations || []).find((ann) =>
-            values.indexOf(ann.value) !== -1
-            && ann.endpoint != null
-            && ann.endpoint.serviceName != null
-            && ann.endpoint.serviceName !== '');
-  return annotation ? annotation.endpoint.serviceName : null;
-}
-
-export function getServiceName(span) {
-  // Most authoritative is the label of the server's endpoint
-  const serverAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.SERVER_ADDR);
-  if (serverAddressServiceName) {
-    return serverAddressServiceName;
-  }
-
-  // Next, the label of any server annotation, logged by an instrumented server
-  const serverAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_SERVER);
-  if (serverAnnotationServiceName) {
-    return serverAnnotationServiceName;
-  }
-
-  // Next, the label of any messaging annotation, logged by an instrumented producer or consumer
-  const messageAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_MESSAGE);
-  if (messageAnnotationServiceName) {
-    return messageAnnotationServiceName;
-  }
-
-  // Next is the label of the client's endpoint
-  const clientAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.CLIENT_ADDR);
-  if (clientAddressServiceName) {
-    return clientAddressServiceName;
-  }
-
-  // Next is the label of any client annotation, logged by an instrumented client
-  const clientAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_CLIENT);
-  if (clientAnnotationServiceName) {
-    return clientAnnotationServiceName;
-  }
-
-  // Next is the label of the broker's endpoint
-  const brokerAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.MESSAGE_ADDR);
-  if (brokerAddressServiceName) {
-    return brokerAddressServiceName;
-  }
-
-  // Then is the label of the local component's endpoint
-  const localServiceName = findServiceNameForBinaryAnnotation(span, Constants.LOCAL_COMPONENT);
-  if (localServiceName) {
-    return localServiceName;
-  }
-
-  // Finally, anything so that the service name isn't blank!
-  const allServiceNames = getServiceNames(span);
-  return allServiceNames.length === 0 ? null : allServiceNames[0];
-}
-
 export function getGroupedTimestamps(spans) {
   const spanTimestamps = _(spans).flatMap((span) => getServiceNames(span).map((serviceName) => ({
     serviceName,
@@ -120,7 +54,7 @@ export function getGroupedTimestamps(spans) {
   // wash out the redundant name. TODO: rewrite this whole method as it seems easier imperatively
   return _(grouped).mapValues((ntds) => ntds.map((ntd) => ({
     timestamp: ntd.timestamp,
-    duration: ntd.duration
+    duration: ntd.duration || 0
   }))).value();
 }
 
@@ -141,11 +75,6 @@ export function getTraceErrorType(spans) {
   return traceType;
 }
 
-function endpointEquals(e1, e2) {
-  return (e1.ipv4 === e2.ipv4 || e1.ipv6 === e2.ipv6)
-    && e1.port === e2.port && e1.serviceName === e2.serviceName;
-}
-
 // Returns null on empty or when missing a timestamp
 export function traceSummary(trace = []) {
   if (trace.length === 0) {
@@ -159,7 +88,6 @@ export function traceSummary(trace = []) {
   const timestamp = trace[0].timestamp;
   const duration = traceDuration(trace);
   const groupedTimestamps = getGroupedTimestamps(trace);
-  const endpoints = _(trace).flatMap(endpointsForSpan).uniqWith(endpointEquals).value();
   const errorType = getTraceErrorType(trace);
   const spanCount = trace.length;
   return {
@@ -167,7 +95,6 @@ export function traceSummary(trace = []) {
     timestamp,
     duration,
     groupedTimestamps,
-    endpoints,
     errorType,
     spanCount
   };
