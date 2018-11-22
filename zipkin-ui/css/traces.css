@@ -2,11 +2,6 @@
   margin-right: 5px;
 }
 
-#trace-filters .service-filter-label {
-  cursor: default;
-  padding-right: 0;
-}
-
 .date-input, .time-input {
   width: 49%;
   display: inline-block;
@@ -20,10 +15,6 @@
 
 .service-filter-remove:hover {
   background: red;
-}
-
-.service-tag-filtered {
-  background: #0084B4;
 }
 
 #traces {
@@ -191,10 +182,6 @@
 
 #traces li:hover .services .label {
   background-color: #F89406;
-}
-
-#traces li:hover .services .service-tag-filtered {
-  background-color: #0084B4;
 }
 
 #traces li .services .label:hover,

@@ -9,13 +9,10 @@ import {i18nInit} from '../component_ui/i18n';
 export function showSpans(spans, parents, children, selectedSpans) {
   const family = new Set();
   $.each(selectedSpans, (i, $selected) => {
-    if ($selected.inFilters === 0) {
-      $selected.show();
-      $selected.addClass('highlight');
-    }
+    $selected.show();
+    $selected.addClass('highlight');
     $selected.expanded = true;
     $selected.$expander.text('-');
-    $selected.inFilters += 1;
 
     $.each(children[$selected.id], (j, cId) => {
       family.add(cId);
@@ -40,7 +37,7 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
   $.each(selectedSpans, (i, $selected) => {
     $selected.inFilters -= 1;
 
-    if (!childrenOnly && $selected.inFilters === 0) {
+    if (!childrenOnly === 0) {
       $selected.removeClass('highlight');
       $selected.hide();
     }
@@ -84,7 +81,6 @@ function initSpan($span) {
   $span.id = id;
   $span.expanded = false;
   $span.$expander = $span.find('.expander');
-  $span.inFilters = 0;
   $span.openChildren = 0;
   $span.openParents = 0;
 
@@ -161,28 +157,8 @@ export default component(function trace() {
     return spans;
   };
 
-  this.filterAdded = function(e, data) {
-    if (this.actingOnAll) {
-      return;
-    }
-    const self = this;
-    const spans = this.getSpansByService(data.value).map(function() {
-      return self.spans[$(this).data('id')];
-    });
-    this.expandSpans(new Set(spans));
-  };
-
   this.expandSpans = function(spans) {
     showSpans(this.spans, this.parents, this.children, spans);
-  };
-
-  this.filterRemoved = function(e, data) {
-    if (this.actingOnAll) return;
-    const self = this;
-    const spans = this.getSpansByService(data.value).map(function() {
-      return self.spans[$(this).data('id')];
-    });
-    this.collapseSpans(new Set(spans));
   };
 
   this.collapseSpans = function(spans, childrenOnly) {
@@ -324,16 +300,12 @@ export default component(function trace() {
     }
   };
 
-  this.triggerForAllServices = function(evt) {
-    $.each(this.spansByService, value => { this.trigger(document, evt, {value}); });
-  };
 
   this.expandAllSpans = function() {
     const self = this;
     self.actingOnAll = true;
     this.showSpinnerAround(() => {
       showSpans(self.spans, self.parents, self.children, self.spans);
-      self.triggerForAllServices('uiAddServiceNameFilter');
     });
     self.actingOnAll = false;
     $('#expandAll').addClass('active');
@@ -345,7 +317,6 @@ export default component(function trace() {
     self.actingOnAll = true;
     this.showSpinnerAround(() => {
       $.each(self.spans, (id, $span) => {
-        $span.inFilters = 0;
         $span.openParents = 0;
         $span.openChildren = 0;
         $span.removeClass('highlight');
@@ -353,7 +324,6 @@ export default component(function trace() {
         $span.$expander.text('+');
         if (!$span.isRoot) $span.hide();
       });
-      self.triggerForAllServices('uiRemoveServiceNameFilter');
     });
     self.actingOnAll = false;
     $('#expandAll').removeClass('active');
@@ -476,15 +446,9 @@ export default component(function trace() {
   };
 
   this.after('initialize', function() {
-    this.around('filterAdded', this.showSpinnerAround);
-    this.around('filterRemoved', this.showSpinnerAround);
 
     this.on('click', this.handleClick);
     this.on('mousedown', this.handleMouseDown);
-
-    this.on(document, 'uiAddServiceNameFilter', this.filterAdded);
-    this.on(document, 'uiRemoveServiceNameFilter', this.filterRemoved);
-
     this.on(document, 'uiExpandAllSpans', this.expandAllSpans);
     this.on(document, 'uiCollapseAllSpans', this.collapseAllSpans);
     this.on(document, 'uiZoomInSpans', this.zoomInSpans);
