@@ -836,7 +836,7 @@ describe('mergeV2ById', () => {
     ]);
   });
 
-  it('should order spans by timestamp then name', () => {
+  it('should order spans by shared, timestamp then name', () => {
     const spans = mergeV2ById([
       {
         traceId: '1111111111111111',
@@ -857,14 +857,23 @@ describe('mergeV2ById', () => {
         parentId: '0000000000000001',
         id: '0000000000000004',
         name: 'a',
+        timestamp: 1,
+        shared: true
+      },
+      {
+        traceId: '1111111111111111',
+        parentId: '0000000000000001',
+        id: '0000000000000004',
+        name: 'a',
         timestamp: 2
       }
     ]);
 
-    expect(spans.map(s => s.id)).to.deep.equal([
-      '0000000000000004',
-      '0000000000000003',
-      '0000000000000002',
+    expect(spans.map(s => `${s.id}-${s.shared === true}-${s.timestamp}`)).to.deep.equal([
+      '0000000000000004-false-2', // unshared is first even if later!
+      '0000000000000004-true-1',
+      '0000000000000003-false-2',
+      '0000000000000002-false-3'
     ]);
   });
 

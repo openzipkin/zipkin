@@ -211,18 +211,22 @@ export function mergeV2ById(spans) {
     result[i] = span;
   }
 
-  // sort by timestamp, then name, root first in case of skew
+  // sort by timestamp, then name, root/shared first in case of skew
   // TODO: this should be a topological sort
   return result.sort((a, b) => {
-    if (!a.parentId && !b.parentId) { // both are root
-      return a.shared ? 1 : -1; // shared is server, so comes after client
-    } if (!a.parentId) { // a is root
+    if (!a.parentId && b.parentId) { // a is root
       return -1;
-    } else if (!b.parentId) { // b is root
+    } else if (a.parentId && !b.parentId) { // b is root
       return 1;
     }
-    // Either a and b are root or neither are. In any case sort by timestamp, then name
-    return compareShared(a.shared, b.shared) ||
-      compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
+
+    // order client first in case of shared spans (shared is always server)
+    if (a.id === b.id) {
+      const byShared = compareShared(a.shared, b.shared);
+      if (byShared === 1) return 1; // order server last
+    }
+
+    // Either a and b are root or neither are. sort by shared timestamp, then name
+    return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
   });
 }

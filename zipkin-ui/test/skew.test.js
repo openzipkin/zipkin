@@ -112,10 +112,8 @@ describe('SpanNodeBuilder', () => {
     const root = new SpanNodeBuilder({}).build(trace);
 
     expect(root.traverse()).to.deep.equal(trace);
-    expect(root.span.id).to.eql('000000000000000f');
-    expect(root.children.map(n => n.span.id)).to.deep.equal(
-      ['000000000000000e', '000000000000000b']
-    );
+    expect(root.span.id).to.eql('000000000000000b');
+    expect(root.children.map(n => n.span)).to.deep.equal(trace.slice(1));
   });
 
   // spans are often reported depth-first, so it is possible to not have a root yet
