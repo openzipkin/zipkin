@@ -123,7 +123,7 @@ function compareShared(left, right) {
   if (left === right) {
     return 0;
   } else {
-    return left ? 1 : -1;
+    return left === true ? 1 : -1;
   }
 }
 

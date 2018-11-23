@@ -73,9 +73,8 @@ class SpanNode {
 
 // In javascript, dict keys can't be objects
 function keyString(id, shared = false, endpoint) {
-  const sharedV = shared === true;
   const endpointString = endpoint ? JSON.stringify(endpoint) : 'x';
-  return `${id}-${sharedV}-${endpointString}`;
+  return `${id}-${!!shared}-${endpointString}`;
 }
 
 class SpanNodeBuilder {
@@ -103,7 +102,7 @@ class SpanNodeBuilder {
   _index(span) {
     let idKey;
     let parentKey;
-    const shared = span.shared === true; // guards against undefined
+    const shared = !!span.shared; // guards against undefined
 
     if (shared) {
       // we need to classify a shared span by its endpoint in case multiple servers respond to the
@@ -134,7 +133,7 @@ class SpanNodeBuilder {
     const noEndpointKey = endpoint ? keyString(span.id, span.shared) : key;
 
     let parent;
-    if (span.shared === true) {
+    if (!!span.shared) {
       // Shared is a server span. It will very likely be on a different endpoint than the client.
       // Clients are not ambiguous by ID, so we don't need to qualify by endpoint.
       parent = keyString(span.id);
@@ -168,7 +167,7 @@ class SpanNodeBuilder {
     if (!parent && !this._rootSpan) {
       this._rootSpan = node;
       delete this._spanToParent[noEndpointKey];
-    } else if (span.shared === true) {
+    } else if (!!span.shared) {
       // In the case of shared server span, we need to address it both ways, in case intermediate
       // spans are lacking endpoint information.
       this._keyToNode[key] = node;
@@ -366,7 +365,7 @@ function correctForClockSkew(spans, debug = false) {
   const childrenOfRoot = trace.children;
   for (let i = 0; i < childrenOfRoot.length; i++) {
     const next = childrenOfRoot[i].span;
-    if (next.parentId || next.shared === true) continue;
+    if (next.parentId || !!next.shared) continue;
 
     const traceId = next.traceId;
     const spanId = next.id;
