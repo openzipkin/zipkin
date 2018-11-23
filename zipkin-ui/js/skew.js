@@ -73,8 +73,9 @@ class SpanNode {
 
 // In javascript, dict keys can't be objects
 function keyString(id, shared = false, endpoint) {
+  if (!shared) return id;
   const endpointString = endpoint ? JSON.stringify(endpoint) : 'x';
-  return `${id}-${!!shared}-${endpointString}`;
+  return `${id}-${endpointString}`;
 }
 
 class SpanNodeBuilder {
@@ -102,16 +103,15 @@ class SpanNodeBuilder {
   _index(span) {
     let idKey;
     let parentKey;
-    const shared = !!span.shared; // guards against undefined
 
-    if (shared) {
+    if (span.shared) {
       // we need to classify a shared span by its endpoint in case multiple servers respond to the
       // same ID sent by the client.
       idKey = keyString(span.id, true, span.localEndpoint);
       // the parent of a server span is a client, which is not ambiguous for a given span ID.
       parentKey = keyString(span.id);
     } else {
-      idKey = keyString(span.id, shared);
+      idKey = keyString(span.id);
       if (span.parentId) parentKey = keyString(span.parentId);
     }
 
@@ -133,7 +133,7 @@ class SpanNodeBuilder {
     const noEndpointKey = endpoint ? keyString(span.id, span.shared) : key;
 
     let parent;
-    if (!!span.shared) {
+    if (span.shared) {
       // Shared is a server span. It will very likely be on a different endpoint than the client.
       // Clients are not ambiguous by ID, so we don't need to qualify by endpoint.
       parent = keyString(span.id);
@@ -167,7 +167,7 @@ class SpanNodeBuilder {
     if (!parent && !this._rootSpan) {
       this._rootSpan = node;
       delete this._spanToParent[noEndpointKey];
-    } else if (!!span.shared) {
+    } else if (span.shared) {
       // In the case of shared server span, we need to address it both ways, in case intermediate
       // spans are lacking endpoint information.
       this._keyToNode[key] = node;
@@ -365,7 +365,7 @@ function correctForClockSkew(spans, debug = false) {
   const childrenOfRoot = trace.children;
   for (let i = 0; i < childrenOfRoot.length; i++) {
     const next = childrenOfRoot[i].span;
-    if (next.parentId || !!next.shared) continue;
+    if (next.parentId || next.shared) continue;
 
     const traceId = next.traceId;
     const spanId = next.id;
