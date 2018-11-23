@@ -12,7 +12,7 @@ export function showSpans(spans, parents, children, selectedSpans) {
     $selected.show();
     $selected.addClass('highlight');
     $selected.expanded = true;
-    $selected.$expander.text('-');
+    $selected.$expander.html('<i class="far fa-minus-square"></i>');
 
     $.each(children[$selected.id], (j, cId) => {
       family.add(cId);
@@ -43,7 +43,7 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
     }
 
     $selected.expanded = false;
-    $selected.$expander.text('+');
+    $selected.$expander.html('<i class="far fa-plus-square"></i>');
 
     $.each(children[$selected.id], (j, cId) => {
       family.add(cId);
@@ -321,7 +321,7 @@ export default component(function trace() {
         $span.openChildren = 0;
         $span.removeClass('highlight');
         $span.expanded = false;
-        $span.$expander.text('+');
+        $span.$expander.html('<i class="far fa-plus-square"></i>');
         if (!$span.isRoot) $span.hide();
       });
     });
@@ -330,18 +330,6 @@ export default component(function trace() {
     $('#collapseAll').addClass('active');
   };
 
-
-  this.showRootSpan = function() {
-    const self = this;
-    self.actingOnAll = true;
-    $.each(self.spans, (id, $span) => {
-      if ($span.isRoot) {
-        $span.expanded = false;
-        $span.$expander.text('+');
-        $span.show();
-      }
-    });
-  };
   /* This method modifies the span container view. It zooms in the span view
    * for selected time duration. Spans starting with in the selected time
    * duration are highlighted with span name in red color.
@@ -452,7 +440,6 @@ export default component(function trace() {
     this.on(document, 'uiCollapseAllSpans', this.collapseAllSpans);
     this.on(document, 'uiZoomInSpans', this.zoomInSpans);
     this.on(document, 'uiZoomOutSpans', this.zoomOutSpans);
-    this.on(document, 'uiRootSpans', this.showRootSpan);
 
     const self = this;
     const initData = initSpans(self.$node);
@@ -470,7 +457,7 @@ export default component(function trace() {
     if (serviceName !== undefined) {
       this.trigger(document, 'uiAddServiceNameFilter', {value: serviceName});
     } else {
-      this.trigger(document, 'uiRootSpans');
+      this.trigger(document, 'uiExpandAllSpans');
     }
 
     i18nInit('trace');
