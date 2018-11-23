@@ -18,7 +18,7 @@ export default component(function traceFilters() {
 
     const $html =
       $('<span>')
-        .attr('class', 'label service-filter-label service-tag-filtered')
+        .attr('class', 'label service-filter-label')
         .attr('id', this.idFromService(data.value))
         .attr('data-serviceName', data.value)
         .text(data.value)

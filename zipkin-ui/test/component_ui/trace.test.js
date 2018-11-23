@@ -3,6 +3,8 @@ import {showSpans, hideSpans, initSpans} from '../../js/component_ui/trace';
 import {traceDetailSpan} from './traceTestHelpers';
 import traceToMustache from '../../js/component_ui/traceToMustache';
 import {traceTemplate} from '../../js/templates';
+import {SPAN_V1} from '../../js/spanConverter';
+import testTrace from '../../testdata/netflix';
 
 describe('showSpans', () => {
   it('expands and highlights span to show', () => {
@@ -14,7 +16,7 @@ describe('showSpans', () => {
 
     showSpans(spans, parents, children, selected);
 
-    span.expanderText.should.contain('-');
+    span.expanderText.should.contain('<i class="far fa-minus-square"></i>');
     span.expanded.should.equal(true);
     [...span.classes].should.contain('highlight');
   });
@@ -87,7 +89,7 @@ describe('hideSpans', () => {
     showSpans(spans, parents, children, selected);
     hideSpans(spans, parents, children, selected);
 
-    span.expanderText.should.contain('+');
+    span.expanderText.should.contain('<i class="far fa-plus-square"></i>');
     span.expanded.should.equal(false);
     [...span.classes].should.not.contain('highlight');
   });
@@ -124,7 +126,7 @@ describe('hideSpans', () => {
     span1.openParents.should.equal(0);
     span1.openChildren.should.equal(0);
 
-    span2.hidden.should.equal(false);
+    span2.hidden.should.equal(true);
 
     span3.hidden.should.equal(true);
     span3.openParents.should.equal(0);
@@ -179,9 +181,46 @@ describe('hideSpans', () => {
     showSpans(spans, parents, children, selected);
     hideSpans(spans, parents, children, selected);
 
-    span.hidden.should.equal(true);
+    span.hidden.should.equal(false);
     span.openParents.should.equal(0);
     span.openChildren.should.equal(0);
+  });
+
+  it('hides properly during the nested more than four levels', () => {
+    const span1 = traceDetailSpan('0000000000000001');
+    const span2 = traceDetailSpan('0000000000000002');
+    const span3 = traceDetailSpan('0000000000000003');
+    const span4 = traceDetailSpan('0000000000000004');
+    const spans = {
+      '0000000000000001': span1,
+      '0000000000000002': span2,
+      '0000000000000003': span3,
+      '0000000000000004': span4
+    };
+    const parents = {
+      '0000000000000001': [],
+      '0000000000000002': ['0000000000000001'],
+      '0000000000000003': ['0000000000000002'],
+      '0000000000000004': ['0000000000000003']
+    };
+    const children = {
+      '0000000000000001': ['0000000000000002'],
+      '0000000000000002': ['0000000000000003'],
+      '0000000000000003': ['0000000000000004'],
+      '0000000000000004': []
+    };
+
+
+    showSpans(spans, parents, children, spans);
+    hideSpans(spans, parents, children, {0: span3});
+    span4.hidden.should.equal(true); // Checks closing parent closes child as well
+    span3.hidden.should.equal(true);
+    hideSpans(spans, parents, children, {0: span2});
+    span2.hidden.should.equal(true);
+    hideSpans(spans, parents, children, {0: span1});
+    span1.hidden.should.equal(true);
+    span1.shown.should.equal(false);
+    span1.expanded.should.equal(false);
   });
 });
 
@@ -195,41 +234,21 @@ function renderTrace(trace) {
 
 describe('initSpans', () => {
   it('should return initial data from rendered trace', () => {
-    const testTrace = [{
-      traceId: '2480ccca8df0fca5',
-      name: 'get',
-      id: '2480ccca8df0fca5',
-      timestamp: 1457186385375000,
-      duration: 333000,
-      annotations: [{
-        timestamp: 1457186385375000,
-        value: 'sr',
-        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
-      }, {
-        timestamp: 1457186385708000,
-        value: 'ss',
-        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
-      }],
-      binaryAnnotations: [{
-        key: 'sa',
-        value: true,
-        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
-      }, {
-        key: 'literally-false',
-        value: 'false',
-        endpoint: {serviceName: '111', ipv4: '127.0.0.1', port: 9411}
-      }]
-    }];
-
-    const $trace = renderTrace(testTrace);
+    const v1trace = [];
+    testTrace.forEach((span) => {
+      v1trace.push(SPAN_V1.convert(span));
+    });
+    const $trace = renderTrace(v1trace);
     const data = initSpans($trace);
-
-    const span = data.spans['2480ccca8df0fca5'];
-    span.id.should.equal('2480ccca8df0fca5');
+    const span = data.spans['90394f6bcffb5d13'];
+    span.id.should.equal('90394f6bcffb5d13');
     span.expanded.should.equal(false);
     span.isRoot.should.equal(true);
-
-    data.spansByService['111'].length.should.equal(1);
-    data.spansByService['111'][0].should.equal('2480ccca8df0fca5');
+    data.spansByService.apip.length.should.equal(4);
+    data.spansByService.apip[0].should.equal('90394f6bcffb5d13');
+    // Child span should not be visible without showspans on the first load
+    const childSpan = data.spans['67fae42571535f60'];
+    childSpan.isRoot.should.equal(false);
+    childSpan.is(':visible').should.equal(false);
   });
 });

@@ -148,10 +148,6 @@
   background-color: #F89406;
 }
 
-#summary li:hover .durations .service-tag-filtered {
-  background-color: #0084B4;
-}
-
 #summary li .durations .label:hover,
 #summary li .durations .label:hover span {
   background-color: red;

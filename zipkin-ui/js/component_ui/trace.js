@@ -9,13 +9,10 @@ import {i18nInit} from '../component_ui/i18n';
 export function showSpans(spans, parents, children, selectedSpans) {
   const family = new Set();
   $.each(selectedSpans, (i, $selected) => {
-    if ($selected.inFilters === 0) {
-      $selected.show();
-      $selected.addClass('highlight');
-    }
+    $selected.show();
+    $selected.addClass('highlight');
     $selected.expanded = true;
-    $selected.$expander.text('-');
-    $selected.inFilters += 1;
+    $selected.$expander.html('<i class="far fa-minus-square"></i>');
 
     $.each(children[$selected.id], (j, cId) => {
       family.add(cId);
@@ -34,28 +31,21 @@ export function showSpans(spans, parents, children, selectedSpans) {
   family.forEach(id => spans[id].show());
 }
 
-function hideSpan(span) {
-  if (span.inFilters > 0 || span.openChildren > 0 || span.openParents > 0) return;
-  span.hide();
-}
-
 // extracted for testing. this code mutates spans and selectedSpans
 export function hideSpans(spans, parents, children, selectedSpans, childrenOnly) {
   const family = new Set();
   $.each(selectedSpans, (i, $selected) => {
-    $selected.inFilters -= 1;
-
-    if (!childrenOnly && $selected.inFilters === 0) {
-      $selected.removeClass('highlight');
-      hideSpan($selected);
+    if (!childrenOnly === 0) {
+      $selected.hide();
     }
-
+    $selected.removeClass('highlight');
     $selected.expanded = false;
-    $selected.$expander.text('+');
+    $selected.$expander.html('<i class="far fa-plus-square"></i>');
 
     $.each(children[$selected.id], (j, cId) => {
       family.add(cId);
-      spans[cId].openParents -= 1;
+      // Decrement only when there is an open parent
+      if (spans[cId].openParents >= 1) spans[cId].openParents -= 1;
     });
     if (!childrenOnly) {
       $.each(parents[$selected.id], (j, pId) => {
@@ -69,7 +59,8 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
       });
     }
   });
-  family.forEach(id => hideSpan(spans[id]));
+  family.forEach(id => hideSpans(spans, parents, children, [spans[id]], true));
+  family.forEach(id => spans[id].hide());
 }
 
 function spanChildren($span) {
@@ -87,7 +78,6 @@ function initSpan($span) {
   $span.id = id;
   $span.expanded = false;
   $span.$expander = $span.find('.expander');
-  $span.inFilters = 0;
   $span.openChildren = 0;
   $span.openParents = 0;
 
@@ -164,28 +154,8 @@ export default component(function trace() {
     return spans;
   };
 
-  this.filterAdded = function(e, data) {
-    if (this.actingOnAll) {
-      return;
-    }
-    const self = this;
-    const spans = this.getSpansByService(data.value).map(function() {
-      return self.spans[$(this).data('id')];
-    });
-    this.expandSpans(spans);
-  };
-
   this.expandSpans = function(spans) {
     showSpans(this.spans, this.parents, this.children, spans);
-  };
-
-  this.filterRemoved = function(e, data) {
-    if (this.actingOnAll) return;
-    const self = this;
-    const spans = this.getSpansByService(data.value).map(function() {
-      return self.spans[$(this).data('id')];
-    });
-    this.collapseSpans(spans);
   };
 
   this.collapseSpans = function(spans, childrenOnly) {
@@ -327,18 +297,16 @@ export default component(function trace() {
     }
   };
 
-  this.triggerForAllServices = function(evt) {
-    $.each(this.spansByService, value => { this.trigger(document, evt, {value}); });
-  };
 
   this.expandAllSpans = function() {
     const self = this;
     self.actingOnAll = true;
     this.showSpinnerAround(() => {
       showSpans(self.spans, self.parents, self.children, self.spans);
-      self.triggerForAllServices('uiAddServiceNameFilter');
     });
     self.actingOnAll = false;
+    $('#expandAll').addClass('active');
+    $('#collapseAll').removeClass('active');
   };
 
   this.collapseAllSpans = function() {
@@ -346,17 +314,17 @@ export default component(function trace() {
     self.actingOnAll = true;
     this.showSpinnerAround(() => {
       $.each(self.spans, (id, $span) => {
-        $span.inFilters = 0;
         $span.openParents = 0;
         $span.openChildren = 0;
         $span.removeClass('highlight');
         $span.expanded = false;
-        $span.$expander.text('+');
+        $span.$expander.html('<i class="far fa-plus-square"></i>');
         if (!$span.isRoot) $span.hide();
       });
-      self.triggerForAllServices('uiRemoveServiceNameFilter');
     });
     self.actingOnAll = false;
+    $('#expandAll').removeClass('active');
+    $('#collapseAll').addClass('active');
   };
 
   /* This method modifies the span container view. It zooms in the span view
@@ -463,15 +431,8 @@ export default component(function trace() {
   };
 
   this.after('initialize', function() {
-    this.around('filterAdded', this.showSpinnerAround);
-    this.around('filterRemoved', this.showSpinnerAround);
-
     this.on('click', this.handleClick);
     this.on('mousedown', this.handleMouseDown);
-
-    this.on(document, 'uiAddServiceNameFilter', this.filterAdded);
-    this.on(document, 'uiRemoveServiceNameFilter', this.filterRemoved);
-
     this.on(document, 'uiExpandAllSpans', this.expandAllSpans);
     this.on(document, 'uiCollapseAllSpans', this.collapseAllSpans);
     this.on(document, 'uiZoomInSpans', this.zoomInSpans);

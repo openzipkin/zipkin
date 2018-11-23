@@ -27,21 +27,15 @@
   
   <form class='form-row mt-3' role='form'>
     <div class='form-group col-md-3' id='filterAllServices'>
-      <button type='button' class='btn btn-primary active' value='uiExpandAllSpans' data-i18n="trace.expand">Expand All</button>
-      <button type='button' class='btn btn-primary' value='uiCollapseAllSpans' data-i18n="trace.collapse">Collapse All</button>
-    </div>
-    <div class="form-group col-md-2">
-      <select data-placeholder='Filter Service Search' class='form-control' name='serviceFilterSearch' id='serviceFilterSearch'>
-        <option value=''></option>
-        {{#serviceNameAndSpanCounts}}
-        <option value='{{serviceName}}'>{{serviceName}}</option>
-        {{/serviceNameAndSpanCounts}}
-      </select>
+      <button id= 'expandAll' type='button' class='btn btn-primary' value='uiExpandAllSpans'
+      data-i18n="trace.expand">Expand All</button>
+      <button id= 'collapseAll' type='button' class='btn btn-primary' value='uiCollapseAllSpans'
+      data-i18n="trace.collapse">Collapse All</button>
     </div>
   </form>
   <div class='trace-details services'>
   {{#serviceNameAndSpanCounts}}
-    <span class='badge badge-info service-filter-label service-tag-filtered' data-service-name='{{serviceName}}'>{{serviceName}} x{{spanCount}}</span>
+    <span class='badge badge-info service-filter-label' data-service-name='{{serviceName}}'>{{serviceName}} x{{spanCount}}</span>
   {{/serviceNameAndSpanCounts}}
   </div>
  </div>
@@ -76,7 +70,7 @@
   >
     <div class='handle'>
       <div class='service-name' style='margin-left: {{depth}}px'>
-        <span class='expander'>+</span>
+        <span class='expander'></span>
         <span class='text-truncate' data-toggle="tooltip" title={{serviceName}}>{{serviceName}}</span>
       </div>
     </div>
