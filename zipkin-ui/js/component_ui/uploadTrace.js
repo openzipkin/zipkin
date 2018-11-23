@@ -1,11 +1,9 @@
 import {component} from 'flightjs';
 import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
 import traceToMustache from '../../js/component_ui/traceToMustache';
-import {mergeV2ById} from '../spanCleaner';
-import {SPAN_V1} from '../spanConverter';
+import {correctForClockSkew} from '../skew';
 
-// We are about to switch all internals to v2 format. Unsupporting v1 allows easier progress
-export function convertV2ToV1(trace) {
+export function ensureV2(trace) {
   if (!Array.isArray(trace) || trace.length === 0) {
     throw new Error('input is not a list');
   }
@@ -17,7 +15,6 @@ export function convertV2ToV1(trace) {
     throw new Error(
       'v1 format is not supported. For help, contact https://gitter.im/openzipkin/zipkin');
   }
-  return SPAN_V1.convertTrace(mergeV2ById(trace));
 }
 
 export default component(function uploadTrace() {
@@ -31,10 +28,11 @@ export default component(function uploadTrace() {
     reader.onload = evt => {
       let model;
       try {
-        const rawTrace = JSON.parse(evt.target.result);
-        const v1Trace = convertV2ToV1(rawTrace);
-        const modelview = traceToMustache(v1Trace);
-        model = {modelview, trace: rawTrace};
+        const raw = JSON.parse(evt.target.result);
+        ensureV2(raw);
+        const corrected = correctForClockSkew(raw);
+        const modelview = traceToMustache(corrected);
+        model = {modelview, trace: raw};
       } catch (e) {
         this.trigger('uiServerError',
               {desc: 'Cannot parse file', message: e});

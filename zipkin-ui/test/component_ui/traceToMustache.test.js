@@ -4,31 +4,32 @@ import traceToMustache,
     getServiceName,
     formatEndpoint
   } from '../../js/component_ui/traceToMustache';
-import {mergeV2ById} from '../../js/spanCleaner';
+const {clean, mergeV2ById} = require('../../js/spanCleaner');
 import {SPAN_V1} from '../../js/spanConverter';
 import {httpTrace} from './traceTestHelpers';
 
-const v1HttpTrace = SPAN_V1.convertTrace(mergeV2ById(httpTrace));
+// cleans the data as traceSummary expects data to be normalized
+const cleanedHttpTrace = mergeV2ById(httpTrace);
 
 describe('traceToMustache', () => {
   it('should format duration', () => {
-    const modelview = traceToMustache(v1HttpTrace);
+    const modelview = traceToMustache(cleanedHttpTrace);
     modelview.duration.should.equal('168.731ms');
   });
 
   it('should show the number of services', () => {
-    const {services} = traceToMustache(v1HttpTrace);
+    const {services} = traceToMustache(cleanedHttpTrace);
     // TODO: correct: the span count is by ID when it should be by distinct span
     services.should.equal(2);
   });
 
   it('should show logsUrl', () => {
-    const {logsUrl} = traceToMustache(v1HttpTrace, 'http/url.com');
+    const {logsUrl} = traceToMustache(cleanedHttpTrace, 'http/url.com');
     logsUrl.should.equal('http/url.com');
   });
 
   it('should show service name and span counts', () => {
-    const {serviceNameAndSpanCounts} = traceToMustache(v1HttpTrace);
+    const {serviceNameAndSpanCounts} = traceToMustache(cleanedHttpTrace);
     serviceNameAndSpanCounts.should.eql([
       {serviceName: 'backend', spanCount: 1},
       {serviceName: 'frontend', spanCount: 2}
@@ -36,21 +37,20 @@ describe('traceToMustache', () => {
   });
 
   it('should show human-readable annotation name', () => {
-    const {spans: [testSpan]} = traceToMustache(v1HttpTrace);
+    const {spans: [testSpan]} = traceToMustache(cleanedHttpTrace);
     testSpan.annotations[0].value.should.equal('Server Receive');
     testSpan.annotations[1].value.should.equal('Server Send');
     testSpan.binaryAnnotations[4].key.should.equal('Client Address');
   });
 
   it('should tolerate spans without annotations', () => {
-    const testTrace = [SPAN_V1.convert({
+    const testTrace = [clean({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
       timestamp: 1457186385375000,
       duration: 333000,
       localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
-      annotations: [],
       tags: {lc: 'component'}
     })];
     const {spans: [testSpan]} = traceToMustache(testTrace);
@@ -58,7 +58,7 @@ describe('traceToMustache', () => {
   });
 
   it('should not include empty Local Component annotations', () => {
-    const testTrace = [SPAN_V1.convert({
+    const testTrace = [clean({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
@@ -72,7 +72,7 @@ describe('traceToMustache', () => {
   });
 
   it('should tolerate spans without tags', () => {
-    const testTrace = [SPAN_V1.convert({
+    const testTrace = [clean({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
@@ -80,8 +80,6 @@ describe('traceToMustache', () => {
       timestamp: 1457186385375000,
       duration: 333000,
       localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
-      annotations: [],
-      tags: {}
     })];
     const {spans: [testSpan]} = traceToMustache(testTrace);
     testSpan.annotations[0].value.should.equal('Server Receive');

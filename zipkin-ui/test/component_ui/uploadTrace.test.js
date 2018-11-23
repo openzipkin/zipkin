@@ -1,24 +1,19 @@
 import {
-  convertV2ToV1
+  ensureV2
 } from '../../js/component_ui/uploadTrace';
-import {mergeV2ById} from '../../js/spanCleaner';
-import {SPAN_V1} from '../../js/spanConverter';
 import {httpTrace} from '../component_ui/traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
 
-describe('convertV2ToV1', () => {
-  // TODO: this is temporary, as soon this will not need to convert
-  it('should convert to v1 format', () => {
-    const v1Trace = convertV2ToV1(httpTrace);
-
-    expect(v1Trace).to.deep.equal(SPAN_V1.convertTrace(mergeV2ById(httpTrace)));
+describe('ensureV2', () => {
+  it('does not throw on v2 format', () => {
+    ensureV2(httpTrace);
   });
 
   it('should raise error if not a list', () => {
     let error;
     try {
-      convertV2ToV1();
+      ensureV2();
     } catch (err) {
       error = err;
     }
@@ -26,7 +21,7 @@ describe('convertV2ToV1', () => {
     expect(error.message).to.eql('input is not a list');
 
     try {
-      convertV2ToV1({traceId: 'a', id: 'b'});
+      ensureV2({traceId: 'a', id: 'b'});
     } catch (err) {
       expect(err.message).to.eql(error.message);
     }
@@ -35,7 +30,7 @@ describe('convertV2ToV1', () => {
   it('should raise error if missing trace ID or span ID', () => {
     let error;
     try {
-      convertV2ToV1([{traceId: 'a'}]);
+      ensureV2([{traceId: 'a'}]);
     } catch (err) {
       error = err;
     }
@@ -43,7 +38,7 @@ describe('convertV2ToV1', () => {
     expect(error.message).to.eql('List<Span> implies at least traceId and id fields');
 
     try {
-      convertV2ToV1([{id: 'b'}]);
+      ensureV2([{id: 'b'}]);
     } catch (err) {
       expect(err.message).to.eql(error.message);
     }
@@ -52,7 +47,7 @@ describe('convertV2ToV1', () => {
   it('should raise error if in v1 format', () => {
     let error;
     try {
-      convertV2ToV1([{traceId: 'a', id: 'b', binaryAnnotations: []}]);
+      ensureV2([{traceId: 'a', id: 'b', binaryAnnotations: []}]);
     } catch (err) {
       error = err;
     }

@@ -15,7 +15,7 @@ function isEndpoint(endpoint) {
 }
 
 // This cleans potential dirty v2 inputs, like normalizing IDs etc. It does not affect the input
-function clean(span) {
+export function clean(span) {
   const res = {
     traceId: normalizeTraceId(span.traceId)
   };
@@ -108,8 +108,8 @@ export function compare(a, b) {
  */
 function compareEndpoint(left, right) {
   // handle nulls first
-  if (undefined === left) return -1;
-  if (undefined === right) return 1;
+  if (typeof(left) === 'undefined') return -1;
+  if (typeof(right) === 'undefined') return 1;
 
   const byService = compare(left.serviceName, right.serviceName);
   if (byService !== 0) return byService;
@@ -120,6 +120,9 @@ function compareEndpoint(left, right) {
 
 // false or null first (client first)
 function compareShared(left, right) {
+  if (typeof(left) === 'undefined') return -1;
+  if (typeof(right) === 'undefined') return 1;
+
   if (left === right) {
     return 0;
   } else {
@@ -211,18 +214,19 @@ export function mergeV2ById(spans) {
     result[i] = span;
   }
 
-  // sort by timestamp, then name, root first in case of skew
+  // sort by timestamp, then name, root/shared first in case of skew
   // TODO: this should be a topological sort
   return result.sort((a, b) => {
-    if (!a.parentId && !b.parentId) { // both are root
-      return a.shared ? 1 : -1; // shared is server, so comes after client
-    } if (!a.parentId) { // a is root
+    if (!a.parentId && b.parentId) { // a is root
       return -1;
-    } else if (!b.parentId) { // b is root
+    } else if (a.parentId && !b.parentId) { // b is root
       return 1;
     }
-    // Either a and b are root or neither are. In any case sort by timestamp, then name
-    return compareShared(a.shared, b.shared) ||
-      compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
+
+    // order client first in case of shared spans (shared is always server)
+    if (a.id === b.id) return compareShared(a.shared, b.shared);
+
+    // Either a and b are root or neither are. sort by shared timestamp, then name
+    return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
   });
 }

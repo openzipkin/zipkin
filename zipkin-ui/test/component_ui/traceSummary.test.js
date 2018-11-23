@@ -7,25 +7,24 @@ import {
   totalDuration,
   traceDuration
 } from '../../js/component_ui/traceSummary';
+const {clean, mergeV2ById} = require('../../js/spanCleaner');
 import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
-import {mergeV2ById} from '../../js/spanCleaner';
-import {SPAN_V1} from '../../js/spanConverter';
 
 chai.config.truncateThreshold = 0;
 
-const v1HttpTrace = SPAN_V1.convertTrace(mergeV2ById(httpTrace));
+// cleans the data as traceSummary expects data to be normalized
+const cleanedHttpTrace = mergeV2ById(httpTrace);
 
 describe('getGroupedTimestamps', () => {
   it('should classify durations local to the endpoint', () => {
-    getGroupedTimestamps(v1HttpTrace).should.eql(
+    getGroupedTimestamps(cleanedHttpTrace).should.eql(
       {
         frontend: [
           {timestamp: 1541138169255688, duration: 168731},
           {timestamp: 1541138169297572, duration: 111121}
         ],
         backend: [
-          // TODO: correct. The backend server duration should be here not client!
-          {timestamp: 1541138169297572, duration: 111121}
+          {timestamp: 1541138169377997, duration: 26326}
         ]
       }
     );
@@ -33,7 +32,7 @@ describe('getGroupedTimestamps', () => {
 
   // Ex netflix sometimes add annotations with no duration
   it('should backfill incomplete duration as zero instead of undefined', () => {
-    const testTrace = SPAN_V1.convertTrace([
+    const testTrace = [
       {
         traceId: '2480ccca8df0fca5',
         id: '2480ccca8df0fca5',
@@ -49,7 +48,7 @@ describe('getGroupedTimestamps', () => {
         timestamp: 1541138169377997,
         localEndpoint: backend,
       }
-    ]);
+    ];
 
     getGroupedTimestamps(testTrace).should.eql(
       {
@@ -91,16 +90,15 @@ describe('traceSummary', () => {
   });
 
   it('calculates timestamp and duration', () => {
-    const summary = traceSummary(v1HttpTrace);
-    const rootSpan = httpTrace.find(s => s.traceId === s.id);
+    const summary = traceSummary(cleanedHttpTrace);
+    const rootSpan = cleanedHttpTrace.find(s => s.traceId === s.id);
     summary.timestamp.should.equal(rootSpan.timestamp);
     summary.duration.should.equal(rootSpan.duration);
   });
 
   it('should get span count', () => {
-    const summary = traceSummary(v1HttpTrace);
-    // TODO: correct: the span count is by ID when it should be by distinct span
-    summary.spanCount.should.equal(httpTrace.length - 1);
+    const summary = traceSummary(cleanedHttpTrace);
+    summary.spanCount.should.equal(cleanedHttpTrace.length);
   });
 });
 
@@ -110,7 +108,7 @@ describe('getTraceErrorType', () => {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [],
-      binaryAnnotations: []
+      tags: {}
     }];
     expect(getTraceErrorType(spans)).to.equal('none');
   });
@@ -120,7 +118,7 @@ describe('getTraceErrorType', () => {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'not'}],
-      binaryAnnotations: [{key: 'not', value: 'error'}]
+      tags: {not: 'error'}
     }];
     expect(getTraceErrorType(spans)).to.equal('none');
   });
@@ -131,14 +129,14 @@ describe('getTraceErrorType', () => {
         traceId: '1e223ff1f80f1c69',
         id: '1e223ff1f80f1c69',
         annotations: [],
-        binaryAnnotations: []
+        tags: {}
       },
       {
         traceId: '1e223ff1f80f1c69',
         parentId: '1e223ff1f80f1c69',
         id: 'bf396325699c84bf',
         annotations: [{timestamp: 1, value: 'not'}],
-        binaryAnnotations: [{key: 'not', value: 'error'}]
+        tags: {not: 'error'}
       }
     ];
     expect(getTraceErrorType(spans)).to.equal('none');
@@ -149,7 +147,7 @@ describe('getTraceErrorType', () => {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [],
-      binaryAnnotations: [{key: 'error', value: ''}]
+      tags: {error: ''}
     }];
     expect(getTraceErrorType(spans)).to.equal('critical');
   });
@@ -159,7 +157,7 @@ describe('getTraceErrorType', () => {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'not'}],
-      binaryAnnotations: [{key: 'error', value: ''}]
+      tags: {error: ''}
     }];
     expect(getTraceErrorType(spans)).to.equal('critical');
   });
@@ -169,7 +167,7 @@ describe('getTraceErrorType', () => {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'error'}],
-      binaryAnnotations: [{key: 'error', value: ''}]
+      tags: {error: ''}
     }];
     expect(getTraceErrorType(spans)).to.equal('critical');
   });
@@ -180,14 +178,14 @@ describe('getTraceErrorType', () => {
         traceId: '1e223ff1f80f1c69',
         id: '1e223ff1f80f1c69',
         annotations: [{timestamp: 1, value: 'error'}],
-        binaryAnnotations: []
+        tags: {}
       },
       {
         traceId: '1e223ff1f80f1c69',
         parentId: '1e223ff1f80f1c69',
         id: 'bf396325699c84bf',
         annotations: [],
-        binaryAnnotations: [{key: 'error', value: ''}]
+        tags: {error: ''}
       }
     ];
     expect(getTraceErrorType(spans)).to.equal('critical');
@@ -198,14 +196,14 @@ describe('getTraceErrorType', () => {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'error'}],
-      binaryAnnotations: [{key: 'not', value: 'error'}]
+      tags: {not: 'error'}
     }];
     expect(getTraceErrorType(spans)).to.equal('transient');
   });
 });
 
 describe('traceSummariesToMustache', () => {
-  const summary = traceSummary(v1HttpTrace);
+  const summary = traceSummary(cleanedHttpTrace);
 
   it('should return empty list for empty list', () => {
     traceSummariesToMustache(null, []).should.eql([]);
@@ -220,8 +218,7 @@ describe('traceSummariesToMustache', () => {
     const model = traceSummariesToMustache(null, [summary]);
     model[0].serviceSummaries.should.eql([
       {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
-      // TODO: correct. The backend server duration should be here not client!
-      {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '111.121ms'}
+      {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '26.326ms'}
     ]);
   });
 
@@ -232,7 +229,7 @@ describe('traceSummariesToMustache', () => {
 
   it('should get service percentage', () => {
     const model = traceSummariesToMustache('backend', [summary]);
-    model[0].servicePercentage.should.equal(65);
+    model[0].servicePercentage.should.equal(15);
   });
 
   it('should format start time', () => {
@@ -276,35 +273,35 @@ describe('traceSummariesToMustache', () => {
   });
 
   it('should get correct spanCount', () => {
-    const testSummary = traceSummary(v1HttpTrace);
+    const testSummary = traceSummary(cleanedHttpTrace);
     const model = traceSummariesToMustache(null, [testSummary])[0];
-    model.spanCount.should.equal(2); // TODO: correct as this is distinct IDs not spans!
+    model.spanCount.should.equal(cleanedHttpTrace.length);
   });
 
   it('should order traces by duration and tie-break using trace id', () => {
     const traceId1 = '9ed44141f679130b';
     const traceId2 = '6ff1c14161f7bde1';
     const traceId3 = '1234561234561234';
-    const summary1 = traceSummary([{
+    const summary1 = traceSummary([clean({
       traceId: traceId1,
       name: 'get',
       id: '6ff1c14161f7bde1',
       timestamp: 1457186441657000,
-      duration: 4000}]);
-    const summary2 = traceSummary([{
+      duration: 4000})]);
+    const summary2 = traceSummary([clean({
       traceId: traceId2,
       name: 'get',
       id: '9ed44141f679130b',
       timestamp: 1457186568026000,
       duration: 4000
-    }]);
-    const summary3 = traceSummary([{
+    })]);
+    const summary3 = traceSummary([clean({
       traceId: traceId3,
       name: 'get',
       id: '6677567324735',
       timestamp: 1457186568027000,
       duration: 3000
-    }]);
+    })]);
 
     const model = traceSummariesToMustache(null, [summary1, summary2, summary3]);
     model[0].traceId.should.equal(traceId2);

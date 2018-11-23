@@ -2,8 +2,7 @@ import {component} from 'flightjs';
 import $ from 'jquery';
 import {getError} from '../../js/component_ui/error';
 import traceToMustache from '../../js/component_ui/traceToMustache';
-import {mergeV2ById} from '../spanCleaner';
-import {SPAN_V1} from '../spanConverter';
+import {correctForClockSkew} from '../skew';
 
 export function toContextualLogsUrl(logsUrl, traceId) {
   if (logsUrl) {
@@ -14,8 +13,8 @@ export function toContextualLogsUrl(logsUrl, traceId) {
 
 // Converts the response into data for trace.mustache. Missing required data will raise an error.
 export function convertSuccessResponse(rawResponse, logsUrl) {
-  const v1Trace = SPAN_V1.convertTrace(mergeV2ById(rawResponse));
-  const modelview = traceToMustache(v1Trace, logsUrl);
+  const corrected = correctForClockSkew(rawResponse);
+  const modelview = traceToMustache(corrected, logsUrl);
   return {modelview, trace: rawResponse};
 }
 
