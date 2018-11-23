@@ -25,6 +25,9 @@ const TraceViewerPageComponent = component(function TraceViewerPage() {
   };
 
   this.attach = function() {
+    FilterAllServicesUI.attachTo('#filterAllServices', {
+      totalServices: $('.trace-details.services span').length
+    });
     JsonPanelUI.attachTo('#jsonPanel');
     SpanPanelUI.attachTo('#spanPanel');
     TraceUI.attachTo('#trace-container');

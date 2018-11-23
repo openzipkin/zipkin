@@ -16,7 +16,7 @@ describe('showSpans', () => {
 
     showSpans(spans, parents, children, selected);
 
-    span.expanderText.should.contain('-');
+    span.expanderText.should.contain('<i class="far fa-minus-square"></i>');
     span.expanded.should.equal(true);
     [...span.classes].should.contain('highlight');
   });
@@ -89,7 +89,7 @@ describe('hideSpans', () => {
     showSpans(spans, parents, children, selected);
     hideSpans(spans, parents, children, selected);
 
-    span.expanderText.should.contain('+');
+    span.expanderText.should.contain('<i class="far fa-plus-square"></i>');
     span.expanded.should.equal(false);
     [...span.classes].should.not.contain('highlight');
   });
@@ -181,7 +181,7 @@ describe('hideSpans', () => {
     showSpans(spans, parents, children, selected);
     hideSpans(spans, parents, children, selected);
 
-    span.hidden.should.equal(true);
+    span.hidden.should.equal(false);
     span.openParents.should.equal(0);
     span.openChildren.should.equal(0);
   });
@@ -246,7 +246,7 @@ describe('initSpans', () => {
     span.isRoot.should.equal(true);
     data.spansByService.apip.length.should.equal(4);
     data.spansByService.apip[0].should.equal('90394f6bcffb5d13');
-    // Child span should not be visible on the first load
+    // Child span should not be visible without showspans on the first load
     const childSpan = data.spans['67fae42571535f60'];
     childSpan.isRoot.should.equal(false);
     childSpan.is(':visible').should.equal(false);

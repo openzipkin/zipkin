@@ -184,7 +184,7 @@ export function traceDetailSpan(id) {
     hide() {this.hidden = true; this.shown = false;},
     expanderText,
     expanded: false,
-    $expander: {text: t => expanderText.push(t)},
+    $expander: {html: t => expanderText.push(t)},
     classes,
     addClass: c => classes.add(c),
     removeClass: c => classes.delete(c)

@@ -35,13 +35,10 @@ export function showSpans(spans, parents, children, selectedSpans) {
 export function hideSpans(spans, parents, children, selectedSpans, childrenOnly) {
   const family = new Set();
   $.each(selectedSpans, (i, $selected) => {
-    $selected.inFilters -= 1;
-
     if (!childrenOnly === 0) {
-      $selected.removeClass('highlight');
       $selected.hide();
     }
-
+    $selected.removeClass('highlight');
     $selected.expanded = false;
     $selected.$expander.html('<i class="far fa-plus-square"></i>');
 
