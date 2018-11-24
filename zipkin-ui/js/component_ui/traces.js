@@ -17,7 +17,6 @@ export default component(function traces() {
     if (this.sortFunctions.hasOwnProperty(data.order)) {
       this.$traces.sort(this.sortFunctions[data.order]);
       this.$node.html(this.$traces);
-      this.triggerUpdateTraces();
     }
   };
 
@@ -29,8 +28,6 @@ export default component(function traces() {
       this.timestamp = parseInt($this.data('timestamp'), 10);
       this.percentage = parseInt($this.data('servicePercentage'), 10);
     });
-    this.on(document, 'uiAddServiceNameFilter', this.addFilter);
-    this.on(document, 'uiRemoveServiceNameFilter', this.removeFilter);
     this.on(document, 'uiUpdateTraceSortOrder', this.updateSortOrder);
     const sortOrderSelect = $('.sort-order');
     this.updateSortOrder(null, {order: sortOrderSelect.val()});
