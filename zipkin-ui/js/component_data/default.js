@@ -3,7 +3,7 @@ import {errToStr} from '../../js/component_ui/error';
 import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
-import {correctForClockSkew} from '../skew';
+import {treeCorrectedForClockSkew} from '../skew';
 
 export function convertDurationToMicrosecond(duration) {
   const match = duration.match(/^(\d+)(us|μs|ms|s)$/i);
@@ -65,7 +65,7 @@ export function convertToApiQuery(source) {
 export function convertSuccessResponse(rawResponse, serviceName, apiURL, utc = false) {
   const summaries = [];
   rawResponse.forEach((raw) => {
-    const corrected = correctForClockSkew(raw);
+    const corrected = treeCorrectedForClockSkew(raw).traverse();
     if (corrected.length > 0 && corrected[0].timestamp) {
       summaries.push(traceSummary(corrected));
     }

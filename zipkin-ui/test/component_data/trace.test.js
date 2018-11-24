@@ -211,8 +211,8 @@ describe('convertSuccessResponse', () => {
       traceId: 'bb1f0e21882325b8',
       duration: '168.731ms',
       services: 2,
-      depth: 2,
-      spanCount: 2,
+      depth: 3,
+      spanCount: 3,
       serviceNameAndSpanCounts: [
         {serviceName: 'backend', spanCount: 1},
         {serviceName: 'frontend', spanCount: 2}
@@ -453,8 +453,8 @@ describe('convertSuccessResponse', () => {
       traceId: '1e223ff1f80f1c69',
       duration: '99.411ms',
       services: 2,
-      depth: 3,
-      spanCount: 3,
+      depth: 4,
+      spanCount: 4,
       serviceNameAndSpanCounts: [
         {serviceName: 'servicea', spanCount: 2},
         {serviceName: 'serviceb', spanCount: 2}
