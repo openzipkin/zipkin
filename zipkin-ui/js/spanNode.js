@@ -106,6 +106,7 @@ class SpanNode {
 }
 
 // In javascript, dict keys can't be objects
+// TODO: see if we can accomodate shared server spans that accidentally didn't add the shared flag
 function keyString(id, shared = false, endpoint) {
   if (!shared) return id;
   const endpointString = endpoint ? JSON.stringify(endpoint) : 'x';

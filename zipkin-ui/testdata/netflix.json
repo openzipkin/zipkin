@@ -93,7 +93,8 @@
       "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
       "service_asg_name": "session_logs-int-v549",
       "service_cluster_name": "session_logs-int"
-    }
+    },
+    "shared": true
   },
   {
     "traceId": "5982fe77008310cc80f1da5e10147517",
@@ -214,7 +215,8 @@
       "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
       "service_asg_name": "api-int-v606",
       "service_cluster_name": "api-int"
-    }
+    },
+    "shared": true
   },
   {
     "traceId": "5982fe77008310cc80f1da5e10147517",

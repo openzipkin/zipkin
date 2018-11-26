@@ -14,10 +14,30 @@ const backend = {
   port: 9000
 };
 
-const cs = {timestamp: 50000, value: 'cs', endpoint: frontend};
-const sr = {timestamp: 70000, value: 'sr', endpoint: backend};
-const ss = {timestamp: 80000, value: 'ss', endpoint: backend};
-const cr = {timestamp: 100000, value: 'cr', endpoint: frontend};
+const cs = {
+  isDerived: true,
+  timestamp: 50000,
+  value: 'Client Start',
+  endpoint: '127.0.0.1:8080 (frontend)'
+};
+const sr = {
+  isDerived: true,
+  timestamp: 70000,
+  value: 'Server Start',
+  endpoint: '192.168.99.101:9000 (backend)'
+};
+const ss = {
+  isDerived: true,
+  timestamp: 80000,
+  value: 'Server Finish',
+  endpoint: '192.168.99.101:9000 (backend)'
+};
+const cr = {
+  isDerived: true,
+  timestamp: 100000,
+  value: 'Client Finish',
+  endpoint: '127.0.0.1:8080 (frontend)'
+};
 
 describe('SPAN v2 -> v1 Conversion', () => {
   // originally zipkin2.v1.SpanConverterTest.client
@@ -33,14 +53,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       localEndpoint: frontend,
       remoteEndpoint: backend,
       annotations: [
-        {
-          value: 'ws',
-          timestamp: 1472470996238000
-        },
-        {
-          value: 'wr',
-          timestamp: 1472470996403000
-        }
+        {value: 'ws', timestamp: 1472470996238000},
+        {value: 'wr', timestamp: 1472470996403000}
       ],
       tags: {
         'http.path': '/api',
@@ -57,24 +71,28 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 207000,
       annotations: [
         {
-          value: 'cs',
+          isDerived: true,
+          value: 'Client Start',
           timestamp: 1472470996199000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         },
         {
-          value: 'ws',
-          timestamp: 1472470996238000, // ts order retained
-          endpoint: frontend
+          isDerived: false,
+          value: 'Wire Send',
+          timestamp: 1472470996238000,
+          endpoint: '127.0.0.1:8080 (frontend)'
         },
         {
-          value: 'wr',
+          isDerived: false,
+          value: 'Wire Receive',
           timestamp: 1472470996403000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         },
         {
-          value: 'cr',
+          isDerived: true,
+          value: 'Client Finish',
           timestamp: 1472470996406000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
       binaryAnnotations: [
@@ -121,12 +139,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       kind: 'CLIENT',
       timestamp: 1472470996199000,
       localEndpoint: frontend,
-      annotations: [
-        {
-          value: 'ws',
-          timestamp: 1472470996238000
-        }
-      ]
+      annotations: [{value: 'ws', timestamp: 1472470996238000}]
     };
 
     const v1 = {
@@ -137,14 +150,16 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       annotations: [
         {
-          value: 'cs',
+          isDerived: true,
+          value: 'Client Start',
           timestamp: 1472470996199000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         },
         {
-          value: 'ws',
+          isDerived: false,
+          value: 'Wire Send',
           timestamp: 1472470996238000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
       binaryAnnotations: [], // prefers empty array to nil
@@ -165,12 +180,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       localEndpoint: frontend,
-      annotations: [
-        {
-          value: 'cs',
-          timestamp: 1472470996199000
-        }
-      ]
+      annotations: [{value: 'cs', timestamp: 1472470996199000}]
     };
 
     const v1 = {
@@ -182,14 +192,16 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 207000,
       annotations: [
         {
-          value: 'cs',
+          isDerived: true,
+          value: 'Client Start',
           timestamp: 1472470996199000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         },
         {
-          value: 'cr',
+          isDerived: true,
+          value: 'Client Finish',
           timestamp: 1472470996406000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
       binaryAnnotations: [],
@@ -210,12 +222,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       kind: 'CLIENT',
       localEndpoint: frontend,
       remoteEndpoint: backend,
-      annotations: [
-        {
-          value: 'cr',
-          timestamp: 1472470996199000
-        }
-      ]
+      annotations: [{value: 'cr', timestamp: 1472470996199000}]
     };
 
     const v1 = {
@@ -225,9 +232,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       name: 'get',
       annotations: [
         {
-          value: 'cr',
+          isDerived: true,
+          value: 'Client Finish',
           timestamp: 1472470996199000,
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
       binaryAnnotations: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
@@ -317,8 +325,18 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [
-        {timestamp: 1472470996199000, value: 'sr', endpoint: backend},
-        {timestamp: 1472470996406000, value: 'ss', endpoint: backend}
+        {
+          isDerived: true,
+          value: 'Server Start',
+          timestamp: 1472470996199000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        },
+        {
+          isDerived: true,
+          value: 'Server Finish',
+          timestamp: 1472470996406000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
       ],
       binaryAnnotations: [
         {key: 'http.path', value: '/api', endpoint: '192.168.99.101:9000 (backend)'},
@@ -360,19 +378,14 @@ describe('SPAN v2 -> v1 Conversion', () => {
   });
 
   // originally zipkin2.v1.SpanConverterTest.coreAnnotation
-  it('converts v2 span retaining an sr annotation', () => {
+  it('converts v2 span retaining a cs annotation', () => {
     const v2 = {
       traceId: '1',
       parentId: '1',
       id: '2',
       name: 'foo',
       timestamp: 1472470996199000,
-      annotations: [
-        {
-          value: 'cs',
-          timestamp: 1472470996199000
-        }
-      ]
+      annotations: [{value: 'cs', timestamp: 1472470996199000}]
     };
 
     const v1 = {
@@ -383,7 +396,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       annotations: [
         {
-          value: 'cs',
+          isDerived: true,
+          value: 'Client Start',
           timestamp: 1472470996199000
         }
       ],
@@ -416,14 +430,16 @@ describe('SPAN v2 -> v1 Conversion', () => {
       name: 'get',
       annotations: [
         {
-          value: 'sr',
+          isDerived: true,
+          value: 'Server Start',
           timestamp: 1472470996199000,
-          endpoint: backend
+          endpoint: '192.168.99.101:9000 (backend)'
         },
         {
-          value: 'ss',
+          isDerived: true,
+          value: 'Server Finish',
           timestamp: 1472470996406000,
-          endpoint: backend
+          endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
       binaryAnnotations: [],
@@ -455,9 +471,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       name: 'get',
       annotations: [
         {
-          value: 'sr',
+          isDerived: true,
+          value: 'Server Start',
           timestamp: 1472470996199000,
-          endpoint: backend
+          endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
       binaryAnnotations: [],
@@ -478,12 +495,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       kind: 'SERVER',
       localEndpoint: backend,
       remoteEndpoint: frontend,
-      annotations: [
-        {
-          value: 'ss',
-          timestamp: 1472470996199000
-        }
-      ]
+      annotations: [{value: 'ss', timestamp: 1472470996199000}]
     };
 
     const v1 = {
@@ -492,9 +504,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       name: 'get',
       annotations: [
         {
-          value: 'ss',
+          isDerived: true,
+          value: 'Server Finish',
           timestamp: 1472470996199000,
-          endpoint: backend
+          endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
       binaryAnnotations: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
@@ -570,7 +583,14 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000003',
       name: 'send',
       timestamp: 1472470996199000,
-      annotations: [{value: 'ms', timestamp: 1472470996199000, endpoint: frontend}],
+      annotations: [
+        {
+          isDerived: true,
+          value: 'Producer Start',
+          timestamp: 1472470996199000,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        }
+      ],
       binaryAnnotations: [],
       serviceName: 'frontend',
       serviceNames: ['frontend']
@@ -600,8 +620,18 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 51000,
       annotations: [
-        {value: 'ms', timestamp: 1472470996199000, endpoint: frontend},
-        {value: 'ws', timestamp: 1472470996250000, endpoint: frontend}
+        {
+          isDerived: true,
+          value: 'Producer Start',
+          timestamp: 1472470996199000,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        },
+        {
+          isDerived: true,
+          value: 'Producer Finish',
+          timestamp: 1472470996250000,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        }
       ],
       binaryAnnotations: [],
       serviceName: 'frontend',
@@ -629,7 +659,14 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000003',
       name: 'next-message',
       timestamp: 1472470996199000,
-      annotations: [{value: 'mr', timestamp: 1472470996199000, endpoint: backend}],
+      annotations: [
+        {
+          isDerived: true,
+          value: 'Consumer Start',
+          timestamp: 1472470996199000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
+      ],
       binaryAnnotations: [],
       serviceName: 'backend',
       serviceNames: ['backend']
@@ -658,7 +695,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
       name: 'next-message',
       timestamp: 1472470996199000,
       annotations: [
-        {value: 'mr', timestamp: 1472470996199000, endpoint: backend}
+        {
+          isDerived: true,
+          value: 'Consumer Start',
+          timestamp: 1472470996199000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
       ],
       binaryAnnotations: [{key: 'Broker Address', value: 'kafka'}],
       serviceName: 'backend',
@@ -689,8 +731,18 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 51000,
       annotations: [
-        {value: 'wr', timestamp: 1472470996199000, endpoint: backend},
-        {value: 'mr', timestamp: 1472470996250000, endpoint: backend}
+        {
+          isDerived: true,
+          value: 'Consumer Start',
+          timestamp: 1472470996199000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        },
+        {
+          isDerived: true,
+          value: 'Consumer Finish',
+          timestamp: 1472470996250000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
       ],
       binaryAnnotations: [],
       serviceName: 'backend',
@@ -718,7 +770,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
     expect(v1.binaryAnnotations.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
   });
 
-  it('should backfill empty endpoint serviceName', () => {
+  it('should not require endpoint serviceName', () => {
     const v2 = {
       traceId: '1',
       id: '2',
@@ -730,10 +782,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = SPAN_V1.convert(v2);
-    expect(v1.annotations.map(s => s.endpoint)).to.deep.equal([{
-      serviceName: '',
-      ipv6: '2001:db8::c001'
-    }]);
+    expect(v1.annotations.map(s => s.endpoint)).to.deep.equal(['[2001:db8::c001]']);
   });
 });
 
@@ -746,8 +795,18 @@ describe('SPAN v1 Merge', () => {
     timestamp: 1472470996199000,
     duration: 207000,
     annotations: [
-      {value: 'cs', timestamp: 1472470996199000, endpoint: frontend},
-      {value: 'cr', timestamp: 1472470996406000, endpoint: frontend}
+      {
+        isDerived: true,
+        value: 'Client Start',
+        timestamp: 1472470996199000,
+        endpoint: '127.0.0.1:8080 (frontend)'
+      },
+      {
+        isDerived: true,
+        value: 'Client Finish',
+        timestamp: 1472470996406000,
+        endpoint: '127.0.0.1:8080 (frontend)'
+      }
     ],
     binaryAnnotations: [],
     serviceName: 'frontend',
@@ -759,8 +818,18 @@ describe('SPAN v1 Merge', () => {
     id: '3',
     name: 'get',
     annotations: [
-      {value: 'sr', timestamp: 1472470996238000, endpoint: backend},
-      {value: 'ss', timestamp: 1472470996403000, endpoint: backend},
+      {
+        isDerived: true,
+        value: 'Server Start',
+        timestamp: 1472470996238000,
+        endpoint: '192.168.99.101:9000 (backend)'
+      },
+      {
+        isDerived: true,
+        value: 'Server Finish',
+        timestamp: 1472470996403000,
+        endpoint: '192.168.99.101:9000 (backend)'
+      }
     ],
     binaryAnnotations: [],
     serviceName: 'backend',
@@ -774,10 +843,30 @@ describe('SPAN v1 Merge', () => {
     timestamp: 1472470996199000,
     duration: 207000,
     annotations: [
-      {value: 'cs', timestamp: 1472470996199000, endpoint: frontend},
-      {value: 'sr', timestamp: 1472470996238000, endpoint: backend},
-      {value: 'ss', timestamp: 1472470996403000, endpoint: backend},
-      {value: 'cr', timestamp: 1472470996406000, endpoint: frontend}
+      {
+        isDerived: true,
+        value: 'Client Start',
+        timestamp: 1472470996199000,
+        endpoint: '127.0.0.1:8080 (frontend)'
+      },
+      {
+        isDerived: true,
+        value: 'Server Start',
+        timestamp: 1472470996238000,
+        endpoint: '192.168.99.101:9000 (backend)'
+      },
+      {
+        isDerived: true,
+        value: 'Server Finish',
+        timestamp: 1472470996403000,
+        endpoint: '192.168.99.101:9000 (backend)'
+      },
+      {
+        isDerived: true,
+        value: 'Client Finish',
+        timestamp: 1472470996406000,
+        endpoint: '127.0.0.1:8080 (frontend)'
+      }
     ],
     binaryAnnotations: [],
     serviceName: 'backend', // prefer server in shared span
@@ -824,7 +913,14 @@ describe('SPAN v1 Merge', () => {
       traceId: '1',
       id: '3',
       name: 'get /users/:userId',
-      annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
+      annotations: [
+        {
+          isDerived: true,
+          value: 'Server Start',
+          timestamp: 1472470996238000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
+      ],
       binaryAnnotations: []
     });
 
@@ -847,8 +943,18 @@ describe('SPAN v1 Merge', () => {
       timestamp: leftTimestamp,
       duration: leftDuration,
       annotations: [
-        {value: 'cs', timestamp: leftTimestamp, endpoint: frontend},
-        {value: 'cr', timestamp: leftTimestamp + leftDuration, endpoint: frontend}
+        {
+          isDerived: true,
+          value: 'Client Start',
+          timestamp: leftTimestamp,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        },
+        {
+          isDerived: true,
+          value: 'Client Finish',
+          timestamp: leftTimestamp + leftDuration,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        }
       ],
       binaryAnnotations: [],
       serviceName: 'frontend',
@@ -862,8 +968,18 @@ describe('SPAN v1 Merge', () => {
       timestamp: rightTimestamp,
       duration: rightDuration,
       annotations: [
-        {value: 'sr', timestamp: rightTimestamp, endpoint: backend},
-        {value: 'ss', timestamp: rightTimestamp + rightDuration, endpoint: backend},
+        {
+          isDerived: true,
+          value: 'Server Start',
+          timestamp: rightTimestamp,
+          endpoint: '192.168.99.101:9000 (backend)'
+        },
+        {
+          isDerived: true,
+          value: 'Server Finish',
+          timestamp: rightTimestamp + rightDuration,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
       ],
       binaryAnnotations: [],
       serviceName: 'backend',
@@ -907,7 +1023,14 @@ describe('SPAN v1 Merge', () => {
       traceId: '1',
       id: '3',
       name: '',
-      annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
+      annotations: [
+        {
+          isDerived: true,
+          value: 'Server Start',
+          timestamp: 1472470996238000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
+      ],
       binaryAnnotations: [],
       serviceName: 'backend',
       serviceNames: ['backend']
@@ -921,7 +1044,14 @@ describe('SPAN v1 Merge', () => {
       traceId: '1',
       id: '3',
       name: 'unknown',
-      annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
+      annotations: [
+        {
+          isDerived: true,
+          value: 'Server Start',
+          timestamp: 1472470996238000,
+          endpoint: '192.168.99.101:9000 (backend)'
+        }
+      ],
       binaryAnnotations: [],
       serviceName: 'backend',
       serviceNames: ['backend']
@@ -1004,7 +1134,14 @@ describe('SPAN v1 apply timestamp and duration', () => {
       traceId: '1',
       id: '3',
       name: '',
-      annotations: [{timestamp: 50000, value: 'foo', endpoint: frontend}]
+      annotations: [
+        {
+          isDerived: false,
+          timestamp: 50000,
+          value: 'foo',
+          endpoint: '127.0.0.1:8080 (frontend)'
+        }
+      ]
     });
 
     should.equal(span.timestamp, undefined);
