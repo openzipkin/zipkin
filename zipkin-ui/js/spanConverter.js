@@ -22,13 +22,18 @@ function toV1Endpoint(endpoint) {
   return res;
 }
 
-function toV1Annotation(ann, endpoint) {
+/*
+ * Derived means not annotated directly. Ex 'Server Start' reflects the the timestamp of a
+ * kind=SERVER span. 'Server Finish' is timestamp+duration of the same.
+ */
+function toV1Annotation(a, localFormatted, isDerived = false) {
   const res = {
-    value: ann.value,
-    timestamp: ann.timestamp,
+    isDerived,
+    value: ConstantNames[a.value] || a.value,
+    timestamp: a.timestamp,
   };
-  if (endpoint) {
-    res.endpoint = endpoint;
+  if (localFormatted) {
+    res.endpoint = localFormatted;
   }
   return res;
 }
@@ -73,23 +78,42 @@ function convertV1(span) {
   let kind = span.kind;
 
   // scan annotations in case there are better timestamps, or inferred kind
-  (span.annotations || []).forEach((a) => {
+  const annotationsToAdd = [];
+  const annotationLength = span.annotations ? span.annotations.length : 0;
+  for (let i = 0; i < annotationLength; i++) {
+    const a = span.annotations[i];
     switch (a.value) {
       case 'cs':
         kind = 'CLIENT';
-        if (a.timestamp < startTs) startTs = a.timestamp;
+        if (a.timestamp <= startTs) {
+          startTs = a.timestamp;
+        } else {
+          annotationsToAdd.push(a);
+        }
         break;
       case 'sr':
         kind = 'SERVER';
-        if (a.timestamp < startTs) startTs = a.timestamp;
+        if (a.timestamp <= startTs) {
+          startTs = a.timestamp;
+        } else {
+          annotationsToAdd.push(a);
+        }
         break;
       case 'ss':
         kind = 'SERVER';
-        if (a.timestamp > endTs) endTs = a.timestamp;
+        if (a.timestamp >= endTs) {
+          endTs = a.timestamp;
+        } else {
+          annotationsToAdd.push(a);
+        }
         break;
       case 'cr':
         kind = 'CLIENT';
-        if (a.timestamp > endTs) endTs = a.timestamp;
+        if (a.timestamp >= endTs) {
+          endTs = a.timestamp;
+        } else {
+          annotationsToAdd.push(a);
+        }
         break;
       case 'ms':
         kind = 'PRODUCER';
@@ -106,50 +130,61 @@ function convertV1(span) {
         wrTs = a.timestamp;
         break;
       default:
+        annotationsToAdd.push(a);
     }
-  });
+  }
 
-  let addr = 'sa'; // default which will be unset later if needed
+  let addr = 'Server Address'; // default which will be unset later if needed
 
   switch (kind) {
     case 'CLIENT':
-      addr = 'sa';
-      begin = 'cs';
-      end = 'cr';
+      addr = 'Server Address';
+      begin = 'Client Start';
+      end = 'Client Finish';
       break;
     case 'SERVER':
-      addr = 'ca';
-      begin = 'sr';
-      end = 'ss';
+      addr = 'Client Address';
+      begin = 'Server Start';
+      end = 'Server Finish';
       break;
     case 'PRODUCER':
-      addr = 'ma';
-      begin = 'ms';
-      end = 'ws';
+      addr = 'Broker Address';
+      begin = 'Producer Start';
+      end = 'Producer Finish';
       if (startTs === 0 || (msTs !== 0 && msTs < startTs)) {
         startTs = msTs;
+        msTs = 0;
       }
       if (endTs === 0 || (wsTs !== 0 && wsTs > endTs)) {
         endTs = wsTs;
+        wsTs = 0;
       }
       break;
     case 'CONSUMER':
-      addr = 'ma';
+      addr = 'Broker Address';
       if (startTs === 0 || (wrTs !== 0 && wrTs < startTs)) {
         startTs = wrTs;
+        wrTs = 0;
       }
       if (endTs === 0 || (mrTs !== 0 && mrTs > endTs)) {
         endTs = mrTs;
+        mrTs = 0;
       }
       if (endTs !== 0 || wrTs !== 0) {
-        begin = 'wr';
-        end = 'mr';
+        begin = 'Consumer Start';
+        end = 'Consumer Finish';
       } else {
-        begin = 'mr';
+        begin = 'Consumer Start';
       }
       break;
     default:
   }
+
+  // restore sometimes special-cased annotations
+  if (msTs) annotationsToAdd.push({timestamp: msTs, value: 'ms'});
+  if (wsTs) annotationsToAdd.push({timestamp: wsTs, value: 'ws'});
+  if (wrTs) annotationsToAdd.push({timestamp: wrTs, value: 'wr'});
+  if (mrTs) annotationsToAdd.push({timestamp: mrTs, value: 'mr'});
 
   // If we didn't find a span kind, directly or indirectly, unset the addr
   if (!span.remoteEndpoint) addr = undefined;
@@ -160,19 +195,20 @@ function convertV1(span) {
 
   res.annotations = []; // prefer empty to undefined for arrays
 
-  let annotationCount = (span.annotations || []).length;
+  const localFormatted = ep && formatEndpoint(ep) || undefined;
+  let annotationCount = annotationsToAdd.length;
   if (beginAnnotation) {
     annotationCount++;
     res.annotations.push(toV1Annotation({
       value: begin,
       timestamp: startTs
-    }, ep));
+    }, localFormatted, true));
   }
 
-  (span.annotations || []).forEach((a) => {
+  annotationsToAdd.forEach((a) => {
     if (beginAnnotation && a.value === begin) return;
     if (endAnnotation && a.value === end) return;
-    res.annotations.push(toV1Annotation(a, ep));
+    res.annotations.push(toV1Annotation(a, localFormatted));
   });
 
   if (endAnnotation) {
@@ -180,10 +216,9 @@ function convertV1(span) {
     res.annotations.push(toV1Annotation({
       value: end,
       timestamp: endTs
-    }, ep));
+    }, localFormatted, true));
   }
 
-  const localFormatted = ep && formatEndpoint(ep) || undefined;
   res.binaryAnnotations = []; // prefer empty to undefined for arrays
   const keys = Object.keys(span.tags || {});
   if (keys.length > 0) {
@@ -207,7 +242,7 @@ function convertV1(span) {
   if (addr && span.remoteEndpoint) {
     const remoteEndpoint = toV1Endpoint(span.remoteEndpoint);
     res.binaryAnnotations.push({
-      key: ConstantNames[addr],
+      key: addr,
       value: formatEndpoint(remoteEndpoint)
     });
   }
@@ -271,13 +306,13 @@ function merge(left, right) {
   res.annotations = [];
 
   (left.annotations || []).forEach((a) => {
-    if (a.value === 'cs') leftClientSpan = true;
+    if (a.value === 'Client Start') leftClientSpan = true;
     maybePushAnnotation(res.annotations, a);
   });
 
   (right.annotations || []).forEach((a) => {
-    if (a.value === 'cs') rightClientSpan = true;
-    if (a.value === 'sr') rightServerSpan = true;
+    if (a.value === 'Client Start') rightClientSpan = true;
+    if (a.value === 'Server Start') rightServerSpan = true;
     maybePushAnnotation(res.annotations, a);
   });
 
@@ -294,9 +329,7 @@ function merge(left, right) {
   });
 
   if (right.name && right.name !== '' && right.name !== 'unknown') {
-    if (res.name === '' || res.name === 'unknown') {
-      res.name = right.name;
-    } else if (leftClientSpan && rightServerSpan) {
+    if (res.name === '' || res.name === 'unknown' || rightServerSpan) {
       res.name = right.name; // prefer the server's span name
     }
   }
@@ -359,9 +392,9 @@ function guessTimestamp(span) {
   let rootServerRecv;
   for (let i = 0; i < span.annotations.length; i++) {
     const a = span.annotations[i];
-    if (a.value === 'cs') {
+    if (a.value === 'Client Start') {
       return a.timestamp;
-    } else if (a.value === 'sr') {
+    } else if (a.value === 'Server Start') {
       rootServerRecv = a.timestamp;
     }
   }
@@ -395,9 +428,9 @@ function applyTimestampAndDuration(span) {
   let first = span.annotations[0].timestamp;
   let last = span.annotations[annotationLength - 1].timestamp;
   span.annotations.forEach((a) => {
-    if (a.value === 'cs') {
+    if (a.value === 'Client Start') {
       first = a.timestamp;
-    } else if (a.value === 'cr') {
+    } else if (a.value === 'Client Finish') {
       last = a.timestamp;
     }
   });

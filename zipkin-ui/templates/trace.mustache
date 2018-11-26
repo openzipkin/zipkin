@@ -79,7 +79,7 @@
       <div class='duration ml-3' style='left: {{left}}%; width: {{width}}%'>
         {{durationStr}} : {{spanName}}
         {{#annotations}}
-        <div class='annotation{{#isCore}} core{{/isCore}}'
+        <div class='annotation{{#isDerived}} derived{{/isDerived}}'
           style='left: {{left}}%; width: {{width}}px'
           title='{{value}}'
           data-keys='endpoint,value,timestamp,relativeTime,serviceName'
@@ -209,7 +209,7 @@
       <div class='duration' style='left: {{left}}%; width: {{width}}%'>
         {{durationStr}} : {{spanName}}
         {{#annotations}}
-        <div class='annotation{{#isCore}} core{{/isCore}}'
+        <div class='annotation{{#isDerived}} derived{{/isDerived}}'
           style='left: {{left}}%; width: {{width}}px'
           title='{{value}}'
           data-keys='endpoint,value,timestamp,relativeTime,serviceName'

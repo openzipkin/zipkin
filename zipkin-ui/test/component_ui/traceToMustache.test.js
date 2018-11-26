@@ -37,8 +37,8 @@ describe('traceToMustache', () => {
 
   it('should show human-readable annotation name', () => {
     const {spans: [testSpan]} = traceToMustache(cleanedHttpTrace);
-    testSpan.annotations[0].value.should.equal('Server Receive');
-    testSpan.annotations[1].value.should.equal('Server Send');
+    testSpan.annotations[0].value.should.equal('Server Start');
+    testSpan.annotations[1].value.should.equal('Server Finish');
     testSpan.binaryAnnotations[4].key.should.equal('Client Address');
   });
 
@@ -83,8 +83,8 @@ describe('traceToMustache', () => {
       tags: {}
     });
     const {spans: [testSpan]} = traceToMustache(testTrace);
-    testSpan.annotations[0].value.should.equal('Server Receive');
-    testSpan.annotations[1].value.should.equal('Server Send');
+    testSpan.annotations[0].value.should.equal('Server Start');
+    testSpan.annotations[1].value.should.equal('Server Finish');
   });
 });
 

@@ -5,7 +5,6 @@ import {
   mkDurationStr
 } from './traceSummary';
 import {SPAN_V1} from '../spanConverter';
-import {Constants, ConstantNames} from './traceConstants';
 
 export function getRootSpans(spans) {
   const ids = spans.map((s) => s.id);
@@ -139,12 +138,9 @@ export default function traceToMustache(tree, logsUrl = undefined) {
         depth: (spanDepth + 1) * 5,
         depthClass: (spanDepth - 1) % 6,
         children: (groupByParentId[span.id] || []).map((s) => s.id).join(','),
-        annotations: (span.annotations || []).map((a) => ({
-          isCore: Constants.CORE_ANNOTATIONS.indexOf(a.value) !== -1,
+        annotations: span.annotations.map((a) => ({
+          ...a,
           left: (a.timestamp - spanStartTs) / span.duration * 100,
-          endpoint: a.endpoint ? formatEndpoint(a.endpoint) : null,
-          value: ConstantNames[a.value] || a.value,
-          timestamp: a.timestamp,
           relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
           width: 8
         })),

@@ -19,19 +19,19 @@ describe('convertSuccessResponse', () => {
         children: 'c8c50ebd2abc179e',
         annotations: [
           {
-            isCore: true,
+            isDerived: true,
             left: 0,
             endpoint: '172.17.0.13 (frontend)',
-            value: 'Server Receive',
+            value: 'Server Start',
             timestamp: 1541138169255688,
             relativeTime: '',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 100,
             endpoint: '172.17.0.13 (frontend)',
-            value: 'Server Send',
+            value: 'Server Finish',
             timestamp: 1541138169424419,
             relativeTime: '168.731ms',
             width: 8
@@ -80,16 +80,16 @@ describe('convertSuccessResponse', () => {
         children: '',
         annotations: [
           {
-            isCore: true,
+            isDerived: true,
             left: 0,
             endpoint: '172.17.0.13 (frontend)',
-            value: 'Client Send',
+            value: 'Client Start',
             timestamp: 1541138169297572,
             relativeTime: '41.884ms',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: false,
             left: 36.1074864337074,
             endpoint: '172.17.0.13 (frontend)',
             value: 'Wire Send',
@@ -98,25 +98,25 @@ describe('convertSuccessResponse', () => {
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 38.15435426247064,
             endpoint: '172.17.0.9 (backend)',
-            value: 'Server Receive',
+            value: 'Server Start',
             timestamp: 1541138169339969.5,
             relativeTime: '84.281ms',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 61.84564573752937,
             endpoint: '172.17.0.9 (backend)',
-            value: 'Server Send',
+            value: 'Server Finish',
             timestamp: 1541138169366295.5,
             relativeTime: '110.608ms',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: false,
             left: 63.8925135662926,
             endpoint: '172.17.0.13 (frontend)',
             value: 'Wire Receive',
@@ -125,10 +125,10 @@ describe('convertSuccessResponse', () => {
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 100,
             endpoint: '172.17.0.13 (frontend)',
-            value: 'Client Receive',
+            value: 'Client Finish',
             timestamp: 1541138169408693,
             relativeTime: '153.005ms',
             width: 8
@@ -300,19 +300,19 @@ describe('convertSuccessResponse', () => {
         children: '74280ae0c10d8062',
         annotations: [
           {
-            isCore: true,
+            isDerived: true,
             left: 0,
             endpoint: '127.0.0.0 (servicea)',
-            value: 'Server Receive',
+            value: 'Server Start',
             timestamp: 1470150004071068,
             relativeTime: '',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 100,
             endpoint: '127.0.0.0 (servicea)',
-            value: 'Server Send',
+            value: 'Server Finish',
             timestamp: 1470150004170479,
             relativeTime: '99.411ms',
             width: 8
@@ -336,37 +336,37 @@ describe('convertSuccessResponse', () => {
         children: '43210ae0c10d1234',
         annotations: [
           {
-            isCore: true,
+            isDerived: true,
             left: 0,
             endpoint: '127.0.0.0 (servicea)',
-            value: 'Client Send',
+            value: 'Client Start',
             timestamp: 1470150004074202,
             relativeTime: '3.134ms',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 0.5087847343424406,
             endpoint: '192.0.0.0 (serviceb)',
-            value: 'Server Receive',
+            value: 'Server Start',
             timestamp: 1470150004074683,
             relativeTime: '3.615ms',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 99.49121526565756,
             endpoint: '192.0.0.0 (serviceb)',
-            value: 'Server Send',
+            value: 'Server Finish',
             timestamp: 1470150004168260,
             relativeTime: '97.192ms',
             width: 8
           },
           {
-            isCore: true,
+            isDerived: true,
             left: 100,
             endpoint: '127.0.0.0 (servicea)',
-            value: 'Client Receive',
+            value: 'Client Finish',
             timestamp: 1470150004168741,
             relativeTime: '97.673ms',
             width: 8
