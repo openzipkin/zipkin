@@ -1,12 +1,10 @@
 import traceToMustache,
   {
     getRootSpans,
-    getServiceName,
     formatEndpoint
   } from '../../js/component_ui/traceToMustache';
 const {SpanNode} = require('../../js/spanNode');
 import {treeCorrectedForClockSkew} from '../../js/skew';
-import {SPAN_V1} from '../../js/spanConverter';
 import {httpTrace} from './traceTestHelpers';
 
 // renders data into a tree for traceMustache
@@ -169,93 +167,3 @@ describe('formatEndpoint', () => {
     );
   });
 });
-
-describe('get service name of a span', () => {
-  it('should get service name from server addr', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'CLIENT',
-      remoteEndpoint: {serviceName: 'user-service'}
-    });
-    getServiceName(testSpan).should.equal('user-service');
-  });
-
-  it('should get service name from broker addr', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'PRODUCER',
-      remoteEndpoint: {serviceName: 'kafka'}
-    });
-    getServiceName(testSpan).should.equal('kafka');
-  });
-
-  it('should get service name from some server annotation', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'SERVER',
-      timestamp: 1457186385375000,
-      localEndpoint: {serviceName: 'test-service'}
-    });
-    getServiceName(testSpan).should.equal('test-service');
-  });
-
-  it('should get service name from producer annotation', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'PRODUCER',
-      timestamp: 1457186385375000,
-      localEndpoint: {serviceName: 'test-service'}
-    });
-    getServiceName(testSpan).should.equal('test-service');
-  });
-
-  it('should get service name from consumer annotation', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'CONSUMER',
-      timestamp: 1457186385375000,
-      localEndpoint: {serviceName: 'test-service'}
-    });
-    getServiceName(testSpan).should.equal('test-service');
-  });
-
-  it('should get service name from client addr', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'SERVER',
-      remoteEndpoint: {serviceName: 'my-service'}
-    });
-    getServiceName(testSpan).should.equal('my-service');
-  });
-
-  it('should get service name from client annotation', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      kind: 'CLIENT',
-      timestamp: 1457186385375000,
-      localEndpoint: {serviceName: 'abc-service'}
-    });
-    getServiceName(testSpan).should.equal('abc-service');
-  });
-
-  it('should get service name from local component annotation', () => {
-    const testSpan = SPAN_V1.convert({
-      traceId: '2480ccca8df0fca5',
-      id: '2480ccca8df0fca5',
-      localEndpoint: {serviceName: 'localservice'}
-    });
-    getServiceName(testSpan).should.equal('localservice');
-  });
-
-  it('should handle no annotations', () => {
-    expect(getServiceName({})).to.equal(null);
-  });
-});
-

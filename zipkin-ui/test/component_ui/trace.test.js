@@ -243,8 +243,8 @@ describe('initSpans', () => {
     span.id.should.equal('90394f6bcffb5d13');
     span.expanded.should.equal(false);
     span.isRoot.should.equal(true);
-    data.spansByService.apip.length.should.equal(3);
-    data.spansByService.apip[0].should.equal('90394f6bcffb5d13');
+    data.spansByService.apip.should.deep.equal(
+      ['90394f6bcffb5d13', '8f6bc3f30fa5b0bf', '67fae42571535f60']);
     // Child span should not be visible without showspans on the first load
     const childSpan = data.spans['67fae42571535f60'];
     childSpan.isRoot.should.equal(false);

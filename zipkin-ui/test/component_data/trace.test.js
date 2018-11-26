@@ -41,43 +41,26 @@ describe('convertSuccessResponse', () => {
           {
             key: 'http.method',
             value: 'GET',
-            endpoint: {
-              serviceName: 'frontend',
-              ipv4: '172.17.0.13'
-            }
+            endpoint: '172.17.0.13 (frontend)'
           },
           {
             key: 'http.path',
             value: '/',
-            endpoint: {
-              serviceName: 'frontend',
-              ipv4: '172.17.0.13'
-            }
+            endpoint: '172.17.0.13 (frontend)'
           },
           {
             key: 'mvc.controller.class',
             value: 'Frontend',
-            endpoint: {
-              serviceName: 'frontend',
-              ipv4: '172.17.0.13'
-            }
+            endpoint: '172.17.0.13 (frontend)'
           },
           {
             key: 'mvc.controller.method',
             value: 'callBackend',
-            endpoint: {
-              serviceName: 'frontend',
-              ipv4: '172.17.0.13'
-            }
+            endpoint: '172.17.0.13 (frontend)'
           },
           {
             key: 'Client Address',
-            value: '[110.170.201.178]:63678',
-            endpoint: {
-              serviceName: '',
-              ipv6: '110.170.201.178',
-              port: 63678
-            }
+            value: '110.170.201.178:63678'
           }
         ],
         errorType: 'none'
@@ -155,43 +138,26 @@ describe('convertSuccessResponse', () => {
           {
             key: 'http.method',
             value: 'GET',
-            endpoint: {
-              serviceName: 'frontend',
-              ipv4: '172.17.0.13'
-            }
+            endpoint: '172.17.0.13 (frontend)'
           },
           {
             key: 'http.path',
             value: '/api',
-            endpoint: {
-              serviceName: 'frontend',
-              ipv4: '172.17.0.13'
-            }
+            endpoint: '172.17.0.13 (frontend)'
           },
           {
             key: 'mvc.controller.class',
             value: 'Backend',
-            endpoint: {
-              serviceName: 'backend',
-              ipv4: '172.17.0.9'
-            }
+            endpoint: '172.17.0.9 (backend)'
           },
           {
             key: 'mvc.controller.method',
             value: 'printDate',
-            endpoint: {
-              serviceName: 'backend',
-              ipv4: '172.17.0.9'
-            }
+            endpoint: '172.17.0.9 (backend)'
           },
           {
             key: 'Client Address',
-            value: '172.17.0.13:63679',
-            endpoint: {
-              serviceName: '',
-              ipv4: '172.17.0.13',
-              port: 63679
-            }
+            value: '172.17.0.13:63679'
           }
         ],
         errorType: 'none'
@@ -250,10 +216,7 @@ describe('convertSuccessResponse', () => {
           {
             key: 'error',
             value: 'request failed',
-            endpoint: {
-              serviceName: 'backend',
-              ipv4: '172.17.0.9'
-            }
+            endpoint: '172.17.0.9 (backend)'
           }
         ],
         errorType: 'critical'
@@ -362,8 +325,8 @@ describe('convertSuccessResponse', () => {
         spanId: '74280ae0c10d8062',
         parentId: 'bf396325699c84bf',
         spanName: 'post',
-        serviceNames: 'servicea,serviceb',
         serviceName: 'serviceb',
+        serviceNames: 'servicea,serviceb',
         duration: 94539,
         durationStr: '94.539ms',
         left: 3.152568629226142,
@@ -429,11 +392,7 @@ describe('convertSuccessResponse', () => {
         binaryAnnotations: [
           {
             key: 'Local Address',
-            value: '192.0.0.0 (serviceb)',
-            endpoint: {
-              serviceName: 'serviceb',
-              ipv4: '192.0.0.0'
-            }
+            value: '192.0.0.0 (serviceb)'
           }
         ],
         errorType: 'none'

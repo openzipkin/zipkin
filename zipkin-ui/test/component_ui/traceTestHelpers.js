@@ -34,7 +34,7 @@ export const httpTrace = [
     duration: 168731,
     localEndpoint: frontend,
     remoteEndpoint: {
-      ipv6: '110.170.201.178',
+      ipv4: '110.170.201.178',
       port: 63678
     },
     tags: {

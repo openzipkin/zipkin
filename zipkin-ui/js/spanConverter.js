@@ -1,4 +1,7 @@
+import _ from 'lodash';
 import {compare, normalizeTraceId} from './spanCleaner';
+import {ConstantNames} from './component_ui/traceConstants';
+import {formatEndpoint} from './component_ui/traceToMustache';
 
 function toV1Endpoint(endpoint) {
   if (endpoint === undefined) {
@@ -180,32 +183,43 @@ function convertV1(span) {
     }, ep));
   }
 
+  const localFormatted = ep && formatEndpoint(ep) || undefined;
   res.binaryAnnotations = []; // prefer empty to undefined for arrays
   const keys = Object.keys(span.tags || {});
   if (keys.length > 0) {
-    res.binaryAnnotations = keys.map(key => ({
-      key,
-      value: span.tags[key],
-      endpoint: ep
-    }));
+    keys.forEach(key => {
+      res.binaryAnnotations.push({
+        key: ConstantNames[key] || key,
+        value: span.tags[key],
+        endpoint: localFormatted
+      });
+    });
   }
 
-  const writeLocalComponent = annotationCount === 0 && ep && keys.length === 0;
-  const hasRemoteEndpoint = addr && span.remoteEndpoint;
-
-  // write an empty 'lc' annotation to avoid missing the localEndpoint in an in-process span
-  if (writeLocalComponent) {
-    res.binaryAnnotations.push({key: 'lc', value: '', endpoint: ep});
-  }
-  if (hasRemoteEndpoint) {
-    const address = {
-      key: addr,
-      value: true,
-      endpoint: toV1Endpoint(span.remoteEndpoint)
-    };
-    res.binaryAnnotations.push(address);
+  // write a binary annotation when no tags are present to avoid having no context for a local span
+  if (annotationCount === 0 && ep && keys.length === 0) {
+    res.binaryAnnotations.push({
+      key: 'Local Address',
+      value: localFormatted
+    });
   }
 
+  if (addr && span.remoteEndpoint) {
+    const remoteEndpoint = toV1Endpoint(span.remoteEndpoint);
+    res.binaryAnnotations.push({
+      key: ConstantNames[addr],
+      value: formatEndpoint(remoteEndpoint)
+    });
+  }
+
+  res.serviceNames = [];
+  if (span.localEndpoint && span.localEndpoint.serviceName) {
+    res.serviceName = span.localEndpoint.serviceName;
+    res.serviceNames.push(span.localEndpoint.serviceName);
+  }
+  if (span.remoteEndpoint && span.remoteEndpoint.serviceName) {
+    res.serviceNames.push(span.remoteEndpoint.serviceName);
+  }
   return res;
 }
 
@@ -312,6 +326,20 @@ function merge(left, right) {
   if (right.debug) {
     res.debug = true;
   }
+
+  if (left.serviceName) {
+    // in a shared span, prefer the server's name
+    res.serviceName = right.serviceName && leftClientSpan ? right.serviceName : left.serviceName;
+  } else if (right.serviceName) {
+    res.serviceName = right.serviceName;
+  }
+
+  // however, order the client-side service name first for consistency
+  res.serviceNames = leftClientSpan
+    ? _.union(left.serviceNames, right.serviceNames)
+    : _.union(right.serviceNames, left.serviceNames);
+  res.serviceNames = _(res.serviceNames).uniq().value();
+
   return res;
 }
 

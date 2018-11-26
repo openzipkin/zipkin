@@ -81,23 +81,23 @@ describe('SPAN v2 -> v1 Conversion', () => {
         {
           key: 'http.path',
           value: '/api',
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         },
         {
           key: 'clnt/finagle.version',
           value: '6.45.0',
-          endpoint: frontend
+          endpoint: '127.0.0.1:8080 (frontend)'
         },
         {
-          key: 'sa',
-          value: true,
-          endpoint: backend
+          key: 'Server Address',
+          value: '192.168.99.101:9000 (backend)'
         }
-      ]
+      ],
+      serviceName: 'frontend', // prefer the local address vs remote
+      serviceNames: ['frontend', 'backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
 
@@ -147,11 +147,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: frontend
         }
       ],
-      binaryAnnotations: [] // prefers empty array to nil
+      binaryAnnotations: [], // prefers empty array to nil
+      serviceName: 'frontend',
+      serviceNames: ['frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.client_kindInferredFromAnnotation
@@ -191,11 +192,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: frontend
         }
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'frontend',
+      serviceNames: ['frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_cr
@@ -228,17 +230,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: frontend
         }
       ],
-      binaryAnnotations: [
-        {
-          key: 'sa',
-          value: true,
-          endpoint: backend
-        }
-      ]
+      binaryAnnotations: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
+      serviceName: 'frontend',
+      serviceNames: ['frontend', 'backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_sa
@@ -256,17 +253,11 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000003',
       name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
-      binaryAnnotations: [
-        {
-          key: 'sa',
-          value: true,
-          endpoint: backend
-        }
-      ]
+      binaryAnnotations: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
+      serviceNames: ['backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.noAnnotationsExceptAddresses
@@ -291,13 +282,14 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 207000,
       annotations: [],
       binaryAnnotations: [
-        {key: 'lc', value: '', endpoint: frontend},
-        {key: 'sa', value: true, endpoint: backend}
-      ]
+        {key: 'Local Address', value: '127.0.0.1:8080 (frontend)'},
+        {key: 'Server Address', value: '192.168.99.101:9000 (backend)'}
+      ],
+      serviceName: 'frontend',
+      serviceNames: ['frontend', 'backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.server
@@ -329,14 +321,15 @@ describe('SPAN v2 -> v1 Conversion', () => {
         {timestamp: 1472470996406000, value: 'ss', endpoint: backend}
       ],
       binaryAnnotations: [
-        {key: 'http.path', value: '/api', endpoint: backend},
-        {key: 'finagle.version', value: '6.45.0', endpoint: backend},
-        {key: 'ca', value: true, endpoint: frontend}
-      ]
+        {key: 'http.path', value: '/api', endpoint: '192.168.99.101:9000 (backend)'},
+        {key: 'finagle.version', value: '6.45.0', endpoint: '192.168.99.101:9000 (backend)'},
+        {key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}
+      ],
+      serviceName: 'backend',
+      serviceNames: ['backend', 'frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.missingEndpoints
@@ -358,7 +351,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceNames: []
     };
 
     const expected = SPAN_V1.convert(v2);
@@ -393,7 +387,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
           timestamp: 1472470996199000
         }
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceNames: []
     };
 
     const expected = SPAN_V1.convert(v2);
@@ -431,7 +426,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: backend
         }
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'backend',
+      serviceNames: ['backend']
     };
 
     const expected = SPAN_V1.convert(v2);
@@ -463,7 +460,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: backend
         }
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'backend',
+      serviceNames: ['backend']
     };
 
     const expected = SPAN_V1.convert(v2);
@@ -498,17 +497,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: backend
         }
       ],
-      binaryAnnotations: [
-        {
-          key: 'ca',
-          value: true,
-          endpoint: frontend
-        }
-      ]
+      binaryAnnotations: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
+      serviceName: 'backend',
+      serviceNames: ['backend', 'frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ca
@@ -525,17 +519,11 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000002',
       name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
-      binaryAnnotations: [
-        {
-          key: 'ca',
-          value: true,
-          endpoint: frontend
-        }
-      ]
+      binaryAnnotations: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
+      serviceNames: ['frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.localSpan_emptyComponent
@@ -556,13 +544,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
-      binaryAnnotations: [
-        {key: 'lc', value: '', endpoint: {serviceName: 'frontend'}}
-      ]
+      binaryAnnotations: [{key: 'Local Address', value: 'frontend'}],
+      serviceName: 'frontend',
+      serviceNames: ['frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_remote
@@ -583,14 +570,13 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000003',
       name: 'send',
       timestamp: 1472470996199000,
-      annotations: [
-        {value: 'ms', timestamp: 1472470996199000, endpoint: frontend}
-      ],
-      binaryAnnotations: []
+      annotations: [{value: 'ms', timestamp: 1472470996199000, endpoint: frontend}],
+      binaryAnnotations: [],
+      serviceName: 'frontend',
+      serviceNames: ['frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_duration
@@ -617,11 +603,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
         {value: 'ms', timestamp: 1472470996199000, endpoint: frontend},
         {value: 'ws', timestamp: 1472470996250000, endpoint: frontend}
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'frontend',
+      serviceNames: ['frontend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer
@@ -642,14 +629,13 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000003',
       name: 'next-message',
       timestamp: 1472470996199000,
-      annotations: [
-        {value: 'mr', timestamp: 1472470996199000, endpoint: backend}
-      ],
-      binaryAnnotations: []
+      annotations: [{value: 'mr', timestamp: 1472470996199000, endpoint: backend}],
+      binaryAnnotations: [],
+      serviceName: 'backend',
+      serviceNames: ['backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_remote
@@ -674,13 +660,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
       annotations: [
         {value: 'mr', timestamp: 1472470996199000, endpoint: backend}
       ],
-      binaryAnnotations: [
-        {key: 'ma', value: true, endpoint: {serviceName: 'kafka'}}
-      ]
+      binaryAnnotations: [{key: 'Broker Address', value: 'kafka'}],
+      serviceName: 'backend',
+      serviceNames: ['backend', 'kafka']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_duration
@@ -707,14 +692,15 @@ describe('SPAN v2 -> v1 Conversion', () => {
         {value: 'wr', timestamp: 1472470996199000, endpoint: backend},
         {value: 'mr', timestamp: 1472470996250000, endpoint: backend}
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'backend',
+      serviceNames: ['backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
-    expect(v1).to.deep.equal(expected);
+    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
   });
 
-  it('should retain ipv4 and ipv6 addresses', () => {
+  it('should prefer ipv6', () => {
     const localEndpoint = {
       serviceName: 'there',
       ipv4: '10.57.50.84',
@@ -729,7 +715,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = SPAN_V1.convert(v2);
-    expect(v1.binaryAnnotations.map(s => s.endpoint)).to.deep.equal([localEndpoint]);
+    expect(v1.binaryAnnotations.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
   });
 
   it('should backfill empty endpoint serviceName', () => {
@@ -763,7 +749,9 @@ describe('SPAN v1 Merge', () => {
       {value: 'cs', timestamp: 1472470996199000, endpoint: frontend},
       {value: 'cr', timestamp: 1472470996406000, endpoint: frontend}
     ],
-    binaryAnnotations: []
+    binaryAnnotations: [],
+    serviceName: 'frontend',
+    serviceNames: ['frontend']
   };
   const serverSpan = {
     traceId: '1',
@@ -774,7 +762,9 @@ describe('SPAN v1 Merge', () => {
       {value: 'sr', timestamp: 1472470996238000, endpoint: backend},
       {value: 'ss', timestamp: 1472470996403000, endpoint: backend},
     ],
-    binaryAnnotations: []
+    binaryAnnotations: [],
+    serviceName: 'backend',
+    serviceNames: ['backend']
   };
   const mergedSpan = {
     traceId: '0000000000000001',
@@ -789,7 +779,9 @@ describe('SPAN v1 Merge', () => {
       {value: 'ss', timestamp: 1472470996403000, endpoint: backend},
       {value: 'cr', timestamp: 1472470996406000, endpoint: frontend}
     ],
-    binaryAnnotations: []
+    binaryAnnotations: [],
+    serviceName: 'backend', // prefer server in shared span
+    serviceNames: ['frontend', 'backend']
   };
 
   it('should merge server and client span', () => {
@@ -819,10 +811,11 @@ describe('SPAN v1 Merge', () => {
     const merged = SPAN_V1.merge(clientSpan, {
       traceId: '1',
       id: '3',
-      binaryAnnotations: [{key: 'sa', value: true, endpoint: backend}]
+      binaryAnnotations: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]
     });
 
-    expect(merged.binaryAnnotations).to.deep.equal([{key: 'sa', value: true, endpoint: backend}]);
+    expect(merged.binaryAnnotations).to.deep.equal(
+      [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]);
   });
 
   // originally zipkin2.v1.SpanConverterTest.mergePrefersServerSpanName
@@ -857,7 +850,9 @@ describe('SPAN v1 Merge', () => {
         {value: 'cs', timestamp: leftTimestamp, endpoint: frontend},
         {value: 'cr', timestamp: leftTimestamp + leftDuration, endpoint: frontend}
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'frontend',
+      serviceNames: ['frontend']
     };
 
     const rightSpan = {
@@ -870,7 +865,9 @@ describe('SPAN v1 Merge', () => {
         {value: 'sr', timestamp: rightTimestamp, endpoint: backend},
         {value: 'ss', timestamp: rightTimestamp + rightDuration, endpoint: backend},
       ],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'backend',
+      serviceNames: ['backend']
     };
 
     const leftFirst = SPAN_V1.merge(leftSpan, rightSpan);
@@ -911,7 +908,9 @@ describe('SPAN v1 Merge', () => {
       id: '3',
       name: '',
       annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'backend',
+      serviceNames: ['backend']
     });
 
     expect(merged.name).to.equal(clientSpan.name);
@@ -923,7 +922,9 @@ describe('SPAN v1 Merge', () => {
       id: '3',
       name: 'unknown',
       annotations: [{value: 'sr', timestamp: 1472470996238000, endpoint: backend}],
-      binaryAnnotations: []
+      binaryAnnotations: [],
+      serviceName: 'backend',
+      serviceNames: ['backend']
     });
 
     expect(merged.name).to.equal(clientSpan.name);
@@ -1049,7 +1050,8 @@ describe('SPAN v1 merge by ID', () => {
         timestamp: cs.timestamp,
         duration: cr.timestamp - cs.timestamp,
         annotations: [cs, sr, ss, cr],
-        binaryAnnotations: []
+        binaryAnnotations: [],
+        serviceNames: []
       }
     ]);
   });
@@ -1078,7 +1080,8 @@ describe('SPAN v1 merge by ID', () => {
         timestamp: cs.timestamp,
         duration: cr.timestamp - cs.timestamp,
         annotations: [cs, sr, ss, cr],
-        binaryAnnotations: []
+        binaryAnnotations: [],
+        serviceNames: []
       }
     ]);
   });

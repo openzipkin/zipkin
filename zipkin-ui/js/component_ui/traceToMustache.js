@@ -16,20 +16,6 @@ function compareSpan(s1, s2) {
   return (s1.timestamp || 0) - (s2.timestamp || 0);
 }
 
-function endpointsForSpan(span) {
-  return _.union(
-    (span.annotations || []).map(a => a.endpoint),
-    (span.binaryAnnotations || []).map(a => a.endpoint)
-  ).filter(h => h != null);
-}
-
-function getServiceNames(span) {
-  return _(endpointsForSpan(span))
-      .map((ep) => ep.serviceName)
-      .filter((name) => name != null && name !== '')
-      .uniq().value();
-}
-
 function childrenToList(entry) {
   const deepChildren = _(entry.children || [])
     .sort((e1, e2) => compareSpan(e1.span, e2.span))
@@ -84,7 +70,6 @@ function treeDepths(entry, startDepth) {
   }, initial);
 }
 
-
 function toSpanDepths(spans) {
   const rootMost = getRootMostSpan(spans);
   const entry = createSpanTreeEntry(rootMost, spans);
@@ -102,70 +87,14 @@ export function formatEndpoint({ipv4, ipv6, port, serviceName}) {
   }
 }
 
-function findServiceNameForBinaryAnnotation(span, key) {
-  const binaryAnnotation = _(span.binaryAnnotations || []).find((ann) =>
-            ann.key === key
-            && ann.endpoint != null
-            && ann.endpoint.serviceName != null
-            && ann.endpoint.serviceName !== '');
-  return binaryAnnotation ? binaryAnnotation.endpoint.serviceName : null;
-}
-
-function findServiceNameForAnnotation(span, values) {
-  const annotation = _(span.annotations || []).find((ann) =>
-            values.indexOf(ann.value) !== -1
-            && ann.endpoint != null
-            && ann.endpoint.serviceName != null
-            && ann.endpoint.serviceName !== '');
-  return annotation ? annotation.endpoint.serviceName : null;
-}
-
-export function getServiceName(span) { // export for testing
-  // Most authoritative is the label of the server's endpoint
-  const serverAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.SERVER_ADDR);
-  if (serverAddressServiceName) {
-    return serverAddressServiceName;
+function getErrorType(span) {
+  if (span.binaryAnnotations.findIndex(b => b.key === 'error') !== -1) {
+    return 'critical';
+  } else if (span.annotations.findIndex(a => a.value === 'error') !== -1) { // TODO: indexOf!
+    return 'transient';
+  } else {
+    return 'none';
   }
-
-  // Next, the label of any server annotation, logged by an instrumented server
-  const serverAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_SERVER);
-  if (serverAnnotationServiceName) {
-    return serverAnnotationServiceName;
-  }
-
-  // Next, the label of any messaging annotation, logged by an instrumented producer or consumer
-  const messageAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_MESSAGE);
-  if (messageAnnotationServiceName) {
-    return messageAnnotationServiceName;
-  }
-
-  // Next is the label of the client's endpoint
-  const clientAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.CLIENT_ADDR);
-  if (clientAddressServiceName) {
-    return clientAddressServiceName;
-  }
-
-  // Next is the label of any client annotation, logged by an instrumented client
-  const clientAnnotationServiceName = findServiceNameForAnnotation(span, Constants.CORE_CLIENT);
-  if (clientAnnotationServiceName) {
-    return clientAnnotationServiceName;
-  }
-
-  // Next is the label of the broker's endpoint
-  const brokerAddressServiceName = findServiceNameForBinaryAnnotation(span, Constants.MESSAGE_ADDR);
-  if (brokerAddressServiceName) {
-    return brokerAddressServiceName;
-  }
-
-  // Then is the label of the local component's endpoint
-  const localServiceName = findServiceNameForBinaryAnnotation(span, Constants.LOCAL_COMPONENT);
-  if (localServiceName) {
-    return localServiceName;
-  }
-
-  // Finally, anything so that the service name isn't blank!
-  const allServiceNames = getServiceNames(span);
-  return allServiceNames.length === 0 ? null : allServiceNames[0];
 }
 
 export default function traceToMustache(tree, logsUrl = undefined) {
@@ -196,51 +125,13 @@ export default function traceToMustache(tree, logsUrl = undefined) {
       const spanStartTs = span.timestamp || traceTimestamp;
       const spanDepth = spanDepths[span.id] || 1;
       const width = (span.duration || 0) / duration * 100;
-      let errorType = 'none';
-
-      const binaryAnnotations = (span.binaryAnnotations || [])
-      // empty "lc" tags are just a hack for "Local Address" which is processed below
-      .filter((a) => a.key !== Constants.LOCAL_COMPONENT || a.value.length > 0)
-      .map((a) => {
-        if (a.key === Constants.ERROR) {
-          errorType = 'critical';
-        }
-        const key = ConstantNames[a.key] || a.key;
-        if (Constants.CORE_ADDRESS.indexOf(a.key) !== -1) {
-          return {
-            ...a,
-            key,
-            value: formatEndpoint(a.endpoint)
-          };
-        }
-        return {
-          ...a,
-          key
-        };
-      });
-
-      if (errorType !== 'critical') {
-        if (_(span.annotations || []).findIndex(ann => ann.value === Constants.ERROR) !== -1) {
-          errorType = 'transient';
-        }
-      }
-
-      const localComponentAnnotation = _(span.binaryAnnotations || [])
-          .find((s) => s.key === Constants.LOCAL_COMPONENT);
-      if (localComponentAnnotation && localComponentAnnotation.endpoint) {
-        binaryAnnotations.push({
-          ...localComponentAnnotation,
-          key: 'Local Address',
-          value: formatEndpoint(localComponentAnnotation.endpoint)
-        });
-      }
 
       return {
         spanId: span.id,
         parentId: span.parentId || null,
         spanName: span.name,
-        serviceNames: getServiceNames(span).join(','),
-        serviceName: getServiceName(span) || '',
+        serviceNames: span.serviceNames.join(','),
+        serviceName: span.serviceName || '',
         duration: span.duration,
         durationStr: mkDurationStr(span.duration),
         left: parseFloat(spanStartTs - traceTimestamp) / parseFloat(duration) * 100,
@@ -257,8 +148,8 @@ export default function traceToMustache(tree, logsUrl = undefined) {
           relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
           width: 8
         })),
-        binaryAnnotations,
-        errorType
+        binaryAnnotations: span.binaryAnnotations,
+        errorType: getErrorType(span)
       };
     }
   ).value();
