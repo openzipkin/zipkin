@@ -44,7 +44,7 @@ const TracePageComponent = component(function TracePage() {
         });
       });
 
-      $('.annotation:not(.core)').tooltip({placement: 'left'});
+      $('.annotation:not(.derived)').tooltip({placement: 'left'});
     });
   });
 });
