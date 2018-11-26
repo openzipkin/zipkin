@@ -4,12 +4,13 @@ import traceToMustache,
     getServiceName,
     formatEndpoint
   } from '../../js/component_ui/traceToMustache';
-const {clean, mergeV2ById} = require('../../js/spanCleaner');
+const {SpanNode} = require('../../js/spanNode');
+import {treeCorrectedForClockSkew} from '../../js/skew';
 import {SPAN_V1} from '../../js/spanConverter';
 import {httpTrace} from './traceTestHelpers';
 
-// cleans the data as traceSummary expects data to be normalized
-const cleanedHttpTrace = mergeV2ById(httpTrace);
+// renders data into a tree for traceMustache
+const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
 
 describe('traceToMustache', () => {
   it('should format duration', () => {
@@ -44,7 +45,7 @@ describe('traceToMustache', () => {
   });
 
   it('should tolerate spans without annotations', () => {
-    const testTrace = [clean({
+    const testTrace = new SpanNode({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
@@ -52,27 +53,28 @@ describe('traceToMustache', () => {
       duration: 333000,
       localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
       tags: {lc: 'component'}
-    })];
+    });
     const {spans: [testSpan]} = traceToMustache(testTrace);
     testSpan.binaryAnnotations[0].key.should.equal('Local Component');
   });
 
   it('should not include empty Local Component annotations', () => {
-    const testTrace = [clean({
+    const testTrace = new SpanNode({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
       timestamp: 1457186385375000,
       duration: 333000,
-      localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
-    })];
+      localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
+      tags: {}
+    });
     const {spans: [testSpan]} = traceToMustache(testTrace);
     // skips empty Local Component, but still shows it as an address
     testSpan.binaryAnnotations[0].key.should.equal('Local Address');
   });
 
   it('should tolerate spans without tags', () => {
-    const testTrace = [clean({
+    const testTrace = new SpanNode({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
@@ -80,7 +82,8 @@ describe('traceToMustache', () => {
       timestamp: 1457186385375000,
       duration: 333000,
       localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
-    })];
+      tags: {}
+    });
     const {spans: [testSpan]} = traceToMustache(testTrace);
     testSpan.annotations[0].value.should.equal('Server Receive');
     testSpan.annotations[1].value.should.equal('Server Send');

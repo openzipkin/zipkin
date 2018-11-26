@@ -1,7 +1,7 @@
 import {component} from 'flightjs';
 import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
 import traceToMustache from '../../js/component_ui/traceToMustache';
-import {correctForClockSkew} from '../skew';
+import {treeCorrectedForClockSkew} from '../skew';
 
 export function ensureV2(trace) {
   if (!Array.isArray(trace) || trace.length === 0) {
@@ -30,7 +30,7 @@ export default component(function uploadTrace() {
       try {
         const raw = JSON.parse(evt.target.result);
         ensureV2(raw);
-        const corrected = correctForClockSkew(raw);
+        const corrected = treeCorrectedForClockSkew(raw);
         const modelview = traceToMustache(corrected);
         model = {modelview, trace: raw};
       } catch (e) {

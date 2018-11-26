@@ -3,11 +3,11 @@ import {showSpans, hideSpans, initSpans} from '../../js/component_ui/trace';
 import {traceDetailSpan} from './traceTestHelpers';
 import traceToMustache from '../../js/component_ui/traceToMustache';
 import {traceTemplate} from '../../js/templates';
-const {mergeV2ById} = require('../../js/spanCleaner');
+import {treeCorrectedForClockSkew} from '../../js/skew';
 import testTrace from '../../testdata/netflix';
 
-// cleans the data as traceSummary expects data to be normalized
-const cleanedTestTrace = mergeV2ById(testTrace);
+// renders data into a tree for traceMustache
+const cleanedTestTrace = treeCorrectedForClockSkew(testTrace);
 
 describe('showSpans', () => {
   it('expands and highlights span to show', () => {

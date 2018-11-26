@@ -168,9 +168,19 @@ export function getServiceName(span) { // export for testing
   return allServiceNames.length === 0 ? null : allServiceNames[0];
 }
 
-export default function traceToMustache(v2Trace, logsUrl = undefined) {
+export default function traceToMustache(tree, logsUrl = undefined) {
+  // TODO: this is the max depth of spans, but it probably isn't all that useful vs endpoint depth
+  // reason being is that some instrumentation make a lot of intermediate spans. It would probably
+  // make sense to align this with service depth as that's what the dependency graph shows. Either
+  // that or remote depth.. eg what's the longest chain of remote spans (taking care to ignore
+  // redundant instrumentation.
+  const depth = tree.maxDepth();
+
+  const v2Trace = tree.traverse();
+  const spanCount = v2Trace.length;
   const trace = SPAN_V1.convertTrace(v2Trace);
   const t = traceSummary(v2Trace);
+
   const traceId = t.traceId;
   const duration = t.duration;
   const serviceNameAndSpanCounts = getServiceNameAndSpanCounts(t.groupedTimestamps);
@@ -180,8 +190,6 @@ export default function traceToMustache(v2Trace, logsUrl = undefined) {
 
   const traceTimestamp = trace[0].timestamp || 0;
   const spanDepths = toSpanDepths(trace);
-
-  const depth = Math.max(..._.values(spanDepths));
 
   const spans = _(getRootSpans(trace)).flatMap(
     (rootSpan) => childrenToList(createSpanTreeEntry(rootSpan, trace))).map((span) => {
@@ -255,7 +263,6 @@ export default function traceToMustache(v2Trace, logsUrl = undefined) {
     }
   ).value();
 
-  const spanCount = spans.length;
   const timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
       .map((p, index) => ({index, time: mkDurationStr(duration * p)}));
   const timeMarkersBackup = timeMarkers;
