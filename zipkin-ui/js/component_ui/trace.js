@@ -91,6 +91,7 @@ export function initSpans($node) {
   const spans = {};
   const children = {};
   const parents = {};
+  // this includes both local and remote service names
   const spansByService = {};
 
   $node.find('.span:not(#timeLabel)').each(function() {
@@ -120,7 +121,7 @@ export function initSpans($node) {
 
 export default component(function trace() {
   /*
-   * Next variables are setting up after initilization.
+   * Next variables are setting up after initialization.
    * see initSpans
    *
    * this.spans = {};
@@ -143,7 +144,7 @@ export default component(function trace() {
     this.spansBackup[id] = $span;
   };
 
-  /* Returns a jquery object representing the spans in svc*/
+  /* Returns a jquery object representing the spans in svc */
   this.getSpansByService = function(svc) {
     let spans = this.spansByService[svc];
     if (spans === undefined) {
