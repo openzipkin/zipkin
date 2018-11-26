@@ -23,7 +23,8 @@ function toV1Endpoint(endpoint) {
 }
 
 /*
- * implicit means not annotated directly, rather derived from span.kind + span.timestamp/duration
+ * Derived means not annotated directly. Ex 'Server Start' reflects the the timestamp of a
+ * kind=SERVER span. 'Server Finish' is timestamp+duration of the same.
  */
 function toV1Annotation(a, localFormatted, isDerived = false) {
   const res = {
