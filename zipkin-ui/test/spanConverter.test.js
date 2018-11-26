@@ -95,7 +95,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
-      binaryAnnotations: [
+      tags: [
         {
           key: 'http.path',
           value: '/api',
@@ -162,7 +162,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
-      binaryAnnotations: [], // prefers empty array to nil
+      tags: [], // prefers empty array to nil
       serviceName: 'frontend',
       serviceNames: ['frontend']
     };
@@ -204,7 +204,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'frontend',
       serviceNames: ['frontend']
     };
@@ -238,7 +238,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
-      binaryAnnotations: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
+      tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
       serviceName: 'frontend',
       serviceNames: ['frontend', 'backend']
     };
@@ -261,7 +261,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000003',
       name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
-      binaryAnnotations: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
+      tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
       serviceNames: ['backend']
     };
 
@@ -289,7 +289,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
-      binaryAnnotations: [
+      tags: [
         {key: 'Local Address', value: '127.0.0.1:8080 (frontend)'},
         {key: 'Server Address', value: '192.168.99.101:9000 (backend)'}
       ],
@@ -338,7 +338,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [
+      tags: [
         {key: 'http.path', value: '/api', endpoint: '192.168.99.101:9000 (backend)'},
         {key: 'finagle.version', value: '6.45.0', endpoint: '192.168.99.101:9000 (backend)'},
         {key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}
@@ -369,7 +369,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
-      binaryAnnotations: [],
+      tags: [],
       serviceNames: []
     };
 
@@ -401,7 +401,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           timestamp: 1472470996199000
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceNames: []
     };
 
@@ -442,7 +442,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'backend',
       serviceNames: ['backend']
     };
@@ -477,7 +477,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'backend',
       serviceNames: ['backend']
     };
@@ -510,7 +510,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
+      tags: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
       serviceName: 'backend',
       serviceNames: ['backend', 'frontend']
     };
@@ -532,7 +532,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000002',
       name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
-      binaryAnnotations: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
+      tags: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
       serviceNames: ['frontend']
     };
 
@@ -557,7 +557,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
-      binaryAnnotations: [{key: 'Local Address', value: 'frontend'}],
+      tags: [{key: 'Local Address', value: 'frontend'}],
       serviceName: 'frontend',
       serviceNames: ['frontend']
     };
@@ -591,7 +591,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'frontend',
       serviceNames: ['frontend']
     };
@@ -633,7 +633,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'frontend',
       serviceNames: ['frontend']
     };
@@ -667,7 +667,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'backend',
       serviceNames: ['backend']
     };
@@ -702,7 +702,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [{key: 'Broker Address', value: 'kafka'}],
+      tags: [{key: 'Broker Address', value: 'kafka'}],
       serviceName: 'backend',
       serviceNames: ['backend', 'kafka']
     };
@@ -744,7 +744,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'backend',
       serviceNames: ['backend']
     };
@@ -767,7 +767,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
     };
 
     const v1 = SPAN_V1.convert(v2);
-    expect(v1.binaryAnnotations.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
+    expect(v1.tags.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
   });
 
   it('should not require endpoint serviceName', () => {
@@ -808,7 +808,7 @@ describe('SPAN v1 Merge', () => {
         endpoint: '127.0.0.1:8080 (frontend)'
       }
     ],
-    binaryAnnotations: [],
+    tags: [],
     serviceName: 'frontend',
     serviceNames: ['frontend']
   };
@@ -831,7 +831,7 @@ describe('SPAN v1 Merge', () => {
         endpoint: '192.168.99.101:9000 (backend)'
       }
     ],
-    binaryAnnotations: [],
+    tags: [],
     serviceName: 'backend',
     serviceNames: ['backend']
   };
@@ -868,7 +868,7 @@ describe('SPAN v1 Merge', () => {
         endpoint: '127.0.0.1:8080 (frontend)'
       }
     ],
-    binaryAnnotations: [],
+    tags: [],
     serviceName: 'backend', // prefer server in shared span
     serviceNames: ['frontend', 'backend']
   };
@@ -895,15 +895,15 @@ describe('SPAN v1 Merge', () => {
     expect(merged).to.deep.equal(mergedSpan);
   });
 
-  // originally zipkin2.v1.SpanConverterTest.mergeWhenBinaryAnnotationsSentSeparately
+  // originally zipkin2.v1.SpanConverterTest.mergeWhenTagsSentSeparately
   it('should add late server addr', () => {
     const merged = SPAN_V1.merge(clientSpan, {
       traceId: '1',
       id: '3',
-      binaryAnnotations: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]
+      tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]
     });
 
-    expect(merged.binaryAnnotations).to.deep.equal(
+    expect(merged.tags).to.deep.equal(
       [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]);
   });
 
@@ -921,7 +921,7 @@ describe('SPAN v1 Merge', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: []
+      tags: []
     });
 
     expect(merged.name).to.equal('get /users/:userId');
@@ -956,7 +956,7 @@ describe('SPAN v1 Merge', () => {
           endpoint: '127.0.0.1:8080 (frontend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'frontend',
       serviceNames: ['frontend']
     };
@@ -981,7 +981,7 @@ describe('SPAN v1 Merge', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'backend',
       serviceNames: ['backend']
     };
@@ -1031,7 +1031,7 @@ describe('SPAN v1 Merge', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'backend',
       serviceNames: ['backend']
     });
@@ -1052,7 +1052,7 @@ describe('SPAN v1 Merge', () => {
           endpoint: '192.168.99.101:9000 (backend)'
         }
       ],
-      binaryAnnotations: [],
+      tags: [],
       serviceName: 'backend',
       serviceNames: ['backend']
     });
@@ -1187,7 +1187,7 @@ describe('SPAN v1 merge by ID', () => {
         timestamp: cs.timestamp,
         duration: cr.timestamp - cs.timestamp,
         annotations: [cs, sr, ss, cr],
-        binaryAnnotations: [],
+        tags: [],
         serviceNames: []
       }
     ]);
@@ -1217,7 +1217,7 @@ describe('SPAN v1 merge by ID', () => {
         timestamp: cs.timestamp,
         duration: cr.timestamp - cs.timestamp,
         annotations: [cs, sr, ss, cr],
-        binaryAnnotations: [],
+        tags: [],
         serviceNames: []
       }
     ]);

@@ -264,7 +264,7 @@ export default component(function trace() {
   this.showSpanDetails = function($span) {
     const spanData = {
       annotations: [],
-      binaryAnnotations: []
+      tags: []
     };
 
     $.each($span.data('keys').split(','), (i, n) => { spanData[n] = $span.data(n); });
@@ -276,11 +276,11 @@ export default component(function trace() {
       spanData.annotations.push(anno);
     });
 
-    $span.find('.binary-annotation').each(function() {
+    $span.find('.tag').each(function() {
       const $this = $(this);
       const anno = {};
       $.each($this.data('keys').split(','), (e, n) => { anno[n] = $this.data(n); });
-      spanData.binaryAnnotations.push(anno);
+      spanData.tags.push(anno);
     });
 
     this.trigger('uiRequestSpanPanel', spanData);

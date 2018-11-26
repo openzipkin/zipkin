@@ -17,7 +17,7 @@ function escapeHtml(string) {
   return String(string).replace(/[&<>"'`=\/]/g, s => entityMap[s]);
 }
 
-export function isDupeBinaryAnnotation(tagMap, anno) {
+export function isDupeTag(tagMap, anno) {
   if (!tagMap[anno.key]) {
     tagMap[anno.key] = anno.value; // eslint-disable-line no-param-reassign
   } else if (tagMap[anno.key] === anno.value) {
@@ -50,10 +50,9 @@ export function formatAnnotationValue(value) {
   }
 }
 
-// Binary annotations are tags, and sometimes the values are large, for example
-// json representing a query or a stack trace. Format these so that they don't
-// scroll off the side of the screen.
-export function formatBinaryAnnotationValue(value) {
+// Tags sometimes have large values, for example json representing a query or a
+// stack trace. Format these so that they don't scroll off the side of the screen.
+export function formatTagValue(value) {
   const type = $.type(value);
   if (type === 'object' || type === 'array' || value == null) {
     return `<pre><code>${escapeHtml(JSON.stringify(value, null, 2))}</code></pre>`;
@@ -66,7 +65,7 @@ export function formatBinaryAnnotationValue(value) {
 
 export default component(function spanPanel() {
   this.$annotationTemplate = null;
-  this.$binaryAnnotationTemplate = null;
+  this.$tagTemplate = null;
   this.$moreInfoTemplate = null;
 
   this.show = function(e, span) {
@@ -99,10 +98,10 @@ export default component(function spanPanel() {
       $this.text((new Date(parseInt(timestamp, 10) / 1000)).toLocaleString());
     });
 
-    const $binAnnoBody = this.$node.find('#binaryAnnotations tbody').text('');
-    $.each((span.binaryAnnotations || []), (i, anno) => {
-      if (isDupeBinaryAnnotation(tagMap, anno)) return;
-      const $row = self.$binaryAnnotationTemplate.clone();
+    const $tagBody = this.$node.find('#tags tbody').text('');
+    $.each((span.tags || []), (i, anno) => {
+      if (isDupeTag(tagMap, anno)) return;
+      const $row = self.$tagTemplate.clone();
       if (anno.key === Constants.ERROR) {
         $row.addClass('anno-error-critical');
       }
@@ -110,11 +109,11 @@ export default component(function spanPanel() {
         const $this = $(this);
         const propertyName = $this.data('key');
         const text = propertyName === 'value'
-          ? formatBinaryAnnotationValue(anno.value)
+          ? formatTagValue(anno.value)
           : escapeHtml(anno[propertyName]);
         $this.append(text);
       });
-      $binAnnoBody.append($row);
+      $tagBody.append($row);
     });
 
     const $moreInfoBody = this.$node.find('#moreInfo tbody').text('');
@@ -134,7 +133,7 @@ export default component(function spanPanel() {
   this.after('initialize', function() {
     this.$node.modal('hide');
     this.$annotationTemplate = this.$node.find('#annotations tbody tr').remove();
-    this.$binaryAnnotationTemplate = this.$node.find('#binaryAnnotations tbody tr').remove();
+    this.$tagTemplate = this.$node.find('#tags tbody tr').remove();
     this.$moreInfoTemplate = this.$node.find('#moreInfo tbody tr').remove();
     this.on(document, 'uiRequestSpanPanel', this.show);
   });
