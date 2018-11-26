@@ -122,7 +122,7 @@
 }
 
 /*
- * Derived annotations like "Server Receive" "Server Send" are hidden to make
+ * Derived annotations like "Server Start" "Server Finish" are hidden to make
  * the user-defined ones more obvious.
  */
 #trace-container .span .duration .annotation.derived {
