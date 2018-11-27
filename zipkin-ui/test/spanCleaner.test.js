@@ -1,4 +1,4 @@
-const {merge, mergeV2ById} = require('../js/spanCleaner');
+const {cleanupComparator, merge, mergeV2ById} = require('../js/spanCleaner');
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
@@ -929,6 +929,32 @@ describe('mergeV2ById', () => {
     expect(spans.map(s => s.name)).to.deep.equal([
       'client',
       'server'
+    ]);
+  });
+});
+
+describe('cleanupComparator', () => {
+  // some instrumentation don't add shared flag to servers
+  it('should order server after client', () => {
+    const spans = [
+      {
+        traceId: '1111111111111111',
+        parentId: '0000000000000001',
+        id: '0000000000000004',
+        name: 'a',
+        kind: 'SERVER'
+      },
+      {
+        traceId: '1111111111111111',
+        parentId: '0000000000000001',
+        id: '0000000000000004',
+        name: 'a',
+        kind: 'CLIENT'
+      }
+    ];
+
+    expect(spans.sort(cleanupComparator).map(s => `${s.id}-${s.kind}`)).to.deep.equal([
+      '0000000000000004-CLIENT', '0000000000000004-SERVER'
     ]);
   });
 });
