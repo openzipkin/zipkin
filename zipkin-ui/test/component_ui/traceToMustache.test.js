@@ -1,8 +1,4 @@
-import traceToMustache,
-  {
-    getRootSpans,
-    formatEndpoint
-  } from '../../js/component_ui/traceToMustache';
+import {traceToMustache, getRootSpans} from '../../js/component_ui/traceToMustache';
 const {SpanNode} = require('../../js/spanNode');
 import {treeCorrectedForClockSkew} from '../../js/skew';
 import {httpTrace} from './traceTestHelpers';
@@ -112,58 +108,5 @@ describe('get root spans', () => {
       parentId: 3,
       id: 4
     }]);
-  });
-});
-
-describe('formatEndpoint', () => {
-  it('should format ip and port', () => {
-    formatEndpoint({ipv4: '150.151.152.153', port: 5000}).should.equal('150.151.152.153:5000');
-  });
-
-  it('should not use port when missing or zero', () => {
-    formatEndpoint({ipv4: '150.151.152.153'}).should.equal('150.151.152.153');
-    formatEndpoint({ipv4: '150.151.152.153', port: 0}).should.equal('150.151.152.153');
-  });
-
-  it('should put service name in parenthesis', () => {
-    formatEndpoint({ipv4: '150.151.152.153', port: 9042, serviceName: 'cassandra'}).should.equal(
-      '150.151.152.153:9042 (cassandra)'
-    );
-    formatEndpoint({ipv4: '150.151.152.153', serviceName: 'cassandra'}).should.equal(
-      '150.151.152.153 (cassandra)'
-    );
-  });
-
-  it('should not show empty service name', () => {
-    formatEndpoint({ipv4: '150.151.152.153', port: 9042, serviceName: ''}).should.equal(
-      '150.151.152.153:9042'
-    );
-    formatEndpoint({ipv4: '150.151.152.153', serviceName: ''}).should.equal(
-      '150.151.152.153'
-    );
-  });
-
-  it('should show service name missing IP', () => {
-    formatEndpoint({serviceName: 'rabbit'}).should.equal(
-      'rabbit'
-    );
-  });
-
-  it('should not crash on no data', () => {
-    formatEndpoint({}).should.equal('');
-  });
-
-  it('should put ipv6 in brackets', () => {
-    formatEndpoint({ipv6: '2001:db8::c001', port: 9042, serviceName: 'cassandra'}).should.equal(
-      '[2001:db8::c001]:9042 (cassandra)'
-    );
-
-    formatEndpoint({ipv6: '2001:db8::c001', port: 9042}).should.equal(
-      '[2001:db8::c001]:9042'
-    );
-
-    formatEndpoint({ipv6: '2001:db8::c001'}).should.equal(
-      '[2001:db8::c001]'
-    );
   });
 });

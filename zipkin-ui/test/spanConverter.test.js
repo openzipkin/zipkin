@@ -1,4 +1,4 @@
-const {SPAN_V1} = require('../js/spanConverter');
+const {SPAN_V1, formatEndpoint} = require('../js/spanConverter');
 const should = require('chai').should();
 
 // endpoints from zipkin2.TestObjects
@@ -1284,5 +1284,58 @@ describe('SPAN v1 merge by ID', () => {
       '0000000000000002',
       '0000000000000003'
     ]);
+  });
+});
+
+describe('formatEndpoint', () => {
+  it('should format ip and port', () => {
+    formatEndpoint({ipv4: '150.151.152.153', port: 5000}).should.equal('150.151.152.153:5000');
+  });
+
+  it('should not use port when missing or zero', () => {
+    formatEndpoint({ipv4: '150.151.152.153'}).should.equal('150.151.152.153');
+    formatEndpoint({ipv4: '150.151.152.153', port: 0}).should.equal('150.151.152.153');
+  });
+
+  it('should put service name in parenthesis', () => {
+    formatEndpoint({ipv4: '150.151.152.153', port: 9042, serviceName: 'cassandra'}).should.equal(
+      '150.151.152.153:9042 (cassandra)'
+    );
+    formatEndpoint({ipv4: '150.151.152.153', serviceName: 'cassandra'}).should.equal(
+      '150.151.152.153 (cassandra)'
+    );
+  });
+
+  it('should not show empty service name', () => {
+    formatEndpoint({ipv4: '150.151.152.153', port: 9042, serviceName: ''}).should.equal(
+      '150.151.152.153:9042'
+    );
+    formatEndpoint({ipv4: '150.151.152.153', serviceName: ''}).should.equal(
+      '150.151.152.153'
+    );
+  });
+
+  it('should show service name missing IP', () => {
+    formatEndpoint({serviceName: 'rabbit'}).should.equal(
+      'rabbit'
+    );
+  });
+
+  it('should not crash on no data', () => {
+    formatEndpoint({}).should.equal('');
+  });
+
+  it('should put ipv6 in brackets', () => {
+    formatEndpoint({ipv6: '2001:db8::c001', port: 9042, serviceName: 'cassandra'}).should.equal(
+      '[2001:db8::c001]:9042 (cassandra)'
+    );
+
+    formatEndpoint({ipv6: '2001:db8::c001', port: 9042}).should.equal(
+      '[2001:db8::c001]:9042'
+    );
+
+    formatEndpoint({ipv6: '2001:db8::c001'}).should.equal(
+      '[2001:db8::c001]'
+    );
   });
 });

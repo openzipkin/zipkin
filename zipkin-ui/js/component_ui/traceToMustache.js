@@ -75,17 +75,6 @@ function toSpanDepths(spans) {
   return treeDepths(entry, 1);
 }
 
-export function formatEndpoint({ipv4, ipv6, port, serviceName}) {
-  if (ipv4 || ipv6) {
-    const ip = ipv6 ? `[${ipv6}]` : ipv4; // arbitrarily prefer ipv6
-    const portString = port ? `:${port}` : '';
-    const serviceNameString = serviceName ? ` (${serviceName})` : '';
-    return ip + portString + serviceNameString;
-  } else {
-    return serviceName || '';
-  }
-}
-
 function getErrorType(span) {
   if (span.tags.findIndex(b => b.key === 'error') !== -1) {
     return 'critical';
@@ -96,7 +85,7 @@ function getErrorType(span) {
   }
 }
 
-export default function traceToMustache(tree, logsUrl = undefined) {
+export function traceToMustache(tree, logsUrl = undefined) {
   // TODO: this is the max depth of spans, but it probably isn't all that useful vs endpoint depth
   // reason being is that some instrumentation make a lot of intermediate spans. It would probably
   // make sense to align this with service depth as that's what the dependency graph shows. Either
