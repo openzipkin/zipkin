@@ -127,7 +127,7 @@ function treeCorrectedForClockSkew(spans, debug = false) {
         `skipping clock skew adjustment due to missing root span: traceId=${spans[0].traceId}`
       );
     }
-    return spans;
+    return trace;
   }
 
   const childrenOfRoot = trace.children;
@@ -142,7 +142,7 @@ function treeCorrectedForClockSkew(spans, debug = false) {
     console.log(
       `skipping redundant root span: traceId=${traceId}, rootSpanId=${rootSpanId}, spanId=${spanId}`
     );
-    return spans;
+    return trace;
   }
 
   adjust(trace);
