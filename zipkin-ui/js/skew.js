@@ -138,10 +138,11 @@ function treeCorrectedForClockSkew(spans, debug = false) {
     const traceId = next.traceId;
     const spanId = next.id;
     const rootSpanId = trace.span.id;
-    /* eslint-disable no-console */
-    console.log(
-      `skipping redundant root span: traceId=${traceId}, rootSpanId=${rootSpanId}, spanId=${spanId}`
-    );
+    if (debug) {
+      /* eslint-disable no-console */
+      const prefix = 'skipping redundant root span';
+      console.log(`${prefix}: traceId=${traceId}, rootSpanId=${rootSpanId}, spanId=${spanId}`);
+    }
     return trace;
   }
 

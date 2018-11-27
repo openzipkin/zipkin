@@ -76,60 +76,11 @@ export const errorTrace = [{
   tags: {error: 'request failed'}
 }];
 
-// from ../tracedata/skew.json as we can't figure out how to read file with headless chrome env
-export const skewedTrace = [
-  {
-    traceId: '1e223ff1f80f1c69',
-    parentId: '74280ae0c10d8062',
-    id: '43210ae0c10d1234',
-    name: 'async',
-    timestamp: 1470150004008762,
-    duration: 65000,
-    localEndpoint: {
-      serviceName: 'serviceb',
-      ipv4: '192.0.0.0'
-    }
-  },
-  {
-    traceId: '1e223ff1f80f1c69',
-    parentId: 'bf396325699c84bf',
-    id: '74280ae0c10d8062',
-    kind: 'SERVER',
-    name: 'post',
-    timestamp: 1470150004008761,
-    duration: 93577,
-    localEndpoint: {
-      serviceName: 'serviceb',
-      ipv4: '192.0.0.0'
-    },
-    shared: true
-  },
-  {
-    traceId: '1e223ff1f80f1c69',
-    id: 'bf396325699c84bf',
-    kind: 'SERVER',
-    name: 'get',
-    timestamp: 1470150004071068,
-    duration: 99411,
-    localEndpoint: {
-      serviceName: 'servicea',
-      ipv4: '127.0.0.0'
-    }
-  },
-  {
-    traceId: '1e223ff1f80f1c69',
-    parentId: 'bf396325699c84bf',
-    id: '74280ae0c10d8062',
-    kind: 'CLIENT',
-    name: 'post',
-    timestamp: 1470150004074202,
-    duration: 94539,
-    localEndpoint: {
-      serviceName: 'servicea',
-      ipv4: '127.0.0.0'
-    }
-  }
-];
+import skew from '../../testdata/skew';
+export const skewedTrace = skew;
+
+import netflix from '../../testdata/netflix';
+export const netflixTrace = netflix;
 
 export function traceDetailSpan(id) {
   const expanderText = [];

@@ -1,26 +1,11 @@
-const {
-  ipsMatch,
-  getClockSkew
-} = require('../js/skew');
-const {SpanNode} = require('../js/spanNode');
+const {ipsMatch, getClockSkew, treeCorrectedForClockSkew} = require('../js/skew');
+const {SpanNode, SpanNodeBuilder} = require('../js/spanNode');
 import {clean} from '../js/spanCleaner';
+import {frontend, backend, skewedTrace} from './component_ui/traceTestHelpers';
+
 const should = require('chai').should();
 
-// originally zipkin2.internal.CorrectForClockSkewTest.java
-describe('treeCorrectedForClockSkew', () => {
-  // endpoints from zipkin2.TestObjects
-  const frontend = {
-    serviceName: 'frontend',
-    ipv4: '127.0.0.1',
-    port: 8080
-  };
-
-  const backend = {
-    serviceName: 'backend',
-    ipv4: '192.168.99.101',
-    port: 9000
-  };
-
+describe('ipsMatch', () => {
   const ipv6 = {ipv6: '2001:db8::c001'};
   const ipv4 = {ipv4: '192.168.99.101'};
   const both = {
@@ -60,7 +45,9 @@ describe('treeCorrectedForClockSkew', () => {
     expect(ipsMatch(ipv4, both)).to.equal(true);
     expect(ipsMatch(ipv6, both)).to.equal(true);
   });
+});
 
+describe('getClockSkew', () => {
   /*
    * Instrumentation bugs might result in spans that look like clock skew is at play. When skew
    * appears on the same host, we assume it is an instrumentation bug (rather than make it worse by
@@ -116,7 +103,6 @@ describe('treeCorrectedForClockSkew', () => {
     // Skew correction pushes the server side forward, so the skew endpoint is the server
     expect(getClockSkew(child).endpoint).to.deep.equal(backend);
   });
-
   it('clock skew should be attributed to the server endpoint even if missing shared flag', () => {
     const parent = new SpanNode(clean({
       traceId: '1',
@@ -232,5 +218,51 @@ describe('treeCorrectedForClockSkew', () => {
       server.timestamp - client.timestamp // how much server is behind
       - 1 // assume it takes at least 1us to get to the server
     );
+  });
+});
+
+// depth first traversal, comparing timestamps
+function expectChildrenHappenAfterParent(root) {
+  const queue = [];
+
+  queue.push(root);
+  while (queue.length > 0) {
+    const parent = queue.shift();
+
+    parent.children.forEach(child => {
+      if (parent.span) { // handle headless
+        expect(child.span.timestamp).to.be.gt(parent.span.timestamp);
+      }
+      queue.push(child);
+    });
+  }
+}
+
+// originally zipkin2.internal.CorrectForClockSkewTest.java
+describe('treeCorrectedForClockSkew', () => {
+  it('should correct skew', () => {
+    const corrected = treeCorrectedForClockSkew(skewedTrace);
+    expectChildrenHappenAfterParent(corrected);
+  });
+
+  it('should skip when headless', () => {
+    const headless = [];
+    skewedTrace.forEach(span => {
+      if (span.parentId) headless.push(span); // everything but root!
+    });
+    const notCorrected = treeCorrectedForClockSkew(headless);
+    expect(notCorrected).to.deep.equal(new SpanNodeBuilder({}).build(headless));
+  });
+
+  it('should skip on duplicate root', () => {
+    const duplicate = [];
+    skewedTrace.forEach(span => duplicate.push(span));
+    duplicate.push(clean({
+      traceId: skewedTrace[0].traceId,
+      id: 'cafebabe',
+      name: 'curtain'
+    }));
+    const notCorrected = treeCorrectedForClockSkew(duplicate);
+    expect(notCorrected).to.deep.equal(new SpanNodeBuilder({}).build(duplicate));
   });
 });

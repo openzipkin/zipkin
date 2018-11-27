@@ -35,8 +35,7 @@
     "localEndpoint": {
       "serviceName": "servicea",
       "ipv4": "127.0.0.0"
-    },
-    "shared": true
+    }
   },
   {
     "traceId": "1e223ff1f80f1c69",

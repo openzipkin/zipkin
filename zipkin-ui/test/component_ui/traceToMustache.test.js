@@ -37,7 +37,7 @@ describe('traceToMustache', () => {
       traceToMustache(headless);
 
     traceId.should.equal('bb1f0e21882325b8');
-    duration.should.equal('111.121ms'); // TODO: is this right?
+    duration.should.equal('111.121ms'); // client duration
     services.should.equal(2);
     depth.should.equal(2);
     spanCount.should.equal(2);
