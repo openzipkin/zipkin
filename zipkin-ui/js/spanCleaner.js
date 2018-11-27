@@ -101,6 +101,10 @@ export function compare(a, b) {
   return (a > b) - (a < b);
 }
 
+function isUndefined(ref) {
+  return typeof(ref) === 'undefined';
+}
+
 /*
  * Put spans with null endpoints first, so that their data can be attached to the first span with
  * the same ID and endpoint. It is possible that a server can get the same request on a different
@@ -108,8 +112,8 @@ export function compare(a, b) {
  */
 function compareEndpoint(left, right) {
   // handle nulls first
-  if (typeof(left) === 'undefined') return -1;
-  if (typeof(right) === 'undefined') return 1;
+  if (isUndefined(left)) return -1;
+  if (isUndefined(right)) return 1;
 
   const byService = compare(left.serviceName, right.serviceName);
   if (byService !== 0) return byService;
@@ -120,20 +124,21 @@ function compareEndpoint(left, right) {
 
 // false or null first (client first)
 function compareShared(left, right) {
-  if (typeof(left) === 'undefined') return -1;
-  if (typeof(right) === 'undefined') return 1;
+  const leftNotShared = isUndefined(left.shared) || !left.shared;
+  const rightNotShared = isUndefined(right.shared) || !right.shared;
 
-  if (left === right) {
-    return 0;
-  } else {
-    return left ? 1 : -1;
+  if (leftNotShared && rightNotShared) {
+    return left.kind === 'CLIENT' ? -1 : 1;
   }
+  if (leftNotShared) return -1;
+  if (rightNotShared) return 1;
+  return 0;
 }
 
-function cleanupComparator(left, right) {
+export function cleanupComparator(left, right) { // exported for testing
   const bySpanId = compare(left.id, right.id);
   if (bySpanId !== 0) return bySpanId;
-  const byShared = compareShared(left.shared, right.shared);
+  const byShared = compareShared(left, right);
   if (byShared !== 0) return byShared;
   return compareEndpoint(left.localEndpoint, right.localEndpoint);
 }
@@ -183,9 +188,11 @@ export function mergeV2ById(spans) {
   result.sort(cleanupComparator);
 
   // Now start any fixes or merging
+  let last;
   for (let i = 0; i < length; i++) {
     let span = result[i];
 
+    // Choose the longest trace ID
     if (span.traceId.length !== traceId.length) {
       span.traceId = traceId;
     }
@@ -204,13 +211,25 @@ export function mergeV2ById(spans) {
         result.splice(i + 1, 1);
         continue;
       }
-
-      if (next.shared && !next.parentId && span.parentId) {
-        // handle a shared RPC server span that wasn't propagated its parent span ID
-        next.parentId = span.parentId;
-      }
       break;
     }
+
+    // Zipkin and B3 originally used the same span ID between client and server. Some
+    // instrumentation are inconsistent about adding the shared flag on the server side. Since we
+    // have the entire trace, and it is ordered client-first, we can correct a missing shared flag.
+    if (last && last.id === span.id) {
+      // Backfill missing shared flag as some instrumentation doesn't add it
+      if (last.kind === 'CLIENT' && span.kind === 'SERVER' && !span.shared) {
+        span.shared = true;
+      }
+
+      // handle a shared RPC server span that wasn't propagated its parent span ID
+      if (span.shared && !span.parentId && last.parentId) {
+        span.parentId = last.parentId;
+      }
+    }
+
+    last = span;
     result[i] = span;
   }
 
@@ -224,7 +243,7 @@ export function mergeV2ById(spans) {
     }
 
     // order client first in case of shared spans (shared is always server)
-    if (a.id === b.id) return compareShared(a.shared, b.shared);
+    if (a.id === b.id) return compareShared(a, b);
 
     // Either a and b are root or neither are. sort by shared timestamp, then name
     return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);

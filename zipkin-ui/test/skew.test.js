@@ -117,6 +117,31 @@ describe('treeCorrectedForClockSkew', () => {
     expect(getClockSkew(child).endpoint).to.deep.equal(backend);
   });
 
+  it('clock skew should be attributed to the server endpoint even if missing shared flag', () => {
+    const parent = new SpanNode(clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      timestamp: 20,
+      duration: 20
+    }));
+    const child = new SpanNode(clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      timestamp: 10, // skew
+      duration: 10
+    }));
+    parent.addChild(child);
+
+    // Skew correction pushes the server side forward, so the skew endpoint is the server
+    expect(getClockSkew(child).endpoint).to.deep.equal(backend);
+  });
+
   /*
    * Skew is relative to the server receive and centered by the difference between the server
    * duration and the client duration.
