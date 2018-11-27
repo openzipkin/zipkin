@@ -37,7 +37,7 @@ describe('convertSuccessResponse', () => {
             width: 8
           }
         ],
-        binaryAnnotations: [
+        tags: [
           {
             key: 'http.method',
             value: 'GET',
@@ -134,7 +134,7 @@ describe('convertSuccessResponse', () => {
             width: 8
           }
         ],
-        binaryAnnotations: [
+        tags: [
           {
             key: 'http.method',
             value: 'GET',
@@ -212,7 +212,7 @@ describe('convertSuccessResponse', () => {
         depthClass: 0,
         children: '',
         annotations: [],
-        binaryAnnotations: [
+        tags: [
           {
             key: 'error',
             value: 'request failed',
@@ -318,7 +318,7 @@ describe('convertSuccessResponse', () => {
             width: 8
           }
         ],
-        binaryAnnotations: [],
+        tags: [],
         errorType: 'none'
       },
       {
@@ -372,7 +372,7 @@ describe('convertSuccessResponse', () => {
             width: 8
           }
         ],
-        binaryAnnotations: [],
+        tags: [],
         errorType: 'none'
       },
       {
@@ -389,7 +389,7 @@ describe('convertSuccessResponse', () => {
         depthClass: 2,
         children: '',
         annotations: [],
-        binaryAnnotations: [
+        tags: [
           {
             key: 'Local Address',
             value: '192.0.0.0 (serviceb)'

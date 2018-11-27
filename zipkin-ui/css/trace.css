@@ -3,7 +3,7 @@
   margin-bottom: 50px;
 }
 
-#trace-container .binary-annotation {
+#trace-container .tag {
   display: none;
 }
 
@@ -192,7 +192,7 @@
   background: #f2dede;
 }
 
-#spanPanel #binaryAnnotations td.value {
+#spanPanel #tags td.value {
   word-break: break-all;
   max-width: 75%;
 }

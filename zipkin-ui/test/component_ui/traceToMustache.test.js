@@ -39,7 +39,7 @@ describe('traceToMustache', () => {
     const {spans: [testSpan]} = traceToMustache(cleanedHttpTrace);
     testSpan.annotations[0].value.should.equal('Server Start');
     testSpan.annotations[1].value.should.equal('Server Finish');
-    testSpan.binaryAnnotations[4].key.should.equal('Client Address');
+    testSpan.tags[4].key.should.equal('Client Address');
   });
 
   it('should tolerate spans without annotations', () => {
@@ -53,7 +53,7 @@ describe('traceToMustache', () => {
       tags: {lc: 'component'}
     });
     const {spans: [testSpan]} = traceToMustache(testTrace);
-    testSpan.binaryAnnotations[0].key.should.equal('Local Component');
+    testSpan.tags[0].key.should.equal('Local Component');
   });
 
   it('should not include empty Local Component annotations', () => {
@@ -68,7 +68,7 @@ describe('traceToMustache', () => {
     });
     const {spans: [testSpan]} = traceToMustache(testTrace);
     // skips empty Local Component, but still shows it as an address
-    testSpan.binaryAnnotations[0].key.should.equal('Local Address');
+    testSpan.tags[0].key.should.equal('Local Address');
   });
 
   it('should tolerate spans without tags', () => {

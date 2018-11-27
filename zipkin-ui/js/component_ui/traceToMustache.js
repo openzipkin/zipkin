@@ -87,7 +87,7 @@ export function formatEndpoint({ipv4, ipv6, port, serviceName}) {
 }
 
 function getErrorType(span) {
-  if (span.binaryAnnotations.findIndex(b => b.key === 'error') !== -1) {
+  if (span.tags.findIndex(b => b.key === 'error') !== -1) {
     return 'critical';
   } else if (span.annotations.findIndex(a => a.value === 'error') !== -1) { // TODO: indexOf!
     return 'transient';
@@ -144,7 +144,7 @@ export default function traceToMustache(tree, logsUrl = undefined) {
           relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
           width: 8
         })),
-        binaryAnnotations: span.binaryAnnotations,
+        tags: span.tags,
         errorType: getErrorType(span)
       };
     }

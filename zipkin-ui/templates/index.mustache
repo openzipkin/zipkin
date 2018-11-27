@@ -188,8 +188,8 @@
           what you can look up
           by in this field. Could be things like</p> <strong>finagle.timeout</strong>
 
-        <h4 data-i18n="modal.title5">3. Lookups by key/value</h4>
-        <p data-i18n="modal.p6">Key / value annotations are just extra metadata attached to a trace. This could be
+        <h4 data-i18n="modal.title5">3. Lookups by tag</h4>
+        <p data-i18n="modal.p6">Tags are just extra metadata attached to a trace. This could be
           things like the url hit,
           response codes or exceptions. See below for a few examples.</p>
         <table class="table table-bordered">
@@ -201,12 +201,12 @@
           </thead>
           <tbody>
           <tr>
-            <td>tfe.uri</td>
-            <td>/1/trends/available.json?lang=en</td>
+            <td>http.path</td>
+            <td>/1/trends/available.json</td>
           </tr>
           <tr>
-            <td>http.responsecode</td>
-            <td>500 Internal Server Error</td>
+            <td>http.status_code</td>
+            <td>500</td>
           </tr>
           </tbody>
         </table>

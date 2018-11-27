@@ -93,14 +93,14 @@
       </div>
     </div>
 
-    {{#binaryAnnotations}}
-    <div class='binary-annotation'
+    {{#tags}}
+    <div class='tag'
       data-keys='key,value,type'
       data-key='{{key}}'
       data-value='{{value}}'
       data-type='{{annotationType}}'
     ></div>
-    {{/binaryAnnotations}}
+    {{/tags}}
   </div>
   {{/spans}}
 </div>
@@ -135,7 +135,7 @@
           </tbody>
         </table>
 
-        <table id='binaryAnnotations' class='table table-striped table-sm table-bordered'>
+        <table id='tags' class='table table-striped table-sm table-bordered'>
           <thead class="table-info"><tr>
             <th>Key</th>
             <th>Value</th>
@@ -223,14 +223,14 @@
       </div>
     </div>
 
-    {{#binaryAnnotations}}
-    <div class='binary-annotation'
+    {{#tags}}
+    <div class='tag'
       data-keys='key,value,type'
       data-key='{{key}}'
       data-value='{{value}}'
       data-type='{{annotationType}}'
     ></div>
-    {{/binaryAnnotations}}
+    {{/tags}}
   </div>
   {{/spansBackup}}
 </div>

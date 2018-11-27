@@ -219,11 +219,11 @@ function convertV1(span) {
     }, localFormatted, true));
   }
 
-  res.binaryAnnotations = []; // prefer empty to undefined for arrays
+  res.tags = []; // prefer empty to undefined for arrays
   const keys = Object.keys(span.tags || {});
   if (keys.length > 0) {
     keys.forEach(key => {
-      res.binaryAnnotations.push({
+      res.tags.push({
         key: ConstantNames[key] || key,
         value: span.tags[key],
         endpoint: localFormatted
@@ -233,7 +233,7 @@ function convertV1(span) {
 
   // write a binary annotation when no tags are present to avoid having no context for a local span
   if (annotationCount === 0 && ep && keys.length === 0) {
-    res.binaryAnnotations.push({
+    res.tags.push({
       key: 'Local Address',
       value: localFormatted
     });
@@ -241,7 +241,7 @@ function convertV1(span) {
 
   if (addr && span.remoteEndpoint) {
     const remoteEndpoint = toV1Endpoint(span.remoteEndpoint);
-    res.binaryAnnotations.push({
+    res.tags.push({
       key: addr,
       value: formatEndpoint(remoteEndpoint)
     });
@@ -266,9 +266,9 @@ function maybePushAnnotation(annotations, a) {
 }
 
 // This guards to ensure we don't add duplicate binary annotations on merge
-function maybePushBinaryAnnotation(binaryAnnotations, a) {
-  if (binaryAnnotations.findIndex(b => a.key === b.key) === -1) {
-    binaryAnnotations.push(a);
+function maybePushTag(tags, a) {
+  if (tags.findIndex(b => a.key === b.key) === -1) {
+    tags.push(a);
   }
 }
 
@@ -318,14 +318,14 @@ function merge(left, right) {
 
   res.annotations.sort((a, b) => a.timestamp - b.timestamp);
 
-  res.binaryAnnotations = [];
+  res.tags = [];
 
-  (left.binaryAnnotations || []).forEach((b) => {
-    maybePushBinaryAnnotation(res.binaryAnnotations, b);
+  (left.tags || []).forEach((b) => {
+    maybePushTag(res.tags, b);
   });
 
-  (right.binaryAnnotations || []).forEach((b) => {
-    maybePushBinaryAnnotation(res.binaryAnnotations, b);
+  (right.tags || []).forEach((b) => {
+    maybePushTag(res.tags, b);
   });
 
   if (right.name && right.name !== '' && right.name !== 'unknown') {
