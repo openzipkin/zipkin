@@ -7,27 +7,43 @@ import {httpTrace} from './traceTestHelpers';
 const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
 
 describe('traceToMustache', () => {
-  it('should format duration', () => {
-    const modelview = traceToMustache(cleanedHttpTrace);
-    modelview.duration.should.equal('168.731ms');
-  });
-
-  it('should show the number of services', () => {
-    const {services} = traceToMustache(cleanedHttpTrace);
-    // TODO: correct: the span count is by ID when it should be by distinct span
-    services.should.equal(2);
-  });
-
   it('should show logsUrl', () => {
     const {logsUrl} = traceToMustache(cleanedHttpTrace, 'http/url.com');
     logsUrl.should.equal('http/url.com');
   });
 
-  it('should show service name and span counts', () => {
-    const {serviceNameAndSpanCounts} = traceToMustache(cleanedHttpTrace);
+  it('should derive summary info', () => {
+    const {traceId, duration, services, depth, spanCount, serviceNameAndSpanCounts} =
+      traceToMustache(cleanedHttpTrace);
+
+    traceId.should.equal('bb1f0e21882325b8');
+    duration.should.equal('168.731ms');
+    services.should.equal(2);
+    depth.should.equal(3);
+    spanCount.should.equal(3);
     serviceNameAndSpanCounts.should.eql([
       {serviceName: 'backend', spanCount: 1},
       {serviceName: 'frontend', spanCount: 2}
+    ]);
+  });
+
+  it('should derive summary info even when headless', () => {
+    const headless = new SpanNode(); // headless as there's no root span
+
+    // make a copy of the cleaned http trace as adding a child is a mutation
+    treeCorrectedForClockSkew(httpTrace).children.forEach(child => headless.addChild(child));
+
+    const {traceId, duration, services, depth, spanCount, serviceNameAndSpanCounts} =
+      traceToMustache(headless);
+
+    traceId.should.equal('bb1f0e21882325b8');
+    duration.should.equal('111.121ms'); // client duration
+    services.should.equal(2);
+    depth.should.equal(2);
+    spanCount.should.equal(2);
+    serviceNameAndSpanCounts.should.eql([
+      {serviceName: 'backend', spanCount: 1},
+      {serviceName: 'frontend', spanCount: 1}
     ]);
   });
 
