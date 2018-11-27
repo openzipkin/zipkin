@@ -1,25 +1,18 @@
 import _ from 'lodash';
 import {compare, normalizeTraceId} from './spanCleaner';
 import {ConstantNames} from './component_ui/traceConstants';
-import {formatEndpoint} from './component_ui/traceToMustache';
 
-function toV1Endpoint(endpoint) {
-  if (endpoint === undefined) {
-    return undefined;
+export function formatEndpoint(endpoint) {
+  if (!endpoint) return undefined;
+  const {ipv4, ipv6, port, serviceName} = endpoint;
+  if (ipv4 || ipv6) {
+    const ip = ipv6 ? `[${ipv6}]` : ipv4; // arbitrarily prefer ipv6
+    const portString = port ? `:${port}` : '';
+    const serviceNameString = serviceName ? ` (${serviceName})` : '';
+    return ip + portString + serviceNameString;
+  } else {
+    return serviceName || '';
   }
-  const res = {
-    serviceName: endpoint.serviceName || '', // undefined is not allowed in v1
-  };
-  if (endpoint.ipv4) {
-    res.ipv4 = endpoint.ipv4;
-  }
-  if (endpoint.ipv6) {
-    res.ipv6 = endpoint.ipv6;
-  }
-  if (endpoint.port) {
-    res.port = endpoint.port;
-  }
-  return res;
 }
 
 /*
@@ -191,11 +184,10 @@ function convertV1(span) {
 
   const beginAnnotation = startTs && begin;
   const endAnnotation = endTs && end;
-  const ep = toV1Endpoint(span.localEndpoint);
 
   res.annotations = []; // prefer empty to undefined for arrays
 
-  const localFormatted = ep && formatEndpoint(ep) || undefined;
+  const localFormatted = formatEndpoint(span.localEndpoint) || undefined;
   let annotationCount = annotationsToAdd.length;
   if (beginAnnotation) {
     annotationCount++;
@@ -232,7 +224,7 @@ function convertV1(span) {
   }
 
   // write a binary annotation when no tags are present to avoid having no context for a local span
-  if (annotationCount === 0 && ep && keys.length === 0) {
+  if (annotationCount === 0 && localFormatted && keys.length === 0) {
     res.tags.push({
       key: 'Local Address',
       value: localFormatted
@@ -240,10 +232,9 @@ function convertV1(span) {
   }
 
   if (addr && span.remoteEndpoint) {
-    const remoteEndpoint = toV1Endpoint(span.remoteEndpoint);
     res.tags.push({
       key: addr,
-      value: formatEndpoint(remoteEndpoint)
+      value: formatEndpoint(span.remoteEndpoint)
     });
   }
 

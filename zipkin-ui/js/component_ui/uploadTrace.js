@@ -1,6 +1,6 @@
 import {component} from 'flightjs';
 import FullPageSpinnerUI from '../component_ui/fullPageSpinner';
-import traceToMustache from '../../js/component_ui/traceToMustache';
+import {traceToMustache} from '../../js/component_ui/traceToMustache';
 import {treeCorrectedForClockSkew} from '../skew';
 
 export function ensureV2(trace) {

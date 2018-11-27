@@ -1,7 +1,7 @@
 import $ from 'jquery';
 import {showSpans, hideSpans, initSpans} from '../../js/component_ui/trace';
 import {traceDetailSpan} from './traceTestHelpers';
-import traceToMustache from '../../js/component_ui/traceToMustache';
+import {traceToMustache} from '../../js/component_ui/traceToMustache';
 import {traceTemplate} from '../../js/templates';
 import {treeCorrectedForClockSkew} from '../../js/skew';
 import testTrace from '../../testdata/netflix';
