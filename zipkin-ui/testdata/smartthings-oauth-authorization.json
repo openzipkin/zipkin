@@ -1,0 +1,3840 @@
+[
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "54456c991996a6c7",
+      "id": "c8a2bcb3011b9fcd",
+      "kind": "CLIENT",
+      "name": "access_token-store-without-refresh",
+      "timestamp": 1543334727215550,
+      "duration": 3816,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.89",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.3",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tBEGIN BATCH\n\t\t\tINSERT INTO auth.oauth_access_token (oauth_token, access_token, authentication, last_modified) VALUES (?, ?, ?, ?);\n\t\t\tINSERT INTO auth.oauth_access_token_by_authentication (authentication_id, access_token, authentication, last_modified) VALUES (?, ?, ?, ?);\n\t\t\tINSERT INTO auth.oauth_access_token_by_client_with_token (client_id, client_mod, user_id, oauth_token, access_token, authentication, last_modified) VALUES (?, ?, ?, ?, ?, ?, ?);\n\t\t\tINSERT INTO auth.oauth_access_token_by_user (user_id_hash, access_token, authentication, device_name) VALUES (?, ?, ?, ?);\n\t\t\tINSERT INTO auth.oauth_access_token_by_user_and_client (user_id_hash, client_id, access_token, authentication, device_name) VALUES (?, ?, ?, ?, ?);\n\t\tAPPLY BATCH;\n\t\t",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.3",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "54456c991996a6c7",
+      "id": "412ef7480c7eadb7",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334727212580,
+      "duration": 2808,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.89",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.3",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.3",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "54456c991996a6c7",
+      "id": "0ceca358a532f441",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334727211445,
+      "duration": 1075,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.89",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.254",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.254",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "54456c991996a6c7",
+      "id": "c5ec98152a9f6ac2",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-authentication_id",
+      "timestamp": 1543334727210809,
+      "duration": 624,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.89",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.141",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token_by_authentication WHERE authentication_id = ?;\n\t\t",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.141",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "54456c991996a6c7",
+      "kind": "SERVER",
+      "name": "post /tokens/access",
+      "timestamp": 1543334727210025,
+      "duration": 9644,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.89",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 36656
+      },
+      "tags": {
+        "http.path": "/tokens/access"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "54456c991996a6c7",
+      "kind": "CLIENT",
+      "name": "post /tokens/access",
+      "timestamp": 1543334727207536,
+      "duration": 13171,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/tokens/access"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "0df5fb685859651f",
+      "id": "084fcc474e57b661",
+      "kind": "CLIENT",
+      "name": "bound-statement",
+      "timestamp": 1543334727132433,
+      "duration": 72725,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.105",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.31",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "QUORUM",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "DELETE FROM auth.oauth_code WHERE code = ?;",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.31",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "0df5fb685859651f",
+      "id": "776d34b22754ac1e",
+      "kind": "CLIENT",
+      "name": "authcode-select-by-code",
+      "timestamp": 1543334727130888,
+      "duration": 1347,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.105",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.175",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.oauth_code WHERE code = ?;",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.175",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "0df5fb685859651f",
+      "kind": "SERVER",
+      "name": "delete /authorization/code/_code_",
+      "timestamp": 1543334727130025,
+      "duration": 75546,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.105",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 51984
+      },
+      "tags": {
+        "http.path": "/authorization/code/_code_"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "0df5fb685859651f",
+      "kind": "CLIENT",
+      "name": "delete /authorization/code/_code_",
+      "timestamp": 1543334727126847,
+      "duration": 79763,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/authorization/code/_code_"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "772e2305de77c79f",
+      "id": "bdcdfb05e48859a5",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334727123808,
+      "duration": 1045,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.251",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.217",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.217",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "772e2305de77c79f",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727123029,
+      "duration": 2131,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.251",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 8634
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "772e2305de77c79f",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727120302,
+      "duration": 5873,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "001c695f334f9420",
+      "id": "dd0ab59f3e36fbd8",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334727117728,
+      "duration": 1084,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.3",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.3",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "001c695f334f9420",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727114029,
+      "duration": 5281,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 10226
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "001c695f334f9420",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727109066,
+      "duration": 10376,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "f86833c3ff266b46",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727106025,
+      "duration": 1629,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.104.29.139",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 33948
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "f86833c3ff266b46",
+      "id": "b262965706ef4d8a",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334727106652,
+      "duration": 686,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.104.29.139",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.254",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.254",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "f86833c3ff266b46",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727103992,
+      "duration": 4589,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "817bed843984f73c",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727101027,
+      "duration": 1601,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.191",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 27934
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "817bed843984f73c",
+      "id": "4cf370cb3c9eb058",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334727101708,
+      "duration": 615,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.191",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.217",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.217",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b69b3db88ffa3212",
+      "id": "817bed843984f73c",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334727098413,
+      "duration": 5011,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "c2fac1d86e52d441",
+      "id": "b69b3db88ffa3212",
+      "kind": "SERVER",
+      "name": "process-token-request",
+      "timestamp": 1543334727098194,
+      "duration": 123351,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "oauth.param.client_id": "zipkin-sample-id",
+        "oauth.param.code": "_code_",
+        "oauth.param.grant_type": "authorization_code",
+        "oauth.param.principal": "zipkin-sample-id",
+        "oauth.param.redirect_uri": "https://example.com/api/skill/link/M25XHJDAAO8RHQ"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "610825951ae86752",
+      "id": "c2fac1d86e52d441",
+      "kind": "SERVER",
+      "timestamp": 1543334727098066,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "610825951ae86752",
+      "id": "3463f822a0e9cc02",
+      "kind": "CLIENT",
+      "name": "redirect",
+      "timestamp": 1543334726297212,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.redirect": "https://example.com/api/skill/link/M25XHJDAAO8RHQ?code=n8ce82b2e9ed820bac2fac1d86e52d441610825951ae867520000000000000006__code_&state=A2SAAEAEKfMsszL2JvJRpVHDystCXYB4BOiYRGmArdNIv9XYhEFP22dZp4"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "610825951ae86752",
+      "id": "c2fac1d86e52d441",
+      "kind": "CLIENT",
+      "name": "authorize",
+      "timestamp": 1543334726296197,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "61d0055f29150e03",
+      "id": "e2e348dcb3334c38",
+      "kind": "CLIENT",
+      "name": "authcode-store",
+      "timestamp": 1543334725675842,
+      "duration": 66972,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.33",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "QUORUM",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "INSERT INTO auth.oauth_code (code, authentication) VALUES (?, ?) USING TTL ?;",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.33",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "610825951ae86752",
+      "id": "61d0055f29150e03",
+      "kind": "SERVER",
+      "name": "post /authorization/code",
+      "timestamp": 1543334725674025,
+      "duration": 621748,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.160",
+        "port": 52322
+      },
+      "tags": {
+        "http.path": "/authorization/code"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "610825951ae86752",
+      "id": "61d0055f29150e03",
+      "kind": "CLIENT",
+      "name": "post /authorization/code",
+      "timestamp": 1543334725670595,
+      "duration": 624147,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/authorization/code"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "610825951ae86752",
+      "kind": "SERVER",
+      "name": "post /oauth/authorize",
+      "timestamp": 1543334725668597,
+      "duration": 628505,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/authorize",
+        "http.status_code": "302",
+        "user.email": "joe@example.com",
+        "user.said": "abc123",
+        "user.uuid": "567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "9d2d35b746db84f3",
+      "id": "d645461738ed0e17",
+      "name": "process.archiver",
+      "timestamp": 1543334725564862,
+      "duration": 2695,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.187",
+        "port": 8197
+      },
+      "tags": {
+        "lc": "EventProcessor",
+        "pusher.eventType": "LEGACY_EVENT",
+        "pusher.timeInKafka": "32"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "d645461738ed0e17",
+      "id": "5f35e80a5a50fdca",
+      "kind": "CLIENT",
+      "name": "post /events",
+      "timestamp": 1543334725564984,
+      "duration": 2513,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.187",
+        "port": 8197
+      },
+      "annotations": [
+        {
+          "timestamp": 1543334725567000,
+          "value": "Body Part Received"
+        },
+        {
+          "timestamp": 1543334725567000,
+          "value": "Headers Received"
+        },
+        {
+          "timestamp": 1543334725567000,
+          "value": "Status Received"
+        }
+      ],
+      "tags": {
+        "http.url": "http://archiver.st.internal/events"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "19b91ab9a7d47f3d",
+      "id": "9d2d35b746db84f3",
+      "kind": "SERVER",
+      "name": "receive iot-events360",
+      "timestamp": 1543334725564455,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.187",
+        "port": 8197
+      },
+      "remoteEndpoint": {
+        "serviceName": "bouncer"
+      },
+      "tags": {
+        "kafka.partition": "56"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "19b91ab9a7d47f3d",
+      "id": "9d2d35b746db84f3",
+      "kind": "SERVER",
+      "name": "receive iot-events360",
+      "timestamp": 1543334725560112,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.187",
+        "port": 8197
+      },
+      "remoteEndpoint": {
+        "serviceName": "bouncer"
+      },
+      "tags": {
+        "kafka.partition": "56"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "19b91ab9a7d47f3d",
+      "id": "9d2d35b746db84f3",
+      "kind": "SERVER",
+      "name": "receive iot-events360",
+      "timestamp": 1543334725560292,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.187",
+        "port": 8197
+      },
+      "remoteEndpoint": {
+        "serviceName": "bouncer"
+      },
+      "tags": {
+        "kafka.partition": "56"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "de67d452708a545a",
+      "id": "b4c5ce09acaf2e0e",
+      "kind": "SERVER",
+      "name": "post /deliver/",
+      "timestamp": 1543334725554014,
+      "duration": 611,
+      "localEndpoint": {
+        "serviceName": "paperboy",
+        "ipv4": "10.0.0.177",
+        "port": 8195
+      },
+      "remoteEndpoint": {
+        "ipv4": "10.0.0.79"
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "/deliver"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "de67d452708a545a",
+      "id": "b4c5ce09acaf2e0e",
+      "kind": "CLIENT",
+      "name": "post /deliver",
+      "timestamp": 1543334725553873,
+      "duration": 1475,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.79",
+        "port": 8197
+      },
+      "annotations": [
+        {
+          "timestamp": 1543334725555000,
+          "value": "Body Part Received"
+        },
+        {
+          "timestamp": 1543334725555000,
+          "value": "Headers Received"
+        },
+        {
+          "timestamp": 1543334725555000,
+          "value": "Status Received"
+        }
+      ],
+      "tags": {
+        "http.url": "http://paperboy.st.internal/deliver"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "9d2d35b746db84f3",
+      "id": "de67d452708a545a",
+      "name": "process.paperboy",
+      "timestamp": 1543334725553777,
+      "duration": 1612,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.79",
+        "port": 8197
+      },
+      "tags": {
+        "lc": "EventProcessor",
+        "pusher.eventType": "LEGACY_EVENT",
+        "pusher.timeInKafka": "22"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "19b91ab9a7d47f3d",
+      "id": "9d2d35b746db84f3",
+      "kind": "SERVER",
+      "name": "receive iot-events360",
+      "timestamp": 1543334725553308,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.79",
+        "port": 8197
+      },
+      "remoteEndpoint": {
+        "serviceName": "bouncer"
+      },
+      "tags": {
+        "kafka.partition": "56"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "975e74022b72e1cd",
+      "id": "1dfd8f3332f7caca",
+      "kind": "SERVER",
+      "name": "post /deliver/",
+      "timestamp": 1543334725551008,
+      "duration": 259,
+      "localEndpoint": {
+        "serviceName": "dove",
+        "ipv4": "10.0.0.47",
+        "port": 8215
+      },
+      "remoteEndpoint": {
+        "ipv4": "10.0.0.79"
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "/deliver"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "975e74022b72e1cd",
+      "id": "1dfd8f3332f7caca",
+      "kind": "CLIENT",
+      "name": "post /deliver",
+      "timestamp": 1543334725550569,
+      "duration": 1704,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.79",
+        "port": 8197
+      },
+      "annotations": [
+        {
+          "timestamp": 1543334725552000,
+          "value": "Body Part Received"
+        },
+        {
+          "timestamp": 1543334725552000,
+          "value": "Headers Received"
+        },
+        {
+          "timestamp": 1543334725552000,
+          "value": "Status Received"
+        }
+      ],
+      "tags": {
+        "http.url": "http://dove.st.internal/deliver"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "9d2d35b746db84f3",
+      "id": "975e74022b72e1cd",
+      "name": "process.dove",
+      "timestamp": 1543334725550479,
+      "duration": 1843,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.79",
+        "port": 8197
+      },
+      "tags": {
+        "lc": "EventProcessor",
+        "pusher.eventType": "LEGACY_EVENT",
+        "pusher.timeInKafka": "18"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "19b91ab9a7d47f3d",
+      "id": "9d2d35b746db84f3",
+      "kind": "SERVER",
+      "name": "receive iot-events360",
+      "timestamp": 1543334725549997,
+      "localEndpoint": {
+        "serviceName": "pusher",
+        "ipv4": "10.0.0.79",
+        "port": 8197
+      },
+      "remoteEndpoint": {
+        "serviceName": "bouncer"
+      },
+      "tags": {
+        "kafka.partition": "56"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "875e4cd34da71421",
+      "id": "19b91ab9a7d47f3d",
+      "kind": "SERVER",
+      "name": "post",
+      "timestamp": 1543334725532359,
+      "duration": 938,
+      "localEndpoint": {
+        "serviceName": "bouncer",
+        "ipv4": "10.0.0.173",
+        "port": 8194
+      },
+      "remoteEndpoint": {
+        "ipv4": "10.0.0.151"
+      },
+      "tags": {
+        "http.path": "events"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "19b91ab9a7d47f3d",
+      "id": "9d2d35b746db84f3",
+      "kind": "CLIENT",
+      "name": "send iot-events360",
+      "timestamp": 1543334725532596,
+      "localEndpoint": {
+        "serviceName": "bouncer",
+        "ipv4": "10.0.0.173",
+        "port": 8194
+      },
+      "remoteEndpoint": {
+        "serviceName": "pusher"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "875e4cd34da71421",
+      "id": "19b91ab9a7d47f3d",
+      "kind": "CLIENT",
+      "name": "post /events",
+      "timestamp": 1543334725531223,
+      "duration": 1668,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/events"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "687365a88b8ba954",
+      "id": "0364222cb0e20fdc",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334725360796,
+      "duration": 919,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.95",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "875e4cd34da71421",
+      "id": "687365a88b8ba954",
+      "kind": "SERVER",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334725360029,
+      "duration": 2014,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.95",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.04",
+        "port": 41634
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "875e4cd34da71421",
+      "id": "687365a88b8ba954",
+      "kind": "CLIENT",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334725351636,
+      "duration": 15871,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "d4a98698eb1d7b2d",
+      "id": "1f37cd038b59c75c",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334725343718,
+      "duration": 563,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.175",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.175",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "d4a98698eb1d7b2d",
+      "id": "eca1f2f754a803e3",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334725342526,
+      "duration": 1145,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "d4a98698eb1d7b2d",
+      "id": "68bba83007363edf",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334725341400,
+      "duration": 1093,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.0",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "875e4cd34da71421",
+      "id": "d4a98698eb1d7b2d",
+      "kind": "SERVER",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334725340024,
+      "duration": 4530,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.04",
+        "port": 33252
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "d4a98698eb1d7b2d",
+      "id": "01b2d121b174561d",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334725340333,
+      "duration": 1034,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.3",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.3",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "875e4cd34da71421",
+      "id": "d4a98698eb1d7b2d",
+      "kind": "CLIENT",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334725329264,
+      "duration": 20837,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "fde62e1dd7a28f55",
+      "id": "875e4cd34da71421",
+      "kind": "SERVER",
+      "name": "post /api/proxied/locations/_uuid_/smart",
+      "timestamp": 1543334725328957,
+      "duration": 241790,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 63036
+      },
+      "tags": {
+        "http.path": "/api/proxied/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "fde62e1dd7a28f55",
+      "id": "875e4cd34da71421",
+      "kind": "CLIENT",
+      "name": "post /api/proxied/locations/_uuid_/smartapps",
+      "timestamp": 1543334725322726,
+      "duration": 252570,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.254",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/proxied/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "fde62e1dd7a28f55",
+      "id": "37cfec055f61ca1e",
+      "kind": "SERVER",
+      "name": "get /locations/user/:username",
+      "timestamp": 1543334725319014,
+      "duration": 2083,
+      "localEndpoint": {
+        "serviceName": "account",
+        "ipv4": "10.0.0.183",
+        "port": 8181
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101"
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "/locations/user/user_uuid:567xyz"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "fde62e1dd7a28f55",
+      "id": "37cfec055f61ca1e",
+      "kind": "CLIENT",
+      "name": "get /locations/user/user_uuid:_uuid_",
+      "timestamp": 1543334725318386,
+      "duration": 3725,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.254",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/locations/user/user_uuid:567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "fde62e1dd7a28f55",
+      "kind": "SERVER",
+      "name": "post /api/locations/_uuid_/smartapps",
+      "timestamp": 1543334725313097,
+      "duration": 264378,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.254",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps",
+        "user.email": "joe@example.com",
+        "user.said": "abc123",
+        "user.uuid": "567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "16eecb59ef681082",
+      "id": "6d34027436856f8f",
+      "kind": "SERVER",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334722685030,
+      "duration": 1730,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.166",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.05",
+        "port": 42588
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "6d34027436856f8f",
+      "id": "41662d84c58e9462",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722685367,
+      "duration": 1083,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.166",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "16eecb59ef681082",
+      "id": "6d34027436856f8f",
+      "kind": "CLIENT",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334722675146,
+      "duration": 16822,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.182",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "38827242198dba3d",
+      "id": "8e83e655dd49fd63",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334722665856,
+      "duration": 1193,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.213",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.95",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.95",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "38827242198dba3d",
+      "id": "b0720badb933ac4a",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722664791,
+      "duration": 1000,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.213",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "38827242198dba3d",
+      "id": "800d65a16ed6d52c",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722663533,
+      "duration": 1207,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.213",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.3",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.3",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "38827242198dba3d",
+      "id": "ad0f51c51fe9d5f7",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722662419,
+      "duration": 1086,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.213",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "16eecb59ef681082",
+      "id": "38827242198dba3d",
+      "kind": "SERVER",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334722662024,
+      "duration": 5455,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.213",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.05",
+        "port": 49124
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7f1930a97b67b431",
+      "id": "16eecb59ef681082",
+      "kind": "SERVER",
+      "name": "get /api/proxied/locations/_uuid_/smarta",
+      "timestamp": 1543334722651264,
+      "duration": 78267,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.182",
+        "port": 8080
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.25",
+        "port": 3068
+      },
+      "tags": {
+        "http.path": "/api/proxied/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps/_app_/versions/082bb0c8-0f22-4dde-b0ce-7f2b6c4fce07/devices"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "16eecb59ef681082",
+      "id": "38827242198dba3d",
+      "kind": "CLIENT",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334722651546,
+      "duration": 22099,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.182",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7f1930a97b67b431",
+      "id": "16eecb59ef681082",
+      "kind": "CLIENT",
+      "name": "get /api/proxied/locations/_uuid_/smartapps/_uuid_/versions/_uuid_/devices",
+      "timestamp": 1543334722644843,
+      "duration": 90175,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.40",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/proxied/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps/_app_/versions/082bb0c8-0f22-4dde-b0ce-7f2b6c4fce07/devices"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7f1930a97b67b431",
+      "id": "6bfe0f47e2fe0bc0",
+      "kind": "SERVER",
+      "name": "get /locations/user/:username",
+      "timestamp": 1543334722642012,
+      "duration": 2031,
+      "localEndpoint": {
+        "serviceName": "account",
+        "ipv4": "10.0.0.13",
+        "port": 8181
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.25"
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "/locations/user/user_uuid:567xyz"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7f1930a97b67b431",
+      "id": "6bfe0f47e2fe0bc0",
+      "kind": "CLIENT",
+      "name": "get /locations/user/user_uuid:_uuid_",
+      "timestamp": 1543334722640542,
+      "duration": 3681,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.40",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/locations/user/user_uuid:567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "7f1930a97b67b431",
+      "kind": "SERVER",
+      "name": "get /api/locations/_uuid_/smartapps/_uui",
+      "timestamp": 1543334722635440,
+      "duration": 101152,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.40",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps/_app_/versions/082bb0c8-0f22-4dde-b0ce-7f2b6c4fce07/devices",
+        "user.email": "joe@example.com",
+        "user.said": "abc123",
+        "user.uuid": "567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "312c5920ce5de8a9",
+      "id": "8c2689a5613d39ea",
+      "kind": "SERVER",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334722484027,
+      "duration": 1954,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.17",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.9",
+        "port": 17140
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "8c2689a5613d39ea",
+      "id": "b28c979d5fb63133",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722484700,
+      "duration": 861,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.17",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "312c5920ce5de8a9",
+      "id": "8c2689a5613d39ea",
+      "kind": "CLIENT",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334722476150,
+      "duration": 15308,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.9",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "1a26239b7113287e",
+      "id": "11ee4af5fa6f5efa",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334722343703,
+      "duration": 976,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.111",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.111",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "1a26239b7113287e",
+      "id": "09ae44d0fa0da9eb",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722342392,
+      "duration": 550,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.3",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.3",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "1a26239b7113287e",
+      "id": "4e32f8453bc5c879",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722342993,
+      "duration": 637,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.0",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "312c5920ce5de8a9",
+      "id": "1a26239b7113287e",
+      "kind": "SERVER",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334722341024,
+      "duration": 4035,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.9",
+        "port": 33768
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "1a26239b7113287e",
+      "id": "f59b8da1680bb277",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722341434,
+      "duration": 900,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.203",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "3c27c9d57b331bb1",
+      "id": "312c5920ce5de8a9",
+      "kind": "SERVER",
+      "name": "get /api/proxied/smartapps/_uuid_/versio",
+      "timestamp": 1543334722331351,
+      "duration": 178831,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.9",
+        "port": 8080
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 9400
+      },
+      "tags": {
+        "http.path": "/api/proxied/smartapps/_app_/versions/_installapp_"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "312c5920ce5de8a9",
+      "id": "1a26239b7113287e",
+      "kind": "CLIENT",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334722331588,
+      "duration": 142802,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.9",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "3c27c9d57b331bb1",
+      "id": "312c5920ce5de8a9",
+      "kind": "CLIENT",
+      "name": "get /api/proxied/smartapps/_uuid_/versions/_uuid_/installations",
+      "timestamp": 1543334722323843,
+      "duration": 190598,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/proxied/smartapps/_app_/versions/_installapp_"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "3c27c9d57b331bb1",
+      "id": "78cf274cc51240ea",
+      "kind": "SERVER",
+      "name": "get /locations/user/:username",
+      "timestamp": 1543334722321006,
+      "duration": 1293,
+      "localEndpoint": {
+        "serviceName": "account",
+        "ipv4": "10.0.0.04",
+        "port": 8181
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101"
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "/locations/user/user_uuid:567xyz"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "3c27c9d57b331bb1",
+      "id": "78cf274cc51240ea",
+      "kind": "CLIENT",
+      "name": "get /locations/user/user_uuid:_uuid_",
+      "timestamp": 1543334722320087,
+      "duration": 2830,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/locations/user/user_uuid:567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "3c27c9d57b331bb1",
+      "kind": "SERVER",
+      "name": "get /api/smartapps/_uuid_/versions/_uuid",
+      "timestamp": 1543334722315825,
+      "duration": 201412,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/smartapps/_app_/versions/_installapp_",
+        "user.email": "joe@example.com",
+        "user.said": "abc123",
+        "user.uuid": "567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "552eaca6c491fcb4",
+      "id": "7d279f33d9a1a55e",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722183961,
+      "duration": 1201,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.66",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.0",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7224032272dbf81c",
+      "id": "552eaca6c491fcb4",
+      "kind": "SERVER",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334722183038,
+      "duration": 2408,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.66",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.04",
+        "port": 45186
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7224032272dbf81c",
+      "id": "552eaca6c491fcb4",
+      "kind": "CLIENT",
+      "name": "get /tokens/access/_uuid_",
+      "timestamp": 1543334722174444,
+      "duration": 16827,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.225",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/tokens/access/_token_"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "5fdbafe9b43a2185",
+      "id": "c22c3194d0cc8ea3",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334722166380,
+      "duration": 441,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.141",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.122",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.122",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "5fdbafe9b43a2185",
+      "id": "d3f93489645ac562",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722165460,
+      "duration": 864,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.141",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "5fdbafe9b43a2185",
+      "id": "126d715053b9865c",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722164517,
+      "duration": 900,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.141",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7224032272dbf81c",
+      "id": "5fdbafe9b43a2185",
+      "kind": "SERVER",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334722163025,
+      "duration": 4147,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.141",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.04",
+        "port": 40364
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "5fdbafe9b43a2185",
+      "id": "5bfd72a09dad9d02",
+      "kind": "CLIENT",
+      "name": "access_token-select-by-oauth_token",
+      "timestamp": 1543334722163611,
+      "duration": 867,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.141",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT * FROM auth.oauth_access_token WHERE oauth_token = ?;\n\t\t",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "f083061491cddbcb",
+      "id": "7224032272dbf81c",
+      "kind": "SERVER",
+      "name": "get /api/proxied/locations/_uuid_/smarta",
+      "timestamp": 1543334722152268,
+      "duration": 72591,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.225",
+        "port": 8080
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 10954
+      },
+      "tags": {
+        "http.path": "/api/proxied/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps/client/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7224032272dbf81c",
+      "id": "5fdbafe9b43a2185",
+      "kind": "CLIENT",
+      "name": "post /oauth/check_token",
+      "timestamp": 1543334722152465,
+      "duration": 20863,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.225",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/check_token"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "f083061491cddbcb",
+      "id": "7224032272dbf81c",
+      "kind": "CLIENT",
+      "name": "get /api/proxied/locations/_uuid_/smartapps/client/_uuid_",
+      "timestamp": 1543334722145571,
+      "duration": 83715,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/proxied/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapps/client/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "f083061491cddbcb",
+      "id": "5f4625942bfac6f1",
+      "kind": "SERVER",
+      "name": "get /locations/user/:username",
+      "timestamp": 1543334722143022,
+      "duration": 1798,
+      "localEndpoint": {
+        "serviceName": "account",
+        "ipv4": "10.0.0.180",
+        "port": 8181
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101"
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "/locations/user/user_uuid:567xyz"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "f083061491cddbcb",
+      "id": "5f4625942bfac6f1",
+      "kind": "CLIENT",
+      "name": "get /locations/user/user_uuid:_uuid_",
+      "timestamp": 1543334722141626,
+      "duration": 3103,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/locations/user/user_uuid:567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "f083061491cddbcb",
+      "kind": "SERVER",
+      "name": "get /api/locations/_uuid_/smartapp/clien",
+      "timestamp": 1543334722135730,
+      "duration": 95818,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.151",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/api/locations/7b37ecd0-0a7a-44f6-aa11-c099fd7a0f3b/smartapp/client/zipkin-sample-id",
+        "user.email": "joe@example.com",
+        "user.said": "abc123",
+        "user.uuid": "567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "165914062a124bfb",
+      "kind": "SERVER",
+      "name": "get /assets/components/common/spinner-sm",
+      "timestamp": 1543334722132656,
+      "duration": 442,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/components/common/spinner-small.gif"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "a34b5be52d63a84e",
+      "kind": "SERVER",
+      "name": "get /assets/components/common/smartthing",
+      "timestamp": 1543334697726557,
+      "duration": 507,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/components/common/example-logo.png"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "cecf806288f6871c",
+      "kind": "SERVER",
+      "name": "get /assets/apps/oauth/oauth-app-0ee844e",
+      "timestamp": 1543334697648959,
+      "duration": 600,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/apps/oauth/oauth-app-0ee844eeee4e731ef3a802c9750188a4.js"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "e76bd9f07b45a524",
+      "kind": "SERVER",
+      "name": "get /assets/libs/bootstrap/bootstrap-e3b",
+      "timestamp": 1543334697638982,
+      "duration": 633,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/libs/bootstrap/bootstrap-e3bccdc29cf6e1d0f3e7bc54ccf086ef.js"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "45e6e257ca166a24",
+      "kind": "SERVER",
+      "name": "get /assets/base/bootstrap-framework-ca0",
+      "timestamp": 1543334697572469,
+      "duration": 497,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/base/bootstrap-framework-ca068de267e66f972264227b95ad8cb1.css"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "7b083fa5d42084f7",
+      "kind": "SERVER",
+      "name": "get /assets/libs/underscore/underscore-6",
+      "timestamp": 1543334697567311,
+      "duration": 499,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/libs/underscore/underscore-6e1f1c149dc88c708f9bfce4a061187f.js"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "90e92bd934b0ac2f",
+      "kind": "SERVER",
+      "name": "get /assets/base/common-77e2fb036db019b4",
+      "timestamp": 1543334697567900,
+      "duration": 294,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/base/common-77e2fb036db019b4c759f2bb145e94d3.css"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "e874910662f6b5aa",
+      "kind": "SERVER",
+      "name": "get /assets/apps/main/main-app-5811442e0",
+      "timestamp": 1543334697403527,
+      "duration": 637,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/assets/apps/main/main-app-5811442e0bc96e2d7374677668e7edc4.js"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "c101766e11ee2bb4",
+      "id": "b46de0f6c2ec0139",
+      "kind": "SERVER",
+      "name": "get /locations/user/:username",
+      "timestamp": 1543334697224006,
+      "duration": 1409,
+      "localEndpoint": {
+        "serviceName": "account",
+        "ipv4": "10.0.0.108",
+        "port": 8181
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.160"
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "/locations/user/user_uuid:567xyz"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "c101766e11ee2bb4",
+      "id": "b46de0f6c2ec0139",
+      "kind": "CLIENT",
+      "name": "get /locations/user/user_uuid:_uuid_",
+      "timestamp": 1543334697222145,
+      "duration": 3581,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/locations/user/user_uuid:567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "c101766e11ee2bb4",
+      "id": "a6a7402ffab1c5aa",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697219026,
+      "duration": 2045,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.163",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.160",
+        "port": 49322
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a7402ffab1c5aa",
+      "id": "327e218e9065a740",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334697219685,
+      "duration": 1085,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.163",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.217",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.217",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "c101766e11ee2bb4",
+      "id": "a6a7402ffab1c5aa",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697216436,
+      "duration": 5176,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a8de54dbcc867f1d",
+      "id": "c101766e11ee2bb4",
+      "kind": "SERVER",
+      "name": "get /oauth/confirm_access",
+      "timestamp": 1543334697212190,
+      "duration": 28438,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/confirm_access",
+        "oauth.param.client_id": "zipkin-sample-id",
+        "oauth.param.redirect_uri": "https://example.com/api/skill/link/M25XHJDAAO8RHQ",
+        "oauth.param.response_type": "code",
+        "oauth.param.scope": "app",
+        "oauth.param.state": "A2SAAEAEKfMsszL2JvJRpVHDystCXYB4BOiYRGmArdNIv9XYhEFP22dZp46YKR-UkBtNBQKNsLevOuWMb2pXKcm05lQYOLCCjsBY4VHETl7cZuDgcNBU55D1NEQu0MEeSN3yJiSL3Pqc_X0OUwARHmd4LtgwZ2cdIEsDNbWcq3jCnTATXR7ocK-h9XnxJchDx69A1jhbo7FdXE85NLliElT-iHzAO1SHkhBfNuzSZgKUGJQLLmcA_FxJSP_WxebcG1IXI2u4kf0UzX_jqCnDOCdtzhCnV2cba_CI_kLAWvZE-IBrXLT9K7QzXYWqcuKXNj96Mc5gABOF8_2hAkWImrHEau49xeMzzx6RW6wKLIk-jislsdEgo3qXjKq7nTjtwyotYYIjzVB66al2vNIJOog-LMzXtEGpfgl4LlVaRLrBgPY54ECrpd3VSugVpKN5sNNWtZje5MDSl0lUZzmxp4-sYjaEbizj0YLeBzh4pfHRY8rSESRlDHFbjJn3v1igOsRsOaZ0ch5sVthvKT9ThQh0hROkzIgaRyI6oHew2ax_IIsMOMSRDt3XpxP_tvEnp_YE9Kl114HCq-_WwpjrU9n0iCkRQCx2yIpPCqOP7zaO0POJY-iWhp5B-GZObyOTgvTqn4Wn4nJc2KPvmd3DufSK-K0DhDXoQ",
+        "user.email": "joe@example.com",
+        "user.said": "abc123",
+        "user.uuid": "567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "a8de54dbcc867f1d",
+      "kind": "SERVER",
+      "timestamp": 1543334697211897,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "a8de54dbcc867f1d",
+      "kind": "CLIENT",
+      "name": "redirect",
+      "timestamp": 1543334697071886,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.redirect": "https://graph.api.example.com/oauth/confirm_access?response_type=code&scope=app&redirect_uri=https%3A%2F%2Fexample.com%2Fapi%2Fskill%2Flink%2FM25XHJDAAO8RHQ&state=A2SAAEAEKfMsszL2JvJRpVHDy"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "c24ca597b1819c50",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697068026,
+      "duration": 1947,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.142",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 50412
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "c24ca597b1819c50",
+      "id": "d2c7775b59e59c7d",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334697068864,
+      "duration": 686,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.142",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.98",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.98",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "c24ca597b1819c50",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697065264,
+      "duration": 5400,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "e0b3f0c9b97afbed",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697062025,
+      "duration": 2355,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.66",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 12710
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "e0b3f0c9b97afbed",
+      "id": "5e8f131a443eb3f0",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334697062898,
+      "duration": 1095,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.66",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.3",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.3",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "e0b3f0c9b97afbed",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697059732,
+      "duration": 5022,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "7ce382395898c478",
+      "kind": "SERVER",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697056025,
+      "duration": 2152,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.61",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 51782
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7ce382395898c478",
+      "id": "67a33b954d413ee5",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334697056738,
+      "duration": 1152,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.61",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.175",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.175",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "7ce382395898c478",
+      "kind": "CLIENT",
+      "name": "get /clients/_uuid_",
+      "timestamp": 1543334697053649,
+      "duration": 5604,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/clients/zipkin-sample-id"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "7de851d5112e61d4",
+      "kind": "SERVER",
+      "name": "get /admin/users/user_uuid%3a_uuid_",
+      "timestamp": 1543334696955027,
+      "duration": 1581,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "54.0.0.101",
+        "port": 7008
+      },
+      "tags": {
+        "http.path": "/admin/users/user_uuid%3A567xyz"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "7de851d5112e61d4",
+      "id": "01904bc3a7dcfaef",
+      "kind": "CLIENT",
+      "name": "bound-statement",
+      "timestamp": 1543334696955699,
+      "duration": 612,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.250",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT username,uuid,samsung_account_id,okta_account_id,account_non_expired,account_non_locked,credentials_non_expired,deleted,email,phone_number,enabled,full_name,password,reason_deleted,roles,country_code FROM auth.user WHERE username=:username;",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.250",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bfc02051be208bd9",
+      "id": "7de851d5112e61d4",
+      "kind": "CLIENT",
+      "name": "get /admin/users/user_uuid:_uuid_",
+      "timestamp": 1543334696952312,
+      "duration": 5016,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/admin/users/user_uuid:567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "328fac961bc6aaee",
+      "id": "bfc02051be208bd9",
+      "kind": "SERVER",
+      "name": "get /oauth/authorize",
+      "timestamp": 1543334696950745,
+      "duration": 121013,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.255",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/authorize",
+        "http.status_code": "302",
+        "oauth.param.client_id": "zipkin-sample-id",
+        "oauth.param.redirect_uri": "https://example.com/api/skill/link/M25XHJDAAO8RHQ",
+        "oauth.param.response_type": "code",
+        "oauth.param.scope": "app",
+        "oauth.param.state": "A2SAAEAEKfMsszL2JvJRpVHDystCXYB4BOiYRGmArdNIv9XYhEFP22dZp46YKR-UkBtNBQKNsLevOuWMb2pXKcm05lQYOLCCjsBY4VHETl7cZuDgcNBU55D1NEQu0MEeSN3yJiSL3Pqc_X0OUwARHmd4LtgwZ2cdIEsDNbWcq3jCnTATXR7ocK-h9XnxJchDx69A1jhbo7FdXE85NLliElT-iHzAO1SHkhBfNuzSZgKUGJQLLmcA_FxJSP_WxebcG1IXI2u4kf0UzX_jqCnDOCdtzhCnV2cba_CI_kLAWvZE-IBrXLT9K7QzXYWqcuKXNj96Mc5gABOF8_2hAkWImrHEau49xeMzzx6RW6wKLIk-jislsdEgo3qXjKq7nTjtwyotYYIjzVB66al2vNIJOog-LMzXtEGpfgl4LlVaRLrBgPY54ECrpd3VSugVpKN5sNNWtZje5MDSl0lUZzmxp4-sYjaEbizj0YLeBzh4pfHRY8rSESRlDHFbjJn3v1igOsRsOaZ0ch5sVthvKT9ThQh0hROkzIgaRyI6oHew2ax_IIsMOMSRDt3XpxP_tvEnp_YE9Kl114HCq-_WwpjrU9n0iCkRQCx2yIpPCqOP7zaO0POJY-iWhp5B-GZObyOTgvTqn4Wn4nJc2KPvmd3DufSK-K0DhDXoQ",
+        "user.email": "joe@example.com",
+        "user.said": "abc123",
+        "user.uuid": "567xyz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "b3b0a352cb50d500",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334696713123,
+      "duration": 794,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.0",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "30721326942c94cd",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334696712273,
+      "duration": 797,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.0",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "b5858f7f83564a9e",
+      "kind": "CLIENT",
+      "name": "blacklist_get_by_id",
+      "timestamp": 1543334696710752,
+      "duration": 1494,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.42",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "LOCAL_ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "\n\t\tSELECT id FROM auth.blacklist WHERE kind = ? AND id = ?;\n\t\t",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.42",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "822e7a00e82698de",
+      "kind": "CLIENT",
+      "name": "bound-statement",
+      "timestamp": 1543334696709353,
+      "duration": 1106,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.141",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT username,uuid,samsung_account_id,okta_account_id,account_non_expired,account_non_locked,credentials_non_expired,deleted,email,phone_number,enabled,full_name,password,reason_deleted,roles,country_code FROM auth.user_by_uuid WHERE uuid=:uuid;",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.141",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "c1700e99c9f82485",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334696708596,
+      "duration": 659,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.250",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.250",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "dbee5bb90d3fd254",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334696707586,
+      "duration": 963,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.24",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.24",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "47aa779eb9ae60d0",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334696706786,
+      "duration": 741,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.253",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.253",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "c0ed0e95e54ac4f5",
+      "kind": "CLIENT",
+      "name": "client-select-by-id",
+      "timestamp": 1543334696706008,
+      "duration": 720,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.0",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT * FROM auth.client WHERE id = ?",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.0",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "a17b4c85e1561fe0",
+      "kind": "CLIENT",
+      "name": "batch-statement",
+      "timestamp": 1543334696705468,
+      "duration": 501,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.117",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.data_center": "us-east",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.117",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "ad28ef23783326d7",
+      "kind": "CLIENT",
+      "name": "batch-statement",
+      "timestamp": 1543334696704231,
+      "duration": 981,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.112",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.data_center": "us-east",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.112",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "48b40ff5a17e280b",
+      "kind": "CLIENT",
+      "name": "batch-statement",
+      "timestamp": 1543334696700996,
+      "duration": 3179,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.58",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.rack": "1e",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.58",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "f76df11b410bd44c",
+      "kind": "CLIENT",
+      "name": "bound-statement",
+      "timestamp": 1543334696699957,
+      "duration": 953,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.122",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT username,uuid,samsung_account_id,okta_account_id,account_non_expired,account_non_locked,credentials_non_expired,deleted,email,phone_number,enabled,full_name,password,reason_deleted,roles,country_code FROM auth.user WHERE username=:username;",
+        "cassandra.rack": "1c",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.122",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "45c9f5f276a62716",
+      "kind": "CLIENT",
+      "name": "bound-statement",
+      "timestamp": 1543334696699156,
+      "duration": 649,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.254",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT username,uuid,samsung_account_id,okta_account_id,account_non_expired,account_non_locked,credentials_non_expired,deleted,email,phone_number,enabled,full_name,password,reason_deleted,roles,country_code FROM auth.user_by_said WHERE samsung_account_id=:samsung_account_id;",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.254",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "a6a297b5d665be1e",
+      "id": "15fa60faead85b0e",
+      "kind": "CLIENT",
+      "name": "get /v2/profile/user/getuserbyssotoken",
+      "timestamp": 1543334696410745,
+      "duration": 288100,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "tags": {
+        "http.path": "/v2/profile/user/getUserBySsoToken"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "328fac961bc6aaee",
+      "id": "a6a297b5d665be1e",
+      "kind": "SERVER",
+      "name": "post /web/authenticate",
+      "timestamp": 1543334696409046,
+      "duration": 306903,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.22",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.05",
+        "port": 1512
+      },
+      "tags": {
+        "http.path": "/web/authenticate"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "328fac961bc6aaee",
+      "id": "a6a297b5d665be1e",
+      "kind": "CLIENT",
+      "name": "post",
+      "timestamp": 1543334696358772,
+      "duration": 365294,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.8",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "/web/authenticate"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "328fac961bc6aaee",
+      "id": "2f3468f2385971cc",
+      "kind": "CLIENT",
+      "name": "get",
+      "timestamp": 1543334695894428,
+      "duration": 464282,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.8",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "/v2/profile/user/getUserBySsoToken"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "b8d0f0960c488930",
+      "id": "328fac961bc6aaee",
+      "kind": "SERVER",
+      "name": "post",
+      "timestamp": 1543334695822010,
+      "duration": 902201,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.8",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "sa/registURL",
+        "http.status_code": "302"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "fda7e30724d087a6",
+      "id": "b8d0f0960c488930",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334671909008,
+      "duration": 304,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.32",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "login"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "f64efde205fae151",
+      "id": "e4ca41b44ea5514e",
+      "kind": "SERVER",
+      "timestamp": 1543334671805004,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.8",
+        "port": 8141
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "e4ca41b44ea5514e",
+      "id": "fda7e30724d087a6",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334671805005,
+      "duration": 299,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.8",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "",
+        "http.status_code": "307"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "f64efde205fae151",
+      "id": "e4ca41b44ea5514e",
+      "kind": "CLIENT",
+      "name": "redirect",
+      "timestamp": 1543334671433445,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.redirect": "https://account.example.com/?redirect=https%3A%2F%2Fgraph.api.example.com%2Foauth%2Fauthorize%3Fclient_id%3Dzipkin-sample-id%26response_type%3Dcode%26state%3DA2SAAEAEKfMssz"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "1af69980dad7deac",
+      "id": "8ca0d490c17c7d7c",
+      "kind": "SERVER",
+      "timestamp": 1543334671430441,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "8ca0d490c17c7d7c",
+      "id": "f64efde205fae151",
+      "kind": "SERVER",
+      "name": "get /login/auth",
+      "timestamp": 1543334671430620,
+      "duration": 2710,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/login/auth",
+        "http.status_code": "302"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "1af69980dad7deac",
+      "id": "8ca0d490c17c7d7c",
+      "kind": "CLIENT",
+      "name": "redirect",
+      "timestamp": 1543334671334219,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.redirect": "https://graph.api.example.com/login/auth"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "9c523c937ec3694c",
+      "id": "1af69980dad7deac",
+      "kind": "SERVER",
+      "name": "get /oauth/authorize",
+      "timestamp": 1543334671332751,
+      "duration": 1332,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/oauth/authorize",
+        "http.status_code": "302",
+        "oauth.param.client_id": "zipkin-sample-id",
+        "oauth.param.redirect_uri": "https://example.com/api/skill/link/M25XHJDAAO8RHQ",
+        "oauth.param.response_type": "code",
+        "oauth.param.scope": "app",
+        "oauth.param.state": "IntentionallyGarbage"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "be232464081e613d",
+      "id": "9c523c937ec3694c",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334661718014,
+      "duration": 435,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.32",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "login"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "c47bff7f7964b321",
+      "id": "2fec181f2ef22058",
+      "kind": "CLIENT",
+      "name": "bound-statement",
+      "timestamp": 1543334661607218,
+      "duration": 1047,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.63",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.87",
+        "port": 9042
+      },
+      "tags": {
+        "cassandra.consistency_level": "ONE",
+        "cassandra.data_center": "us-east",
+        "cassandra.keyspace": "auth",
+        "cassandra.query": "SELECT username,uuid,samsung_account_id,okta_account_id,account_non_expired,account_non_locked,credentials_non_expired,deleted,email,phone_number,enabled,full_name,password,reason_deleted,roles,country_code FROM auth.user WHERE username=:username;",
+        "cassandra.rack": "1d",
+        "cassandra.state": "UP",
+        "cassandra.tried_hosts": "10.0.0.87",
+        "cassandra.version": "unknown"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "be232464081e613d",
+      "id": "c47bff7f7964b321",
+      "kind": "SERVER",
+      "name": "post /sso/authenticate",
+      "timestamp": 1543334661606025,
+      "duration": 3041,
+      "localEndpoint": {
+        "serviceName": "auth",
+        "ipv4": "10.0.0.63",
+        "port": 8180
+      },
+      "remoteEndpoint": {
+        "ipv4": "52.0.0.9",
+        "port": 51436
+      },
+      "tags": {
+        "error": "401",
+        "http.path": "/sso/authenticate",
+        "http.status_code": "401"
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "be232464081e613d",
+      "id": "c47bff7f7964b321",
+      "kind": "CLIENT",
+      "name": "post",
+      "timestamp": 1543334661559392,
+      "duration": 56057,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.48",
+        "port": 8141
+      },
+      "tags": {
+        "error": "401",
+        "http.method": "POST",
+        "http.path": "/sso/authenticate",
+        "http.status_code": "401"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "219e12d0ebe2b39a",
+      "id": "be232464081e613d",
+      "kind": "SERVER",
+      "name": "post",
+      "timestamp": 1543334661559010,
+      "duration": 56515,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.48",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "POST",
+        "http.path": "login",
+        "http.status_code": "302"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "6ed62ab3544b76fc",
+      "id": "219e12d0ebe2b39a",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334627816002,
+      "duration": 65,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.224",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "js/chunk-vendors.c863181d.js"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "6ed62ab3544b76fc",
+      "id": "b652298e30752bb9",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334627815005,
+      "duration": 117,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.8",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "css/app.5dd2fcd7.css"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "6ed62ab3544b76fc",
+      "id": "f3e4621668bf9d44",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334627814007,
+      "duration": 248,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.32",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "js/chunk-common.455c9996.js"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "6ed62ab3544b76fc",
+      "id": "be7da77f52042b9c",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334627716006,
+      "duration": 133,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.48",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "js/app.f65d12ae.js"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "6ed62ab3544b76fc",
+      "id": "e39c4c6ca709cb6c",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334627637026,
+      "duration": 211,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.224",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "css/chunk-common.2ff68acc.css"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "4d59559cb7d1753f",
+      "id": "6ed62ab3544b76fc",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334627473021,
+      "duration": 271,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.8",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "login"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bb44efaef3c5c894",
+      "id": "4ce318f49fb2d88b",
+      "kind": "SERVER",
+      "timestamp": 1543334627370007,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.32",
+        "port": 8141
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "4ce318f49fb2d88b",
+      "id": "4d59559cb7d1753f",
+      "kind": "SERVER",
+      "name": "get",
+      "timestamp": 1543334627370008,
+      "duration": 447,
+      "localEndpoint": {
+        "serviceName": "stlogin",
+        "ipv4": "10.0.0.32",
+        "port": 8141
+      },
+      "tags": {
+        "http.method": "GET",
+        "http.path": "",
+        "http.status_code": "307"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "bb44efaef3c5c894",
+      "id": "4ce318f49fb2d88b",
+      "kind": "CLIENT",
+      "name": "redirect",
+      "timestamp": 1543334626979079,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.redirect": "https://account.example.com/?redirect=https%3A%2F%2Fgraph.api.example.com%2Foauth%2Fauthorize%3Fclient_id%3Dzipkin-sample-id%26response_type%3Dcode%26state%3DA2SAAEAEPNoaFt"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "8ce82b2e9ed820ba",
+      "id": "d70bbce77a790a35",
+      "kind": "SERVER",
+      "timestamp": 1543334626973644,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "shared": true
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "d70bbce77a790a35",
+      "id": "bb44efaef3c5c894",
+      "kind": "SERVER",
+      "name": "get /login/auth",
+      "timestamp": 1543334626973860,
+      "duration": 5090,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.196",
+        "port": 8080
+      },
+      "tags": {
+        "http.path": "/login/auth",
+        "http.status_code": "302"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "parentId": "8ce82b2e9ed820ba",
+      "id": "d70bbce77a790a35",
+      "kind": "CLIENT",
+      "name": "redirect",
+      "timestamp": 1543334626874647,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "tags": {
+        "http.redirect": "https://graph.api.example.com/login/auth"
+      }
+    },
+    {
+      "traceId": "8ce82b2e9ed820ba",
+      "id": "8ce82b2e9ed820ba",
+      "kind": "SERVER",
+      "name": "get /oauth/authorize",
+      "timestamp": 1543334626873100,
+      "duration": 1429,
+      "localEndpoint": {
+        "serviceName": "datamgmt",
+        "ipv4": "10.0.0.234",
+        "port": 8080
+      },
+      "remoteEndpoint": {
+        "ipv4": "23.0.0.0",
+        "port": 23210
+      },
+      "tags": {
+        "http.path": "/oauth/authorize",
+        "http.status_code": "302",
+        "oauth.param.client_id": "zipkin-sample-id",
+        "oauth.param.redirect_uri": "https://example.com/api/skill/link/M25XHJDAAO8RHQ",
+        "oauth.param.response_type": "code",
+        "oauth.param.scope": "app",
+        "oauth.param.state": "IntentionallyGarbage"
+      }
+    }
+  ]
+  
