@@ -205,7 +205,7 @@ describe('convertSuccessResponse', () => {
         serviceNames: 'backend',
         serviceName: 'backend',
         duration: 17,
-        durationStr: '17μ',
+        durationStr: '17μs',
         left: 0,
         width: 100,
         depth: 10,
@@ -225,16 +225,16 @@ describe('convertSuccessResponse', () => {
 
     const timeMarkers = [
       {index: 0, time: ''},
-      {index: 1, time: '3μ'},
-      {index: 2, time: '7μ'},
-      {index: 3, time: '10μ'},
-      {index: 4, time: '14μ'},
-      {index: 5, time: '17μ'}
+      {index: 1, time: '3μs'},
+      {index: 2, time: '7μs'},
+      {index: 3, time: '10μs'},
+      {index: 4, time: '14μs'},
+      {index: 5, time: '17μs'}
     ];
 
     const expectedTemplate = {
       traceId: '1e223ff1f80f1c69',
-      duration: '17μ',
+      duration: '17μs',
       services: 1,
       depth: 1,
       spanCount: 1,
