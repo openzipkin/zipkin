@@ -2,6 +2,18 @@ import {convertSuccessResponse, toContextualLogsUrl} from '../../js/component_da
 import {errorTrace, httpTrace, skewedTrace} from '../component_ui/traceTestHelpers';
 
 describe('convertSuccessResponse', () => {
+  // getting a trace by ID should result in at least one span
+  it('should throw error on empty trace', () => {
+    let error;
+    try {
+      convertSuccessResponse([]);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).to.eql('Trace was empty');
+  });
+
   it('should convert an http trace', () => {
     const spans = [
       {

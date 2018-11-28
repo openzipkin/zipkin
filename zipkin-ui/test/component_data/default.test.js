@@ -7,6 +7,14 @@ import queryString from 'query-string';
 describe('convertSuccessResponse', () => {
   const apiURL = '/api/v2/traces?serviceName=all&spanName=all&endTs=1459169770000';
 
+  // search results can validly return empty
+  it('should not fail on empty response', () => {
+    const rawResponse = [];
+    convertSuccessResponse(rawResponse, 'all', apiURL, true).should.deep.equal(
+      {traces: [], apiURL, rawResponse}
+    );
+  });
+
   it('should convert an http trace', () => {
     const expectedTemplate = {
       traceId: 'bb1f0e21882325b8',

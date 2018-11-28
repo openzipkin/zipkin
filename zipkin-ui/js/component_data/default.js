@@ -65,6 +65,8 @@ export function convertToApiQuery(source) {
 export function convertSuccessResponse(rawResponse, serviceName, apiURL, utc = false) {
   const summaries = [];
   rawResponse.forEach((raw) => {
+    if (raw.length === 0) return;
+
     const corrected = treeCorrectedForClockSkew(raw).traverse();
     if (corrected.length > 0 && corrected[0].timestamp) {
       summaries.push(traceSummary(corrected));

@@ -94,6 +94,17 @@ describe('SpanNode', () => {
 
 // originally zipkin2.internal.SpanNodeTest.java
 describe('SpanNodeBuilder', () => {
+  it('should throw error on empty trace', () => {
+    let error;
+    try {
+      new SpanNodeBuilder({}).build([]);
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).to.eql('Trace was empty');
+  });
+
   // Makes sure that the trace tree is constructed based on parent-child, not by parameter order.
   it('should construct a trace tree', () => {
     const trace = mergeV2ById([
