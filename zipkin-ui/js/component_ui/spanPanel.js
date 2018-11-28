@@ -66,7 +66,7 @@ export function formatTagValue(value) {
 export default component(function spanPanel() {
   this.$annotationTemplate = null;
   this.$tagTemplate = null;
-  this.$moreInfoTemplate = null;
+  this.$showIdsTemplate = null;
 
   this.show = function(e, span) {
     const self = this;
@@ -116,15 +116,15 @@ export default component(function spanPanel() {
       $tagBody.append($row);
     });
 
-    const $moreInfoBody = this.$node.find('#moreInfo tbody').text('');
-    const moreInfo = [['traceId', span.traceId],
+    const $showIdsBody = this.$node.find('#showIds tbody').text('');
+    const showIds = [['traceId', span.traceId],
                       ['spanId', span.id],
                       ['parentId', span.parentId]];
-    $.each(moreInfo, (i, pair) => {
-      const $row = self.$moreInfoTemplate.clone();
+    $.each(showIds, (i, pair) => {
+      const $row = self.$showIdsTemplate.clone();
       $row.find('.key').text(pair[0]);
       $row.find('.value').text(pair[1]);
-      $moreInfoBody.append($row);
+      $showIdsBody.append($row);
     });
 
     this.$node.modal('show');
@@ -134,7 +134,7 @@ export default component(function spanPanel() {
     this.$node.modal('hide');
     this.$annotationTemplate = this.$node.find('#annotations tbody tr').remove();
     this.$tagTemplate = this.$node.find('#tags tbody tr').remove();
-    this.$moreInfoTemplate = this.$node.find('#moreInfo tbody tr').remove();
+    this.$showIdsTemplate = this.$node.find('#showIds tbody tr').remove();
     this.on(document, 'uiRequestSpanPanel', this.show);
   });
 });
