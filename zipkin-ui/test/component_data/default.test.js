@@ -62,11 +62,11 @@ describe('convertSuccessResponse', () => {
       startTs: '11-02-2018T05:56:09.377+0000',
       timestamp: 1541138169377997,
       duration: 0.017,
-      durationStr: '17μ',
+      durationStr: '17μs',
       width: 100,
       spanCount: 1,
       serviceSummaries: [
-        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '17μ'}
+        {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '17μs'}
       ],
       infoClass: 'trace-error-critical'
     };

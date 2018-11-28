@@ -320,7 +320,7 @@ describe('mkDurationStr', () => {
   });
 
   it('should format microseconds', () => {
-    mkDurationStr(3).should.equal('3μ');
+    mkDurationStr(3).should.equal('3μs');
   });
 
   it('should format ms', () => {

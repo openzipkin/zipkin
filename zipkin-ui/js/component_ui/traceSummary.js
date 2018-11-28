@@ -146,7 +146,7 @@ export function mkDurationStr(duration) {
   if (duration === 0 || typeof duration === 'undefined') {
     return '';
   } else if (duration < 1000) {
-    return `${duration.toFixed(0)}μ`;
+    return `${duration.toFixed(0)}μs`;
   } else if (duration < 1000000) {
     if (duration % 1000 === 0) { // Sometimes spans are in milliseconds resolution
       return `${(duration / 1000).toFixed(0)}ms`;
