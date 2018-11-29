@@ -218,7 +218,7 @@ class SpanNodeBuilder {
    * (e.g. all share the same trace ID).
    */
   build(spans) {
-    if (spans.length === 0) throw new Error('spans were empty');
+    if (spans.length === 0) throw new Error('Trace was empty');
 
     // In order to make a tree, we need clean data. This will merge any duplicates so that we
     // don't have redundant leaves on the tree.

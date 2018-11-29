@@ -166,6 +166,21 @@ function tryMerge(current, endpoint) {
   return true;
 }
 
+// sort by timestamp, then name, root/shared first in case of skew
+export function spanComparator(a, b) { // exported for testing
+  if (!a.parentId && b.parentId) { // a is root
+    return -1;
+  } else if (a.parentId && !b.parentId) { // b is root
+    return 1;
+  }
+
+  // order client first in case of shared spans (shared is always server)
+  if (a.id === b.id) return compareShared(a, b);
+
+  // Either a and b are root or neither are. sort by shared timestamp, then name
+  return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
+}
+
 /*
  * Spans can be sent in multiple parts. Also client and server spans can share the same ID. This
  * merges both scenarios.
@@ -233,19 +248,5 @@ export function mergeV2ById(spans) {
     result[i] = span;
   }
 
-  // sort by timestamp, then name, root/shared first in case of skew
-  // TODO: this should be a topological sort
-  return result.sort((a, b) => {
-    if (!a.parentId && b.parentId) { // a is root
-      return -1;
-    } else if (a.parentId && !b.parentId) { // b is root
-      return 1;
-    }
-
-    // order client first in case of shared spans (shared is always server)
-    if (a.id === b.id) return compareShared(a, b);
-
-    // Either a and b are root or neither are. sort by shared timestamp, then name
-    return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
-  });
+  return result.sort(spanComparator);
 }
