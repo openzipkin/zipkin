@@ -1,10 +1,66 @@
-import {traceToMustache, getRootSpans} from '../../js/component_ui/traceToMustache';
+import {
+  traceToMustache,
+  getRootSpans,
+  getServiceNameAndSpanCounts
+} from '../../js/component_ui/traceToMustache';
 const {SpanNode} = require('../../js/spanNode');
 import {treeCorrectedForClockSkew} from '../../js/skew';
-import {httpTrace} from './traceTestHelpers';
+import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
 
 // renders data into a tree for traceMustache
 const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
+
+describe('getServiceNameAndSpanCounts', () => {
+  // TODO: we should really only allocate remote endpoints when on an uninstrumented link
+  it('should count spans for any endpoint', () => {
+    const testTrace = [
+      {
+        traceId: '2480ccca8df0fca5',
+        id: '2480ccca8df0fca5',
+        kind: 'CLIENT',
+        timestamp: 1,
+        localEndpoint: frontend,
+        remoteEndpoint: frontend
+      },
+      {
+        traceId: '2480ccca8df0fca5',
+        parentId: '2480ccca8df0fca5',
+        id: 'bf396325699c84bf',
+        name: 'foo',
+        timestamp: 2,
+        localEndpoint: backend,
+      }
+    ];
+
+    getServiceNameAndSpanCounts(testTrace).should.eql([
+      {serviceName: 'backend', spanCount: 1},
+      {serviceName: 'frontend', spanCount: 2}
+    ]);
+  });
+
+  it('should count spans with no timestamp or duration', () => {
+    const testTrace = [
+      {
+        traceId: '2480ccca8df0fca5',
+        id: '2480ccca8df0fca5',
+        kind: 'CLIENT',
+        localEndpoint: frontend
+      },
+      {
+        traceId: '2480ccca8df0fca5',
+        parentId: '2480ccca8df0fca5',
+        id: 'bf396325699c84bf',
+        name: 'foo',
+        localEndpoint: backend,
+      }
+    ];
+
+    getServiceNameAndSpanCounts(testTrace).should.eql([
+      {serviceName: 'backend', spanCount: 1},
+      {serviceName: 'frontend', spanCount: 1}
+    ]);
+  });
+});
 
 describe('traceToMustache', () => {
   it('should show logsUrl', () => {

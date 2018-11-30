@@ -5,7 +5,7 @@ import {
   traceSummariesToMustache,
   mkDurationStr,
   totalDuration,
-  traceDuration
+  getTraceDuration
 } from '../../js/component_ui/traceSummary';
 const {clean, mergeV2ById} = require('../../js/spanCleaner');
 import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
@@ -58,6 +58,33 @@ describe('getGroupedTimestamps', () => {
         backend: [
           {timestamp: 1541138169377997, duration: 0}
         ]
+      }
+    );
+  });
+
+  // since data is derived from this, we still need to report the service name even if there
+  // are no timestamps.
+  it('should backfill incomplete timestamp as zero instead of undefined', () => {
+    const testTrace = [
+      {
+        traceId: '2480ccca8df0fca5',
+        id: '2480ccca8df0fca5',
+        kind: 'CLIENT',
+        localEndpoint: frontend
+      },
+      {
+        traceId: '2480ccca8df0fca5',
+        parentId: '2480ccca8df0fca5',
+        id: 'bf396325699c84bf',
+        name: 'foo',
+        localEndpoint: backend,
+      }
+    ];
+
+    getGroupedTimestamps(testTrace).should.eql(
+      {
+        frontend: [{timestamp: 0, duration: 0}],
+        backend: [{timestamp: 0, duration: 0}]
       }
     );
   });
@@ -374,13 +401,13 @@ describe('totalDuration', () => {
   });
 });
 
-describe('traceDuration', () => {
+describe('getTraceDuration', () => {
   it('should return zero on empty input', () => {
-    traceDuration([]).should.equal(0);
+    getTraceDuration([]).should.equal(0);
   });
 
   it('should return only duration when single input', () => {
-    traceDuration([{timestamp: 10, duration: 200}]).should.equal(200);
+    getTraceDuration([{timestamp: 10, duration: 200}]).should.equal(200);
   });
 
   it('should return root span duration when no children complete after root', () => {
@@ -389,7 +416,7 @@ describe('traceDuration', () => {
       {timestamp: 10, duration: 200},
       {timestamp: 20, duration: 210}
     ];
-    traceDuration(rootLongest).should.equal(300);
+    getTraceDuration(rootLongest).should.equal(300);
   });
 
   it('should return the distance from the earliest event to the end of the last', () => {
@@ -400,7 +427,7 @@ describe('traceDuration', () => {
       {timestamp: 390, duration: 20},
       {timestamp: 400, duration: 30},
     ];
-    traceDuration(asyncTrace).should.equal(400 + 30 - 1);
+    getTraceDuration(asyncTrace).should.equal(400 + 30 - 1);
   });
 
   it('should ignore input missing duration', () => {
@@ -409,6 +436,6 @@ describe('traceDuration', () => {
       {timestamp: 10}, // incomplete span
       {timestamp: 20, duration: 210}
     ];
-    traceDuration(rootLongest).should.equal(300);
+    getTraceDuration(rootLongest).should.equal(300);
   });
 });
