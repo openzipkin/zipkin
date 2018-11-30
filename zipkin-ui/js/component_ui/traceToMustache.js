@@ -76,8 +76,22 @@ export function traceToMustache(root, logsUrl) {
     const childIds = [];
     current.children.forEach(child => {
       if (child.span.id === span.id) {
+        // merge any spans with the same ID as the current UI has a single ID per row
         span = SPAN_V1.merge(span, SPAN_V1.convert(child.span));
         child.children.forEach(grandChild => {
+          queue.push(grandChild);
+          childIds.push(grandChild.span.id);
+        });
+      } else if (current.span.kind === 'CLIENT' && child.span.kind === 'SERVER') {
+        // merge any child that's a server, and reparent its kids accordingly
+        const serverChild = SPAN_V1.convert(child.span);
+        serverChild.id = span.id; // pretend the are the same span to satisfy the UI
+        serverChild.parentId = span.parentId;
+        span = SPAN_V1.merge(span, serverChild);
+
+        child.children.forEach(grandChild => {
+          // reparent the grandchildren so they aren't orphaned
+          grandChild.span.parentId = span.id;
           queue.push(grandChild);
           childIds.push(grandChild.span.id);
         });
