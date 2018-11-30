@@ -76,6 +76,12 @@ export const errorTrace = [{
   tags: {error: 'request failed'}
 }];
 
+export const minimalTrace = [{
+  traceId: '1e223ff1f80f1c69',
+  id: '1e223ff1f80f1c69',
+  timestamp: 1541138169377997
+}];
+
 import skew from '../../testdata/skew';
 export const skewedTrace = skew;
 

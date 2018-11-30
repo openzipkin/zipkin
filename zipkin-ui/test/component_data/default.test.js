@@ -1,7 +1,7 @@
 import {
   convertSuccessResponse, convertToApiQuery, convertDurationToMicrosecond,
 } from '../../js/component_data/default';
-import {errorTrace, httpTrace, skewedTrace} from '../component_ui/traceTestHelpers';
+import {errorTrace, httpTrace, minimalTrace, skewedTrace} from '../component_ui/traceTestHelpers';
 import queryString from 'query-string';
 
 describe('convertSuccessResponse', () => {
@@ -28,8 +28,7 @@ describe('convertSuccessResponse', () => {
         // Where both sides are instrumented, this prefers server duration.
         {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
         {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '26.326ms'}
-      ],
-      infoClass: ''
+      ]
     };
 
     const rawResponse = [httpTrace];
@@ -54,7 +53,6 @@ describe('convertSuccessResponse', () => {
         {serviceName: 'frontend', spanCount: 2, maxSpanDurationStr: '168.731ms'},
         {serviceName: 'backend', spanCount: 1, maxSpanDurationStr: '26.326ms'}
       ],
-      infoClass: '',
       servicePercentage: 15 // what percentage of total duration was in backend?
     };
 
@@ -80,6 +78,20 @@ describe('convertSuccessResponse', () => {
     };
 
     const rawResponse = [errorTrace];
+    convertSuccessResponse(rawResponse, 'all', apiURL, true).should.deep.equal(
+      {traces: [expectedTemplate], apiURL, rawResponse}
+    );
+  });
+
+  it('should convert a minimal trace', () => {
+    const expectedTemplate = {
+      traceId: '1e223ff1f80f1c69',
+      startTs: '11-02-2018T05:56:09.377+0000',
+      timestamp: 1541138169377997,
+      spanCount: 1
+    };
+
+    const rawResponse = [minimalTrace];
     convertSuccessResponse(rawResponse, 'all', apiURL, true).should.deep.equal(
       {traces: [expectedTemplate], apiURL, rawResponse}
     );
@@ -122,7 +134,6 @@ describe('convertSuccessResponse', () => {
         {serviceName: 'servicea', spanCount: 2, maxSpanDurationStr: '99.411ms'},
         {serviceName: 'serviceb', spanCount: 2, maxSpanDurationStr: '93.577ms'}
       ],
-      infoClass: '',
       servicePercentage: 94
     };
 
