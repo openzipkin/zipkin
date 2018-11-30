@@ -9,28 +9,23 @@ function endpointsForSpan(span) {
   return result;
 }
 
+function addStartEndTimestamps(span, list) {
+  if (span.timestamp) list.push(span.timestamp);
+  if (!span.duration) return;
+  list.push(span.timestamp + span.duration);
+}
+
 // What's the total duration of the spans in this trace?
 export function traceDuration(spans) {
-  function makeList({timestamp, duration}) {
-    if (!timestamp) {
-      return [];
-    } else if (!duration) {
-      return [timestamp];
-    } else {
-      return [timestamp, timestamp + duration];
-    }
+  const timestamps = [];
+  for (let i = 0; i < spans.length; i++) {
+    addStartEndTimestamps(spans[i], timestamps);
   }
 
-  // turns (timestamp, timestamp + duration) into an ordered list
-  const timestamps = _(spans).flatMap(makeList).sort().value();
+  if (timestamps.length < 2) return 0; // can't get a duration
 
-  if (timestamps.length < 2) {
-    return 0;
-  } else {
-    const first = _.head(timestamps);
-    const last = _.last(timestamps);
-    return last - first;
-  }
+  timestamps.sort();
+  return timestamps[timestamps.length - 1] - timestamps[0];
 }
 
 function getServiceNames(span) {
