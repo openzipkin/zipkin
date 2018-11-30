@@ -181,7 +181,7 @@ export default component(function trace() {
   this.originalDuration = function() {
     const markerText = $('#timeLabel-backup .time-marker-5').text();
     return markerText ? parseFloat(markerText) : 0;
-  }
+  };
 
   /* On mousedown and mousemove we need to show a selection area and zoomin
    * spans according to width of selected area. During zoomin only the

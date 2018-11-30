@@ -155,7 +155,7 @@ export function traceToMustache(tree, logsUrl) {
   };
 
   // the zoom feature needs backups and timeMarkers regardless of if there is a trace duration
-  res.spansBackup = res.spans
+  res.spansBackup = res.spans;
   res.timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
     .map((p, index) => ({index, time: mkDurationStr(traceDuration * p)}));
   res.timeMarkersBackup = res.timeMarkers;
