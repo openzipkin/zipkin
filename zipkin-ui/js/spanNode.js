@@ -65,40 +65,6 @@ class SpanNode {
     return result;
   }
 
-  // Returns the depth of the tree resulting from a depth-first traversal at this node
-  maxDepth() {
-    let max = 0;
-    const queue = [];
-
-    queue.push(this);
-
-    while (queue.length > 0) {
-      let current = queue.shift();
-
-      const children = current.children;
-
-      // we found the bottom, so report the count until the top
-      if (children.length === 0) {
-        let currentDepth = 1;
-
-        // count up until we hit the root most (not synthetic root)
-        while (current !== this) {
-          currentDepth++;
-          current = current.parent;
-        }
-
-        if (currentDepth > max) max = currentDepth;
-      } else {
-        for (let i = 0; i < children.length; i++) {
-          queue.push(children[i]);
-        }
-      }
-    }
-
-    if (typeof(this._span) === 'undefined') max--; // synthetic root, so deduct one
-    return max;
-  }
-
   toString() {
     if (this._span) return `SpanNode(${JSON.stringify(this._span)})`;
     return 'SpanNode()';
