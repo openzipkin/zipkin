@@ -47,10 +47,8 @@ function convertV1(span) {
   }
 
   res.id = id;
-  res.name = span.name || ''; // undefined is not allowed in v1
-  if (span.debug) {
-    res.debug = true;
-  }
+  if (span.name) res.name = span.name;
+  if (span.debug) res.debug = true;
 
   // Don't report timestamp and duration on shared spans (should be server, but not necessarily)
   if (!span.shared) {
@@ -287,7 +285,7 @@ function merge(left, right) {
   }
 
   res.id = id;
-  res.name = left.name || '';
+  if (left.name) res.name = left.name;
 
   // When we move to span model 2, remove this code in favor of using Span.kind == CLIENT
   let leftClientSpan;
@@ -319,8 +317,8 @@ function merge(left, right) {
     maybePushTag(res.tags, b);
   });
 
-  if (right.name && right.name !== '' && right.name !== 'unknown') {
-    if (res.name === '' || res.name === 'unknown' || rightServerSpan) {
+  if (right.name) {
+    if (!res.name || rightServerSpan) {
       res.name = right.name; // prefer the server's span name
     }
   }

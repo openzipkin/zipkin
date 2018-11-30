@@ -13,12 +13,11 @@ describe('traceToMustache', () => {
   });
 
   it('should derive summary info', () => {
-    const {traceId, duration, services, depth, spanCount, serviceNameAndSpanCounts} =
+    const {traceId, durationStr, depth, spanCount, serviceNameAndSpanCounts} =
       traceToMustache(cleanedHttpTrace);
 
     traceId.should.equal('bb1f0e21882325b8');
-    duration.should.equal('168.731ms');
-    services.should.equal(2);
+    durationStr.should.equal('168.731ms');
     depth.should.equal(3);
     spanCount.should.equal(3);
     serviceNameAndSpanCounts.should.eql([
@@ -33,12 +32,11 @@ describe('traceToMustache', () => {
     // make a copy of the cleaned http trace as adding a child is a mutation
     treeCorrectedForClockSkew(httpTrace).children.forEach(child => headless.addChild(child));
 
-    const {traceId, duration, services, depth, spanCount, serviceNameAndSpanCounts} =
+    const {traceId, durationStr, depth, spanCount, serviceNameAndSpanCounts} =
       traceToMustache(headless);
 
     traceId.should.equal('bb1f0e21882325b8');
-    duration.should.equal('111.121ms'); // client duration
-    services.should.equal(2);
+    durationStr.should.equal('111.121ms'); // client duration
     depth.should.equal(2);
     spanCount.should.equal(2);
     serviceNameAndSpanCounts.should.eql([

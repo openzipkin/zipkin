@@ -4,7 +4,6 @@ import queryString from 'query-string';
 import $ from 'jquery';
 import {i18nInit} from '../component_ui/i18n';
 
-
 // extracted for testing. this code mutates spans and selectedSpans
 export function showSpans(spans, parents, children, selectedSpans) {
   const family = new Set();
@@ -179,6 +178,11 @@ export default component(function trace() {
     }
   };
 
+  this.originalDuration = function() {
+    const markerText = $('#timeLabel-backup .time-marker-5').text();
+    return markerText ? parseFloat(markerText) : 0;
+  };
+
   /* On mousedown and mousemove we need to show a selection area and zoomin
    * spans according to width of selected area. During zoomin only the
    * width i.e. x coordinates are considered.*/
@@ -214,7 +218,7 @@ export default component(function trace() {
       self.$node.unbind('mouseup');
       /* Add code to calculate mintime and max time from pixel value of
        * mouse down and mouse move*/
-      const originalDuration = parseFloat($('#timeLabel-backup .time-marker-5').text());
+      const originalDuration = this.originalDuration();
       const spanClickViewLeftOffsetPx = $($('#trace-container .time-marker-0')[1]).offset().left;
       const spanClickViewWidthPx = $('#trace-container .time-marker-5').position().left;
 
@@ -336,7 +340,7 @@ export default component(function trace() {
   this.zoomInSpans = function(node, data) {
     const self = this;
 
-    const originalDuration = parseFloat($('#timeLabel-backup .time-marker-5').text());
+    const originalDuration = this.originalDuration();
 
     const mintime = data.mintime;
     const maxtime = data.maxtime;

@@ -85,7 +85,7 @@ function getErrorType(span) {
   }
 }
 
-export function traceToMustache(tree, logsUrl = undefined) {
+export function traceToMustache(tree, logsUrl) {
   // TODO: this is the max depth of spans, but it probably isn't all that useful vs endpoint depth
   // reason being is that some instrumentation make a lot of intermediate spans. It would probably
   // make sense to align this with service depth as that's what the dependency graph shows. Either
@@ -94,17 +94,14 @@ export function traceToMustache(tree, logsUrl = undefined) {
   const depth = tree.maxDepth();
 
   const v2Trace = tree.traverse();
-  const spanCount = v2Trace.length;
-  const trace = SPAN_V1.convertTrace(v2Trace);
   const t = traceSummary(v2Trace);
-
+  const spanCount = t.spanCount;
   const traceId = t.traceId;
-  const duration = t.duration;
+  const traceDuration = t.duration || 0;
   const serviceNameAndSpanCounts = getServiceNameAndSpanCounts(t.groupedTimestamps);
 
-  const services = serviceNameAndSpanCounts.length || 0;
+  const trace = SPAN_V1.convertTrace(v2Trace);
   const groupByParentId = _(trace).groupBy((s) => s.parentId).value();
-
   const traceTimestamp = trace[0].timestamp || 0;
   const spanDepths = toSpanDepths(trace);
 
@@ -112,49 +109,59 @@ export function traceToMustache(tree, logsUrl = undefined) {
     (rootSpan) => childrenToList(createSpanTreeEntry(rootSpan, trace))).map((span) => {
       const spanStartTs = span.timestamp || traceTimestamp;
       const spanDepth = spanDepths[span.id] || 1;
-      const width = (span.duration || 0) / duration * 100;
+      const spanDuration = span.duration || 0;
+      const children = (groupByParentId[span.id] || []).map((s) => s.id);
 
-      return {
+      const res = {
         spanId: span.id,
-        parentId: span.parentId || null,
-        spanName: span.name,
-        serviceNames: span.serviceNames.join(','),
-        serviceName: span.serviceName || '',
-        duration: span.duration,
-        durationStr: mkDurationStr(span.duration),
-        left: parseFloat(spanStartTs - traceTimestamp) / parseFloat(duration) * 100,
-        width: width < 0.1 ? 0.1 : width,
         depth: (spanDepth + 1) * 5,
         depthClass: (spanDepth - 1) % 6,
-        children: (groupByParentId[span.id] || []).map((s) => s.id).join(','),
         annotations: span.annotations.map((a) => ({
           ...a,
-          left: (a.timestamp - spanStartTs) / span.duration * 100,
+          left: spanDuration ? (a.timestamp - spanStartTs) / spanDuration * 100 : 0,
           relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
           width: 8
         })),
         tags: span.tags,
         errorType: getErrorType(span)
       };
+
+      // Optionally add fields instead of defaulting to empty string
+      if (span.name) res.spanName = span.name;
+      if (spanDuration) {
+        const width = traceDuration ? spanDuration / traceDuration * 100 : 0;
+        res.width = width < 0.1 ? 0.1 : width;
+        res.left = parseFloat(spanStartTs - traceTimestamp) / parseFloat(traceDuration) * 100;
+        res.duration = spanDuration; // used in zoom
+        res.durationStr = mkDurationStr(spanDuration); // bubble over the span in trace view
+      } else {
+        res.left = 0;
+        res.width = 0.1;
+      }
+      if (span.serviceName) res.serviceName = span.serviceName;
+      if (span.serviceNames.length !== 0) res.serviceNames = span.serviceNames.join(',');
+      if (span.parentId) res.parentId = span.parentId;
+      if (children.length !== 0) res.children = children.join(','); // used for expand and collapse
+      return res;
     }
   ).value();
 
-  const timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
-      .map((p, index) => ({index, time: mkDurationStr(duration * p)}));
-  const timeMarkersBackup = timeMarkers;
-  const spansBackup = spans;
-
-  return {
+  const res = {
     traceId,
-    duration: mkDurationStr(duration),
-    services,
     depth,
     spanCount,
     serviceNameAndSpanCounts,
-    timeMarkers,
-    timeMarkersBackup,
-    spans,
-    spansBackup,
-    logsUrl
+    spans
   };
+
+  // the zoom feature needs backups and timeMarkers regardless of if there is a trace duration
+  res.spansBackup = res.spans;
+  res.timeMarkers = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0]
+    .map((p, index) => ({index, time: mkDurationStr(traceDuration * p)}));
+  res.timeMarkersBackup = res.timeMarkers;
+
+  if (traceDuration) res.durationStr = mkDurationStr(traceDuration);
+  if (logsUrl) res.logsUrl = logsUrl;
+
+  return res;
 }

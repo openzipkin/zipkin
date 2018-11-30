@@ -259,7 +259,6 @@ describe('SPAN v2 -> v1 Conversion', () => {
       traceId: '0000000000000001',
       parentId: '0000000000000002',
       id: '0000000000000003',
-      name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
       tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
       serviceNames: ['backend']
@@ -530,7 +529,6 @@ describe('SPAN v2 -> v1 Conversion', () => {
     const v1 = {
       traceId: '0000000000000001',
       id: '0000000000000002',
-      name: '', // TODO: check if empty name is needed elsewhere in the codebase still
       annotations: [],
       tags: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
       serviceNames: ['frontend']
@@ -1022,28 +1020,6 @@ describe('SPAN v1 Merge', () => {
     const merged = SPAN_V1.merge(clientSpan, {
       traceId: '1',
       id: '3',
-      name: '',
-      annotations: [
-        {
-          isDerived: true,
-          value: 'Server Start',
-          timestamp: 1472470996238000,
-          endpoint: '192.168.99.101:9000 (backend)'
-        }
-      ],
-      tags: [],
-      serviceName: 'backend',
-      serviceNames: ['backend']
-    });
-
-    expect(merged.name).to.equal(clientSpan.name);
-  });
-
-  it('should not overwrite client name with unknown', () => {
-    const merged = SPAN_V1.merge(clientSpan, {
-      traceId: '1',
-      id: '3',
-      name: 'unknown',
       annotations: [
         {
           isDerived: true,
@@ -1067,7 +1043,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
       traceId: '1',
       id: '3',
-      name: '',
       annotations: [cs]
     });
 
@@ -1080,7 +1055,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
       traceId: '1',
       id: '3',
-      name: '',
       annotations: [cs, sr, ss, cr]
     });
 
@@ -1093,7 +1067,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
       traceId: '1',
       id: '3',
-      name: '',
       annotations: [sr, ss]
     });
 
@@ -1106,7 +1079,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
       traceId: '1',
       id: '3',
-      name: '',
       annotations: [cs, sr]
     });
 
@@ -1119,7 +1091,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
       traceId: '1',
       id: '3',
-      name: '',
       timestamp: cs.timestamp - 1,
       annotations: [cs]
     });
@@ -1133,7 +1104,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
       traceId: '1',
       id: '3',
-      name: '',
       annotations: [
         {
           isDerived: false,
@@ -1153,7 +1123,6 @@ describe('SPAN v1 apply timestamp and duration', () => {
     const span = SPAN_V1.applyTimestampAndDuration({
       traceId: '1',
       id: '3',
-      name: '',
       annotations: [sr]
     });
 
@@ -1168,13 +1137,11 @@ describe('SPAN v1 merge by ID', () => {
       {
         traceId: '1',
         id: '3',
-        name: '',
         annotations: [sr, ss]
       },
       {
         traceId: '1',
         id: '3',
-        name: '',
         annotations: [cs, cr]
       }
     ]);
@@ -1183,7 +1150,6 @@ describe('SPAN v1 merge by ID', () => {
       {
         traceId: '0000000000000001',
         id: '0000000000000003',
-        name: '',
         timestamp: cs.timestamp,
         duration: cr.timestamp - cs.timestamp,
         annotations: [cs, sr, ss, cr],
@@ -1198,13 +1164,11 @@ describe('SPAN v1 merge by ID', () => {
       {
         traceId: '1111111111111111',
         id: '3',
-        name: '',
         annotations: [sr, ss]
       },
       {
         traceId: '21111111111111111',
         id: '3',
-        name: '',
         annotations: [cs, cr]
       }
     ]);
@@ -1213,7 +1177,6 @@ describe('SPAN v1 merge by ID', () => {
       {
         traceId: '00000000000000021111111111111111',
         id: '0000000000000003',
-        name: '',
         timestamp: cs.timestamp,
         duration: cr.timestamp - cs.timestamp,
         annotations: [cs, sr, ss, cr],

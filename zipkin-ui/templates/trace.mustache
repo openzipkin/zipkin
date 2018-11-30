@@ -1,10 +1,10 @@
 <div id='trace-controls' class='card w-90 mb-4 bg-light'>
 <div class="clearfix m-3">
 <div class='row justify-content-start'>
-    <div class='col-md-2'><div href='#'><strong data-i18n="trace.duration">Duration:</strong> <span class='badge badge-dark'>{{duration}}</span></div></div>
-    <div class='col-md-2'><div href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge badge-dark'>{{services}}</span></div></div>
+    <div class='col-md-2'><div href='#'><strong data-i18n="trace.duration">Duration:</strong> <span class='badge badge-dark'>{{durationStr}}</span></div></div>
+    <div class='col-md-2'><div href='#'><strong data-i18n="trace.service">Services:</strong> <span class='badge badge-dark'>{{serviceNameAndSpanCounts.length}}</span></div></div>
     <div class='col-md-2'><div href='#'><strong data-i18n="trace.depth">Depth:</strong> <span class='badge badge-dark'>{{depth}}</span></div></div>
-    <div class='col-md-2'><div href='#'><strong data-i18n="trace.spans">Total Spans:</strong> <span class='badge badge-dark'>{{spanCount}}</span></div></div>
+    <div class='col-md-2'><div href='#'><strong data-i18n="trace.spanCount">Total Spans:</strong> <span class='badge badge-dark'>{{spanCount}}</span></div></div>
     <div class='col-md-2'>
       {{#logsUrl}}
       <div id='traceLogsLink'>
@@ -116,7 +116,7 @@
       </div>
       <div class='modal-body'>
        <div class="card">
-        <h6 class="card-body">AKA: <span class='service-names container'></span></h6>
+        <h6 class="card-body">Services: <span class='service-names container'></span></h6>
        </div>
         <table id='annotations' class='table table-striped table-sm table-bordered'>
           <thead class="table-info"><tr>

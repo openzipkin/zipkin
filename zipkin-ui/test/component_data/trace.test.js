@@ -1,5 +1,5 @@
 import {convertSuccessResponse, toContextualLogsUrl} from '../../js/component_data/trace';
-import {errorTrace, httpTrace, skewedTrace} from '../component_ui/traceTestHelpers';
+import {errorTrace, httpTrace, minimalTrace, skewedTrace} from '../component_ui/traceTestHelpers';
 
 describe('convertSuccessResponse', () => {
   // getting a trace by ID should result in at least one span
@@ -14,11 +14,51 @@ describe('convertSuccessResponse', () => {
     expect(error.message).to.eql('Trace was empty');
   });
 
+  it('should convert a minimal trace', () => {
+    const spans = [
+      {
+        spanId: '1e223ff1f80f1c69',
+        left: 0,
+        width: 0.1,
+        depth: 10,
+        depthClass: 0,
+        annotations: [],
+        tags: [],
+        errorType: 'none'
+      }
+    ];
+
+    // This avoids showing NaN in edge case of no duration
+    const timeMarkers = [
+      {index: 0, time: ''},
+      {index: 1, time: ''},
+      {index: 2, time: ''},
+      {index: 3, time: ''},
+      {index: 4, time: ''},
+      {index: 5, time: ''}
+    ];
+
+    const expectedTemplate = {
+      traceId: '1e223ff1f80f1c69',
+      depth: 1,
+      spanCount: 1,
+      serviceNameAndSpanCounts: [],
+      timeMarkers,
+      timeMarkersBackup: timeMarkers,
+      spans,
+      spansBackup: spans
+    };
+
+    const rawResponse = minimalTrace;
+    convertSuccessResponse(rawResponse).should.deep.equal(
+      {modelview: expectedTemplate, trace: rawResponse}
+    );
+  });
+
   it('should convert an http trace', () => {
     const spans = [
       {
         spanId: 'bb1f0e21882325b8',
-        parentId: null,
         spanName: 'get /',
         serviceNames: 'frontend',
         serviceName: 'frontend',
@@ -89,7 +129,6 @@ describe('convertSuccessResponse', () => {
         width: 65.8568964801963,
         depth: 15,
         depthClass: 1,
-        children: '',
         annotations: [
           {
             isDerived: true,
@@ -187,8 +226,7 @@ describe('convertSuccessResponse', () => {
 
     const expectedTemplate = {
       traceId: 'bb1f0e21882325b8',
-      duration: '168.731ms',
-      services: 2,
+      durationStr: '168.731ms',
       depth: 3,
       spanCount: 3,
       serviceNameAndSpanCounts: [
@@ -196,10 +234,9 @@ describe('convertSuccessResponse', () => {
         {serviceName: 'frontend', spanCount: 2}
       ],
       timeMarkers,
-      timeMarkersBackup: timeMarkers, // TODO: what is backup and why??
+      timeMarkersBackup: timeMarkers,
       spans,
-      spansBackup: spans, // TODO: what is backup and why??
-      logsUrl: undefined
+      spansBackup: spans
     };
 
     const rawResponse = httpTrace;
@@ -212,8 +249,6 @@ describe('convertSuccessResponse', () => {
     const spans = [
       {
         spanId: '1e223ff1f80f1c69',
-        parentId: null,
-        spanName: '',
         serviceNames: 'backend',
         serviceName: 'backend',
         duration: 17,
@@ -222,7 +257,6 @@ describe('convertSuccessResponse', () => {
         width: 100,
         depth: 10,
         depthClass: 0,
-        children: '',
         annotations: [],
         tags: [
           {
@@ -246,18 +280,16 @@ describe('convertSuccessResponse', () => {
 
     const expectedTemplate = {
       traceId: '1e223ff1f80f1c69',
-      duration: '17μs',
-      services: 1,
+      durationStr: '17μs',
       depth: 1,
       spanCount: 1,
       serviceNameAndSpanCounts: [
         {serviceName: 'backend', spanCount: 1}
       ],
       timeMarkers,
-      timeMarkersBackup: timeMarkers, // TODO: what is backup and why??
+      timeMarkersBackup: timeMarkers,
       spans,
-      spansBackup: spans, // TODO: what is backup and why??
-      logsUrl: undefined
+      spansBackup: spans
     };
 
     const rawResponse = errorTrace;
@@ -299,7 +331,6 @@ describe('convertSuccessResponse', () => {
     const spans = [
       {
         spanId: 'bf396325699c84bf',
-        parentId: null,
         spanName: 'get',
         serviceNames: 'servicea',
         serviceName: 'servicea',
@@ -399,7 +430,6 @@ describe('convertSuccessResponse', () => {
         width: 65.3851183470642,
         depth: 20,
         depthClass: 2,
-        children: '',
         annotations: [],
         tags: [
           {
@@ -422,8 +452,7 @@ describe('convertSuccessResponse', () => {
 
     const expectedTemplate = {
       traceId: '1e223ff1f80f1c69',
-      duration: '99.411ms',
-      services: 2,
+      durationStr: '99.411ms',
       depth: 4,
       spanCount: 4,
       serviceNameAndSpanCounts: [
@@ -433,8 +462,7 @@ describe('convertSuccessResponse', () => {
       timeMarkers,
       timeMarkersBackup: timeMarkers,
       spans,
-      spansBackup: spans,
-      logsUrl: undefined
+      spansBackup: spans
     };
 
     const rawResponse = skewedTrace;

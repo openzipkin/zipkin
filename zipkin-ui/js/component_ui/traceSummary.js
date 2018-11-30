@@ -180,32 +180,41 @@ export function getServiceSummaries(groupedTimestamps) {
     })).value();
 }
 
-export function traceSummariesToMustache(serviceName = null, traceSummaries, utc = false) {
+export function traceSummariesToMustache(serviceName, traceSummaries, utc = false) {
   const maxDuration = Math.max(...traceSummaries.map((s) => s.duration));
 
   return traceSummaries.map((t) => {
     const timestamp = t.timestamp;
-    const duration = t.duration;
-    const groupedTimestamps = t.groupedTimestamps;
 
     const res = {
-      traceId: t.traceId,
+      traceId: t.traceId, // used to navigate to trace screen
+      timestamp, // used only for client-side sort
       startTs: formatDate(timestamp, utc),
-      timestamp,
-      duration: duration / 1000,
-      durationStr: mkDurationStr(duration),
-      width: parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10),
-      spanCount: t.spanCount,
-      serviceSummaries: getServiceSummaries(groupedTimestamps),
-      infoClass: t.errorType === 'none' ? '' : `trace-error-${t.errorType}`
+      spanCount: t.spanCount
     };
 
-    // Only add a service percentage when there is a duration for it
-    if (serviceName && groupedTimestamps[serviceName]) {
-      const serviceTime = totalDuration(groupedTimestamps[serviceName]);
-      res.servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(duration) * 100, 10);
+    const duration = t.duration || 0;
+    if (duration) {
+      // used to show the relative duration this trace was compared to others
+      res.width = parseInt(parseFloat(duration) / parseFloat(maxDuration) * 100, 10);
+      res.duration = duration / 1000; // used only for client-side sort
+      res.durationStr = mkDurationStr(duration);
     }
 
+    // groupedTimestamps is keyed by service name, if there are no service names in the trace,
+    // don't try to add data dependent on service names.
+    if (Object.keys(t.groupedTimestamps).length !== 0) {
+      res.serviceSummaries = getServiceSummaries(t.groupedTimestamps);
+
+      // Only add a service percentage when there is a duration for it
+      if (serviceName && duration && t.groupedTimestamps[serviceName]) {
+        const serviceTime = totalDuration(t.groupedTimestamps[serviceName]);
+        // used for display and also client-side sort by service percentage
+        res.servicePercentage = parseInt(parseFloat(serviceTime) / parseFloat(duration) * 100, 10);
+      }
+    }
+
+    if (t.errorType !== 'none') res.infoClass = `trace-error-${t.errorType}`;
     return res;
   }).sort((t1, t2) => {
     const durationComparison = t2.duration - t1.duration;

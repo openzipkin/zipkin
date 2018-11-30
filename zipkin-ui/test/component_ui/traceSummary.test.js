@@ -210,8 +210,8 @@ describe('traceSummariesToMustache', () => {
   });
 
   it('should convert duration from micros to millis', () => {
-    const model = traceSummariesToMustache(null, [{timestamp: 1, duration: 20000}]);
-    model[0].duration.should.equal(20);
+    const model = traceSummariesToMustache(null, [summary]);
+    model[0].duration.should.equal(168.731);
   });
 
   it('should get service summaries, ordered descending by max span duration', () => {
