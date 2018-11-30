@@ -1,9 +1,5 @@
 import _ from 'lodash';
-import {
-  traceSummary,
-  getServiceNameAndSpanCounts,
-  mkDurationStr
-} from './traceSummary';
+import {getTraceDuration, mkDurationStr} from './traceSummary';
 import {SPAN_V1} from '../spanConverter';
 
 export function getRootSpans(spans) {
@@ -85,25 +81,60 @@ function getErrorType(span) {
   }
 }
 
+function incrementEntry(dict, key) {
+  if (dict[key]) {
+    dict[key]++; // eslint-disable-line no-param-reassign
+  } else {
+    dict[key] = 1; // eslint-disable-line no-param-reassign
+  }
+}
+
+function incrementServiceNameCount(span, results) {
+  if (span.localEndpoint && span.localEndpoint.serviceName) {
+    incrementEntry(results, span.localEndpoint.serviceName);
+  }
+  // TODO: only do this if it is a leaf span and a client or producer.
+  // If we are at the bottom of the tree, it can be helpful to count also against a remote
+  // uninstrumented service
+  if (span.remoteEndpoint && span.remoteEndpoint.serviceName) {
+    incrementEntry(results, span.remoteEndpoint.serviceName);
+  }
+}
+
+export function getServiceNameAndSpanCounts(spans) {
+  const serviceNameToCount = {};
+  for (let i = 0; i < spans.length; i++) {
+    incrementServiceNameCount(spans[i], serviceNameToCount);
+  }
+
+  const result = [];
+  Object.keys(serviceNameToCount).sort().forEach(serviceName => {
+    result.push({serviceName, spanCount: serviceNameToCount[serviceName]});
+  });
+  return result;
+}
+
 export function traceToMustache(tree, logsUrl) {
+  const v2Trace = tree.traverse();
+  if (v2Trace.length === 0) throw new Error('Trace was empty');
+  if (!v2Trace[0].timestamp) throw new Error('Trace is missing a timestamp');
+
+  const serviceNameAndSpanCounts = getServiceNameAndSpanCounts(v2Trace);
+  const spanCount = v2Trace.length;
+  const traceId = v2Trace[0].traceId;
+  const traceDuration = getTraceDuration(v2Trace) || 0;
+
+  const trace = SPAN_V1.convertTrace(v2Trace);
+  const groupByParentId = _(trace).groupBy((s) => s.parentId).value();
+  const traceTimestamp = trace[0].timestamp || 0;
+  const spanDepths = toSpanDepths(trace);
+
   // TODO: this is the max depth of spans, but it probably isn't all that useful vs endpoint depth
   // reason being is that some instrumentation make a lot of intermediate spans. It would probably
   // make sense to align this with service depth as that's what the dependency graph shows. Either
   // that or remote depth.. eg what's the longest chain of remote spans (taking care to ignore
   // redundant instrumentation.
   const depth = tree.maxDepth();
-
-  const v2Trace = tree.traverse();
-  const t = traceSummary(v2Trace);
-  const spanCount = t.spanCount;
-  const traceId = t.traceId;
-  const traceDuration = t.duration || 0;
-  const serviceNameAndSpanCounts = getServiceNameAndSpanCounts(t.groupedTimestamps);
-
-  const trace = SPAN_V1.convertTrace(v2Trace);
-  const groupByParentId = _(trace).groupBy((s) => s.parentId).value();
-  const traceTimestamp = trace[0].timestamp || 0;
-  const spanDepths = toSpanDepths(trace);
 
   const spans = _(getRootSpans(trace)).flatMap(
     (rootSpan) => childrenToList(createSpanTreeEntry(rootSpan, trace))).map((span) => {

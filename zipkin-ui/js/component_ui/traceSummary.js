@@ -2,13 +2,6 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-function endpointsForSpan(span) {
-  const result = [];
-  if (span.localEndpoint) result.push(span.localEndpoint);
-  if (span.remoteEndpoint) result.push(span.remoteEndpoint);
-  return result;
-}
-
 function addStartEndTimestamps(span, list) {
   if (span.timestamp) list.push(span.timestamp);
   if (!span.duration) return;
@@ -16,7 +9,7 @@ function addStartEndTimestamps(span, list) {
 }
 
 // What's the total duration of the spans in this trace?
-export function traceDuration(spans) {
+export function getTraceDuration(spans) {
   const timestamps = [];
   for (let i = 0; i < spans.length; i++) {
     addStartEndTimestamps(spans[i], timestamps);
@@ -28,27 +21,36 @@ export function traceDuration(spans) {
   return timestamps[timestamps.length - 1] - timestamps[0];
 }
 
-function getServiceNames(span) {
-  return _(endpointsForSpan(span))
-      .map((ep) => ep.serviceName)
-      .filter((name) => name != null && name !== '')
-      .uniq().value();
+function pushEntry(dict, key, value) {
+  if (dict[key]) {
+    dict[key].push(value);
+  } else {
+    dict[key] = [value]; // eslint-disable-line no-param-reassign
+  }
+}
+
+function addServiceNameTimestampDuration(span, results) {
+  const value = {
+    timestamp: span.timestamp || 0, // only used by totalDuration
+    duration: span.duration || 0
+  };
+  if (span.localEndpoint && span.localEndpoint.serviceName) {
+    pushEntry(results, span.localEndpoint.serviceName, value);
+  }
+  // TODO: only do this if it is a leaf span and a client or producer.
+  // If we are at the bottom of the tree, it can be helpful to count also against a remote
+  // uninstrumented service
+  if (span.remoteEndpoint && span.remoteEndpoint.serviceName) {
+    pushEntry(results, span.remoteEndpoint.serviceName, value);
+  }
 }
 
 export function getGroupedTimestamps(spans) {
-  const spanTimestamps = _(spans).flatMap((span) => getServiceNames(span).map((serviceName) => ({
-    serviceName,
-    timestamp: span.timestamp, // only used by totalDuration
-    duration: span.duration
-  }))).value();
-
-  const grouped = _(spanTimestamps).groupBy((sts) => sts.serviceName).value();
-
-  // wash out the redundant name. TODO: rewrite this whole method as it seems easier imperatively
-  return _(grouped).mapValues((ntds) => ntds.map((ntd) => ({
-    timestamp: ntd.timestamp,
-    duration: ntd.duration || 0
-  }))).value();
+  const groupedTimestamps = {};
+  for (let i = 0; i < spans.length; i++) {
+    addServiceNameTimestampDuration(spans[i], groupedTimestamps);
+  }
+  return groupedTimestamps;
 }
 
 // returns 'critical' if one of the spans has an error tag, else
@@ -79,7 +81,7 @@ export function traceSummary(trace = []) {
 
   const traceId = trace[0].traceId;
   const timestamp = trace[0].timestamp;
-  const duration = traceDuration(trace);
+  const duration = getTraceDuration(trace);
   const groupedTimestamps = getGroupedTimestamps(trace);
   const errorType = getTraceErrorType(trace);
   const spanCount = trace.length;
@@ -150,13 +152,6 @@ export function mkDurationStr(duration) {
   } else {
     return `${(duration / 1000000).toFixed(3)}s`;
   }
-}
-
-export function getServiceNameAndSpanCounts(groupedTimestamps) {
-  return _(groupedTimestamps).toPairs().map(([serviceName, sts]) => ({
-    serviceName,
-    spanCount: sts.length
-  })).sortBy('serviceName').value();
 }
 
 // maxSpanDurationStr is only used in index.mustache
