@@ -1,6 +1,5 @@
 import {
   traceToMustache,
-  getRootSpans,
   getServiceNameAndSpanCounts
 } from '../../js/component_ui/traceToMustache';
 const {SpanNode} = require('../../js/spanNode');
@@ -74,7 +73,7 @@ describe('traceToMustache', () => {
 
     traceId.should.equal('bb1f0e21882325b8');
     durationStr.should.equal('168.731ms');
-    depth.should.equal(3);
+    depth.should.equal(2); // number of span rows (distinct span IDs)
     spanCount.should.equal(3);
     serviceNameAndSpanCounts.should.eql([
       {serviceName: 'backend', spanCount: 1},
@@ -93,7 +92,7 @@ describe('traceToMustache', () => {
 
     traceId.should.equal('bb1f0e21882325b8');
     durationStr.should.equal('111.121ms'); // client duration
-    depth.should.equal(2);
+    depth.should.equal(1); // number of span rows (distinct span IDs)
     spanCount.should.equal(2);
     serviceNameAndSpanCounts.should.eql([
       {serviceName: 'backend', spanCount: 1},
@@ -154,29 +153,3 @@ describe('traceToMustache', () => {
   });
 });
 
-describe('get root spans', () => {
-  it('should find root spans in a trace', () => {
-    const testTrace = [{
-      parentId: null, // root span (no parent)
-      id: 1
-    }, {
-      parentId: 1,
-      id: 2
-    }, {
-      parentId: 3, // root span (no parent with this id)
-      id: 4
-    }, {
-      parentId: 4,
-      id: 5
-    }];
-
-    const rootSpans = getRootSpans(testTrace);
-    rootSpans.should.eql([{
-      parentId: null,
-      id: 1
-    }, {
-      parentId: 3,
-      id: 4
-    }]);
-  });
-});

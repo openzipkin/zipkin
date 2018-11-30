@@ -62,34 +62,6 @@ describe('SpanNode', () => {
       'a', 'b', 'c', 'd', 'e', 'f', '1', '2'
     ]);
   });
-
-  /*
-   * Use the same tree to check depths
-   *
-   *          a
-   *        / | \
-   *       b  c  d
-   *      /|\
-   *     e f g
-   *          \
-   *           h
-   */
-  it('should report correct max depth', () => {
-    expect(a.maxDepth()).to.equal(4);
-    expect(b.maxDepth()).to.equal(3);
-    expect(c.maxDepth()).to.equal(1);
-    expect(d.maxDepth()).to.equal(1);
-    expect(e.maxDepth()).to.equal(1);
-    expect(f.maxDepth()).to.equal(1);
-    expect(g.maxDepth()).to.equal(2);
-    expect(h.maxDepth()).to.equal(1);
-  });
-
-  it('should report correct max depth when headless', () => {
-    const headless = new SpanNode();
-    headless.addChild(a);
-    expect(headless.maxDepth()).to.equal(a.maxDepth());
-  });
 });
 
 // originally zipkin2.internal.SpanNodeTest.java
