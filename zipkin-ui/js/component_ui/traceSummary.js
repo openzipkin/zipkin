@@ -2,23 +2,32 @@
 import _ from 'lodash';
 import moment from 'moment';
 
-function addStartEndTimestamps(span, list) {
-  if (span.timestamp) list.push(span.timestamp);
-  if (!span.duration) return;
-  list.push(span.timestamp + span.duration);
+// returns 'critical' if one of the spans has an error tag or currentErrorType was already critical,
+// returns 'transient' if one of the spans has an ERROR annotation, else
+// returns currentErrorType
+export function getErrorType(span, currentErrorType) {
+  if (currentErrorType === 'critical') return currentErrorType;
+  if (span.tags.error !== undefined) { // empty error tag is ok
+    return 'critical';
+  } else if (_(span.annotations).findIndex(ann => ann.value === 'error') !== -1) {
+    return 'transient';
+  }
+  return currentErrorType;
 }
 
-// What's the total duration of the spans in this trace?
-export function getTraceDuration(spans) {
-  const timestamps = [];
-  for (let i = 0; i < spans.length; i++) {
-    addStartEndTimestamps(spans[i], timestamps);
+export function addStartEndTimestamps(span, timestamps) {
+  if (!span.timestamp) return;
+  timestamps.push(span.timestamp);
+  if (!span.duration) return;
+  timestamps.push(span.timestamp + span.duration);
+}
+
+export function getMaxDuration(timestamps) {
+  if (timestamps.length > 1) {
+    timestamps.sort();
+    return timestamps[timestamps.length - 1] - timestamps[0];
   }
-
-  if (timestamps.length < 2) return 0; // can't get a duration
-
-  timestamps.sort();
-  return timestamps[timestamps.length - 1] - timestamps[0];
+  return 0;
 }
 
 function pushEntry(dict, key, value) {
@@ -29,66 +38,46 @@ function pushEntry(dict, key, value) {
   }
 }
 
-function addServiceNameTimestampDuration(span, results) {
+function addServiceNameTimestampDuration(span, groupedTimestamps) {
   const value = {
     timestamp: span.timestamp || 0, // only used by totalDuration
     duration: span.duration || 0
   };
+
   if (span.localEndpoint && span.localEndpoint.serviceName) {
-    pushEntry(results, span.localEndpoint.serviceName, value);
+    pushEntry(groupedTimestamps, span.localEndpoint.serviceName, value);
   }
   // TODO: only do this if it is a leaf span and a client or producer.
   // If we are at the bottom of the tree, it can be helpful to count also against a remote
   // uninstrumented service
   if (span.remoteEndpoint && span.remoteEndpoint.serviceName) {
-    pushEntry(results, span.remoteEndpoint.serviceName, value);
+    pushEntry(groupedTimestamps, span.remoteEndpoint.serviceName, value);
   }
-}
-
-export function getGroupedTimestamps(spans) {
-  const groupedTimestamps = {};
-  for (let i = 0; i < spans.length; i++) {
-    addServiceNameTimestampDuration(spans[i], groupedTimestamps);
-  }
-  return groupedTimestamps;
-}
-
-// returns 'critical' if one of the spans has an error tag, else
-// returns 'transient' if one of the spans has an ERROR annotation, else
-// returns 'none'
-export function getTraceErrorType(spans) {
-  let traceType = 'none';
-  for (let i = 0; i < spans.length; i++) {
-    const span = spans[i];
-    if (span.tags.error !== undefined) { // empty error tag is ok
-      return 'critical';
-    } else if (traceType === 'none' &&
-               _(span.annotations).findIndex(ann => ann.value === 'error') !== -1) {
-      traceType = 'transient';
-    }
-  }
-  return traceType;
 }
 
 // Returns null on empty or when missing a timestamp
-export function traceSummary(trace = []) {
-  if (trace.length === 0) {
-    throw new Error('Trace was empty');
-  }
-  if (!trace[0].timestamp) {
-    throw new Error('Trace is missing a timestamp');
-  }
+export function traceSummary(root) {
+  const timestamps = [];
+  const groupedTimestamps = {};
 
-  const traceId = trace[0].traceId;
-  const timestamp = trace[0].timestamp;
-  const duration = getTraceDuration(trace);
-  const groupedTimestamps = getGroupedTimestamps(trace);
-  const errorType = getTraceErrorType(trace);
-  const spanCount = trace.length;
+  let traceId;
+  let spanCount = 0;
+  let errorType = 'none';
+
+  root.traverse(span => {
+    spanCount++;
+    traceId = span.traceId;
+    errorType = getErrorType(span, errorType);
+    addStartEndTimestamps(span, timestamps);
+    addServiceNameTimestampDuration(span, groupedTimestamps);
+  });
+
+  if (timestamps.length === 0) throw new Error(`Trace ${traceId} is missing a timestamp`);
+
   return {
     traceId,
-    timestamp,
-    duration,
+    timestamp: timestamps[0],
+    duration: getMaxDuration(timestamps),
     groupedTimestamps,
     errorType,
     spanCount

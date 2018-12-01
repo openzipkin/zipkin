@@ -46,23 +46,33 @@ class SpanNode {
     this._children.push(child);
   }
 
-  // Returns an array of spans resulting from a breadth-first traversal at this node
-  traverse() {
-    const result = [];
-    const queue = [this];
+  // throws an error if the trace was empty
+  queueRootMostSpans() {
+    const queue = [];
+    // since the input data could be headless, we first push onto the queue the root-most spans
+    if (typeof(this.span) === 'undefined') { // synthetic root
+      this.children.forEach(child => queue.push(child));
+    } else {
+      queue.push(this);
+    }
+    if (queue.length === 0) throw new Error('Trace was empty');
+    return queue;
+  }
+
+  // Invokes the callback for each span resulting from a breadth-first traversal at this node
+  traverse(spanCallback) {
+    const queue = this.queueRootMostSpans();
 
     while (queue.length > 0) {
       const current = queue.shift();
 
-      // when there's a synthetic root span, the span could be undefined
-      if (current.span) result.push(current.span);
+      spanCallback(current.span);
 
       const children = current.children;
       for (let i = 0; i < children.length; i++) {
         queue.push(children[i]);
       }
     }
-    return result;
   }
 
   toString() {

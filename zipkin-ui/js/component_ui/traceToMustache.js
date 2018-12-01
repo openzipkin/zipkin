@@ -1,15 +1,5 @@
-import {getTraceDuration, mkDurationStr} from './traceSummary';
+import {getErrorType, addStartEndTimestamps, getMaxDuration, mkDurationStr} from './traceSummary';
 import {SPAN_V1} from '../spanConverter';
-
-function getErrorType(span) {
-  if (span.tags.findIndex(b => b.key === 'error') !== -1) {
-    return 'critical';
-  } else if (span.annotations.findIndex(a => a.value === 'error') !== -1) { // TODO: indexOf!
-    return 'transient';
-  } else {
-    return 'none';
-  }
-}
 
 function incrementEntry(dict, key) {
   if (dict[key]) {
@@ -19,36 +9,34 @@ function incrementEntry(dict, key) {
   }
 }
 
+// We need to do an initial traversal in order to get the timestamp and duration of the trace,
+// as that is used for positioning spans later.
+function getTraceTimestampAndDuration(root) {
+  const timestamps = [];
+  root.traverse(span => addStartEndTimestamps(span, timestamps));
+  return {
+    traceTimestamp: timestamps[0] || 0,
+    traceDuration: getMaxDuration(timestamps)
+  };
+}
+
 export function traceToMustache(root, logsUrl) {
-  const spans = root.traverse();
-  if (spans.length === 0) throw new Error('Trace was empty');
-  const traceTimestamp = spans[0].timestamp;
-  if (!traceTimestamp) throw new Error('Trace is missing a timestamp');
-
-  // currently we need to pass one traversal in order to get the duration
-  const traceDuration = getTraceDuration(spans);
-
+  const serviceNameToCount = {};
+  const queue = root.queueRootMostSpans();
   const modelview = {
-    traceId: spans[0].traceId,
+    traceId: queue[0].span.traceId,
     depth: 0,
     spans: []
   };
 
-  const queue = [];
-
-  // since the input data could be headless, we first push onto the queue the root-most spans
-  if (typeof(root.span) === 'undefined') { // synthetic root
-    root.children.forEach(child => queue.push(child));
-  } else {
-    queue.push(root);
-  }
-
-  const serviceNameToCount = {};
+  const {traceTimestamp, traceDuration} = getTraceTimestampAndDuration(root);
+  if (!traceTimestamp) throw new Error(`Trace ${modelview.traceId} is missing a timestamp`);
 
   while (queue.length > 0) {
     let current = queue.shift();
 
     let span = SPAN_V1.convert(current.span);
+    let errorType = getErrorType(current.span, 'none');
 
     // This is more than a normal tree traversal, as we are merging any server spans that share the
     // same ID. When that's the case, we pull up any of their children as if they are our own.
@@ -56,6 +44,7 @@ export function traceToMustache(root, logsUrl) {
     current.children.forEach(child => {
       if (child.span.id === span.id) {
         span = SPAN_V1.merge(span, SPAN_V1.convert(child.span));
+        errorType = getErrorType(child.span, errorType);
         child.children.forEach(grandChild => {
           queue.push(grandChild);
           childIds.push(grandChild.span.id);
@@ -87,11 +76,12 @@ export function traceToMustache(root, logsUrl) {
       annotations: span.annotations.map((a) => ({
         ...a,
         left: spanDuration ? (a.timestamp - spanStartTs) / spanDuration * 100 : 0,
+        // TODO: do we really want relative time of annotations to be relative to the trace?
         relativeTime: mkDurationStr(a.timestamp - traceTimestamp),
         width: 8
       })),
       tags: span.tags,
-      errorType: getErrorType(span)
+      errorType
     };
 
     // Optionally add fields instead of defaulting to empty string
