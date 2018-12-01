@@ -1,17 +1,42 @@
-const {
-  SpanNode,
-  SpanNodeBuilder
-} = require('../js/spanNode');
+const {SpanNode, SpanNodeBuilder} = require('../js/spanNode');
 import {clean, mergeV2ById} from '../js/spanCleaner';
 const should = require('chai').should();
 
 // originally zipkin2.internal.SpanNodeTest.java
+describe('queueRootMostSpans', () => {
+  it('should throw error on empty trace', () => {
+    let error;
+    try {
+      new SpanNode().queueRootMostSpans();
+    } catch (err) {
+      error = err;
+    }
+
+    expect(error.message).to.eql('Trace was empty');
+  });
+
+  it('should queue root', () => {
+    const root = new SpanNode({traceId: '1', id: '1'});
+    expect(root.queueRootMostSpans()).to.deep.equal([root]);
+  });
+
+  it('should queue root-most', () => {
+    const root = new SpanNode();
+    const a = new SpanNode({traceId: '1', id: 'a'});
+    root.addChild(a);
+    const b = new SpanNode({traceId: '1', id: 'b'});
+    root.addChild(b);
+
+    expect(root.queueRootMostSpans()).to.deep.equal([a, b]);
+  });
+});
+
 describe('SpanNode', () => {
   it('should construct without a span', () => {
     const span = {traceId: '1', id: '1'};
     const node = new SpanNode(span);
 
-    expect(node.span).to.equal(span);
+    expect(node.span).to.deep.equal(span);
   });
 
   it('should construct without a span', () => {
@@ -58,7 +83,10 @@ describe('SpanNode', () => {
    *           h
    */
   it('should traverse breadth first', () => {
-    expect(a.traverse().map(s => s.id)).to.deep.equal([
+    const ids = [];
+    a.traverse(s => ids.push(s.id));
+
+    expect(ids).to.eql([
       'a', 'b', 'c', 'd', 'e', 'f', '1', '2'
     ]);
   });
@@ -90,11 +118,11 @@ describe('SpanNodeBuilder', () => {
     // sure the trace is stitched together by id.
     const root = new SpanNodeBuilder({}).build(trace.slice(0).reverse());
 
-    expect(root.span).to.deep.equal(trace[0]);
-    expect(root.children.map(n => n.span)).to.deep.equal([trace[1]]);
+    expect(root.span).to.eql(trace[0]);
+    expect(root.children.map(n => n.span)).to.eql([trace[1]]);
 
     const child = root.children[0];
-    expect(child.children.map(n => n.span)).to.deep.equal([trace[2]]);
+    expect(child.children.map(n => n.span)).to.eql([trace[2]]);
   });
 
   // input should be merged, but this ensures we are fine anyway
@@ -107,8 +135,8 @@ describe('SpanNodeBuilder', () => {
 
     const root = new SpanNodeBuilder({}).build(trace);
 
-    expect(root.span).to.deep.equal(clean(trace[0]));
-    expect(root.children.length).to.equal(0);
+    expect(root.span).to.eql(clean(trace[0]));
+    expect(root.children.length).to.deep.equal(0);
   });
 
   it('should allocate spans missing parents to root', () => {
@@ -122,9 +150,11 @@ describe('SpanNodeBuilder', () => {
 
     const root = new SpanNodeBuilder({}).build(trace);
 
-    expect(root.traverse()).to.deep.equal(trace);
+    const spans = [];
+    root.traverse(span => spans.push(span));
+    expect(spans).to.eql(trace);
     expect(root.span.id).to.eql('000000000000000b');
-    expect(root.children.map(n => n.span)).to.deep.equal(trace.slice(1));
+    expect(root.children.map(n => n.span)).to.eql(trace.slice(1));
   });
 
   // spans are often reported depth-first, so it is possible to not have a root yet
@@ -138,7 +168,10 @@ describe('SpanNodeBuilder', () => {
     const root = new SpanNodeBuilder({}).build(trace);
 
     should.equal(root.span, undefined);
-    expect(root.traverse()).to.deep.equal(trace);
+
+    const spans = [];
+    root.traverse(span => spans.push(span));
+    expect(spans).to.eql(trace);
   });
 
   // input should be well formed, but this ensures we are fine anyway
@@ -149,8 +182,8 @@ describe('SpanNodeBuilder', () => {
 
     const root = new SpanNodeBuilder({}).build(trace);
 
-    expect(root.span).to.deep.equal(
+    expect(root.span).to.eql(
           {traceId: '000000000000000a', id: '000000000000000b', annotations: [], tags: {}});
-    expect(root.children.length).to.equal(0);
+    expect(root.children.length).to.deep.equal(0);
   });
 });

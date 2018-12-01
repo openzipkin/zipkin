@@ -1,23 +1,23 @@
 import {
   traceSummary,
-  getGroupedTimestamps,
-  getTraceErrorType,
+  getErrorType,
   traceSummariesToMustache,
   mkDurationStr,
   totalDuration,
-  getTraceDuration
 } from '../../js/component_ui/traceSummary';
-const {clean, mergeV2ById} = require('../../js/spanCleaner');
+const {SpanNode} = require('../../js/spanNode');
+const {clean} = require('../../js/spanCleaner');
+const {treeCorrectedForClockSkew} = require('../../js/skew');
 import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
 
 chai.config.truncateThreshold = 0;
 
-// cleans the data as traceSummary expects data to be normalized
-const cleanedHttpTrace = mergeV2ById(httpTrace);
+// renders data into a tree for traceMustache
+const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
 
-describe('getGroupedTimestamps', () => {
+describe('traceSummary', () => {
   it('should classify durations local to the endpoint', () => {
-    getGroupedTimestamps(cleanedHttpTrace).should.eql(
+    expect(traceSummary(cleanedHttpTrace).groupedTimestamps).to.eql(
       {
         frontend: [
           {timestamp: 1541138169255688, duration: 168731},
@@ -32,25 +32,23 @@ describe('getGroupedTimestamps', () => {
 
   // Ex netflix sometimes add annotations with no duration
   it('should backfill incomplete duration as zero instead of undefined', () => {
-    const testTrace = [
-      {
-        traceId: '2480ccca8df0fca5',
-        id: '2480ccca8df0fca5',
-        kind: 'CLIENT',
-        timestamp: 1541138169297572,
-        duration: 111121,
-        localEndpoint: frontend
-      },
-      {
-        traceId: '2480ccca8df0fca5',
-        parentId: '2480ccca8df0fca5',
-        id: 'bf396325699c84bf',
-        timestamp: 1541138169377997,
-        localEndpoint: backend,
-      }
-    ];
+    const testTrace = new SpanNode(clean({
+      traceId: '2480ccca8df0fca5',
+      id: '2480ccca8df0fca5',
+      kind: 'CLIENT',
+      timestamp: 1541138169297572,
+      duration: 111121,
+      localEndpoint: frontend
+    }));
+    testTrace.addChild(new SpanNode(clean({
+      traceId: '2480ccca8df0fca5',
+      parentId: '2480ccca8df0fca5',
+      id: 'bf396325699c84bf',
+      timestamp: 1541138169377997,
+      localEndpoint: backend,
+    })));
 
-    getGroupedTimestamps(testTrace).should.eql(
+    expect(traceSummary(testTrace).groupedTimestamps).to.eql(
       {
         frontend: [
           {timestamp: 1541138169297572, duration: 111121}
@@ -62,170 +60,113 @@ describe('getGroupedTimestamps', () => {
     );
   });
 
-  // since data is derived from this, we still need to report the service name even if there
-  // are no timestamps.
-  it('should backfill incomplete timestamp as zero instead of undefined', () => {
-    const testTrace = [
-      {
-        traceId: '2480ccca8df0fca5',
-        id: '2480ccca8df0fca5',
-        kind: 'CLIENT',
-        localEndpoint: frontend
-      },
-      {
-        traceId: '2480ccca8df0fca5',
-        parentId: '2480ccca8df0fca5',
-        id: 'bf396325699c84bf',
-        name: 'foo',
-        localEndpoint: backend,
-      }
-    ];
-
-    getGroupedTimestamps(testTrace).should.eql(
-      {
-        frontend: [{timestamp: 0, duration: 0}],
-        backend: [{timestamp: 0, duration: 0}]
-      }
-    );
-  });
-});
-
-describe('traceSummary', () => {
-  it('should throw error on empty trace', () => {
-    let error;
-    try {
-      traceSummary([]);
-    } catch (err) {
-      error = err;
-    }
-
-    expect(error.message).to.eql('Trace was empty');
-  });
-
   it('should throw error on trace missing timestamp', () => {
     let error;
     try {
-      traceSummary([{
+      traceSummary(new SpanNode(clean({
         traceId: '1e223ff1f80f1c69',
         id: 'bf396325699c84bf'
-      }]);
+      })));
     } catch (err) {
       error = err;
     }
 
-    expect(error.message).to.eql('Trace is missing a timestamp');
+    expect(error.message).to.eql('Trace 1e223ff1f80f1c69 is missing a timestamp');
   });
 
   it('calculates timestamp and duration', () => {
     const summary = traceSummary(cleanedHttpTrace);
-    const rootSpan = cleanedHttpTrace.find(s => s.traceId === s.id);
-    summary.timestamp.should.equal(rootSpan.timestamp);
-    summary.duration.should.equal(rootSpan.duration);
+    summary.timestamp.should.equal(cleanedHttpTrace.span.timestamp);
+    summary.duration.should.equal(cleanedHttpTrace.span.duration);
   });
 
   it('should get span count', () => {
     const summary = traceSummary(cleanedHttpTrace);
-    summary.spanCount.should.equal(cleanedHttpTrace.length);
+    summary.spanCount.should.equal(httpTrace.length);
   });
 });
 
-describe('getTraceErrorType', () => {
+describe('getErrorType', () => {
   it('should return none if annotations and tags are empty', () => {
-    const spans = [{
+    const span = {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [],
       tags: {}
-    }];
-    expect(getTraceErrorType(spans)).to.equal('none');
+    };
+    expect(getErrorType(span, 'none')).to.equal('none');
   });
 
   it('should return none if ann=noError and tag=noError', () => {
-    const spans = [{
+    const span = {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'not'}],
       tags: {not: 'error'}
-    }];
-    expect(getTraceErrorType(spans)).to.equal('none');
+    };
+    expect(getErrorType(span, 'none')).to.equal('none');
   });
 
   it('should return none if second span has ann=noError and tag=noError', () => {
-    const spans = [
-      {
-        traceId: '1e223ff1f80f1c69',
-        id: '1e223ff1f80f1c69',
-        annotations: [],
-        tags: {}
-      },
-      {
-        traceId: '1e223ff1f80f1c69',
-        parentId: '1e223ff1f80f1c69',
-        id: 'bf396325699c84bf',
-        annotations: [{timestamp: 1, value: 'not'}],
-        tags: {not: 'error'}
-      }
-    ];
-    expect(getTraceErrorType(spans)).to.equal('none');
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      parentId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'not'}],
+      tags: {not: 'error'}
+    };
+    expect(getErrorType(span, 'none')).to.equal('none');
   });
 
   it('should return critical if ann empty and tag=error', () => {
-    const spans = [{
+    const span = {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [],
       tags: {error: ''}
-    }];
-    expect(getTraceErrorType(spans)).to.equal('critical');
+    };
+    expect(getErrorType(span, 'none')).to.equal('critical');
   });
 
   it('should return critical if ann=noError and tag=error', () => {
-    const spans = [{
+    const span = {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'not'}],
       tags: {error: ''}
-    }];
-    expect(getTraceErrorType(spans)).to.equal('critical');
+    };
+    expect(getErrorType(span, 'none')).to.equal('critical');
   });
 
   it('should return critical if ann=error and tag=error', () => {
-    const spans = [{
+    const span = {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'error'}],
       tags: {error: ''}
-    }];
-    expect(getTraceErrorType(spans)).to.equal('critical');
+    };
+    expect(getErrorType(span, 'none')).to.equal('critical');
   });
 
   it('should return critical if span1 has ann=error and span2 has tag=error', () => {
-    const spans = [
-      {
-        traceId: '1e223ff1f80f1c69',
-        id: '1e223ff1f80f1c69',
-        annotations: [{timestamp: 1, value: 'error'}],
-        tags: {}
-      },
-      {
-        traceId: '1e223ff1f80f1c69',
-        parentId: '1e223ff1f80f1c69',
-        id: 'bf396325699c84bf',
-        annotations: [],
-        tags: {error: ''}
-      }
-    ];
-    expect(getTraceErrorType(spans)).to.equal('critical');
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      parentId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [],
+      tags: {error: ''}
+    };
+    expect(getErrorType(span, 'transient')).to.equal('critical');
   });
 
   it('should return transient if ann=error and tag noError', () => {
-    const spans = [{
+    const span = {
       traceId: '1e223ff1f80f1c69',
       id: 'bf396325699c84bf',
       annotations: [{timestamp: 1, value: 'error'}],
       tags: {not: 'error'}
-    }];
-    expect(getTraceErrorType(spans)).to.equal('transient');
+    };
+    expect(getErrorType(span)).to.equal('transient');
   });
 });
 
@@ -302,33 +243,33 @@ describe('traceSummariesToMustache', () => {
   it('should get correct spanCount', () => {
     const testSummary = traceSummary(cleanedHttpTrace);
     const model = traceSummariesToMustache(null, [testSummary])[0];
-    model.spanCount.should.equal(cleanedHttpTrace.length);
+    model.spanCount.should.equal(httpTrace.length);
   });
 
   it('should order traces by duration and tie-break using trace id', () => {
     const traceId1 = '9ed44141f679130b';
     const traceId2 = '6ff1c14161f7bde1';
     const traceId3 = '1234561234561234';
-    const summary1 = traceSummary([clean({
+    const summary1 = traceSummary(new SpanNode(clean({
       traceId: traceId1,
       name: 'get',
       id: '6ff1c14161f7bde1',
       timestamp: 1457186441657000,
-      duration: 4000})]);
-    const summary2 = traceSummary([clean({
+      duration: 4000})));
+    const summary2 = traceSummary(new SpanNode(clean({
       traceId: traceId2,
       name: 'get',
       id: '9ed44141f679130b',
       timestamp: 1457186568026000,
       duration: 4000
-    })]);
-    const summary3 = traceSummary([clean({
+    })));
+    const summary3 = traceSummary(new SpanNode(clean({
       traceId: traceId3,
       name: 'get',
       id: '6677567324735',
       timestamp: 1457186568027000,
       duration: 3000
-    })]);
+    })));
 
     const model = traceSummariesToMustache(null, [summary1, summary2, summary3]);
     model[0].traceId.should.equal(traceId2);
@@ -398,44 +339,5 @@ describe('totalDuration', () => {
       {timestamp: 20, duration: 210}
     ];
     totalDuration(rootLongest).should.equal(300);
-  });
-});
-
-describe('getTraceDuration', () => {
-  it('should return zero on empty input', () => {
-    getTraceDuration([]).should.equal(0);
-  });
-
-  it('should return only duration when single input', () => {
-    getTraceDuration([{timestamp: 10, duration: 200}]).should.equal(200);
-  });
-
-  it('should return root span duration when no children complete after root', () => {
-    const rootLongest = [
-      {timestamp: 1, duration: 300},
-      {timestamp: 10, duration: 200},
-      {timestamp: 20, duration: 210}
-    ];
-    getTraceDuration(rootLongest).should.equal(300);
-  });
-
-  it('should return the distance from the earliest event to the end of the last', () => {
-    // In a messaging or async trace, the child span can start well after the first completes
-    const asyncTrace = [
-      {timestamp: 1, duration: 300},
-      {timestamp: 11, duration: 200},
-      {timestamp: 390, duration: 20},
-      {timestamp: 400, duration: 30},
-    ];
-    getTraceDuration(asyncTrace).should.equal(400 + 30 - 1);
-  });
-
-  it('should ignore input missing duration', () => {
-    const rootLongest = [
-      {timestamp: 1, duration: 300},
-      {timestamp: 10}, // incomplete span
-      {timestamp: 20, duration: 210}
-    ];
-    getTraceDuration(rootLongest).should.equal(300);
   });
 });

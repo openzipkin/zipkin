@@ -9,14 +9,14 @@ const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
 describe('traceToMustache', () => {
   it('should show logsUrl', () => {
     const {logsUrl} = traceToMustache(cleanedHttpTrace, 'http/url.com');
-    logsUrl.should.equal('http/url.com');
+    expect(logsUrl).to.equal('http/url.com');
   });
 
   it('should derive summary info', () => {
     const {traceId, durationStr, depth, serviceNameAndSpanCounts} =
       traceToMustache(cleanedHttpTrace);
 
-    traceId.should.equal('bb1f0e21882325b8');
+    expect(traceId).to.equal('bb1f0e21882325b8');
     durationStr.should.equal('168.731ms');
     depth.should.equal(2); // number of span rows (distinct span IDs)
     serviceNameAndSpanCounts.should.eql([
@@ -34,7 +34,7 @@ describe('traceToMustache', () => {
     const {traceId, durationStr, depth, serviceNameAndSpanCounts} =
       traceToMustache(headless);
 
-    traceId.should.equal('bb1f0e21882325b8');
+    expect(traceId).to.equal('bb1f0e21882325b8');
     durationStr.should.equal('111.121ms'); // client duration
     depth.should.equal(1); // number of span rows (distinct span IDs)
     serviceNameAndSpanCounts.should.eql([

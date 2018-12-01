@@ -321,7 +321,7 @@ describe('convertSuccessResponse', () => {
       error = err;
     }
 
-    expect(error.message).to.eql('Trace is missing a timestamp');
+    expect(error.message).to.eql('Trace 0000000000000002 is missing a timestamp');
   });
 
   it('should convert a skewed trace', () => {

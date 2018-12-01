@@ -5,6 +5,8 @@ import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
 import {treeCorrectedForClockSkew} from '../skew';
 
+const debug = false;
+
 export function convertDurationToMicrosecond(duration) {
   const match = duration.match(/^(\d+)(us|μs|ms|s)$/i);
   if (match) {
@@ -67,9 +69,12 @@ export function convertSuccessResponse(rawResponse, serviceName, apiURL, utc = f
   rawResponse.forEach((raw) => {
     if (raw.length === 0) return;
 
-    const corrected = treeCorrectedForClockSkew(raw).traverse();
-    if (corrected.length > 0 && corrected[0].timestamp) {
+    const corrected = treeCorrectedForClockSkew(raw);
+    try {
       summaries.push(traceSummary(corrected));
+    } catch (e) {
+      /* eslint-disable no-console */
+      if (debug) console.log(e.toString());
     }
   });
 
