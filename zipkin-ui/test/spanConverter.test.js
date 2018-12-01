@@ -1,4 +1,4 @@
-const {SPAN_V1, formatEndpoint} = require('../js/spanConverter');
+const {SPAN_V1, getErrorType, formatEndpoint} = require('../js/spanConverter');
 const {clean} = require('../js/spanCleaner');
 
 // endpoints from zipkin2.TestObjects
@@ -13,6 +13,90 @@ const backend = {
   ipv4: '192.168.99.101',
   port: 9000
 };
+
+describe('getErrorType', () => {
+  it('should return none if annotations and tags are empty', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [],
+      tags: {}
+    };
+    expect(getErrorType(span, 'none')).to.equal('none');
+  });
+
+  it('should return none if ann=noError and tag=noError', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'not'}],
+      tags: {not: 'error'}
+    };
+    expect(getErrorType(span, 'none')).to.equal('none');
+  });
+
+  it('should return none if second span has ann=noError and tag=noError', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      parentId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'not'}],
+      tags: {not: 'error'}
+    };
+    expect(getErrorType(span, 'none')).to.equal('none');
+  });
+
+  it('should return critical if ann empty and tag=error', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [],
+      tags: {error: ''}
+    };
+    expect(getErrorType(span, 'none')).to.equal('critical');
+  });
+
+  it('should return critical if ann=noError and tag=error', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'not'}],
+      tags: {error: ''}
+    };
+    expect(getErrorType(span, 'none')).to.equal('critical');
+  });
+
+  it('should return critical if ann=error and tag=error', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'error'}],
+      tags: {error: ''}
+    };
+    expect(getErrorType(span, 'none')).to.equal('critical');
+  });
+
+  it('should return critical if span1 has ann=error and span2 has tag=error', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      parentId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [],
+      tags: {error: ''}
+    };
+    expect(getErrorType(span, 'transient')).to.equal('critical');
+  });
+
+  it('should return transient if ann=error and tag noError', () => {
+    const span = {
+      traceId: '1e223ff1f80f1c69',
+      id: 'bf396325699c84bf',
+      annotations: [{timestamp: 1, value: 'error'}],
+      tags: {not: 'error'}
+    };
+    expect(getErrorType(span)).to.equal('transient');
+  });
+});
 
 describe('SPAN v2 -> v1 Conversion', () => {
   // originally zipkin2.v1.SpanConverterTest.client
@@ -87,7 +171,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
         }
       ],
       serviceName: 'frontend', // prefer the local address vs remote
-      serviceNames: ['backend', 'frontend']
+      serviceNames: ['backend', 'frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -139,7 +224,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [], // prefers empty array to nil
       serviceName: 'frontend',
-      serviceNames: ['frontend']
+      serviceNames: ['frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -181,7 +267,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [],
       serviceName: 'frontend',
-      serviceNames: ['frontend']
+      serviceNames: ['frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -215,7 +302,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
       serviceName: 'frontend',
-      serviceNames: ['backend', 'frontend']
+      serviceNames: ['backend', 'frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -236,7 +324,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000003',
       annotations: [],
       tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
-      serviceNames: ['backend']
+      serviceNames: ['backend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -268,7 +357,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
         {key: 'Server Address', value: '192.168.99.101:9000 (backend)'}
       ],
       serviceName: 'frontend',
-      serviceNames: ['backend', 'frontend']
+      serviceNames: ['backend', 'frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -318,7 +408,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
         {key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}
       ],
       serviceName: 'backend',
-      serviceNames: ['backend', 'frontend']
+      serviceNames: ['backend', 'frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -344,7 +435,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 207000,
       annotations: [],
       tags: [],
-      serviceNames: []
+      serviceNames: [],
+      errorType: 'none'
     };
 
     const expected = SPAN_V1.merge([v2]);
@@ -376,7 +468,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
         }
       ],
       tags: [],
-      serviceNames: []
+      serviceNames: [],
+      errorType: 'none'
     };
 
     const expected = SPAN_V1.merge([v2]);
@@ -418,7 +511,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [],
       serviceName: 'backend',
-      serviceNames: ['backend']
+      serviceNames: ['backend'],
+      errorType: 'none'
     };
 
     const expected = SPAN_V1.merge([v2]);
@@ -453,7 +547,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [],
       serviceName: 'backend',
-      serviceNames: ['backend']
+      serviceNames: ['backend'],
+      errorType: 'none'
     };
 
     const expected = SPAN_V1.merge([v2]);
@@ -486,7 +581,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
       serviceName: 'backend',
-      serviceNames: ['backend', 'frontend']
+      serviceNames: ['backend', 'frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -506,7 +602,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       id: '0000000000000002',
       annotations: [],
       tags: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
-      serviceNames: ['frontend']
+      serviceNames: ['frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -532,7 +629,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       annotations: [],
       tags: [{key: 'Local Address', value: 'frontend'}],
       serviceName: 'frontend',
-      serviceNames: ['frontend']
+      serviceNames: ['frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -566,7 +664,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [],
       serviceName: 'frontend',
-      serviceNames: ['frontend']
+      serviceNames: ['frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -608,7 +707,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [],
       serviceName: 'frontend',
-      serviceNames: ['frontend']
+      serviceNames: ['frontend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -642,7 +742,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [],
       serviceName: 'backend',
-      serviceNames: ['backend']
+      serviceNames: ['backend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -677,7 +778,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [{key: 'Broker Address', value: 'kafka'}],
       serviceName: 'backend',
-      serviceNames: ['backend', 'kafka']
+      serviceNames: ['backend', 'kafka'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -719,7 +821,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [],
       serviceName: 'backend',
-      serviceNames: ['backend']
+      serviceNames: ['backend'],
+      errorType: 'none'
     };
 
     expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
@@ -816,7 +919,8 @@ describe('SPAN v1 Merge', () => {
     ],
     tags: [],
     serviceName: 'backend', // prefer server in shared span
-    serviceNames: ['backend', 'frontend']
+    serviceNames: ['backend', 'frontend'],
+    errorType: 'none'
   };
 
   it('should merge server and client span', () => {

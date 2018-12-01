@@ -1,5 +1,18 @@
 import {ConstantNames} from './component_ui/traceConstants';
 
+// returns 'critical' if one of the spans has an error tag or currentErrorType was already critical,
+// returns 'transient' if one of the spans has an ERROR annotation, else
+// returns currentErrorType
+export function getErrorType(span, currentErrorType) {
+  if (currentErrorType === 'critical') return currentErrorType;
+  if (span.tags.error !== undefined) { // empty error tag is ok
+    return 'critical';
+  } else if (span.annotations.findIndex(ann => ann.value === 'error') !== -1) {
+    return 'transient';
+  }
+  return currentErrorType;
+}
+
 export function formatEndpoint(endpoint) {
   if (!endpoint) return undefined;
   const {ipv4, ipv6, port, serviceName} = endpoint;
@@ -254,7 +267,8 @@ function merge(spans) {
   const first = spans.shift();
   const res = {
     traceId: first.traceId,
-    id: first.id
+    id: first.id,
+    errorType: getErrorType(first, 'none')
   };
   if (first.parentId) res.parentId = first.parentId;
 
@@ -296,6 +310,8 @@ function merge(spans) {
 
     parseAnnotationRows(next).forEach((a) => maybePushAnnotation(res.annotations, a));
     parseTagRows(next).forEach((t) => maybePushTag(res.tags, t));
+
+    res.errorType = getErrorType(next, res.errorType);
 
     if (next.debug) res.debug = true;
   });
