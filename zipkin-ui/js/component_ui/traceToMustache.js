@@ -84,16 +84,21 @@ export function traceToMustache(root, logsUrl) {
       errorType: span.errorType
     };
 
+    // positions the span at the offset in the trace diagram.
+    if (traceDuration) {
+      uiSpan.left = parseFloat(spanStartTs - traceTimestamp) / parseFloat(traceDuration) * 100;
+    } else {
+      uiSpan.left = 0;
+    }
+
     // Optionally add fields instead of defaulting to empty string
     if (span.name) uiSpan.spanName = span.name;
     if (spanDuration) {
       const width = traceDuration ? spanDuration / traceDuration * 100 : 0;
       uiSpan.width = width < 0.1 ? 0.1 : width;
-      uiSpan.left = parseFloat(spanStartTs - traceTimestamp) / parseFloat(traceDuration) * 100;
       uiSpan.duration = spanDuration; // used in zoom
       uiSpan.durationStr = mkDurationStr(spanDuration); // bubble over the span in trace view
     } else {
-      uiSpan.left = 0;
       uiSpan.width = 0.1;
     }
     if (span.serviceName) uiSpan.serviceName = span.serviceName;

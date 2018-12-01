@@ -2,10 +2,11 @@ import {traceToMustache} from '../../js/component_ui/traceToMustache';
 const {SpanNode} = require('../../js/spanNode');
 const {clean} = require('../../js/spanCleaner');
 import {treeCorrectedForClockSkew} from '../../js/skew';
-import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
+import {httpTrace, netflixTrace, frontend, backend} from '../component_ui/traceTestHelpers';
 
 // renders data into a tree for traceMustache
 const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
+const cleanedNetflixTrace = treeCorrectedForClockSkew(netflixTrace);
 
 describe('traceToMustache', () => {
   it('should show logsUrl', () => {
@@ -24,6 +25,15 @@ describe('traceToMustache', () => {
       {serviceName: 'backend', spanCount: 1},
       {serviceName: 'frontend', spanCount: 2}
     ]);
+  });
+
+  it('should position incomplete spans at the correct offset', () => {
+    const {spans} = traceToMustache(cleanedNetflixTrace);
+
+    // the absolute values are not important, just checks that only the root span is at offset 0
+    spans.map(s => s.left).should.eql(
+      [0, 8.108108108108109, 16.216216216216218, 64.86486486486487]
+    );
   });
 
   it('should derive summary info even when headless', () => {
