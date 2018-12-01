@@ -1,4 +1,3 @@
-import _ from 'lodash';
 import {ConstantNames} from './component_ui/traceConstants';
 
 export function formatEndpoint(endpoint) {
@@ -18,34 +17,18 @@ export function formatEndpoint(endpoint) {
  * Derived means not annotated directly. Ex 'Server Start' reflects the the timestamp of a
  * kind=SERVER span. 'Server Finish' is timestamp+duration of the same.
  */
-function toV1Annotation(a, localFormatted, isDerived = false) {
+function toAnnotationRow(a, localFormatted, isDerived = false) {
   const res = {
     isDerived,
     value: ConstantNames[a.value] || a.value,
     timestamp: a.timestamp,
   };
-  if (localFormatted) {
-    res.endpoint = localFormatted;
-  }
+  if (localFormatted) res.endpoint = localFormatted;
   return res;
 }
 
-// ported from zipkin2.v1.V1SpanConverter
-function convertV1(span) {
-  const res = {
-    traceId: span.traceId
-  };
-
-  if (span.parentId) res.parentId = span.parentId;
-  res.id = span.id;
-  if (span.name) res.name = span.name;
-  if (span.debug) res.debug = true;
-
-  // Don't report timestamp and duration on shared spans (should be server, but not necessarily)
-  if (!span.shared) {
-    if (span.timestamp) res.timestamp = span.timestamp;
-    if (span.duration) res.duration = span.duration;
-  }
+function parseAnnotationRows(span) {
+  const localFormatted = formatEndpoint(span.localEndpoint) || undefined;
 
   let startTs = span.timestamp || 0;
   let endTs = startTs && span.duration ? startTs + span.duration : 0;
@@ -114,21 +97,16 @@ function convertV1(span) {
     }
   });
 
-  let addr = 'Server Address'; // default which will be unset later if needed
-
   switch (kind) {
     case 'CLIENT':
-      addr = 'Server Address';
       begin = 'Client Start';
       end = 'Client Finish';
       break;
     case 'SERVER':
-      addr = 'Client Address';
       begin = 'Server Start';
       end = 'Server Finish';
       break;
     case 'PRODUCER':
-      addr = 'Broker Address';
       begin = 'Producer Start';
       end = 'Producer Finish';
       if (startTs === 0 || (msTs !== 0 && msTs < startTs)) {
@@ -141,7 +119,6 @@ function convertV1(span) {
       }
       break;
     case 'CONSUMER':
-      addr = 'Broker Address';
       if (startTs === 0 || (wrTs !== 0 && wrTs < startTs)) {
         startTs = wrTs;
         wrTs = 0;
@@ -166,19 +143,15 @@ function convertV1(span) {
   if (wrTs) annotationsToAdd.push({timestamp: wrTs, value: 'wr'});
   if (mrTs) annotationsToAdd.push({timestamp: mrTs, value: 'mr'});
 
-  // If we didn't find a span kind, directly or indirectly, unset the addr
-  if (!span.remoteEndpoint) addr = undefined;
-
   const beginAnnotation = startTs && begin;
   const endAnnotation = endTs && end;
 
-  res.annotations = []; // prefer empty to undefined for arrays
+  const annotations = []; // prefer empty to undefined for arrays
 
-  const localFormatted = formatEndpoint(span.localEndpoint) || undefined;
   let annotationCount = annotationsToAdd.length;
   if (beginAnnotation) {
     annotationCount++;
-    res.annotations.push(toV1Annotation({
+    annotations.push(toAnnotationRow({
       value: begin,
       timestamp: startTs
     }, localFormatted, true));
@@ -187,55 +160,67 @@ function convertV1(span) {
   annotationsToAdd.forEach((a) => {
     if (beginAnnotation && a.value === begin) return;
     if (endAnnotation && a.value === end) return;
-    res.annotations.push(toV1Annotation(a, localFormatted));
+    annotations.push(toAnnotationRow(a, localFormatted));
   });
 
   if (endAnnotation) {
     annotationCount++;
-    res.annotations.push(toV1Annotation({
+    annotations.push(toAnnotationRow({
       value: end,
       timestamp: endTs
     }, localFormatted, true));
   }
+  return annotations;
+}
 
-  res.tags = []; // prefer empty to undefined for arrays
+function parseTagRows(span) {
+  const localFormatted = formatEndpoint(span.localEndpoint) || undefined;
+
+  const tagRows = []; // prefer empty to undefined for arrays
   const keys = Object.keys(span.tags);
   if (keys.length > 0) {
     keys.forEach(key => {
-      res.tags.push({
+      const tagRow = {
         key: ConstantNames[key] || key,
-        value: span.tags[key],
-        endpoint: localFormatted
-      });
+        value: span.tags[key]
+      };
+      if (localFormatted) tagRow.endpoint = localFormatted;
+      tagRows.push(tagRow);
     });
   }
 
-  // write a binary annotation when no tags are present to avoid having no context for a local span
-  if (annotationCount === 0 && localFormatted && keys.length === 0) {
-    res.tags.push({
+  // Ensure there's at least some data that will display the local address
+  if (!span.kind && span.annotations.length === 0 && localFormatted && keys.length === 0) {
+    tagRows.push({
       key: 'Local Address',
       value: localFormatted
     });
   }
 
-  if (addr && span.remoteEndpoint) {
-    res.tags.push({
-      key: addr,
+  let addr;
+  switch (span.kind) {
+    case 'CLIENT':
+      addr = 'Server Address';
+      break;
+    case 'SERVER':
+      addr = 'Client Address';
+      break;
+    case 'PRODUCER':
+      addr = 'Broker Address';
+      break;
+    case 'CONSUMER':
+      addr = 'Broker Address';
+      break;
+    default:
+  }
+
+  if (span.remoteEndpoint) {
+    tagRows.push({
+      key: addr || 'Server Address', // default when we don't know the endpoint
       value: formatEndpoint(span.remoteEndpoint)
     });
   }
-
-  res.serviceNames = [];
-  if (span.localEndpoint && span.localEndpoint.serviceName) {
-    res.serviceName = span.localEndpoint.serviceName;
-    res.serviceNames.push(span.localEndpoint.serviceName);
-  }
-  // add remote endpoint to the service names list IFF it isn't the same as the local one
-  if (span.remoteEndpoint && span.remoteEndpoint.serviceName
-    && span.remoteEndpoint.serviceName !== res.serviceName) {
-    res.serviceNames.push(span.remoteEndpoint.serviceName);
-  }
-  return res;
+  return tagRows;
 }
 
 // This guards to ensure we don't add duplicate annotations on merge
@@ -252,92 +237,75 @@ function maybePushTag(tags, a) {
   }
 }
 
+// This guards to ensure we don't add duplicate service names on merge
+function maybePushServiceName(serviceNames, serviceName) {
+  if (!serviceName) return;
+  if (serviceNames.findIndex(s => s === serviceName) === -1) {
+    serviceNames.push(serviceName);
+  }
+}
+
+function getServiceName(endpoint) {
+  return endpoint ? endpoint.serviceName : undefined;
+}
+
 // assumes spans are already clean
-function merge(left, right) {
+function merge(spans) {
+  const first = spans.shift();
   const res = {
-    traceId: right.traceId
+    traceId: first.traceId,
+    id: first.id
   };
+  if (first.parentId) res.parentId = first.parentId;
 
-  if (left.parentId) res.parentId = left.parentId;
-  if (right.parentId) res.parentId = right.parentId;
+  if (first.name) res.name = first.name;
 
-  res.id = left.id;
-  if (left.name) res.name = left.name;
+  if (!first.shared) {
+    if (first.timestamp) res.timestamp = first.timestamp;
+    if (first.duration) res.duration = first.duration;
+  }
 
-  // When we move to span model 2, remove this code in favor of using Span.kind == CLIENT
-  let leftClientSpan;
-  let rightClientSpan;
-  let rightServerSpan;
+  const firstServiceName = getServiceName(first.localEndpoint);
+  if (firstServiceName) res.serviceName = firstServiceName;
+  res.serviceNames = firstServiceName ? [firstServiceName] : [];
+  maybePushServiceName(res.serviceNames, getServiceName(first.remoteEndpoint));
 
-  res.annotations = [];
+  res.annotations = parseAnnotationRows(first);
+  res.tags = parseTagRows(first);
+  if (first.debug) res.debug = true;
 
-  left.annotations.forEach((a) => {
-    if (a.value === 'Client Start') leftClientSpan = true;
-    maybePushAnnotation(res.annotations, a);
+  spans.forEach(next => {
+    if (next.parentId) res.parentId = next.parentId;
+    if (next.name && (!res.name || next.kind === 'SERVER')) {
+      res.name = next.name; // prefer the server's span name
+    }
+
+    // If we have 2 different timestamps. Prefer the not shared one
+    if (!next.shared) {
+      if (!res.timestamp) res.timestamp = next.timestamp;
+      if (!res.duration) res.duration = next.duration;
+    }
+
+    const nextServiceName = getServiceName(next.localEndpoint);
+    if (next.kind === 'SERVER' && nextServiceName) {
+      res.serviceName = nextServiceName; // prefer the server's service name
+    }
+
+    maybePushServiceName(res.serviceNames, nextServiceName);
+    maybePushServiceName(res.serviceNames, getServiceName(next.remoteEndpoint));
+
+    parseAnnotationRows(next).forEach((a) => maybePushAnnotation(res.annotations, a));
+    parseTagRows(next).forEach((t) => maybePushTag(res.tags, t));
+
+    if (next.debug) res.debug = true;
   });
-
-  right.annotations.forEach((a) => {
-    if (a.value === 'Client Start') rightClientSpan = true;
-    if (a.value === 'Server Start') rightServerSpan = true;
-    maybePushAnnotation(res.annotations, a);
-  });
-
   res.annotations.sort((a, b) => a.timestamp - b.timestamp);
-
-  res.tags = [];
-
-  left.tags.forEach((t) => maybePushTag(res.tags, t));
-  right.tags.forEach((t) => maybePushTag(res.tags, t));
-
-  if (right.name && (!res.name || rightServerSpan)) {
-    res.name = right.name; // prefer the server's span name
-  }
-
-  // Single timestamp makes duration easy: just choose max
-  if (!left.timestamp || !right.timestamp || left.timestamp === right.timestamp) {
-    res.timestamp = left.timestamp || right.timestamp;
-    if (!left.duration) {
-      res.duration = right.duration;
-    } else if (right.duration) {
-      res.duration = Math.max(left.duration, right.duration);
-    } else {
-      res.duration = left.duration;
-    }
-  } else {
-    // We have 2 different timestamps. If we have client data in either one of them, use right,
-    // else set timestamp and duration to null
-    if (rightClientSpan) {
-      res.timestamp = right.timestamp;
-      res.duration = right.duration;
-    } else if (leftClientSpan) {
-      res.timestamp = left.timestamp;
-      res.duration = left.duration;
-    }
-  }
-
-  if (right.debug) res.debug = true;
-
-  if (left.serviceName) {
-    // in a shared span, prefer the server's name
-    res.serviceName = right.serviceName && leftClientSpan ? right.serviceName : left.serviceName;
-  } else if (right.serviceName) {
-    res.serviceName = right.serviceName;
-  }
-
-  // however, order the client-side service name first for consistency
-  res.serviceNames = leftClientSpan
-    ? _.union(left.serviceNames, right.serviceNames)
-    : _.union(right.serviceNames, left.serviceNames);
-  res.serviceNames = _(res.serviceNames).uniq().value();
-
+  res.serviceNames.sort();
   return res;
 }
 
 module.exports.SPAN_V1 = {
-  convert(v2Span) {
-    return convertV1(v2Span);
-  },
-  merge(v1Left, v1Right) {
-    return merge(v1Left, v1Right);
+  merge(spans) {
+    return merge(spans);
   }
 };

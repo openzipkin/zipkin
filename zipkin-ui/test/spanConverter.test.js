@@ -87,19 +87,19 @@ describe('SPAN v2 -> v1 Conversion', () => {
         }
       ],
       serviceName: 'frontend', // prefer the local address vs remote
-      serviceNames: ['frontend', 'backend']
+      serviceNames: ['backend', 'frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   it('should not duplicate service names', () => {
-    const converted = SPAN_V1.convert(clean({
+    const converted = SPAN_V1.merge([clean({
       traceId: '1',
       id: '3',
       localEndpoint: frontend,
       remoteEndpoint: frontend
-    }));
+    })]);
 
     expect(converted.serviceNames).to.deep.equal(['frontend']);
   });
@@ -142,7 +142,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.client_kindInferredFromAnnotation
@@ -184,7 +184,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_cr
@@ -215,10 +215,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       ],
       tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
       serviceName: 'frontend',
-      serviceNames: ['frontend', 'backend']
+      serviceNames: ['backend', 'frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_sa
@@ -239,7 +239,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.noAnnotationsExceptAddresses
@@ -268,10 +268,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
         {key: 'Server Address', value: '192.168.99.101:9000 (backend)'}
       ],
       serviceName: 'frontend',
-      serviceNames: ['frontend', 'backend']
+      serviceNames: ['backend', 'frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.server
@@ -321,7 +321,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend', 'frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.missingEndpoints
@@ -347,7 +347,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: []
     };
 
-    const expected = SPAN_V1.convert(v2);
+    const expected = SPAN_V1.merge([v2]);
     expect(v1).to.deep.equal(expected);
   });
 
@@ -379,7 +379,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: []
     };
 
-    const expected = SPAN_V1.convert(v2);
+    const expected = SPAN_V1.merge([v2]);
     expect(v1).to.deep.equal(expected);
   });
 
@@ -421,7 +421,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
+    const expected = SPAN_V1.merge([v2]);
     expect(v1).to.deep.equal(expected);
   });
 
@@ -456,7 +456,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend']
     };
 
-    const expected = SPAN_V1.convert(v2);
+    const expected = SPAN_V1.merge([v2]);
     expect(v1).to.deep.equal(expected);
   });
 
@@ -489,7 +489,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend', 'frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ca
@@ -509,7 +509,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.localSpan_emptyComponent
@@ -535,7 +535,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_remote
@@ -569,7 +569,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_duration
@@ -611,7 +611,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['frontend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer
@@ -645,7 +645,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_remote
@@ -680,7 +680,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend', 'kafka']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_duration
@@ -722,7 +722,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       serviceNames: ['backend']
     };
 
-    expect(SPAN_V1.convert(v2)).to.deep.equal(v1);
+    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
   });
 
   it('should prefer ipv6', () => {
@@ -739,7 +739,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       localEndpoint
     });
 
-    const v1 = SPAN_V1.convert(v2);
+    const v1 = SPAN_V1.merge([v2]);
     expect(v1.tags.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
   });
 
@@ -754,64 +754,37 @@ describe('SPAN v2 -> v1 Conversion', () => {
       }
     });
 
-    const v1 = SPAN_V1.convert(v2);
+    const v1 = SPAN_V1.merge([v2]);
     expect(v1.annotations.map(s => s.endpoint)).to.deep.equal(['[2001:db8::c001]']);
   });
 });
 
 describe('SPAN v1 Merge', () => {
-  const clientSpan = {
+  const clientSpan = clean({
     traceId: '1',
     parentId: '2',
     id: '3',
     name: 'get',
+    kind: 'CLIENT',
     timestamp: 1472470996199000,
     duration: 207000,
-    annotations: [
-      {
-        isDerived: true,
-        value: 'Client Start',
-        timestamp: 1472470996199000,
-        endpoint: '127.0.0.1:8080 (frontend)'
-      },
-      {
-        isDerived: true,
-        value: 'Client Finish',
-        timestamp: 1472470996406000,
-        endpoint: '127.0.0.1:8080 (frontend)'
-      }
-    ],
-    tags: [],
-    serviceName: 'frontend',
-    serviceNames: ['frontend']
-  };
-  const serverSpan = {
+    localEndpoint: frontend
+  });
+  const serverSpan = clean({
     traceId: '1',
     parentId: '2',
     id: '3',
     name: 'get',
-    annotations: [
-      {
-        isDerived: true,
-        value: 'Server Start',
-        timestamp: 1472470996238000,
-        endpoint: '192.168.99.101:9000 (backend)'
-      },
-      {
-        isDerived: true,
-        value: 'Server Finish',
-        timestamp: 1472470996403000,
-        endpoint: '192.168.99.101:9000 (backend)'
-      }
-    ],
-    tags: [],
-    serviceName: 'backend',
-    serviceNames: ['backend']
-  };
+    kind: 'SERVER',
+    timestamp: 1472470996238000,
+    duration: 165000,
+    localEndpoint: backend,
+    shared: true
+  });
   const mergedSpan = {
-    traceId: '1',
-    parentId: '2',
-    id: '3',
+    traceId: '0000000000000001',
+    parentId: '0000000000000002',
+    id: '0000000000000003',
     name: 'get',
     timestamp: 1472470996199000,
     duration: 207000,
@@ -843,29 +816,28 @@ describe('SPAN v1 Merge', () => {
     ],
     tags: [],
     serviceName: 'backend', // prefer server in shared span
-    serviceNames: ['frontend', 'backend']
+    serviceNames: ['backend', 'frontend']
   };
 
   it('should merge server and client span', () => {
-    const merged = SPAN_V1.merge(serverSpan, clientSpan);
+    const merged = SPAN_V1.merge([serverSpan, clientSpan]);
 
     expect(merged).to.deep.equal(mergedSpan);
   });
 
   it('should merge client and server span', () => {
-    const merged = SPAN_V1.merge(clientSpan, serverSpan);
+    const merged = SPAN_V1.merge([clientSpan, serverSpan]);
 
     expect(merged).to.deep.equal(mergedSpan);
   });
 
   // originally zipkin2.v1.SpanConverterTest.mergeWhenTagsSentSeparately
   it('should add late server addr', () => {
-    const merged = SPAN_V1.merge(clientSpan, {
+    const merged = SPAN_V1.merge([clientSpan, clean({
       traceId: '1',
       id: '3',
-      annotations: [],
-      tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]
-    });
+      remoteEndpoint: backend
+    })]);
 
     expect(merged.tags).to.deep.equal(
       [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]);
@@ -873,20 +845,15 @@ describe('SPAN v1 Merge', () => {
 
   // originally zipkin2.v1.SpanConverterTest.mergePrefersServerSpanName
   it('should overwrite client name with server name', () => {
-    const merged = SPAN_V1.merge(clientSpan, {
+    const merged = SPAN_V1.merge([clientSpan, clean({
       traceId: '1',
       id: '3',
       name: 'get /users/:userId',
-      annotations: [
-        {
-          isDerived: true,
-          value: 'Server Start',
-          timestamp: 1472470996238000,
-          endpoint: '192.168.99.101:9000 (backend)'
-        }
-      ],
-      tags: []
-    });
+      timestamp: 1472470996238000,
+      kind: 'SERVER',
+      localEndpoint: backend,
+      shared: true
+    })]);
 
     expect(merged.name).to.equal('get /users/:userId');
   });
@@ -899,85 +866,49 @@ describe('SPAN v1 Merge', () => {
     const rightTimestamp = 200 * 1000;
     const rightDuration = 30 * 1000;
 
-    const leftSpan = {
+    const leftSpan = clean({
       traceId: '1',
       parentId: '2',
       id: '3',
       name: 'get',
+      kind: 'CLIENT',
       timestamp: leftTimestamp,
       duration: leftDuration,
-      annotations: [
-        {
-          isDerived: true,
-          value: 'Client Start',
-          timestamp: leftTimestamp,
-          endpoint: '127.0.0.1:8080 (frontend)'
-        },
-        {
-          isDerived: true,
-          value: 'Client Finish',
-          timestamp: leftTimestamp + leftDuration,
-          endpoint: '127.0.0.1:8080 (frontend)'
-        }
-      ],
-      tags: [],
-      serviceName: 'frontend',
-      serviceNames: ['frontend']
-    };
+      localEndpoint: frontend
+    });
 
-    const rightSpan = {
+    const rightSpan = clean({
       traceId: '1',
       id: '3',
       name: 'get',
+      kind: 'SERVER',
       timestamp: rightTimestamp,
       duration: rightDuration,
-      annotations: [
-        {
-          isDerived: true,
-          value: 'Server Start',
-          timestamp: rightTimestamp,
-          endpoint: '192.168.99.101:9000 (backend)'
-        },
-        {
-          isDerived: true,
-          value: 'Server Finish',
-          timestamp: rightTimestamp + rightDuration,
-          endpoint: '192.168.99.101:9000 (backend)'
-        }
-      ],
-      tags: [],
-      serviceName: 'backend',
-      serviceNames: ['backend']
-    };
+      localEndpoint: backend,
+      shared: true
+    });
 
-    const leftFirst = SPAN_V1.merge(leftSpan, rightSpan);
-    const rightFirst = SPAN_V1.merge(rightSpan, leftSpan);
+    const leftFirst = SPAN_V1.merge([leftSpan, rightSpan]);
+    const rightFirst = SPAN_V1.merge([rightSpan, leftSpan]);
 
     [leftFirst, rightFirst].forEach((completeSpan) => {
       expect(completeSpan.timestamp).to.equal(leftTimestamp);
       expect(completeSpan.duration).to.equal(leftDuration);
 
       // ensure if server isn't propagated the parent ID, it is still ok.
-      expect(completeSpan.parentId).to.equal('2');
+      expect(completeSpan.parentId).to.equal('0000000000000002');
     });
   });
 
   it('should not overwrite client name with empty', () => {
-    const merged = SPAN_V1.merge(clientSpan, {
+    const merged = SPAN_V1.merge([clientSpan, clean({
       traceId: '1',
       id: '3',
-      annotations: [
-        {
-          isDerived: true,
-          value: 'Server Start',
-          timestamp: 1472470996238000,
-          endpoint: '192.168.99.101:9000 (backend)'
-        }
-      ],
-      tags: [],
-      serviceName: 'backend',
-      serviceNames: ['backend']
-    });
+      timestamp: 1472470996238000,
+      kind: 'SERVER',
+      localEndpoint: backend,
+      shared: true
+    })]);
 
     expect(merged.name).to.equal(clientSpan.name);
   });

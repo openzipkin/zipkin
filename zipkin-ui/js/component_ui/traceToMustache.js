@@ -35,15 +35,15 @@ export function traceToMustache(root, logsUrl) {
   while (queue.length > 0) {
     let current = queue.shift();
 
-    let span = SPAN_V1.convert(current.span);
     let errorType = getErrorType(current.span, 'none');
 
     // This is more than a normal tree traversal, as we are merging any server spans that share the
     // same ID. When that's the case, we pull up any of their children as if they are our own.
+    const spansToMerge = [current.span];
     const childIds = [];
     current.children.forEach(child => {
-      if (child.span.id === span.id) {
-        span = SPAN_V1.merge(span, SPAN_V1.convert(child.span));
+      if (current.span.id === child.span.id) {
+        spansToMerge.push(child.span);
         errorType = getErrorType(child.span, errorType);
         child.children.forEach(grandChild => {
           queue.push(grandChild);
@@ -54,6 +54,8 @@ export function traceToMustache(root, logsUrl) {
         childIds.push(child.span.id);
       }
     });
+
+    const span = SPAN_V1.merge(spansToMerge);
 
     // The mustache template expects one row per span ID. To get the correct depth class, we need to
     // count distinct span IDs above us.
