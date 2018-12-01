@@ -1,4 +1,4 @@
-import {getErrorType, addStartEndTimestamps, getMaxDuration, mkDurationStr} from './traceSummary';
+import {addStartEndTimestamps, getMaxDuration, mkDurationStr} from './traceSummary';
 import {SPAN_V1} from '../spanConverter';
 
 function incrementEntry(dict, key) {
@@ -35,8 +35,6 @@ export function traceToMustache(root, logsUrl) {
   while (queue.length > 0) {
     let current = queue.shift();
 
-    let errorType = getErrorType(current.span, 'none');
-
     // This is more than a normal tree traversal, as we are merging any server spans that share the
     // same ID. When that's the case, we pull up any of their children as if they are our own.
     const spansToMerge = [current.span];
@@ -44,7 +42,6 @@ export function traceToMustache(root, logsUrl) {
     current.children.forEach(child => {
       if (current.span.id === child.span.id) {
         spansToMerge.push(child.span);
-        errorType = getErrorType(child.span, errorType);
         child.children.forEach(grandChild => {
           queue.push(grandChild);
           childIds.push(grandChild.span.id);
@@ -54,8 +51,6 @@ export function traceToMustache(root, logsUrl) {
         childIds.push(child.span.id);
       }
     });
-
-    const span = SPAN_V1.merge(spansToMerge);
 
     // The mustache template expects one row per span ID. To get the correct depth class, we need to
     // count distinct span IDs above us.
@@ -67,6 +62,7 @@ export function traceToMustache(root, logsUrl) {
     // If we are the deepest span, mark the trace accordingly
     if (spanRowDepth > modelview.depth) modelview.depth = spanRowDepth;
 
+    const span = SPAN_V1.merge(spansToMerge);
     // TODO: merge the remaining "v1" type logic here so we don't have the confusion of a
     // double transformation
     const spanStartTs = span.timestamp || traceTimestamp;
@@ -83,7 +79,7 @@ export function traceToMustache(root, logsUrl) {
         width: 8
       })),
       tags: span.tags,
-      errorType
+      errorType: span.errorType
     };
 
     // Optionally add fields instead of defaulting to empty string

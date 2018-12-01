@@ -1,19 +1,7 @@
 // eslint-disable no-nested-ternary
 import _ from 'lodash';
 import moment from 'moment';
-
-// returns 'critical' if one of the spans has an error tag or currentErrorType was already critical,
-// returns 'transient' if one of the spans has an ERROR annotation, else
-// returns currentErrorType
-export function getErrorType(span, currentErrorType) {
-  if (currentErrorType === 'critical') return currentErrorType;
-  if (span.tags.error !== undefined) { // empty error tag is ok
-    return 'critical';
-  } else if (_(span.annotations).findIndex(ann => ann.value === 'error') !== -1) {
-    return 'transient';
-  }
-  return currentErrorType;
-}
+import {getErrorType} from '../spanConverter';
 
 export function addStartEndTimestamps(span, timestamps) {
   if (!span.timestamp) return;

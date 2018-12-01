@@ -1,6 +1,5 @@
 import {
   traceSummary,
-  getErrorType,
   traceSummariesToMustache,
   mkDurationStr,
   totalDuration,
@@ -83,90 +82,6 @@ describe('traceSummary', () => {
   it('should get span count', () => {
     const summary = traceSummary(cleanedHttpTrace);
     summary.spanCount.should.equal(httpTrace.length);
-  });
-});
-
-describe('getErrorType', () => {
-  it('should return none if annotations and tags are empty', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [],
-      tags: {}
-    };
-    expect(getErrorType(span, 'none')).to.equal('none');
-  });
-
-  it('should return none if ann=noError and tag=noError', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [{timestamp: 1, value: 'not'}],
-      tags: {not: 'error'}
-    };
-    expect(getErrorType(span, 'none')).to.equal('none');
-  });
-
-  it('should return none if second span has ann=noError and tag=noError', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      parentId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [{timestamp: 1, value: 'not'}],
-      tags: {not: 'error'}
-    };
-    expect(getErrorType(span, 'none')).to.equal('none');
-  });
-
-  it('should return critical if ann empty and tag=error', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [],
-      tags: {error: ''}
-    };
-    expect(getErrorType(span, 'none')).to.equal('critical');
-  });
-
-  it('should return critical if ann=noError and tag=error', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [{timestamp: 1, value: 'not'}],
-      tags: {error: ''}
-    };
-    expect(getErrorType(span, 'none')).to.equal('critical');
-  });
-
-  it('should return critical if ann=error and tag=error', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [{timestamp: 1, value: 'error'}],
-      tags: {error: ''}
-    };
-    expect(getErrorType(span, 'none')).to.equal('critical');
-  });
-
-  it('should return critical if span1 has ann=error and span2 has tag=error', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      parentId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [],
-      tags: {error: ''}
-    };
-    expect(getErrorType(span, 'transient')).to.equal('critical');
-  });
-
-  it('should return transient if ann=error and tag noError', () => {
-    const span = {
-      traceId: '1e223ff1f80f1c69',
-      id: 'bf396325699c84bf',
-      annotations: [{timestamp: 1, value: 'error'}],
-      tags: {not: 'error'}
-    };
-    expect(getErrorType(span)).to.equal('transient');
   });
 });
 
