@@ -241,7 +241,9 @@ function convertV1(span) {
     res.serviceName = span.localEndpoint.serviceName;
     res.serviceNames.push(span.localEndpoint.serviceName);
   }
-  if (span.remoteEndpoint && span.remoteEndpoint.serviceName) {
+  // add remote endpoint to the service names list IFF it isn't the same as the local one
+  if (span.remoteEndpoint && span.remoteEndpoint.serviceName
+    && span.remoteEndpoint.serviceName !== res.serviceName) {
     res.serviceNames.push(span.remoteEndpoint.serviceName);
   }
   return res;

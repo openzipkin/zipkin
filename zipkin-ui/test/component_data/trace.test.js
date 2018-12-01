@@ -41,7 +41,6 @@ describe('convertSuccessResponse', () => {
     const expectedTemplate = {
       traceId: '1e223ff1f80f1c69',
       depth: 1,
-      spanCount: 1,
       serviceNameAndSpanCounts: [],
       timeMarkers,
       timeMarkersBackup: timeMarkers,
@@ -228,7 +227,6 @@ describe('convertSuccessResponse', () => {
       traceId: 'bb1f0e21882325b8',
       durationStr: '168.731ms',
       depth: 2, // number of span rows (distinct span IDs)
-      spanCount: 3,
       serviceNameAndSpanCounts: [
         {serviceName: 'backend', spanCount: 1},
         {serviceName: 'frontend', spanCount: 2}
@@ -282,7 +280,6 @@ describe('convertSuccessResponse', () => {
       traceId: '1e223ff1f80f1c69',
       durationStr: '17μs',
       depth: 1,
-      spanCount: 1,
       serviceNameAndSpanCounts: [
         {serviceName: 'backend', spanCount: 1}
       ],
@@ -454,7 +451,6 @@ describe('convertSuccessResponse', () => {
       traceId: '1e223ff1f80f1c69',
       durationStr: '99.411ms',
       depth: 3, // number of span rows (distinct span IDs)
-      spanCount: 4,
       serviceNameAndSpanCounts: [
         {serviceName: 'servicea', spanCount: 2},
         {serviceName: 'serviceb', spanCount: 2}
