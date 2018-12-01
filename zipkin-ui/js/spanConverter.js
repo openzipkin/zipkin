@@ -1,5 +1,4 @@
 import _ from 'lodash';
-import {compare, normalizeTraceId} from './spanCleaner';
 import {ConstantNames} from './component_ui/traceConstants';
 
 export function formatEndpoint(endpoint) {
@@ -34,19 +33,11 @@ function toV1Annotation(a, localFormatted, isDerived = false) {
 // ported from zipkin2.v1.V1SpanConverter
 function convertV1(span) {
   const res = {
-    traceId: normalizeTraceId(span.traceId)
+    traceId: span.traceId
   };
 
-  // take care not to create self-referencing spans even if the input data is incorrect
-  const id = span.id.padStart(16, '0');
-  if (span.parentId) {
-    const parentId = span.parentId.padStart(16, '0');
-    if (parentId !== id) {
-      res.parentId = parentId;
-    }
-  }
-
-  res.id = id;
+  if (span.parentId) res.parentId = span.parentId;
+  res.id = span.id;
   if (span.name) res.name = span.name;
   if (span.debug) res.debug = true;
 
@@ -70,9 +61,7 @@ function convertV1(span) {
 
   // scan annotations in case there are better timestamps, or inferred kind
   const annotationsToAdd = [];
-  const annotationLength = span.annotations ? span.annotations.length : 0;
-  for (let i = 0; i < annotationLength; i++) {
-    const a = span.annotations[i];
+  span.annotations.forEach(a => {
     switch (a.value) {
       case 'cs':
         kind = 'CLIENT';
@@ -123,7 +112,7 @@ function convertV1(span) {
       default:
         annotationsToAdd.push(a);
     }
-  }
+  });
 
   let addr = 'Server Address'; // default which will be unset later if needed
 
@@ -210,7 +199,7 @@ function convertV1(span) {
   }
 
   res.tags = []; // prefer empty to undefined for arrays
-  const keys = Object.keys(span.tags || {});
+  const keys = Object.keys(span.tags);
   if (keys.length > 0) {
     keys.forEach(key => {
       res.tags.push({
@@ -263,30 +252,16 @@ function maybePushTag(tags, a) {
   }
 }
 
+// assumes spans are already clean
 function merge(left, right) {
-  // normalize ID lengths in case dirty input is received
-  //  (this won't be the case from the normal zipkin server, as it normalizes IDs)
   const res = {
-    traceId: normalizeTraceId(right.traceId.length > 16 ? right.traceId : left.traceId)
+    traceId: right.traceId
   };
 
-  // take care not to create self-referencing spans even if the input data is incorrect
-  const id = left.id.padStart(16, '0');
-  if (left.parentId) {
-    const leftParent = left.parentId.padStart(16, '0');
-    if (leftParent !== id) {
-      res.parentId = leftParent;
-    }
-  }
+  if (left.parentId) res.parentId = left.parentId;
+  if (right.parentId) res.parentId = right.parentId;
 
-  if (right.parentId && !res.parentId) {
-    const rightParent = right.parentId.padStart(16, '0');
-    if (rightParent !== id) {
-      res.parentId = rightParent;
-    }
-  }
-
-  res.id = id;
+  res.id = left.id;
   if (left.name) res.name = left.name;
 
   // When we move to span model 2, remove this code in favor of using Span.kind == CLIENT
@@ -296,12 +271,12 @@ function merge(left, right) {
 
   res.annotations = [];
 
-  (left.annotations || []).forEach((a) => {
+  left.annotations.forEach((a) => {
     if (a.value === 'Client Start') leftClientSpan = true;
     maybePushAnnotation(res.annotations, a);
   });
 
-  (right.annotations || []).forEach((a) => {
+  right.annotations.forEach((a) => {
     if (a.value === 'Client Start') rightClientSpan = true;
     if (a.value === 'Server Start') rightServerSpan = true;
     maybePushAnnotation(res.annotations, a);
@@ -311,18 +286,11 @@ function merge(left, right) {
 
   res.tags = [];
 
-  (left.tags || []).forEach((b) => {
-    maybePushTag(res.tags, b);
-  });
+  left.tags.forEach((t) => maybePushTag(res.tags, t));
+  right.tags.forEach((t) => maybePushTag(res.tags, t));
 
-  (right.tags || []).forEach((b) => {
-    maybePushTag(res.tags, b);
-  });
-
-  if (right.name) {
-    if (!res.name || rightServerSpan) {
-      res.name = right.name; // prefer the server's span name
-    }
+  if (right.name && (!res.name || rightServerSpan)) {
+    res.name = right.name; // prefer the server's span name
   }
 
   // Single timestamp makes duration easy: just choose max
@@ -347,9 +315,7 @@ function merge(left, right) {
     }
   }
 
-  if (right.debug) {
-    res.debug = true;
-  }
+  if (right.debug) res.debug = true;
 
   if (left.serviceName) {
     // in a shared span, prefer the server's name
@@ -367,131 +333,11 @@ function merge(left, right) {
   return res;
 }
 
-/*
- * Instrumentation should set {@link Span#timestamp} when recording a span so that guess-work
- * isn't needed. Since a lot of instrumentation don't, we have to make some guesses.
- *
- * * If there is a 'cs', use that
- * * Fall back to 'sr'
- * * Otherwise, return undefined
- */
-// originally zipkin.internal.ApplyTimestampAndDuration.guessTimestamp
-function guessTimestamp(span) {
-  if (span.timestamp || !span.annotations || span.annotations.length === 0) {
-    return span.timestamp;
-  }
-  let rootServerRecv;
-  for (let i = 0; i < span.annotations.length; i++) {
-    const a = span.annotations[i];
-    if (a.value === 'Client Start') {
-      return a.timestamp;
-    } else if (a.value === 'Server Start') {
-      rootServerRecv = a.timestamp;
-    }
-  }
-  return rootServerRecv;
-}
-
-/*
- * For RPC two-way spans, the duration between 'cs' and 'cr' is authoritative. RPC one-way spans
- * lack a response, so the duration is between 'cs' and 'sr'. We special-case this to avoid
- * setting incorrect duration when there's skew between the client and the server.
- */
-// originally zipkin.internal.ApplyTimestampAndDuration.apply
-function applyTimestampAndDuration(span) {
-  // Don't overwrite authoritatively set timestamp and duration!
-  if ((span.timestamp && span.duration) || !span.annotations) {
-    return span;
-  }
-
-  // We cannot backfill duration on a span with less than two annotations. However, we can
-  // backfill timestamp.
-  const annotationLength = span.annotations.length;
-  if (annotationLength < 2) {
-    if (span.timestamp) return span;
-    const guess = guessTimestamp(span);
-    if (!guess) return span;
-    span.timestamp = guess; // eslint-disable-line no-param-reassign
-    return span;
-  }
-
-  // Prefer RPC one-way (cs -> sr) vs arbitrary annotations.
-  let first = span.annotations[0].timestamp;
-  let last = span.annotations[annotationLength - 1].timestamp;
-  span.annotations.forEach((a) => {
-    if (a.value === 'Client Start') {
-      first = a.timestamp;
-    } else if (a.value === 'Client Finish') {
-      last = a.timestamp;
-    }
-  });
-
-  if (!span.timestamp) {
-    span.timestamp = first; // eslint-disable-line no-param-reassign
-  }
-  if (!span.duration && last !== first) {
-    span.duration = last - first; // eslint-disable-line no-param-reassign
-  }
-  return span;
-}
-
-/*
- * v1 spans can be sent in multiple parts. Also client and server spans can share the same ID. This
- * merges both scenarios.
- */
-// originally zipkin.internal.MergeById.apply
-function mergeById(spans) {
-  const result = [];
-
-  if (!spans || spans.length === 0) return result;
-
-  const spanIdToSpans = {};
-  spans.forEach((s) => {
-    const id = s.id.padStart(16, '0');
-    spanIdToSpans[id] = spanIdToSpans[id] || [];
-    spanIdToSpans[id].push(s);
-  });
-
-  Object.keys(spanIdToSpans).forEach(id => {
-    const spansToMerge = spanIdToSpans[id];
-    let left = spansToMerge[0];
-    for (let i = 1; i < spansToMerge.length; i++) {
-      left = merge(left, spansToMerge[i]);
-    }
-
-    // attempt to get a timestamp so that sorting will be helpful
-    result.push(applyTimestampAndDuration(left));
-  });
-
-  // sort by timestamp, then name, root first in case of skew
-  // TODO: this should be a topological sort
-  return result.sort((a, b) => {
-    if (!a.parentId) { // a is root
-      return -1;
-    } else if (!b.parentId) { // b is root
-      return 1;
-    }
-    // Either a and b are root or neither are. In any case sort by timestamp, then name
-    return compare(a.timestamp, b.timestamp) || compare(a.name, b.name);
-  });
-}
-
 module.exports.SPAN_V1 = {
-  // Temporary convenience function until functionality is ported to v2
-  convertTrace(v2Trace) {
-    const v1Trace = v2Trace.map(convertV1);
-    return mergeById(v1Trace);
-  },
   convert(v2Span) {
     return convertV1(v2Span);
   },
   merge(v1Left, v1Right) {
     return merge(v1Left, v1Right);
-  },
-  applyTimestampAndDuration(v1Span) {
-    return applyTimestampAndDuration(v1Span);
-  },
-  mergeById(v1Spans) {
-    return mergeById(v1Spans);
   }
 };
