@@ -22,8 +22,10 @@ describe('convertSuccessResponse', () => {
         width: 0.1,
         depth: 10,
         depthClass: 0,
+        childIds: [],
         annotations: [],
         tags: [],
+        serviceNames: [],
         errorType: 'none'
       }
     ];
@@ -58,8 +60,9 @@ describe('convertSuccessResponse', () => {
     const spans = [
       {
         spanId: 'bb1f0e21882325b8',
+        childIds: ['c8c50ebd2abc179e'],
         spanName: 'get /',
-        serviceNames: 'frontend',
+        serviceNames: ['frontend'],
         serviceName: 'frontend',
         duration: 168731,
         durationStr: '168.731ms',
@@ -67,7 +70,6 @@ describe('convertSuccessResponse', () => {
         width: 100,
         depth: 10,
         depthClass: 0,
-        children: 'c8c50ebd2abc179e',
         annotations: [
           {
             isDerived: true,
@@ -119,8 +121,9 @@ describe('convertSuccessResponse', () => {
       {
         spanId: 'c8c50ebd2abc179e',
         parentId: 'bb1f0e21882325b8',
+        childIds: [],
         spanName: 'get /api',
-        serviceNames: 'backend,frontend',
+        serviceNames: ['backend', 'frontend'],
         serviceName: 'backend',
         duration: 111121,
         durationStr: '111.121ms',
@@ -247,7 +250,8 @@ describe('convertSuccessResponse', () => {
     const spans = [
       {
         spanId: '1e223ff1f80f1c69',
-        serviceNames: 'backend',
+        childIds: [],
+        serviceNames: ['backend'],
         serviceName: 'backend',
         duration: 17,
         durationStr: '17μs',
@@ -328,8 +332,9 @@ describe('convertSuccessResponse', () => {
     const spans = [
       {
         spanId: 'bf396325699c84bf',
+        childIds: ['74280ae0c10d8062'],
         spanName: 'get',
-        serviceNames: 'servicea',
+        serviceNames: ['servicea'],
         serviceName: 'servicea',
         duration: 99411,
         durationStr: '99.411ms',
@@ -337,7 +342,6 @@ describe('convertSuccessResponse', () => {
         width: 100,
         depth: 10,
         depthClass: 0,
-        children: '74280ae0c10d8062',
         annotations: [
           {
             isDerived: true,
@@ -364,16 +368,16 @@ describe('convertSuccessResponse', () => {
       {
         spanId: '74280ae0c10d8062',
         parentId: 'bf396325699c84bf',
+        childIds: ['43210ae0c10d1234'],
         spanName: 'post',
         serviceName: 'serviceb',
-        serviceNames: 'servicea,serviceb',
+        serviceNames: ['servicea', 'serviceb'],
         duration: 94539,
         durationStr: '94.539ms',
         left: 3.152568629226142,
         width: 95.09913389866313,
         depth: 15,
         depthClass: 1,
-        children: '43210ae0c10d1234',
         annotations: [
           {
             isDerived: true,
@@ -418,8 +422,9 @@ describe('convertSuccessResponse', () => {
       {
         spanId: '43210ae0c10d1234',
         parentId: '74280ae0c10d8062',
+        childIds: [],
         spanName: 'async',
-        serviceNames: 'serviceb',
+        serviceNames: ['serviceb'],
         serviceName: 'serviceb',
         duration: 65000,
         durationStr: '65ms',
