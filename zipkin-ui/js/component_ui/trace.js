@@ -5,7 +5,7 @@ import $ from 'jquery';
 import {i18nInit} from '../component_ui/i18n';
 
 // extracted for testing. this code mutates spans and selectedSpans
-export function showSpans(spans, parents, children, selectedSpans) {
+export function showSpans(spans, parents, childIds, selectedSpans) {
   const family = new Set();
   $.each(selectedSpans, (i, $selected) => {
     $selected.show();
@@ -13,7 +13,7 @@ export function showSpans(spans, parents, children, selectedSpans) {
     $selected.expanded = true;
     $selected.$expander.html('<i class="far fa-minus-square"></i>');
 
-    $.each(children[$selected.id], (j, cId) => {
+    $.each(childIds[$selected.id], (j, cId) => {
       family.add(cId);
       spans[cId].openParents += 1;
     });
@@ -31,7 +31,7 @@ export function showSpans(spans, parents, children, selectedSpans) {
 }
 
 // extracted for testing. this code mutates spans and selectedSpans
-export function hideSpans(spans, parents, children, selectedSpans, childrenOnly) {
+export function hideSpans(spans, parents, childIds, selectedSpans, childrenOnly) {
   const family = new Set();
   $.each(selectedSpans, (i, $selected) => {
     if (!childrenOnly === 0) {
@@ -41,7 +41,7 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
     $selected.expanded = false;
     $selected.$expander.html('<i class="far fa-plus-square"></i>');
 
-    $.each(children[$selected.id], (j, cId) => {
+    $.each(childIds[$selected.id], (j, cId) => {
       family.add(cId);
       // Decrement only when there is an open parent
       if (spans[cId].openParents >= 1) spans[cId].openParents -= 1;
@@ -58,17 +58,17 @@ export function hideSpans(spans, parents, children, selectedSpans, childrenOnly)
       });
     }
   });
-  family.forEach(id => hideSpans(spans, parents, children, [spans[id]], true));
+  family.forEach(id => hideSpans(spans, parents, childIds, [spans[id]], true));
   family.forEach(id => spans[id].hide());
 }
 
-function spanChildren($span) {
-  const children = ($span.attr('data-children') || '').toString().split(',');
-  if (children.length === 1 && children[0] === '') {
+function spanChildIds($span) {
+  const childIds = ($span.attr('data-child-ids') || '').toString().split(',');
+  if (childIds.length === 1 && childIds[0] === '') {
     $span.find('.expander').hide();
     return [];
   } else {
-    return children;
+    return childIds;
   }
 }
 
@@ -88,7 +88,7 @@ function initSpan($span) {
 
 export function initSpans($node) {
   const spans = {};
-  const children = {};
+  const childIds = {};
   const parents = {};
   // this includes both local and remote service names
   const spansByService = {};
@@ -99,7 +99,7 @@ export function initSpans($node) {
     const parentId = span.parentId;
 
     spans[id] = span;
-    children[id] = spanChildren(span);
+    childIds[id] = spanChildIds(span);
     parents[id] = !span.isRoot ? [parentId] : [];
     $.merge(parents[id], parents[parentId] || []);
 
@@ -112,7 +112,7 @@ export function initSpans($node) {
 
   return {
     spans,
-    children,
+    childIds,
     parents,
     spansByService
   };
@@ -125,7 +125,7 @@ export default component(function trace() {
    *
    * this.spans = {};
    * this.parents = {};
-   * this.children = {};
+   * this.childIds = {};
    * this.spansByService = {};
    */
   this.spansBackup = {};
@@ -155,11 +155,11 @@ export default component(function trace() {
   };
 
   this.expandSpans = function(spans) {
-    showSpans(this.spans, this.parents, this.children, spans);
+    showSpans(this.spans, this.parents, this.childIds, spans);
   };
 
   this.collapseSpans = function(spans, childrenOnly) {
-    hideSpans(this.spans, this.parents, this.children, spans, childrenOnly);
+    hideSpans(this.spans, this.parents, this.childIds, spans, childrenOnly);
   };
 
   this.handleClick = function(e) {
@@ -307,7 +307,7 @@ export default component(function trace() {
     const self = this;
     self.actingOnAll = true;
     this.showSpinnerAround(() => {
-      showSpans(self.spans, self.parents, self.children, self.spans);
+      showSpans(self.spans, self.parents, self.childIds, self.spans);
     });
     self.actingOnAll = false;
     $('#expandAll').addClass('active');
@@ -447,7 +447,7 @@ export default component(function trace() {
     const initData = initSpans(self.$node);
     this.spans = initData.spans;
     this.parents = initData.parents;
-    this.children = initData.children;
+    this.childIds = initData.childIds;
     this.spansByService = initData.spansByService;
 
     /* get spans from trace-container-backup*/

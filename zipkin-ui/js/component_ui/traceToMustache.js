@@ -79,6 +79,8 @@ export function traceToMustache(root, logsUrl) {
         width: 8
       })),
       tags: span.tags,
+      serviceNames: span.serviceNames,
+      childIds,
       errorType: span.errorType
     };
 
@@ -95,15 +97,13 @@ export function traceToMustache(root, logsUrl) {
       uiSpan.width = 0.1;
     }
     if (span.serviceName) uiSpan.serviceName = span.serviceName;
-    if (span.serviceNames.length !== 0) uiSpan.serviceNames = span.serviceNames.join(',');
     if (span.parentId) uiSpan.parentId = span.parentId;
-    if (childIds.length !== 0) uiSpan.children = childIds.join(','); // used for expand and collapse
 
     // NOTE: This will increment both the local and remote service name
     //
     // TODO: We should only do this if it is a leaf span and a client or producer. If we are at the
     // bottom of the tree, it can be helpful to count also against a remote uninstrumented service.
-    span.serviceNames.forEach(serviceName => incrementEntry(serviceNameToCount, serviceName));
+    uiSpan.serviceNames.forEach(serviceName => incrementEntry(serviceNameToCount, serviceName));
 
     modelview.spans.push(uiSpan);
   }
