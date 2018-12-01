@@ -120,7 +120,7 @@ describe('convertSuccessResponse', () => {
         spanId: 'c8c50ebd2abc179e',
         parentId: 'bb1f0e21882325b8',
         spanName: 'get /api',
-        serviceNames: 'frontend,backend',
+        serviceNames: 'backend,frontend',
         serviceName: 'backend',
         duration: 111121,
         durationStr: '111.121ms',
