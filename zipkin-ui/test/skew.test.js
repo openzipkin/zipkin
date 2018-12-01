@@ -78,6 +78,31 @@ describe('getClockSkew', () => {
     should.equal(getClockSkew(child), undefined);
   });
 
+  it('clock skew should only exist when client is behind server', () => {
+    const parent = new SpanNode(clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'CLIENT',
+      localEndpoint: frontend,
+      timestamp: 20,
+      duration: 20
+    }));
+    const child = new SpanNode(clean({
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      kind: 'SERVER',
+      localEndpoint: backend,
+      timestamp: 30, // no skew
+      duration: 10,
+      shared: true
+    }));
+    parent.addChild(child);
+
+    should.equal(getClockSkew(child), undefined);
+  });
+
   it('clock skew should be attributed to the server endpoint', () => {
     const parent = new SpanNode(clean({
       traceId: '1',
@@ -103,6 +128,7 @@ describe('getClockSkew', () => {
     // Skew correction pushes the server side forward, so the skew endpoint is the server
     expect(getClockSkew(child).endpoint).to.deep.equal(backend);
   });
+
   it('clock skew should be attributed to the server endpoint even if missing shared flag', () => {
     const parent = new SpanNode(clean({
       traceId: '1',

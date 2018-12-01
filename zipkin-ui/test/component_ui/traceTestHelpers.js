@@ -50,7 +50,7 @@ export const httpTrace = [
     id: 'c8c50ebd2abc179e',
     kind: 'SERVER',
     name: 'get /api',
-    timestamp: 1541138169377997,
+    timestamp: 1541138169377997, // this is actually skewed right, but we can't correct it
     duration: 26326,
     localEndpoint: backend,
     remoteEndpoint: {
