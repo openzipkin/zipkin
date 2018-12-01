@@ -54,6 +54,9 @@ function getClockSkew(node) {
   const serverTimestamp = child.timestamp;
   if (!clientTimestamp || !serverTimestamp) return undefined;
 
+  // skew is when the server happens before the client
+  if (serverTimestamp > clientTimestamp) return undefined;
+
   const clientDuration = parent.duration;
   const serverDuration = child.duration;
   if (!clientDuration || !serverDuration) oneWay = true;
@@ -66,9 +69,9 @@ function getClockSkew(node) {
   // There's no skew if the RPC is going to itself
   if (ipsMatch(server, client)) return undefined;
 
-  let latency;
   if (oneWay) {
-    latency = serverTimestamp - clientTimestamp;
+    const latency = serverTimestamp - clientTimestamp;
+
     // the only way there is skew is when the client appears to be after the server
     if (latency > 0) return undefined;
     // We can't currently do better than push the client and server apart by minimum duration (1)
@@ -77,11 +80,12 @@ function getClockSkew(node) {
     // If the client finished before the server (async), we still know the server must have happened
     // after the client. So, push 1us.
     if (clientDuration < serverDuration) {
-      return new ClockSkew({endpoint: server, skew: serverTimestamp - clientTimestamp - 1});
+      const skew = serverTimestamp - clientTimestamp - 1;
+      return new ClockSkew({endpoint: server, skew});
     }
 
     // We assume latency is half the difference between the client and server duration.
-    latency = (clientDuration - serverDuration) / 2;
+    const latency = (clientDuration - serverDuration) / 2;
 
     // We can't see skew when send happens before receive
     if (latency < 0) return undefined;

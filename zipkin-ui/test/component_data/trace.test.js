@@ -148,30 +148,30 @@ describe('convertSuccessResponse', () => {
             width: 8
           },
           {
-            isDerived: true,
-            left: 38.15435426247064,
-            endpoint: '172.17.0.9 (backend)',
-            value: 'Server Start',
-            timestamp: 1541138169339969.5,
-            relativeTime: '84.281ms',
-            width: 8
-          },
-          {
-            isDerived: true,
-            left: 61.84564573752937,
-            endpoint: '172.17.0.9 (backend)',
-            value: 'Server Finish',
-            timestamp: 1541138169366295.5,
-            relativeTime: '110.608ms',
-            width: 8
-          },
-          {
             isDerived: false,
             left: 63.8925135662926,
             endpoint: '172.17.0.13 (frontend)',
             value: 'Wire Receive',
             timestamp: 1541138169368570,
             relativeTime: '112.882ms',
+            width: 8
+          },
+          {
+            isDerived: true,
+            left: 72.37605853079076,
+            endpoint: '172.17.0.9 (backend)',
+            value: 'Server Start',
+            timestamp: 1541138169377997,
+            relativeTime: '122.309ms',
+            width: 8
+          },
+          {
+            isDerived: true,
+            left: 96.06735000584948,
+            endpoint: '172.17.0.9 (backend)',
+            value: 'Server Finish',
+            timestamp: 1541138169404323,
+            relativeTime: '148.635ms',
             width: 8
           },
           {
