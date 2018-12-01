@@ -78,7 +78,7 @@ export default component(function spanPanel() {
     this.$node.find('.service-names').text(span.serviceNames);
 
     const $annoBody = this.$node.find('#annotations tbody').text('');
-    $.each((span.annotations || []), (i, anno) => {
+    $.each(span.annotations, (i, anno) => {
       const $row = self.$annotationTemplate.clone();
       maybeMarkTransientError($row, anno);
       $row.find('td').each(function() {

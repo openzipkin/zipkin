@@ -1,5 +1,6 @@
 import {traceToMustache} from '../../js/component_ui/traceToMustache';
 const {SpanNode} = require('../../js/spanNode');
+const {clean} = require('../../js/spanCleaner');
 import {treeCorrectedForClockSkew} from '../../js/skew';
 import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
 
@@ -51,7 +52,7 @@ describe('traceToMustache', () => {
   });
 
   it('should tolerate spans without annotations', () => {
-    const testTrace = new SpanNode({
+    const testTrace = new SpanNode(clean({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
@@ -59,37 +60,35 @@ describe('traceToMustache', () => {
       duration: 333000,
       localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
       tags: {lc: 'component'}
-    });
+    }));
     const {spans: [testSpan]} = traceToMustache(testTrace);
     testSpan.tags[0].key.should.equal('Local Component');
   });
 
   it('should not include empty Local Component annotations', () => {
-    const testTrace = new SpanNode({
+    const testTrace = new SpanNode(clean({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
       timestamp: 1457186385375000,
       duration: 333000,
-      localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
-      tags: {}
-    });
+      localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+    }));
     const {spans: [testSpan]} = traceToMustache(testTrace);
     // skips empty Local Component, but still shows it as an address
     testSpan.tags[0].key.should.equal('Local Address');
   });
 
   it('should tolerate spans without tags', () => {
-    const testTrace = new SpanNode({
+    const testTrace = new SpanNode(clean({
       traceId: '2480ccca8df0fca5',
       name: 'get',
       id: '2480ccca8df0fca5',
       kind: 'SERVER',
       timestamp: 1457186385375000,
       duration: 333000,
-      localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411},
-      tags: {}
-    });
+      localEndpoint: {serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411}
+    }));
     const {spans: [testSpan]} = traceToMustache(testTrace);
     testSpan.annotations[0].value.should.equal('Server Start');
     testSpan.annotations[1].value.should.equal('Server Finish');
@@ -97,24 +96,22 @@ describe('traceToMustache', () => {
 
   // TODO: we should really only allocate remote endpoints when on an uninstrumented link
   it('should count spans for any endpoint', () => {
-    const testTrace = new SpanNode({
+    const testTrace = new SpanNode(clean({
       traceId: '2480ccca8df0fca5',
       id: '2480ccca8df0fca5',
       kind: 'CLIENT',
       timestamp: 1,
       localEndpoint: frontend,
-      remoteEndpoint: frontend,
-      tags: {}
-    });
-    testTrace.addChild(new SpanNode({
+      remoteEndpoint: frontend
+    }));
+    testTrace.addChild(new SpanNode(clean({
       traceId: '2480ccca8df0fca5',
       parentId: '2480ccca8df0fca5',
       id: 'bf396325699c84bf',
       name: 'foo',
       timestamp: 2,
-      localEndpoint: backend,
-      tags: {}
-    }));
+      localEndpoint: backend
+    })));
 
     const {serviceNameAndSpanCounts} = traceToMustache(testTrace);
     serviceNameAndSpanCounts.should.eql([
@@ -124,23 +121,21 @@ describe('traceToMustache', () => {
   });
 
   it('should count spans with no timestamp or duration', () => {
-    const testTrace = new SpanNode({
+    const testTrace = new SpanNode(clean({
       traceId: '2480ccca8df0fca5',
       id: '2480ccca8df0fca5',
       kind: 'CLIENT',
       timestamp: 1, // root always needs a timestamp
       localEndpoint: frontend,
-      remoteEndpoint: frontend,
-      tags: {}
-    });
-    testTrace.addChild(new SpanNode({
+      remoteEndpoint: frontend
+    }));
+    testTrace.addChild(new SpanNode(clean({
       traceId: '2480ccca8df0fca5',
       parentId: '2480ccca8df0fca5',
       id: 'bf396325699c84bf',
       name: 'foo',
-      localEndpoint: backend,
-      tags: {}
-    }));
+      localEndpoint: backend
+    })));
 
     const {serviceNameAndSpanCounts} = traceToMustache(testTrace);
     serviceNameAndSpanCounts.should.eql([

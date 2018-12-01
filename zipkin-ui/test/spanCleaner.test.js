@@ -321,6 +321,26 @@ describe('mergeV2ById', () => {
     ]);
   });
 
+  // originally zipkin2.v1.SpanConverterTest.mergeTraceIdHigh
+  it('should prefer 128bit trace ID', () => {
+    const left = {
+      traceId: '463ac35c9f6413ad48485a3953bb6124',
+      id: '3'
+    };
+
+    const right = {
+      traceId: '48485a3953bb6124',
+      id: '3'
+    };
+
+    const leftFirst = mergeV2ById([left, right]);
+    const rightFirst = mergeV2ById([right, left]);
+
+    [leftFirst, rightFirst].forEach((spans) => {
+      spans.forEach(span => expect(span.traceId).to.equal(left.traceId));
+    });
+  });
+
   /*
    * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.
    *
