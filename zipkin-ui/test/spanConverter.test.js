@@ -129,6 +129,17 @@ describe('SPAN v2 -> v1 Conversion', () => {
     should.equal(converted.parentId, undefined);
   });
 
+  it('should not duplicate service names', () => {
+    const converted = SPAN_V1.convert({
+      traceId: '1',
+      id: '3',
+      localEndpoint: frontend,
+      remoteEndpoint: frontend
+    });
+
+    expect(converted.serviceNames).to.deep.equal(['frontend']);
+  });
+
   // originally zipkin2.v1.SpanConverterTest.SpanConverterTest.client_unfinished
   it('converts incomplete client span', () => {
     const v2 = {

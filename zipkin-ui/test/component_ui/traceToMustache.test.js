@@ -1,65 +1,10 @@
-import {
-  traceToMustache,
-  getServiceNameAndSpanCounts
-} from '../../js/component_ui/traceToMustache';
+import {traceToMustache} from '../../js/component_ui/traceToMustache';
 const {SpanNode} = require('../../js/spanNode');
 import {treeCorrectedForClockSkew} from '../../js/skew';
 import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
 
 // renders data into a tree for traceMustache
 const cleanedHttpTrace = treeCorrectedForClockSkew(httpTrace);
-
-describe('getServiceNameAndSpanCounts', () => {
-  // TODO: we should really only allocate remote endpoints when on an uninstrumented link
-  it('should count spans for any endpoint', () => {
-    const testTrace = [
-      {
-        traceId: '2480ccca8df0fca5',
-        id: '2480ccca8df0fca5',
-        kind: 'CLIENT',
-        timestamp: 1,
-        localEndpoint: frontend,
-        remoteEndpoint: frontend
-      },
-      {
-        traceId: '2480ccca8df0fca5',
-        parentId: '2480ccca8df0fca5',
-        id: 'bf396325699c84bf',
-        name: 'foo',
-        timestamp: 2,
-        localEndpoint: backend,
-      }
-    ];
-
-    getServiceNameAndSpanCounts(testTrace).should.eql([
-      {serviceName: 'backend', spanCount: 1},
-      {serviceName: 'frontend', spanCount: 2}
-    ]);
-  });
-
-  it('should count spans with no timestamp or duration', () => {
-    const testTrace = [
-      {
-        traceId: '2480ccca8df0fca5',
-        id: '2480ccca8df0fca5',
-        kind: 'CLIENT',
-        localEndpoint: frontend
-      },
-      {
-        traceId: '2480ccca8df0fca5',
-        parentId: '2480ccca8df0fca5',
-        id: 'bf396325699c84bf',
-        name: 'foo',
-        localEndpoint: backend,
-      }
-    ];
-
-    getServiceNameAndSpanCounts(testTrace).should.eql([
-      {serviceName: 'backend', spanCount: 1},
-      {serviceName: 'frontend', spanCount: 1}
-    ]);
-  });
-});
 
 describe('traceToMustache', () => {
   it('should show logsUrl', () => {
@@ -68,13 +13,12 @@ describe('traceToMustache', () => {
   });
 
   it('should derive summary info', () => {
-    const {traceId, durationStr, depth, spanCount, serviceNameAndSpanCounts} =
+    const {traceId, durationStr, depth, serviceNameAndSpanCounts} =
       traceToMustache(cleanedHttpTrace);
 
     traceId.should.equal('bb1f0e21882325b8');
     durationStr.should.equal('168.731ms');
     depth.should.equal(2); // number of span rows (distinct span IDs)
-    spanCount.should.equal(3);
     serviceNameAndSpanCounts.should.eql([
       {serviceName: 'backend', spanCount: 1},
       {serviceName: 'frontend', spanCount: 2}
@@ -87,13 +31,12 @@ describe('traceToMustache', () => {
     // make a copy of the cleaned http trace as adding a child is a mutation
     treeCorrectedForClockSkew(httpTrace).children.forEach(child => headless.addChild(child));
 
-    const {traceId, durationStr, depth, spanCount, serviceNameAndSpanCounts} =
+    const {traceId, durationStr, depth, serviceNameAndSpanCounts} =
       traceToMustache(headless);
 
     traceId.should.equal('bb1f0e21882325b8');
     durationStr.should.equal('111.121ms'); // client duration
     depth.should.equal(1); // number of span rows (distinct span IDs)
-    spanCount.should.equal(2);
     serviceNameAndSpanCounts.should.eql([
       {serviceName: 'backend', spanCount: 1},
       {serviceName: 'frontend', spanCount: 1}
@@ -150,6 +93,60 @@ describe('traceToMustache', () => {
     const {spans: [testSpan]} = traceToMustache(testTrace);
     testSpan.annotations[0].value.should.equal('Server Start');
     testSpan.annotations[1].value.should.equal('Server Finish');
+  });
+
+  // TODO: we should really only allocate remote endpoints when on an uninstrumented link
+  it('should count spans for any endpoint', () => {
+    const testTrace = new SpanNode({
+      traceId: '2480ccca8df0fca5',
+      id: '2480ccca8df0fca5',
+      kind: 'CLIENT',
+      timestamp: 1,
+      localEndpoint: frontend,
+      remoteEndpoint: frontend,
+      tags: {}
+    });
+    testTrace.addChild(new SpanNode({
+      traceId: '2480ccca8df0fca5',
+      parentId: '2480ccca8df0fca5',
+      id: 'bf396325699c84bf',
+      name: 'foo',
+      timestamp: 2,
+      localEndpoint: backend,
+      tags: {}
+    }));
+
+    const {serviceNameAndSpanCounts} = traceToMustache(testTrace);
+    serviceNameAndSpanCounts.should.eql([
+      {serviceName: 'backend', spanCount: 1},
+      {serviceName: 'frontend', spanCount: 1}
+    ]);
+  });
+
+  it('should count spans with no timestamp or duration', () => {
+    const testTrace = new SpanNode({
+      traceId: '2480ccca8df0fca5',
+      id: '2480ccca8df0fca5',
+      kind: 'CLIENT',
+      timestamp: 1, // root always needs a timestamp
+      localEndpoint: frontend,
+      remoteEndpoint: frontend,
+      tags: {}
+    });
+    testTrace.addChild(new SpanNode({
+      traceId: '2480ccca8df0fca5',
+      parentId: '2480ccca8df0fca5',
+      id: 'bf396325699c84bf',
+      name: 'foo',
+      localEndpoint: backend,
+      tags: {}
+    }));
+
+    const {serviceNameAndSpanCounts} = traceToMustache(testTrace);
+    serviceNameAndSpanCounts.should.eql([
+      {serviceName: 'backend', spanCount: 1},
+      {serviceName: 'frontend', spanCount: 1}
+    ]);
   });
 });
 

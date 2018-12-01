@@ -19,27 +19,6 @@ function incrementEntry(dict, key) {
   }
 }
 
-function incrementServiceNameCount(span, results) {
-  if (span.localEndpoint && span.localEndpoint.serviceName) {
-    incrementEntry(results, span.localEndpoint.serviceName);
-  }
-  // TODO: only do this if it is a leaf span and a client or producer.
-  // If we are at the bottom of the tree, it can be helpful to count also against a remote
-  // uninstrumented service
-  if (span.remoteEndpoint && span.remoteEndpoint.serviceName) {
-    incrementEntry(results, span.remoteEndpoint.serviceName);
-  }
-}
-
-export function getServiceNameAndSpanCounts(spans) {
-  const serviceNameToCount = {};
-  spans.forEach(span => incrementServiceNameCount(span, serviceNameToCount));
-
-  return Object.keys(serviceNameToCount).sort().map(serviceName =>
-    ({serviceName, spanCount: serviceNameToCount[serviceName]})
-  );
-}
-
 export function traceToMustache(root, logsUrl) {
   const spans = root.traverse();
   if (spans.length === 0) throw new Error('Trace was empty');
@@ -52,8 +31,6 @@ export function traceToMustache(root, logsUrl) {
   const modelview = {
     traceId: spans[0].traceId,
     depth: 0,
-    spanCount: spans.length,
-    serviceNameAndSpanCounts: getServiceNameAndSpanCounts(spans),
     spans: []
   };
 
@@ -65,6 +42,8 @@ export function traceToMustache(root, logsUrl) {
   } else {
     queue.push(root);
   }
+
+  const serviceNameToCount = {};
 
   while (queue.length > 0) {
     let current = queue.shift();
@@ -131,9 +110,19 @@ export function traceToMustache(root, logsUrl) {
     if (span.serviceNames.length !== 0) uiSpan.serviceNames = span.serviceNames.join(',');
     if (span.parentId) uiSpan.parentId = span.parentId;
     if (childIds.length !== 0) uiSpan.children = childIds.join(','); // used for expand and collapse
+
+    // NOTE: This will increment both the local and remote service name
+    //
+    // TODO: We should only do this if it is a leaf span and a client or producer. If we are at the
+    // bottom of the tree, it can be helpful to count also against a remote uninstrumented service.
+    span.serviceNames.forEach(serviceName => incrementEntry(serviceNameToCount, serviceName));
+
     modelview.spans.push(uiSpan);
   }
 
+  modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount).sort().map(serviceName =>
+    ({serviceName, spanCount: serviceNameToCount[serviceName]})
+  );
 
   // the zoom feature needs backups and timeMarkers regardless of if there is a trace duration
   modelview.spansBackup = modelview.spans;
