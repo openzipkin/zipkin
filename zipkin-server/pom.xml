@@ -298,7 +298,6 @@
         <configuration>
           <classifier>exec</classifier>
           <executable>true</executable>
-          <excludeArtifactIds>logback-classic</excludeArtifactIds>
         </configuration>
       </plugin>
       <!-- disable retrolambda since this module uses java 8 types -->

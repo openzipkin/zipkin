@@ -65,14 +65,33 @@
           <excludeGroupIds>
             org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson
           </excludeGroupIds>
-          <!-- excludes direct dependency instead of the group id, as otherwise we'd exclude ourselves -->
-          <excludeArtifactIds>zipkin</excludeArtifactIds>
+          <excludes>
+            <!-- excludes direct dependency instead of the group id, as otherwise we'd exclude ourselves -->
+            <exclude>
+              <groupId>io.zipkin.zipkin2</groupId>
+              <artifactId>zipkin</artifactId>
+            </exclude>
+            <exclude>
+              <groupId>io.zipkin.zipkin2</groupId>
+              <artifactId>zipkin-collector</artifactId>
+            </exclude>
+            <!-- excludes already packaged logging libraries in the server. Can't use group ID or we
+                 would miss the api bridge -->
+            <exclude>
+              <groupId>org.apache.logging.log4j</groupId>
+              <artifactId>log4j-core</artifactId>
+            </exclude>
+            <exclude>
+              <groupId>org.apache.logging.log4j</groupId>
+              <artifactId>log4j-api</artifactId>
+            </exclude>
+          </excludes>
         </configuration>
         <dependencies>
           <dependency>
             <groupId>io.zipkin.layout</groupId>
             <artifactId>zipkin-layout-factory</artifactId>
-            <version>0.0.3</version>
+            <version>${zipkin-layout-factory.version}</version>
           </dependency>
         </dependencies>
       </plugin>
