@@ -1,9 +1,12 @@
 // eslint-disable no-nested-ternary
 import _ from 'lodash';
 import moment from 'moment';
-import {getErrorType} from '../spanConverter';
+import {getErrorType} from './spanRow';
 
-export function addStartEndTimestamps(span, timestamps) {
+// To ensure data doesn't scroll off the screen, we need all timestamps, not just
+// client/server ones.
+export function addTimestamps(span, timestamps) {
+  span.annotations.forEach(a => timestamps.push(a.timestamp));
   if (!span.timestamp) return;
   timestamps.push(span.timestamp);
   if (!span.duration) return;
@@ -56,7 +59,7 @@ export function traceSummary(root) {
     spanCount++;
     traceId = span.traceId;
     errorType = getErrorType(span, errorType);
-    addStartEndTimestamps(span, timestamps);
+    addTimestamps(span, timestamps);
     addServiceNameTimestampDuration(span, groupedTimestamps);
   });
 

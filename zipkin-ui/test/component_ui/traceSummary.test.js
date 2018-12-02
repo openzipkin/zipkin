@@ -4,9 +4,9 @@ import {
   mkDurationStr,
   totalDuration,
 } from '../../js/component_ui/traceSummary';
-const {SpanNode} = require('../../js/spanNode');
-const {clean} = require('../../js/spanCleaner');
-const {treeCorrectedForClockSkew} = require('../../js/skew');
+const {SpanNode} = require('../../js/component_data/spanNode');
+const {clean} = require('../../js/component_data/spanCleaner');
+const {treeCorrectedForClockSkew} = require('../../js/component_data/skew');
 import {httpTrace, frontend, backend} from '../component_ui/traceTestHelpers';
 
 chai.config.truncateThreshold = 0;

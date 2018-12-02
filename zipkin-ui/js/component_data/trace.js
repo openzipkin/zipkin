@@ -1,8 +1,8 @@
 import {component} from 'flightjs';
 import $ from 'jquery';
-import {getError} from '../../js/component_ui/error';
-import {traceToMustache} from '../../js/component_ui/traceToMustache';
-import {treeCorrectedForClockSkew} from '../skew';
+import {getError} from '../component_ui/error';
+import {traceToMustache} from '../component_ui/traceToMustache';
+import {treeCorrectedForClockSkew} from '../component_data/skew';
 
 export function toContextualLogsUrl(logsUrl, traceId) {
   if (logsUrl) {

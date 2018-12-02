@@ -3,7 +3,7 @@ import {errToStr} from '../../js/component_ui/error';
 import $ from 'jquery';
 import queryString from 'query-string';
 import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
-import {treeCorrectedForClockSkew} from '../skew';
+import {treeCorrectedForClockSkew} from '../component_data/skew';
 
 const debug = false;
 
