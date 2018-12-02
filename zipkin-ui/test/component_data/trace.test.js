@@ -1,6 +1,8 @@
 import {convertSuccessResponse, toContextualLogsUrl} from '../../js/component_data/trace';
 import {errorTrace, httpTrace, minimalTrace, skewedTrace} from '../component_ui/traceTestHelpers';
 
+// NOTE: strictly speaking the span.timestamp values below are not used in presentation after offset
+// logic completes. However, the values are retained for easier debugging.
 describe('convertSuccessResponse', () => {
   // getting a trace by ID should result in at least one span
   it('should throw error on empty trace', () => {
@@ -18,6 +20,7 @@ describe('convertSuccessResponse', () => {
     const spans = [
       {
         spanId: '1e223ff1f80f1c69',
+        timestamp: 1541138169377997,
         left: 0,
         width: 0.1,
         depth: 10,
@@ -64,6 +67,7 @@ describe('convertSuccessResponse', () => {
         spanName: 'get /',
         serviceNames: ['frontend'],
         serviceName: 'frontend',
+        timestamp: 1541138169255688,
         duration: 168731,
         durationStr: '168.731ms',
         left: 0,
@@ -125,6 +129,7 @@ describe('convertSuccessResponse', () => {
         spanName: 'get /api',
         serviceNames: ['backend', 'frontend'],
         serviceName: 'backend',
+        timestamp: 1541138169297572,
         duration: 111121,
         durationStr: '111.121ms',
         left: 24.82294302765941,
@@ -253,6 +258,7 @@ describe('convertSuccessResponse', () => {
         childIds: [],
         serviceNames: ['backend'],
         serviceName: 'backend',
+        timestamp: 1541138169377997,
         duration: 17,
         durationStr: '17μs',
         left: 0,
@@ -336,6 +342,7 @@ describe('convertSuccessResponse', () => {
         spanName: 'get',
         serviceNames: ['servicea'],
         serviceName: 'servicea',
+        timestamp: 1470150004071068,
         duration: 99411,
         durationStr: '99.411ms',
         left: 0,
@@ -372,6 +379,7 @@ describe('convertSuccessResponse', () => {
         spanName: 'post',
         serviceName: 'serviceb',
         serviceNames: ['servicea', 'serviceb'],
+        timestamp: 1470150004074202,
         duration: 94539,
         durationStr: '94.539ms',
         left: 3.152568629226142,
@@ -426,6 +434,7 @@ describe('convertSuccessResponse', () => {
         spanName: 'async',
         serviceNames: ['serviceb'],
         serviceName: 'serviceb',
+        timestamp: 1470150004074684,
         duration: 65000,
         durationStr: '65ms',
         left: 3.6374244298920644,

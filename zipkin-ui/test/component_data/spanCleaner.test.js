@@ -1,4 +1,4 @@
-const {cleanupComparator, merge, mergeV2ById} = require('../js/spanCleaner');
+const {cleanupComparator, merge, mergeV2ById} = require('../../js/component_data/spanCleaner');
 
 // endpoints from zipkin2.TestObjects
 const frontend = {

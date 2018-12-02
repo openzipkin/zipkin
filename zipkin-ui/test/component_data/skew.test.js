@@ -1,7 +1,7 @@
-const {ipsMatch, getClockSkew, treeCorrectedForClockSkew} = require('../js/skew');
-const {SpanNode, SpanNodeBuilder} = require('../js/spanNode');
-import {clean} from '../js/spanCleaner';
-import {frontend, backend, skewedTrace} from './component_ui/traceTestHelpers';
+const {ipsMatch, getClockSkew, treeCorrectedForClockSkew} = require('../../js/component_data/skew');
+const {SpanNode, SpanNodeBuilder} = require('../../js/component_data/spanNode');
+import {clean} from '../../js/component_data/spanCleaner';
+import {frontend, backend, skewedTrace} from '../component_ui/traceTestHelpers';
 
 const should = require('chai').should();
 

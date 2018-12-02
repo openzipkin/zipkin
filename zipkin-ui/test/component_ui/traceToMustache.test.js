@@ -1,7 +1,7 @@
 import {traceToMustache} from '../../js/component_ui/traceToMustache';
-const {SpanNode} = require('../../js/spanNode');
-const {clean} = require('../../js/spanCleaner');
-import {treeCorrectedForClockSkew} from '../../js/skew';
+const {SpanNode} = require('../../js/component_data/spanNode');
+const {clean} = require('../../js/component_data/spanCleaner');
+import {treeCorrectedForClockSkew} from '../../js/component_data/skew';
 import {httpTrace, netflixTrace, frontend, backend} from '../component_ui/traceTestHelpers';
 
 // renders data into a tree for traceMustache

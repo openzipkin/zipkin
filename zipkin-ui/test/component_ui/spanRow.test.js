@@ -1,5 +1,5 @@
-const {SPAN_V1, getErrorType, formatEndpoint} = require('../js/spanConverter');
-const {clean} = require('../js/spanCleaner');
+const {newSpanRow, getErrorType, formatEndpoint} = require('../../js/component_ui/spanRow');
+const {clean} = require('../../js/component_data/spanCleaner');
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
@@ -98,7 +98,7 @@ describe('getErrorType', () => {
   });
 });
 
-describe('SPAN v2 -> v1 Conversion', () => {
+describe('SPAN v2 -> spanRow Conversion', () => {
   // originally zipkin2.v1.SpanConverterTest.client
   it('converts client span', () => {
     const v2 = {
@@ -121,11 +121,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       }
     };
 
-    const v1 = {
-      traceId: '1',
+    const spanRow = {
       parentId: '2',
-      id: '3',
-      name: 'get',
+      spanId: '3',
+      spanName: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [
@@ -175,11 +174,11 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   it('should not duplicate service names', () => {
-    const converted = SPAN_V1.merge([clean({
+    const converted = newSpanRow([clean({
       traceId: '1',
       id: '3',
       localEndpoint: frontend,
@@ -202,11 +201,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       annotations: [{value: 'ws', timestamp: 1472470996238000}]
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'get',
+      spanId: '0000000000000003',
+      spanName: 'get',
       timestamp: 1472470996199000,
       annotations: [
         {
@@ -228,7 +226,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.client_kindInferredFromAnnotation
@@ -244,11 +242,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       annotations: [{value: 'cs', timestamp: 1472470996199000}]
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'get',
+      spanId: '0000000000000003',
+      spanName: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [
@@ -271,7 +268,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_cr
@@ -287,11 +284,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       annotations: [{value: 'cr', timestamp: 1472470996199000}]
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'get',
+      spanId: '0000000000000003',
+      spanName: 'get',
       annotations: [
         {
           isDerived: true,
@@ -306,7 +302,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_sa
@@ -318,17 +314,16 @@ describe('SPAN v2 -> v1 Conversion', () => {
       remoteEndpoint: backend
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
+      spanId: '0000000000000003',
       annotations: [],
       tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
       serviceNames: ['backend'],
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.noAnnotationsExceptAddresses
@@ -344,11 +339,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       remoteEndpoint: backend
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'get',
+      spanId: '0000000000000003',
+      spanName: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
@@ -361,7 +355,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.server
@@ -382,10 +376,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
       }
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
-      id: '0000000000000002',
-      name: 'get',
+    const spanRow = {
+      spanId: '0000000000000002',
+      spanName: 'get',
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [
@@ -412,7 +405,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.missingEndpoints
@@ -426,11 +419,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 207000
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000001',
-      id: '0000000000000002',
-      name: 'foo',
+      spanId: '0000000000000002',
+      spanName: 'foo',
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
@@ -439,8 +431,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = SPAN_V1.merge([v2]);
-    expect(v1).to.deep.equal(expected);
+    const expected = newSpanRow([v2]);
+    expect(spanRow).to.deep.equal(expected);
   });
 
   // originally zipkin2.v1.SpanConverterTest.coreAnnotation
@@ -454,11 +446,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       annotations: [{value: 'cs', timestamp: 1472470996199000}]
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000001',
-      id: '0000000000000002',
-      name: 'foo',
+      spanId: '0000000000000002',
+      spanName: 'foo',
       timestamp: 1472470996199000,
       annotations: [
         {
@@ -472,12 +463,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = SPAN_V1.merge([v2]);
-    expect(v1).to.deep.equal(expected);
+    const expected = newSpanRow([v2]);
+    expect(spanRow).to.deep.equal(expected);
   });
 
-  // originally zipkin2.v1.SpanConverterTest.server_shared_v1_no_timestamp_duration
-  it('converts shared server span without writing timestamp and duration', () => {
+  // originally zipkin2.v1.SpanConverterTest.server_shared_spanRow_no_timestamp_duration
+  it('when shared server span is missing its client, write its timestamp and duration', () => {
     const v2 = clean({
       traceId: '1',
       parentId: '2',
@@ -490,11 +481,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 207000
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'get',
+      spanId: '0000000000000003',
+      spanName: 'get',
+      timestamp: 1472470996199000,
+      duration: 207000,
       annotations: [
         {
           isDerived: true,
@@ -515,8 +507,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = SPAN_V1.merge([v2]);
-    expect(v1).to.deep.equal(expected);
+    const expected = newSpanRow([v2]);
+    expect(spanRow).to.deep.equal(expected);
   });
 
   // originally zipkin2.v1.SpanConverterTest.server_incomplete_shared
@@ -532,11 +524,11 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'get',
+      spanId: '0000000000000003',
+      spanName: 'get',
+      timestamp: 1472470996199000, // When we only have a shared timestamp, we should use it
       annotations: [
         {
           isDerived: true,
@@ -551,8 +543,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = SPAN_V1.merge([v2]);
-    expect(v1).to.deep.equal(expected);
+    const expected = newSpanRow([v2]);
+    expect(spanRow).to.deep.equal(expected);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ss
@@ -567,10 +559,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
       annotations: [{value: 'ss', timestamp: 1472470996199000}]
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
-      id: '0000000000000002',
-      name: 'get',
+    const spanRow = {
+      spanId: '0000000000000002',
+      spanName: 'get',
       annotations: [
         {
           isDerived: true,
@@ -585,7 +576,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ca
@@ -597,16 +588,15 @@ describe('SPAN v2 -> v1 Conversion', () => {
       remoteEndpoint: frontend
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
-      id: '0000000000000002',
+    const spanRow = {
+      spanId: '0000000000000002',
       annotations: [],
       tags: [{key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}],
       serviceNames: ['frontend'],
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.localSpan_emptyComponent
@@ -620,10 +610,9 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 207000,
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
-      id: '0000000000000002',
-      name: 'local',
+    const spanRow = {
+      spanId: '0000000000000002',
+      spanName: 'local',
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [],
@@ -633,7 +622,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_remote
@@ -648,11 +637,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       localEndpoint: frontend
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'send',
+      spanId: '0000000000000003',
+      spanName: 'send',
       timestamp: 1472470996199000,
       annotations: [
         {
@@ -668,7 +656,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_duration
@@ -684,11 +672,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 51000
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'send',
+      spanId: '0000000000000003',
+      spanName: 'send',
       timestamp: 1472470996199000,
       duration: 51000,
       annotations: [
@@ -711,7 +698,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer
@@ -726,11 +713,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       localEndpoint: backend
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'next-message',
+      spanId: '0000000000000003',
+      spanName: 'next-message',
       timestamp: 1472470996199000,
       annotations: [
         {
@@ -746,7 +732,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_remote
@@ -762,11 +748,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       remoteEndpoint: {serviceName: 'kafka'}
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'next-message',
+      spanId: '0000000000000003',
+      spanName: 'next-message',
       timestamp: 1472470996199000,
       annotations: [
         {
@@ -782,7 +767,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_duration
@@ -798,11 +783,10 @@ describe('SPAN v2 -> v1 Conversion', () => {
       duration: 51000
     });
 
-    const v1 = {
-      traceId: '0000000000000001',
+    const spanRow = {
       parentId: '0000000000000002',
-      id: '0000000000000003',
-      name: 'send',
+      spanId: '0000000000000003',
+      spanName: 'send',
       timestamp: 1472470996199000,
       duration: 51000,
       annotations: [
@@ -825,7 +809,7 @@ describe('SPAN v2 -> v1 Conversion', () => {
       errorType: 'none'
     };
 
-    expect(SPAN_V1.merge([v2])).to.deep.equal(v1);
+    expect(newSpanRow([v2])).to.deep.equal(spanRow);
   });
 
   it('should prefer ipv6', () => {
@@ -842,8 +826,8 @@ describe('SPAN v2 -> v1 Conversion', () => {
       localEndpoint
     });
 
-    const v1 = SPAN_V1.merge([v2]);
-    expect(v1.tags.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
+    const spanRow = newSpanRow([v2]);
+    expect(spanRow.tags.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
   });
 
   it('should not require endpoint serviceName', () => {
@@ -857,12 +841,12 @@ describe('SPAN v2 -> v1 Conversion', () => {
       }
     });
 
-    const v1 = SPAN_V1.merge([v2]);
-    expect(v1.annotations.map(s => s.endpoint)).to.deep.equal(['[2001:db8::c001]']);
+    const spanRow = newSpanRow([v2]);
+    expect(spanRow.annotations.map(s => s.endpoint)).to.deep.equal(['[2001:db8::c001]']);
   });
 });
 
-describe('SPAN v1 Merge', () => {
+describe('newSpanRow', () => {
   const clientSpan = clean({
     traceId: '1',
     parentId: '2',
@@ -884,11 +868,10 @@ describe('SPAN v1 Merge', () => {
     localEndpoint: backend,
     shared: true
   });
-  const mergedSpan = {
-    traceId: '0000000000000001',
+  const expectedSpanRow = {
     parentId: '0000000000000002',
-    id: '0000000000000003',
-    name: 'get',
+    spanId: '0000000000000003',
+    spanName: 'get',
     timestamp: 1472470996199000,
     duration: 207000,
     annotations: [
@@ -924,32 +907,32 @@ describe('SPAN v1 Merge', () => {
   };
 
   it('should merge server and client span', () => {
-    const merged = SPAN_V1.merge([serverSpan, clientSpan]);
+    const spanRow = newSpanRow([serverSpan, clientSpan]);
 
-    expect(merged).to.deep.equal(mergedSpan);
+    expect(spanRow).to.deep.equal(expectedSpanRow);
   });
 
   it('should merge client and server span', () => {
-    const merged = SPAN_V1.merge([clientSpan, serverSpan]);
+    const spanRow = newSpanRow([clientSpan, serverSpan]);
 
-    expect(merged).to.deep.equal(mergedSpan);
+    expect(spanRow).to.deep.equal(expectedSpanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.mergeWhenTagsSentSeparately
   it('should add late server addr', () => {
-    const merged = SPAN_V1.merge([clientSpan, clean({
+    const spanRow = newSpanRow([clientSpan, clean({
       traceId: '1',
       id: '3',
       remoteEndpoint: backend
     })]);
 
-    expect(merged.tags).to.deep.equal(
+    expect(spanRow.tags).to.deep.equal(
       [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]);
   });
 
   // originally zipkin2.v1.SpanConverterTest.mergePrefersServerSpanName
   it('should overwrite client name with server name', () => {
-    const merged = SPAN_V1.merge([clientSpan, clean({
+    const spanRow = newSpanRow([clientSpan, clean({
       traceId: '1',
       id: '3',
       name: 'get /users/:userId',
@@ -959,7 +942,7 @@ describe('SPAN v1 Merge', () => {
       shared: true
     })]);
 
-    expect(merged.name).to.equal('get /users/:userId');
+    expect(spanRow.spanName).to.equal('get /users/:userId');
   });
 
   // originally zipkin2.v1.SpanConverterTest.timestampAndDurationMergeWithClockSkew
@@ -992,8 +975,8 @@ describe('SPAN v1 Merge', () => {
       shared: true
     });
 
-    const leftFirst = SPAN_V1.merge([leftSpan, rightSpan]);
-    const rightFirst = SPAN_V1.merge([rightSpan, leftSpan]);
+    const leftFirst = newSpanRow([leftSpan, rightSpan]);
+    const rightFirst = newSpanRow([rightSpan, leftSpan]);
 
     [leftFirst, rightFirst].forEach((completeSpan) => {
       expect(completeSpan.timestamp).to.equal(leftTimestamp);
@@ -1005,7 +988,7 @@ describe('SPAN v1 Merge', () => {
   });
 
   it('should not overwrite client name with empty', () => {
-    const merged = SPAN_V1.merge([clientSpan, clean({
+    const spanRow = newSpanRow([clientSpan, clean({
       traceId: '1',
       id: '3',
       timestamp: 1472470996238000,
@@ -1014,7 +997,7 @@ describe('SPAN v1 Merge', () => {
       shared: true
     })]);
 
-    expect(merged.name).to.equal(clientSpan.name);
+    expect(spanRow.spanName).to.equal(clientSpan.name);
   });
 });
 

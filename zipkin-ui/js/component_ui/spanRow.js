@@ -1,4 +1,4 @@
-import {ConstantNames} from './component_ui/traceConstants';
+import {ConstantNames} from './traceConstants';
 
 // returns 'critical' if one of the spans has an error tag or currentErrorType was already critical,
 // returns 'transient' if one of the spans has an ERROR annotation, else
@@ -34,7 +34,7 @@ function toAnnotationRow(a, localFormatted, isDerived = false) {
   const res = {
     isDerived,
     value: ConstantNames[a.value] || a.value,
-    timestamp: a.timestamp,
+    timestamp: a.timestamp
   };
   if (localFormatted) res.endpoint = localFormatted;
   return res;
@@ -262,46 +262,35 @@ function getServiceName(endpoint) {
   return endpoint ? endpoint.serviceName : undefined;
 }
 
-// assumes spans are already clean
-function merge(spans) {
-  const first = spans.shift();
+// Merges the data into a single span row, which is lacking presentation information
+export function newSpanRow(spansToMerge) {
+  const first = spansToMerge[0];
   const res = {
-    traceId: first.traceId,
-    id: first.id,
-    errorType: getErrorType(first, 'none')
+    spanId: first.id,
+    serviceNames: [],
+    annotations: [],
+    tags: [],
+    errorType: 'none'
   };
-  if (first.parentId) res.parentId = first.parentId;
 
-  if (first.name) res.name = first.name;
-
-  if (!first.shared) {
-    if (first.timestamp) res.timestamp = first.timestamp;
-    if (first.duration) res.duration = first.duration;
-  }
-
-  const firstServiceName = getServiceName(first.localEndpoint);
-  if (firstServiceName) res.serviceName = firstServiceName;
-  res.serviceNames = firstServiceName ? [firstServiceName] : [];
-  maybePushServiceName(res.serviceNames, getServiceName(first.remoteEndpoint));
-
-  res.annotations = parseAnnotationRows(first);
-  res.tags = parseTagRows(first);
-  if (first.debug) res.debug = true;
-
-  spans.forEach(next => {
+  let sharedTimestamp;
+  let sharedDuration;
+  spansToMerge.forEach(next => {
     if (next.parentId) res.parentId = next.parentId;
-    if (next.name && (!res.name || next.kind === 'SERVER')) {
-      res.name = next.name; // prefer the server's span name
+    if (next.name && (!res.spanName || next.kind === 'SERVER')) {
+      res.spanName = next.name; // prefer the server's span name
     }
 
-    // If we have 2 different timestamps. Prefer the not shared one
-    if (!next.shared) {
-      if (!res.timestamp) res.timestamp = next.timestamp;
-      if (!res.duration) res.duration = next.duration;
+    if (next.shared) { // save off any shared timestamp, it is our second choice
+      if (!sharedTimestamp) sharedTimestamp = next.timestamp;
+      if (!sharedDuration) sharedDuration = next.duration;
+    } else {
+      if (!res.timestamp && next.timestamp) res.timestamp = next.timestamp;
+      if (!res.duration && next.duration) res.duration = next.duration;
     }
 
     const nextServiceName = getServiceName(next.localEndpoint);
-    if (next.kind === 'SERVER' && nextServiceName) {
+    if (nextServiceName && (!res.serviceName || next.kind === 'SERVER')) {
       res.serviceName = nextServiceName; // prefer the server's service name
     }
 
@@ -315,13 +304,13 @@ function merge(spans) {
 
     if (next.debug) res.debug = true;
   });
-  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
+
+  // timestamp is used to derive positional data later
+  if (!res.timestamp && sharedTimestamp) res.timestamp = sharedTimestamp;
+  // duration is used for deriving data, and also for the zoom function
+  if (!res.duration && sharedDuration) res.duration = sharedDuration;
+
   res.serviceNames.sort();
+  res.annotations.sort((a, b) => a.timestamp - b.timestamp);
   return res;
 }
-
-module.exports.SPAN_V1 = {
-  merge(spans) {
-    return merge(spans);
-  }
-};

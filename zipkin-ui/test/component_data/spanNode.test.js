@@ -1,5 +1,5 @@
-const {SpanNode, SpanNodeBuilder} = require('../js/spanNode');
-import {clean, mergeV2ById} from '../js/spanCleaner';
+const {SpanNode, SpanNodeBuilder} = require('../../js/component_data/spanNode');
+import {clean, mergeV2ById} from '../../js/component_data/spanCleaner';
 const should = require('chai').should();
 
 // originally zipkin2.internal.SpanNodeTest.java

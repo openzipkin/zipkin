@@ -3,7 +3,7 @@ import {showSpans, hideSpans, initSpans} from '../../js/component_ui/trace';
 import {netflixTrace, traceDetailSpan} from './traceTestHelpers';
 import {traceToMustache} from '../../js/component_ui/traceToMustache';
 import {traceTemplate} from '../../js/templates';
-import {treeCorrectedForClockSkew} from '../../js/skew';
+import {treeCorrectedForClockSkew} from '../../js/component_data/skew';
 
 // renders data into a tree for traceMustache
 const cleanedTestTrace = treeCorrectedForClockSkew(netflixTrace);
