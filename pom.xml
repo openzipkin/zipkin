@@ -48,14 +48,14 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <brave.version>5.5.0</brave.version>
+    <brave.version>5.5.1</brave.version>
     <cassandra-driver-core.version>3.6.0</cassandra-driver-core.version>
     <okhttp.version>3.12.0</okhttp.version>
     <okio.version>1.16.0</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
     <jooq.version>3.11.7</jooq.version>
-    <micrometer.version>1.1.0</micrometer.version>
-    <spring-boot.version>2.1.0.RELEASE</spring-boot.version>
+    <micrometer.version>1.1.1</micrometer.version>
+    <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
@@ -71,10 +71,10 @@
 
     <junit.version>4.12</junit.version>
     <powermock.version>2.0.0-RC.4</powermock.version>
-    <mockito.version>2.23.0</mockito.version>
+    <mockito.version>2.23.4</mockito.version>
     <assertj.version>3.11.1</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <testcontainers.version>1.10.1</testcontainers.version>
+    <testcontainers.version>1.10.2</testcontainers.version>
 
     <auto-value.version>1.6.2</auto-value.version>
     <animal-sniffer-maven-plugin.version>1.17</animal-sniffer-maven-plugin.version>
@@ -89,6 +89,7 @@
     <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M1</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
+    <zipkin-layout-factory.version>0.0.4</zipkin-layout-factory.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -428,7 +429,7 @@
   <build>
     <pluginManagement>
       <plugins>
-        <!-- mvn -N io.takari:maven:wrapper -Dmaven=3.5.4 -->
+        <!-- mvn -N io.takari:maven:wrapper -Dmaven=3.6.0 -->
         <plugin>
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>
@@ -533,7 +534,7 @@
         <plugin>
           <groupId>net.orfjackal.retrolambda</groupId>
           <artifactId>retrolambda-maven-plugin</artifactId>
-          <version>2.5.5</version>
+          <version>2.5.6</version>
           <executions>
             <execution>
               <goals>
@@ -601,16 +602,12 @@
         </executions>
       </plugin>
 
-      <!-- Checksums are added after all other plugins -->
       <plugin>
         <artifactId>maven-install-plugin</artifactId>
         <version>${maven-install-plugin.version}</version>
-        <configuration>
-          <createChecksum>true</createChecksum>
-        </configuration>
       </plugin>
 
-      <!-- Uploads occur as a last step -->
+      <!-- Uploads occur as a last step (which also adds checksums) -->
       <plugin>
         <artifactId>maven-deploy-plugin</artifactId>
         <version>${maven-deploy-plugin.version}</version>
