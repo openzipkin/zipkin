@@ -490,10 +490,6 @@ public class DependencyLinkerTest {
     assertThat(new DependencyLinker(logger)
       .putTrace(trace).link())
       .isEmpty();
-
-    assertThat(messages).contains(
-      "skipping fake root node for broken span tree"
-    );
   }
 
   @Test
@@ -506,10 +502,6 @@ public class DependencyLinkerTest {
 
     assertThat(new DependencyLinker(logger).putTrace(trace).link()).containsOnly(
       DependencyLink.newBuilder().parent("service1").child("service2").callCount(1L).build()
-    );
-
-    assertThat(messages).contains(
-      "skipping fake root node for broken span tree"
     );
   }
 

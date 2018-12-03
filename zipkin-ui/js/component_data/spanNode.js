@@ -119,10 +119,10 @@ class SpanNodeBuilder {
       // same ID sent by the client.
       idKey = keyString(span.id, true, span.localEndpoint);
       // the parent of a server span is a client, which is not ambiguous for a given span ID.
-      parentKey = keyString(span.id);
+      parentKey = span.id;
     } else {
-      idKey = keyString(span.id);
-      if (span.parentId) parentKey = keyString(span.parentId);
+      idKey = span.id;
+      parentKey = span.parentId;
     }
 
     this._spanToParent[idKey] = parentKey;
@@ -146,7 +146,7 @@ class SpanNodeBuilder {
     if (span.shared) {
       // Shared is a server span. It will very likely be on a different endpoint than the client.
       // Clients are not ambiguous by ID, so we don't need to qualify by endpoint.
-      parent = keyString(span.id);
+      parent = span.id;
     } else if (span.parentId) {
       // We are not a root span, and not a shared server span. Proceed in most specific to least.
 
@@ -157,7 +157,7 @@ class SpanNodeBuilder {
         this._spanToParent[noEndpointKey] = parent;
       } else {
         // If there's no shared parent, fall back to normal case which is unqualified beyond ID.
-        parent = keyString(span.parentId);
+        parent = span.parentId;
       }
     } else { // we are root or don't know our parent
       if (this._rootSpan) {
