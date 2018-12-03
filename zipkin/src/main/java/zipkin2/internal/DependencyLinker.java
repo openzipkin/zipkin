@@ -35,9 +35,10 @@ import static java.util.logging.Level.FINE;
  * the same as client spans.
  */
 public final class DependencyLinker {
-  private final Logger logger;
-  private final Map<Pair, Long> callCounts = new LinkedHashMap<>();
-  private final Map<Pair, Long> errorCounts = new LinkedHashMap<>();
+  final Logger logger;
+  final SpanNode.Builder builder;
+  final Map<Pair, Long> callCounts = new LinkedHashMap<>();
+  final Map<Pair, Long> errorCounts = new LinkedHashMap<>();
 
   public DependencyLinker() {
     this(Logger.getLogger(DependencyLinker.class.getName()));
@@ -45,6 +46,7 @@ public final class DependencyLinker {
 
   DependencyLinker(Logger logger) {
     this.logger = logger;
+    this.builder = new SpanNode.Builder(logger);
   }
 
   /**
@@ -52,16 +54,12 @@ public final class DependencyLinker {
    */
   public DependencyLinker putTrace(List<Span> spans) {
     if (spans.isEmpty()) return this;
-    SpanNode traceTree = new SpanNode.Builder(logger).build(spans);
+    SpanNode traceTree = builder.build(spans);
 
     if (logger.isLoggable(FINE)) logger.fine("traversing trace tree, breadth-first");
     for (Iterator<SpanNode> i = traceTree.traverse(); i.hasNext(); ) {
       SpanNode current = i.next();
       Span currentSpan = current.span();
-      if (currentSpan == null) {
-        logger.fine("skipping fake root node for broken span tree");
-        continue;
-      }
       if (logger.isLoggable(FINE)) {
         logger.fine("processing " + currentSpan);
       }
@@ -122,7 +120,8 @@ public final class DependencyLinker {
       // Local spans may be between the current node and its remote parent
       Span remoteAncestor = firstRemoteAncestor(current);
       String remoteAncestorName;
-      if (remoteAncestor != null && (remoteAncestorName = remoteAncestor.localServiceName()) != null) {
+      if (remoteAncestor != null
+        && (remoteAncestorName = remoteAncestor.localServiceName()) != null) {
         // Some users accidentally put the remote service name on client annotations.
         // Check for this and backfill a link from the nearest remote to that service as necessary.
         if (kind == Kind.CLIENT && serviceName != null && !remoteAncestorName.equals(serviceName)) {

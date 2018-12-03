@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.logging.Logger;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -36,8 +35,9 @@ import static java.util.logging.Level.FINE;
  */
 public final class SpanNode {
   /** Set via {@link #addChild(SpanNode)} */
-  SpanNode parent;
-  Span span;
+  @Nullable SpanNode parent;
+  /** Null when a synthetic root node */
+  @Nullable Span span;
   /** mutable to avoid allocating lists for childless nodes */
   List<SpanNode> children = Collections.emptyList();
 
@@ -50,7 +50,7 @@ public final class SpanNode {
     return parent;
   }
 
-  /** Returns the span, or null if a synthetic root span */
+  /** Returns the span, or null if a synthetic root node */
   @Nullable public Span span() {
     return span;
   }
@@ -66,10 +66,17 @@ public final class SpanNode {
   }
 
   static final class BreadthFirstIterator implements Iterator<SpanNode> {
-    private final Queue<SpanNode> queue = new ArrayDeque<>();
+    final ArrayDeque<SpanNode> queue = new ArrayDeque<>();
 
     BreadthFirstIterator(SpanNode root) {
-      queue.add(root);
+      // since the input data could be headless, we first push onto the queue the root-most spans
+      if (root.span == null) { // synthetic root
+        for (int i = 0, length = root.children.size(); i < length; i++) {
+          queue.add(root.children.get(i));
+        }
+      } else {
+        queue.add(root);
+      }
     }
 
     @Override public boolean hasNext() {
@@ -79,7 +86,9 @@ public final class SpanNode {
     @Override public SpanNode next() {
       if (!hasNext()) throw new NoSuchElementException();
       SpanNode result = queue.remove();
-      queue.addAll(result.children);
+      for (int i = 0, length = result.children.size(); i < length; i++) {
+        queue.add(result.children.get(i));
+      }
       return result;
     }
 
@@ -93,12 +102,8 @@ public final class SpanNode {
     if (child == null) throw new NullPointerException("child == null");
     if (child == this) throw new IllegalArgumentException("circular dependency on " + this);
     if (children.equals(Collections.emptyList())) children = new ArrayList<>();
-    if (!children.contains(child)) {
-      children.add(child);
-      child.parent = this;
-    } else { // shouldn't ever happen as we already dedupe with Trace.merge
-      throw new IllegalArgumentException("children already contains " + child);
-    }
+    children.add(child);
+    child.parent = this;
     return this;
   }
 
@@ -110,8 +115,14 @@ public final class SpanNode {
     }
 
     SpanNode rootSpan = null;
-    Map<Key, SpanNode> keyToNode = new LinkedHashMap<>();
-    Map<Key, Key> spanToParent = new LinkedHashMap<>();
+    Map<Object, SpanNode> keyToNode = new LinkedHashMap<>();
+    Map<Object, Object> spanToParent = new LinkedHashMap<>();
+
+    void clear() {
+      rootSpan = null;
+      keyToNode.clear();
+      spanToParent.clear();
+    }
 
     /**
      * Builds a trace tree by merging and processing the input or returns an empty tree.
@@ -121,22 +132,24 @@ public final class SpanNode {
      */
     public SpanNode build(List<Span> spans) {
       if (spans.isEmpty()) throw new IllegalArgumentException("spans were empty");
+      clear();
 
       // In order to make a tree, we need clean data. This will merge any duplicates so that we
       // don't have redundant leaves on the tree.
       List<Span> cleaned = Trace.merge(spans);
+      int length = cleaned.size();
       String traceId = cleaned.get(0).traceId();
 
       if (logger.isLoggable(FINE)) logger.fine("building trace tree: traceId=" + traceId);
 
       // Next, index all the spans so that we can understand any relationships.
-      for (int i = 0, length = cleaned.size(); i < length; i++) {
+      for (int i = 0; i < length; i++) {
         index(cleaned.get(i));
       }
 
       // Now that we've index references to all spans, we can revise any parent-child relationships.
       // Notably, by now, we can tell which is the root-most.
-      for (int i = 0, length = cleaned.size(); i < length; i++) {
+      for (int i = 0; i < length; i++) {
         process(cleaned.get(i));
       }
 
@@ -150,7 +163,7 @@ public final class SpanNode {
 
       // At this point, we have the most reliable parent-child relationships and can allocate spans
       // corresponding the the best place in the trace tree.
-      for (Map.Entry<Key, Key> entry : spanToParent.entrySet()) {
+      for (Map.Entry<Object, Object> entry : spanToParent.entrySet()) {
         SpanNode child = keyToNode.get(entry.getKey());
         SpanNode parent = keyToNode.get(entry.getValue());
 
@@ -177,16 +190,16 @@ public final class SpanNode {
      * endpoint data that might be available.
      */
     void index(Span span) {
-      Key idKey, parentKey;
+      Object idKey, parentKey;
       if (Boolean.TRUE.equals(span.shared())) {
         // we need to classify a shared span by its endpoint in case multiple servers respond to the
         // same ID sent by the client.
-        idKey = new Key(span.id(), true, span.localEndpoint());
+        idKey = createKey(span.id(), true, span.localEndpoint());
         // the parent of a server span is a client, which is not ambiguous for a given span ID.
-        parentKey = new Key(span.id(), false, null);
+        parentKey = span.id();
       } else {
-        idKey = new Key(span.id(), span.shared(), null);
-        parentKey = span.parentId() != null ? new Key(span.parentId(), false, null) : null;
+        idKey = span.id();
+        parentKey = span.parentId();
       }
       spanToParent.put(idKey, parentKey);
     }
@@ -202,32 +215,33 @@ public final class SpanNode {
      */
     void process(Span span) {
       Endpoint endpoint = span.localEndpoint();
-      Key key = new Key(span.id(), span.shared(), span.localEndpoint());
-      Key noEndpointKey = endpoint != null ? new Key(span.id(), span.shared(), null) : key;
+      boolean shared = Boolean.TRUE.equals(span.shared());
+      Object key = createKey(span.id(), shared, span.localEndpoint());
+      Object noEndpointKey = endpoint != null ? createKey(span.id(), shared, null) : key;
 
-      Key parent = null;
-      if (key.shared) {
+      Object parent = null;
+      if (shared) {
         // Shared is a server span. It will very likely be on a different endpoint than the client.
         // Clients are not ambiguous by ID, so we don't need to qualify by endpoint.
-        parent = new Key(span.id(), false, null);
+        parent = span.id();
       } else if (span.parentId() != null) {
         // We are not a root span, and not a shared server span. Proceed in most specific to least.
 
         // We could be the child of a shared server span (ex a local (intermediate) span on the same
         // endpoint). This is the most specific case, so we try this first.
-        parent = new Key(span.parentId(), true, endpoint);
+        parent = createKey(span.parentId(), true, endpoint);
         if (spanToParent.containsKey(parent)) {
           spanToParent.put(noEndpointKey, parent);
         } else {
           // If there's no shared parent, fall back to normal case which is unqualified beyond ID.
-          parent = new Key(span.parentId(), false, null);
+          parent = span.parentId();
         }
       } else { // we are root or don't know our parent
         if (rootSpan != null) {
           if (logger.isLoggable(FINE)) {
             logger.fine(format(
               "attributing span missing parent to root: traceId=%s, rootSpanId=%s, spanId=%s",
-              span.traceId(), rootSpan.span().id(), key.id));
+              span.traceId(), rootSpan.span().id(), span.id()));
           }
         }
       }
@@ -238,7 +252,7 @@ public final class SpanNode {
       if (parent == null && rootSpan == null) {
         rootSpan = node;
         spanToParent.remove(noEndpointKey);
-      } else if (key.shared) {
+      } else if (shared) {
         // In the case of shared server span, we need to address it both ways, in case intermediate
         // spans are lacking endpoint information.
         keyToNode.put(key, node);
@@ -249,31 +263,34 @@ public final class SpanNode {
     }
   }
 
+  static Object createKey(String id, boolean shared, @Nullable Endpoint endpoint) {
+    if (!shared) return id;
+    return new SharedKey(id, endpoint);
+  }
+
   /**
    * A span in the tree is not always unique on ID. Sharing is allowed once per ID (Ex: in RPC).
    * However, it is possible in a retry scenario for accidental duplicate ID sharing to occur
    */
-  static final class Key {
+  static final class SharedKey {
     final String id;
-    boolean shared;
     @Nullable final Endpoint endpoint;
 
-    Key(String id, @Nullable Boolean shared, @Nullable Endpoint endpoint) {
+    SharedKey(String id, @Nullable Endpoint endpoint) {
       if (id == null) throw new NullPointerException("id == null");
       this.id = id;
-      this.shared = Boolean.TRUE.equals(shared);
       this.endpoint = endpoint;
     }
 
     @Override public String toString() {
-      return "Key{id=" + id + ", shared=" + shared + ", endpoint=" + endpoint + "}";
+      return "SharedKey{id=" + id + ", endpoint=" + endpoint + "}";
     }
 
     @Override public boolean equals(Object o) {
       if (o == this) return true;
-      if (!(o instanceof Key)) return false;
-      Key that = (Key) o;
-      return id.equals(that.id) && shared == that.shared && equal(endpoint, that.endpoint);
+      if (!(o instanceof SharedKey)) return false;
+      SharedKey that = (SharedKey) o;
+      return id.equals(that.id) && equal(endpoint, that.endpoint);
     }
 
     static boolean equal(Object a, Object b) {
@@ -284,8 +301,6 @@ public final class SpanNode {
       int result = 1;
       result *= 1000003;
       result ^= id.hashCode();
-      result *= 1000003;
-      result ^= shared ? 1231 : 1237;
       result *= 1000003;
       result ^= (endpoint == null) ? 0 : endpoint.hashCode();
       return result;
