@@ -13,6 +13,7 @@
  */
 package zipkin2.internal;
 
+import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import zipkin2.Endpoint;
@@ -41,6 +42,21 @@ public class TraceTest {
       span("a", null, "a", Kind.SERVER, "frontend", null, false),
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false),
       span("a", "a", "b", Kind.SERVER, "backend", null, true)
+    );
+  }
+
+  @Test public void backfillsMissingSharedFlag() {
+    List<Span> trace = asList(
+      span("a", null, "a", Kind.SERVER, "frontend", null, false),
+      span("a", "a", "b", Kind.CLIENT, "frontend", "1.2.3.4", false),
+      // below the shared flag was forgotten
+      span("a", "a", "b", Kind.SERVER, "backend", "5.6.7.8", false)
+    );
+
+    assertThat(Trace.merge(trace)).usingFieldByFieldElementComparator().containsExactlyInAnyOrder(
+      span("a", null, "a", Kind.SERVER, "frontend", null, false),
+      span("a", "a", "b", Kind.CLIENT, "frontend", "1.2.3.4", false),
+      span("a", "a", "b", Kind.SERVER, "backend", "5.6.7.8", true)
     );
   }
 
@@ -184,6 +200,17 @@ public class TraceTest {
     );
 
     assertThat(Trace.merge(trace)).containsExactlyElementsOf(trace);
+  }
+
+  // some instrumentation don't add shared flag to servers
+  @Test public void cleanupComparator_ordersClientFirst() {
+    List<Span> trace = asList(
+      span("a", "a", "b", Kind.SERVER, "backend", "1.2.3.5", false),
+      span("a", "a", "b", Kind.CLIENT, "frontend", null, false)
+    );
+
+    Collections.sort(trace, Trace.CLEANUP_COMPARATOR);
+    assertThat(trace.get(0).kind()).isEqualTo(Kind.CLIENT);
   }
 
   static Span span(String traceId, @Nullable String parentId, String id, @Nullable Kind kind,

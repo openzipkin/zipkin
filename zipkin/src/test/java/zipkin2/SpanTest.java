@@ -310,6 +310,24 @@ public class SpanTest {
     );
   }
 
+  @Test public void builder_merge_localEndpoint_null() {
+    Span merged = Span.newBuilder().localEndpoint(FRONTEND)
+      .merge(Span.newBuilder().traceId(base.traceId()).id(base.id()).build()).build();
+
+    assertThat(merged).isEqualToComparingFieldByField(
+      Span.newBuilder().traceId(base.traceId()).id(base.id()).localEndpoint(FRONTEND).build()
+    );
+  }
+
+  @Test public void builder_merge_remoteEndpoint_null() {
+    Span merged = Span.newBuilder().remoteEndpoint(FRONTEND)
+      .merge(Span.newBuilder().traceId(base.traceId()).id(base.id()).build()).build();
+
+    assertThat(merged).isEqualToComparingFieldByField(
+      Span.newBuilder().traceId(base.traceId()).id(base.id()).remoteEndpoint(FRONTEND).build()
+    );
+  }
+
   @Test public void builder_merge_remoteEndpoint() {
     Span merged = Span.newBuilder()
       .merge(base.toBuilder().remoteEndpoint(FRONTEND).build()).build();

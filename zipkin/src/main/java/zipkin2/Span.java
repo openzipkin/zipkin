@@ -28,7 +28,6 @@ import java.util.TreeMap;
 import java.util.logging.Logger;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.internal.DependencyLinker;
 import zipkin2.internal.Nullable;
 
 import static java.lang.String.format;
@@ -365,12 +364,12 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       if (duration == 0L) duration = source.duration;
       if (localEndpoint == null) {
         localEndpoint = source.localEndpoint;
-      } else {
+      } else if (source.localEndpoint != null) {
         localEndpoint = localEndpoint.toBuilder().merge(source.localEndpoint).build();
       }
       if (remoteEndpoint == null) {
         remoteEndpoint = source.remoteEndpoint;
-      } else {
+      } else if (source.remoteEndpoint != null) {
         remoteEndpoint = remoteEndpoint.toBuilder().merge(source.remoteEndpoint).build();
       }
       if (!source.annotations.isEmpty()) {
