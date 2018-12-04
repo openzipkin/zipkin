@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin.zipkin2</groupId>
     <artifactId>parent</artifactId>
-    <version>2.11.10-SNAPSHOT</version>
+    <version>2.11.10</version>
   </parent>
 
   <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
