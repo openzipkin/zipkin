@@ -441,6 +441,11 @@ public class SpanTest {
       .isNull();
   }
 
+  @Test public void removesSharedFlagFromClientSpans() {
+    assertThat(base.toBuilder().kind(Span.Kind.CLIENT).build().shared())
+      .isNull();
+  }
+
   @Test public void idFromLong() {
     assertThat(base.toBuilder().id(3405691582L).build().id())
       .isEqualTo("00000000cafebabe");
