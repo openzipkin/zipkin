@@ -153,5 +153,43 @@ describe('traceToMustache', () => {
       {serviceName: 'frontend', spanCount: 1}
     ]);
   });
+
+  /*
+   * The following tree should not traverse in alphabetical order, as the UI intends to order by
+   * timstamp, not by cause. The reason is that the UI is row based, and people are used to seeing
+   * data descending to the right.
+   *
+   *          a
+   *        / | \
+   *       b  c  d
+   *      /|\
+   *     e f 1
+   *          \
+   *           2
+   */
+  it('should order spans by timestamp, root first, not by cause', () => {
+    const a = new SpanNode(clean({traceId: '1', id: 'a', timestamp: 8}));
+    const b = new SpanNode(clean({traceId: '1', id: 'b', parentId: 'a', timestamp: 7}));
+    const c = new SpanNode(clean({traceId: '1', id: 'c', parentId: 'a', timestamp: 6}));
+    const d = new SpanNode(clean({traceId: '1', id: 'd', parentId: 'a', timestamp: 5}));
+    // root(a) has children b, c, d
+    a.addChild(b);
+    a.addChild(c);
+    a.addChild(d);
+    const e = new SpanNode(clean({traceId: '1', id: 'e', parentId: 'b', timestamp: 4}));
+    const f = new SpanNode(clean({traceId: '1', id: 'f', parentId: 'b', timestamp: 3}));
+    const g = new SpanNode(clean({traceId: '1', id: '1', parentId: 'b', timestamp: 2}));
+    // child(b) has children e, f, g
+    b.addChild(e);
+    b.addChild(f);
+    b.addChild(g);
+    const h = new SpanNode(clean({traceId: '1', id: '2', parentId: '1', timestamp: 1}));
+    // f has no children
+    // child(g) has child h
+    g.addChild(h);
+
+    const {spans} = traceToMustache(a);
+    expect(spans.map(s => s.timestamp)).to.eql([8, 1, 2, 3, 4, 5, 6, 7]);
+  });
 });
 

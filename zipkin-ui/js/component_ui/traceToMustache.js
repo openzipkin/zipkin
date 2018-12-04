@@ -106,6 +106,19 @@ export function traceToMustache(root, logsUrl) {
     modelview.spans.push(spanRow);
   }
 
+  // Sort by timestamp, root first in case of skew. This makes the trace diagram display in
+  // increasing indent (temporal) order, which is a better experience than causal (topological)
+  // order in the current UI.
+  modelview.spans.sort((a, b) => {
+    if (!a.parentId && b.parentId) { // a is root
+      return -1;
+    } else if (a.parentId && !b.parentId) { // b is root
+      return 1;
+    }
+
+    return a.timestamp - b.timestamp;
+  });
+
   modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount).sort().map(serviceName =>
     ({serviceName, spanCount: serviceNameToCount[serviceName]})
   );
