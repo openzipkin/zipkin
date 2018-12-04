@@ -31,7 +31,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Nullable;
 
 import static java.lang.String.format;
-import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINEST;
 import static zipkin2.Endpoint.HEX_DIGITS;
 
 /**
@@ -609,10 +609,18 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       if (!"".equals(missing)) throw new IllegalStateException("Missing :" + missing);
       if (id.equals(parentId)) { // edge case, so don't require a logger field
         Logger logger = Logger.getLogger(Span.class.getName());
-        if (logger.isLoggable(FINE)) {
+        if (logger.isLoggable(FINEST)) {
           logger.fine(format("undoing circular dependency: traceId=%s, spanId=%s", traceId, id));
         }
         parentId = null;
+      }
+      // shared is for the server side, unset it if accidentally set on the client side
+      if ((flags & FLAG_SHARED) == FLAG_SHARED && kind == Kind.CLIENT) {
+        Logger logger = Logger.getLogger(Span.class.getName());
+        if (logger.isLoggable(FINEST)) {
+          logger.fine(format("removing shared flag on client: traceId=%s, spanId=%s", traceId, id));
+        }
+        shared(null);
       }
       return new Span(this);
     }

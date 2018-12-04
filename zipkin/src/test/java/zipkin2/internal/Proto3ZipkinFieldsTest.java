@@ -179,7 +179,7 @@ public class Proto3ZipkinFieldsTest {
   }
 
   @Test public void span_write_shared() {
-    SPAN.write(buf, CLIENT_SPAN.toBuilder().shared(true).build());
+    SPAN.write(buf, CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).shared(true).build());
 
     assertThat(buf.toByteArray())
       .contains(0b01101000, atIndex(buf.pos - 2)) // (field_number << 3) | wire_type = 13 << 3 | 0

@@ -1,4 +1,9 @@
-const {cleanupComparator, merge, mergeV2ById} = require('../../js/component_data/spanCleaner');
+const {
+  clean,
+  cleanupComparator,
+  merge,
+  mergeV2ById
+} = require('../../js/component_data/spanCleaner');
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
@@ -57,6 +62,19 @@ const oneOfEach = { // has every field set
   shared: true,
   debug: true
 };
+
+describe('clean', () => {
+  it('should remove shared flag if set on client', () => {
+    const cleaned = clean({
+      traceId: '0000000000000001',
+      id: '0000000000000002',
+      kind: 'CLIENT',
+      shared: true
+    });
+
+    (typeof cleaned.shared).should.equal('undefined');
+  });
+});
 
 describe('merge', () => {
   it('should work on redundant data', () => {

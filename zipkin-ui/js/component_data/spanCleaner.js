@@ -46,7 +46,8 @@ export function clean(span) {
   res.tags = span.tags || {};
 
   if (span.debug) res.debug = true;
-  if (span.shared) res.shared = true;
+  // shared is for the server side, unset it if accidentally set on the client side
+  if (span.shared && span.kind !== 'CLIENT') res.shared = true;
 
   return res;
 }
