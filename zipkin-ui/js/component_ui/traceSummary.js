@@ -6,7 +6,6 @@ import {getErrorType} from './spanRow';
 // To ensure data doesn't scroll off the screen, we need all timestamps, not just
 // client/server ones.
 export function addTimestamps(span, timestamps) {
-  span.annotations.forEach(a => timestamps.push(a.timestamp));
   if (!span.timestamp) return;
   timestamps.push(span.timestamp);
   if (!span.duration) return;
