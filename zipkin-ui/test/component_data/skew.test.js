@@ -247,20 +247,37 @@ describe('getClockSkew', () => {
   });
 });
 
-// depth first traversal, comparing timestamps
+// breadth first traversal, comparing timestamps between the parent and each child
 function expectChildrenHappenAfterParent(root) {
-  const queue = [];
-
-  queue.push(root);
+  const queue = root.queueRootMostSpans();
   while (queue.length > 0) {
     const parent = queue.shift();
 
     parent.children.forEach(child => {
-      if (parent.span) { // handle headless
-        expect(child.span.timestamp).to.be.gt(parent.span.timestamp);
-      }
+      expect(child.span.timestamp).to.be.gt(parent.span.timestamp);
       queue.push(child);
     });
+  }
+}
+
+// breadth first traversal, comparing timestamps between children
+function expectChildrenToBeInOrder(root) {
+  const queue = root.queueRootMostSpans();
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    const childCount = current.children.length;
+    if (childCount === 0) continue;
+
+    let lastChild = current.children[0].span;
+    for (let i = 1; i < childCount; i++) {
+      const currentChild = current.children[i].span;
+      expect(currentChild.timestamp).to.be.gt(lastChild.timestamp);
+      lastChild = currentChild;
+    }
+
+    // process the next level of the tree
+    current.children.forEach(child => queue.push(child));
   }
 }
 
@@ -269,6 +286,7 @@ describe('treeCorrectedForClockSkew', () => {
   it('should correct skew', () => {
     const corrected = treeCorrectedForClockSkew(skewedTrace);
     expectChildrenHappenAfterParent(corrected);
+    expectChildrenToBeInOrder(corrected);
   });
 
   it('should skip when headless', () => {
