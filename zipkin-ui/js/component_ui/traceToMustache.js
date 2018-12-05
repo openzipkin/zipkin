@@ -55,7 +55,7 @@ function addLayoutDetails(
 
 export function traceToMustache(root, logsUrl) {
   const serviceNameToCount = {};
-  const queue = root.queueRootMostSpans();
+  let queue = root.queueRootMostSpans();
   const modelview = {
     traceId: queue[0].span.traceId,
     depth: 0,
@@ -72,18 +72,20 @@ export function traceToMustache(root, logsUrl) {
     // same ID. When that's the case, we pull up any of their children as if they are our own.
     const spansToMerge = [current.span];
     const childIds = [];
+    const toPrefix = [];
     current.children.forEach(child => {
       if (current.span.id === child.span.id) {
         spansToMerge.push(child.span);
         child.children.forEach(grandChild => {
-          queue.push(grandChild);
+          toPrefix.push(grandChild);
           childIds.push(grandChild.span.id);
         });
       } else {
-        queue.push(child);
+        toPrefix.push(child);
         childIds.push(child.span.id);
       }
     });
+    queue = toPrefix.concat(queue);
 
     // The mustache template expects one row per span ID. To get the correct depth class, we need to
     // count distinct span IDs above us.
@@ -105,19 +107,6 @@ export function traceToMustache(root, logsUrl) {
 
     modelview.spans.push(spanRow);
   }
-
-  // Sort by timestamp, root first in case of skew. This makes the trace diagram display in
-  // increasing indent (temporal) order, which is a better experience than causal (topological)
-  // order in the current UI.
-  modelview.spans.sort((a, b) => {
-    if (!a.parentId && b.parentId) { // a is root
-      return -1;
-    } else if (a.parentId && !b.parentId) { // b is root
-      return 1;
-    }
-
-    return a.timestamp - b.timestamp;
-  });
 
   modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount).sort().map(serviceName =>
     ({serviceName, spanCount: serviceNameToCount[serviceName]})
