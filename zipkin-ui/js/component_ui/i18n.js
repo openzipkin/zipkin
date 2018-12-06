@@ -8,6 +8,7 @@ export function i18nInit(file) {
     name: file,
     path: contextRoot,
     mode: 'map',
+    language: 'zh_CN',
     // do not append a unix timestamp when requesting the language (.properties) files
     // this allows them to be cached by the browser
     cache: true,
