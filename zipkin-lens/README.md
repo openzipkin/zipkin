@@ -16,6 +16,11 @@ $ npm install --dev
 $ API_BASE="http://localhost:9411" npm run start
 ```
 
+## URL to view development build
+```
+http://localhost:9000/zipkin
+```
+
 ## Production build
 
 ```
