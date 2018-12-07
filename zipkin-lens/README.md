@@ -35,6 +35,13 @@ Zipkin Lens can be secured by running it behind an authenticating proxy like [Ap
 Zipkin Lens design includes facets of old and new designs. Here are
 some notable new aspects borrowed or adapted from others.
 
+### Overall Design
+Zipkin Lens was originally an internal Ui to LINE called IMON. One driving feature was to
+allow site-specific tags like "Phase" and "Instance Id" to be choices for trace queries.
+The Ui was originally matching color schemes of other tools like Grafana and fit in with
+the Observability ecosystem of LINE engineering. IMON was created by Igarashi Takuma and
+Huy Do who later contributed it as the initial version of Zipkin Lens.
+
 ### Trace Mini Map
 The original Zipkin UI trace detail screen had a Zoom feature which is
 helpful for looking at nuance in a large trace by expanding the
