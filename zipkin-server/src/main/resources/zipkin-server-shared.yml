@@ -119,7 +119,6 @@ zipkin:
       max-active: ${MYSQL_MAX_CONNECTIONS:10}
       use-ssl: ${MYSQL_USE_SSL:false}
   ui:
-    source-root: classpath:zipkin-ui
     enabled: ${QUERY_ENABLED:true}
     ## Values below here are mapped to ZipkinUiProperties, served as /config.json
     # Default limit for Find Traces

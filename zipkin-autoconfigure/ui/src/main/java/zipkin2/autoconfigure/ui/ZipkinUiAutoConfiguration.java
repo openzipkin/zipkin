@@ -74,7 +74,7 @@ class ZipkinUiAutoConfiguration {
   @Autowired
   ZipkinUiProperties ui;
 
-  @Value("${zipkin.ui.source-root}/index.html")
+  @Value("${zipkin.ui.source-root:classpath:zipkin-ui}/index.html")
   Resource indexHtml;
 
   @Bean
@@ -95,7 +95,7 @@ class ZipkinUiAutoConfiguration {
   }
 
   @Bean
-  public WebMvcConfigurer resourceConfigurer(@Value("${zipkin.ui.source-root}") String sourceRoot) {
+  public WebMvcConfigurer resourceConfigurer(@Value("${zipkin.ui.source-root:classpath:zipkin-ui}") String sourceRoot) {
     return new WebMvcConfigurer() {
       @Override
       public void addResourceHandlers(ResourceHandlerRegistry registry) {
