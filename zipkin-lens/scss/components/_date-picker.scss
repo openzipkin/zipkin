@@ -1,0 +1,21 @@
+.date-picker {
+  display: flex;
+
+  .date-picker__calendar {
+    min-width: 75px;
+    max-width: 125px;
+    &-input {
+      height: $input-line-height;
+      color: $input-color;
+      background-color: $input-bg;
+      border: solid 1px $input-border-color;
+      border-radius: 2px;
+    }
+  }
+
+  .date-picker__timepicker {
+    min-width: 50px;
+    max-width: 100px;
+    padding-left: 5px;
+  }
+}

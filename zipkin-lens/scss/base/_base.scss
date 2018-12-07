@@ -1,0 +1,17 @@
+html {
+  // Include padding and border in the element's total width and height:
+  box-sizing: border-box;
+  font-size: $font-size-root;
+}
+
+body {
+  font-family: $font-family-base;
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  color: $body-color;
+  background-color: $body-bg;
+}
+
+[role="button"] {
+  cursor: pointer;
+}

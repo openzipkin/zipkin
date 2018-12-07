@@ -1,0 +1,87 @@
+.trace {
+  padding: 10px;
+}
+
+.trace__trace-info-wrapper {
+  width: 100%;
+  display: flex;
+  -webkit-pack: justify !important;
+  justify-content: center;
+  align-items: center;
+  padding: 10px;
+}
+
+.trace__trace-info {
+  width: 80%;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  background-color: $trace-info-bg;
+  border: 1px solid $trace-info-border-color;
+  border-radius: 5px;
+  display: flex;
+}
+
+.trace__trace-info-info {
+  display: flex;
+}
+
+.trace__trace-info-label {
+  padding-left: 9px;
+  color: $gray-10;
+
+  &::after {
+    content: ":";
+    margin-right: 5px;
+  }
+}
+
+.trace__trace-info-value {
+  color: $gray-8;
+}
+
+.trace__mini-trace-viewer-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.trace__mini-trace-viewer {
+  width: 95%;
+  padding: 2px;
+  margin: 5px;
+}
+
+.trace__mini-trace-viewer-time-markers-wrapper {
+  position: relative;
+  height: 14px;
+}
+
+.trace__mini-trace-viewer-graph {
+  padding: 2px;
+  background-color: $trace-mini-viewer-bg;
+  height: 75px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.trace__mini-trace-viewer-time-markers {
+  position: absolute;
+}
+
+.trace__mini-trace-viewer-time-markers-label {
+  color: $trace-mini-viewer-time-markers-label-color;
+  font-size: $font-size-xs;
+  position: absolute;
+  left: -20px;
+
+  &.first {
+    left: 2px;
+    position: absolute;
+  }
+
+  &.last {
+    left: initial;
+    right: 2px;
+    position: absolute;
+  }
+}

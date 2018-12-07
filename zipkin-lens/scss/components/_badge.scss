@@ -1,0 +1,27 @@
+.badge {
+  color: $text-color;
+  background: $badge-bg;
+  position: relative;
+  height: 14px;
+  font-size: $font-size-sm;
+  padding: 2px 4px 2px 14px;
+  border: solid 1px $badge-border-color;
+  border-radius: 6px;
+  cursor: pointer;
+
+  // Nowrap
+  display: inline-block;
+  overflow: hidden;
+
+  &:hover {
+    background-color: $badge-bg-hover;
+  }
+}
+
+.badge__color {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 10px;
+  height: 100%;
+}

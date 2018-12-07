@@ -1,0 +1,60 @@
+.search {
+  color: $text-color;
+  padding: 5px 10px;
+}
+
+.search__contents {
+  &-enter {
+    display: block;
+  }
+
+  &-enter-active {
+    display: none;
+  }
+
+  &-enter-done {
+    display: none;
+  }
+
+  &-exit {
+    display: none;
+  }
+
+  &-exit-active {
+    display: none;
+  }
+
+  &-exit-done {
+    display: block;
+  }
+}
+
+.search__condition {
+  padding: 5px 0;
+}
+
+.search__condition-label {
+  font-size: $font-size-base;
+}
+
+.search__find-button-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+
+.search__find-button {
+  padding: 10px 20px;
+}
+
+.search__annotation-query {
+  resize: none;
+}
+
+.search__custom-lookback {
+  border: solid 1px $lookback-customs-border-color;
+  border-radius: 3px;
+  padding: 5px;
+  background-color: $lookback-customs-bg;
+}
