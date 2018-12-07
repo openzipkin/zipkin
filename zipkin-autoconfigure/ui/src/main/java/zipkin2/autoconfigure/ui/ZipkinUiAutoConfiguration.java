@@ -27,8 +27,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
@@ -37,11 +35,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.filter.CharacterEncodingFilter;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 
 import static org.springframework.web.bind.annotation.RequestMethod.GET;
 import static org.springframework.web.servlet.HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE;
@@ -78,7 +74,7 @@ class ZipkinUiAutoConfiguration {
   @Autowired
   ZipkinUiProperties ui;
 
-  @Value("classpath:zipkin-ui/index.html")
+  @Value("${zipkin.ui.source-root}/index.html")
   Resource indexHtml;
 
   @Bean
@@ -97,13 +93,14 @@ class ZipkinUiAutoConfiguration {
     soup.head().getElementsByTag("base").attr("href", baseTagValue);
     return soup.html();
   }
+
   @Bean
-  public WebMvcConfigurer resourceConfigurer() {
+  public WebMvcConfigurer resourceConfigurer(@Value("${zipkin.ui.source-root}") String sourceRoot) {
     return new WebMvcConfigurer() {
       @Override
       public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/zipkin/**")
-          .addResourceLocations("classpath:/zipkin-ui/")
+          .addResourceLocations(sourceRoot + "/")
           .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));      }
     };
   }

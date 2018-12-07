@@ -25,6 +25,7 @@
   <modules>
     <module>zipkin</module>
     <module>zipkin-ui</module>
+    <module>zipkin-lens</module>
     <module>zipkin-junit</module>
     <module>benchmarks</module>
     <module>zipkin-storage</module>

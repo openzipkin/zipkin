@@ -21,6 +21,8 @@ import org.springframework.util.StringUtils;
 class ZipkinUiProperties {
   static final String DEFAULT_BASEPATH = "/zipkin";
 
+  // TODO: temporary hack to allow people to choose classpath:zipkin-lens
+  private String sourceRoot = "classpath:zipkin-ui";
   private String environment;
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
@@ -29,6 +31,14 @@ class ZipkinUiProperties {
   private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
+
+  public String getSourceRoot() {
+    return sourceRoot;
+  }
+
+  public void setSourceRoot(String sourceRoot) {
+    this.sourceRoot = sourceRoot;
+  }
 
   public int getDefaultLookback() {
     return defaultLookback;
