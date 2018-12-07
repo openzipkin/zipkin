@@ -19,7 +19,7 @@
     }
   },
   "keywords": [],
-  "author": "LINE Corporation",
+  "author": "https://gitter.im/openzipkin/zipkin",
   "license": "Apache-2.0",
   "devDependencies": {
     "babel-core": "^6.26.3",
