@@ -33,13 +33,14 @@ jobs:
           command: |
             sudo apt-get install xsltproc
             ./circleci/go-offline.sh
-            ./mvnw frontend:install-node-and-npm frontend:npm -pl zipkin-ui
+            ./mvnw frontend:install-node-and-npm frontend:npm -pl zipkin-ui,zipkin-lens
 
       - save_cache:
           key: offline-dependencies-{{ checksum "pom.xml" }}
           paths:
             - ~/.m2
             - zipkin-ui/node_modules
+            - zipkin-lens/node_modules
 
       - run:
           name: Tests

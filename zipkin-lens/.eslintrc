@@ -1,0 +1,25 @@
+{
+  "extends": "airbnb",
+  "rules": {
+    "import/prefer-default-export": "off",
+    "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],
+    "react/no-array-index-key": "off",
+    "no-console": 0,
+    "no-underscore-dangle": ["off"],
+    "no-continue": ["off"],
+    "prefer-destructuring": ["error", {
+      "AssignmentExpression": {"array": false, "object": false},
+      "VariableDeclarator": {"array": true, "object": true}
+    }],
+  },
+  "plugins": ["jest"],
+  "globals": {
+    "fetch": false,
+    "document": false
+  },
+  "env": {
+      "browser": true,
+      "jquery": true,
+      "jest/globals": true,
+  }
+}

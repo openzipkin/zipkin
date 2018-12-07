@@ -1,0 +1,4 @@
+# Ignores are placed here to allow node.js-idiomatic builds
+*.log
+node_modules
+dist
