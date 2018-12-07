@@ -61,6 +61,10 @@
       <artifactId>zipkin-ui</artifactId>
     </dependency>
     <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-lens</artifactId>
+    </dependency>
+    <dependency>
       <!-- HTML library for injecting configurable <base> tag -->
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>

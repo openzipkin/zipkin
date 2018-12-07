@@ -155,6 +155,14 @@ public class ZipkinUiAutoConfigurationTest {
   }
 
   @Test
+  public void canOverideProperty_sourceRoot() throws IOException {
+    context = createContextWithOverridenProperty("zipkin.ui.source-root:classpath:zipkin-lens");
+
+    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml.getDescription())
+      .contains("zipkin-lens");
+  }
+
+  @Test
   public void canOverideProperty_specialCaseRoot() throws IOException {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 

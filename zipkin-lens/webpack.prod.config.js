@@ -9,9 +9,9 @@ module.exports = {
   mode: 'production',
   entry: path.join(__dirname, './src/index.js'),
   output: {
-    path: path.join(__dirname, './dist'),
-    filename: 'bundle.js',
-    publicPath: '/zipkin/',
+      path: __dirname + '/target/classes/zipkin-lens/',
+      filename: 'app-[hash].min.js',
+      publicPath: '/zipkin/'
   },
   module: {
     rules: [
@@ -61,7 +61,7 @@ module.exports = {
     extensions: ['.js'],
   },
   plugins: [
-    new ExtractTextPlugin('style.css'),
+    new ExtractTextPlugin("style-[hash].min.css", {allChunks: true}),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, './static/index.html'),
     }),
