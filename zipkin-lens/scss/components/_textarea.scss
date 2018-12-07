@@ -1,0 +1,11 @@
+.form-textarea {
+  display: block;
+  width: 100%;
+  box-sizing:border-box;
+  font-size: $font-size-base;
+  color: $input-color;
+  background-color: $input-bg;
+  border: solid 1px $input-border-color;
+  border-radius: 3px;
+  padding: 5px;
+}

@@ -1,0 +1,55 @@
+.browser__sidebar {
+  &-enter {
+    width: 250px;
+  }
+
+  &-enter-active {
+    width: 50px;
+    transition: all 150ms ease-in;
+  }
+
+  &-enter-done {
+    width: 50px;
+  }
+
+  &-exit {
+    width: 50px;
+  }
+
+  &-exit-active {
+    width: 250px;
+    transition: all 150ms ease-in;
+  }
+
+  &-exit-done {
+    width: 250px;
+  }
+}
+
+.browser__main {
+  &-enter {
+    margin-left: 250px;
+  }
+
+  &-enter-active {
+    margin-left: 50px;
+    transition: all 150ms ease-in;
+  }
+
+  &-enter-done {
+    margin-left: 50px;
+  }
+
+  &-exit {
+    margin-left: 50px;
+  }
+
+  &-exit-active {
+    margin-left: 250px;
+    transition: all 150ms ease-in;
+  }
+
+  &-exit-done {
+    margin-left: 250px;
+  }
+}

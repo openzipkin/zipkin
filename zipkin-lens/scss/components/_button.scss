@@ -1,0 +1,29 @@
+.btn {
+  display: inline-block;
+  font-size: $font-size-base;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  font-weight: $btn-font-weight;
+  line-height: $btn-line-height;
+
+  outline: 0;
+  color: $btn-color;
+  border: none;
+  border-radius: $btn-border-radius;
+  background: $btn-bg-default;
+  background: $btn-bg-webkit;
+  background: $btn-bg;
+
+  &:active {
+    color: $btn-color-active;
+    background: $btn-bg-active-default;
+    background: $btn-bg-active-webkit;
+    background: $btn-bg-active;
+  }
+
+  &.disabled {
+    color: $btn-color-disabled;
+    background: $btn-bg-disabled;
+  }
+}
