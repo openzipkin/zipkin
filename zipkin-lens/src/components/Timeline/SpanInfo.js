@@ -24,7 +24,7 @@ const renderInfo = span => (
     <div className="timeline__span-info-info-aka">
       {
         span.serviceNames
-          ? span.serviceNames.split(',').map(serviceName => (
+          ? span.serviceNames.map(serviceName => (
             <Badge
               key={serviceName}
               value={serviceName}
@@ -60,7 +60,7 @@ const renderInfo = span => (
     <ReactTable
       showPagination={false}
       minRows={0 /* Hide empty rows */}
-      data={span.binaryAnnotations}
+      data={span.tags}
       columns={
         [
           { Header: 'Key', accessor: 'key' },

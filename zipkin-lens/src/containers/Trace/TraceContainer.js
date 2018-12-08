@@ -2,7 +2,7 @@ import { connect } from 'react-redux';
 
 import { fetchTrace } from '../../actions/trace-action';
 import Trace from '../../components/Trace';
-import { getDetailedTraceSummary } from '../../zipkin';
+import { treeCorrectedForClockSkew, detailedTraceSummary } from '../../zipkin';
 
 const mapStateToProps = (state, ownProps) => {
   const props = {
@@ -12,7 +12,8 @@ const mapStateToProps = (state, ownProps) => {
   if (state.trace.trace.length === 0) {
     props.traceSummary = null;
   } else {
-    props.traceSummary = getDetailedTraceSummary(state.trace.trace);
+    const corrected = treeCorrectedForClockSkew(state.trace.trace);
+    props.traceSummary = detailedTraceSummary(corrected);
   }
   return props;
 };
