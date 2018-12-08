@@ -1,0 +1,238 @@
+[
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "parentId": "90394f6bcffb5d13",
+    "id": "8f6bc3f30fa5b0bf",
+    "kind": "CLIENT",
+    "name": "/m/n/2.6.1",
+    "timestamp": 1516781775721000,
+    "localEndpoint": {
+      "serviceName": "apip"
+    },
+    "remoteEndpoint": {
+      "serviceName": "evcache_g"
+    },
+    "annotations": [
+      {
+        "timestamp": 1516781775721000,
+        "value": "EVCACHE_G"
+      },
+      {
+        "timestamp": 1516781775721000,
+        "value": "salp.hystrix"
+      }
+    ],
+    "tags": {
+      "EVCACHE_G.data.call": "BULK",
+      "EVCACHE_G.data.key": "[5.1.5.2, NF-DEV-1, -1]",
+      "client_asg_name": "apip-int-v7778",
+      "client_cluster_name": "apip-int",
+      "customer_id": "-1",
+      "device_id": "NF-DEV-1",
+      "device_type": "1881",
+      "salp.hystrix.data.hystrix.cmd_name": "GOLCommand",
+      "salp.hystrix.data.hystrix.thread_id": "329",
+      "salp.parent_id": "-8054319134105969389",
+      "salp.span_id": "-8112174855070830401",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "evcache_g-useast1d-v000",
+      "service_cluster_name": "evcache_g-useast1d"
+    }
+  },
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "parentId": "67fae42571535f60",
+    "id": "6c59056709a0b1e4",
+    "kind": "CLIENT",
+    "name": "/m/n/2.6.1",
+    "timestamp": 1516781775742000,
+    "duration": 8000,
+    "localEndpoint": {
+      "serviceName": "api"
+    },
+    "remoteEndpoint": {
+      "serviceName": "session_logs"
+    },
+    "tags": {
+      "client_asg_name": "api-int-v606",
+      "client_cluster_name": "api-int",
+      "country": "US",
+      "data.http_response_code": "200",
+      "device_id": "NF-DEV-1",
+      "device_type": "1881",
+      "salp.parent_id": "7492551779550453600",
+      "salp.span_id": "7807277369124762084",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "session_logs-int-v549",
+      "service_cluster_name": "session_logs-int"
+    }
+  },
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "parentId": "67fae42571535f60",
+    "id": "6c59056709a0b1e4",
+    "kind": "SERVER",
+    "name": "/slp/v1/sessionlogs",
+    "timestamp": 1516781775747000,
+    "duration": 3000,
+    "localEndpoint": {
+      "serviceName": "session_logs"
+    },
+    "remoteEndpoint": {
+      "serviceName": "api"
+    },
+    "tags": {
+      "client_asg_name": "api-int-v606",
+      "client_cluster_name": "api-int",
+      "country": "US",
+      "data.http_response_code": "200",
+      "device_id": "NF-DEV-1",
+      "device_type": "1881",
+      "salp.parent_id": "7492551779550453600",
+      "salp.span_id": "7807277369124762084",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "session_logs-int-v549",
+      "service_cluster_name": "session_logs-int"
+    }
+  },
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "parentId": "67fae42571535f60",
+    "id": "6c59056709a0b1e4",
+    "name": "/m/n/2.6.1",
+    "timestamp": 1516781775744000,
+    "annotations": [
+      {
+        "timestamp": 1516781775744000,
+        "value": "salp.niws"
+      }
+    ],
+    "tags": {
+      "client_asg_name": "api-int-v606",
+      "client_cluster_name": "api-int",
+      "country": "US",
+      "device_id": "NF-DEV-1",
+      "device_type": "1881",
+      "salp.niws.data.resolved_vip_address": "session_logs-int:7101",
+      "salp.niws.data.rest_client_name": "session-logs-client",
+      "salp.niws.data.vip_address": "session_logs-int:7101,session_logs-:7101",
+      "salp.parent_id": "7492551779550453600",
+      "salp.span_id": "7807277369124762084",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "session_logs-int-v549",
+      "service_cluster_name": "session_logs-int"
+    }
+  },
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "parentId": "67fae42571535f60",
+    "id": "6c59056709a0b1e4",
+    "name": "/m/n/2.6.1",
+    "timestamp": 1516781775744000,
+    "annotations": [
+      {
+        "timestamp": 1516781775744000,
+        "value": "salp.hystrix"
+      }
+    ],
+    "tags": {
+      "client_asg_name": "api-int-v606",
+      "client_cluster_name": "api-int",
+      "country": "US",
+      "device_id": "NF-DEV-1",
+      "device_type": "1881",
+      "salp.hystrix.data.hystrix.cmd_name": "PDS_REPORT_LOG",
+      "salp.hystrix.data.hystrix.thread_id": "1623",
+      "salp.parent_id": "7492551779550453600",
+      "salp.span_id": "7807277369124762084",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "session_logs-int-v549",
+      "service_cluster_name": "session_logs-int"
+    }
+  },
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "parentId": "90394f6bcffb5d13",
+    "id": "67fae42571535f60",
+    "kind": "CLIENT",
+    "name": "/m/n/2.6.1",
+    "timestamp": 1516781775724000,
+    "duration": 29000,
+    "localEndpoint": {
+      "serviceName": "apip"
+    },
+    "remoteEndpoint": {
+      "serviceName": "api"
+    },
+    "annotations": [
+      {
+        "timestamp": 1516781775724000,
+        "value": "salp.niws"
+      }
+    ],
+    "tags": {
+      "client_asg_name": "apip-int-v7778",
+      "client_cluster_name": "apip-int",
+      "country": "US",
+      "customer_id": "-1",
+      "data.http_response_code": "200",
+      "device_id": "NF-DEV-1",
+      "device_type": "1881",
+      "salp.niws.data.resolved_vip_address": "api-int.netflix.net:7001",
+      "salp.niws.data.rest_client_name": "api-int",
+      "salp.niws.data.vip_address": "api-int.netflix.net:7001",
+      "salp.parent_id": "-8054319134105969389",
+      "salp.span_id": "7492551779550453600",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "api-int-v606",
+      "service_cluster_name": "api-int"
+    }
+  },
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "parentId": "90394f6bcffb5d13",
+    "id": "67fae42571535f60",
+    "kind": "SERVER",
+    "name": "/m/n/2.6.1",
+    "timestamp": 1516781775726000,
+    "duration": 26000,
+    "localEndpoint": {
+      "serviceName": "api"
+    },
+    "remoteEndpoint": {
+      "serviceName": "apip"
+    },
+    "tags": {
+      "client_asg_name": "apip-int-v7778",
+      "client_cluster_name": "apip-int",
+      "country": "US",
+      "data.http_response_code": "200",
+      "device_id": "NF-DEV-1",
+      "device_type": "1881",
+      "salp.parent_id": "-8054319134105969389",
+      "salp.span_id": "7492551779550453600",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "api-int-v606",
+      "service_cluster_name": "api-int"
+    }
+  },
+  {
+    "traceId": "5982fe77008310cc80f1da5e10147517",
+    "id": "90394f6bcffb5d13",
+    "kind": "SERVER",
+    "name": "/m/n/2.6.1",
+    "timestamp": 1516781775718000,
+    "duration": 37000,
+    "localEndpoint": {
+      "serviceName": "apip"
+    },
+    "tags": {
+      "data.http_response_code": "200",
+      "salp.parent_id": "0",
+      "salp.span_id": "-8054319134105969389",
+      "salp.trace_id": "7c6451ad-b111-459f-8310-cc80f1da5e10-147517",
+      "service_asg_name": "apip-int-v7778",
+      "service_cluster_name": "apip-int"
+    }
+  }
+]
