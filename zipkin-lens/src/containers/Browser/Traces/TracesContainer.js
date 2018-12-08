@@ -3,9 +3,7 @@ import queryString from 'query-string';
 
 import Trace from '../../../components/Browser/Traces';
 import {
-  correctForClockSkew,
-  convert,
-  mergeById,
+  treeCorrectedForClockSkew,
   traceSummary,
   traceSummaries,
 } from '../../../zipkin';
@@ -19,18 +17,15 @@ const mapStateToProps = (state, ownProps) => {
   }
 
   const { traces } = state.traces;
-  const clockSkewCorrectedTraces = traces.map((rawTrace) => {
-    const v1Trace = rawTrace.map(convert);
-    const mergedTrace = mergeById(v1Trace);
-    return correctForClockSkew(mergedTrace);
-  });
-  const summaries = traceSummaries(serviceName, clockSkewCorrectedTraces.map(traceSummary));
+  const corrected = traces.map(treeCorrectedForClockSkew);
+  const summaries = traceSummaries(serviceName, corrected.map(traceSummary));
 
   const clockSkewCorrectedTracesMap = {};
-  clockSkewCorrectedTraces.forEach((trace) => {
-    const [{ traceId }] = trace;
-    clockSkewCorrectedTracesMap[traceId] = trace;
+  corrected.forEach((trace) => {
+    const { span } = trace;
+    clockSkewCorrectedTracesMap[span.traceId] = trace;
   });
+
   return {
     clockSkewCorrectedTracesMap,
     traceSummaries: summaries,

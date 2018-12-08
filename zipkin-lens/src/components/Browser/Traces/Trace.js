@@ -13,7 +13,7 @@ import { detailedTraceSummary } from '../../../zipkin';
 
 const propTypes = {
   traceSummary: PropTypes.shape({}).isRequired,
-  clockSkewCorrectedTrace: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  clockSkewCorrectedTrace: PropTypes.shape({}).isRequired,
   handleBadgeClick: PropTypes.func.isRequired,
 };
 
@@ -82,7 +82,7 @@ class Trace extends React.Component {
               <div>
                 <div className="traces__trace-info--left">
                   <div className="traces__trace-info-content">
-                    {`${traceSummary.totalSpans}spans`}
+                    {`${traceSummary.spanCount}spans`}
                   </div>
                   <div className="traces__trace-info-content">
                     {traceSummary.durationStr}
@@ -126,11 +126,11 @@ class Trace extends React.Component {
                 : null
             }
             <div className="traces__trace-badges-wrapper">
-              {traceSummary.serviceDurations.map(service => (
+              {traceSummary.serviceSummaries.map(summary => (
                 <Badge
-                  key={service.name}
-                  value={service.name}
-                  text={`${service.name} x ${service.count}`}
+                  key={summary.serviceName}
+                  value={summary.serviceName}
+                  text={`${summary.serviceName} x ${summary.spanCount}`}
                   onClick={handleBadgeClick}
                 />
               ))}
