@@ -53,8 +53,8 @@ public enum Encoding {
     /** Encoding overhead is thrift type plus 32-bit length prefix */
     @Override public int listSizeInBytes(List<byte[]> values) {
       int sizeInBytes = 5;
-      for (int i = 0, length = values.size(); i < length; i++) {
-        sizeInBytes += values.get(i).length;
+      for (byte[] value : values) {
+        sizeInBytes += value.length;
       }
       return sizeInBytes;
     }

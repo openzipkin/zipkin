@@ -309,8 +309,8 @@ public final class SpanNode {
 
   @Override public String toString() {
     List<Span> childrenSpans = new ArrayList<>();
-    for (int i = 0, length = children.size(); i < length; i++) {
-      childrenSpans.add(children.get(i).span);
+    for (SpanNode child : children) {
+      childrenSpans.add(child.span);
     }
     return "SpanNode{parent=" + (parent != null ? parent.span : null)
       + ", span=" + span + ", children=" + childrenSpans + "}";

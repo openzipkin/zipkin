@@ -57,8 +57,8 @@ public final class ThriftCodec {
   /** Encoding overhead is thrift type plus 32-bit length prefix */
   static <T> int listSizeInBytes(Buffer.Writer<T> writer, List<T> values) {
     int sizeInBytes = 5;
-    for (int i = 0, length = values.size(); i < length; i++) {
-      sizeInBytes += writer.sizeInBytes(values.get(i));
+    for (T value : values) {
+      sizeInBytes += writer.sizeInBytes(value);
     }
     return sizeInBytes;
   }

@@ -177,8 +177,8 @@ public final class V1SpanConverter {
 
   void handleIncompleteRpc(V1Span source) {
     handleIncompleteRpc(first);
-    for (int i = 0, length = spans.size(); i < length; i++) {
-      handleIncompleteRpc(spans.get(i));
+    for (Span.Builder span : spans) {
+      handleIncompleteRpc(span);
     }
     if (source.timestamp != 0) {
       first.timestamp(source.timestamp).duration(source.duration);
@@ -275,8 +275,7 @@ public final class V1SpanConverter {
   Span.Builder forEndpoint(V1Span source, @Nullable zipkin2.Endpoint e) {
     if (e == null) return first; // allocate missing endpoint data to first span
     if (closeEnoughEndpoint(first, e)) return first;
-    for (int i = 0, length = spans.size(); i < length; i++) {
-      Span.Builder next = spans.get(i);
+    for (Span.Builder next : spans) {
       if (closeEnoughEndpoint(next, e)) return next;
     }
     return newSpanBuilder(source, e);
@@ -299,8 +298,8 @@ public final class V1SpanConverter {
 
   void finish(Collection<Span> sink) {
     sink.add(first.build());
-    for (int i = 0, length = spans.size(); i < length; i++) {
-      sink.add(spans.get(i).build());
+    for (Span.Builder span : spans) {
+      sink.add(span.build());
     }
   }
 

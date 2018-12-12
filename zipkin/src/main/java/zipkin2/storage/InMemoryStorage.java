@@ -196,9 +196,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     int spansEvicted = 0;
     String lowTraceId = spansByTraceIdTimeStamp.delegate.lastKey().lowTraceId;
     Collection<TraceIdTimestamp> traceIdTimeStamps = traceIdToTraceIdTimeStamps.remove(lowTraceId);
-    for (Iterator<TraceIdTimestamp> traceIdTimeStampIter = traceIdTimeStamps.iterator();
-      traceIdTimeStampIter.hasNext(); ) {
-      TraceIdTimestamp traceIdTimeStamp = traceIdTimeStampIter.next();
+    for (TraceIdTimestamp traceIdTimeStamp : traceIdTimeStamps) {
       Collection<Span> spans = spansByTraceIdTimeStamp.remove(traceIdTimeStamp);
       spansEvicted += spans.size();
     }
