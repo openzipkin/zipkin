@@ -458,7 +458,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     for (String lowTraceId : serviceToTraceIds.get(serviceName)) {
       traceIdTimestamps.addAll(traceIdToTraceIdTimeStamps.get(lowTraceId));
     }
-    Collections.sort(traceIdTimestamps, TIMESTAMP_DESCENDING);
+    traceIdTimestamps.sort(TIMESTAMP_DESCENDING);
     return traceIdTimestamps;
   }
 

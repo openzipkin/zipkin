@@ -13,7 +13,6 @@
  */
 package zipkin2.internal;
 
-import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
 import zipkin2.Endpoint;
@@ -209,7 +208,7 @@ public class TraceTest {
       span("a", "a", "b", Kind.CLIENT, "frontend", null, false)
     );
 
-    Collections.sort(trace, Trace.CLEANUP_COMPARATOR);
+    trace.sort(Trace.CLEANUP_COMPARATOR);
     assertThat(trace.get(0).kind()).isEqualTo(Kind.CLIENT);
   }
 

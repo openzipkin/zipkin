@@ -14,7 +14,6 @@
 package zipkin2.internal;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import zipkin2.Endpoint;
@@ -29,7 +28,7 @@ public class Trace {
     int length = spans.size();
     if (length <= 1) return spans;
     List<Span> result = new ArrayList<>(spans);
-    Collections.sort(result, CLEANUP_COMPARATOR);
+    result.sort(CLEANUP_COMPARATOR);
 
     // Let's cleanup any spans and pick the longest ID
     String traceId = result.get(0).traceId();

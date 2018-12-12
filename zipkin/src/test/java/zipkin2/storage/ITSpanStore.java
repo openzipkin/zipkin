@@ -813,13 +813,13 @@ public abstract class ITSpanStore {
   static List<List<Span>> sortTraces(List<List<Span>> traces) {
     List<List<Span>> result = new ArrayList<>();
     for (List<Span> trace : traces) result.add(sortTrace(trace));
-    Collections.sort(result, Comparator.comparing(o -> o.get(0).traceId()));
+    result.sort(Comparator.comparing(o -> o.get(0).traceId()));
     return result;
   }
 
   static ArrayList<Span> sortTrace(List<Span> trace) {
     ArrayList<Span> result = new ArrayList<>(trace);
-    Collections.sort(result, Comparator.comparing(Span::timestampAsLong));
+    result.sort(Comparator.comparing(Span::timestampAsLong));
     return result;
   }
 }
