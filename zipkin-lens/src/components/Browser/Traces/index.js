@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import ReactSelect from 'react-select';
 
-import InitialMessage from './InitialMessage';
 import Trace from './Trace';
 import Badge from '../../Common/Badge';
 import LoadingOverlay from '../../Common/LoadingOverlay';
@@ -11,7 +10,6 @@ const propTypes = {
   isLoading: PropTypes.bool.isRequired,
   clockSkewCorrectedTracesMap: PropTypes.shape({}).isRequired,
   traceSummaries: PropTypes.arrayOf(PropTypes.object).isRequired,
-  location: PropTypes.shape({}).isRequired,
 };
 
 const sortOptions = [
@@ -72,16 +70,6 @@ class Traces extends React.Component {
       });
   }
 
-  isInitialState() {
-    const {
-      location,
-    } = this.props;
-    if (location.search) {
-      return false;
-    }
-    return true;
-  }
-
   handleBadgeClick(value) {
     const { filters } = this.state;
 
@@ -129,51 +117,45 @@ class Traces extends React.Component {
     return (
       <div>
         <LoadingOverlay active={isLoading} />
-        {
-          this.isInitialState()
-            ? (<InitialMessage />)
-            : (
-              <div className="traces">
-                <div className="traces__upper-box-wrapper">
-                  <div className="traces__upper-box">
-                    <div className="traces__total-traces-and-sorter">
-                      <div>
-                        {`${shownTraceSummaries.length} traces are found.`}
-                      </div>
-                      <div className="traces__sorter-wrapper">
-                        <ReactSelect
-                          onChange={this.handleSortChange}
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          options={sortOptions}
-                          value={{ sort, label: convertValueToLabel(sort) }}
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      { this.renderFilters() }
-                    </div>
-                  </div>
-                </div>
+        <div className="traces">
+          <div className="traces__upper-box-wrapper">
+            <div className="traces__upper-box">
+              <div className="traces__total-traces-and-sorter">
                 <div>
-                  {
-                    shownTraceSummaries.map(
-                      traceSummary => (
-                        <Trace
-                          key={traceSummary.traceId}
-                          traceSummary={traceSummary}
-                          clockSkewCorrectedTrace={
-                            clockSkewCorrectedTracesMap[traceSummary.traceId]
-                          }
-                          handleBadgeClick={this.handleBadgeClick}
-                        />
-                      ),
-                    )
-                  }
+                  {`${shownTraceSummaries.length} traces are found.`}
+                </div>
+                <div className="traces__sorter-wrapper">
+                  <ReactSelect
+                    onChange={this.handleSortChange}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    options={sortOptions}
+                    value={{ sort, label: convertValueToLabel(sort) }}
+                  />
                 </div>
               </div>
-            )
-        }
+              <div>
+                { this.renderFilters() }
+              </div>
+            </div>
+          </div>
+          <div>
+            {
+              shownTraceSummaries.map(
+                traceSummary => (
+                  <Trace
+                    key={traceSummary.traceId}
+                    traceSummary={traceSummary}
+                    clockSkewCorrectedTrace={
+                      clockSkewCorrectedTracesMap[traceSummary.traceId]
+                    }
+                    handleBadgeClick={this.handleBadgeClick}
+                  />
+                ),
+              )
+            }
+          </div>
+        </div>
       </div>
     );
   }

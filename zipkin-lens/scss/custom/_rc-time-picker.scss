@@ -10,14 +10,19 @@
 }
 
 .rc-time-picker {
-  height: $input-line-height;
+  height: 16px;
 }
 
 .rc-time-picker-input {
   color: $input-color;
   background-color: $input-bg;
-  border: 1px solid $input-border-color;
+  border: 0;
   border-radius: 2px;
+  height: 16px;
+  width: 65px;
+  padding-left: 4px;
+  color: #ffffff;
+  background-color: #454545;
 }
 
 .rc-time-picker-panel-select {

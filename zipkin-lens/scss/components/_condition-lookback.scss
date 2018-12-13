@@ -1,0 +1,39 @@
+.condition-lookback {
+  display: flex;
+}
+
+.condition-lookback-select__control {
+  height: 50px !important;
+  border: 0 !important;
+  border-radius: 0px !important;
+  cursor: pointer !important;
+  color: #ffffff !important;
+  background: linear-gradient(to bottom, #676767, #464646) !important;
+}
+
+.condition-lookback-select__single-value {
+  color: #ffffff !important;
+}
+
+.condition-lookback__custom {
+  padding: 0;
+  padding-left: 3px;
+  padding-right: 3px;
+  color: #ffffff;
+  background-color: #787878;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.condition-lookback__custom-date-picker {
+  display: flex;
+  padding: 0 1px;
+}
+
+.condition-lookback__custom-tilda-indicator {
+  font-size: 12px;
+  padding-left: 4px;
+  padding-right: 4px;
+  box-sizing: border-box;
+}
