@@ -120,6 +120,21 @@
       <version>1.11.3</version>
     </dependency>
 
+    <!-- Experimental GRPC collector -->
+    <dependency>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>zipkin-autoconfigure-grpc-server</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
+    <dependency>
+      <groupId>io.grpc</groupId>
+      <artifactId>grpc-testing</artifactId>
+      <version>1.19.0</version>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Cassandra and Cassandra 3 backends -->
     <dependency>
       <groupId>io.zipkin.zipkin2</groupId>
@@ -145,6 +160,10 @@
           <groupId>io.netty</groupId>
           <artifactId>*</artifactId>
         </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
+        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -156,6 +175,10 @@
         <exclusion>
           <groupId>com.datastax.cassandra</groupId>
           <artifactId>cassandra-driver-core</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.google.guava</groupId>
+          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>

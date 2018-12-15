@@ -370,6 +370,18 @@ Example usage:
 $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```
 
+### GRPC Collector (Experimental)
+
+You can start a GRPC server as an alternative for collecting spans by setting `GRPC_SERVER_ENABLED` to `true`. You may want to only deploy a server with GRPC running in which case you would disable the HTTP collector and query endpoints:
+
+```bash
+GRPC_COLLECTOR_ENABLED=true HTTP_COLLECTOR_ENABLED=false QUERY_ENABLED=false java -jar zipkin.jar
+```
+
+The server will run on port 9412 by default but can be overridden using `GRPC_SERVER_PORT`.
+
+As this service is experimental, it is not recommended to run this in production environments.
+
 ### 128-bit trace IDs
 
 Zipkin supports 64 and 128-bit trace identifiers, typically serialized

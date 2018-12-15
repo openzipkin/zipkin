@@ -38,6 +38,7 @@
   <modules>
     <module>collector-kafka08</module>
     <module>collector-scribe</module>
+    <module>grpc-server</module>
   </modules>
 
   <dependencies>
