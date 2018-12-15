@@ -370,6 +370,19 @@ Example usage:
 $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```
 
+### gRPC Collector (Experimental)
+You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED=true`. The
+`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal http (9411).
+
+
+Example usage:
+
+```bash
+COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
+```
+
+As this service is experimental, it is not recommended to run this in production environments.
+
 ### 128-bit trace IDs
 
 Zipkin supports 64 and 128-bit trace identifiers, typically serialized

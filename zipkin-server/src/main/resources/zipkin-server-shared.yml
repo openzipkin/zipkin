@@ -12,6 +12,9 @@ zipkin:
     http:
       # Set to false to disable creation of spans via HTTP collector API
       enabled: ${HTTP_COLLECTOR_ENABLED:true}
+    grpc:
+      # Set to true to enable the GRPC collector
+      enabled: ${COLLECTOR_GRPC_ENABLED:false}
     kafka:
       # Kafka bootstrap broker list, comma-separated host:port values. Setting this activates the
       # Kafka 0.10+ collector.

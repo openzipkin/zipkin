@@ -154,6 +154,26 @@
     <url>https://github.com/openzipkin/zipkin/issues</url>
   </issueManagement>
 
+  <repositories>
+    <repository>
+      <id>apache.snapshots.https</id>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>apache.snapshots.https</id>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -362,9 +382,9 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.proto3</groupId>
+        <groupId>org.apache.zipkin.proto3</groupId>
         <artifactId>zipkin-proto3</artifactId>
-        <version>0.1.0</version>
+        <version>0.2.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>com.squareup.wire</groupId>
@@ -627,6 +647,7 @@
           <mapping>
             <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
             <java>SLASHSTAR_STYLE</java>
+            <kt>SLASHSTAR_STYLE</kt>
           </mapping>
           <excludes>
             <exclude>.travis.yml</exclude>
