@@ -80,7 +80,7 @@
       <version>${wire.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.zipkin.proto3</groupId>
+      <groupId>org.apache.zipkin.proto3</groupId>
       <artifactId>zipkin-proto3</artifactId>
     </dependency>
   </dependencies>

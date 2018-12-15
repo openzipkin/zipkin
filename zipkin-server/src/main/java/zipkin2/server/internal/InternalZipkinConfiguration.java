@@ -39,6 +39,7 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
   TracingConfiguration.class,
   ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class,
+  ZipkinGrpcCollector.class,
   ZipkinKafkaCollectorConfiguration.class,
   ZipkinRabbitMQCollectorConfiguration.class,
   MetricsHealthController.class,
