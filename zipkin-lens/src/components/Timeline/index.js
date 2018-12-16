@@ -123,8 +123,8 @@ class Timeline extends React.Component {
               /* Skip closed spans */
               if (closed[span.spanId]) {
                 if (hasChildren) {
-                  for (let i = 0; i < span.children.length; i += 1) {
-                    closed[span.children[i]] = true;
+                  for (let i = 0; i < span.childIds.length; i += 1) {
+                    closed[span.childIds[i]] = true;
                   }
                 }
                 return null;

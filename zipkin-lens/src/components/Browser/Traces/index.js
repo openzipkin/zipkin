@@ -48,8 +48,8 @@ class Traces extends React.Component {
     return traceSummaries
       .filter((summary) => {
         for (let i = 0; i < filters.length; i += 1) {
-          if (!summary.serviceDurations.find(
-            service => service.name === filters[i],
+          if (!summary.serviceSummaries.find(
+            serviceSummary => serviceSummary.serviceName === filters[i],
           )) {
             return false;
           }
