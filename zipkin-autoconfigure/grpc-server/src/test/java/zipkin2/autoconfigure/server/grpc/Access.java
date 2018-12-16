@@ -17,7 +17,7 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
-import zipkin2.server.grpc.ZipkinGrpcServer;
+import zipkin2.server.grpc.ArmeriaGrpcCollector;
 
 /** opens package access for testing */
 public final class Access {
@@ -31,7 +31,7 @@ public final class Access {
   @EnableConfigurationProperties(ZipkinGrpcServerProperties.class)
   static class EnableZipkinGrpcServerProperties {}
 
-  public static ZipkinGrpcServer.Builder serverBuilder(
+  public static ArmeriaGrpcCollector.Builder serverBuilder(
       AnnotationConfigApplicationContext context) {
     return context.getBean(ZipkinGrpcServerProperties.class).toBuilder();
   }

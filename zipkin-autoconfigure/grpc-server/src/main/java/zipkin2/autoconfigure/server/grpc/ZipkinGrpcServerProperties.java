@@ -14,11 +14,13 @@
 package zipkin2.autoconfigure.server.grpc;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin2.server.grpc.ZipkinGrpcServer;
+import zipkin2.server.grpc.GrpcCollector;
+import zipkin2.server.grpc.GrpcCollectorType;
 
 @ConfigurationProperties("zipkin.collector.grpc")
 class ZipkinGrpcServerProperties {
   private int port;
+  private GrpcCollectorType type = GrpcCollectorType.ARMERIA;
 
   public int getPort() {
     return port;
@@ -28,10 +30,18 @@ class ZipkinGrpcServerProperties {
     this.port = port;
   }
 
-  public ZipkinGrpcServer.Builder toBuilder() {
-    final ZipkinGrpcServer.Builder result = ZipkinGrpcServer.builder();
-    result.port(port);
-    return result;
+  public GrpcCollectorType getType() {
+    return type;
+  }
+
+  public void setType(GrpcCollectorType type) {
+    this.type = type;
+  }
+
+  public GrpcCollector.Builder toBuilder() {
+    return GrpcCollector.builder()
+      .type(type)
+      .port(port);
   }
 
 }

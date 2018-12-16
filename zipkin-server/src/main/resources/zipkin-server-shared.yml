@@ -16,7 +16,9 @@ zipkin:
       # Set to true to enable the GRPC collector
       enabled: ${GRPC_COLLECTOR_ENABLED:false}
       # Set to greater than 0 to enable the GRPC server
-      port: ${GRPC_SERVER_PORT:9412}
+      port: ${GRPC_COLLECTOR_PORT:9412}
+      # GRPC_JAVA or ARMERIA
+      type: ${GRPC_COLLECTOR_TYPE:ARMERIA}
     kafka:
       # Kafka bootstrap broker list, comma-separated host:port values. Setting this activates the
       # Kafka 0.10+ collector.

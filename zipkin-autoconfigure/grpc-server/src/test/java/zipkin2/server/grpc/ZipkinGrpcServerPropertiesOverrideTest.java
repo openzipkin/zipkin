@@ -42,7 +42,7 @@ public class ZipkinGrpcServerPropertiesOverrideTest {
   public Object value;
 
   @Parameterized.Parameter(2)
-  public Function<ZipkinGrpcServer.Builder, Object> builderExtractor;
+  public Function<ArmeriaGrpcCollector.Builder, Object> builderExtractor;
 
   @Parameterized.Parameters(name = "{0}")
   public static Iterable<Object[]> data() {
@@ -53,7 +53,7 @@ public class ZipkinGrpcServerPropertiesOverrideTest {
 
   /** to allow us to define with a lambda */
   static <T> Object[] parameters(
-      String propertySuffix, T value, Function<ZipkinGrpcServer.Builder, T> builderExtractor) {
+      String propertySuffix, T value, Function<GrpcCollector.Builder, T> builderExtractor) {
     return new Object[] {"zipkin.collector.grpc." + propertySuffix, value, builderExtractor};
   }
 

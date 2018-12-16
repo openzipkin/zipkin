@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
-import zipkin2.server.grpc.ZipkinGrpcServer;
+import zipkin2.server.grpc.GrpcJavaCollector;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
@@ -54,7 +54,7 @@ public class ZipkinGrpcServerAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ZipkinGrpcServer.class);
+    context.getBean(GrpcJavaCollector.class);
   }
 
   @Test
@@ -68,7 +68,7 @@ public class ZipkinGrpcServerAutoConfigurationTest {
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ZipkinGrpcServer.class);
+    context.getBean(GrpcJavaCollector.class);
   }
 
   @Test
@@ -81,7 +81,7 @@ public class ZipkinGrpcServerAutoConfigurationTest {
         InMemoryConfiguration.class);
     context.refresh();
 
-    assertThat(context.getBean(ZipkinGrpcServer.class)).isNotNull();
+    assertThat(context.getBean(GrpcJavaCollector.class)).isNotNull();
   }
 
   @Configuration

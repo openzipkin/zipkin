@@ -27,12 +27,8 @@ import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import zipkin.server.ZipkinServer;
 import zipkin2.TestObjects;
 import zipkin2.proto3.Annotation;
 import zipkin2.proto3.Endpoint;
@@ -45,16 +41,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-@SpringBootTest(
-  classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = {
-    "zipkin.storage.type=", // cheat and test empty storage type
-    "spring.config.name=zipkin-server",
-    "zipkin.collector.grpc.enabled=true"
-  })
-@RunWith(SpringRunner.class)
-public class ITZipkinServerGrpcServer {
+public abstract class ITZipkinServerGrpcServer {
 
   static final Span PROTO_SPAN = Span.newBuilder()
     .setTraceId(decodeHex(TestObjects.CLIENT_SPAN.traceId()))

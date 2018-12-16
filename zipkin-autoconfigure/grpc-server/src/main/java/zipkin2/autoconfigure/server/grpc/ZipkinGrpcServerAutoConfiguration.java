@@ -19,7 +19,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
-import zipkin2.server.grpc.ZipkinGrpcServer;
+import zipkin2.server.grpc.GrpcCollector;
 import zipkin2.storage.StorageComponent;
 
 /**
@@ -30,8 +30,8 @@ import zipkin2.storage.StorageComponent;
 @ConditionalOnProperty(name = "zipkin.collector.grpc.enabled", matchIfMissing = true)
 class ZipkinGrpcServerAutoConfiguration { // makes simple type name unique for /actuator/conditions
 
-  @Bean(initMethod = "start", destroyMethod = "stop")
-  ZipkinGrpcServer grpcServer(
+  @Bean(initMethod = "start", destroyMethod = "close")
+  GrpcCollector grpcCollector(
       ZipkinGrpcServerProperties properties,
       CollectorSampler sampler,
       CollectorMetrics metrics,
