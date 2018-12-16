@@ -130,6 +130,13 @@
 
     <dependency>
       <groupId>io.grpc</groupId>
+      <artifactId>grpc-protobuf</artifactId>
+      <version>${grpc.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>io.grpc</groupId>
       <artifactId>grpc-testing</artifactId>
       <version>1.19.0</version>
       <scope>test</scope>
@@ -160,10 +167,6 @@
           <groupId>io.netty</groupId>
           <artifactId>*</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-        </exclusion>
       </exclusions>
     </dependency>
     <dependency>
@@ -175,10 +178,6 @@
         <exclusion>
           <groupId>com.datastax.cassandra</groupId>
           <artifactId>cassandra-driver-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -325,7 +324,7 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <build>
-        <plugins>
+       <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>

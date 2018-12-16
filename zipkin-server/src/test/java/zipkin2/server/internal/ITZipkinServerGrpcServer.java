@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Value;
 import zipkin2.TestObjects;
 import zipkin2.proto3.Annotation;
 import zipkin2.proto3.Endpoint;
+import zipkin2.proto3.PublishSpansRequest;
 import zipkin2.proto3.PublishSpansResponse;
 import zipkin2.proto3.Span;
 import zipkin2.proto3.SpanServiceGrpc;
@@ -79,7 +80,8 @@ public abstract class ITZipkinServerGrpcServer {
     ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
     SpanServiceGrpc.SpanServiceStub spanService = SpanServiceGrpc.newStub(channel);
     final CountDownLatch finishLatch = new CountDownLatch(1);
-    final StreamObserver<Span> requestObserver = spanService.publishSpans(new StreamObserver<PublishSpansResponse>() {
+    final StreamObserver<PublishSpansRequest> requestObserver =
+      spanService.publishSpans(new StreamObserver<PublishSpansResponse>() {
       @Override
       public void onNext(PublishSpansResponse publishSpansResponse) {
         testHelper.onMessage(publishSpansResponse);
@@ -100,7 +102,7 @@ public abstract class ITZipkinServerGrpcServer {
 
     try {
       for (int i = 0; i < 10; ++i) {
-        requestObserver.onNext(PROTO_SPAN);
+        requestObserver.onNext(PublishSpansRequest.newBuilder().addSpan(PROTO_SPAN).build());
         Thread.sleep(random.nextInt(1000) + 500);
       }
     } catch (RuntimeException e) {

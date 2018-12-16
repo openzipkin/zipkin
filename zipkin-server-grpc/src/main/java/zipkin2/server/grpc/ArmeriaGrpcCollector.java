@@ -13,25 +13,24 @@
  */
 package zipkin2.server.grpc;
 
-import com.linecorp.armeria.common.HttpRequest;
+/*import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.logging.LogLevel;
 import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServiceWithPathMappings;
-import com.linecorp.armeria.server.docs.DocService;
 import com.linecorp.armeria.server.grpc.GrpcServiceBuilder;
-import com.linecorp.armeria.server.logging.LoggingServiceBuilder;
+import com.linecorp.armeria.server.logging.LoggingServiceBuilder;*/
 import io.grpc.BindableService;
 import zipkin2.collector.CollectorComponent;
 
 public class ArmeriaGrpcCollector extends GrpcCollector {
 
-  private final Server server;
+  //private final Server server;
 
   ArmeriaGrpcCollector(BindableService service, int port) {
-    ServiceWithPathMappings<HttpRequest, HttpResponse> grpcService = new GrpcServiceBuilder()
+    /*ServiceWithPathMappings<HttpRequest, HttpResponse> grpcService = new GrpcServiceBuilder()
       .addService(service)
       .build();
 
@@ -42,16 +41,15 @@ public class ArmeriaGrpcCollector extends GrpcCollector {
                     .successfulResponseLogLevel(LogLevel.INFO)
                     .failureResponseLogLevel(LogLevel.WARN)
                     .newDecorator()));
-    sb.serviceUnder("/docs/", new DocService());
 
-    server = sb.build();
+    server = sb.build();*/
   }
 
   /**
    * Start serving requests.
    */
   public CollectorComponent start() {
-    server.start();
+//    server.start();
     return this;
   }
 
@@ -59,7 +57,7 @@ public class ArmeriaGrpcCollector extends GrpcCollector {
    * Stop serving requests and shutdown resources.
    */
   public void close() {
-    server.stop();
+//    server.stop();
   }
 
 }

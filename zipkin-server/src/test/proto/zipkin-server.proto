@@ -22,11 +22,16 @@ option java_package = "zipkin2.proto3";
 option java_multiple_files = true;
 
 // TODO Once this API is finalized it should be moved to zipkin-api's zipkin.proto prior to
-// this PR being merged into zipkin
+// this PR being merged into zipkin. We don't actually use the generated stubs anywhere in the main project -
+// they are only being used for integration tests.
 
 // Response for the PublishSpans RPC. This response currently does not return any information beyond
 // indicating that the request has finished.
 message PublishSpansResponse {
+}
+
+message PublishSpansRequest {
+  repeated zipkin.proto3.Span span = 1;
 }
 
 // Service for receiving spans
@@ -35,6 +40,6 @@ service SpanService {
   // A client can publish a stream of spans to the server. Underlying implementations can choose
   // to persist the spans how they see fit; either checkpointing while the stream is in process or
   // persisting the entire batch at the end of the stream.
-  rpc PublishSpans(stream zipkin.proto3.Span) returns (PublishSpansResponse) {}
+  rpc PublishSpans(stream PublishSpansRequest) returns (PublishSpansResponse) {}
 
 }

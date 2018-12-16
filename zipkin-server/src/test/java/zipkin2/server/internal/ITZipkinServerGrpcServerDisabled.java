@@ -28,6 +28,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.TestObjects;
+import zipkin2.proto3.PublishSpansRequest;
 import zipkin2.proto3.PublishSpansResponse;
 import zipkin2.proto3.Span;
 import zipkin2.proto3.SpanServiceGrpc;
@@ -53,7 +54,8 @@ public class ITZipkinServerGrpcServerDisabled {
     SpanServiceGrpc.SpanServiceStub spanService = SpanServiceGrpc.newStub(channel);
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> t = new AtomicReference<>();
-    final StreamObserver<Span> requestObserver = spanService.publishSpans(new StreamObserver<PublishSpansResponse>() {
+    final StreamObserver<PublishSpansRequest> requestObserver =
+      spanService.publishSpans(new StreamObserver<PublishSpansResponse>() {
       @Override
       public void onNext(PublishSpansResponse publishSpansResponse) {
       }
@@ -74,7 +76,7 @@ public class ITZipkinServerGrpcServerDisabled {
       .setId(ByteString.copyFromUtf8(TestObjects.CLIENT_SPAN.id()))
       .build();
 
-    requestObserver.onNext(span);
+    requestObserver.onNext(PublishSpansRequest.newBuilder().addSpan(span).build());
     requestObserver.onCompleted();
 
     latch.await(10, TimeUnit.SECONDS);
