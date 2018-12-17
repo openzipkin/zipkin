@@ -28,7 +28,7 @@ export default component(function autocompleteKeys() {
       }
       this.$node.append(option);
     });
-    // There won't be any tag keys at the first load, load the first one and its 
+    // There won't be any tag keys at the first load, load the first one and its
     // values
     if (!data.lastTag && data.keys && data.keys.length > 1) {
       this.$node.trigger('uiautocompletevalues', data.keys[0]);
