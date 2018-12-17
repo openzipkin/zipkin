@@ -17,6 +17,7 @@ import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -36,9 +37,11 @@ import zipkin2.internal.Platform;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.AutocompleteTags;
 
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 @AutoValue
@@ -67,7 +70,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .indexReplicas(1)
         .namesLookback(86400000)
         .shutdownClientOnClose(false)
-        .flushOnWrites(false);
+        .flushOnWrites(false)
+        .autocompleteKeys(new ArrayList<>());
   }
 
   public static Builder newBuilder() {
@@ -187,6 +191,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     public abstract Builder searchEnabled(boolean searchEnabled);
 
     @Override
+    public abstract Builder autocompleteKeys(List<String> keys);
+
+    @Override
     public abstract ElasticsearchStorage build();
 
     abstract IndexNameFormatter.Builder indexNameFormatterBuilder();
@@ -211,6 +218,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   abstract boolean searchEnabled();
 
+  abstract List<String> autocompleteKeys();
+
   abstract int indexShards();
 
   abstract int indexReplicas();
@@ -223,6 +232,12 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public SpanStore spanStore() {
     ensureIndexTemplates();
     return new ElasticsearchSpanStore(this);
+  }
+
+  @Override
+  public AutocompleteTags autocompleteTags() {
+    ensureIndexTemplates();
+    return new ElasticsearchAutocompleteTags(this);
   }
 
   @Override
@@ -321,6 +336,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       EnsureIndexTemplate.apply(http(), index + ":" + SPAN + "_template", templates.span());
       EnsureIndexTemplate.apply(
           http(), index + ":" + DEPENDENCY + "_template", templates.dependency());
+      EnsureIndexTemplate.apply(
+        http(), index + ":" + AUTOCOMPLETE + "_template", templates.tag());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);

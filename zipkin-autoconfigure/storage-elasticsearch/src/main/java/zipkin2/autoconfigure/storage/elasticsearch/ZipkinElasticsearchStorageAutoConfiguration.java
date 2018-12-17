@@ -13,6 +13,7 @@
  */
 package zipkin2.autoconfigure.storage.elasticsearch;
 
+import java.util.List;
 import java.util.logging.Logger;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
@@ -65,12 +66,14 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
       @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
       @Value("${zipkin.query.lookback:86400000}") int namesLookback,
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled) {
+      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
+      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
     return elasticsearch
         .toBuilder(client)
         .namesLookback(namesLookback)
         .strictTraceId(strictTraceId)
-        .searchEnabled(searchEnabled);
+        .searchEnabled(searchEnabled)
+        .autocompleteKeys(autocompleteKeys);
   }
 
   static final class HttpLoggingSet implements Condition {

@@ -43,6 +43,7 @@ public class ElasticsearchStorageTest {
     es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
+    es.enqueue(new MockResponse()); // get tags template
     es.enqueue(new MockResponse()); // dependencies request
     es.enqueue(new MockResponse()); // dependencies request
 
@@ -53,6 +54,7 @@ public class ElasticsearchStorageTest {
     es.takeRequest(); // get version
     es.takeRequest(); // get span template
     es.takeRequest(); // get dependency template
+    es.takeRequest(); // get tags template
 
     assertThat(es.takeRequest().getPath())
         .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");

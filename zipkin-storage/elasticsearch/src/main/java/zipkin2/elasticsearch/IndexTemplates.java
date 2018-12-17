@@ -27,6 +27,8 @@ abstract class IndexTemplates {
 
   abstract String dependency();
 
+  abstract String tag();
+
   @AutoValue.Builder
   interface Builder {
     Builder version(float version);
@@ -34,6 +36,8 @@ abstract class IndexTemplates {
     Builder span(String span);
 
     Builder dependency(String dependency);
+
+    Builder tag(String tag);
 
     IndexTemplates build();
   }
