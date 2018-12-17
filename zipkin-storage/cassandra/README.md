@@ -72,6 +72,11 @@ This component is tuned to help reduce the size of indexes needed to
 perform query operations. The most important aspects are described below.
 See [CassandraStorage](src/main/java/zipkin2/storage/cassandra/CassandraStorage.java) for details.
 
+### Autocomplete indexing
+Redundant requests to store service names, span names, and autocomplete
+values are ignored for an hour to reduce load. This is implemented by
+[DeduplicatingCall](src/main/java/zipkin2/storage/cassandra/internal/call/DeduplicatingCall.java).
+
 ### Trace indexing
 Indexing in CQL is simplified by SASI, for example, reducing the number
 of tables from 7 down to 4 (from the original cassandra schema). SASI

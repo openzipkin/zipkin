@@ -31,7 +31,7 @@ abstract class ITSpanConsumer {
   private CassandraStorage storage;
 
   @Before public void connect() {
-    storage = storageBuilder().keyspace(keyspace()).build();
+    storage = storageBuilder().autocompleteKeys(asList("environment")).keyspace(keyspace()).build();
   }
 
   abstract CassandraStorage.Builder storageBuilder();
@@ -82,6 +82,35 @@ abstract class ITSpanConsumer {
       .isGreaterThanOrEqualTo(120L); // TODO: magic number
     assertThat(rowCountForTraceByServiceSpan(storage))
       .isGreaterThanOrEqualTo(120L);
+
+  }
+
+  @Test
+  public void insertTags_SelectTags_CalculateCount() throws IOException {
+    Span[] trace = new Span[101];
+    trace[0] = TestObjects.CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).build();
+
+    IntStream.range(0, 100).forEach(i -> trace[i + 1] = Span.newBuilder()
+      .traceId(trace[0].traceId())
+      .parentId(trace[0].id())
+      .id(Long.toHexString(i))
+      .name("get")
+      .kind(Span.Kind.CLIENT)
+      .localEndpoint(FRONTEND)
+      .putTag("environment", "dev")
+      .putTag("a", "b")
+      .timestamp(
+        trace[0].timestamp() + i * 1000) // all peer span timestamps happen a millisecond later
+      .duration(10L)
+      .build());
+
+    accept(storage.spanConsumer(), trace);
+
+    assertThat(rowCountForTags(storage))
+      .isEqualTo(1L); // Since tag {a,b} are not in the whitelist
+
+    assertThat(getTagValue(storage, "environment")).isEqualTo("dev");
+
   }
 
   void accept(SpanConsumer consumer, Span... spans) throws IOException {
@@ -94,5 +123,20 @@ abstract class ITSpanConsumer {
       .execute("SELECT COUNT(*) from " + Schema.TABLE_TRACE_BY_SERVICE_SPAN)
       .one()
       .getLong(0);
+  }
+
+  static long rowCountForTags(CassandraStorage storage) {
+    return storage
+      .session()
+      .execute("SELECT COUNT(*) from " + Schema.TABLE_AUTOCOMPLETE_TAGS)
+      .one()
+      .getLong(0);
+  }
+  static String getTagValue(CassandraStorage storage, String key) {
+    return storage
+      .session()
+      .execute("SELECT value from " + Schema.TABLE_AUTOCOMPLETE_TAGS + " WHERE key='environment'")
+      .one()
+      .getString(0);
   }
 }

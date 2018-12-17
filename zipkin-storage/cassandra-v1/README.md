@@ -37,8 +37,10 @@ That said, all integration tests run on pull request via Travis.
 ## Tuning
 This component is tuned to help reduce the size of indexes needed to perform query operations. The most important aspects are described below. See [CassandraStorage](src/main/java/zipkin/storage/cassandra/CassandraStorage.java) for details.
 
-### Service and span name indexing
-Redundant requests to store service or span names are ignored for an hour to reduce load.
+### Autocomplete indexing
+Redundant requests to store service names, span names, and autocomplete
+values are ignored for an hour to reduce load. This is implemented by
+[DeduplicatingCall](../cassandra/src/main/java/zipkin2/storage/cassandra/internal/call/DeduplicatingCall.java).
 
 ### Trace indexing
 Indexing of traces are optimized by default. This reduces writes to Cassandra at the cost of memory

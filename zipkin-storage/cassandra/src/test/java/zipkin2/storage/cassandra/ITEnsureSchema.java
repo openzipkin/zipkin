@@ -43,12 +43,23 @@ abstract class ITEnsureSchema {
   }
 
   @Test public void installsIndexesWhenMissing() {
-    session().execute("CREATE KEYSPACE " + keyspace()
-      + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};");
+    Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
 
     Schema.ensureExists(keyspace(), true, session());
 
     KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
     assertThat(metadata.getTable("trace_by_service_span")).isNotNull();
+    assertThat(metadata.getTable("autocomplete_tags")).isNotNull();
+  }
+
+  @Test public void upgradesOldSchema() {
+    Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
+    Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-indexes-original.cql");
+
+    Schema.ensureExists(keyspace(), true, session());
+
+    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
+    assertThat(metadata).isNotNull();
+    assertThat(Schema.hasUpgrade1_autocompleteTags(metadata)).isTrue();
   }
 }

@@ -11,31 +11,25 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.auto.value.AutoValue;
+import java.util.Map;
+import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingCall;
 
-import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
+import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
 
-final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input> {
+final class InsertAutocompleteValue extends DeduplicatingCall<Map.Entry<String, String>> {
 
-  @AutoValue
-  abstract static class Input {
-    abstract String service();
-
-    abstract String span();
-
-    Input() {
-    }
-  }
-
-  static class Factory extends DeduplicatingCall.Factory<Input, InsertServiceSpan> {
+  static class Factory
+    extends DeduplicatingCall.Factory<Map.Entry<String, String>, InsertAutocompleteValue> {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -46,26 +40,22 @@ final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input>
     Factory(Session session, int indexTtl, int redundantCallTtl) {
       super(redundantCallTtl);
       this.session = session;
-      Insert insertQuery = QueryBuilder.insertInto(TABLE_SERVICE_SPANS)
-        .value("service", QueryBuilder.bindMarker("service"))
-        .value("span", QueryBuilder.bindMarker("span"));
+      Insert insertQuery = QueryBuilder.insertInto(TABLE_AUTOCOMPLETE_TAGS)
+        .value("key", QueryBuilder.bindMarker("key"))
+        .value("value", QueryBuilder.bindMarker("value"));
       if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
       this.preparedStatement = session.prepare(insertQuery);
     }
 
-    Input newInput(String service_name, String span_name) {
-      return new AutoValue_InsertServiceSpan_Input(service_name, span_name);
-    }
-
-    @Override protected InsertServiceSpan newCall(Input input) {
-      return new InsertServiceSpan(this, input);
+    @Override protected InsertAutocompleteValue newCall(Map.Entry<String, String> input) {
+      return new InsertAutocompleteValue(this, input);
     }
   }
 
   final Factory factory;
-  final Input input;
+  final Map.Entry<String, String> input;
 
-  InsertServiceSpan(Factory factory, Input input) {
+  InsertAutocompleteValue(Factory factory, Map.Entry<String, String> input) {
     super(factory, input);
     this.factory = factory;
     this.input = input;
@@ -73,15 +63,15 @@ final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input>
 
   @Override protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(factory.preparedStatement.bind()
-      .setString("service", input.service())
-      .setString("span", input.span()));
+      .setString("key", input.getKey())
+      .setString("value", input.getValue()));
   }
 
   @Override public String toString() {
-    return input.toString().replace("Input", "InsertServiceSpan");
+    return "InsertAutocompleteValue(" + input + ")";
   }
 
-  @Override public InsertServiceSpan clone() {
-    return new InsertServiceSpan(factory, input);
+  @Override public Call<ResultSet> clone() {
+    return new InsertAutocompleteValue(factory, input);
   }
 }

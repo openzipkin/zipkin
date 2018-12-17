@@ -55,5 +55,6 @@ abstract class ITEnsureSchema {
     KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
     assertThat(metadata).isNotNull();
     assertThat(Schema.hasUpgrade1_defaultTtl(metadata)).isTrue();
+    assertThat(Schema.hasUpgrade2_autocompleteTags(metadata)).isTrue();
   }
 }

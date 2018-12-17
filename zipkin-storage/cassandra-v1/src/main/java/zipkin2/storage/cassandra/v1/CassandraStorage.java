@@ -16,9 +16,13 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.cache.CacheBuilderSpec;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
+import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
@@ -57,6 +61,7 @@ public final class CassandraStorage extends StorageComponent {
     int indexCacheMax = 100000;
     int indexCacheTtl = 60;
     int indexFetchMultiplier = 3;
+    List<String> autocompleteKeys = new ArrayList<>();
 
     /**
      * Used to avoid hot spots when writing indexes used to query by service name or annotation.
@@ -83,6 +88,12 @@ public final class CassandraStorage extends StorageComponent {
     @Override
     public Builder searchEnabled(boolean searchEnabled) {
       this.searchEnabled = searchEnabled;
+      return this;
+    }
+
+    @Override public Builder autocompleteKeys(List<String> keys) {
+      if (keys == null) throw new NullPointerException("keys == null");
+      this.autocompleteKeys = keys;
       return this;
     }
 
@@ -255,12 +266,14 @@ public final class CassandraStorage extends StorageComponent {
   final int indexFetchMultiplier;
   final boolean strictTraceId, searchEnabled;
   final LazySession session;
+  final List<String> autocompleteKeys;
 
   /** close is typically called from a different thread */
   volatile boolean closeCalled;
 
   volatile CassandraSpanConsumer spanConsumer;
   volatile CassandraSpanStore spanStore;
+  volatile CassandraAutocompleteTags tagStore;
 
   CassandraStorage(Builder b) {
     this.contactPoints = b.contactPoints;
@@ -286,6 +299,7 @@ public final class CassandraStorage extends StorageComponent {
       this.indexCacheSpec = null;
     }
     this.indexFetchMultiplier = b.indexFetchMultiplier;
+    this.autocompleteKeys = b.autocompleteKeys;
   }
 
   /** Lazy initializes or returns the session in use by this storage component. */
@@ -304,6 +318,17 @@ public final class CassandraStorage extends StorageComponent {
       }
     }
     return spanStore;
+  }
+
+  @Override public AutocompleteTags autocompleteTags() {
+    if (tagStore == null) {
+      synchronized (this) {
+        if (tagStore == null) {
+          tagStore = new CassandraAutocompleteTags(this);
+        }
+      }
+    }
+    return tagStore;
   }
 
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */

@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.storage.cassandra.v1;
+package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.exceptions.DriverInternalError;
@@ -170,24 +170,20 @@ public class DeduplicatingCallTest {
         this.delegate = delegate;
       }
 
-      @Override
-      public long read() {
+      @Override public long read() {
         return nanoTime;
       }
 
-      @Override
-      TestDeduplicatingCall newCall(String string) {
+      @Override protected TestDeduplicatingCall newCall(String string) {
         return new TestDeduplicatingCall(this, string);
       }
     }
 
-    @Override
-    protected ListenableFuture<ResultSet> newFuture() {
+    @Override  protected ListenableFuture<ResultSet> newFuture() {
       return ((Factory) factory).delegate.apply(input);
     }
 
-    @Override
-    public Call<ResultSet> clone() {
+    @Override public Call<ResultSet> clone() {
       return new TestDeduplicatingCall(((Factory) factory), input);
     }
 
