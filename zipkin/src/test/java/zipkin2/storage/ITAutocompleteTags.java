@@ -30,9 +30,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>Subtypes should create a connection to a real backend, even if that backend is in-process.
  */
 public abstract class ITAutocompleteTags {
-  protected final StorageComponent storage;
+  protected StorageComponent storage;
 
-  protected ITAutocompleteTags() {
+  @Before public void before() {
     storage = storageBuilder().autocompleteKeys(asList("http.host")).build();
   }
 
