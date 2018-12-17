@@ -18,14 +18,14 @@ import javax.sql.DataSource;
 import org.junit.Test;
 import zipkin2.CheckResult;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class MySQLStorageTest {
 
-  @Test
-  public void check_failsInsteadOfThrowing() throws SQLException {
+  @Test public void check_failsInsteadOfThrowing() throws SQLException {
     DataSource dataSource = mock(DataSource.class);
     when(dataSource.getConnection()).thenThrow(new SQLException("foo"));
 
@@ -33,14 +33,21 @@ public class MySQLStorageTest {
 
     assertThat(result.ok()).isFalse();
     assertThat(result.error())
-        .isInstanceOf(SQLException.class);
+      .isInstanceOf(SQLException.class);
+  }
+
+  @Test public void returns_whitelisted_autocompletekey() throws Exception {
+    DataSource dataSource = mock(DataSource.class);
+    assertThat(storage(dataSource).autocompleteTags().getKeys().execute())
+      .containsOnlyOnce("http.method");
   }
 
   static MySQLStorage storage(DataSource dataSource) {
     return MySQLStorage.newBuilder()
-        .strictTraceId(false)
-        .executor(Runnable::run)
-        .datasource(dataSource)
-        .build();
+      .strictTraceId(false)
+      .executor(Runnable::run)
+      .datasource(dataSource)
+      .autocompleteKeys(asList("http.method"))
+      .build();
   }
 }

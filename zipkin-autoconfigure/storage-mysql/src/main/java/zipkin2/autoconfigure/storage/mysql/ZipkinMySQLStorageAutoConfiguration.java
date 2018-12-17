@@ -13,6 +13,7 @@
  */
 package zipkin2.autoconfigure.storage.mysql;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
@@ -57,14 +58,18 @@ class ZipkinMySQLStorageAutoConfiguration {
 
   @Bean
   StorageComponent storage(
-      Executor executor,
-      DataSource dataSource,
-      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId) {
+    Executor executor,
+    DataSource dataSource,
+    @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+    @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
+    @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
     return MySQLStorage.newBuilder()
-        .strictTraceId(strictTraceId)
-        .executor(executor)
-        .datasource(dataSource)
-        .listenerProvider(listener)
-        .build();
+      .strictTraceId(strictTraceId)
+      .searchEnabled(searchEnabled)
+      .autocompleteKeys(autocompleteKeys)
+      .executor(executor)
+      .datasource(dataSource)
+      .listenerProvider(listener)
+      .build();
   }
 }
