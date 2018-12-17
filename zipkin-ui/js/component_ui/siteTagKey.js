@@ -28,9 +28,8 @@ export default component(function autocompleteKeys() {
       }
       this.$node.append(option);
     });
-    // On the first view there won't be a selected or "last" service
-    // name.  Instead the first service at the top of the list will be
-    // displayed, so load the span names for the top service too.
+    // There won't be any tag keys at the first load, load the first one and its 
+    // values
     if (!data.lastTag && data.keys && data.keys.length > 1) {
       this.$node.trigger('uiautocompletevalues', data.keys[0]);
     }
