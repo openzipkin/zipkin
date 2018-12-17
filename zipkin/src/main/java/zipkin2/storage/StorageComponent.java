@@ -13,6 +13,8 @@
  */
 package zipkin2.storage;
 
+import java.util.List;
+import zipkin2.Call;
 import zipkin2.Component;
 import zipkin2.Span;
 
@@ -25,6 +27,18 @@ import zipkin2.Span;
 public abstract class StorageComponent extends Component {
 
   public abstract SpanStore spanStore();
+
+  public AutocompleteTags autocompleteTags() { // returns default to not break compat
+    return new AutocompleteTags() {
+      @Override public Call<List<String>> getKeys() {
+        return Call.emptyList();
+      }
+
+      @Override public Call<List<String>> getValues(String key) {
+        return Call.emptyList();
+      }
+    };
+  }
 
   public abstract SpanConsumer spanConsumer();
 
@@ -39,8 +53,8 @@ public abstract class StorageComponent extends Component {
      *
      * <h3>Details</h3>
      *
-     * <p>Zipkin historically had 64-bit {@link Span#traceId trace IDs}, but it now supports 128-bit
-     * trace IDs via 32-character hex representation. While instrumentation update to propagate
+     * <p>Zipkin historically had 64-bit {@link Span#traceId() trace IDs}, but it now supports 128-
+     * bit trace IDs via 32-character hex representation. While instrumentation update to propagate
      * 128-bit IDs, it can be ambiguous whether a 64-bit trace ID was sent intentionally, or as an
      * accident of truncation. This setting allows Zipkin to be usable until application
      * instrumentation are upgraded to support 128-bit trace IDs.
@@ -84,6 +98,19 @@ public abstract class StorageComponent extends Component {
      * should return empty as opposed to throwing an exception.
      */
     public abstract Builder searchEnabled(boolean searchEnabled);
+
+    /**
+     * Autocomplete is used by the UI to suggest getValues for site-specific tags, such as environment
+     * names. The getKeys here would appear in {@link Span#tags() span tags}. Good choices for
+     * autocomplete are limited in cardinality for the same reasons as service and span names.
+     *
+     * For example, "http.url" would be a bad choice for autocomplete, not just because it isn't
+     * site-specific (such as environment would be), but also as there are unlimited getValues due to
+     * factors such as unique ids in the path.
+     *
+     * @param keys controls the span values stored for auto-complete.
+     */
+    public abstract Builder autocompleteKeys(List<String> keys);
 
     public abstract StorageComponent build();
   }

@@ -63,7 +63,8 @@ import zipkin2.internal.DependencyLinker;
  *    foo --> ( GET, POST )
  * }</pre>
  */
-public final class InMemoryStorage extends StorageComponent implements SpanStore, SpanConsumer {
+public final class InMemoryStorage extends StorageComponent implements SpanStore, SpanConsumer,
+  AutocompleteTags {
 
   public static Builder newBuilder() {
     return new Builder();
@@ -72,6 +73,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   public static final class Builder extends StorageComponent.Builder {
     boolean strictTraceId = true, searchEnabled = true;
     int maxSpanCount = 500000;
+    List<String> autocompleteKeys = Collections.emptyList();
 
     /** {@inheritDoc} */
     @Override
@@ -83,6 +85,12 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     @Override
     public Builder searchEnabled(boolean searchEnabled) {
       this.searchEnabled = searchEnabled;
+      return this;
+    }
+
+    @Override public Builder autocompleteKeys(List<String> autocompleteKeys) {
+      if (autocompleteKeys == null) throw new NullPointerException("autocompleteKeys == null");
+      this.autocompleteKeys = autocompleteKeys;
       return this;
     }
 
@@ -112,7 +120,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       }
     };
 
-  /** This supports span lookup by {@link Span#traceId lower 64-bits of the trace ID} */
+  /** This supports span lookup by {@link Span#traceId() lower 64-bits of the trace ID} */
   private final SortedMultimap<String, TraceIdTimestamp> traceIdToTraceIdTimeStamps =
     new SortedMultimap<String, TraceIdTimestamp>(STRING_COMPARATOR) {
       @Override
@@ -120,10 +128,18 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
         return new LinkedHashSet<>();
       }
     };
-  /** This is an index of {@link Span#traceId} by {@link Endpoint#serviceName() service name} */
+  /** This is an index of {@link Span#traceId()} by {@link Endpoint#serviceName() service name} */
   private final ServiceNameToTraceIds serviceToTraceIds = new ServiceNameToTraceIds();
-  /** This is an index of {@link Span#name} by {@link Endpoint#serviceName() service name} */
+  /** This is an index of {@link Span#name()} by {@link Endpoint#serviceName() service name} */
   private final SortedMultimap<String, String> serviceToSpanNames =
+    new SortedMultimap<String, String>(STRING_COMPARATOR) {
+      @Override
+      Collection<String> valueContainer() {
+        return new LinkedHashSet<>();
+      }
+    };
+
+  private final SortedMultimap<String, String> autocompleteTags =
     new SortedMultimap<String, String>(STRING_COMPARATOR) {
       @Override
       Collection<String> valueContainer() {
@@ -133,12 +149,16 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
 
   final boolean strictTraceId, searchEnabled;
   final int maxSpanCount;
+  final Call<List<String>> autocompleteKeysCall;
+  final Set<String> autocompleteKeys;
   volatile int acceptedSpanCount;
 
   InMemoryStorage(Builder builder) {
     this.strictTraceId = builder.strictTraceId;
     this.searchEnabled = builder.searchEnabled;
     this.maxSpanCount = builder.maxSpanCount;
+    this.autocompleteKeysCall = Call.create(builder.autocompleteKeys);
+    this.autocompleteKeys = new LinkedHashSet<>(builder.autocompleteKeys);
   }
 
   public int acceptedSpanCount() {
@@ -151,6 +171,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     spansByTraceIdTimeStamp.clear();
     serviceToTraceIds.clear();
     serviceToSpanNames.clear();
+    autocompleteTags.clear();
   }
 
   @Override
@@ -175,6 +196,11 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       if (span.remoteServiceName() != null) {
         serviceToTraceIds.put(span.remoteServiceName(), lowTraceId);
         if (spanName != null) serviceToSpanNames.put(span.remoteServiceName(), spanName);
+      }
+      for (Map.Entry<String, String> tag : span.tags().entrySet()) {
+        if (autocompleteKeys.contains(tag.getKey())) {
+          autocompleteTags.put(tag.getKey(), tag.getValue());
+        }
       }
     }
     return Call.create(null /* Void == null */);
@@ -331,6 +357,18 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return getTracesCall.map(LinkDependencies.INSTANCE);
   }
 
+  @Override public Call<List<String>> getKeys() {
+    if (!searchEnabled) return Call.emptyList();
+    return autocompleteKeysCall.clone();
+  }
+
+  @Override public Call<List<String>> getValues(String key) {
+    if (key == null) throw new NullPointerException("key == null");
+    if (key.isEmpty()) throw new IllegalArgumentException("key was empty");
+    if (!searchEnabled) return Call.emptyList();
+    return Call.create(new ArrayList<>(autocompleteTags.get(key)));
+  }
+
   enum LinkDependencies implements Call.Mapper<List<List<Span>>, List<DependencyLink>> {
     INSTANCE;
 
@@ -468,6 +506,10 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
 
   @Override
   public InMemoryStorage spanStore() {
+    return this;
+  }
+
+  @Override public InMemoryStorage autocompleteTags() {
     return this;
   }
 

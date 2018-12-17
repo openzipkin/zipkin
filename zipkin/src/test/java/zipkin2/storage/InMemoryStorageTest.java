@@ -32,7 +32,7 @@ import static zipkin2.TestObjects.TODAY;
 import static zipkin2.storage.ITSpanStore.requestBuilder;
 
 public class InMemoryStorageTest {
-  InMemoryStorage storage = InMemoryStorage.newBuilder().build();
+  InMemoryStorage storage = InMemoryStorage.newBuilder().autocompleteKeys(asList("http.path")).build();
 
   @Test public void getTraces_filteringMatchesMostRecentTraces() throws IOException {
     List<Endpoint> endpoints = IntStream.rangeClosed(1, 10)
@@ -121,5 +121,38 @@ public class InMemoryStorageTest {
     assertThat(storage.getSpanNames("app").execute()).containsOnly(
       "root"
     );
+  }
+
+  @Test public void getTagsAndThenValues() throws IOException {
+    Span span1 = Span.newBuilder().traceId("1").id("1").name("root")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .putTag("environment", "dev")
+      .putTag("http.method" , "GET")
+      .timestamp(TODAY * 1000)
+      .build();
+    Span span2 = Span.newBuilder().traceId("1").parentId("1").id("2")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .putTag("environment", "dev")
+      .putTag("http.method" , "POST")
+      .putTag("http.path", "/users")
+      .timestamp(TODAY * 1000)
+      .build();
+    Span span3 = Span.newBuilder().traceId("2").id("3").name("root")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .putTag("environment", "dev")
+      .putTag("http.method" , "GET")
+      .timestamp(TODAY * 1000)
+      .build();
+    Span span4 = Span.newBuilder().traceId("2").parentId("3").id("4")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .putTag("environment", "dev")
+      .putTag("http.method" , "POST")
+      .putTag("http.path", "/users")
+      .timestamp(TODAY * 1000)
+      .build();
+    storage.accept(asList(span1, span2, span3, span4));
+
+    assertThat(storage.getKeys().execute()).containsOnlyOnce("http.path");
+    assertThat(storage.getValues("http.path").execute()).containsOnlyOnce("/users");
   }
 }

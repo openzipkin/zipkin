@@ -20,6 +20,7 @@ import java.util.List;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
@@ -35,13 +36,15 @@ public final class TracingStorageComponent extends StorageComponent {
     this.delegate = delegate;
   }
 
-  @Override
-  public SpanStore spanStore() {
+  @Override public SpanStore spanStore() {
     return new TracingSpanStore(tracing, delegate.spanStore());
   }
 
-  @Override
-  public SpanConsumer spanConsumer() {
+  @Override public AutocompleteTags autocompleteTags() {
+    return new TracingAutocompleteTags(tracing, delegate.autocompleteTags());
+  }
+
+  @Override public SpanConsumer spanConsumer() {
     // prevents accidental write amplification
     return delegate.spanConsumer();
   }
@@ -52,8 +55,8 @@ public final class TracingStorageComponent extends StorageComponent {
   }
 
   static final class TracingSpanStore implements SpanStore {
-    private final Tracer tracer;
-    private final SpanStore delegate;
+    final Tracer tracer;
+    final SpanStore delegate;
 
     TracingSpanStore(Tracing tracing, SpanStore delegate) {
       this.tracer = tracing.tracer();
@@ -83,7 +86,25 @@ public final class TracingStorageComponent extends StorageComponent {
     @Override
     public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
       return new TracedCall<>(
-          tracer, delegate.getDependencies(endTs, lookback), "get-dependencies");
+        tracer, delegate.getDependencies(endTs, lookback), "get-dependencies");
+    }
+  }
+
+  static final class TracingAutocompleteTags implements AutocompleteTags {
+    final Tracer tracer;
+    final AutocompleteTags delegate;
+
+    TracingAutocompleteTags(Tracing tracing, AutocompleteTags delegate) {
+      this.tracer = tracing.tracer();
+      this.delegate = delegate;
+    }
+
+    @Override public Call<List<String>> getKeys() {
+      return new TracedCall<>(tracer, delegate.getKeys(), "get-keys");
+    }
+
+    @Override public Call<List<String>> getValues(String key) {
+      return new TracedCall<>(tracer, delegate.getValues(key), "get-values");
     }
   }
 }

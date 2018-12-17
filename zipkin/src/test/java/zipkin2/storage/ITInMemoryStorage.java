@@ -13,7 +13,6 @@
  */
 package zipkin2.storage;
 
-import java.io.IOException;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
@@ -49,6 +48,17 @@ public class ITInMemoryStorage {
 
     @Override protected InMemoryStorage storage() {
       return storage;
+    }
+
+    @Override public void clear() {
+      // no need.. the test rule does this
+    }
+  }
+
+  public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
+
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return InMemoryStorage.newBuilder();
     }
 
     @Override public void clear() {
