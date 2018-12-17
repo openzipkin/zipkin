@@ -22,6 +22,10 @@ import {i18nInit} from '../component_ui/i18n';
 import bootstrap // eslint-disable-line no-unused-vars
     from 'bootstrap/dist/js/bootstrap.bundle.min.js';
 
+import SiteTagData from '../component_data/siteTags';
+import SiteTagsKeyUI from '../component_ui/siteTagKey';
+import SiteTagsValueUI from '../component_ui/siteTagValue';
+
 const DefaultPageComponent = component(function DefaultPage() {
   const sortOptions = [
     {value: 'service-percentage-desc', text: 'Service Percentage: Longest First'},
@@ -79,6 +83,7 @@ const DefaultPageComponent = component(function DefaultPage() {
 
       SpanNamesData.attachTo(document);
       ServiceNamesData.attachTo(document);
+      SiteTagData.attachTo(document);
       ServiceNameUI.attachTo('#serviceName');
       SpanNameUI.attachTo('#spanName');
       LookbackUI.attachTo('#lookback');
@@ -90,6 +95,8 @@ const DefaultPageComponent = component(function DefaultPage() {
       TimeStampUI.attachTo('#end-ts');
       TimeStampUI.attachTo('#start-ts');
       BackToTop.attachTo('#backToTop');
+      SiteTagsKeyUI.attachTo('#tagkey');
+      SiteTagsValueUI.attachTo('#tagValue');
       i18nInit('traces');
       $('.timeago').timeago();
       // Need to initialize the datepicker when the UI refershes. Can be optimized
