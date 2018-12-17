@@ -16,6 +16,7 @@ package zipkin2.server.internal;
 import brave.Tracing;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -147,11 +148,13 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     StorageComponent storage(
         @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
         @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
-        @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans) {
+        @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans,
+        @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
       return InMemoryStorage.newBuilder()
           .strictTraceId(strictTraceId)
           .searchEnabled(searchEnabled)
           .maxSpanCount(maxSpans)
+          .autocompleteKeys(autocompleteKeys)
           .build();
     }
   }

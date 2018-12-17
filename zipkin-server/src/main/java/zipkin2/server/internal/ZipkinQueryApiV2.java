@@ -62,7 +62,7 @@ public class ZipkinQueryApiV2 {
     @Value("${zipkin.storage.type:mem}") String storageType,
     @Value("${zipkin.query.lookback:86400000}") long defaultLookback, // 1 day in millis
     @Value("${zipkin.query.names-max-age:300}") int namesMaxAge, // 5 minutes
-    @Value("${zipkin.storage.autocompleteKeys:}") List<String> autocompleteKeys
+    @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys
   ) {
     this.storage = storage;
     this.storageType = storageType;
@@ -136,13 +136,28 @@ public class ZipkinQueryApiV2 {
 
   @GetMapping(value = "/autocompleteKeys", produces = APPLICATION_JSON_VALUE)
   public ResponseEntity<List<String>> getAutocompleteKeys() {
-    return ResponseEntity.ok(autocompleteKeys);
+    return ResponseEntity.ok()
+      .cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate())
+      .body(autocompleteKeys);
   }
 
   @GetMapping(value = "/autocompleteValues", produces = APPLICATION_JSON_VALUE)
   public ResponseEntity<List<String>> getAutocompleteValues(@RequestParam String key)
     throws IOException {
     return maybeCacheAutocompleteValues(storage.autocompleteTags().getValues(key).execute());
+  }
+
+  /**
+   * We cache tag values to minimize the number of requests made to the storage backend. The tag
+   * values doesn't change frequently and cache expires in 5 minutes
+   *
+   */
+  ResponseEntity<List<String>> maybeCacheAutocompleteValues(List<String> values) {
+    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    if (values.size() > 3) {
+      response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
+    }
+    return response.body(values);
   }
 
   @ExceptionHandler(TraceNotFoundException.class)
@@ -166,19 +181,6 @@ public class ZipkinQueryApiV2 {
       response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
     }
     return response.body(names);
-  }
-
-  /**
-   * We cache tag values to minimize the number of requests made to the storage backend. The tag
-   * values doesn't change frequently and cache expires in 5 minutes
-   *
-   */
-  ResponseEntity<List<String>> maybeCacheAutocompleteValues(List<String> values) {
-    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
-    if (values.size() > 3) {
-      response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
-    }
-    return response.body(values);
   }
 
   // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library

@@ -14,6 +14,7 @@
 package zipkin2.storage;
 
 import java.util.List;
+import java.util.logging.Logger;
 import zipkin2.Call;
 import zipkin2.Component;
 import zipkin2.Span;
@@ -110,7 +111,10 @@ public abstract class StorageComponent extends Component {
      *
      * @param keys controls the span values stored for auto-complete.
      */
-    public abstract Builder autocompleteKeys(List<String> keys);
+    public Builder autocompleteKeys(List<String> keys) {
+      Logger.getLogger(getClass().getName()).info("autocompleteKeys not yet supported");
+      return this;
+    }
 
     public abstract StorageComponent build();
   }
