@@ -23,6 +23,7 @@ import org.springframework.http.CacheControl;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -52,19 +53,22 @@ public class ZipkinQueryApiV2 {
   final long defaultLookback;
   /** The Cache-Control max-age (seconds) for /api/v2/services and /api/v2/spans */
   final int namesMaxAge;
+  final List<String> autocompleteKeys;
 
   volatile int serviceCount; // used as a threshold to start returning cache-control headers
 
   ZipkinQueryApiV2(
-      StorageComponent storage,
-      @Value("${zipkin.storage.type:mem}") String storageType,
-      @Value("${zipkin.query.lookback:86400000}") long defaultLookback, // 1 day in millis
-      @Value("${zipkin.query.names-max-age:300}") int namesMaxAge // 5 minutes
-      ) {
+    StorageComponent storage,
+    @Value("${zipkin.storage.type:mem}") String storageType,
+    @Value("${zipkin.query.lookback:86400000}") long defaultLookback, // 1 day in millis
+    @Value("${zipkin.query.names-max-age:300}") int namesMaxAge, // 5 minutes
+    @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys
+  ) {
     this.storage = storage;
     this.storageType = storageType;
     this.defaultLookback = defaultLookback;
     this.namesMaxAge = namesMaxAge;
+    this.autocompleteKeys = autocompleteKeys;
   }
 
   @RequestMapping(
@@ -89,7 +93,7 @@ public class ZipkinQueryApiV2 {
 
   @RequestMapping(value = "/spans", method = RequestMethod.GET)
   public ResponseEntity<List<String>> getSpanNames(
-      @RequestParam(value = "serviceName", required = true) String serviceName) throws IOException {
+      @RequestParam(value = "serviceName") String serviceName) throws IOException {
     return maybeCacheNames(storage.spanStore().getSpanNames(serviceName).execute());
   }
 
@@ -128,6 +132,32 @@ public class ZipkinQueryApiV2 {
     List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
     if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
     return new String(SpanBytesEncoder.JSON_V2.encodeList(trace), UTF_8);
+  }
+
+  @GetMapping(value = "/autocompleteKeys", produces = APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<String>> getAutocompleteKeys() {
+    return ResponseEntity.ok()
+      .cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate())
+      .body(autocompleteKeys);
+  }
+
+  @GetMapping(value = "/autocompleteValues", produces = APPLICATION_JSON_VALUE)
+  public ResponseEntity<List<String>> getAutocompleteValues(@RequestParam String key)
+    throws IOException {
+    return maybeCacheAutocompleteValues(storage.autocompleteTags().getValues(key).execute());
+  }
+
+  /**
+   * We cache tag values to minimize the number of requests made to the storage backend. The tag
+   * values doesn't change frequently and cache expires in 5 minutes
+   *
+   */
+  ResponseEntity<List<String>> maybeCacheAutocompleteValues(List<String> values) {
+    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
+    if (values.size() > 3) {
+      response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
+    }
+    return response.body(values);
   }
 
   @ExceptionHandler(TraceNotFoundException.class)
