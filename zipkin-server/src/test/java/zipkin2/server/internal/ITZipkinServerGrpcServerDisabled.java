@@ -28,8 +28,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.TestObjects;
+import zipkin2.proto3.ListOfSpans;
 import zipkin2.proto3.PublishSpansRequest;
-import zipkin2.proto3.PublishSpansResponse;
+import zipkin2.proto3.PutSpansResponse;
 import zipkin2.proto3.Span;
 import zipkin2.proto3.SpanServiceGrpc;
 
@@ -54,10 +55,41 @@ public class ITZipkinServerGrpcServerDisabled {
     SpanServiceGrpc.SpanServiceStub spanService = SpanServiceGrpc.newStub(channel);
     CountDownLatch latch = new CountDownLatch(1);
     AtomicReference<Throwable> t = new AtomicReference<>();
-    final StreamObserver<PublishSpansRequest> requestObserver =
-      spanService.publishSpans(new StreamObserver<PublishSpansResponse>() {
+    spanService.putSpans(ListOfSpans.getDefaultInstance(), new StreamObserver<PutSpansResponse>() {
       @Override
-      public void onNext(PublishSpansResponse publishSpansResponse) {
+      public void onNext(PutSpansResponse value) {
+        latch.countDown();
+      }
+
+      @Override
+      public void onError(Throwable throwable) {
+        t.set(throwable);
+        latch.countDown();
+      }
+
+      @Override
+      public void onCompleted() {
+
+      }
+    });
+
+    latch.await(10, TimeUnit.SECONDS);
+    assertThat(t.get()).isInstanceOf(StatusRuntimeException.class);
+    StatusRuntimeException statusException = (StatusRuntimeException)t.get();
+    assertThat(statusException.getStatus().getCode()).isEqualTo(Status.UNAVAILABLE.getCode());
+  }
+
+  // TODO This likely goes away in the final version of the PR
+  @Test public void serverIsNotStartedByDefaultClientStreaming() throws Exception {
+    ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
+    SpanServiceGrpc.SpanServiceStub spanService = SpanServiceGrpc.newStub(channel);
+    CountDownLatch latch = new CountDownLatch(1);
+    AtomicReference<Throwable> t = new AtomicReference<>();
+    final StreamObserver<PublishSpansRequest> requestObserver =
+      spanService.publishSpans(new StreamObserver<PutSpansResponse>() {
+      @Override
+      public void onNext(PutSpansResponse publishSpansResponse) {
+        latch.countDown();
       }
 
       @Override

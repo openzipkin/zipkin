@@ -13,9 +13,15 @@
  */
 package zipkin2.server.grpc;
 
+import static com.google.protobuf.CodedOutputStream.computeBytesSize;
 import static io.grpc.MethodDescriptor.generateFullMethodName;
 
 import com.google.common.collect.Lists;
+import com.google.protobuf.ByteString;
+import com.google.protobuf.CodedOutputStream;
+import com.google.protobuf.Empty;
+import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.unsafe.grpc.GrpcUnsafeBufferUtil;
 import io.grpc.BindableService;
 import io.grpc.KnownLength;
 import io.grpc.MethodDescriptor;
@@ -30,6 +36,8 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.proto3.internal.ListOfSpansInternal;
+import zipkin2.proto3.internal.SpanServiceGrpc;
 import zipkin2.storage.StorageComponent;
 
 import java.io.IOException;
@@ -106,9 +114,58 @@ public abstract class GrpcCollector extends CollectorComponent {
         .sampler(sampler)
         .metrics(collectorMetrics)
         .build();
-      return this.type.newCollector(this, new SpanService(collectorMetrics, collector));
+      return this.type.newCollector(this, new SpanServiceUnary(collectorMetrics, collector));
     }
   }
+
+  static class SpanServiceUnary extends SpanServiceGrpc.SpanServiceImplBase {
+
+    private final CollectorMetrics metrics;
+    private final Collector collector;
+
+    SpanServiceUnary(CollectorMetrics metrics, Collector collector) {
+      this.metrics = metrics;
+      this.collector = collector;
+    }
+
+    @Override
+    public void putSpans(ListOfSpansInternal request, StreamObserver<Empty> responseObserver) {
+      try {
+        List<ByteString> spans = request.getSpansList();
+        List<zipkin2.Span> zipkinSpans = new ArrayList<>(spans.size());
+        for (ByteString span : spans) {
+          metrics.incrementMessages();
+          // TODO Add support for Proto3Codec to take in a ByteBuffer and use span.asReadonlyByteBuffer() instead
+          // so we don't have to copy
+          try {
+            byte[] buff = new byte[computeBytesSize(1, span)];
+            CodedOutputStream out = CodedOutputStream.newInstance(buff);
+            out.writeBytes(1, span);
+            zipkinSpans.add(SpanBytesDecoder.PROTO3.decodeOne(buff));
+          } catch (IOException e) {
+            throw new RuntimeException(e);
+          }
+
+        }
+        collector.accept(zipkinSpans, new Callback<Void>() {
+          @Override
+          public void onSuccess(Void value) {
+            // This is ok because we return a hard coded response in the marshaller
+            responseObserver.onNext(Empty.getDefaultInstance());
+          }
+
+          @Override
+          public void onError(Throwable t) {
+            responseObserver.onError(t);
+          }
+        });
+      } finally {
+        GrpcUnsafeBufferUtil.releaseBuffer(request, RequestContext.current());
+      }
+    }
+  }
+
+  // Everything below here is likely to go away in the final revision of this PR.
 
   /**
    * We need to use our custom {@link zipkin2.internal.Proto3Codec} to parse the message sent in by gRPC. In

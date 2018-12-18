@@ -26,14 +26,16 @@ import com.google.protobuf.Message;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.stub.StreamObserver;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import zipkin2.TestObjects;
 import zipkin2.proto3.Annotation;
 import zipkin2.proto3.Endpoint;
+import zipkin2.proto3.ListOfSpans;
 import zipkin2.proto3.PublishSpansRequest;
-import zipkin2.proto3.PublishSpansResponse;
+import zipkin2.proto3.PutSpansResponse;
 import zipkin2.proto3.Span;
 import zipkin2.proto3.SpanServiceGrpc;
 import zipkin2.storage.InMemoryStorage;
@@ -76,14 +78,60 @@ public abstract class ITZipkinServerGrpcServer {
 
   private TestHelper testHelper = mock(TestHelper.class);
 
-  @Test public void writeSpans() throws Exception {
+  @Test public void testUnary() throws Exception {
+    ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
+    SpanServiceGrpc.SpanServiceStub spanService = SpanServiceGrpc.newStub(channel);
+    final CountDownLatch finishLatch = new CountDownLatch(1);
+
+    ListOfSpans.Builder listOfSpans = ListOfSpans.newBuilder();
+    for (int i = 0; i < 10; ++i) {
+      listOfSpans.addSpans(PROTO_SPAN);
+    }
+    spanService.putSpans(listOfSpans.build(), new StreamObserver<PutSpansResponse>() {
+      @Override
+      public void onNext(PutSpansResponse spans) {
+        testHelper.onMessage(spans);
+        finishLatch.countDown();
+      }
+
+      @Override
+      public void onError(Throwable t) {
+        testHelper.onRpcError(t);
+        finishLatch.countDown();
+      }
+
+      @Override
+      public void onCompleted() {
+        finishLatch.countDown();
+      }
+    });
+
+    if (!finishLatch.await(10, TimeUnit.SECONDS)) {
+      warning("grpc did not finish within 10 secs");
+    }
+
+    verify(testHelper, never()).onRpcError(any(Throwable.class));
+    verify(testHelper).onMessage(PutSpansResponse.newBuilder().build());
+
+    assertThat(storage.acceptedSpanCount()).isEqualTo(10);
+    for (zipkin2.Span received : storage.getTraces().get(0)) {
+      assertThat(received.traceId()).isEqualTo(TestObjects.CLIENT_SPAN.traceId());
+      assertThat(received.parentId()).isEqualTo(TestObjects.CLIENT_SPAN.parentId());
+      assertThat(received.id()).isEqualTo(TestObjects.CLIENT_SPAN.id());
+    }
+
+    channel.shutdown().awaitTermination(5, TimeUnit.SECONDS);
+  }
+
+  // TODO This is likely going away in the final version of the PR
+  @Test @Ignore public void testClientStreaming() throws Exception {
     ManagedChannel channel = ManagedChannelBuilder.forAddress("localhost", grpcPort).usePlaintext().build();
     SpanServiceGrpc.SpanServiceStub spanService = SpanServiceGrpc.newStub(channel);
     final CountDownLatch finishLatch = new CountDownLatch(1);
     final StreamObserver<PublishSpansRequest> requestObserver =
-      spanService.publishSpans(new StreamObserver<PublishSpansResponse>() {
+      spanService.publishSpans(new StreamObserver<PutSpansResponse>() {
       @Override
-      public void onNext(PublishSpansResponse publishSpansResponse) {
+      public void onNext(PutSpansResponse publishSpansResponse) {
         testHelper.onMessage(publishSpansResponse);
         finishLatch.countDown();
       }
@@ -116,8 +164,8 @@ public abstract class ITZipkinServerGrpcServer {
       warning("grpc did not finish within 10 secs");
     }
 
-    verify(testHelper).onMessage(PublishSpansResponse.newBuilder().build());
     verify(testHelper, never()).onRpcError(any(Throwable.class));
+    verify(testHelper).onMessage(PutSpansResponse.newBuilder().build());
 
     assertThat(storage.acceptedSpanCount()).isEqualTo(10);
     for (zipkin2.Span received : storage.getTraces().get(0)) {

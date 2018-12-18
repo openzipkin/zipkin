@@ -13,43 +13,58 @@
  */
 package zipkin2.server.grpc;
 
-/*import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.SessionProtocol;
+import com.linecorp.armeria.common.grpc.GrpcSerializationFormats;
 import com.linecorp.armeria.common.logging.LogLevel;
 import com.linecorp.armeria.server.Server;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServiceWithPathMappings;
+import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.server.grpc.GrpcServiceBuilder;
-import com.linecorp.armeria.server.logging.LoggingServiceBuilder;*/
+import com.linecorp.armeria.server.logging.LoggingServiceBuilder;
 import io.grpc.BindableService;
 import zipkin2.collector.CollectorComponent;
 
 public class ArmeriaGrpcCollector extends GrpcCollector {
 
-  //private final Server server;
+  private final Server server;
 
   ArmeriaGrpcCollector(BindableService service, int port) {
-    /*ServiceWithPathMappings<HttpRequest, HttpResponse> grpcService = new GrpcServiceBuilder()
+    // TODO Expose via configuration
+    final CorsServiceBuilder corsBuilder =
+      CorsServiceBuilder.forOrigin("http://foo.com")
+        .allowRequestMethods(HttpMethod.POST) // Allow POST method.
+        // Allow Content-type and X-GRPC-WEB headers.
+        .allowRequestHeaders(HttpHeaderNames.CONTENT_TYPE,
+          HttpHeaderNames.of("X-GRPC-WEB"));
+
+
+    // TODO Expose formats via configuration
+    ServiceWithPathMappings<HttpRequest, HttpResponse> grpcService = new GrpcServiceBuilder()
+      .supportedSerializationFormats(GrpcSerializationFormats.values())
+      .unsafeWrapRequestBuffers(true)
       .addService(service)
       .build();
 
-    ServerBuilder sb = new ServerBuilder();
-    sb.port(port, SessionProtocol.HTTP);
-    sb.serviceUnder("/",  grpcService.decorate(new LoggingServiceBuilder()
+    server = new ServerBuilder()
+      .port(port, SessionProtocol.HTTP)
+      .serviceUnder("/",  grpcService.decorate(new LoggingServiceBuilder()
                     .requestLogLevel(LogLevel.INFO)
                     .successfulResponseLogLevel(LogLevel.INFO)
                     .failureResponseLogLevel(LogLevel.WARN)
-                    .newDecorator()));
-
-    server = sb.build();*/
+                    .newDecorator()))
+      .build();
   }
 
   /**
    * Start serving requests.
    */
   public CollectorComponent start() {
-//    server.start();
+    server.start();
     return this;
   }
 
@@ -57,7 +72,7 @@ public class ArmeriaGrpcCollector extends GrpcCollector {
    * Stop serving requests and shutdown resources.
    */
   public void close() {
-//    server.stop();
+    server.stop();
   }
 
 }
