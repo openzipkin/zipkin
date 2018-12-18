@@ -95,6 +95,33 @@ public class ZipkinMySQLStorageAutoConfigurationTest {
   }
 
   @Test
+  public void searchEnabled_canSetToFalse() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of(
+      "zipkin.storage.type:mysql",
+      "zipkin.storage.search-enabled:false")
+      .applyTo(context);
+    Access.registerMySQL(context);
+    context.refresh();
+
+    assertThat(context.getBean(MySQLStorage.class).searchEnabled).isFalse();
+  }
+
+  @Test
+  public void autocompleteKeys_list() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of(
+      "zipkin.storage.type:mysql",
+      "zipkin.storage.autocomplete-keys:environment")
+      .applyTo(context);
+    Access.registerMySQL(context);
+    context.refresh();
+
+    assertThat(context.getBean(MySQLStorage.class).autocompleteKeys)
+      .containsOnly("environment");
+  }
+
+  @Test
   public void usesJdbcUrl_whenPresent() {
     context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(

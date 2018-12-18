@@ -15,14 +15,15 @@ package zipkin2.storage.mysql.v1;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executor;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
-import org.jooq.Record;
-import org.jooq.TableField;
 import org.jooq.conf.Settings;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
+import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
@@ -42,17 +43,21 @@ public final class MySQLStorage extends StorageComponent {
     private Settings settings = new Settings().withRenderSchema(false);
     private ExecuteListenerProvider listenerProvider;
     private Executor executor;
+    List<String> autocompleteKeys = new ArrayList<>();
 
-    /** {@inheritDoc} */
-    @Override
-    public Builder strictTraceId(boolean strictTraceId) {
+    @Override public Builder strictTraceId(boolean strictTraceId) {
       this.strictTraceId = strictTraceId;
       return this;
     }
 
-    @Override
-    public Builder searchEnabled(boolean searchEnabled) {
+    @Override public Builder searchEnabled(boolean searchEnabled) {
       this.searchEnabled = searchEnabled;
+      return this;
+    }
+
+    @Override public Builder autocompleteKeys(List<String> keys) {
+      if (keys == null) throw new NullPointerException("keys == null");
+      this.autocompleteKeys = keys;
       return this;
     }
 
@@ -79,8 +84,7 @@ public final class MySQLStorage extends StorageComponent {
       return this;
     }
 
-    @Override
-    public MySQLStorage build() {
+    @Override public MySQLStorage build() {
       return new MySQLStorage(this);
     }
 
@@ -95,7 +99,7 @@ public final class MySQLStorage extends StorageComponent {
   final DataSourceCall.Factory dataSourceCallFactory;
   final DSLContexts context;
   final boolean strictTraceId, searchEnabled;
-
+  final List<String> autocompleteKeys;
   volatile Schema schema;
 
   MySQLStorage(MySQLStorage.Builder builder) {
@@ -107,6 +111,7 @@ public final class MySQLStorage extends StorageComponent {
     dataSourceCallFactory = new DataSourceCall.Factory(datasource, context, executor);
     strictTraceId = builder.strictTraceId;
     searchEnabled = builder.searchEnabled;
+    autocompleteKeys = builder.autocompleteKeys;
   }
 
   /** Returns the session in use by this storage component. */
@@ -128,7 +133,11 @@ public final class MySQLStorage extends StorageComponent {
 
   @Override
   public SpanStore spanStore() {
-    return new MySQLSpanStore(dataSourceCallFactory, schema(), strictTraceId);
+    return new MySQLSpanStore(this, schema());
+  }
+
+  @Override public AutocompleteTags autocompleteTags() {
+    return new MySQLAutocompleteTags(this, schema());
   }
 
   @Override
