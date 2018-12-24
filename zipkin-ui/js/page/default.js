@@ -59,7 +59,7 @@ const DefaultPageComponent = component(function DefaultPage() {
       const startTs = query.startTs || (endTs - this.attr.config('defaultLookback'));
       const serviceName = query.serviceName || '';
       const annotationQuery = query.annotationQuery || '';
-      const sortOrder = query.sortOrder || 'duration-desc';
+      const sortOrder = query.sortOrder || 'timestamp-desc';
       const queryWasPerformed = serviceName && serviceName.length > 0;
       this.$node.html(defaultTemplate({
         limit,

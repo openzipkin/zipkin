@@ -2,7 +2,7 @@
   <form role="form" id="submitForm" class="card-body">
     <div class="form-row">
       <div class="form-group col-md-3">
-        <label for="timeStamp" data-i18n="traces.servicename">Service Name</label>
+        <label for="timeStamp">服务名称</label>
         <div class="clearfix">
           <select data-placeholder="Service Name" class="form-control form-control-chosen" name="serviceName" id="serviceName">
           </select>
@@ -10,7 +10,7 @@
       </div>
 
       <div class="form-group col-md-3">
-        <label for="timeStamp" data-i18n="traces.spanname">Span Name</label>
+        <label for="timeStamp">调用名称</label>
         <div class="clearfix">
           <select data-placeholder="Span Name" class="form-control-chosen" name="spanName" id="spanName">
           </select>
@@ -18,7 +18,7 @@
       </div>
 
       <div class="form-group col-md-6">
-        <label for="lookback" data-i18n="traces.lookback">Lookback</label>
+        <label for="lookback" >回溯时间</label>
         <div class="clearfix">
           <select class="form-control" name="lookback" id="lookback">
             <option value="3600000" data-i18n="traces.lookback.1hour">1 hour</option>
@@ -58,7 +58,7 @@
 
     <div class="form-row">
       <div class="form-group col-md-6">
-        <label for="annotationQuery" data-i18n="traces.annotationQuery">Annotations Query</label>
+        <label for="annotationQuery" >查询条件</label>
         <div class="clearfix">
           <input type="text" class="form-control input-sm" id="annotationQuery" name="annotationQuery"
                      value="{{annotationQuery}}" style="width: 100%"
@@ -67,17 +67,17 @@
       </div>
 
       <div class="form-group col-md-2">
-        <label for="minDuration" data-i18n="traces.duration">Duration (μs) >=</label>
+        <label for="minDuration" >持续时间 (μs) >=</label>
         <input class="form-control input-sm" id="minDuration" name="minDuration" type="text" value="{{minDuration}}"
                placeholder="Ex: 100ms or 5s">
       </div>
 
       <div class="form-group col-md-2">
-        <label for="limit" data-i18n="traces.limit">Limit</label>
+        <label for="limit" >条数</label>
         <input class="form-control input-sm" id="limit" name="limit" type="text" value="{{limit}}">
       </div>
       <div class="form-group col-md-2">
-        <label for="sortOrder" data-i18n="traces.sort">Sort</label>
+        <label for="sortOrder" >排序</label>
         <select class="sort-order js-sort-order form-control" form="submitForm" name="sortOrder" id="sortOrder">
           {{#sortOrderOptions}}
             <option value="{{value}}" {{sortOrderSelected}} data-i18n="{{value}}">{{text}}</option>{{/sortOrderOptions}}
@@ -87,7 +87,7 @@
 
     <div class="form-row">
       <div class="col-md-12">
-        <button type="submit" class="btn btn-primary btn-lg" data-i18n="traces.findBtn">Find Traces</button>
+        <button type="submit" class="btn btn-primary btn-lg" >查找</button>
         <button type="button" class="btn btn-outline-info info-request">
           <span class="fas fa-question-circle"></span>
         </button>
