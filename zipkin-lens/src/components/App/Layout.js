@@ -1,7 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import Header from './Header';
+import Sidebar from './Sidebar';
+import GlobalSearchContainer from '../../containers/GlobalSearch/GlobalSearchContainer';
 
 const propTypes = {
   location: PropTypes.shape({}).isRequired,
@@ -10,7 +11,10 @@ const propTypes = {
 
 const Layout = ({ location, children }) => (
   <div className="app__layout">
-    <Header location={location} />
+    <Sidebar location={location} />
+    <div className="app__global-search-wrapper">
+      <GlobalSearchContainer />
+    </div>
     <div className="app__content">
       {children}
     </div>

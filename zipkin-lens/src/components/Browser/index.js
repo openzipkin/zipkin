@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import GlobalSearchContainer from '../../containers/GlobalSearch/GlobalSearchContainer';
 import TracesContainer from '../../containers/Browser/Traces/TracesContainer';
 
 const propTypes = {
@@ -19,12 +18,7 @@ class Browser extends React.Component {
     const { location } = this.props;
     return (
       <div>
-        <div className="browser__global-search-wrapper">
-          <GlobalSearchContainer />
-        </div>
-        <TracesContainer
-          location={location}
-        />
+        <TracesContainer location={location} />
       </div>
     );
   }

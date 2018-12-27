@@ -1,5 +1,6 @@
 .global-search {
   display: flex;
+  width: 100%;
 }
 
 .global-search__conditions {
@@ -9,10 +10,11 @@
   overflow: scroll;
   margin-right: 15px;
   padding: 9px;
-  color: #676767;
-  background: #efefef;
+  color: $dark-2;
+  background: $gray-10;
   border-radius: 3px;
   border: 1px solid #898989;
+  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
 
   align-items: center;
   -ms-flex-align: center;
