@@ -9,9 +9,9 @@ module.exports = {
   mode: 'production',
   entry: path.join(__dirname, './src/index.js'),
   output: {
-      path: __dirname + '/target/classes/zipkin-lens/',
-      filename: 'app-[hash].min.js',
-      publicPath: '/zipkin/'
+    path: path.join(__dirname, '/target/classes/zipkin-lens/'),
+    filename: 'app-[hash].min.js',
+    publicPath: '/zipkin/',
   },
   module: {
     rules: [
@@ -50,10 +50,23 @@ module.exports = {
           minimize: true,
         },
       },
-
       {
         test: /\.(jpg|png)$/,
         loader: 'url-loader',
+      },
+      {
+        test: /\.svg$/,
+        use: [
+          {
+            loader: 'babel-loader',
+          },
+          {
+            loader: 'react-svg-loader',
+            options: {
+              jsx: true,
+            },
+          },
+        ],
       },
     ],
   },
@@ -61,7 +74,7 @@ module.exports = {
     extensions: ['.js'],
   },
   plugins: [
-    new ExtractTextPlugin("style-[hash].min.css", {allChunks: true}),
+    new ExtractTextPlugin('style-[hash].min.css', { allChunks: true }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, './static/index.html'),
     }),
