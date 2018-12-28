@@ -1,8 +1,8 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import { formatDuration } from '../../../util/timestamp';
-import { getServiceNameColor } from '../../../util/color';
+import { formatDuration } from '../../util/timestamp';
+import { getServiceNameColor } from '../../util/color';
 
 const propTypes = {
   startTs: PropTypes.number.isRequired,
@@ -145,12 +145,12 @@ class MiniTraceViewer extends React.Component {
       timeMarkers.push(
         <div
           key={portion}
-          className="trace__mini-trace-viewer-time-markers"
+          className="mini-trace-viewer__time-marker"
           style={{
             left: `${portion * 100}%`,
           }}
         >
-          <span className={`trace__mini-trace-viewer-time-markers-label ${portionClassName}`}>
+          <span className={`mini-trace-viewer__time-marker-label ${portionClassName}`}>
             {label}
           </span>
         </div>,
@@ -183,14 +183,12 @@ class MiniTraceViewer extends React.Component {
     const lineHeight = GRAPH_HEIGHT / spans.length;
 
     return (
-      <div className="trace__mini-trace-viewer">
-        <div className="trace__mini-trace-viewer-time-markers-wrapper">
-          {
-            this.renderTicks()
-          }
+      <div className="mini-trace-viewer">
+        <div className="mini-trace-viewer__time-markers-wrapper">
+          {this.renderTicks()}
         </div>
         <div
-          className="trace__mini-trace-viewer-graph"
+          className="mini-trace-viewer__graph"
           ref={this.setGraphElement}
           role="presentation"
           onMouseDown={this.handleMouseDown}

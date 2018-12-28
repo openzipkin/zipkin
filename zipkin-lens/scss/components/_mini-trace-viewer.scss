@@ -1,0 +1,41 @@
+.mini-trace-viewer {
+  width: 96%;
+  padding: 2px;
+  margin: 5px;
+}
+
+.mini-trace-viewer__time-markers-wrapper {
+  position: relative;
+  height: 14px;
+}
+
+.mini-trace-viewer__time-marker {
+  position: absolute;
+}
+
+.mini-trace-viewer__time-marker-label {
+  color: $dark-2;
+  font-size: $font-size-xs;
+  position: absolute;
+  left: -20px;
+
+  &.first {
+    left: 2px;
+    position: absolute;
+  }
+
+  &.last {
+    left: initial;
+    right: 2px;
+    position: absolute;
+  }
+}
+
+.mini-trace-viewer__graph {
+  padding: 2px;
+  background-color: $gray-10;
+  height: 75px;
+  border: 1px solid $gray-9;
+  border-radius: 2px;
+  cursor: pointer;
+}

@@ -1,7 +1,7 @@
 import { connect } from 'react-redux';
 
 import { fetchTrace } from '../../actions/trace-action';
-import Trace from '../../components/Trace';
+import DetailedTraceSummary from '../../components/DetailedTraceSummary';
 import { treeCorrectedForClockSkew, detailedTraceSummary } from '../../zipkin';
 
 const mapStateToProps = (state, ownProps) => {
@@ -22,9 +22,9 @@ const mapDispatchToProps = dispatch => ({
   fetchTrace: traceId => dispatch(fetchTrace(traceId)),
 });
 
-const TraceContainer = connect(
+const DetailedTraceSummaryContainer = connect(
   mapStateToProps,
   mapDispatchToProps,
-)(Trace);
+)(DetailedTraceSummary);
 
-export default TraceContainer;
+export default DetailedTraceSummaryContainer;

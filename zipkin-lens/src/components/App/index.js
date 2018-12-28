@@ -4,7 +4,7 @@ import { BrowserRouter, Route } from 'react-router-dom';
 
 import Layout from './Layout';
 import BrowserContainer from '../../containers/Browser/BrowserContainer';
-import TraceContainer from '../../containers/Trace/TraceContainer';
+import DetailedTraceSummaryContainer from '../../containers/DetailedTraceSummary/DetailedTraceSummaryContainer';
 import DependenciesContainer from '../../containers/Dependencies/DependenciesContainer';
 import configureStore from '../../store/configure-store';
 
@@ -26,7 +26,7 @@ const App = () => (
           path="/zipkin/trace/:traceId"
           render={props => (
             <Layout {...props}>
-              <TraceContainer {...props} />
+              <DetailedTraceSummaryContainer {...props} />
             </Layout>
           )}
         />

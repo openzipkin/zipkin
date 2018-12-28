@@ -1,0 +1,49 @@
+.detailed-trace-summary {
+
+}
+
+.detailed-trace-summary__header {
+  border-bottom: 2px solid $gray-9;
+  padding: 4px 8px;
+  box-sizing: border-box;
+  display: flex;
+  justify-content: space-between;
+}
+
+.detailed-trace-summary__trace-id {
+  display: flex;
+  align-items: center;
+  font-size: 24px;
+}
+
+.detailed-trace-summary__trace-data-list {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+}
+
+.detailed-trace-summary__data-wrapper {
+  margin: 0 4px;
+  display: flex;
+}
+
+.detailed-trace-summary__data-label {
+  color: $dark-2;
+  &:after {
+    content: ':';
+    margin-right: 3px;
+  }
+}
+
+.detailed-trace-summary__data-value {
+  color: $gray-3;
+}
+
+.detailed-trace-summary__mini-trace-viewer-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.detailed-trace-summary__timeline-wrapper {
+  padding: 10px;
+}
