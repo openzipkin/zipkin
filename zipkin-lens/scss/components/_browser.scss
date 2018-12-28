@@ -1,0 +1,27 @@
+.browser {
+  padding: 10px;
+}
+
+.browser__results-header {
+  padding-bottom: 8px;
+  border-bottom: solid 2px $gray-9;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.browser__total-results {
+  font-size: 16px;
+}
+
+.browser__sorting-method-select {
+  width: 180px;
+}
+
+.browser__results {
+  padding-top: 10px;
+}
+
+.browser__trace-summary-wrapper {
+  margin: 26px 0;
+}

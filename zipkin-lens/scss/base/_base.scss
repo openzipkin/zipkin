@@ -8,8 +8,9 @@ body {
   font-family: $font-family-base;
   font-size: $font-size-base;
   line-height: $line-height-base;
-  color: $body-color;
-  background-color: $body-bg;
+  color: $gray-2;
+  background-color: $white;
+  margin: 0;
 }
 
 [role="button"] {

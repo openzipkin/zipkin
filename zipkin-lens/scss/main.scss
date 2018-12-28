@@ -17,6 +17,7 @@
 
 @import 'components/app';
 @import 'components/badge';
+@import 'components/browser';
 @import 'components/button';
 @import 'components/condition-annotation-query';
 @import 'components/condition-duration';
@@ -30,8 +31,9 @@
 @import 'components/input';
 @import 'components/loading-overlay';
 @import 'components/search-condition';
+@import 'components/service-name-badge';
 @import 'components/sidebar';
 @import 'components/textarea';
 @import 'components/timeline';
+@import 'components/trace-summary';
 @import 'components/trace';
-@import 'components/traces';
