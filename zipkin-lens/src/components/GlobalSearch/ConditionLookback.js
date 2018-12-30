@@ -77,7 +77,6 @@ class ConditionLookback extends React.Component {
   render() {
     const { lookback } = this.props;
     const selected = lookbackOptions.find(option => option.value === lookback.value);
-
     return (
       <div className="condition-lookback">
         <ReactSelect

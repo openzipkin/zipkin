@@ -12,7 +12,7 @@ import { detailedTraceSummary } from '../../zipkin';
 const propTypes = {
   traceId: PropTypes.string.isRequired,
   width: PropTypes.number.isRequired,
-  infoClass: PropTypes.string.isRequired,
+  infoClass: PropTypes.string,
   spanCount: PropTypes.number.isRequired,
   durationStr: PropTypes.string.isRequired,
   timestamp: PropTypes.number.isRequired,
@@ -25,6 +25,7 @@ const propTypes = {
 };
 
 const defaultProps = {
+  infoClass: 'none',
   servicePercentage: undefined,
 };
 
@@ -83,7 +84,7 @@ class TraceSummary extends React.Component {
           role="presentation"
           onClick={this.handleTimelineOpenToggle}
         />
-        <a href={`${api.TRACE}/${traceId}`}>
+        <a href={`${api.TRACE}/${traceId}`} target="_brank">
           <i className="fas fa-file-download" />
         </a>
         <Link to={{ pathname: `/zipkin/trace/${traceId}` }}>
@@ -96,9 +97,11 @@ class TraceSummary extends React.Component {
   renderServiceBadges() {
     const { serviceSummaries } = this.props;
     return serviceSummaries.map(summary => (
-      <div className="trace-summary__badge-wrapper">
+      <div
+        key={summary.serviceName}
+        className="trace-summary__badge-wrapper"
+      >
         <ServiceNameBadge
-          key={summary.serviceName}
           serviceName={summary.serviceName}
           count={summary.spanCount}
         />

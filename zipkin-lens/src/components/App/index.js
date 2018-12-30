@@ -11,35 +11,29 @@ import configureStore from '../../store/configure-store';
 const App = () => (
   <Provider store={configureStore()}>
     <BrowserRouter>
-      <div>
+      <Layout>
         <Route
           exact
           path="/zipkin"
           render={props => (
-            <Layout {...props}>
-              <BrowserContainer {...props} />
-            </Layout>
+            <BrowserContainer {...props} />
           )}
         />
         <Route
           exact
           path="/zipkin/trace/:traceId"
           render={props => (
-            <Layout {...props}>
-              <DetailedTraceSummaryContainer {...props} />
-            </Layout>
+            <DetailedTraceSummaryContainer {...props} />
           )}
         />
         <Route
           exact
           path="/zipkin/dependencies"
           render={props => (
-            <Layout {...props}>
-              <DependenciesContainer {...props} />
-            </Layout>
+            <DependenciesContainer {...props} />
           )}
         />
-      </div>
+      </Layout>
     </BrowserRouter>
   </Provider>
 );

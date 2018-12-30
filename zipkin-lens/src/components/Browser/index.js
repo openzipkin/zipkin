@@ -102,9 +102,12 @@ class Browser extends React.Component {
         {
           sortedTraceSummaries.map(
             traceSummary => (
-              <div className="browser__trace-summary-wrapper">
+              <div
+                key={traceSummary.traceId}
+                className="browser__trace-summary-wrapper"
+              >
                 <TraceSummary
-                  key={traceSummary.traceId}
+
                   traceId={traceSummary.traceId}
                   width={traceSummary.width}
                   infoClass={traceSummary.infoClass}

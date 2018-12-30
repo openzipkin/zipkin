@@ -3,7 +3,7 @@ import React from 'react';
 import ReactSelect from 'react-select';
 
 const propTypes = {
-  value: PropTypes.string.isRequired,
+  value: PropTypes.number.isRequired,
   onConditionChange: PropTypes.func.isRequired,
   setNextFocusRef: PropTypes.func.isRequired,
   onFocus: PropTypes.func.isRequired,
@@ -183,6 +183,7 @@ class ConditionDuration extends React.Component {
         />
         <ReactSelect
           ref={(ref) => { this.unitRef = ref; }}
+          isSearchable={false}
           value={{ value: unit, label: unit }}
           options={unitOptions.map(option => ({ value: option, label: option }))}
           styles={{

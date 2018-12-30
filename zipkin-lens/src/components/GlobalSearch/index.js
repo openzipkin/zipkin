@@ -3,6 +3,7 @@ import React from 'react';
 import { withRouter } from 'react-router';
 import moment from 'moment';
 import queryString from 'query-string';
+import shortid from 'shortid';
 
 import SearchCondition from './SearchCondition';
 import ConditionDuration from './ConditionDuration';
@@ -70,7 +71,7 @@ class GlobalSearch extends React.Component {
     };
     const serviceNameCondition = initialConditions.conditions.find(condition => condition.key === 'serviceName');
     if (serviceNameCondition) {
-      fetchSpans(serviceNameCondition);
+      fetchSpans(serviceNameCondition.value);
     }
 
     this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
@@ -111,6 +112,7 @@ class GlobalSearch extends React.Component {
           case 'minDuration':
           case 'maxDuration':
             conditions.push({
+              _id: shortid.generate(),
               key: conditionKey,
               value: conditionValue,
             });
@@ -118,6 +120,7 @@ class GlobalSearch extends React.Component {
           case 'annotationQuery':
             conditionValue.split(' and ').forEach((annotationQuery) => {
               conditions.push({
+                _id: shortid.generate(),
                 key: conditionKey,
                 value: annotationQuery,
               });
@@ -136,13 +139,13 @@ class GlobalSearch extends React.Component {
               case '2d':
               case '7d': {
                 lookbackCondition.value = conditionValue;
-                lookbackCondition.endTs = queryParameters.endTs;
+                lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
                 break;
               }
               case 'custom':
                 lookbackCondition.value = conditionValue;
-                lookbackCondition.endTs = queryParameters.endTs;
-                lookbackCondition.startTs = queryParameters.startTs;
+                lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
+                lookbackCondition.startTs = parseInt(queryParameters.startTs, 10);
                 break;
               default:
                 break;
@@ -305,6 +308,7 @@ class GlobalSearch extends React.Component {
 
     this.setState(prevState => ({
       conditions: [...prevState.conditions, {
+        _id: shortid.generate(), // For element unique key
         key: nextKey,
         value: defaultConditionValues[nextKey],
       }],
@@ -334,12 +338,12 @@ class GlobalSearch extends React.Component {
     conditionMap.lookback = lookbackCondition.value;
     conditionMap.endTs = lookbackCondition.endTs;
     if (lookbackCondition.value === 'custom') {
-      conditionMap.starTs = lookbackCondition.startTs;
+      conditionMap.startTs = lookbackCondition.startTs;
     }
 
     const queryParams = buildQueryParameters(conditionMap);
     history.push({
-      pathname: '',
+      pathname: '/zipkin',
       search: queryParams,
     });
   }
@@ -448,7 +452,6 @@ class GlobalSearch extends React.Component {
 
   render() {
     const { conditions, lookbackCondition, limitCondition } = this.state;
-
     return (
       <div className="global-search">
         <div className="global-search__conditions">
@@ -460,7 +463,10 @@ class GlobalSearch extends React.Component {
                 </div>
               )
               : conditions.map((condition, index) => (
-                <div className="global-search__search-condition-wrapper">
+                <div
+                  key={condition._id}
+                  className="global-search__search-condition-wrapper"
+                >
                   <SearchCondition
                     keyString={condition.key}
                     keyOptions={this.getConditionListWithAvailability(condition.key)}
