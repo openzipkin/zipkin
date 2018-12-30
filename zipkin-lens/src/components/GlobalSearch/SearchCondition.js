@@ -6,7 +6,7 @@ const propTypes = {
   keyString: PropTypes.string.isRequired, // "key" is used by React, so use "keyString".
   keyOptions: PropTypes.arrayOf(
     PropTypes.shape({
-      name: PropTypes.string,
+      conditionKey: PropTypes.string,
       isAvailable: PropTypes.bool,
     }),
   ).isRequired,
@@ -37,8 +37,8 @@ class SearchCondition extends React.Component {
   getOptions() {
     const { keyOptions } = this.props;
     return keyOptions.map(keyOption => ({
-      value: keyOption.name,
-      label: keyOption.name,
+      value: keyOption.conditionKey,
+      label: keyOption.conditionKey,
       // Disable the already set condition
       isDisabled: !keyOption.isAvailable,
     }));
@@ -48,7 +48,7 @@ class SearchCondition extends React.Component {
     const { keyOptions } = this.props;
     let max = 0;
     keyOptions.forEach((keyOption) => {
-      const { length } = keyOption.name;
+      const { length } = keyOption.conditionKey;
       if (max < length) {
         max = length;
       }

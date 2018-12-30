@@ -22,7 +22,7 @@ class ConditionName extends React.Component {
 
   getMaxLengthOfOptions() {
     const { options } = this.props;
-    let max = 0;
+    let max = 4;
     options.forEach((option) => {
       const { length } = option;
       if (max < length) {
@@ -32,10 +32,24 @@ class ConditionName extends React.Component {
     return max;
   }
 
+  getOptions() {
+    const { options } = this.props;
+    const result = [{
+      value: '',
+      label: 'all',
+    }];
+    options.forEach((option) => {
+      result.push({
+        value: option,
+        label: option,
+      });
+    });
+    return result;
+  }
+
   render() {
     const {
       value,
-      options,
       onConditionChange,
       setNextFocusRef,
       onFocus,
@@ -52,8 +66,8 @@ class ConditionName extends React.Component {
       <div className="condition-name">
         <ReactSelect
           ref={(ref) => { setNextFocusRef(ref); }}
-          value={{ value, label: value }}
-          options={options.map(option => ({ value: option, label: option }))}
+          value={{ value, label: value === '' ? 'all' : value }}
+          options={this.getOptions()}
           onFocus={
             () => {
               onFocus();

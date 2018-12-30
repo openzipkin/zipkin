@@ -3,7 +3,6 @@ import React from 'react';
 import { withRouter } from 'react-router';
 import moment from 'moment';
 import queryString from 'query-string';
-import shortid from 'shortid';
 
 import SearchCondition from './SearchCondition';
 import ConditionDuration from './ConditionDuration';
@@ -31,20 +30,32 @@ const lookbackDurations = {
   '7d': 604800000,
 };
 
-const defaultConditionValues = {
-  serviceName: 'all',
-  spanName: 'all',
-  minDuration: 10,
-  maxDuration: 100,
-  annotationQuery: '',
-};
-
 const propTypes = {
   services: PropTypes.arrayOf(PropTypes.string).isRequired,
   spans: PropTypes.arrayOf(PropTypes.string).isRequired,
+  conditions: PropTypes.arrayOf(PropTypes.shape({
+    key: PropTypes.string,
+    value: PropTypes.oneOfType([
+      PropTypes.string,
+      PropTypes.number,
+      PropTypes.shape({}),
+    ]),
+  })).isRequired,
+  lookbackCondition: PropTypes.shape({
+    value: PropTypes.string,
+    endTs: PropTypes.number,
+    startTs: PropTypes.number,
+  }).isRequired,
+  limitCondition: PropTypes.number.isRequired,
   fetchServices: PropTypes.func.isRequired,
   fetchSpans: PropTypes.func.isRequired,
   fetchTraces: PropTypes.func.isRequired,
+  setLookbackCondition: PropTypes.func.isRequired,
+  setLimitCondition: PropTypes.func.isRequired,
+  addCondition: PropTypes.func.isRequired,
+  deleteCondition: PropTypes.func.isRequired,
+  changeConditionKey: PropTypes.func.isRequired,
+  changeConditionValue: PropTypes.func.isRequired,
   location: PropTypes.shape({
     search: PropTypes.string.isRequired,
   }).isRequired,
@@ -57,23 +68,6 @@ class GlobalSearch extends React.Component {
   constructor(props) {
     super(props);
 
-    const { fetchSpans } = props;
-
-    const initialConditions = this.getConditionsFromQueryParameters();
-    this.state = {
-      conditions: initialConditions.conditions,
-      lookbackCondition: {
-        value: initialConditions.lookbackCondition.value || '1h',
-        endTs: initialConditions.lookbackCondition.endTs || moment().valueOf(),
-        startTs: initialConditions.lookbackCondition.startTs || moment().valueOf(),
-      },
-      limitCondition: initialConditions.limitCondition || 10,
-    };
-    const serviceNameCondition = initialConditions.conditions.find(condition => condition.key === 'serviceName');
-    if (serviceNameCondition) {
-      fetchSpans(serviceNameCondition.value);
-    }
-
     this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
     this.handleSearchButtonClick = this.handleSearchButtonClick.bind(this);
     this.handleDeleteConditionButtonClick = this.handleDeleteConditionButtonClick.bind(this);
@@ -84,8 +78,32 @@ class GlobalSearch extends React.Component {
   }
 
   componentDidMount() {
-    const { fetchServices, location } = this.props;
+    const {
+      fetchServices,
+      fetchSpans,
+      location,
+      addCondition,
+      setLookbackCondition,
+      setLimitCondition,
+    } = this.props;
+
+    const initialConditions = this.getConditionsFromQueryParameters();
+    const { conditions, lookbackCondition, limitCondition } = initialConditions;
+    conditions.forEach((condition) => {
+      addCondition(condition);
+    });
+    setLookbackCondition({
+      value: lookbackCondition.value || '1h',
+      endTs: lookbackCondition.endTs || moment().valueOf(),
+      startTs: lookbackCondition.startTs || moment().valueOf(),
+    });
+    setLimitCondition(limitCondition || 10);
+
     fetchServices();
+    const serviceNameCondition = initialConditions.conditions.find(condition => condition.key === 'serviceName');
+    if (serviceNameCondition) {
+      fetchSpans(serviceNameCondition.value);
+    }
     this.fetchTraces(location);
   }
 
@@ -109,18 +127,21 @@ class GlobalSearch extends React.Component {
         switch (conditionKey) {
           case 'serviceName':
           case 'spanName':
+            conditions.push({
+              key: conditionKey,
+              value: conditionValue,
+            });
+            break;
           case 'minDuration':
           case 'maxDuration':
             conditions.push({
-              _id: shortid.generate(),
               key: conditionKey,
-              value: conditionValue,
+              value: parseInt(conditionValue, 10),
             });
             break;
           case 'annotationQuery':
             conditionValue.split(' and ').forEach((annotationQuery) => {
               conditions.push({
-                _id: shortid.generate(),
                 key: conditionKey,
                 value: annotationQuery,
               });
@@ -159,93 +180,36 @@ class GlobalSearch extends React.Component {
     return { conditions, lookbackCondition, limitCondition };
   }
 
-  // Returns the condition that first appears when the Add condition
-  // button is clicked.
-  getNextInitialConditionKey() {
-    const { services, spans } = this.props;
-    const { conditions } = this.state;
-    const conditionMap = {};
-
-    conditions.forEach((condition) => {
-      conditionMap[condition.key] = true;
-    });
-
-    for (let i = 0; i < conditionList.length; i += 1) {
-      const conditionName = conditionList[i];
-      if (!conditionMap[conditionName]) {
-        switch (conditionName) {
-          // If the key is serviceName or spanName, skip if there are no options.
-          // Probably this approach is best for UX.
-          case 'serviceName':
-            if (services.length === 0) {
-              continue;
-            }
-            return conditionName;
-          case 'spanName':
-            if (spans.length === 0) {
-              continue;
-            }
-            return conditionName;
-          default: // else always return the condition name.
-            return conditionName;
-        }
-      }
-    }
-    // Return annotationQuery if all conditions are already set
-    return 'annotationQuery';
-  }
-
   // Make the availability with the already specified condition being false,
   // the condition not specified yet being true.
-  getConditionListWithAvailability(currentConditionName) {
-    const { services, spans } = this.props;
-    const { conditions } = this.state;
-    const conditionMap = {};
+  getConditionListWithAvailability(currentConditionKey) {
+    const { conditions } = this.props;
+    const existingConditionsMemo = {};
 
     // Memo the keys which is already used.
     conditions.forEach((condition) => {
       if (condition.key === 'annotationQuery') {
         return;
       }
-      conditionMap[condition.key] = true;
+      existingConditionsMemo[condition.key] = true;
     });
 
     const result = [];
     for (let i = 0; i < conditionList.length; i += 1) {
-      const conditionName = conditionList[i];
+      const conditionKey = conditionList[i];
 
       // The currently focused conditionName is also available.
-      if (conditionName === currentConditionName) {
-        result.push({ name: conditionName, isAvailable: true });
+      if (conditionKey === currentConditionKey) {
+        result.push({ conditionKey, isAvailable: true });
         continue;
       }
 
       let isAvailable = false;
-      if (!conditionMap[conditionName]) {
-        switch (conditionName) {
-          // If the key is serviceName or spanName, it is
-          // unavailable when there is no options.
-          case 'serviceName':
-            if (services.length > 0) {
-              isAvailable = true;
-            } else {
-              isAvailable = false;
-            }
-            break;
-          case 'spanName':
-            if (spans.length > 0) {
-              isAvailable = true;
-            } else {
-              isAvailable = false;
-            }
-            break;
-          default: // Else always available.
-            isAvailable = true;
-            break;
-        }
+      if (!existingConditionsMemo[conditionKey]) {
+        isAvailable = true;
       }
       result.push({
-        name: conditionName,
+        conditionKey,
         isAvailable,
       });
     }
@@ -298,30 +262,14 @@ class GlobalSearch extends React.Component {
   }
 
   handleAddButtonClick() {
-    const nextKey = this.getNextInitialConditionKey();
-    const { fetchSpans } = this.props;
-
-    const condition = {
-      key: nextKey,
-      value: defaultConditionValues[nextKey],
-    };
-
-    this.setState(prevState => ({
-      conditions: [...prevState.conditions, {
-        _id: shortid.generate(), // For element unique key
-        key: nextKey,
-        value: defaultConditionValues[nextKey],
-      }],
-    }));
-
-    if (nextKey === 'serviceName') {
-      fetchSpans(condition.value);
-    }
+    const { addCondition } = this.props;
+    addCondition();
   }
 
   handleSearchButtonClick() {
-    const { history } = this.props;
-    const { conditions, lookbackCondition, limitCondition } = this.state;
+    const {
+      history, conditions, lookbackCondition, limitCondition,
+    } = this.props;
     const annotationQueryConditions = [];
     const conditionMap = {};
 
@@ -348,51 +296,39 @@ class GlobalSearch extends React.Component {
     });
   }
 
-  // Replaces the key of the "index"-th condition with "keyName" and
-  // Clear value.
-  handleConditionKeyChange(index, keyName) {
-    const { fetchSpans } = this.props;
-    const { conditions: prevConditions } = this.state;
-    const conditions = [...prevConditions];
-    const condition = { ...conditions[index] };
-    condition.key = keyName;
-    condition.value = defaultConditionValues[keyName];
-    conditions[index] = condition;
-    this.setState({ conditions });
-
-    if (condition.key === 'serviceName') {
-      fetchSpans(condition.value);
-    }
+  // Replaces the key of the "index"-th condition with "keyName" and clear value.
+  handleConditionKeyChange(index, conditionKey) {
+    const { changeConditionKey } = this.props;
+    changeConditionKey(index, conditionKey);
   }
 
   // Replaces the value of the "index"-th condition with "value".
-  handleConditionValueChange(index, value) {
-    const { fetchSpans } = this.props;
-    const { conditions: prevConditions } = this.state;
-    const conditions = [...prevConditions];
-    const condition = { ...conditions[index] };
-    condition.value = value;
-    conditions[index] = condition;
-    this.setState({ conditions });
+  handleConditionValueChange(index, conditionValue) {
+    const {
+      fetchSpans,
+      conditions,
+      changeConditionValue,
+    } = this.props;
 
-    if (condition.key === 'serviceName') {
-      fetchSpans(condition.value);
+    changeConditionValue(index, conditionValue);
+    if (conditions[index].key === 'serviceName') {
+      fetchSpans(conditionValue);
     }
   }
 
   handleDeleteConditionButtonClick(index) {
-    const { conditions: prevConditions } = this.state;
-    const conditions = [...prevConditions];
-    conditions.splice(index, 1);
-    this.setState({ conditions });
+    const { deleteCondition } = this.props;
+    deleteCondition(index);
   }
 
   handleLookbackChange(lookbackCondition) {
-    this.setState({ lookbackCondition });
+    const { setLookbackCondition } = this.props;
+    setLookbackCondition(lookbackCondition);
   }
 
   handleLimitChange(limitCondition) {
-    this.setState({ limitCondition });
+    const { setLimitCondition } = this.props;
+    setLimitCondition(limitCondition);
   }
 
   renderCondition(conditionName, index, value) {
@@ -451,7 +387,7 @@ class GlobalSearch extends React.Component {
   }
 
   render() {
-    const { conditions, lookbackCondition, limitCondition } = this.state;
+    const { conditions, lookbackCondition, limitCondition } = this.props;
     return (
       <div className="global-search">
         <div className="global-search__conditions">
