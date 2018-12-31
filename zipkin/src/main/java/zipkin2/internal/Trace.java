@@ -117,16 +117,20 @@ public class Trace {
 
   // false or null first (client first)
   static int compareShared(Span left, Span right) {
-    boolean leftNotShared = !Boolean.TRUE.equals(left.shared());
-    boolean rightNotShared = !Boolean.TRUE.equals(right.shared());
+    // If either are shared put it last
+    boolean leftShared = Boolean.TRUE.equals(left.shared());
+    boolean rightShared = Boolean.TRUE.equals(right.shared());
+    if (leftShared && rightShared) return 0; // both are shared, so skip out
+    if (leftShared) return 1;
+    if (rightShared) return -1;
 
-    if (leftNotShared && rightNotShared) {
-      return Span.Kind.CLIENT.equals(left.kind()) ? -1 : 1;
-    }
-
-    if (leftNotShared) return -1;
-    if (rightNotShared) return 1;
-    return 0;
+    // neither are shared, put the client spans first
+    boolean leftClient = Span.Kind.CLIENT.equals(left.kind());
+    boolean rightClient = Span.Kind.CLIENT.equals(right.kind());
+    if (leftClient && rightClient) return 0;
+    if (leftClient) return -1;
+    if (rightClient) return 1;
+    return 0; // neither are client spans
   }
 
   /**

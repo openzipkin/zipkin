@@ -13,7 +13,9 @@
  */
 package zipkin2.internal;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import org.junit.Test;
 import zipkin2.Endpoint;
@@ -22,6 +24,7 @@ import zipkin2.Span.Kind;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 public class TraceTest {
 
@@ -211,6 +214,35 @@ public class TraceTest {
 
     Collections.sort(trace, Trace.CLEANUP_COMPARATOR);
     assertThat(trace.get(0).kind()).isEqualTo(Kind.CLIENT);
+  }
+
+  /** Comparators are meant to be transitive. This exploits edge cases to fool our comparator. */
+  @Test public void cleanupComparator_transitiveKindComparison() {
+    List<Span> trace = new ArrayList<>();
+    Endpoint aEndpoint = Endpoint.newBuilder().serviceName("a").build();
+    Endpoint bEndpoint = Endpoint.newBuilder().serviceName("b").build();
+    Span template = Span.newBuilder().traceId("a").id("a").build();
+    // If there is a transitive ordering problem, TimSort will throw an IllegalArgumentException
+    // when there are at least 32 elements.
+    for (int i = 0, length = 7; i < length; i++) {
+      trace.add(template.toBuilder().shared(true).localEndpoint(bEndpoint).build());
+      trace.add(template.toBuilder().kind(Kind.CLIENT).localEndpoint(bEndpoint).build());
+      trace.add(template.toBuilder().localEndpoint(aEndpoint).build());
+      trace.add(template);
+      trace.add(template.toBuilder().kind(Kind.CLIENT).localEndpoint(aEndpoint).build());
+    }
+
+    Collections.sort(trace, Trace.CLEANUP_COMPARATOR);
+
+    assertThat(new LinkedHashSet<>(trace))
+      .extracting(Span::shared, Span::kind, s -> s.localServiceName())
+      .containsExactly(
+        tuple(null, Kind.CLIENT, "a"),
+        tuple(null, Kind.CLIENT, "b"),
+        tuple(null, null, null),
+        tuple(null, null, "a"),
+        tuple(true, null, "b")
+      );
   }
 
   static Span span(String traceId, @Nullable String parentId, String id, @Nullable Kind kind,
