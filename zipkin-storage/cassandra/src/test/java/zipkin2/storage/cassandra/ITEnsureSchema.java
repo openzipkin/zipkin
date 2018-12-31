@@ -43,7 +43,8 @@ abstract class ITEnsureSchema {
   }
 
   @Test public void installsIndexesWhenMissing() {
-    Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
+    session().execute("CREATE KEYSPACE " + keyspace()
+      + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};");
 
     Schema.ensureExists(keyspace(), true, session());
 
