@@ -28,13 +28,6 @@ option java_multiple_files = true;
 // Service for receiving spans
 service SpanService {
 
-  // A client can publish a stream of spans to the server. Underlying implementations can choose
-  // to persist the spans how they see fit; either checkpointing while the stream is in process or
-  // persisting the entire batch at the end of the stream.
-  //
-  // TODO This will likely be going away in the final version of the PR.
-  rpc PublishSpans(stream PublishSpansRequest) returns (PutSpansResponse) {}
-
   // Writes a list of spans to the collector
   rpc PutSpans(zipkin.proto3.ListOfSpans) returns (PutSpansResponse) {}
 
