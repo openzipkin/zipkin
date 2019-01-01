@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra.v1;
 
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
 
@@ -80,6 +81,9 @@ final class Tables {
    * and 9).
    */
   static final String ANNOTATIONS_INDEX = "annotations_index";
+
+  /** This table supports {@link AutocompleteTags#getValues(String key)}. */
+  static final String TABLE_AUTOCOMPLETE_TAGS = "autocomplete_tags";
 
   private Tables() {}
 }

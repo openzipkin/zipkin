@@ -19,6 +19,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingCall;
 
 final class InsertSpanName extends DeduplicatingCall<InsertSpanName.Input> {
 
@@ -28,7 +29,8 @@ final class InsertSpanName extends DeduplicatingCall<InsertSpanName.Input> {
 
     abstract String span_name();
 
-    Input() {}
+    Input() {
+    }
   }
 
   static class Factory extends DeduplicatingCall.Factory<Input, InsertSpanName> {
@@ -42,14 +44,11 @@ final class InsertSpanName extends DeduplicatingCall<InsertSpanName.Input> {
     Factory(Session session, int indexTtl, int redundantCallTtl) {
       super(redundantCallTtl);
       this.session = session;
-
-      Insert insertQuery =
-          QueryBuilder.insertInto(Tables.SPAN_NAMES)
-              .value("service_name", QueryBuilder.bindMarker("service_name"))
-              .value("bucket", 0) // bucket is deprecated on this index
-              .value("span_name", QueryBuilder.bindMarker("span_name"));
+      Insert insertQuery = QueryBuilder.insertInto(Tables.SPAN_NAMES)
+        .value("service_name", QueryBuilder.bindMarker("service_name"))
+        .value("bucket", 0) // bucket is deprecated on this index
+        .value("span_name", QueryBuilder.bindMarker("span_name"));
       if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
-
       this.preparedStatement = session.prepare(insertQuery);
     }
 
@@ -57,8 +56,7 @@ final class InsertSpanName extends DeduplicatingCall<InsertSpanName.Input> {
       return new AutoValue_InsertSpanName_Input(service_name, span_name);
     }
 
-    @Override
-    InsertSpanName newCall(Input input) {
+    @Override protected InsertSpanName newCall(Input input) {
       return new InsertSpanName(this, input);
     }
   }
@@ -72,23 +70,17 @@ final class InsertSpanName extends DeduplicatingCall<InsertSpanName.Input> {
     this.input = input;
   }
 
-  @Override
-  protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(
-        factory
-            .preparedStatement
-            .bind()
-            .setString("service_name", input.service_name())
-            .setString("span_name", input.span_name()));
+  @Override protected ResultSetFuture newFuture() {
+    return factory.session.executeAsync(factory.preparedStatement.bind()
+      .setString("service_name", input.service_name())
+      .setString("span_name", input.span_name()));
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return input.toString().replace("Input", "InsertSpanName");
   }
 
-  @Override
-  public InsertSpanName clone() {
+  @Override public InsertSpanName clone() {
     return new InsertSpanName(factory, input);
   }
 }

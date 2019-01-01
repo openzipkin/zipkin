@@ -62,7 +62,6 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     if (searchEnabled) {
       KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace());
       indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
-
       spanNames = new SelectSpanNames.Factory(session);
       serviceNames = new SelectServiceNames.Factory(session).create();
       traceIdsFromServiceSpan = new SelectTraceIdsFromServiceSpan.Factory(session);

@@ -19,8 +19,11 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
+import java.util.ArrayList;
+import java.util.List;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
+import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
@@ -49,7 +52,7 @@ public abstract class CassandraStorage extends StorageComponent {
   }
 
   public static Builder newBuilder() {
-    return new AutoValue_CassandraStorage.Builder()
+    return new $AutoValue_CassandraStorage.Builder()
         .strictTraceId(true)
         .searchEnabled(true)
         .keyspace(Schema.DEFAULT_KEYSPACE)
@@ -60,7 +63,8 @@ public abstract class CassandraStorage extends StorageComponent {
         .useSsl(false)
         .maxTraceCols(100000)
         .indexFetchMultiplier(3)
-        .sessionFactory(SessionFactory.DEFAULT);
+        .sessionFactory(SessionFactory.DEFAULT)
+        .autocompleteKeys(new ArrayList<>());
   }
 
   @AutoValue.Builder
@@ -72,6 +76,10 @@ public abstract class CassandraStorage extends StorageComponent {
     /** {@inheritDoc} */
     @Override
     public abstract Builder searchEnabled(boolean searchEnabled);
+
+    /** {@inheritDoc} */
+    @Override
+    public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
 
     /** Override to control how sessions are created. */
     public abstract Builder sessionFactory(SessionFactory sessionFactory);
@@ -168,6 +176,8 @@ public abstract class CassandraStorage extends StorageComponent {
 
   abstract boolean searchEnabled();
 
+  abstract List<String> autocompleteKeys();
+
   abstract SessionFactory sessionFactory();
 
   /** session and close are typically called from different threads */
@@ -186,6 +196,13 @@ public abstract class CassandraStorage extends StorageComponent {
   @Override
   public SpanStore spanStore() {
     return new CassandraSpanStore(this);
+  }
+
+  /** {@inheritDoc} Memoized in order to avoid re-preparing statements */
+  @Memoized
+  @Override
+  public AutocompleteTags autocompleteTags() {
+    return new CassandraAutocompleteTags(this);
   }
 
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */

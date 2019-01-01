@@ -13,6 +13,7 @@
  */
 package zipkin2.autoconfigure.storage.cassandra3;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,9 +47,12 @@ class ZipkinCassandra3StorageAutoConfiguration {
   StorageComponent storage(
       ZipkinCassandra3StorageProperties properties,
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled) {
-    CassandraStorage.Builder builder =
-        properties.toBuilder().strictTraceId(strictTraceId).searchEnabled(searchEnabled);
+      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
+      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
+    CassandraStorage.Builder builder = properties.toBuilder()
+      .strictTraceId(strictTraceId)
+      .searchEnabled(searchEnabled)
+      .autocompleteKeys(autocompleteKeys);
     return tracingSessionFactory == null
         ? builder.build()
         : builder.sessionFactory(tracingSessionFactory).build();

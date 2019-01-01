@@ -63,12 +63,10 @@ final class SelectSpanNames extends ResultSetFutureCall {
 
   @Override
   protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(
-        factory
-            .preparedStatement
-            .bind()
-            .setString("service", service)
-            .setInt("limit_", 1000)); // no one is ever going to browse so many span names
+    return factory.session.executeAsync(factory.preparedStatement
+      .bind()
+      .setString("service", service)
+      .setInt("limit_", 1000)); // no one is ever going to browse so many span names
   }
 
   @Override

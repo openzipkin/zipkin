@@ -15,14 +15,10 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.KeyspaceMetadata;
-import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.TypeCodec;
 import com.datastax.driver.core.VersionNumber;
-import com.datastax.driver.core.exceptions.InvalidTypeException;
 import com.datastax.driver.mapping.annotations.UDT;
 import com.google.common.io.CharStreams;
 import com.google.common.net.InetAddresses;
@@ -31,7 +27,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.Serializable;
 import java.net.InetAddress;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
 import org.slf4j.Logger;
@@ -43,21 +38,25 @@ import static com.google.common.base.Preconditions.checkState;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
-  public static final Charset UTF_8 = Charset.forName("UTF-8");
+  static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static final String TABLE_SPAN = "span";
   static final String TABLE_TRACE_BY_SERVICE_SPAN = "trace_by_service_span";
   static final String TABLE_SERVICE_SPANS = "span_by_service";
   static final String TABLE_DEPENDENCY = "dependency";
+  static final String TABLE_AUTOCOMPLETE_TAGS = "autocomplete_tags";
 
   static final String DEFAULT_KEYSPACE = "zipkin2";
-  private static final String SCHEMA_RESOURCE = "/zipkin2-schema.cql";
-  private static final String INDEX_RESOURCE = "/zipkin2-schema-indexes.cql";
+  static final String SCHEMA_RESOURCE = "/zipkin2-schema.cql";
+  static final String INDEX_RESOURCE = "/zipkin2-schema-indexes.cql";
+  static final String UPGRADE_1 = "/zipkin2-schema-upgrade-1.cql";
 
-  private Schema() {}
+  private Schema() {
+  }
 
   static Metadata readMetadata(Session session) {
-    KeyspaceMetadata keyspaceMetadata = ensureKeyspaceMetadata(session, session.getLoggedKeyspace());
+    KeyspaceMetadata keyspaceMetadata =
+      ensureKeyspaceMetadata(session, session.getLoggedKeyspace());
 
     Map<String, String> replication = keyspaceMetadata.getReplication();
     if ("SimpleStrategy".equals(replication.get("class"))) {
@@ -66,13 +65,13 @@ final class Schema {
       }
 
       ConsistencyLevel cl =
-          session.getCluster().getConfiguration().getQueryOptions().getConsistencyLevel();
+        session.getCluster().getConfiguration().getQueryOptions().getConsistencyLevel();
 
       checkState(
-          ConsistencyLevel.ONE == cl, "Do not define `local_dc` and use SimpleStrategy");
+        ConsistencyLevel.ONE == cl, "Do not define `local_dc` and use SimpleStrategy");
     }
     String compactionClass =
-        keyspaceMetadata.getTable("span").getOptions().getCompaction().get("class");
+      keyspaceMetadata.getTable("span").getOptions().getCompaction().get("class");
 
     return new Metadata(compactionClass);
   }
@@ -119,7 +118,15 @@ final class Schema {
       // refresh metadata since we've installed the schema
       result = ensureKeyspaceMetadata(session, keyspace);
     }
+    if (!hasUpgrade1_autocompleteTags(result)) {
+      LOG.info("Upgrading schema {}", UPGRADE_1);
+      applyCqlFile(keyspace, session, UPGRADE_1);
+    }
     return result;
+  }
+
+  static boolean hasUpgrade1_autocompleteTags(KeyspaceMetadata keyspaceMetadata) {
+    return keyspaceMetadata.getTable(TABLE_AUTOCOMPLETE_TAGS) != null;
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
@@ -233,36 +240,6 @@ final class Schema {
 
     Annotation toAnnotation() {
       return Annotation.create(ts, v);
-    }
-  }
-
-  static final class TypeCodecImpl<T> extends TypeCodec<T> {
-
-    private final TypeCodec<T> codec;
-
-    public TypeCodecImpl(DataType cqlType, Class<T> javaClass, TypeCodec<T> codec) {
-      super(cqlType, javaClass);
-      this.codec = codec;
-    }
-
-    @Override
-    public ByteBuffer serialize(T t, ProtocolVersion pv) throws InvalidTypeException {
-      return codec.serialize(t, pv);
-    }
-
-    @Override
-    public T deserialize(ByteBuffer bb, ProtocolVersion pv) throws InvalidTypeException {
-      return codec.deserialize(bb, pv);
-    }
-
-    @Override
-    public T parse(String string) throws InvalidTypeException {
-      return codec.parse(string);
-    }
-
-    @Override
-    public String format(T t) throws InvalidTypeException {
-      return codec.format(t);
     }
   }
 }

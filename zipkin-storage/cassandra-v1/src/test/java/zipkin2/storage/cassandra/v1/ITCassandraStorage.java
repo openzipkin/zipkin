@@ -172,6 +172,19 @@ public class ITCassandraStorage {
     }
   }
 
+  public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
+    @ClassRule public static CassandraStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return backend.computeStorageBuilder().keyspace(keyspace(testName));
+    }
+
+    @Before @Override public void clear() {
+      dropKeyspace(backend.session(), keyspace(testName));
+    }
+  }
+
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
     @ClassRule public static CassandraStorageRule backend = classRule();
     @Rule public TestName testName = new TestName();

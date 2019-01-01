@@ -106,4 +106,18 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
 
     assertThat(context.getBean(CassandraStorage.class).searchEnabled()).isFalse();
   }
+
+  @Test
+  public void autocompleteKeys_list() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of(
+      "zipkin.storage.type:cassandra3",
+      "zipkin.storage.autocomplete-keys:environment")
+      .applyTo(context);
+    Access.registerCassandra3(context);
+    context.refresh();
+
+    assertThat(context.getBean(CassandraStorage.class).autocompleteKeys())
+      .containsOnly("environment");
+  }
 }

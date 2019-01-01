@@ -30,7 +30,7 @@ abstract class ITSpanConsumer {
 
   @Before
   public void connect() {
-    storage = storageBuilder().keyspace(keyspace()).build();
+    storage = storageBuilder().autocompleteKeys(asList("environment")).keyspace(keyspace()).build();
   }
 
   abstract CassandraStorage.Builder storageBuilder();
@@ -100,5 +100,37 @@ abstract class ITSpanConsumer {
       .execute("SELECT COUNT(*) from " + table)
       .one()
       .getLong(0);
+  }
+
+  static String getTagValue(CassandraStorage storage, String key) {
+    return storage
+      .session()
+      .execute("SELECT value from " + Tables.TABLE_AUTOCOMPLETE_TAGS + " WHERE key='environment'")
+      .one()
+      .getString(0);
+  }
+
+  @Test
+  public void insertTags_SelectTags_CalculateCount() throws IOException {
+    Span[] trace = new Span[2];
+    trace[0] = TestObjects.CLIENT_SPAN;
+
+    trace[1] =
+      Span.newBuilder()
+        .traceId(trace[0].traceId())
+        .parentId(trace[0].id())
+        .id(1)
+        .name("1")
+        .putTag("environment", "dev")
+        .putTag("a", "b")
+        .timestamp(trace[0].timestamp() * 1000) // child span timestamps happen 1 ms later
+        .addAnnotation(trace[0].annotations().get(0).timestamp() + 1000, "bar")
+        .build();
+    accept(storage.spanConsumer(), trace);
+
+    assertThat(rowCount(Tables.TABLE_AUTOCOMPLETE_TAGS))
+      .isGreaterThanOrEqualTo(1L);
+
+    assertThat(getTagValue(storage, "environment")).isEqualTo("dev");
   }
 }

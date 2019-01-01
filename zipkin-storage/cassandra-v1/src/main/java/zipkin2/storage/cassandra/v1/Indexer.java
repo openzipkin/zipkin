@@ -40,9 +40,9 @@ import zipkin2.v1.V1Span;
 
 /**
  * Inserts index rows into Cassandra according to {@link IndexSupport} of a table. This skips
- * entries that don't improve results based on {@link QueryRequest#endTs} and {@link
- * QueryRequest#lookback}. For example, it doesn't insert rows that only vary on timestamp and exist
- * between timestamps of existing rows.
+ * entries that don't improve results based on {@link QueryRequest#endTs()} and {@link
+ * QueryRequest#lookback()}. For example, it doesn't insert rows that only vary on timestamp and
+ * exist between timestamps of existing rows.
  */
 final class Indexer {
   static final Logger LOG = LoggerFactory.getLogger(Indexer.class);
