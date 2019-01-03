@@ -74,7 +74,7 @@ Before you do the first release of the year, move the SNAPSHOT version back and 
 In-between, re-apply the licenses.
 ```bash
 $ ./mvnw versions:set -DnewVersion=1.3.3-SNAPSHOT -DgenerateBackupPoms=false
-$ ./mvnw com.mycila:license-maven-plugin:format
+$ ./mvnw com.mycila:license-maven-plugin:format -pl -:zipkin-ui,-:zipkin-lens
 $ ./mvnw versions:set -DnewVersion=1.3.2-SNAPSHOT -DgenerateBackupPoms=false
 $ git commit -am"Adjusts copyright headers for this year"
 ```
