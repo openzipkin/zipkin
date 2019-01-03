@@ -31,6 +31,7 @@ public abstract class DeduplicatingCall<I> extends ResultSetFutureCall {
       // TODO: maximum size or weight
       cache = CacheBuilder.newBuilder()
         .expireAfterWrite(cacheTtl, TimeUnit.MILLISECONDS)
+        .maximumSize(1000L)
         .ticker(this)
         .<I, C>build()
         .asMap();
