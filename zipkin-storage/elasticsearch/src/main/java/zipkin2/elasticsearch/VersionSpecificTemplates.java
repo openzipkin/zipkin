@@ -32,7 +32,7 @@ final class VersionSpecificTemplates {
   final boolean searchEnabled;
   final String spanIndexTemplate;
   final String dependencyIndexTemplate;
-  final String tagIndexTemplate;
+  final String autocompleteIndexTemplate;
 
   VersionSpecificTemplates(ElasticsearchStorage es) {
     this.searchEnabled = es.searchEnabled();
@@ -51,7 +51,7 @@ final class VersionSpecificTemplates {
             .replace("${__INDEX__}", es.indexNameFormatter().index())
             .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
             .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()));
-    this.tagIndexTemplate = TAG_INDEX_TEMPLATE
+    this.autocompleteIndexTemplate = AUTOCOMPLETE_INDEX_TEMPLATE
       .replace("${__INDEX__}", es.indexNameFormatter().index())
       .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
       .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()));
@@ -167,9 +167,9 @@ final class VersionSpecificTemplates {
           + "\": { \"enabled\": false }}\n"
           + "}";
 
-  // The key filed of a autocompleteKeys is intentionally names as tagkey since it clashes with the
+  // The key filed of a autocompleteKeys is intentionally names as tagKey since it clashes with the
   // BodyConverters KEY
-  static final String TAG_INDEX_TEMPLATE =
+  static final String AUTOCOMPLETE_INDEX_TEMPLATE =
     "{\n"
       + "  \"TEMPLATE\": \"${__INDEX__}:"
       + AUTOCOMPLETE
@@ -184,8 +184,8 @@ final class VersionSpecificTemplates {
       + AUTOCOMPLETE
       + "\": { \"enabled\": true,\n"
       + " \t\"properties\": {\n"
-      + "        \"tagkey\": { KEYWORD },\n"
-      + "        \"tagvalue\": { KEYWORD }\n"
+      + "        \"tagKey\": { KEYWORD },\n"
+      + "        \"tagValue\": { KEYWORD }\n"
       + "  }}}\n"
       + "}";
   IndexTemplates get(HttpCall.Factory callFactory) throws IOException {
@@ -194,7 +194,7 @@ final class VersionSpecificTemplates {
         .version(version)
         .span(versionSpecificSpanIndexTemplate(version))
         .dependency(versionSpecificDependencyLinkIndexTemplate(version))
-        .tag(versionSpecificTagIndexTemplate(version))
+        .autocomplete(versionSpecificAutocompleteIndexTemplate(version))
         .build();
   }
 
@@ -252,14 +252,14 @@ final class VersionSpecificTemplates {
     return dependencyIndexTemplate.replace(
         "TEMPLATE", version >= 6 ? "index_patterns" : "template");
   }
-  private String versionSpecificTagIndexTemplate(float version) {
+  private String versionSpecificAutocompleteIndexTemplate(float version) {
     if (version >= 2 && version < 3) {
-      return tagIndexTemplate
+      return autocompleteIndexTemplate
         .replace("TEMPLATE", "template")
         .replace("KEYWORD", "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": "
           + "\"not_analyzed\"");
     } else if (version >= 5) {
-      return tagIndexTemplate
+      return autocompleteIndexTemplate
         .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
         .replace("KEYWORD", "\"type\": \"text\",\"fielddata\": true\n");
     }else {

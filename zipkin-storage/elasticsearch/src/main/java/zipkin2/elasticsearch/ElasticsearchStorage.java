@@ -337,7 +337,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       EnsureIndexTemplate.apply(
           http(), index + ":" + DEPENDENCY + "_template", templates.dependency());
       EnsureIndexTemplate.apply(
-        http(), index + ":" + AUTOCOMPLETE + "_template", templates.tag());
+        http(), index + ":" + AUTOCOMPLETE + "_template", templates.autocomplete());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);

@@ -27,7 +27,7 @@ abstract class IndexTemplates {
 
   abstract String dependency();
 
-  abstract String tag();
+  abstract String autocomplete();
 
   @AutoValue.Builder
   interface Builder {
@@ -37,7 +37,7 @@ abstract class IndexTemplates {
 
     Builder dependency(String dependency);
 
-    Builder tag(String tag);
+    Builder autocomplete(String autocomplete);
 
     IndexTemplates build();
   }

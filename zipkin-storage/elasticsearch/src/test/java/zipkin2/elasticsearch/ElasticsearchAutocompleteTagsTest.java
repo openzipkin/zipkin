@@ -43,7 +43,7 @@ public class ElasticsearchAutocompleteTagsTest {
   @Test public void getValues_requestIncludesKeyName() throws Exception {
     es.enqueue(new MockResponse().setBody(TestResponses.AUTOCOMPLETE_VALUES));
     tagStore.getValues("http.method").execute();
-    assertThat(es.takeRequest().getBody().readUtf8()).contains("\"tagkey\":\"http.method\"");
+    assertThat(es.takeRequest().getBody().readUtf8()).contains("\"tagKey\":\"http.method\"");
   }
 
   @Test public void getValues() throws Exception {

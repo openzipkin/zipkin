@@ -108,9 +108,9 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
 
           JsonWriter writer = JsonWriter.of(query);
           writer.beginObject();
-          writer.name("tagkey");
+          writer.name("tagKey");
           writer.value(tag.getKey());
-          writer.name("tagvalue");
+          writer.name("tagValue");
           writer.value(tag.getValue());
           writer.endObject();
           String index = indexNameFormatter.formatTypeAndTimestamp(AUTOCOMPLETE, indexTimestamp);

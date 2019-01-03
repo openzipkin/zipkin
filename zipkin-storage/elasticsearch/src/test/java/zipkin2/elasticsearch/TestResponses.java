@@ -118,7 +118,7 @@ public final class TestResponses {
         + "    ]\n"
         + "  },\n"
         + "  \"aggregations\": {\n"
-        + "    \"tagvalue\": {\n"
+        + "    \"tagValue\": {\n"
         + "      \"doc_count_error_upper_bound\": 0,\n"
         + "      \"sum_other_doc_count\": 0,\n"
         + "      \"buckets\": [\n"

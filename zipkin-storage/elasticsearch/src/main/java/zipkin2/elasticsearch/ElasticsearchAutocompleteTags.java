@@ -57,11 +57,11 @@ final class ElasticsearchAutocompleteTags implements AutocompleteTags {
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest.Filters filters =
-      new SearchRequest.Filters().addTerm("tagkey", key.toLowerCase(Locale.ROOT));
+      new SearchRequest.Filters().addTerm("tagKey", key.toLowerCase(Locale.ROOT));
 
     SearchRequest request = SearchRequest.create(indices)
       .filters(filters)
-      .addAggregation(Aggregation.terms("tagvalue", Integer.MAX_VALUE));
+      .addAggregation(Aggregation.terms("tagValue", Integer.MAX_VALUE));
     return search.newCall(request, BodyConverters.KEYS);
   }
 }
