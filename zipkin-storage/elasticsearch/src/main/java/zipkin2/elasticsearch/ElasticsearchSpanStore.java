@@ -31,10 +31,11 @@ import zipkin2.storage.StrictTraceId;
 
 import static java.util.Arrays.asList;
 
-final class ElasticsearchSpanStore implements SpanStore {
+final class ElasticsearchSpanStore implements SpanStore{
 
   static final String SPAN = "span";
   static final String DEPENDENCY = "dependency";
+
   /** To not produce unnecessarily long queries, we don't look back further than first ES support */
   static final long EARLIEST_MS = 1456790400000L; // March 2016
 

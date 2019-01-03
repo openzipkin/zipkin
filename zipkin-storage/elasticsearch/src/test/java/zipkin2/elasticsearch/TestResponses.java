@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -89,4 +89,49 @@ public final class TestResponses {
           + "    }\n"
           + "  }\n"
           + "}";
+
+      public static final String AUTOCOMPLETE_VALUES = "{\n"
+        + "  \"took\": 12,\n"
+        + "  \"timed_out\": false,\n"
+        + "  \"_shards\": {\n"
+        + "    \"total\": 5,\n"
+        + "    \"successful\": 5,\n"
+        + "    \"skipped\": 0,\n"
+        + "    \"failed\": 0\n"
+        + "  },\n"
+        + "  \"hits\": {\n"
+        + "    \"total\": 2,\n"
+        + "    \"max_score\": 0,\n"
+        + "    \"hits\": [\n"
+        + "      {\n"
+        + "        \"_index\": \"zipkin:autocomplete-2018-12-08\",\n"
+        + "        \"_type\": \"autocomplete\",\n"
+        + "        \"_id\": \"http.method|POST\",\n"
+        + "        \"_score\": 0\n"
+        + "      },\n"
+        + "      {\n"
+        + "        \"_index\": \"zipkin:autocomplete-2018-12-08\",\n"
+        + "        \"_type\": \"autocomplete\",\n"
+        + "        \"_id\": \"http.method|GET\",\n"
+        + "        \"_score\": 0\n"
+        + "      }\n"
+        + "    ]\n"
+        + "  },\n"
+        + "  \"aggregations\": {\n"
+        + "    \"tagValue\": {\n"
+        + "      \"doc_count_error_upper_bound\": 0,\n"
+        + "      \"sum_other_doc_count\": 0,\n"
+        + "      \"buckets\": [\n"
+        + "        {\n"
+        + "          \"key\": \"get\",\n"
+        + "          \"doc_count\": 1\n"
+        + "        },\n"
+        + "        {\n"
+        + "          \"key\": \"post\",\n"
+        + "          \"doc_count\": 1\n"
+        + "        }\n"
+        + "      ]\n"
+        + "    }\n"
+        + "  }\n"
+        + "}";
 }

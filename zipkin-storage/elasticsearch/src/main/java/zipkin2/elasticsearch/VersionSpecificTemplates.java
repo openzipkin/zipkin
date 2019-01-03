@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,6 +22,7 @@ import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /** Returns a version-specific span and dependency index template */
@@ -31,6 +32,7 @@ final class VersionSpecificTemplates {
   final boolean searchEnabled;
   final String spanIndexTemplate;
   final String dependencyIndexTemplate;
+  final String autocompleteIndexTemplate;
 
   VersionSpecificTemplates(ElasticsearchStorage es) {
     this.searchEnabled = es.searchEnabled();
@@ -49,6 +51,10 @@ final class VersionSpecificTemplates {
             .replace("${__INDEX__}", es.indexNameFormatter().index())
             .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
             .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()));
+    this.autocompleteIndexTemplate = AUTOCOMPLETE_INDEX_TEMPLATE
+      .replace("${__INDEX__}", es.indexNameFormatter().index())
+      .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
+      .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()));
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
@@ -161,12 +167,34 @@ final class VersionSpecificTemplates {
           + "\": { \"enabled\": false }}\n"
           + "}";
 
+  // The key filed of a autocompleteKeys is intentionally names as tagKey since it clashes with the
+  // BodyConverters KEY
+  static final String AUTOCOMPLETE_INDEX_TEMPLATE =
+    "{\n"
+      + "  \"TEMPLATE\": \"${__INDEX__}:"
+      + AUTOCOMPLETE
+      + "-*\",\n"
+      + "  \"settings\": {\n"
+      + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
+      + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
+      + "    \"index.requests.cache.enable\": true,\n"
+      + "    \"index.mapper.dynamic\": true\n"
+      + "  },\n"
+      + "  \"mappings\": {\""
+      + AUTOCOMPLETE
+      + "\": { \"enabled\": true,\n"
+      + " \t\"properties\": {\n"
+      + "        \"tagKey\": { KEYWORD },\n"
+      + "        \"tagValue\": { KEYWORD }\n"
+      + "  }}}\n"
+      + "}";
   IndexTemplates get(HttpCall.Factory callFactory) throws IOException {
     float version = getVersion(callFactory);
     return IndexTemplates.newBuilder()
         .version(version)
         .span(versionSpecificSpanIndexTemplate(version))
         .dependency(versionSpecificDependencyLinkIndexTemplate(version))
+        .autocomplete(versionSpecificAutocompleteIndexTemplate(version))
         .build();
   }
 
@@ -224,4 +252,20 @@ final class VersionSpecificTemplates {
     return dependencyIndexTemplate.replace(
         "TEMPLATE", version >= 6 ? "index_patterns" : "template");
   }
+  private String versionSpecificAutocompleteIndexTemplate(float version) {
+    if (version >= 2 && version < 3) {
+      return autocompleteIndexTemplate
+        .replace("TEMPLATE", "template")
+        .replace("KEYWORD", "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": "
+          + "\"not_analyzed\"");
+    } else if (version >= 5) {
+      return autocompleteIndexTemplate
+        .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
+        .replace("KEYWORD", "\"type\": \"text\",\"fielddata\": true\n");
+    }else {
+      throw new IllegalStateException(
+        "Elasticsearch 2.x, 5.x and 6.x are supported, was: " + version);
+    }
+  }
 }
+

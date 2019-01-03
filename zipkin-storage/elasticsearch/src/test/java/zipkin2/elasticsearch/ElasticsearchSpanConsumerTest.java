@@ -57,10 +57,12 @@ public class ElasticsearchSpanConsumerTest {
     es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"6.0.0\"}}"));
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
+    es.enqueue(new MockResponse()); // get tags template
     storage.ensureIndexTemplates();
     es.takeRequest(); // get version
     es.takeRequest(); // get span template
     es.takeRequest(); // get dependency template
+    es.takeRequest(); // get tags template
   }
 
   @After
@@ -316,6 +318,7 @@ public class ElasticsearchSpanConsumerTest {
       es.enqueue(new MockResponse().setResponseCode(404)); // get span template
       es.enqueue(new MockResponse()); // put span template
       es.enqueue(new MockResponse()); // get dependency template
+      es.enqueue(new MockResponse()); // get tags template
       storage.ensureIndexTemplates();
       es.takeRequest(); // get version
       es.takeRequest(); // get span template

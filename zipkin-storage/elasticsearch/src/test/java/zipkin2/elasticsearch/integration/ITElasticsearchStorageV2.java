@@ -99,6 +99,19 @@ public class ITElasticsearchStorageV2 {
     }
   }
 
+  public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
+    @ClassRule public static ElasticsearchStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return backend.computeStorageBuilder().index(index(testName));
+    }
+
+    @Before @Override public void clear() throws IOException {
+      ((ElasticsearchStorage) storage).clear();
+    }
+  }
+
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
     @ClassRule public static ElasticsearchStorageRule backend = classRule();
     @Rule public TestName testName = new TestName();

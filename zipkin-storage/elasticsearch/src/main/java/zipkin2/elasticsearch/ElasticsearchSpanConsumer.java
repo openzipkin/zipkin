@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,8 +15,10 @@ package zipkin2.elasticsearch;
 
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -30,6 +32,8 @@ import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.storage.SpanConsumer;
+
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
   static final Logger LOG = Logger.getLogger(ElasticsearchSpanConsumer.class.getName());
@@ -66,6 +70,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         if (indexTimestamp == 0L) indexTimestamp = System.currentTimeMillis();
       }
       indexer.add(indexTimestamp, span, spanTimestamp);
+      indexer.addTag(indexTimestamp, span);
     }
   }
 
@@ -73,11 +78,13 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     final HttpBulkIndexer indexer;
     final IndexNameFormatter indexNameFormatter;
     final boolean searchEnabled;
+    final Set<String> autocompleteKeys;
 
     BulkSpanIndexer(ElasticsearchStorage es) {
       this.indexer = new HttpBulkIndexer("index-span", es);
       this.indexNameFormatter = es.indexNameFormatter();
       this.searchEnabled = es.searchEnabled();
+      this.autocompleteKeys = new LinkedHashSet<>(es.autocompleteKeys());
     }
 
     void add(long indexTimestamp, Span span, long timestampMillis) {
@@ -89,6 +96,37 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
               : SpanBytesEncoder.JSON_V2.encode(span);
       indexer.add(
           index, ElasticsearchSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
+    }
+
+    void addTag(long indexTimestamp, Span span) {
+      if (span.tags().isEmpty()) return;
+      try {
+        Buffer query = new Buffer();
+        for (Map.Entry<String, String> tag : span.tags().entrySet()) {
+          // If the autocomplete whitelist doesn't contain the key, skip storing its value
+          if (!autocompleteKeys.contains(tag.getKey())) continue;
+
+          JsonWriter writer = JsonWriter.of(query);
+          writer.beginObject();
+          writer.name("tagKey");
+          writer.value(tag.getKey());
+          writer.name("tagValue");
+          writer.value(tag.getValue());
+          writer.endObject();
+          String index = indexNameFormatter.formatTypeAndTimestamp(AUTOCOMPLETE, indexTimestamp);
+          byte[] document = query.readByteArray();
+          query.clear();
+          // Id of the document will be combination of {key,value} so that duplicate autocomplete
+          // keys can be avoided
+          indexer.add(index, AUTOCOMPLETE, document, tag.getKey() + "|" + tag.getValue());
+        }
+      } catch (IOException e) {
+        // very unexpected to have an IOE for an in-memory write
+        assert false : "Error indexing autocomplete tags for span: " + span;
+        if (LOG.isLoggable(Level.FINE)) {
+          LOG.log(Level.FINE, "Error indexing autocomplete tags for span: " + span, e);
+        }
+      }
     }
 
     HttpCall<Void> newCall() {
