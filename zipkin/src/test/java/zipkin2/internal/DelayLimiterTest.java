@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch.internal;
+package zipkin2.internal;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -38,7 +38,8 @@ public class DelayLimiterTest {
 
   @Test public void mutesDuringDelayPeriod() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = new DelayLimiter<>(3000);
+    DelayLimiter<Long> delayLimiter =
+      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
 
     when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -52,7 +53,8 @@ public class DelayLimiterTest {
 
   @Test public void contextsAreIndependent() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = new DelayLimiter<>(3000);
+    DelayLimiter<Long> delayLimiter =
+      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
 
     when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -70,7 +72,8 @@ public class DelayLimiterTest {
 
   @Test public void worksOnRollover() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = new DelayLimiter<>(3000);
+    DelayLimiter<Long> delayLimiter =
+      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
 
     when(System.nanoTime()).thenReturn(-NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -84,7 +87,8 @@ public class DelayLimiterTest {
 
   @Test public void worksOnSameNanos() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = new DelayLimiter<>(3000);
+    DelayLimiter<Long> delayLimiter =
+      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
 
     when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -97,8 +101,12 @@ public class DelayLimiterTest {
   }
 
   @Test(timeout = 15000L)
-  public void limitsTo1000Contexts() {
-    DelayLimiter<Long> delayLimiter = new DelayLimiter<>(15_000L);
+  public void maximumSize() {
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder()
+      .expireAfter(15, TimeUnit.SECONDS)
+      .maximumSize(1000)
+      .build();
+
     for (long i = 0; i < 10_000L; i++) {
       assertThat(delayLimiter.shouldInvoke(i)).isTrue();
     }
@@ -107,13 +115,16 @@ public class DelayLimiterTest {
 
     // verify internal state
     assertThat(delayLimiter.cache)
-      .hasSameSizeAs(delayLimiter.ignoredContexts)
+      .hasSameSizeAs(delayLimiter.suppressions)
       .hasSize(1000);
   }
 
   @Test(timeout = 15000L)
-  public void concurrent_executesOrSubmitsOnce() throws InterruptedException {
-    DelayLimiter<Long> delayLimiter = new DelayLimiter<>(15_000L);
+  public void maximumSize_parallel() throws InterruptedException {
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder()
+      .expireAfter(15, TimeUnit.SECONDS)
+      .maximumSize(1000)
+      .build();
 
     AtomicInteger trueCount = new AtomicInteger();
     ExecutorService exec = Executors.newFixedThreadPool(4);
@@ -133,12 +144,27 @@ public class DelayLimiterTest {
 
     // verify internal state
     assertThat(delayLimiter.cache)
-      .hasSameSizeAs(delayLimiter.ignoredContexts)
+      .hasSameSizeAs(delayLimiter.suppressions)
       .hasSize(1000);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void tracesPerSecond_cantBeNegative() {
-    new DelayLimiter<>(-1);
+  public void expireAfter_cantBeNegative() {
+    DelayLimiter.newBuilder().expireAfter(-1, TimeUnit.SECONDS);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void expireAfter_cantBeZero() {
+    DelayLimiter.newBuilder().expireAfter(0, TimeUnit.SECONDS);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void maximumSize_cantBeNegative() {
+    DelayLimiter.newBuilder().maximumSize(-1);
+  }
+
+  @Test(expected = IllegalArgumentException.class)
+  public void maximumSize_cantBeZero() {
+    DelayLimiter.newBuilder().maximumSize(0);
   }
 }
