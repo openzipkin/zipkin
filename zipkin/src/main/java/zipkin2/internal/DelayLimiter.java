@@ -13,7 +13,6 @@
  */
 package zipkin2.internal;
 
-import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.DelayQueue;
 import java.util.concurrent.Delayed;
@@ -62,7 +61,7 @@ public final class DelayLimiter<C> {
     }
   }
 
-  final Map<C, Suppression<C>> cache = new ConcurrentHashMap<>();
+  final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
   final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
   final long expireAfterNanos;
   final long maximumSize;
