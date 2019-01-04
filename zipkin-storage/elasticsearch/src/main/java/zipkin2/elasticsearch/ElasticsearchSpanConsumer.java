@@ -31,6 +31,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.SpanConsumer;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
@@ -79,12 +80,16 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     final IndexNameFormatter indexNameFormatter;
     final boolean searchEnabled;
     final Set<String> autocompleteKeys;
+    final DelayLimiter<String> delayLimiter;
 
     BulkSpanIndexer(ElasticsearchStorage es) {
       this.indexer = new HttpBulkIndexer("index-span", es);
       this.indexNameFormatter = es.indexNameFormatter();
       this.searchEnabled = es.searchEnabled();
       this.autocompleteKeys = new LinkedHashSet<>(es.autocompleteKeys());
+      this.delayLimiter = DelayLimiter.newBuilder()
+        .ttl(es.autocompleteSuppressionTtl)
+        .maxSize(es.autocompleteSuppressionMaxSize).build();
     }
 
     void add(long indexTimestamp, Span span, long timestampMillis) {
@@ -105,6 +110,8 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         for (Map.Entry<String, String> tag : span.tags().entrySet()) {
           // If the autocomplete whitelist doesn't contain the key, skip storing its value
           if (!autocompleteKeys.contains(tag.getKey())) continue;
+          String id = tag.getKey() + "|" + tag.getValue();
+          if (!delayLimiter.shouldInvoke(id)) continue;
 
           JsonWriter writer = JsonWriter.of(query);
           writer.beginObject();
@@ -118,7 +125,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
           query.clear();
           // Id of the document will be combination of {key,value} so that duplicate autocomplete
           // keys can be avoided
-          indexer.add(index, AUTOCOMPLETE, document, tag.getKey() + "|" + tag.getValue());
+          indexer.add(index, AUTOCOMPLETE, document, id);
         }
       } catch (IOException e) {
         // very unexpected to have an IOE for an in-memory write

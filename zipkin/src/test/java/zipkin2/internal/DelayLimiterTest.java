@@ -38,8 +38,7 @@ public class DelayLimiterTest {
 
   @Test public void mutesDuringDelayPeriod() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter =
-      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
 
     when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -53,8 +52,7 @@ public class DelayLimiterTest {
 
   @Test public void contextsAreIndependent() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter =
-      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
 
     when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -72,8 +70,7 @@ public class DelayLimiterTest {
 
   @Test public void worksOnRollover() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter =
-      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
 
     when(System.nanoTime()).thenReturn(-NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -87,8 +84,7 @@ public class DelayLimiterTest {
 
   @Test public void worksOnSameNanos() {
     mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter =
-      DelayLimiter.newBuilder().expireAfter(3, TimeUnit.SECONDS).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
 
     when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
@@ -102,10 +98,7 @@ public class DelayLimiterTest {
 
   @Test(timeout = 15000L)
   public void maximumSize() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder()
-      .expireAfter(15, TimeUnit.SECONDS)
-      .maximumSize(1000)
-      .build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(15000).maxSize(1000).build();
 
     for (long i = 0; i < 10_000L; i++) {
       assertThat(delayLimiter.shouldInvoke(i)).isTrue();
@@ -122,8 +115,8 @@ public class DelayLimiterTest {
   @Test(timeout = 15000L)
   public void maximumSize_parallel() throws InterruptedException {
     DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder()
-      .expireAfter(15, TimeUnit.SECONDS)
-      .maximumSize(1000)
+      .ttl(15000)
+      .maxSize(1000)
       .build();
 
     AtomicInteger trueCount = new AtomicInteger();
@@ -149,22 +142,22 @@ public class DelayLimiterTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void expireAfter_cantBeNegative() {
-    DelayLimiter.newBuilder().expireAfter(-1, TimeUnit.SECONDS);
+  public void ttl_cantBeNegative() {
+    DelayLimiter.newBuilder().ttl(-1);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void expireAfter_cantBeZero() {
-    DelayLimiter.newBuilder().expireAfter(0, TimeUnit.SECONDS);
+  public void ttl_cantBeZero() {
+    DelayLimiter.newBuilder().ttl(0);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void maximumSize_cantBeNegative() {
-    DelayLimiter.newBuilder().maximumSize(-1);
+    DelayLimiter.newBuilder().maxSize(-1);
   }
 
   @Test(expected = IllegalArgumentException.class)
   public void maximumSize_cantBeZero() {
-    DelayLimiter.newBuilder().maximumSize(0);
+    DelayLimiter.newBuilder().maxSize(0);
   }
 }

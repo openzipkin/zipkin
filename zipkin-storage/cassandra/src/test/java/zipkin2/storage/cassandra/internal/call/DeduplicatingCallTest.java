@@ -160,7 +160,7 @@ public class DeduplicatingCallTest {
       final Function<String, ListenableFuture<ResultSet>> delegate;
 
       Factory(Function<String, ListenableFuture<ResultSet>> delegate) {
-        super(TimeUnit.SECONDS.toMillis(1L));
+        super(1000, 1000);
         this.delegate = delegate;
       }
 

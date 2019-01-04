@@ -34,6 +34,9 @@ import static zipkin2.storage.cassandra.CassandraUtil.durationIndexBucket;
 class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   static final int WRITTEN_NAMES_TTL =
     Integer.getInteger("zipkin2.storage.cassandra.internal.writtenNamesTtl", 60 * 60 * 1000);
+  static final int WRITTEN_NAMES_MAX_SIZE =
+    Integer.getInteger("zipkin2.storage.cassandra.internal.writtenNamesMaxSize", 5 * 1000);
+
   final Session session;
   final boolean strictTraceId, searchEnabled;
   final InsertSpan.Factory insertSpan;
@@ -54,8 +57,10 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     if (searchEnabled) {
       int indexTtl = 0;
       insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
-      insertServiceSpanName = new InsertServiceSpan.Factory(session, indexTtl, WRITTEN_NAMES_TTL);
-      insertTags = new InsertAutocompleteValue.Factory(session, indexTtl, WRITTEN_NAMES_TTL);
+      insertServiceSpanName =
+        new InsertServiceSpan.Factory(session, indexTtl, WRITTEN_NAMES_TTL, WRITTEN_NAMES_MAX_SIZE);
+      insertTags = new InsertAutocompleteValue.Factory(session, indexTtl, WRITTEN_NAMES_TTL,
+        WRITTEN_NAMES_MAX_SIZE);
     } else {
       insertTraceByServiceSpan = null;
       insertServiceSpanName = null;

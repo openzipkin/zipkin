@@ -41,10 +41,12 @@ final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input>
 
     /**
      * @param indexTtl how long cassandra will persist the rows
-     * @param redundantCallTtl how long in milliseconds to obviate redundant calls
+     * @param suppressionTtl milliseconds to obviate suppress calls to write the same service/span
+     * pair
+     * @param suppressionMaxSize maximum service/span pairs to suppress at a time
      */
-    Factory(Session session, int indexTtl, int redundantCallTtl) {
-      super(redundantCallTtl);
+    Factory(Session session, int indexTtl, int suppressionTtl, int suppressionMaxSize) {
+      super(suppressionTtl, suppressionMaxSize);
       this.session = session;
       Insert insertQuery = QueryBuilder.insertInto(TABLE_SERVICE_SPANS)
         .value("service", QueryBuilder.bindMarker("service"))

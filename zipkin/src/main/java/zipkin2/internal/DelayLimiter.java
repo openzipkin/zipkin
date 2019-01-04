@@ -31,24 +31,24 @@ public final class DelayLimiter<C> {
   }
 
   public static final class Builder {
-    long expireAfterNanos = TimeUnit.HOURS.toNanos(1); // legacy default from cassandra
-    long maximumSize = 5 * 1000; // Ex. 5 site tags with cardinality 1000 each
+    long ttlNanos = TimeUnit.HOURS.toNanos(1); // legacy default from cassandra
+    int maximumSize = 5 * 1000; // Ex. 5 site tags with cardinality 1000 each
 
     /**
      * When {@link #shouldInvoke(Object)} returns true, it will return false until this duration
      * expires.
      */
-    public Builder expireAfter(long duration, TimeUnit unit) {
-      if (duration <= 0) throw new IllegalArgumentException("duration <= 0");
-      this.expireAfterNanos = unit.toNanos(duration);
+    public Builder ttl(int ttl) {
+      if (ttl <= 0) throw new IllegalArgumentException("ttl <= 0");
+      this.ttlNanos = TimeUnit.MILLISECONDS.toNanos(ttl);
       return this;
     }
 
     /**
      * This bounds supressions, useful because contexts can be accidentally unlimited cardinality.
      */
-    public Builder maximumSize(long maximumSize) {
-      if (maximumSize <= 0) throw new IllegalArgumentException("maximumSize <= 0");
+    public Builder maxSize(int maximumSize) {
+      if (maximumSize <= 0) throw new IllegalArgumentException("maxSize <= 0");
       this.maximumSize = maximumSize;
       return this;
     }
@@ -63,10 +63,10 @@ public final class DelayLimiter<C> {
 
   final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
   final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
-  final long expireAfterNanos, maximumSize;
+  final long ttlNanos, maximumSize;
 
   DelayLimiter(Builder builder) {
-    expireAfterNanos = builder.expireAfterNanos;
+    ttlNanos = builder.ttlNanos;
     maximumSize = builder.maximumSize;
   }
 
@@ -76,7 +76,7 @@ public final class DelayLimiter<C> {
 
     if (cache.containsKey(context)) return false;
 
-    Suppression<C> suppression = new Suppression<>(context, System.nanoTime() + expireAfterNanos);
+    Suppression<C> suppression = new Suppression<>(context, System.nanoTime() + ttlNanos);
 
     if (cache.putIfAbsent(context, suppression) != null) return false; // lost race
 

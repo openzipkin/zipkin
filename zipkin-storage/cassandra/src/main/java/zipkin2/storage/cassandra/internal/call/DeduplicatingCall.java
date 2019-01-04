@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
 import java.io.IOException;
-import java.util.concurrent.TimeUnit;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.internal.DelayLimiter;
@@ -25,10 +24,8 @@ public abstract class DeduplicatingCall<I> extends ResultSetFutureCall {
   public abstract static class Factory<I, C extends DeduplicatingCall<I>> {
     final DelayLimiter<I> delayLimiter;
 
-    protected Factory(long cacheTtl) {
-      delayLimiter = DelayLimiter.newBuilder()
-        .expireAfter(cacheTtl, TimeUnit.MILLISECONDS)
-        .maximumSize(1000L).build();
+    protected Factory(int ttl, int maximumSize) {
+      delayLimiter = DelayLimiter.newBuilder().ttl(ttl).maxSize(maximumSize).build();
     }
 
     protected abstract C newCall(I input);

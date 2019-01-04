@@ -34,14 +34,14 @@ import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
+import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
-import zipkin2.storage.AutocompleteTags;
 
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 @AutoValue
@@ -227,6 +227,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public abstract IndexNameFormatter indexNameFormatter();
 
   public abstract int namesLookback();
+
+  int autocompleteSuppressionTtl = 60 * 60 * 1000; // legacy 1 hr default from cassandra
+  int autocompleteSuppressionMaxSize = 5 * 1000; // Ex. 5 site tags with cardinality 1000 each
 
   @Override
   public SpanStore spanStore() {
