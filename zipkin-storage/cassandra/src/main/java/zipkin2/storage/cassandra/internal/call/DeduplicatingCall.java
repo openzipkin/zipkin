@@ -14,53 +14,40 @@
 package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
-import com.google.common.base.Ticker;
-import com.google.common.cache.CacheBuilder;
 import java.io.IOException;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.internal.DelayLimiter;
 
 public abstract class DeduplicatingCall<I> extends ResultSetFutureCall {
 
-  public abstract static class Factory<I, C extends DeduplicatingCall<I>> extends Ticker {
-    final ConcurrentMap<I, C> cache;
+  public abstract static class Factory<I, C extends DeduplicatingCall<I>> {
+    final DelayLimiter<I> delayLimiter;
 
     protected Factory(long cacheTtl) {
-      // TODO: maximum size or weight
-      cache = CacheBuilder.newBuilder()
-        .expireAfterWrite(cacheTtl, TimeUnit.MILLISECONDS)
-        .maximumSize(1000L)
-        .ticker(this)
-        .<I, C>build()
-        .asMap();
-    }
-
-    // visible for testing, since nanoTime is weird and can return negative
-    @Override public long read() {
-      return System.nanoTime();
+      delayLimiter = DelayLimiter.newBuilder()
+        .expireAfter(cacheTtl, TimeUnit.MILLISECONDS)
+        .maximumSize(1000L).build();
     }
 
     protected abstract C newCall(I input);
 
     public final Call<ResultSet> create(I input) {
       if (input == null) throw new NullPointerException("input == null");
-      if (cache.containsKey(input)) return Call.create(null);
-      C realCall = newCall(input);
-      if (cache.putIfAbsent(input, realCall) != null) return Call.create(null);
-      return realCall;
+      if (!delayLimiter.shouldInvoke(input)) return Call.create(null);
+      return newCall(input);
     }
 
     public final void clear() {
-      cache.clear();
+      delayLimiter.clear();
     }
   }
 
-  final Factory factory;
+  final Factory<I, ?> factory;
   final I input;
 
-  protected DeduplicatingCall(Factory factory, I input) {
+  protected DeduplicatingCall(Factory<I, ?> factory, I input) {
     this.factory = factory;
     this.input = input;
   }
@@ -69,7 +56,7 @@ public abstract class DeduplicatingCall<I> extends ResultSetFutureCall {
     try {
       return super.doExecute();
     } catch (IOException | RuntimeException | Error e) {
-      factory.cache.remove(input, DeduplicatingCall.this); // invalidate
+      factory.delayLimiter.invalidate(input);
       throw e;
     }
   }
@@ -82,14 +69,14 @@ public abstract class DeduplicatingCall<I> extends ResultSetFutureCall {
         }
 
         @Override public void onError(Throwable t) {
-          factory.cache.remove(input, DeduplicatingCall.this); // invalidate
+          factory.delayLimiter.invalidate(input);
           callback.onError(t);
         }
       });
   }
 
   @Override protected void doCancel() {
-    factory.cache.remove(input, DeduplicatingCall.this); // invalidate
+    factory.delayLimiter.invalidate(input);
     super.doCancel();
   }
 }

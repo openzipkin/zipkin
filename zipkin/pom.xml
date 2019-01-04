@@ -53,7 +53,7 @@
       <scope>test</scope>
     </dependency>
 
-    <!-- to mock Platform calls -->
+    <!-- to mock Platform and DelayLimiter calls -->
     <dependency>
       <groupId>org.powermock</groupId>
       <artifactId>powermock-module-junit4</artifactId>

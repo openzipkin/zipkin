@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.exceptions.DriverInternalError;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import java.util.concurrent.Executors;
@@ -23,37 +22,45 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.core.classloader.annotations.PowerMockIgnore;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 import zipkin2.Call;
+import zipkin2.internal.DelayLimiter;
 
+import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
+import static com.google.common.util.concurrent.Futures.immediateFuture;
 import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
 
+@RunWith(PowerMockRunner.class)
+// Added to declutter console: tells power mock not to mess with implicit classes we aren't testing
+@PowerMockIgnore({"org.apache.logging.*", "javax.script.*"})
+@PrepareForTest(DelayLimiter.class)
 public class DeduplicatingCallTest {
   Call<Void> constant = Call.create(null);
 
   Function<String, ListenableFuture<ResultSet>> delegate =
-      new Function<String, ListenableFuture<ResultSet>>() {
-        @Override
-        public ListenableFuture<ResultSet> apply(String s) {
-          return Futures.immediateFuture(mock(ResultSet.class));
-        }
-      };
+    s -> immediateFuture(mock(ResultSet.class));
   TestDeduplicatingCall.Factory callFactory = new TestDeduplicatingCall.Factory(delegate);
 
   @Test
   public void expiresWhenTtlPasses() {
-    Futures.immediateFuture(mock(ResultSet.class));
+    mockStatic(System.class);
 
-    callFactory.nanoTime = 0;
+    when(System.nanoTime()).thenReturn(0L);
 
     Call<ResultSet> firstFoo = callFactory.create("foo");
 
     // cached results return a constant value
     assertThat(callFactory.create("foo")).isEqualTo(constant);
 
-    callFactory.nanoTime = TimeUnit.MILLISECONDS.toNanos(500);
+    when(System.nanoTime()).thenReturn(100L);
 
     // still, same result for the foo
     assertThat(callFactory.create("foo")).isEqualTo(constant);
@@ -63,7 +70,7 @@ public class DeduplicatingCallTest {
     assertThat(firstBar).isNotEqualTo(firstFoo);
 
     // A second after the first call, we should try again
-    callFactory.nanoTime = TimeUnit.SECONDS.toNanos(1);
+    when(System.nanoTime()).thenReturn(TimeUnit.SECONDS.toNanos(1));
 
     // first key refreshes
     assertThat(callFactory.create("foo")).isNotEqualTo(constant);
@@ -79,9 +86,9 @@ public class DeduplicatingCallTest {
         new TestDeduplicatingCall.Factory(
             s -> {
               if (first.getAndSet(false)) {
-                return Futures.immediateFailedFuture(new IllegalArgumentException());
+                return immediateFailedFuture(new IllegalArgumentException());
               }
-              return Futures.immediateFuture(null);
+              return immediateFuture(null);
             });
     exceptionsArentCached();
   }
@@ -101,7 +108,7 @@ public class DeduplicatingCallTest {
                         throw new IllegalArgumentException();
                       });
                 }
-                return Futures.immediateFuture(null);
+                return immediateFuture(null);
               });
       exceptionsArentCached();
     } finally {
@@ -119,13 +126,14 @@ public class DeduplicatingCallTest {
               if (first.getAndSet(false)) {
                 throw new IllegalArgumentException();
               }
-              return Futures.immediateFuture(null);
+              return immediateFuture(null);
             });
     exceptionsArentCached();
   }
 
   void exceptionsArentCached() throws Exception {
-    callFactory.nanoTime = 0;
+    mockStatic(System.class);
+    when(System.nanoTime()).thenReturn(0L);
 
     // Intentionally not dereferencing the future. We need to ensure that dropped failed
     // futures still purge!
@@ -146,32 +154,14 @@ public class DeduplicatingCallTest {
     }
   }
 
-  @Test
-  public void expiresWhenTtlPasses_initiallyNegative() {
-    callFactory.nanoTime = -TimeUnit.SECONDS.toNanos(1);
-
-    callFactory.create("foo");
-    assertThat(callFactory.create("foo")).isEqualTo(constant);
-
-    // A second after the first call, we should try again
-    callFactory.nanoTime = 0;
-
-    assertThat(callFactory.create("foo")).isNotEqualTo(constant);
-  }
-
   static class TestDeduplicatingCall extends DeduplicatingCall<String> {
 
     static class Factory extends DeduplicatingCall.Factory<String, TestDeduplicatingCall> {
       final Function<String, ListenableFuture<ResultSet>> delegate;
-      long nanoTime;
 
       Factory(Function<String, ListenableFuture<ResultSet>> delegate) {
         super(TimeUnit.SECONDS.toMillis(1L));
         this.delegate = delegate;
-      }
-
-      @Override public long read() {
-        return nanoTime;
       }
 
       @Override protected TestDeduplicatingCall newCall(String string) {

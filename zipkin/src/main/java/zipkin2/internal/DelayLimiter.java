@@ -63,8 +63,7 @@ public final class DelayLimiter<C> {
 
   final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
   final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
-  final long expireAfterNanos;
-  final long maximumSize;
+  final long expireAfterNanos, maximumSize;
 
   DelayLimiter(Builder builder) {
     expireAfterNanos = builder.expireAfterNanos;
@@ -90,6 +89,16 @@ public final class DelayLimiter<C> {
     }
 
     return true;
+  }
+
+  public void invalidate(C context) {
+    Suppression<C> suppression = cache.remove(context);
+    if (suppression != null) suppressions.remove(suppression);
+  }
+
+  public void clear() {
+    cache.clear();
+    suppressions.clear();
   }
 
   /** This attempts to remove the oldest entry to free up one slot */
