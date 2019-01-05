@@ -26,7 +26,7 @@ Here's an example, sending a list of a single span to the zipkin topic:
 
 ```bash
 $ kafka-console-producer.sh --broker-list $ADVERTISED_HOST:9092 --topic zipkin
-[{"traceId":"1","name":"bang","id":"2","timestamp":1234,"binaryAnnotations":[{"key":"lc","value":"bamm-bamm","endpoint":{"serviceName":"flintstones","ipv4":"127.0.0.1"}}]}]
+[{"traceId":"1","name":"bang","id":"2","timestamp":1470150004071068,"duration":1,"localEndpoint":{"serviceName":"flintstones"},"tags":{"lc":"bamm-bamm"}}]
 ```
 
 ### Thrift
