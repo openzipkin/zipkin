@@ -20,85 +20,73 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.LongStream;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
-// Added to declutter console: tells power mock not to mess with implicit classes we aren't testing
-@PowerMockIgnore({"org.apache.logging.*", "javax.script.*"})
-@PrepareForTest(DelayLimiter.class)
 public class DelayLimiterTest {
   static final long NANOS_PER_SECOND = TimeUnit.SECONDS.toNanos(1);
+  long nanoTime;
+  DelayLimiter.Ticker ticker = new DelayLimiter.Ticker() {
+    long read() {
+      return nanoTime;
+    }
+  };
 
   @Test public void mutesDuringDelayPeriod() {
-    mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
 
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
+    nanoTime = NANOS_PER_SECOND;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 2);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 2);
+
+    nanoTime = NANOS_PER_SECOND * 2;
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
+
+    nanoTime = NANOS_PER_SECOND * 4;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
   }
 
   @Test public void contextsAreIndependent() {
-    mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
 
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
+    nanoTime = NANOS_PER_SECOND;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 2);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 2);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 2);
+
+    nanoTime = NANOS_PER_SECOND * 2;
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
     assertThat(delayLimiter.shouldInvoke(1L)).isTrue();
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
+
+    nanoTime = NANOS_PER_SECOND * 4;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
     assertThat(delayLimiter.shouldInvoke(1L)).isFalse();
   }
 
   @Test public void worksOnRollover() {
-    mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
 
-    when(System.nanoTime()).thenReturn(-NANOS_PER_SECOND);
+    nanoTime = -NANOS_PER_SECOND;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
-    when(System.nanoTime()).thenReturn(0L);
-    when(System.nanoTime()).thenReturn(0L);
+
+    nanoTime = 0L;
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 2);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 2);
+
+    nanoTime = NANOS_PER_SECOND * 2;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
   }
 
   @Test public void worksOnSameNanos() {
-    mockStatic(System.class);
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(3000).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ticker(ticker).ttl(3000).build();
 
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND);
+    nanoTime = NANOS_PER_SECOND;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
+
+    nanoTime = NANOS_PER_SECOND * 4;
     assertThat(delayLimiter.shouldInvoke(0L)).isTrue();
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
-    when(System.nanoTime()).thenReturn(NANOS_PER_SECOND * 4);
     assertThat(delayLimiter.shouldInvoke(0L)).isFalse();
   }
 
-  @Test(timeout = 15000L)
+  @Test(timeout = 1000L)
   public void maximumSize() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(15000).maxSize(1000).build();
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(1000).maxSize(1000).build();
 
     for (long i = 0; i < 10_000L; i++) {
       assertThat(delayLimiter.shouldInvoke(i)).isTrue();
@@ -112,26 +100,26 @@ public class DelayLimiterTest {
       .hasSize(1000);
   }
 
-  @Test(timeout = 15000L)
+  @Test(timeout = 2000L)
   public void maximumSize_parallel() throws InterruptedException {
     DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder()
-      .ttl(15000)
+      .ttl(1000)
       .maxSize(1000)
       .build();
 
     AtomicInteger trueCount = new AtomicInteger();
     ExecutorService exec = Executors.newFixedThreadPool(4);
 
-    int count = 1500;
-    CountDownLatch latch = new CountDownLatch(count);
+    long count = 10_000L;
+    CountDownLatch latch = new CountDownLatch((int) count);
     LongStream.range(0, count).forEach(i -> exec.execute(() -> {
       if (delayLimiter.shouldInvoke(i)) trueCount.incrementAndGet();
       latch.countDown();
     }));
 
-    assertThat(latch.await(10, TimeUnit.SECONDS)).isTrue();
+    assertThat(latch.await(1, TimeUnit.SECONDS)).isTrue();
     exec.shutdown();
-    assertThat(exec.awaitTermination(10, TimeUnit.SECONDS)).isTrue();
+    assertThat(exec.awaitTermination(1, TimeUnit.SECONDS)).isTrue();
 
     assertThat(trueCount.get()).isEqualTo(count);
 

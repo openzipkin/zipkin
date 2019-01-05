@@ -31,6 +31,7 @@ public final class DelayLimiter<C> {
   }
 
   public static final class Builder {
+    Ticker ticker = new Ticker();
     long ttlNanos = TimeUnit.HOURS.toNanos(1); // legacy default from cassandra
     int maximumSize = 5 * 1000; // Ex. 5 site tags with cardinality 1000 each
 
@@ -45,11 +46,16 @@ public final class DelayLimiter<C> {
     }
 
     /**
-     * This bounds supressions, useful because contexts can be accidentally unlimited cardinality.
+     * This bounds suppressions, useful because contexts can be accidentally unlimited cardinality.
      */
     public Builder maxSize(int maximumSize) {
       if (maximumSize <= 0) throw new IllegalArgumentException("maxSize <= 0");
       this.maximumSize = maximumSize;
+      return this;
+    }
+
+    Builder ticker(Ticker ticker) { // do not expose public: only for tests
+      this.ticker = ticker;
       return this;
     }
 
@@ -61,11 +67,19 @@ public final class DelayLimiter<C> {
     }
   }
 
+  static class Ticker { // not final for tests
+    long read() {
+      return System.nanoTime();
+    }
+  }
+
+  final Ticker ticker;
   final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
   final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
   final long ttlNanos, maximumSize;
 
   DelayLimiter(Builder builder) {
+    ticker = builder.ticker;
     ttlNanos = builder.ttlNanos;
     maximumSize = builder.maximumSize;
   }
@@ -76,19 +90,26 @@ public final class DelayLimiter<C> {
 
     if (cache.containsKey(context)) return false;
 
-    Suppression<C> suppression = new Suppression<>(context, System.nanoTime() + ttlNanos);
+    Suppression<C> suppression = new Suppression<>(ticker, context, ticker.read() + ttlNanos);
 
     if (cache.putIfAbsent(context, suppression) != null) return false; // lost race
 
     suppressions.offer(suppression);
 
-    // If we added an entry, it could make us go over the max size. This loops until we are no more
-    // than max size.
-    while (suppressions.size() > maximumSize) {
-      tryClearOneSuppression();
-    }
+    // If we added an entry, it could make us go over the max size.
+    if (suppressions.size() > maximumSize) removeOneSuppression();
 
     return true;
+  }
+
+  void removeOneSuppression() {
+    Suppression<C> eldest;
+    while ((eldest = suppressions.peek()) != null) { // loop unless empty
+      if (suppressions.remove(eldest)) { // check for lost race
+        cache.remove(eldest.context, eldest);
+        break; // to ensure we don't remove two!
+      }
+    }
   }
 
   public void invalidate(C context) {
@@ -101,20 +122,6 @@ public final class DelayLimiter<C> {
     suppressions.clear();
   }
 
-  /** This attempts to remove the oldest entry to free up one slot */
-  void tryClearOneSuppression() {
-    // This double-checks that another thread didn't remove the same context we peeked
-    Suppression<C> eldest;
-    if ((eldest = suppressions.peek()) != null && suppressions.remove(eldest)) {
-      // This double-checks that another thread didn't resolve the space problem
-      if (cache.size() > maximumSize) {
-        cache.remove(eldest.context, eldest);
-      } else { // We lost a race so should put the eldest back
-        suppressions.offer(eldest);
-      }
-    }
-  }
-
   void cleanupExpiredSuppressions() {
     Suppression<C> expiredSuppression;
     while ((expiredSuppression = suppressions.poll()) != null) {
@@ -123,16 +130,18 @@ public final class DelayLimiter<C> {
   }
 
   static final class Suppression<C> implements Delayed {
+    final Ticker ticker;
     final C context;
     final long expiration;
 
-    Suppression(C context, long expiration) {
+    Suppression(Ticker ticker, C context, long expiration) {
+      this.ticker = ticker;
       this.context = context;
       this.expiration = expiration;
     }
 
     @Override public long getDelay(TimeUnit unit) {
-      return unit.convert(expiration - System.nanoTime(), TimeUnit.NANOSECONDS);
+      return unit.convert(expiration - ticker.read(), TimeUnit.NANOSECONDS);
     }
 
     @Override public int compareTo(Delayed o) {
