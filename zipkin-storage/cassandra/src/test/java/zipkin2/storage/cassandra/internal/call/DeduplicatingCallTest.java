@@ -18,16 +18,10 @@ import com.datastax.driver.core.exceptions.DriverInternalError;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 import zipkin2.Call;
-import zipkin2.internal.DelayLimiter;
 
 import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.Futures.immediateFuture;
@@ -35,49 +29,11 @@ import static com.google.common.util.concurrent.MoreExecutors.listeningDecorator
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
-// Added to declutter console: tells power mock not to mess with implicit classes we aren't testing
-@PowerMockIgnore({"org.apache.logging.*", "javax.script.*"})
-@PrepareForTest(DelayLimiter.class)
 public class DeduplicatingCallTest {
-  Call<Void> constant = Call.create(null);
-
   Function<String, ListenableFuture<ResultSet>> delegate =
     s -> immediateFuture(mock(ResultSet.class));
   TestDeduplicatingCall.Factory callFactory = new TestDeduplicatingCall.Factory(delegate);
-
-  @Test
-  public void expiresWhenTtlPasses() {
-    mockStatic(System.class);
-
-    when(System.nanoTime()).thenReturn(0L);
-
-    Call<ResultSet> firstFoo = callFactory.create("foo");
-
-    // cached results return a constant value
-    assertThat(callFactory.create("foo")).isEqualTo(constant);
-
-    when(System.nanoTime()).thenReturn(100L);
-
-    // still, same result for the foo
-    assertThat(callFactory.create("foo")).isEqualTo(constant);
-
-    // add a key for the element that happened after "foo"
-    Call<ResultSet> firstBar = callFactory.create("bar");
-    assertThat(firstBar).isNotEqualTo(firstFoo);
-
-    // A second after the first call, we should try again
-    when(System.nanoTime()).thenReturn(TimeUnit.SECONDS.toNanos(1));
-
-    // first key refreshes
-    assertThat(callFactory.create("foo")).isNotEqualTo(constant);
-
-    // second key still caching
-    assertThat(callFactory.create("bar")).isEqualTo(constant);
-  }
 
   @Test
   public void exceptionArentCached_immediateFuture() throws Exception {
@@ -132,9 +88,6 @@ public class DeduplicatingCallTest {
   }
 
   void exceptionsArentCached() throws Exception {
-    mockStatic(System.class);
-    when(System.nanoTime()).thenReturn(0L);
-
     // Intentionally not dereferencing the future. We need to ensure that dropped failed
     // futures still purge!
     Call<ResultSet> firstFoo = callFactory.create("foo");
@@ -169,7 +122,7 @@ public class DeduplicatingCallTest {
       }
     }
 
-    @Override  protected ListenableFuture<ResultSet> newFuture() {
+    @Override protected ListenableFuture<ResultSet> newFuture() {
       return ((Factory) factory).delegate.apply(input);
     }
 
