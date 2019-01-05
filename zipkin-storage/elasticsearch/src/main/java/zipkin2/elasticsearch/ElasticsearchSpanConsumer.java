@@ -48,7 +48,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
   final Set<String> autocompleteKeys;
   final IndexNameFormatter indexNameFormatter;
   final boolean searchEnabled;
-  final DelayLimiter<String> delayLimiter;
+  final DelayLimiter<AutocompleteContext> delayLimiter;
 
   ElasticsearchSpanConsumer(ElasticsearchStorage es) {
     this.es = es;
@@ -93,7 +93,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
   static final class BulkSpanIndexer {
     final HttpBulkIndexer indexer;
     final ElasticsearchSpanConsumer consumer;
-    final List<String> pendingAutocompleteIds = new ArrayList<>();
+    final List<AutocompleteContext> pendingAutocompleteContexts = new ArrayList<>();
 
     BulkSpanIndexer(ElasticsearchSpanConsumer consumer) {
       this.indexer = new HttpBulkIndexer("index-span", consumer.es);
@@ -110,6 +110,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     }
 
     void addAutocompleteValues(long indexTimestamp, Span span) {
+      String idx = consumer.indexNameFormatter.formatTypeAndTimestamp(AUTOCOMPLETE, indexTimestamp);
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
         int length = tag.getKey().length() + tag.getValue().length() + 1;
         if (length > INDEX_CHARS_LIMIT) continue;
@@ -117,9 +118,11 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         // If the autocomplete whitelist doesn't contain the key, skip storing its value
         if (!consumer.autocompleteKeys.contains(tag.getKey())) continue;
 
-        String id = tag.getKey() + "=" + tag.getValue(); // same format as _q value
-        if (!consumer.delayLimiter.shouldInvoke(id)) continue;
-        pendingAutocompleteIds.add(id);
+        // Id is used to dedupe server side as necessary. Arbitrarily same format as _q value.
+        String id = tag.getKey() + "=" + tag.getValue();
+        AutocompleteContext context = new AutocompleteContext(indexTimestamp, id);
+        if (!consumer.delayLimiter.shouldInvoke(context)) continue;
+        pendingAutocompleteContexts.add(context);
 
         // encode using zipkin's internal buffer so we don't have to catch exceptions etc
         int sizeInBytes = 27; // {"tagKey":"","tagValue":""}
@@ -130,21 +133,16 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         b.writeAscii("\",\"tagValue\":\"").writeUtf8(jsonEscape(tag.getValue()));
         b.writeAscii("\"}");
         byte[] document = b.toByteArray();
-
-        String index =
-          consumer.indexNameFormatter.formatTypeAndTimestamp(AUTOCOMPLETE, indexTimestamp);
-        // Id of the document will be combination of {key,value} so that duplicate autocomplete
-        // keys can be avoided
-        indexer.add(index, AUTOCOMPLETE, document, id);
+        indexer.add(idx, AUTOCOMPLETE, document, id);
       }
     }
 
     Call<Void> newCall() {
       Call<Void> storeCall = indexer.newCall();
-      if (pendingAutocompleteIds.isEmpty()) return storeCall;
+      if (pendingAutocompleteContexts.isEmpty()) return storeCall;
       return storeCall.handleError((error, callback) -> {
-        for (String id : pendingAutocompleteIds) {
-          consumer.delayLimiter.invalidate(id);
+        for (AutocompleteContext context : pendingAutocompleteContexts) {
+          consumer.delayLimiter.invalidate(context);
         }
         callback.onError(error);
       });
@@ -210,5 +208,31 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     // starting at position 1 discards the old head of '{'
     System.arraycopy(suffix, 1, newSpanBytes, pos, suffix.length - 1);
     return newSpanBytes;
+  }
+
+  static final class AutocompleteContext {
+    final long indexTimestamp;
+    final String autocompleteId;
+
+    AutocompleteContext(long indexTimestamp, String autocompleteId) {
+      this.indexTimestamp = indexTimestamp;
+      this.autocompleteId = autocompleteId;
+    }
+
+    @Override public boolean equals(Object o) {
+      if (o == this) return true;
+      if (!(o instanceof AutocompleteContext)) return false;
+      AutocompleteContext that = (AutocompleteContext) o;
+      return indexTimestamp == that.indexTimestamp && autocompleteId.equals(that.autocompleteId);
+    }
+
+    @Override public int hashCode() {
+      int h$ = 1;
+      h$ *= 1000003;
+      h$ ^= (int) (h$ ^ ((indexTimestamp >>> 32) ^ indexTimestamp));
+      h$ *= 1000003;
+      h$ ^= (int) autocompleteId.hashCode();
+      return h$;
+    }
   }
 }
