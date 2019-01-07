@@ -57,7 +57,11 @@ class TraceSummary extends React.Component {
 
   renderBar(width, label) {
     return (
-      <div className="trace-summary__bar-container">
+      <div
+        className="trace-summary__bar-container"
+        role="presentation"
+        onClick={this.handleTimelineOpenToggle}
+      >
         <div
           className="trace-summary__bar-wrapper"
           style={{ width: `${width}%` }}
