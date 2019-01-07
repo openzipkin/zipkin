@@ -39,18 +39,13 @@ final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input>
     final Session session;
     final PreparedStatement preparedStatement;
 
-    /**
-     * @param indexTtl how long cassandra will persist the rows
-     * @param redundantCallTtl how long in milliseconds to obviate redundant calls
-     */
-    Factory(Session session, int indexTtl, int redundantCallTtl) {
-      super(redundantCallTtl);
-      this.session = session;
+    Factory(CassandraStorage storage) {
+      super(storage.autocompleteTtl(), storage.autocompleteCardinality());
+      session = storage.session();
       Insert insertQuery = QueryBuilder.insertInto(TABLE_SERVICE_SPANS)
         .value("service", QueryBuilder.bindMarker("service"))
         .value("span", QueryBuilder.bindMarker("span"));
-      if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
-      this.preparedStatement = session.prepare(insertQuery);
+      preparedStatement = session.prepare(insertQuery);
     }
 
     Input newInput(String service_name, String span_name) {

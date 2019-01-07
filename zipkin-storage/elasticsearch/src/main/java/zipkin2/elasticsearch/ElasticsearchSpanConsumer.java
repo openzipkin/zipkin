@@ -15,6 +15,7 @@ package zipkin2.elasticsearch;
 
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -30,26 +31,38 @@ import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
-import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.SpanConsumer;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
+import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
+import static zipkin2.internal.JsonEscaper.jsonEscape;
+import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
   static final Logger LOG = Logger.getLogger(ElasticsearchSpanConsumer.class.getName());
-
-  private static final int INDEX_CHARS_LIMIT = 256;
+  static final int INDEX_CHARS_LIMIT = 256;
+  static final ByteString EMPTY_JSON = ByteString.of(new byte[] {'{', '}'});
 
   final ElasticsearchStorage es;
+  final Set<String> autocompleteKeys;
+  final IndexNameFormatter indexNameFormatter;
+  final boolean searchEnabled;
+  final DelayLimiter<AutocompleteContext> delayLimiter;
 
   ElasticsearchSpanConsumer(ElasticsearchStorage es) {
     this.es = es;
+    this.autocompleteKeys = new LinkedHashSet<>(es.autocompleteKeys());
+    this.indexNameFormatter = es.indexNameFormatter();
+    this.searchEnabled = es.searchEnabled();
+    this.delayLimiter = DelayLimiter.newBuilder()
+      .ttl(es.autocompleteTtl())
+      .cardinality(es.autocompleteCardinality()).build();
   }
 
-  @Override
-  public Call<Void> accept(List<Span> spans) {
+  @Override public Call<Void> accept(List<Span> spans) {
     if (spans.isEmpty()) return Call.create(null);
-    BulkSpanIndexer indexer = new BulkSpanIndexer(es);
+    BulkSpanIndexer indexer = new BulkSpanIndexer(this);
     indexSpans(indexer, spans);
     return indexer.newCall();
   }
@@ -70,67 +83,69 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         if (indexTimestamp == 0L) indexTimestamp = System.currentTimeMillis();
       }
       indexer.add(indexTimestamp, span, spanTimestamp);
-      indexer.addTag(indexTimestamp, span);
+      if (searchEnabled && !span.tags().isEmpty()) {
+        indexer.addAutocompleteValues(indexTimestamp, span);
+      }
     }
   }
 
+  /** Mutable type used for each call to store spans */
   static final class BulkSpanIndexer {
     final HttpBulkIndexer indexer;
-    final IndexNameFormatter indexNameFormatter;
-    final boolean searchEnabled;
-    final Set<String> autocompleteKeys;
+    final ElasticsearchSpanConsumer consumer;
+    final List<AutocompleteContext> pendingAutocompleteContexts = new ArrayList<>();
 
-    BulkSpanIndexer(ElasticsearchStorage es) {
-      this.indexer = new HttpBulkIndexer("index-span", es);
-      this.indexNameFormatter = es.indexNameFormatter();
-      this.searchEnabled = es.searchEnabled();
-      this.autocompleteKeys = new LinkedHashSet<>(es.autocompleteKeys());
+    BulkSpanIndexer(ElasticsearchSpanConsumer consumer) {
+      this.indexer = new HttpBulkIndexer("index-span", consumer.es);
+      this.consumer = consumer;
     }
 
     void add(long indexTimestamp, Span span, long timestampMillis) {
-      String index =
-          indexNameFormatter.formatTypeAndTimestamp(ElasticsearchSpanStore.SPAN, indexTimestamp);
-      byte[] document =
-          searchEnabled
-              ? prefixWithTimestampMillisAndQuery(span, timestampMillis)
-              : SpanBytesEncoder.JSON_V2.encode(span);
-      indexer.add(
-          index, ElasticsearchSpanStore.SPAN, document, null /* Allow ES to choose an ID */);
+      String index = consumer.indexNameFormatter
+        .formatTypeAndTimestamp(SPAN, indexTimestamp);
+      byte[] document = consumer.searchEnabled
+        ? prefixWithTimestampMillisAndQuery(span, timestampMillis)
+        : SpanBytesEncoder.JSON_V2.encode(span);
+      indexer.add(index, SPAN, document, null /* Allow ES to choose an ID */);
     }
 
-    void addTag(long indexTimestamp, Span span) {
-      if (span.tags().isEmpty()) return;
-      try {
-        Buffer query = new Buffer();
-        for (Map.Entry<String, String> tag : span.tags().entrySet()) {
-          // If the autocomplete whitelist doesn't contain the key, skip storing its value
-          if (!autocompleteKeys.contains(tag.getKey())) continue;
+    void addAutocompleteValues(long indexTimestamp, Span span) {
+      String idx = consumer.indexNameFormatter.formatTypeAndTimestamp(AUTOCOMPLETE, indexTimestamp);
+      for (Map.Entry<String, String> tag : span.tags().entrySet()) {
+        int length = tag.getKey().length() + tag.getValue().length() + 1;
+        if (length > INDEX_CHARS_LIMIT) continue;
 
-          JsonWriter writer = JsonWriter.of(query);
-          writer.beginObject();
-          writer.name("tagKey");
-          writer.value(tag.getKey());
-          writer.name("tagValue");
-          writer.value(tag.getValue());
-          writer.endObject();
-          String index = indexNameFormatter.formatTypeAndTimestamp(AUTOCOMPLETE, indexTimestamp);
-          byte[] document = query.readByteArray();
-          query.clear();
-          // Id of the document will be combination of {key,value} so that duplicate autocomplete
-          // keys can be avoided
-          indexer.add(index, AUTOCOMPLETE, document, tag.getKey() + "|" + tag.getValue());
-        }
-      } catch (IOException e) {
-        // very unexpected to have an IOE for an in-memory write
-        assert false : "Error indexing autocomplete tags for span: " + span;
-        if (LOG.isLoggable(Level.FINE)) {
-          LOG.log(Level.FINE, "Error indexing autocomplete tags for span: " + span, e);
-        }
+        // If the autocomplete whitelist doesn't contain the key, skip storing its value
+        if (!consumer.autocompleteKeys.contains(tag.getKey())) continue;
+
+        // Id is used to dedupe server side as necessary. Arbitrarily same format as _q value.
+        String id = tag.getKey() + "=" + tag.getValue();
+        AutocompleteContext context = new AutocompleteContext(indexTimestamp, id);
+        if (!consumer.delayLimiter.shouldInvoke(context)) continue;
+        pendingAutocompleteContexts.add(context);
+
+        // encode using zipkin's internal buffer so we don't have to catch exceptions etc
+        int sizeInBytes = 27; // {"tagKey":"","tagValue":""}
+        sizeInBytes += jsonEscapedSizeInBytes(tag.getKey());
+        sizeInBytes += jsonEscapedSizeInBytes(tag.getValue());
+        zipkin2.internal.Buffer b = new zipkin2.internal.Buffer(sizeInBytes);
+        b.writeAscii("{\"tagKey\":\"").writeUtf8(jsonEscape(tag.getKey()));
+        b.writeAscii("\",\"tagValue\":\"").writeUtf8(jsonEscape(tag.getValue()));
+        b.writeAscii("\"}");
+        byte[] document = b.toByteArray();
+        indexer.add(idx, AUTOCOMPLETE, document, id);
       }
     }
 
-    HttpCall<Void> newCall() {
-      return indexer.newCall();
+    Call<Void> newCall() {
+      Call<Void> storeCall = indexer.newCall();
+      if (pendingAutocompleteContexts.isEmpty()) return storeCall;
+      return storeCall.handleError((error, callback) -> {
+        for (AutocompleteContext context : pendingAutocompleteContexts) {
+          consumer.delayLimiter.invalidate(context);
+        }
+        callback.onError(error);
+      });
     }
   }
 
@@ -149,8 +164,8 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
    * <p>Ex {@code curl -s localhost:9200/zipkin:span-2017-08-11/_search?q=_q:error=500}
    */
   static byte[] prefixWithTimestampMillisAndQuery(Span span, long timestampMillis) {
-    Buffer query = new Buffer();
-    JsonWriter writer = JsonWriter.of(query);
+    Buffer prefix = new Buffer();
+    JsonWriter writer = JsonWriter.of(prefix);
     try {
       writer.beginObject();
 
@@ -159,23 +174,14 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         writer.name("_q");
         writer.beginArray();
         for (Annotation a : span.annotations()) {
-          if (a.value().length() > INDEX_CHARS_LIMIT) {
-            continue;
-          }
+          if (a.value().length() > INDEX_CHARS_LIMIT) continue;
           writer.value(a.value());
         }
         for (Map.Entry<String, String> tag : span.tags().entrySet()) {
           int length = tag.getKey().length() + tag.getValue().length() + 1;
-          if (length > INDEX_CHARS_LIMIT) {
-            continue;
-          }
+          if (length > INDEX_CHARS_LIMIT) continue;
           writer.value(tag.getKey()); // search is possible by key alone
-          writer.value(
-              new StringBuilder(length)
-                  .append(tag.getKey())
-                  .append("=")
-                  .append(tag.getValue())
-                  .toString());
+          writer.value(tag.getKey() + "=" + tag.getValue());
         }
         writer.endArray();
       }
@@ -189,18 +195,44 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
       return SpanBytesEncoder.JSON_V2.encode(span);
     }
     byte[] document = SpanBytesEncoder.JSON_V2.encode(span);
-    if (query.rangeEquals(0L, ByteString.of(new byte[] {'{', '}'}))) {
-      return document;
-    }
-    byte[] prefix = query.readByteArray();
+    if (prefix.rangeEquals(0L, EMPTY_JSON)) return document;
+    return mergeJson(prefix.readByteArray(), document);
+  }
 
-    byte[] newSpanBytes = new byte[prefix.length + document.length - 1];
+  static byte[] mergeJson(byte[] prefix, byte[] suffix) {
+    byte[] newSpanBytes = new byte[prefix.length + suffix.length - 1];
     int pos = 0;
     System.arraycopy(prefix, 0, newSpanBytes, pos, prefix.length);
     pos += prefix.length;
     newSpanBytes[pos - 1] = ',';
     // starting at position 1 discards the old head of '{'
-    System.arraycopy(document, 1, newSpanBytes, pos, document.length - 1);
+    System.arraycopy(suffix, 1, newSpanBytes, pos, suffix.length - 1);
     return newSpanBytes;
+  }
+
+  static final class AutocompleteContext {
+    final long indexTimestamp;
+    final String autocompleteId;
+
+    AutocompleteContext(long indexTimestamp, String autocompleteId) {
+      this.indexTimestamp = indexTimestamp;
+      this.autocompleteId = autocompleteId;
+    }
+
+    @Override public boolean equals(Object o) {
+      if (o == this) return true;
+      if (!(o instanceof AutocompleteContext)) return false;
+      AutocompleteContext that = (AutocompleteContext) o;
+      return indexTimestamp == that.indexTimestamp && autocompleteId.equals(that.autocompleteId);
+    }
+
+    @Override public int hashCode() {
+      int h$ = 1;
+      h$ *= 1000003;
+      h$ ^= (int) (h$ ^ ((indexTimestamp >>> 32) ^ indexTimestamp));
+      h$ *= 1000003;
+      h$ ^= autocompleteId.hashCode();
+      return h$;
+    }
   }
 }

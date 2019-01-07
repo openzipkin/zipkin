@@ -32,14 +32,12 @@ import zipkin2.storage.cassandra.internal.call.AggregateCall;
 import static zipkin2.storage.cassandra.CassandraUtil.durationIndexBucket;
 
 class CassandraSpanConsumer implements SpanConsumer { // not final for testing
-  static final int WRITTEN_NAMES_TTL =
-    Integer.getInteger("zipkin2.storage.cassandra.internal.writtenNamesTtl", 60 * 60 * 1000);
   final Session session;
   final boolean strictTraceId, searchEnabled;
   final InsertSpan.Factory insertSpan;
   @Nullable final InsertTraceByServiceSpan.Factory insertTraceByServiceSpan;
   @Nullable final InsertServiceSpan.Factory insertServiceSpanName;
-  @Nullable final InsertAutocompleteValue.Factory insertTags;
+  @Nullable final InsertAutocompleteValue.Factory insertAutocompleteValue;
   final Set<String> autocompleteKeys;
 
   CassandraSpanConsumer(CassandraStorage storage) {
@@ -52,14 +50,13 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
 
     insertSpan = new InsertSpan.Factory(session, strictTraceId, searchEnabled);
     if (searchEnabled) {
-      int indexTtl = 0;
       insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
-      insertServiceSpanName = new InsertServiceSpan.Factory(session, indexTtl, WRITTEN_NAMES_TTL);
-      insertTags = new InsertAutocompleteValue.Factory(session, indexTtl, WRITTEN_NAMES_TTL);
+      insertServiceSpanName = new InsertServiceSpan.Factory(storage);
+      insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage);
     } else {
       insertTraceByServiceSpan = null;
       insertServiceSpanName = null;
-      insertTags = null;
+      insertAutocompleteValue = null;
     }
   }
 
@@ -131,7 +128,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       }
     }
     for (Map.Entry<String, String> entry : autocompleteTags) {
-      calls.add(insertTags.create(entry));
+      calls.add(insertAutocompleteValue.create(entry));
     }
     if (calls.size() == 1) return calls.get(0).map(r -> null);
     return new StoreSpansCall(calls);

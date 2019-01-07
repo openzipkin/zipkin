@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -111,8 +111,20 @@ public abstract class StorageComponent extends Component {
      *
      * @param keys controls the span values stored for auto-complete.
      */
-    public Builder autocompleteKeys(List<String> keys) {
+    public Builder autocompleteKeys(List<String> keys) { // not abstract as added later
       Logger.getLogger(getClass().getName()).info("autocompleteKeys not yet supported");
+      return this;
+    }
+
+    /** How long in milliseconds to suppress calls to write the same autocomplete key/value pair. */
+    public Builder autocompleteTtl(int autocompleteTtl) { // not abstract as added later
+      Logger.getLogger(getClass().getName()).info("autocompleteTtl not yet supported");
+      return this;
+    }
+
+    /** How many autocomplete key/value pairs to suppress at a time.  */
+    public Builder autocompleteCardinality(int autocompleteCardinality) { // not abstract as added later
+      Logger.getLogger(getClass().getName()).info("autocompleteCardinality not yet supported");
       return this;
     }
 

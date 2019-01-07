@@ -32,18 +32,14 @@ final class InsertAutocompleteValue extends DeduplicatingCall<Map.Entry<String, 
     final Session session;
     final PreparedStatement preparedStatement;
 
-    /**
-     * @param indexTtl how long cassandra will persist the rows
-     * @param redundantCallTtl how long in milliseconds to obviate redundant calls
-     */
-    Factory(Session session, int indexTtl, int redundantCallTtl) {
-      super(redundantCallTtl);
-      this.session = session;
+    Factory(CassandraStorage storage, int indexTtl) {
+      super(storage.autocompleteTtl, storage.autocompleteCardinality);
+      session = storage.session();
       Insert insertQuery = QueryBuilder.insertInto(TABLE_AUTOCOMPLETE_TAGS)
         .value("key", QueryBuilder.bindMarker("key"))
         .value("value", QueryBuilder.bindMarker("value"));
       if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
-      this.preparedStatement = session.prepare(insertQuery);
+      preparedStatement = session.prepare(insertQuery);
     }
 
     @Override protected InsertAutocompleteValue newCall(Map.Entry<String, String> input) {

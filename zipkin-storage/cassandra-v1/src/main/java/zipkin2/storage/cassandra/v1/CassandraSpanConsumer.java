@@ -33,8 +33,6 @@ import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
 final class CassandraSpanConsumer implements SpanConsumer {
-  static final int WRITTEN_NAMES_TTL =
-    Integer.getInteger("zipkin.store.cassandra.internal.writtenNamesTtl", 60 * 60 * 1000);
   final InsertTrace.Factory insertTrace;
   final InsertServiceName.Factory insertServiceName;
   final InsertSpanName.Factory insertSpanName;
@@ -44,14 +42,14 @@ final class CassandraSpanConsumer implements SpanConsumer {
   final Set<String> autocompleteKeys;
 
   CassandraSpanConsumer(CassandraStorage storage, CacheBuilderSpec indexCacheSpec) {
-    Session session = storage.session.get();
+    Session session = storage.session();
     metadata = Schema.readMetadata(session);
     int indexTtl = metadata.hasDefaultTtl ? 0 : storage.indexTtl;
     int spanTtl = metadata.hasDefaultTtl ? 0 : storage.spanTtl;
     insertTrace = new InsertTrace.Factory(session, metadata, spanTtl);
-    insertServiceName = new InsertServiceName.Factory(session, indexTtl, WRITTEN_NAMES_TTL);
-    insertSpanName = new InsertSpanName.Factory(session, indexTtl, WRITTEN_NAMES_TTL);
-    insertAutocompleteValue = new InsertAutocompleteValue.Factory(session, indexTtl, WRITTEN_NAMES_TTL);
+    insertServiceName = new InsertServiceName.Factory(storage, indexTtl);
+    insertSpanName = new InsertSpanName.Factory(storage, indexTtl);
+    insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage, indexTtl);
     indexer = new CompositeIndexer(session, indexCacheSpec, storage.bucketCount, indexTtl);
     autocompleteKeys = new LinkedHashSet<>(storage.autocompleteKeys);
   }

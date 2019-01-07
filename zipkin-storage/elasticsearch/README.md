@@ -143,3 +143,10 @@ PUT _ingest/pipeline/zipkin
   ]
 }
 ```
+
+## Tuning
+
+### Autocomplete indexing
+Redundant requests to store autocomplete values are ignored for an hour
+to reduce load. This is implemented by
+[DelayLimiter](../../zipkin/src/main/java/zipkin2/internal/DelayLimiter.java)

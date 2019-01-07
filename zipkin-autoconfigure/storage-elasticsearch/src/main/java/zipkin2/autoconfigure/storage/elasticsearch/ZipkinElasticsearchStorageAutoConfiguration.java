@@ -67,13 +67,17 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
       @Value("${zipkin.query.lookback:86400000}") int namesLookback,
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
       @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
-      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
+      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
+      @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
+      @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     return elasticsearch
         .toBuilder(client)
         .namesLookback(namesLookback)
         .strictTraceId(strictTraceId)
         .searchEnabled(searchEnabled)
-        .autocompleteKeys(autocompleteKeys);
+        .autocompleteKeys(autocompleteKeys)
+        .autocompleteTtl(autocompleteTtl)
+        .autocompleteCardinality(autocompleteCardinality);
   }
 
   static final class HttpLoggingSet implements Condition {

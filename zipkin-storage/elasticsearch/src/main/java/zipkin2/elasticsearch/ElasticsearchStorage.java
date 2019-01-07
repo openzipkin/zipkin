@@ -17,11 +17,11 @@ import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -34,14 +34,14 @@ import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
+import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
-import zipkin2.storage.AutocompleteTags;
 
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 @AutoValue
@@ -71,7 +71,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .namesLookback(86400000)
         .shutdownClientOnClose(false)
         .flushOnWrites(false)
-        .autocompleteKeys(new ArrayList<>());
+        .autocompleteKeys(Collections.emptyList())
+        .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
+        .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
 
   public static Builder newBuilder() {
@@ -190,8 +192,17 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     @Override
     public abstract Builder searchEnabled(boolean searchEnabled);
 
+    /** {@inheritDoc} */
     @Override
-    public abstract Builder autocompleteKeys(List<String> keys);
+    public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
+
+    /** {@inheritDoc} */
+    @Override
+    public abstract Builder autocompleteTtl(int autocompleteTtl);
+
+    /** {@inheritDoc} */
+    @Override
+    public abstract Builder autocompleteCardinality(int autocompleteCardinality);
 
     @Override
     public abstract ElasticsearchStorage build();
@@ -219,6 +230,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   abstract boolean searchEnabled();
 
   abstract List<String> autocompleteKeys();
+
+  abstract int autocompleteTtl();
+
+  abstract int autocompleteCardinality();
 
   abstract int indexShards();
 

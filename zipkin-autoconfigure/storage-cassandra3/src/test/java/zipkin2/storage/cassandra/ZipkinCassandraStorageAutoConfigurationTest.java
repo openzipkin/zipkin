@@ -120,4 +120,32 @@ public class ZipkinCassandraStorageAutoConfigurationTest {
     assertThat(context.getBean(CassandraStorage.class).autocompleteKeys())
       .containsOnly("environment");
   }
+
+  @Test
+  public void autocompleteTtl() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of(
+      "zipkin.storage.type:cassandra3",
+      "zipkin.storage.autocomplete-ttl:60000")
+      .applyTo(context);
+    Access.registerCassandra3(context);
+    context.refresh();
+
+    assertThat(context.getBean(CassandraStorage.class).autocompleteTtl())
+      .isEqualTo(60000);
+  }
+
+  @Test
+  public void autocompleteCardinality() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of(
+      "zipkin.storage.type:cassandra3",
+      "zipkin.storage.autocomplete-cardinality:5000")
+      .applyTo(context);
+    Access.registerCassandra3(context);
+    context.refresh();
+
+    assertThat(context.getBean(CassandraStorage.class).autocompleteCardinality())
+      .isEqualTo(5000);
+  }
 }

@@ -26,17 +26,13 @@ final class InsertServiceName extends DeduplicatingCall<String> {
     final Session session;
     final PreparedStatement preparedStatement;
 
-    /**
-     * @param indexTtl how long cassandra will persist the rows
-     * @param redundantCallTtl how long in milliseconds to obviate redundant calls
-     */
-    Factory(Session session, int indexTtl, int redundantCallTtl) {
-      super(redundantCallTtl);
-      this.session = session;
+    Factory(CassandraStorage storage, int indexTtl) {
+      super(storage.autocompleteTtl, storage.autocompleteCardinality);
+      session = storage.session();
       Insert insertQuery = QueryBuilder.insertInto(Tables.SERVICE_NAMES)
         .value("service_name", QueryBuilder.bindMarker("service_name"));
       if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
-      this.preparedStatement = session.prepare(insertQuery);
+      preparedStatement = session.prepare(insertQuery);
     }
 
     @Override protected InsertServiceName newCall(String input) {
