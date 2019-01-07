@@ -84,8 +84,8 @@ public class DelayLimiterTest {
   }
 
   @Test(timeout = 1000L)
-  public void maximumSize() {
-    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(1000).maxSize(1000).build();
+  public void cardinality() {
+    DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder().ttl(1000).cardinality(1000).build();
 
     for (long i = 0; i < 10_000L; i++) {
       assertThat(delayLimiter.shouldInvoke(i)).isTrue();
@@ -100,10 +100,10 @@ public class DelayLimiterTest {
   }
 
   @Test(timeout = 2000L)
-  public void maximumSize_parallel() throws InterruptedException {
+  public void cardinality_parallel() throws InterruptedException {
     DelayLimiter<Long> delayLimiter = DelayLimiter.newBuilder()
       .ttl(1000)
-      .maxSize(1000)
+      .cardinality(1000)
       .build();
 
     AtomicInteger trueCount = new AtomicInteger();
@@ -136,12 +136,12 @@ public class DelayLimiterTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void maximumSize_cantBeNegative() {
-    DelayLimiter.newBuilder().maxSize(-1);
+  public void cardinality_cantBeNegative() {
+    DelayLimiter.newBuilder().cardinality(-1);
   }
 
   @Test(expected = IllegalArgumentException.class)
-  public void maximumSize_cantBeZero() {
-    DelayLimiter.newBuilder().maxSize(0);
+  public void cardinality_cantBeZero() {
+    DelayLimiter.newBuilder().cardinality(0);
   }
 }

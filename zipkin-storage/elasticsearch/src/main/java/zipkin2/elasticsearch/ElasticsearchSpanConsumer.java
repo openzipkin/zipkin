@@ -56,8 +56,8 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     this.indexNameFormatter = es.indexNameFormatter();
     this.searchEnabled = es.searchEnabled();
     this.delayLimiter = DelayLimiter.newBuilder()
-      .ttl(es.autocompleteSuppressionTtl)
-      .maxSize(es.autocompleteSuppressionMaxSize).build();
+      .ttl(es.autocompleteTtl())
+      .cardinality(es.autocompleteCardinality()).build();
   }
 
   @Override public Call<Void> accept(List<Span> spans) {
@@ -231,7 +231,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
       h$ *= 1000003;
       h$ ^= (int) (h$ ^ ((indexTimestamp >>> 32) ^ indexTimestamp));
       h$ *= 1000003;
-      h$ ^= (int) autocompleteId.hashCode();
+      h$ ^= autocompleteId.hashCode();
       return h$;
     }
   }

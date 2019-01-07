@@ -37,21 +37,15 @@ final class InsertSpanName extends DeduplicatingCall<InsertSpanName.Input> {
     final Session session;
     final PreparedStatement preparedStatement;
 
-    /**
-     * @param indexTtl how long cassandra will persist the rows
-     * @param suppressionTtl milliseconds to obviate suppress calls to write the same service/span
-     * pair
-     * @param suppressionMaxSize maximum service/span pairs to suppress at a time
-     */
-    Factory(Session session, int indexTtl, int suppressionTtl, int suppressionMaxSize) {
-      super(suppressionTtl, suppressionMaxSize);
-      this.session = session;
+    Factory(CassandraStorage storage, int indexTtl) {
+      super(storage.autocompleteTtl, storage.autocompleteCardinality);
+      session = storage.session();
       Insert insertQuery = QueryBuilder.insertInto(Tables.SPAN_NAMES)
         .value("service_name", QueryBuilder.bindMarker("service_name"))
         .value("bucket", 0) // bucket is deprecated on this index
         .value("span_name", QueryBuilder.bindMarker("span_name"));
       if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
-      this.preparedStatement = session.prepare(insertQuery);
+      preparedStatement = session.prepare(insertQuery);
     }
 
     Input newInput(String service_name, String span_name) {

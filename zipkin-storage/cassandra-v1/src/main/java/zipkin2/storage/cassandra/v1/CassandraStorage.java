@@ -17,7 +17,6 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.cache.CacheBuilderSpec;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import zipkin2.CheckResult;
@@ -27,6 +26,7 @@ import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingCall;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -62,6 +62,8 @@ public final class CassandraStorage extends StorageComponent {
     int indexCacheTtl = 60;
     int indexFetchMultiplier = 3;
     List<String> autocompleteKeys = new ArrayList<>();
+    int autocompleteTtl = (int) TimeUnit.HOURS.toMillis(1);
+    int autocompleteCardinality = 5 * 4000; // Ex. 5 site tags with cardinality 4000 each
 
     /**
      * Used to avoid hot spots when writing indexes used to query by service name or annotation.
@@ -94,6 +96,18 @@ public final class CassandraStorage extends StorageComponent {
     @Override public Builder autocompleteKeys(List<String> keys) {
       if (keys == null) throw new NullPointerException("keys == null");
       this.autocompleteKeys = keys;
+      return this;
+    }
+
+    @Override public Builder autocompleteTtl(int autocompleteTtl) {
+      if (autocompleteTtl <= 0) throw new IllegalArgumentException("autocompleteTtl <= 0");
+      this.autocompleteTtl = autocompleteTtl;
+      return this;
+    }
+
+    @Override public Builder autocompleteCardinality(int autocompleteCardinality) {
+      if (autocompleteCardinality <= 0) throw new IllegalArgumentException("autocompleteCardinality <= 0");
+      this.autocompleteCardinality = autocompleteCardinality;
       return this;
     }
 
@@ -267,6 +281,8 @@ public final class CassandraStorage extends StorageComponent {
   final boolean strictTraceId, searchEnabled;
   final LazySession session;
   final List<String> autocompleteKeys;
+  final int autocompleteTtl;
+  final int autocompleteCardinality;
 
   /** close is typically called from a different thread */
   volatile boolean closeCalled;
@@ -300,6 +316,8 @@ public final class CassandraStorage extends StorageComponent {
     }
     this.indexFetchMultiplier = b.indexFetchMultiplier;
     this.autocompleteKeys = b.autocompleteKeys;
+    this.autocompleteTtl = b.autocompleteTtl;
+    this.autocompleteCardinality = b.autocompleteCardinality;
   }
 
   /** Lazy initializes or returns the session in use by this storage component. */

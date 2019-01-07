@@ -17,11 +17,11 @@ import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -71,7 +71,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .namesLookback(86400000)
         .shutdownClientOnClose(false)
         .flushOnWrites(false)
-        .autocompleteKeys(new ArrayList<>());
+        .autocompleteKeys(Collections.emptyList())
+        .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
+        .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
 
   public static Builder newBuilder() {
@@ -190,8 +192,17 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     @Override
     public abstract Builder searchEnabled(boolean searchEnabled);
 
+    /** {@inheritDoc} */
     @Override
-    public abstract Builder autocompleteKeys(List<String> keys);
+    public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
+
+    /** {@inheritDoc} */
+    @Override
+    public abstract Builder autocompleteTtl(int autocompleteTtl);
+
+    /** {@inheritDoc} */
+    @Override
+    public abstract Builder autocompleteCardinality(int autocompleteCardinality);
 
     @Override
     public abstract ElasticsearchStorage build();
@@ -220,6 +231,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   abstract List<String> autocompleteKeys();
 
+  abstract int autocompleteTtl();
+
+  abstract int autocompleteCardinality();
+
   abstract int indexShards();
 
   abstract int indexReplicas();
@@ -227,9 +242,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public abstract IndexNameFormatter indexNameFormatter();
 
   public abstract int namesLookback();
-
-  int autocompleteSuppressionTtl = 60 * 60 * 1000; // legacy 1 hr default from cassandra
-  int autocompleteSuppressionMaxSize = 5 * 1000; // Ex. 5 site tags with cardinality 1000 each
 
   @Override
   public SpanStore spanStore() {

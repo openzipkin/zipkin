@@ -19,8 +19,9 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
@@ -64,7 +65,9 @@ public abstract class CassandraStorage extends StorageComponent {
         .maxTraceCols(100000)
         .indexFetchMultiplier(3)
         .sessionFactory(SessionFactory.DEFAULT)
-        .autocompleteKeys(new ArrayList<>());
+        .autocompleteKeys(Collections.emptyList())
+        .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
+        .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
 
   @AutoValue.Builder
@@ -80,6 +83,14 @@ public abstract class CassandraStorage extends StorageComponent {
     /** {@inheritDoc} */
     @Override
     public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
+
+    /** {@inheritDoc} */
+    @Override
+    public abstract Builder autocompleteTtl(int autocompleteTtl);
+
+    /** {@inheritDoc} */
+    @Override
+    public abstract Builder autocompleteCardinality(int autocompleteCardinality);
 
     /** Override to control how sessions are created. */
     public abstract Builder sessionFactory(SessionFactory sessionFactory);
@@ -134,8 +145,8 @@ public abstract class CassandraStorage extends StorageComponent {
     /**
      * How many more index rows to fetch than the user-supplied query limit. Defaults to 3.
      *
-     * <p>Backend requests will request {@link QueryRequest#limit} times this factor rows from
-     * Cassandra indexes in attempts to return {@link QueryRequest#limit} traces.
+     * <p>Backend requests will request {@link QueryRequest#limit()} times this factor rows from
+     * Cassandra indexes in attempts to return {@link QueryRequest#limit()} traces.
      *
      * <p>Indexing in cassandra will usually have more rows than trace identifiers due to factors
      * including table design and collection implementation. As there's no way to DISTINCT out
@@ -177,6 +188,10 @@ public abstract class CassandraStorage extends StorageComponent {
   abstract boolean searchEnabled();
 
   abstract List<String> autocompleteKeys();
+
+  abstract int autocompleteTtl();
+
+  abstract int autocompleteCardinality();
 
   abstract SessionFactory sessionFactory();
 

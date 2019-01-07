@@ -24,8 +24,8 @@ public abstract class DeduplicatingCall<I> extends ResultSetFutureCall {
   public abstract static class Factory<I, C extends DeduplicatingCall<I>> {
     final DelayLimiter<I> delayLimiter;
 
-    protected Factory(int ttl, int maximumSize) {
-      delayLimiter = DelayLimiter.newBuilder().ttl(ttl).maxSize(maximumSize).build();
+    protected Factory(int ttl, int cardinality) {
+      delayLimiter = DelayLimiter.newBuilder().ttl(ttl).cardinality(cardinality).build();
     }
 
     protected abstract C newCall(I input);

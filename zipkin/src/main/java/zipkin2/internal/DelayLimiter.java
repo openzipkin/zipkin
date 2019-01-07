@@ -33,7 +33,7 @@ public final class DelayLimiter<C> {
   public static final class Builder {
     Ticker ticker = new Ticker();
     long ttlNanos = TimeUnit.HOURS.toNanos(1); // legacy default from cassandra
-    int maximumSize = 5 * 1000; // Ex. 5 site tags with cardinality 1000 each
+    int cardinality = 5 * 4000; // Ex. 5 site tags with cardinality 4000 each
 
     /**
      * When {@link #shouldInvoke(Object)} returns true, it will return false until this duration
@@ -48,9 +48,9 @@ public final class DelayLimiter<C> {
     /**
      * This bounds suppressions, useful because contexts can be accidentally unlimited cardinality.
      */
-    public Builder maxSize(int maximumSize) {
-      if (maximumSize <= 0) throw new IllegalArgumentException("maxSize <= 0");
-      this.maximumSize = maximumSize;
+    public Builder cardinality(int cardinality) {
+      if (cardinality <= 0) throw new IllegalArgumentException("cardinality <= 0");
+      this.cardinality = cardinality;
       return this;
     }
 
@@ -76,12 +76,12 @@ public final class DelayLimiter<C> {
   final Ticker ticker;
   final ConcurrentHashMap<C, Suppression<C>> cache = new ConcurrentHashMap<>();
   final DelayQueue<Suppression<C>> suppressions = new DelayQueue<>();
-  final long ttlNanos, maximumSize;
+  final long ttlNanos, cardinality;
 
   DelayLimiter(Builder builder) {
     ticker = builder.ticker;
     ttlNanos = builder.ttlNanos;
-    maximumSize = builder.maximumSize;
+    cardinality = builder.cardinality;
   }
 
   /** Returns true if a given context should be invoked. */
@@ -97,7 +97,7 @@ public final class DelayLimiter<C> {
     suppressions.offer(suppression);
 
     // If we added an entry, it could make us go over the max size.
-    if (suppressions.size() > maximumSize) removeOneSuppression();
+    if (suppressions.size() > cardinality) removeOneSuppression();
 
     return true;
   }
