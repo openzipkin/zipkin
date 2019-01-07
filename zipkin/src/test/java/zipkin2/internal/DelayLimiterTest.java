@@ -13,7 +13,6 @@
  */
 package zipkin2.internal;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -110,18 +109,15 @@ public class DelayLimiterTest {
     AtomicInteger trueCount = new AtomicInteger();
     ExecutorService exec = Executors.newFixedThreadPool(4);
 
-    long count = 10_000L;
-    CountDownLatch latch = new CountDownLatch((int) count);
+    int count = 10_000;
     LongStream.range(0, count).forEach(i -> exec.execute(() -> {
       if (delayLimiter.shouldInvoke(i)) trueCount.incrementAndGet();
-      latch.countDown();
     }));
 
-    assertThat(latch.await(1, TimeUnit.SECONDS)).isTrue();
     exec.shutdown();
     assertThat(exec.awaitTermination(1, TimeUnit.SECONDS)).isTrue();
 
-    assertThat(trueCount.get()).isEqualTo(count);
+    assertThat(trueCount).hasValue(count);
 
     // verify internal state
     assertThat(delayLimiter.cache)
