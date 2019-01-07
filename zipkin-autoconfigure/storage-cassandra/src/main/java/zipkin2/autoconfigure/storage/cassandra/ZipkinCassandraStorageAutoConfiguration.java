@@ -47,11 +47,15 @@ class ZipkinCassandraStorageAutoConfiguration {
       ZipkinCassandraStorageProperties properties,
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
       @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
-      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
+      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
+      @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
+      @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     CassandraStorage.Builder builder = properties.toBuilder()
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
-      .autocompleteKeys(autocompleteKeys);
+      .autocompleteKeys(autocompleteKeys)
+      .autocompleteTtl(autocompleteTtl)
+      .autocompleteCardinality(autocompleteCardinality);
     return tracingSessionFactory == null
         ? builder.build()
         : builder.sessionFactory(tracingSessionFactory).build();

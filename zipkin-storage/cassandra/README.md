@@ -73,9 +73,9 @@ perform query operations. The most important aspects are described below.
 See [CassandraStorage](src/main/java/zipkin2/storage/cassandra/CassandraStorage.java) for details.
 
 ### Autocomplete indexing
-Redundant requests to store service names, span names, and autocomplete
-values are ignored for an hour to reduce load. This is implemented by
-[DeduplicatingCall](src/main/java/zipkin2/storage/cassandra/internal/call/DeduplicatingCall.java).
+Redundant requests to store autocomplete values are ignored for an hour
+to reduce load. This is implemented by
+[DelayLimiter](../../zipkin/src/main/java/zipkin2/internal/DelayLimiter.java)
 
 ### Trace indexing
 Indexing in CQL is simplified by SASI, for example, reducing the number

@@ -47,6 +47,8 @@ zipkin:
     strict-trace-id: ${STRICT_TRACE_ID:true}
     search-enabled: ${SEARCH_ENABLED:true}
     autocomplete-keys: ${AUTOCOMPLETE_KEYS:}
+    autocomplete-ttl: ${AUTOCOMPLETE_TTL:3600000}
+    autocomplete-cardinality: 20000
     type: ${STORAGE_TYPE:mem}
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.

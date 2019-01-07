@@ -390,6 +390,34 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
       .containsOnly("environment");
   }
 
+  @Test
+  public void autocompleteTtl() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.autocomplete-ttl:60000")
+      .applyTo(context);
+    Access.registerElasticsearchHttp(context);
+    context.refresh();
+
+    assertThat(context.getBean(ElasticsearchStorage.class).autocompleteTtl())
+      .isEqualTo(60000);
+  }
+
+  @Test
+  public void autocompleteCardinality() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.autocomplete-cardinality:5000")
+      .applyTo(context);
+    Access.registerElasticsearchHttp(context);
+    context.refresh();
+
+    assertThat(context.getBean(ElasticsearchStorage.class).autocompleteCardinality())
+      .isEqualTo(5000);
+  }
+
   ElasticsearchStorage es() {
     return context.getBean(ElasticsearchStorage.class);
   }
