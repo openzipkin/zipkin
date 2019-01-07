@@ -6,11 +6,9 @@
 .condition-limit__input {
   height: 100%;
   padding: 0px 2px 0px 4px;
-  outline: 0;
-  border: 0;
   box-sizing: border-box;
   color: #ffffff;
-  background: linear-gradient(to bottom, $gray-1, $dark-3);
+  background: linear-gradient(to bottom, $dark-5, $dark-3);
   width: 76px;
   font-size: 13px;
   display: flex;
@@ -18,13 +16,6 @@
 }
 
 .condition-limit__input--focused {
-  height: 100%;
-  padding: 0px 2px 0px 4px;
   outline: 0;
   border: 0;
-  box-sizing: border-box;
-  color: #ffffff;
-  background: linear-gradient(to bottom, $gray-1, $dark-3);
-  width: 76px;
-  font-size: 13px;
 }

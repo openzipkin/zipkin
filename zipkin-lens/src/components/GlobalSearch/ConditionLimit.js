@@ -52,7 +52,7 @@ class ConditionLimit extends React.Component {
                   }
                   onLimitChange(newLimit);
                 }}
-                className="condition-limit__input--focused"
+                className="condition-limit__input condition-limit__input--focused"
                 onKeyDown={this.handleKeyDown}
                 onFocus={this.handleFocus}
                 onBlur={this.handleBlur}

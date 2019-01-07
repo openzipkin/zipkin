@@ -10,11 +10,8 @@
   overflow: scroll;
   margin-right: 15px;
   padding: 9px;
-  color: $dark-2;
-  background: $gray-10;
-  border-radius: 3px;
-  border: 1px solid #898989;
-  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
+  color: $gray-11;
+  background: $gray-2;
 
   align-items: center;
   -ms-flex-align: center;
@@ -56,8 +53,7 @@
   font-size: 13px;
   width: 76px;
   height: 50px;
-  border-right: solid 1px #222222;
-  background: linear-gradient(to bottom, #676767, #464646);
+  border-right: solid 1px $gray-3;
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
   overflow: hidden;

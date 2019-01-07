@@ -8,7 +8,7 @@
   border-radius: 0px !important;
   cursor: pointer !important;
   color: #ffffff !important;
-  background: linear-gradient(to bottom, $gray-1, $dark-3) !important;
+  background: linear-gradient(to bottom, $dark-5, $dark-3) !important;
 }
 
 .condition-lookback-select__single-value {
@@ -20,7 +20,7 @@
   padding-left: 3px;
   padding-right: 3px;
   color: #ffffff;
-  background-color: #787878;
+  background-color: $gray-4;
   box-sizing: border-box;
   display: flex;
   align-items: center;
