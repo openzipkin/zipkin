@@ -11,24 +11,7 @@ import ConditionName from './ConditionName';
 import ConditionAnnotationQuery from './ConditionAnnotationQuery';
 import ConditionLookback from './ConditionLookback';
 import { buildQueryParameters } from '../../util/api';
-
-const conditionList = [
-  'serviceName',
-  'spanName',
-  'minDuration',
-  'maxDuration',
-  'annotationQuery',
-];
-
-const lookbackDurations = {
-  '1h': 3600000,
-  '2h': 7200000,
-  '6h': 21600000,
-  '12h': 43200000,
-  '1d': 86400000,
-  '2d': 172800000,
-  '7d': 604800000,
-};
+import { lookbackDurations, orderedConditionKeyList } from '../../util/global-search';
 
 const propTypes = {
   services: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -195,8 +178,8 @@ class GlobalSearch extends React.Component {
     });
 
     const result = [];
-    for (let i = 0; i < conditionList.length; i += 1) {
-      const conditionKey = conditionList[i];
+    for (let i = 0; i < orderedConditionKeyList.length; i += 1) {
+      const conditionKey = orderedConditionKeyList[i];
 
       // The currently focused conditionName is also available.
       if (conditionKey === currentConditionKey) {

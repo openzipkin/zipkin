@@ -2,36 +2,7 @@ import moment from 'moment';
 import shortid from 'shortid';
 
 import * as types from '../constants/action-types';
-
-const orderedConditionList = [
-  'serviceName',
-  'spanName',
-  'minDuration',
-  'maxDuration',
-  'annotationQuery',
-];
-
-const defaultConditionValues = {
-  serviceName: 'all',
-  spanName: 'all',
-  minDuration: 10,
-  maxDuration: 100,
-  annotationQuery: 'error',
-};
-
-const nextInitialConditionKey = (conditions) => {
-  const existingConditionsMemo = {};
-  conditions.forEach((condition) => {
-    existingConditionsMemo[condition.key] = true;
-  });
-  for (let i = 0; i < orderedConditionList.length; i += 1) {
-    const conditionName = orderedConditionList[i];
-    if (!existingConditionsMemo[conditionName]) {
-      return conditionName;
-    }
-  }
-  return 'annotationQuery';
-};
+import { defaultConditionValues, nextInitialConditionKey } from '../util/global-search';
 
 const initialState = {
   conditions: [],
