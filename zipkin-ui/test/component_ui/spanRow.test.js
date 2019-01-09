@@ -169,7 +169,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
           value: '192.168.99.101:9000 (backend)'
         }
       ],
-      serviceName: 'frontend', // prefer the local address vs remote
+      serviceName: 'backend', // prefer the client remote address vs local
       serviceNames: ['backend', 'frontend'],
       errorType: 'none'
     };
@@ -297,7 +297,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
         }
       ],
       tags: [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}],
-      serviceName: 'frontend',
+      serviceName: 'backend',
       serviceNames: ['backend', 'frontend'],
       errorType: 'none'
     };

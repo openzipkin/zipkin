@@ -289,13 +289,18 @@ export function newSpanRow(spansToMerge) {
       if (!res.duration && next.duration) res.duration = next.duration;
     }
 
-    const nextServiceName = getServiceName(next.localEndpoint);
-    if (nextServiceName && (!res.serviceName || next.kind === 'SERVER')) {
-      res.serviceName = nextServiceName; // prefer the server's service name
+    const nextLocalServiceName = getServiceName(next.localEndpoint);
+    const nextRemoteServiceName = getServiceName(next.remoteEndpoint);
+    if (nextLocalServiceName && next.kind === 'SERVER') {
+      res.serviceName = nextLocalServiceName; // prefer the server's service name
+    } else if (nextRemoteServiceName && next.kind === 'CLIENT' && !res.serviceName) {
+      res.serviceName = nextRemoteServiceName;
+    } else if (nextLocalServiceName && !res.serviceName) {
+      res.serviceName = nextLocalServiceName;
     }
 
-    maybePushServiceName(res.serviceNames, nextServiceName);
-    maybePushServiceName(res.serviceNames, getServiceName(next.remoteEndpoint));
+    maybePushServiceName(res.serviceNames, nextLocalServiceName);
+    maybePushServiceName(res.serviceNames, nextRemoteServiceName);
 
     parseAnnotationRows(next).forEach((a) => maybePushAnnotation(res.annotations, a));
     parseTagRows(next).forEach((t) => maybePushTag(res.tags, t));
