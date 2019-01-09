@@ -11,7 +11,9 @@
   margin-right: 15px;
   padding: 9px;
   color: $gray-11;
-  background: $gray-2;
+  background: $dark-5;
+  border-radius: 3px;
+  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
 
   align-items: center;
   -ms-flex-align: center;
