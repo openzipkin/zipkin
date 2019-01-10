@@ -71,7 +71,7 @@ export function traceToMustache(root, logsUrl) {
     // This is more than a normal tree traversal, as we are merging any server spans that share the
     // same ID. When that's the case, we pull up any of their children as if they are our own.
     const spansToMerge = [current.span];
-    const isLeafSpan = current.children.length === 0
+    const isLeafSpan = current.children.length === 0;
     const childIds = [];
     const toPrefix = [];
     current.children.forEach(child => {
