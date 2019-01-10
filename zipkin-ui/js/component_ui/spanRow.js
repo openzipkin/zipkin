@@ -263,7 +263,7 @@ function getServiceName(endpoint) {
 }
 
 // Merges the data into a single span row, which is lacking presentation information
-export function newSpanRow(spansToMerge) {
+export function newSpanRow(spansToMerge, isLeafSpan) {
   const first = spansToMerge[0];
   const res = {
     spanId: first.id,
@@ -293,8 +293,8 @@ export function newSpanRow(spansToMerge) {
     const nextRemoteServiceName = getServiceName(next.remoteEndpoint);
     if (nextLocalServiceName && next.kind === 'SERVER') {
       res.serviceName = nextLocalServiceName; // prefer the server's service name
-    } else if (nextRemoteServiceName && next.kind === 'CLIENT' && !res.serviceName) {
-      res.serviceName = nextRemoteServiceName;
+    } else if (isLeafSpan && nextRemoteServiceName && next.kind === 'CLIENT' && !res.serviceName) {
+      res.serviceName = nextRemoteServiceName; // use the client's remote service name only on leaf spans
     } else if (nextLocalServiceName && !res.serviceName) {
       res.serviceName = nextLocalServiceName;
     }
