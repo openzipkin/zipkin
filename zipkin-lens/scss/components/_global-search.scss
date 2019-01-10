@@ -10,10 +10,10 @@
   overflow: scroll;
   margin-right: 15px;
   padding: 9px;
-  color: $gray-11;
-  background: $dark-5;
+  color: $dark-5;
+  background: $gray-11;
+  border: 1px solid $gray-8;
   border-radius: 3px;
-  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
 
   align-items: center;
   -ms-flex-align: center;
@@ -27,8 +27,8 @@
 }
 
 .global-search__search-condition-wrapper {
-  padding-top: 2px;
-  padding-bottom: 2px;
+  padding-top: 1px;
+  padding-bottom: 1px;
   padding-left: 4px;
   padding-right: 4px;
 }
@@ -44,6 +44,7 @@
   border-radius: 3px;
   color: #ffffff;
   margin-right: 2px;
+  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
 }
 
 .global-search__add-condition-button-icon {
@@ -55,11 +56,13 @@
   font-size: 13px;
   width: 76px;
   height: 50px;
-  border-right: solid 1px $gray-3;
+  border-right: solid 1px $gray-8;
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;
+  border: 1px solid $gray-7;
+  box-sizing: border-box;
 }
 
 .global-search__condition-lookback-wrapper {
@@ -79,6 +82,7 @@
   background: #9989ef;
   border-radius: 3px;
   cursor: pointer;
+  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
 }
 
 .global-search__find-button-icon {

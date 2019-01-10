@@ -7,20 +7,22 @@
   border: 0 !important;
   border-radius: 0px !important;
   cursor: pointer !important;
-  color: #ffffff !important;
-  background: linear-gradient(to bottom, $dark-5, $dark-3) !important;
+  color: $dark-2 !important;
+  background: linear-gradient(to bottom, $gray-10, $gray-9) !important;
+  border: 1px solid $gray-7 !important;
+  box-sizing: border-box !important;
 }
 
 .condition-lookback-select__single-value {
-  color: #ffffff !important;
+  color: $dark-2 !important;
 }
 
 .condition-lookback__custom {
   padding: 0;
   padding-left: 3px;
   padding-right: 3px;
-  color: #ffffff;
-  background-color: $gray-4;
+  color: $dark-2;
+  background-color: $gray-8;
   box-sizing: border-box;
   display: flex;
   align-items: center;

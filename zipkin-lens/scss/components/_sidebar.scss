@@ -4,15 +4,17 @@
   top: 0;
   height: 100vh;
   width: 80px;
-  color: $gray-10;
-  background-color: $dark-4;
+  color: $gray-11;
+  background-color: #6A9FB5;
   z-index: 10000;
   font-size: 11px;
+  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);  
 }
 
 .sidebar__menu {
   & a {
     color: #dedede;
+  color: $gray-11;
     text-decoration: none;
   }
 }
@@ -29,7 +31,9 @@
   justify-content: center;
   padding: 4px;
   box-sizing: border-box;
-  background: linear-gradient(to bottom, $gray-2, $dark-5);
+  color: $dark-4;
+  background: #7baFc6;
+  border-right: 1px solid $gray-9;
 }
 
 .sidebar__page-option-icon {
@@ -45,12 +49,12 @@
   box-sizing: border-box;
   display: flex;
   justify-content: center;
-  background: linear-gradient(to bottom, $gray-1, $dark-4);
+  background: linear-gradient(to bottom, #7baFc6, #6A9FB5);
 }
 
 .sidebar__brand-logo {
   width: 80px;
   & * {
-    fill: $gray-10;
+    fill: $gray-11;
   }
 }
