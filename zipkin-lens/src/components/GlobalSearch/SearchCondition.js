@@ -62,12 +62,12 @@ class SearchCondition extends React.Component {
 
   handleKeyFocus() {
     this.setState({ isKeyFocused: true });
-    setTimeout(() => { this.setState({ isKeyMenuOpened: true }); }, 150);
+    setTimeout(() => { this.setState({ isKeyMenuOpened: true }); }, 10);
   }
 
   handleKeyBlur() {
     this.setState({ isKeyFocused: false });
-    this.setState({ isKeyMenuOpened: false });
+    setTimeout(() => { this.setState({ isKeyMenuOpened: false }); }, 10);
   }
 
   handleValueFocus() {

@@ -22,7 +22,7 @@ const ServiceNameBadge = ({
   const style = {
     backgroundColor: getServiceNameColor(serviceName),
   };
-  const text = count ? `${serviceName}x${count}` : serviceName;
+  const text = count ? `${serviceName} x ${count}` : serviceName;
   return (
     <span
       style={style}

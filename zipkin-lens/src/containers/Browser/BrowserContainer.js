@@ -26,13 +26,9 @@ const mapStateToProps = (state, ownProps) => {
   );
 
   const skewCorrectedTracesMap = {};
-  correctedTraces.forEach((trace) => {
-    const { span } = trace;
-    // There are cases where there is no span.
-    // The reason is unknown.
-    if (span && span.traceId) {
-      skewCorrectedTracesMap[span.traceId] = trace;
-    }
+  correctedTraces.forEach((trace, index) => {
+    const { traceId } = correctedSummaries[index];
+    skewCorrectedTracesMap[traceId] = trace;
   });
 
   return {
