@@ -10,8 +10,12 @@ import ConditionLimit from './ConditionLimit';
 import ConditionName from './ConditionName';
 import ConditionAnnotationQuery from './ConditionAnnotationQuery';
 import ConditionLookback from './ConditionLookback';
-import { buildQueryParameters } from '../../util/api';
-import { lookbackDurations, orderedConditionKeyList } from '../../util/global-search';
+import {
+  orderedConditionKeyList,
+  buildQueryParametersWithConditions,
+  buildApiQueryParameters,
+  extractConditionsFromQueryParameters,
+} from '../../util/global-search';
 
 const propTypes = {
   services: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -99,68 +103,15 @@ class GlobalSearch extends React.Component {
 
   getConditionsFromQueryParameters() {
     const { location } = this.props;
-    const conditions = [];
-    const lookbackCondition = {};
-    let limitCondition = 10;
-
     if (location.search !== '' && location.search !== '?') {
       const queryParameters = queryString.parse(location.search);
-      Object.keys(queryParameters).forEach((conditionKey) => {
-        const conditionValue = queryParameters[conditionKey];
-        switch (conditionKey) {
-          case 'serviceName':
-          case 'spanName':
-            conditions.push({
-              key: conditionKey,
-              value: conditionValue,
-            });
-            break;
-          case 'minDuration':
-          case 'maxDuration':
-            conditions.push({
-              key: conditionKey,
-              value: parseInt(conditionValue, 10),
-            });
-            break;
-          case 'annotationQuery':
-            conditionValue.split(' and ').forEach((annotationQuery) => {
-              conditions.push({
-                key: conditionKey,
-                value: annotationQuery,
-              });
-            });
-            break;
-          case 'limit':
-            limitCondition = parseInt(conditionValue, 10);
-            break;
-          case 'lookback':
-            switch (conditionValue) {
-              case '1h':
-              case '2h':
-              case '6h':
-              case '12h':
-              case '1d':
-              case '2d':
-              case '7d': {
-                lookbackCondition.value = conditionValue;
-                lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
-                break;
-              }
-              case 'custom':
-                lookbackCondition.value = conditionValue;
-                lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
-                lookbackCondition.startTs = parseInt(queryParameters.startTs, 10);
-                break;
-              default:
-                break;
-            }
-            break;
-          default:
-            break;
-        }
-      });
+      return extractConditionsFromQueryParameters(queryParameters);
     }
-    return { conditions, lookbackCondition, limitCondition };
+    return {
+      conditions: [],
+      lookbackCondition: {},
+      limitCondition: null,
+    };
   }
 
   // Make the availability with the already specified condition being false,
@@ -203,43 +154,7 @@ class GlobalSearch extends React.Component {
     const { fetchTraces } = this.props;
     if (location.search !== '' && location.search !== '?') {
       const queryParameters = queryString.parse(location.search);
-      const apiQueryParameters = {};
-
-      Object.keys(queryParameters).forEach((conditionKey) => {
-        const conditionValue = queryParameters[conditionKey];
-        switch (conditionKey) {
-          case 'serviceName':
-          case 'spanName':
-          case 'minDuration':
-          case 'maxDuration':
-          case 'annotationQuery':
-          case 'limit':
-            apiQueryParameters[conditionKey] = conditionValue;
-            break;
-          case 'lookback':
-            switch (conditionValue) {
-              case '1h':
-              case '2h':
-              case '6h':
-              case '12h':
-              case '1d':
-              case '2d':
-              case '7d':
-                apiQueryParameters.endTs = queryParameters.endTs;
-                apiQueryParameters.lookback = lookbackDurations[conditionValue];
-                break;
-              case 'custom':
-                apiQueryParameters.endTs = queryParameters.endTs;
-                apiQueryParameters.lookback = queryParameters.endTs - queryParameters.startTs;
-                break;
-              default:
-                break;
-            }
-            break;
-          default:
-            break;
-        }
-      });
+      const apiQueryParameters = buildApiQueryParameters(queryParameters);
       fetchTraces(apiQueryParameters);
     }
   }
@@ -253,26 +168,12 @@ class GlobalSearch extends React.Component {
     const {
       history, conditions, lookbackCondition, limitCondition,
     } = this.props;
-    const annotationQueryConditions = [];
-    const conditionMap = {};
 
-    conditions.forEach((condition) => {
-      if (condition.key === 'annotationQuery') {
-        annotationQueryConditions.push(condition.value);
-      } else {
-        conditionMap[condition.key] = condition.value;
-      }
-    });
-    conditionMap.annotationQuery = annotationQueryConditions.join(' and ');
-
-    conditionMap.limit = limitCondition;
-    conditionMap.lookback = lookbackCondition.value;
-    conditionMap.endTs = lookbackCondition.endTs;
-    if (lookbackCondition.value === 'custom') {
-      conditionMap.startTs = lookbackCondition.startTs;
-    }
-
-    const queryParams = buildQueryParameters(conditionMap);
+    const queryParams = buildQueryParametersWithConditions(
+      conditions,
+      lookbackCondition,
+      limitCondition,
+    );
     history.push({
       pathname: '/zipkin',
       search: queryParams,
