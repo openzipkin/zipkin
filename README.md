@@ -21,7 +21,7 @@ docker run -d -p 9411:9411 openzipkin/zipkin
 
 Once the server is running, you can view traces with the Zipkin UI at `http://your_host:9411/zipkin/`.
 
-If your applications aren't sending traces, yet, configure them with [Zipkin instrumentation](https://zipkin.io/pages/existing_instrumentations.html) or try one of our [examples](https://github.com/openzipkin?utf8=%E2%9C%93&q=example).
+If your applications aren't sending traces, yet, configure them with [Zipkin instrumentation](https://zipkin.io/pages/tracers_instrumentation) or try one of our [examples](https://github.com/openzipkin?utf8=%E2%9C%93&q=example).
 
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
