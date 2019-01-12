@@ -143,13 +143,23 @@ zipkin:
     base-path: /zipkin
 
 server:
-  port: ${QUERY_PORT:9411}
   use-forward-headers: true
   compression:
     enabled: true
     # compresses any response over min-response-size (default is 2KiB)
     # Includes dynamic json content and large static assets from zipkin-ui
     mime-types: application/json,application/javascript,text/css,image/svg
+
+# Disable the Web Server.
+# See https://docs.spring.io/spring-boot/docs/current/reference/html/howto-embedded-web-servers.html.
+spring.main.web-application-type: none
+
+# Additional server ports specified with Armeria configuration.
+armeria:
+  ports:
+    - port: ${QUERY_PORT:9411}
+      protocols:
+        - http
 
 spring:
   jmx:

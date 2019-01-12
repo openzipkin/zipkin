@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,168 +13,97 @@
  */
 package zipkin2.server.internal;
 
-import io.undertow.io.Receiver;
-import io.undertow.server.HandlerWrapper;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HttpString;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.util.zip.GZIPInputStream;
+import com.linecorp.armeria.client.encoding.GzipStreamDecoderFactory;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.server.annotation.Consumes;
+import com.linecorp.armeria.server.annotation.ConsumesJson;
+import com.linecorp.armeria.server.annotation.Header;
+import com.linecorp.armeria.server.annotation.Post;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Configuration;
 import zipkin2.Callback;
-import zipkin2.Span;
-import zipkin2.codec.BytesDecoder;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
 
-/** Implements the POST /api/v1/spans and /api/v2/spans endpoints used by instrumentation. */
-@Configuration
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
-class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
-
-  static final HttpString POST = HttpString.tryFromString("POST"),
-      CONTENT_TYPE = HttpString.tryFromString("Content-Type"),
-      CONTENT_ENCODING = HttpString.tryFromString("Content-Encoding");
+public class ZipkinHttpCollector {
+  static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
 
   final CollectorMetrics metrics;
   final Collector collector;
-  final HttpCollector JSON_V2, PROTO3, JSON_V1, THRIFT;
-  final Receiver.ErrorCallback errorCallback;
-  private HttpHandler next;
 
-  @Autowired
-  ZipkinHttpCollector(
-      StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
+  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
+    CollectorMetrics metrics) {
     this.metrics = metrics.forTransport("http");
-    this.collector =
-        Collector.newBuilder(getClass())
-            .storage(storage)
-            .sampler(sampler)
-            .metrics(this.metrics)
-            .build();
-    this.JSON_V2 = new HttpCollector(SpanBytesDecoder.JSON_V2);
-    this.PROTO3 = new HttpCollector(SpanBytesDecoder.PROTO3);
-    this.JSON_V1 = new HttpCollector(SpanBytesDecoder.JSON_V1);
-    this.THRIFT = new HttpCollector(SpanBytesDecoder.THRIFT);
-    this.errorCallback =
-        new Receiver.ErrorCallback() {
-          @Override
-          public void error(HttpServerExchange exchange, IOException e) {
-            ZipkinHttpCollector.this.metrics.incrementMessagesDropped();
-            ZipkinHttpCollector.error(exchange, e);
-          }
-        };
+    this.collector = Collector.newBuilder(getClass())
+      .storage(storage).sampler(sampler).metrics(this.metrics).build();
   }
 
-  @Override
-  public void handleRequest(HttpServerExchange exchange) throws Exception {
-    boolean v2 = exchange.getRelativePath().equals("/api/v2/spans");
-    boolean v1 = !v2 && exchange.getRelativePath().equals("/api/v1/spans");
-    if (!v2 && !v1) {
-      next.handleRequest(exchange);
-      return;
-    }
+  @Post("/api/v2/spans")
+  @ConsumesJson
+  public HttpResponse uploadSpansJson2(@Header("content-encoding") String encoding, HttpData req) {
+    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V2, req);
+  }
 
-    if (!POST.equals(exchange.getRequestMethod())) {
-      next.handleRequest(exchange);
-      return;
-    }
+  @Post("/api/v2/spans")
+  @ConsumesProtobuf
+  public HttpResponse uploadSpansProtobuf(@Header("content-encoding") String encoding,
+    HttpData req) {
+    return validateAndStoreSpans(encoding, SpanBytesDecoder.PROTO3, req);
+  }
 
-    String contentTypeValue = exchange.getRequestHeaders().getFirst(CONTENT_TYPE);
-    boolean json = contentTypeValue == null || contentTypeValue.startsWith("application/json");
-    boolean thrift = !json && contentTypeValue.startsWith("application/x-thrift");
-    boolean proto = v2 && !json && contentTypeValue.startsWith("application/x-protobuf");
-    if (!json && !thrift && !proto) {
-      exchange
-          .setStatusCode(400)
-          .getResponseSender()
-          .send("unsupported content type " + contentTypeValue + "\n");
-      return;
-    }
+  @Post("/api/v1/spans")
+  @ConsumesJson
+  public HttpResponse uploadSpansJson1(@Header("content-encoding") String encoding, HttpData req) {
+    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V1, req);
+  }
 
-    HttpCollector collector = v2 ? (json ? JSON_V2 : PROTO3) : thrift ? THRIFT : JSON_V1;
+  @Post("/api/v1/spans")
+  @ConsumesThrift
+  public HttpResponse uploadSpansThrift(@Header("content-encoding") String encoding, HttpData req) {
+    return validateAndStoreSpans(encoding, SpanBytesDecoder.THRIFT, req);
+  }
+
+  HttpResponse validateAndStoreSpans(String encoding, SpanBytesDecoder decoder, HttpData req) {
+    CompletableFuture<HttpResponse> result = new CompletableFuture<>();
     metrics.incrementMessages();
-    exchange.getRequestReceiver().receiveFullBytes(collector, errorCallback);
-  }
-
-  @Override
-  public HttpHandler wrap(HttpHandler handler) {
-    this.next = handler;
-    return this;
-  }
-
-  final class HttpCollector implements Receiver.FullBytesCallback {
-    final BytesDecoder<Span> decoder;
-
-    HttpCollector(BytesDecoder<Span> decoder) {
-      this.decoder = decoder;
-    }
-
-    @Override
-    public void handle(HttpServerExchange exchange, byte[] body) {
-      String encoding = exchange.getRequestHeaders().getFirst(CONTENT_ENCODING);
-
-      if (encoding != null && encoding.contains("gzip")) {
-        try {
-          body = gunzip(body);
-        } catch (IOException e) {
-          metrics.incrementMessagesDropped();
-          exchange
-              .setStatusCode(400)
-              .getResponseSender()
-              .send("Cannot gunzip spans: " + e.getMessage() + "\n");
-          return;
-        }
+    if (encoding != null && encoding.contains("gzip")) {
+      try {
+        req = GZIP_DECODER_FACTORY.newDecoder().decode(req);
+      } catch (RuntimeException e) {
+        metrics.incrementMessagesDropped();
+        return HttpResponse.ofFailure(e);
       }
-      collector.acceptSpans(
-          body,
-          decoder,
-          new Callback<Void>() {
-            @Override
-            public void onSuccess(Void value) {
-              exchange.setStatusCode(202).getResponseSender().close();
-            }
-
-            @Override
-            public void onError(Throwable t) {
-              error(exchange, t);
-            }
-          });
     }
-  }
-
-  static void error(HttpServerExchange exchange, Throwable e) {
-    String message = e.getMessage();
-    int code = message == null || message.startsWith("Cannot store") ? 500 : 400;
-    if (message == null) message = e.getClass().getSimpleName();
-    exchange.setStatusCode(code).getResponseSender().send(message);
-  }
-
-  // TODO: there's gotta be an N/IO way to gunzip
-  private static final ThreadLocal<byte[]> GZIP_BUFFER =
-      new ThreadLocal<byte[]>() {
-        @Override
-        protected byte[] initialValue() {
-          return new byte[1024];
-        }
-      };
-
-  static byte[] gunzip(byte[] input) throws IOException {
-    GZIPInputStream in = new GZIPInputStream(new ByteArrayInputStream(input));
-    try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(input.length)) {
-      byte[] buf = GZIP_BUFFER.get();
-      int len;
-      while ((len = in.read(buf)) > 0) {
-        outputStream.write(buf, 0, len);
+    collector.acceptSpans(req.array(), decoder, new Callback<Void>() {
+      @Override public void onSuccess(Void value) {
+        result.complete(HttpResponse.of(HttpStatus.ACCEPTED));
       }
-      return outputStream.toByteArray();
-    }
+
+      @Override public void onError(Throwable t) {
+        result.completeExceptionally(t);
+      }
+    });
+    return HttpResponse.from(result);
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Consumes("application/x-thrift") @interface ConsumesThrift {
+  }
+
+  @Retention(RetentionPolicy.RUNTIME)
+  @Target({ElementType.TYPE, ElementType.METHOD})
+  @Consumes("application/x-protobuf") @interface ConsumesProtobuf {
   }
 }

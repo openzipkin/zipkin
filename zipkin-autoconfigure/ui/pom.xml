@@ -48,13 +48,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
-    <!-- In excluding tomcat, we exclude its indirect dep on servlet-api. This one is
-         from spring-boot-starter-undertow -->
+    <!-- In excluding tomcat, we exclude its indirect dep on servlet-api. -->
     <dependency>
       <groupId>javax.servlet</groupId>
       <artifactId>javax.servlet-api</artifactId>
       <version>4.0.1</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>

@@ -34,10 +34,6 @@
     <main.signature.artifact>java18</main.signature.artifact>
     <start-class>zipkin.server.ZipkinServer</start-class>
     <maven-invoker-plugin.version>3.2.0</maven-invoker-plugin.version>
-
-    <!-- Manual version updates to work around warnings mentioned in UNDERTOW-1355 -->
-    <xnio.version>3.6.5.Final</xnio.version>
-    <jboss-threads.version>2.3.2.Final</jboss-threads.version>
   </properties>
 
   <dependencyManagement>
@@ -47,6 +43,13 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-dependencies</artifactId>
         <version>${spring-boot.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.linecorp.armeria</groupId>
+        <artifactId>armeria-bom</artifactId>
+        <version>${armeria.version}</version>
         <type>pom</type>
         <scope>import</scope>
       </dependency>
@@ -65,43 +68,26 @@
       <artifactId>spring-boot-starter-log4j2</artifactId>
     </dependency>
 
-    <!-- reduces http transport latency -->
+    <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-undertow</artifactId>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-spring-boot-autoconfigure</artifactId>
       <exclusions>
         <exclusion>
-          <groupId>io.undertow</groupId>
-          <artifactId>undertow-websockets-jsr</artifactId>
+          <groupId>com.linecorp.armeria</groupId>
+          <artifactId>armeria-logback</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
-
-    <!-- BEGIN WORKAROUNDS FOR UNDERTOW-1355 -->
     <dependency>
-      <groupId>org.jboss.xnio</groupId>
-      <artifactId>xnio-api</artifactId>
-      <version>${xnio.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.jboss.threads</groupId>
-          <artifactId>jboss-threads</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-zipkin</artifactId>
     </dependency>
-
+    <!-- Armeria needs a validation implementation -->
     <dependency>
-      <groupId>org.jboss.threads</groupId>
-      <artifactId>jboss-threads</artifactId>
-      <version>${jboss-threads.version}</version>
+      <groupId>org.hibernate.validator</groupId>
+      <artifactId>hibernate-validator</artifactId>
     </dependency>
-
-    <dependency>
-      <groupId>org.jboss.xnio</groupId>
-      <artifactId>xnio-nio</artifactId>
-      <version>${xnio.version}</version>
-    </dependency>
-    <!-- END WORKAROUNDS FOR UNDERTOW-1355 -->
 
     <!-- zipkin requires exporting /health endpoint -->
     <dependency>

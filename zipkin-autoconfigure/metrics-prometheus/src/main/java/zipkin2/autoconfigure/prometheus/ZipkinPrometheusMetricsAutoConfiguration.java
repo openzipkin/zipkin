@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,19 +13,24 @@
  */
 package zipkin2.autoconfigure.prometheus;
 
+import com.linecorp.armeria.common.Request;
+import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.Response;
+import com.linecorp.armeria.common.logging.RequestLog;
+import com.linecorp.armeria.common.logging.RequestLogAvailability;
+import com.linecorp.armeria.server.Service;
+import com.linecorp.armeria.server.ServiceRequestContext;
+import com.linecorp.armeria.server.SimpleDecoratingService;
+import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.undertow.server.HandlerWrapper;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
+import io.netty.util.AttributeKey;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
@@ -51,98 +56,100 @@ import org.springframework.util.StringUtils;
     this.metricName = metricName;
   }
 
-  @Bean @Qualifier("httpRequestDurationCustomizer")
-  UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer() {
-    HttpRequestDurationHandler.Wrapper result =
-      new HttpRequestDurationHandler.Wrapper(registry, metricName);
-    return info -> info.addInitialHandlerChainWrapper(result);
+  @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator() {
+    return serverBuilder -> serverBuilder.decorator(
+      s -> new MetricCollectingService<>(s, registry, metricName));
   }
 
-  static final class HttpRequestDurationHandler implements HttpHandler {
+  static final class MetricCollectingService<I extends Request, O extends Response>
+    extends SimpleDecoratingService<I, O> {
     final MeterRegistry registry;
     final String metricName;
-    final HttpHandler next;
-    final Clock clock;
 
-    HttpRequestDurationHandler(MeterRegistry registry, String metricName, HttpHandler next) {
+    MetricCollectingService(Service<I, O> delegate, MeterRegistry registry, String metricName) {
+      super(delegate);
       this.registry = registry;
       this.metricName = metricName;
-      this.next = next;
-      this.clock = registry.config().clock();
     }
 
-    @Override public void handleRequest(HttpServerExchange exchange) throws Exception {
-      final long startTime = clock.monotonicTime();
-      if (!exchange.isComplete()) {
-        exchange.addExchangeCompleteListener((exchange1, nextListener) -> {
-          getTimeBuilder(exchange).register(registry)
-            .record(clock.monotonicTime() - startTime, TimeUnit.NANOSECONDS);
-          nextListener.proceed();
-        });
-      }
-      next.handleRequest(exchange);
+    @Override
+    public O serve(ServiceRequestContext ctx, I req) throws Exception {
+      setup(ctx, registry, metricName);
+      return delegate().serve(ctx, req);
     }
+  }
 
-    private Timer.Builder getTimeBuilder(HttpServerExchange exchange) {
-      return Timer.builder(metricName)
-        .tags(this.getTags(exchange))
-        .description("Response time histogram")
-        .publishPercentileHistogram();
+  // A variable to make sure setup method is not called twice.
+  private static final AttributeKey<Boolean> PROMETHEUS_METRICS_SET =
+    AttributeKey.valueOf(Boolean.class, "PROMETHEUS_METRICS_SET");
+
+  public static void setup(RequestContext ctx, MeterRegistry registry, String metricName) {
+    if (ctx.hasAttr(PROMETHEUS_METRICS_SET)) {
+      return;
     }
+    ctx.attr(PROMETHEUS_METRICS_SET).set(true);
 
-    private Iterable<Tag> getTags(HttpServerExchange exchange) {
-      return Arrays.asList(Tag.of("method", exchange.getRequestMethod().toString())
-        , uri(exchange)
-        , Tag.of("status", Integer.toString(exchange.getStatusCode()))
-      );
-    }
+    ctx.log().addListener(log -> onRequest(log, registry, metricName),
+      RequestLogAvailability.REQUEST_HEADERS,
+      RequestLogAvailability.REQUEST_CONTENT);
+  }
 
-    /** Ensure metrics cardinality doesn't blow up on variables */
-    // TODO: this should really live in the zipkin-server codebase!
-    private static Tag uri(HttpServerExchange exchange) {
-      int status = exchange.getStatusCode();
-      if (status > 299 && status < 400) return URI_REDIRECTION;
-      if (status == 404) return URI_NOT_FOUND;
+  private static void onRequest(RequestLog log, MeterRegistry registry, String metricName) {
+    Clock clock = registry.config().clock();
+    long startTime = clock.monotonicTime();
+    log.addListener(requestLog -> {
+      getTimeBuilder(requestLog, metricName).register(registry)
+        .record(clock.monotonicTime() - startTime, TimeUnit.NANOSECONDS);
+    },RequestLogAvailability.COMPLETE);
+  }
 
-      String uri = getPathInfo(exchange);
-      if (uri.startsWith("/zipkin")) {
-        if (uri.equals("/zipkin/") || uri.equals("/zipkin")
-          || uri.startsWith("/zipkin/traces/")
-          || uri.equals("/zipkin/dependency")
-          || uri.equals("/zipkin/traceViewer")) {
-          return URI_CROSSROADS; // single-page app route
-        }
 
-        // un-map UI's api route
-        if (uri.startsWith("/zipkin/api")) {
-          uri = uri.replaceFirst("/zipkin", "");
-        }
-      }
-      // handle templated routes instead of exploding on trace ID cardinality
-      if (uri.startsWith("/api/v2/trace/")) return URI_TRACE_V2;
-      return Tag.of("uri", uri);
-    }
+  private static Timer.Builder getTimeBuilder(RequestLog requestLog, String metricName) {
+    return Timer.builder(metricName)
+      .tags(getTags(requestLog))
+      .description("Response time histogram")
+      .publishPercentileHistogram();
+  }
 
-    // from io.micrometer.spring.web.servlet.WebMvcTags
-    private static String getPathInfo(HttpServerExchange exchange) {
-      String uri = exchange.getRelativePath();
-      if (!StringUtils.hasText(uri)) return "/";
-      return uri.replaceAll("//+", "/")
-        .replaceAll("/$", "");
-    }
 
-    static final class Wrapper implements HandlerWrapper {
-      final MeterRegistry registry;
-      final String metricName;
+  private static Iterable<Tag> getTags(RequestLog requestLog) {
+    return Arrays.asList(Tag.of("method", requestLog.method().toString())
+      , uri(requestLog)
+      , Tag.of("status", Integer.toString(requestLog.statusCode()))
+    );
+  }
 
-      Wrapper(MeterRegistry registry, String metricName) {
-        this.registry = registry;
-        this.metricName = metricName;
+  /** Ensure metrics cardinality doesn't blow up on variables */
+  // TODO: this should really live in the zipkin-server codebase!
+  private static Tag uri(RequestLog requestLog) {
+    int status = requestLog.statusCode();
+    if (status > 299 && status < 400) return URI_REDIRECTION;
+    if (status == 404) return URI_NOT_FOUND;
+
+    String uri = getPathInfo(requestLog);
+    if (uri.startsWith("/zipkin")) {
+      if (uri.equals("/zipkin/") || uri.equals("/zipkin")
+        || uri.startsWith("/zipkin/traces/")
+        || uri.equals("/zipkin/dependency")
+        || uri.equals("/zipkin/traceViewer")) {
+        return URI_CROSSROADS; // single-page app route
       }
 
-      @Override public HttpHandler wrap(HttpHandler next) {
-        return new HttpRequestDurationHandler(registry, metricName, next);
+      // un-map UI's api route
+      if (uri.startsWith("/zipkin/api")) {
+        uri = uri.replaceFirst("/zipkin", "");
       }
     }
+    // handle templated routes instead of exploding on trace ID cardinality
+    if (uri.startsWith("/api/v2/trace/")) return URI_TRACE_V2;
+    return Tag.of("uri", uri);
+  }
+
+  // from io.micrometer.spring.web.servlet.WebMvcTags
+  static String getPathInfo(RequestLog requestLog) {
+    String uri = requestLog.path();
+    if (!StringUtils.hasText(uri)) return "/";
+    return uri.replaceAll("//+", "/")
+      .replaceAll("/$", "");
   }
 }

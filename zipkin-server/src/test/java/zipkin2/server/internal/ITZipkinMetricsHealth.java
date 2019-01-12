@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,7 +45,10 @@ import static zipkin2.TestObjects.LOTS_OF_SPANS;
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = "spring.config.name=zipkin-server"
+  properties = {
+    "spring.config.name=zipkin-server",
+    "spring.main.web-application-type=none"
+  }
 )
 @RunWith(SpringRunner.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)

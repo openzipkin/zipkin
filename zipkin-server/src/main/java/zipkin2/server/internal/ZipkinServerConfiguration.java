@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,18 +14,18 @@
 package zipkin2.server.internal;
 
 import brave.Tracing;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.server.cors.CorsServiceBuilder;
+import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.web.embedded.undertow.UndertowDeploymentInfoCustomizer;
-import org.springframework.boot.web.embedded.undertow.UndertowServletWebServerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -44,14 +44,6 @@ import zipkin2.storage.StorageComponent;
 public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Autowired(required = false)
-  @Qualifier("httpTracingCustomizer")
-  UndertowDeploymentInfoCustomizer httpTracingCustomizer;
-
-  @Autowired(required = false)
-  @Qualifier("httpRequestDurationCustomizer")
-  UndertowDeploymentInfoCustomizer httpRequestDurationCustomizer;
-
-  @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
 
   /** Registers health for any components, even those not in this jar. */
@@ -65,23 +57,11 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     registry.addRedirectViewController("/info", "/actuator/info");
   }
 
-  @Bean
-  public UndertowServletWebServerFactory embeddedServletContainerFactory(
-      @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
-    UndertowServletWebServerFactory factory = new UndertowServletWebServerFactory();
-    CorsHandler cors = new CorsHandler(allowedOrigins);
-    if (httpCollector != null) {
-      factory.addDeploymentInfoCustomizers(
-          info -> info.addInitialHandlerChainWrapper(httpCollector));
-    }
-    factory.addDeploymentInfoCustomizers(info -> info.addInitialHandlerChainWrapper(cors));
-    if (httpTracingCustomizer != null) {
-      factory.addDeploymentInfoCustomizers(httpTracingCustomizer);
-    }
-    if (httpRequestDurationCustomizer != null) {
-      factory.addDeploymentInfoCustomizers(httpRequestDurationCustomizer);
-    }
-    return factory;
+  @Bean ArmeriaServerConfigurator corsConfigurator(
+    @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
+    return server -> server.decorator(CorsServiceBuilder
+      .forOrigins(allowedOrigins.split("."))
+      .allowRequestMethods(HttpMethod.GET).newDecorator());
   }
 
   @Bean
@@ -99,19 +79,19 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Bean
   public MeterRegistryCustomizer meterRegistryCustomizer() {
     return registry ->
-        registry
-            .config()
-            .meterFilter(
-                MeterFilter.deny(
-                    id -> {
-                      String uri = id.getTag("uri");
-                      return uri != null
-                          && (uri.startsWith("/actuator")
-                              || uri.startsWith("/metrics")
-                              || uri.startsWith("/health")
-                              || uri.startsWith("/favicon.ico")
-                              || uri.startsWith("/prometheus"));
-                    }));
+      registry
+        .config()
+        .meterFilter(
+          MeterFilter.deny(
+            id -> {
+              String uri = id.getTag("uri");
+              return uri != null
+                && (uri.startsWith("/actuator")
+                || uri.startsWith("/metrics")
+                || uri.startsWith("/health")
+                || uri.startsWith("/favicon.ico")
+                || uri.startsWith("/prometheus"));
+            }));
   }
 
   @Configuration
@@ -146,16 +126,16 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   static class InMemoryConfiguration {
     @Bean
     StorageComponent storage(
-        @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-        @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
-        @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans,
-        @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
+      @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+      @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
+      @Value("${zipkin.storage.mem.max-spans:500000}") int maxSpans,
+      @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
       return InMemoryStorage.newBuilder()
-          .strictTraceId(strictTraceId)
-          .searchEnabled(searchEnabled)
-          .maxSpanCount(maxSpans)
-          .autocompleteKeys(autocompleteKeys)
-          .build();
+        .strictTraceId(strictTraceId)
+        .searchEnabled(searchEnabled)
+        .maxSpanCount(maxSpans)
+        .autocompleteKeys(autocompleteKeys)
+        .build();
     }
   }
 
