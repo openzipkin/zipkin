@@ -71,6 +71,7 @@ export function traceToMustache(root, logsUrl) {
     // This is more than a normal tree traversal, as we are merging any server spans that share the
     // same ID. When that's the case, we pull up any of their children as if they are our own.
     const spansToMerge = [current.span];
+    const isLeafSpan = current.children.length === 0;
     const childIds = [];
     const toPrefix = [];
     current.children.forEach(child => {
@@ -97,7 +98,7 @@ export function traceToMustache(root, logsUrl) {
     // If we are the deepest span, mark the trace accordingly
     if (depth > modelview.depth) modelview.depth = depth;
 
-    const spanRow = newSpanRow(spansToMerge);
+    const spanRow = newSpanRow(spansToMerge, isLeafSpan);
     addLayoutDetails(spanRow, timestamp, duration, depth, childIds);
     // NOTE: This will increment both the local and remote service name
     //

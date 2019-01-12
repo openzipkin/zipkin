@@ -174,7 +174,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   it('should not duplicate service names', () => {
@@ -183,7 +183,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       id: '3',
       localEndpoint: frontend,
       remoteEndpoint: frontend
-    })]);
+    })], false);
 
     expect(converted.serviceNames).to.deep.equal(['frontend']);
   });
@@ -226,7 +226,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.client_kindInferredFromAnnotation
@@ -268,7 +268,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_cr
@@ -302,7 +302,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_sa
@@ -323,7 +323,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.noAnnotationsExceptAddresses
@@ -355,7 +355,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.server
@@ -405,7 +405,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.missingEndpoints
@@ -431,7 +431,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = newSpanRow([v2]);
+    const expected = newSpanRow([v2], false);
     expect(spanRow).to.deep.equal(expected);
   });
 
@@ -463,7 +463,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = newSpanRow([v2]);
+    const expected = newSpanRow([v2], false);
     expect(spanRow).to.deep.equal(expected);
   });
 
@@ -507,7 +507,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = newSpanRow([v2]);
+    const expected = newSpanRow([v2], false);
     expect(spanRow).to.deep.equal(expected);
   });
 
@@ -543,7 +543,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    const expected = newSpanRow([v2]);
+    const expected = newSpanRow([v2], false);
     expect(spanRow).to.deep.equal(expected);
   });
 
@@ -576,7 +576,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ca
@@ -596,7 +596,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.localSpan_emptyComponent
@@ -622,7 +622,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_remote
@@ -656,7 +656,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_duration
@@ -698,7 +698,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer
@@ -732,7 +732,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_remote
@@ -767,7 +767,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_duration
@@ -809,7 +809,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none'
     };
 
-    expect(newSpanRow([v2])).to.deep.equal(spanRow);
+    expect(newSpanRow([v2], false)).to.deep.equal(spanRow);
   });
 
   it('should prefer ipv6', () => {
@@ -826,7 +826,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       localEndpoint
     });
 
-    const spanRow = newSpanRow([v2]);
+    const spanRow = newSpanRow([v2], false);
     expect(spanRow.tags.map(s => s.value)).to.deep.equal(['[2001:db8::c001]:80 (there)']);
   });
 
@@ -841,8 +841,85 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       }
     });
 
-    const spanRow = newSpanRow([v2]);
+    const spanRow = newSpanRow([v2], false);
     expect(spanRow.annotations.map(s => s.endpoint)).to.deep.equal(['[2001:db8::c001]']);
+  });
+
+  it('converts client leaf spans using its remote service name', () => {
+    const v2 = {
+      traceId: '1',
+      parentId: '2',
+      id: '3',
+      name: 'get',
+      kind: 'CLIENT',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      localEndpoint: frontend,
+      remoteEndpoint: backend,
+      annotations: [
+        {value: 'ws', timestamp: 1472470996238000},
+        {value: 'wr', timestamp: 1472470996403000}
+      ],
+      tags: {
+        'http.path': '/api',
+        'clnt/finagle.version': '6.45.0',
+      }
+    };
+
+    const spanRow = {
+      parentId: '2',
+      spanId: '3',
+      spanName: 'get',
+      timestamp: 1472470996199000,
+      duration: 207000,
+      annotations: [
+        {
+          isDerived: true,
+          value: 'Client Start',
+          timestamp: 1472470996199000,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        },
+        {
+          isDerived: false,
+          value: 'Wire Send',
+          timestamp: 1472470996238000,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        },
+        {
+          isDerived: false,
+          value: 'Wire Receive',
+          timestamp: 1472470996403000,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        },
+        {
+          isDerived: true,
+          value: 'Client Finish',
+          timestamp: 1472470996406000,
+          endpoint: '127.0.0.1:8080 (frontend)'
+        }
+      ],
+      tags: [
+        {
+          key: 'http.path',
+          value: '/api',
+          endpoint: '127.0.0.1:8080 (frontend)'
+        },
+        {
+          key: 'clnt/finagle.version',
+          value: '6.45.0',
+          endpoint: '127.0.0.1:8080 (frontend)'
+        },
+        {
+          key: 'Server Address',
+          value: '192.168.99.101:9000 (backend)'
+        }
+      ],
+      serviceName: 'backend', // prefer client remote address on leaf client-only spans
+      serviceNames: ['backend', 'frontend'],
+      errorType: 'none'
+    };
+
+    expect(newSpanRow([v2], true)).to.deep.equal(spanRow);
   });
 });
 
@@ -907,13 +984,13 @@ describe('newSpanRow', () => {
   };
 
   it('should merge server and client span', () => {
-    const spanRow = newSpanRow([serverSpan, clientSpan]);
+    const spanRow = newSpanRow([serverSpan, clientSpan], false);
 
     expect(spanRow).to.deep.equal(expectedSpanRow);
   });
 
   it('should merge client and server span', () => {
-    const spanRow = newSpanRow([clientSpan, serverSpan]);
+    const spanRow = newSpanRow([clientSpan, serverSpan], false);
 
     expect(spanRow).to.deep.equal(expectedSpanRow);
   });
@@ -924,7 +1001,7 @@ describe('newSpanRow', () => {
       traceId: '1',
       id: '3',
       remoteEndpoint: backend
-    })]);
+    })], false);
 
     expect(spanRow.tags).to.deep.equal(
       [{key: 'Server Address', value: '192.168.99.101:9000 (backend)'}]);
@@ -940,7 +1017,7 @@ describe('newSpanRow', () => {
       kind: 'SERVER',
       localEndpoint: backend,
       shared: true
-    })]);
+    })], false);
 
     expect(spanRow.spanName).to.equal('get /users/:userId');
   });
@@ -975,8 +1052,8 @@ describe('newSpanRow', () => {
       shared: true
     });
 
-    const leftFirst = newSpanRow([leftSpan, rightSpan]);
-    const rightFirst = newSpanRow([rightSpan, leftSpan]);
+    const leftFirst = newSpanRow([leftSpan, rightSpan], false);
+    const rightFirst = newSpanRow([rightSpan, leftSpan], false);
 
     [leftFirst, rightFirst].forEach((completeSpan) => {
       expect(completeSpan.timestamp).to.equal(leftTimestamp);
@@ -995,7 +1072,7 @@ describe('newSpanRow', () => {
       kind: 'SERVER',
       localEndpoint: backend,
       shared: true
-    })]);
+    })], false);
 
     expect(spanRow.spanName).to.equal(clientSpan.name);
   });
