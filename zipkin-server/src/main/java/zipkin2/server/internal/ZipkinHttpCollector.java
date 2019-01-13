@@ -17,6 +17,7 @@ import com.linecorp.armeria.client.encoding.GzipStreamDecoderFactory;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.annotation.Consumes;
 import com.linecorp.armeria.server.annotation.ConsumesJson;
 import com.linecorp.armeria.server.annotation.Header;
@@ -25,10 +26,14 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import javax.annotation.Nullable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Callback;
+import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
@@ -50,31 +55,47 @@ public class ZipkinHttpCollector {
   }
 
   @Post("/api/v2/spans")
+  public HttpResponse uploadSpans(@Nullable @Header("content-encoding") String encoding,
+    HttpData req) {
+    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V2, req);
+  }
+
+  @Post("/api/v2/spans")
   @ConsumesJson
-  public HttpResponse uploadSpansJson2(@Header("content-encoding") String encoding, HttpData req) {
+  public HttpResponse uploadSpansJson(@Nullable @Header("content-encoding") String encoding,
+    HttpData req) {
     return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V2, req);
   }
 
   @Post("/api/v2/spans")
   @ConsumesProtobuf
-  public HttpResponse uploadSpansProtobuf(@Header("content-encoding") String encoding,
+  public HttpResponse uploadSpansProtobuf(@Nullable @Header("content-encoding") String encoding,
     HttpData req) {
     return validateAndStoreSpans(encoding, SpanBytesDecoder.PROTO3, req);
   }
 
   @Post("/api/v1/spans")
+  public HttpResponse uploadSpansV1(@Nullable @Header("content-encoding") String encoding,
+    HttpData req) {
+    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V1, req);
+  }
+
+  @Post("/api/v1/spans")
   @ConsumesJson
-  public HttpResponse uploadSpansJson1(@Header("content-encoding") String encoding, HttpData req) {
+  public HttpResponse uploadSpansV1Json(@Nullable @Header("content-encoding") String encoding,
+    HttpData req) {
     return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V1, req);
   }
 
   @Post("/api/v1/spans")
   @ConsumesThrift
-  public HttpResponse uploadSpansThrift(@Header("content-encoding") String encoding, HttpData req) {
+  public HttpResponse uploadSpansV1Thrift(@Nullable @Header("content-encoding") String encoding,
+    HttpData req) {
     return validateAndStoreSpans(encoding, SpanBytesDecoder.THRIFT, req);
   }
 
-  HttpResponse validateAndStoreSpans(String encoding, SpanBytesDecoder decoder, HttpData req) {
+  HttpResponse validateAndStoreSpans(String encoding, SpanBytesDecoder decoder,
+    HttpData req) {
     CompletableFuture<HttpResponse> result = new CompletableFuture<>();
     metrics.incrementMessages();
     if (encoding != null && encoding.contains("gzip")) {
@@ -85,7 +106,18 @@ public class ZipkinHttpCollector {
         return HttpResponse.ofFailure(e);
       }
     }
-    collector.acceptSpans(req.array(), decoder, new Callback<Void>() {
+    byte[] serializedSpans = req.array();
+    metrics.incrementBytes(serializedSpans.length);
+    List<Span> spans = new ArrayList<>();
+    try {
+      if (decoder.decodeList(serializedSpans, spans)) {
+        return HttpResponse.of(HttpStatus.BAD_REQUEST, MediaType.ANY_TEXT_TYPE,
+          "Could not decode spans");
+      }
+    } catch (RuntimeException e) {
+      return HttpResponse.ofFailure(e);
+    }
+    collector.accept(spans, new Callback<Void>() {
       @Override public void onSuccess(Void value) {
         result.complete(HttpResponse.of(HttpStatus.ACCEPTED));
       }

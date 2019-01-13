@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,44 +13,63 @@
  */
 package zipkin2.server.internal;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.RedirectService;
+import com.linecorp.armeria.server.annotation.Get;
+import com.linecorp.armeria.server.annotation.ProducesJson;
+import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.health.HealthStatusHttpMapper;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.context.annotation.Bean;
 
-@RestController
-public class MetricsHealthController implements WebMvcConfigurer {
+public class MetricsHealthController {
+
+  @Bean ArmeriaServerConfigurator metricsConfigurator(MetricsHealthController controller) {
+    return sb -> {
+      sb.annotatedService(controller);
+      // Redirects the prometheus scrape endpoint for backward compatibility
+      sb.service("/prometheus/", new RedirectService("/actuator/prometheus/"));
+    };
+  }
+
   final MeterRegistry meterRegistry;
   final HealthEndpoint healthEndpoint;
   final HealthStatusHttpMapper statusMapper;
   final CollectorRegistry collectorRegistry;
+  final ObjectMapper mapper;
   final JsonNodeFactory factory = JsonNodeFactory.instance;
 
   MetricsHealthController(
     MeterRegistry meterRegistry,
     HealthEndpoint healthEndpoint,
     HealthStatusHttpMapper statusMapper,
-    CollectorRegistry collectorRegistry
+    CollectorRegistry collectorRegistry,
+    ObjectMapper mapper
   ) {
     this.meterRegistry = meterRegistry;
     this.healthEndpoint = healthEndpoint;
     this.statusMapper = statusMapper;
     this.collectorRegistry = collectorRegistry;
+    this.mapper = mapper;
   }
 
   // Extracts Zipkin metrics to provide backward compatibility
-  @GetMapping("/metrics")
+  @Get("/metrics")
+  @ProducesJson
   public ObjectNode fetchMetricsFromMicrometer() {
     ObjectNode metrics = factory.objectNode();
     // Iterate over the meters and get the Zipkin Custom meters for constructing the Metrics endpoint
@@ -74,18 +93,18 @@ public class MetricsHealthController implements WebMvcConfigurer {
 
   // Delegates the health endpoint from the Actuator to the root context path and can be deprecated
   // in future in favour of Actuator endpoints
-  @GetMapping("/health")
-  public ResponseEntity<Map> getHealth() {
+  @Get("/health")
+  public HttpResponse getHealth() throws JsonProcessingException {
     Health health = healthEndpoint.health();
-    Map body = new HashMap();
-    body.put("status", health.getStatus().getCode());
-    body.put("zipkin", health.getDetails().get("zipkin"));
-    return ResponseEntity.status(statusMapper.mapStatus(health.getStatus())).body(body);
-  }
 
-  // Redirects the prometheus scrape endpoint for backward compatibility
-  @Override
-  public void addViewControllers(ViewControllerRegistry registry) {
-    registry.addRedirectViewController("/prometheus", "/actuator/prometheus");
+    Map<String, Object> healthJson = new LinkedHashMap<>();
+    healthJson.put("status", health.getStatus().getCode());
+    healthJson.put("zipkin", health.getDetails().get("zipkin"));
+    byte[] body = mapper.writer().writeValueAsBytes(healthJson);
+
+    HttpHeaders headers = HttpHeaders.of(statusMapper.mapStatus(health.getStatus()))
+      .contentType(MediaType.JSON)
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
+    return HttpResponse.of(headers, HttpData.of(body));
   }
 }

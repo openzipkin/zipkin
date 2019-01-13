@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,13 +13,14 @@
  */
 package zipkin2.autoconfigure.ui;
 
+import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -32,8 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 )
 public class ITZipkinUiAutoConfiguration {
 
-  @Value("${local.server.port}") int zipkinPort;
-
+  @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   /** The zipkin-ui is a single-page app. This prevents reloading all resources on each click. */
@@ -48,7 +48,7 @@ public class ITZipkinUiAutoConfiguration {
 
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + zipkinPort + path)
+      .url("http://localhost:" + server.activePort().get().localAddress().getPort() + path)
       .build()).execute();
   }
 }

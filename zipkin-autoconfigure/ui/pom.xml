@@ -48,6 +48,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-spring-boot-autoconfigure</artifactId>
+      <scope>provided</scope>
+    </dependency>
     <!-- In excluding tomcat, we exclude its indirect dep on servlet-api. -->
     <dependency>
       <groupId>javax.servlet</groupId>

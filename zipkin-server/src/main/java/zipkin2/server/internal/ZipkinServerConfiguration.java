@@ -44,7 +44,17 @@ import zipkin2.storage.StorageComponent;
 public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Autowired(required = false)
+  ZipkinQueryApiV2 httpQuery;
+
+  @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
+
+  @Bean ArmeriaServerConfigurator httpCollectorConfigurator() {
+    return server -> {
+      if (httpQuery != null) server.annotatedService(httpQuery);
+      if (httpCollector != null) server.annotatedService(httpCollector);
+    };
+  }
 
   /** Registers health for any components, even those not in this jar. */
   @Bean

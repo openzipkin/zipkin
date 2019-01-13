@@ -16,6 +16,7 @@ package zipkin2.server.internal;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import com.linecorp.armeria.server.Server;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +29,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -41,14 +41,12 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
+import static zipkin2.server.internal.ITZipkinServer.url;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = {
-    "spring.config.name=zipkin-server",
-    "spring.main.web-application-type=none"
-  }
+  properties = "spring.config.name=zipkin-server"
 )
 @RunWith(SpringRunner.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
@@ -56,7 +54,7 @@ public class ITZipkinMetricsHealth {
 
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
-  @Value("${local.server.port}") int zipkinPort;
+  @Autowired Server server;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
@@ -124,7 +122,8 @@ public class ITZipkinMetricsHealth {
   @Test public void apiTemplate_prometheus() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
-    post("/api/v2/spans", body);
+    assertThat(post("/api/v2/spans", body).isSuccessful())
+      .isTrue();
 
     assertThat(get("/api/v2/trace/" + LOTS_OF_SPANS[0].traceId()).isSuccessful())
       .isTrue();
@@ -247,19 +246,19 @@ public class ITZipkinMetricsHealth {
 
   private String getAsString(String path) throws IOException {
     Response response = get(path);
-    assertThat(response.isSuccessful()).isTrue();
+    assertThat(response.isSuccessful())
+      .withFailMessage(response.toString())
+      .isTrue();
     return response.body().string();
   }
 
   private Response get(String path) throws IOException {
-    return client.newCall(new Request.Builder()
-      .url("http://localhost:" + zipkinPort + path)
-      .build()).execute();
+    return client.newCall(new Request.Builder().url(url(server, path)).build()).execute();
   }
 
   private Response post(String path, byte[] body) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + zipkinPort + path)
+      .url(url(server, path))
       .post(RequestBody.create(null, body))
       .build()).execute();
   }

@@ -100,7 +100,7 @@ import org.springframework.util.StringUtils;
     log.addListener(requestLog -> {
       getTimeBuilder(requestLog, metricName).register(registry)
         .record(clock.monotonicTime() - startTime, TimeUnit.NANOSECONDS);
-    },RequestLogAvailability.COMPLETE);
+    }, RequestLogAvailability.COMPLETE);
   }
 
 
