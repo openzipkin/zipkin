@@ -15,11 +15,17 @@ package zipkin2.server.internal;
 
 import brave.Tracing;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.server.Service;
+import com.linecorp.armeria.server.annotation.Options;
+import com.linecorp.armeria.server.cors.CorsService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import java.util.List;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -50,9 +56,9 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   ZipkinHttpCollector httpCollector;
 
   @Bean ArmeriaServerConfigurator httpCollectorConfigurator() {
-    return server -> {
-      if (httpQuery != null) server.annotatedService(httpQuery);
-      if (httpCollector != null) server.annotatedService(httpCollector);
+    return sb -> {
+      if (httpQuery != null) sb.annotatedService(httpQuery);
+      if (httpCollector != null) sb.annotatedService(httpCollector);
     };
   }
 
@@ -69,9 +75,19 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Bean ArmeriaServerConfigurator corsConfigurator(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
-    return server -> server.decorator(CorsServiceBuilder
-      .forOrigins(allowedOrigins.split("."))
-      .allowRequestMethods(HttpMethod.GET).newDecorator());
+    CorsServiceBuilder corsBuilder = allowedOrigins.equals("*") ? CorsServiceBuilder.forAnyOrigin()
+      : CorsServiceBuilder.forOrigins(allowedOrigins.split(","));
+
+    Function<Service<HttpRequest, HttpResponse>, CorsService>
+      corsDecorator = corsBuilder.allowRequestMethods(HttpMethod.GET).newDecorator();
+
+    return server -> server
+      .annotatedService(new Object() { // don't know how else to enable options for CORS preflight!
+        @Options("glob:/**")
+        public void options() {
+        }
+      })
+      .decorator(corsDecorator);
   }
 
   @Bean

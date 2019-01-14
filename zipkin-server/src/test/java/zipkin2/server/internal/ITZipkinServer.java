@@ -124,6 +124,7 @@ public class ITZipkinServer {
       .build()).execute();
 
     assertThat(response.code())
+      .withFailMessage(response.body().string())
       .isEqualTo(202);
   }
 
@@ -223,7 +224,7 @@ public class ITZipkinServer {
       .build()).execute();
 
     assertThat(response.isSuccessful()).isTrue();
-    assertThat(response.header("vary")).contains("origin");
+    assertThat(response.header("vary")).isNull();
     assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).contains("*");
   }

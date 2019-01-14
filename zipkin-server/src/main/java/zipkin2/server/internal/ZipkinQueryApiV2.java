@@ -16,19 +16,15 @@ package zipkin2.server.internal;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpHeaders;
-import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
-import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.server.annotation.Default;
-import com.linecorp.armeria.server.annotation.ExceptionHandler;
-import com.linecorp.armeria.server.annotation.ExceptionHandlerFunction;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.Param;
 import java.io.IOException;
 import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -40,7 +36,6 @@ import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Buffer;
 import zipkin2.internal.JsonCodec;
-import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
@@ -72,9 +67,9 @@ public class ZipkinQueryApiV2 {
   @Get("/api/v2/dependencies")
   public HttpResponse getDependencies(
     @Param("endTs") long endTs,
-    @Nullable @Param("lookback") Long lookback) throws IOException {
+    @Param("lookback") Optional<Long> lookback) throws IOException {
     Call<List<DependencyLink>> call =
-      storage.spanStore().getDependencies(endTs, lookback != null ? lookback : defaultLookback);
+      storage.spanStore().getDependencies(endTs, lookback.orElse(defaultLookback));
     return jsonResponse(DependencyLinkBytesEncoder.JSON_V1.encodeList(call.execute()));
   }
 
@@ -82,34 +77,35 @@ public class ZipkinQueryApiV2 {
   public HttpResponse getServiceNames() throws IOException {
     List<String> serviceNames = storage.spanStore().getServiceNames().execute();
     serviceCount = serviceNames.size();
-    return maybeCacheNames(serviceNames);
+    return maybeCacheNames(serviceCount > 3, serviceNames);
   }
 
   @Get("/api/v2/spans")
   public HttpResponse getSpanNames(@Param("serviceName") String serviceName) throws IOException {
-    return maybeCacheNames(storage.spanStore().getSpanNames(serviceName).execute());
+    List<String> spanNames = storage.spanStore().getSpanNames(serviceName).execute();
+    return maybeCacheNames(serviceCount > 3, spanNames);
   }
 
   @Get("/api/v2/traces")
   public HttpResponse getTraces(
-    @Nullable @Param("serviceName") String serviceName,
-    @Nullable @Param("spanName") String spanName,
-    @Nullable @Param("annotationQuery") String annotationQuery,
-    @Nullable @Param("minDuration") Long minDuration,
-    @Nullable @Param("maxDuration") Long maxDuration,
-    @Nullable @Param("endTs") Long endTs,
-    @Nullable @Param("lookback") Long lookback,
+    @Param("serviceName") Optional<String> serviceName,
+    @Param("spanName") Optional<String> spanName,
+    @Param("annotationQuery") Optional<String> annotationQuery,
+    @Param("minDuration") Optional<Long> minDuration,
+    @Param("maxDuration") Optional<Long> maxDuration,
+    @Param("endTs") Optional<Long> endTs,
+    @Param("lookback") Optional<Long> lookback,
     @Default("10") @Param("limit") int limit)
     throws IOException {
     QueryRequest queryRequest =
       QueryRequest.newBuilder()
-        .serviceName(serviceName)
-        .spanName(spanName)
-        .parseAnnotationQuery(annotationQuery)
-        .minDuration(minDuration)
-        .maxDuration(maxDuration)
-        .endTs(endTs != null ? endTs : System.currentTimeMillis())
-        .lookback(lookback != null ? lookback : defaultLookback)
+        .serviceName(serviceName.orElse(null))
+        .spanName(spanName.orElse(null))
+        .parseAnnotationQuery(annotationQuery.orElse(null))
+        .minDuration(minDuration.orElse(null))
+        .maxDuration(maxDuration.orElse(null))
+        .endTs(endTs.orElse(System.currentTimeMillis()))
+        .lookback(lookback.orElse(defaultLookback))
         .limit(limit)
         .build();
 
@@ -118,23 +114,13 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/trace/{traceIdHex}")
-  @ExceptionHandler(NotFoundHandler.class)
   public HttpResponse getTrace(@Param("traceIdHex") String traceIdHex) throws IOException {
     List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
-    if (trace.isEmpty()) throw new NoSuchElementException(traceIdHex);
-    return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));
-  }
-
-  static final class NotFoundHandler implements ExceptionHandlerFunction {
-    @Override
-    public HttpResponse handleException(RequestContext ctx, HttpRequest req, Throwable cause) {
-      if (cause instanceof NoSuchElementException) {
-        return HttpResponse.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
-          cause.getMessage() + " not found");
-      }
-      // To the next exception handler.
-      return ExceptionHandlerFunction.fallthrough();
+    if (trace == null) {
+      return HttpResponse.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
+        traceIdHex + " not found");
     }
+    return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));
   }
 
   static HttpResponse jsonResponse(byte[] body) {
@@ -153,14 +139,15 @@ public class ZipkinQueryApiV2 {
     }
   };
 
-  @Get("/api/v2/trace/autocompleteKeys")
+  @Get("/api/v2/autocompleteKeys")
   public HttpResponse getAutocompleteKeys() {
-    return maybeCacheNames(autocompleteKeys);
+    return maybeCacheNames(true, autocompleteKeys);
   }
 
-  @Get("/api/v2/trace/autocompleteKeys")
+  @Get("/api/v2/autocompleteValues")
   public HttpResponse getAutocompleteValues(@Param("key") String key) throws IOException {
-    return maybeCacheNames(storage.autocompleteTags().getValues(key).execute());
+    List<String> values = storage.autocompleteTags().getValues(key).execute();
+    return maybeCacheNames(values.size() > 3, values);
   }
 
   /**
@@ -168,12 +155,12 @@ public class ZipkinQueryApiV2 {
    * empty results, users have more questions. We assume caching becomes a concern when zipkin is in
    * active use, and active use usually implies more than 3 services.
    */
-  HttpResponse maybeCacheNames(List<String> values) {
+  HttpResponse maybeCacheNames(boolean shouldCacheControl, List<String> values) {
     byte[] body = JsonCodec.writeList(QUOTED_STRING_WRITER, values);
     HttpHeaders headers = HttpHeaders.of(200)
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
-    if (serviceCount > 3) {
+    if (shouldCacheControl) {
       headers = headers.add(
         HttpHeaderNames.CACHE_CONTROL,
         CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate().getHeaderValue()

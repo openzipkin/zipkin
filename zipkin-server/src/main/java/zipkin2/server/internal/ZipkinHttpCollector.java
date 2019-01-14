@@ -14,14 +14,22 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.encoding.GzipStreamDecoderFactory;
+import com.linecorp.armeria.common.AggregatedHttpMessage;
 import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.Consumes;
 import com.linecorp.armeria.server.annotation.ConsumesJson;
-import com.linecorp.armeria.server.annotation.Header;
+import com.linecorp.armeria.server.annotation.ExceptionHandler;
+import com.linecorp.armeria.server.annotation.ExceptionHandlerFunction;
 import com.linecorp.armeria.server.annotation.Post;
+import com.linecorp.armeria.server.annotation.RequestConverter;
+import com.linecorp.armeria.server.annotation.RequestConverterFunction;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -29,8 +37,6 @@ import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import javax.annotation.Nullable;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Callback;
 import zipkin2.Span;
@@ -40,102 +46,122 @@ import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
 
-@ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
-public class ZipkinHttpCollector {
-  static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
+import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
+import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
 
-  final CollectorMetrics metrics;
+@ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
+@RequestConverter(UnzippingBytesRequestConverter.class)
+@ExceptionHandler(BodyIsExceptionMessage.class)
+public class ZipkinHttpCollector {
+  static volatile CollectorMetrics metrics;
   final Collector collector;
 
-  @Autowired ZipkinHttpCollector(StorageComponent storage, CollectorSampler sampler,
-    CollectorMetrics metrics) {
-    this.metrics = metrics.forTransport("http");
-    this.collector = Collector.newBuilder(getClass())
-      .storage(storage).sampler(sampler).metrics(this.metrics).build();
+  ZipkinHttpCollector(
+    StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
+    metrics = metrics.forTransport("http");
+    collector =
+      Collector.newBuilder(getClass()).storage(storage).sampler(sampler).metrics(metrics).build();
+    ZipkinHttpCollector.metrics = metrics; // converter instances aren't injected by Spring
   }
 
   @Post("/api/v2/spans")
-  public HttpResponse uploadSpans(@Nullable @Header("content-encoding") String encoding,
-    HttpData req) {
-    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V2, req);
+  public HttpResponse uploadSpans(byte[] serializedSpans) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, serializedSpans);
   }
 
   @Post("/api/v2/spans")
   @ConsumesJson
-  public HttpResponse uploadSpansJson(@Nullable @Header("content-encoding") String encoding,
-    HttpData req) {
-    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V2, req);
+  public HttpResponse uploadSpansJson(byte[] serializedSpans) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, serializedSpans);
   }
 
   @Post("/api/v2/spans")
   @ConsumesProtobuf
-  public HttpResponse uploadSpansProtobuf(@Nullable @Header("content-encoding") String encoding,
-    HttpData req) {
-    return validateAndStoreSpans(encoding, SpanBytesDecoder.PROTO3, req);
+  public HttpResponse uploadSpansProtobuf(byte[] serializedSpans) {
+    return validateAndStoreSpans(SpanBytesDecoder.PROTO3, serializedSpans);
   }
 
   @Post("/api/v1/spans")
-  public HttpResponse uploadSpansV1(@Nullable @Header("content-encoding") String encoding,
-    HttpData req) {
-    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V1, req);
+  public HttpResponse uploadSpansV1(byte[] serializedSpans) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V1, serializedSpans);
   }
 
   @Post("/api/v1/spans")
   @ConsumesJson
-  public HttpResponse uploadSpansV1Json(@Nullable @Header("content-encoding") String encoding,
-    HttpData req) {
-    return validateAndStoreSpans(encoding, SpanBytesDecoder.JSON_V1, req);
+  public HttpResponse uploadSpansV1Json(byte[] serializedSpans) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V1, serializedSpans);
   }
 
   @Post("/api/v1/spans")
   @ConsumesThrift
-  public HttpResponse uploadSpansV1Thrift(@Nullable @Header("content-encoding") String encoding,
-    HttpData req) {
-    return validateAndStoreSpans(encoding, SpanBytesDecoder.THRIFT, req);
+  public HttpResponse uploadSpansV1Thrift(byte[] serializedSpans) {
+    return validateAndStoreSpans(SpanBytesDecoder.THRIFT, serializedSpans);
   }
 
-  HttpResponse validateAndStoreSpans(String encoding, SpanBytesDecoder decoder,
-    HttpData req) {
-    CompletableFuture<HttpResponse> result = new CompletableFuture<>();
-    metrics.incrementMessages();
-    if (encoding != null && encoding.contains("gzip")) {
-      try {
-        req = GZIP_DECODER_FACTORY.newDecoder().decode(req);
-      } catch (RuntimeException e) {
-        metrics.incrementMessagesDropped();
-        return HttpResponse.ofFailure(e);
-      }
-    }
-    byte[] serializedSpans = req.array();
-    metrics.incrementBytes(serializedSpans.length);
+  /** This synchronously decodes the message so that users can see data errors. */
+  HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, byte[] serializedSpans) {
+    CompletableCallback result = new CompletableCallback();
     List<Span> spans = new ArrayList<>();
-    try {
-      if (decoder.decodeList(serializedSpans, spans)) {
-        return HttpResponse.of(HttpStatus.BAD_REQUEST, MediaType.ANY_TEXT_TYPE,
-          "Could not decode spans");
-      }
-    } catch (RuntimeException e) {
-      return HttpResponse.ofFailure(e);
+    if (!decoder.decodeList(serializedSpans, spans)) {
+      throw new IllegalArgumentException("Empty " + decoder.name() + " message");
     }
-    collector.accept(spans, new Callback<Void>() {
-      @Override public void onSuccess(Void value) {
-        result.complete(HttpResponse.of(HttpStatus.ACCEPTED));
-      }
-
-      @Override public void onError(Throwable t) {
-        result.completeExceptionally(t);
-      }
-    });
+    collector.accept(spans, result);
     return HttpResponse.from(result);
   }
+}
 
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target({ElementType.TYPE, ElementType.METHOD})
-  @Consumes("application/x-thrift") @interface ConsumesThrift {
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Consumes("application/x-thrift") @interface ConsumesThrift {
+}
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.TYPE, ElementType.METHOD})
+@Consumes("application/x-protobuf") @interface ConsumesProtobuf {
+}
+
+final class CompletableCallback extends CompletableFuture<HttpResponse>
+  implements Callback<Void> {
+
+  @Override public void onSuccess(Void value) {
+    complete(HttpResponse.of(HttpStatus.ACCEPTED));
   }
 
-  @Retention(RetentionPolicy.RUNTIME)
-  @Target({ElementType.TYPE, ElementType.METHOD})
-  @Consumes("application/x-protobuf") @interface ConsumesProtobuf {
+  @Override public void onError(Throwable t) {
+    completeExceptionally(t);
+  }
+}
+
+final class UnzippingBytesRequestConverter implements RequestConverterFunction {
+  static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
+
+  @Override public Object convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request,
+    Class<?> expectedResultType) {
+    ZipkinHttpCollector.metrics.incrementMessages();
+    HttpData content = request.content();
+    if (content.isEmpty()) throw new IllegalArgumentException("Empty POST body");
+
+    String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
+    if (encoding != null && encoding.contains("gzip")) {
+      content = GZIP_DECODER_FACTORY.newDecoder().decode(content);
+      // The implementation of the armeria decoder is to return an empty body of failure
+      if (content.isEmpty()) throw new IllegalArgumentException("Cannot gunzip spans");
+    }
+    byte[] result = content.array();
+    ZipkinHttpCollector.metrics.incrementBytes(result.length);
+    return result;
+  }
+}
+
+final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
+
+  @Override
+  public HttpResponse handleException(RequestContext ctx, HttpRequest req, Throwable cause) {
+    ZipkinHttpCollector.metrics.incrementMessagesDropped();
+    if (cause instanceof IllegalArgumentException) {
+      return HttpResponse.of(BAD_REQUEST, MediaType.ANY_TEXT_TYPE, cause.getMessage());
+    } else {
+      return HttpResponse.of(INTERNAL_SERVER_ERROR, MediaType.ANY_TEXT_TYPE, cause.getMessage());
+    }
   }
 }

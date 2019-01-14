@@ -1,0 +1,10 @@
+# Disable the Web Server.
+# See https://docs.spring.io/spring-boot/docs/current/reference/html/howto-embedded-web-servers.html.
+spring.main.web-application-type: none
+
+# Additional server ports specified with Armeria configuration.
+armeria:
+  ports:
+    - port: ${server.port:9411}
+      protocols:
+        - http
