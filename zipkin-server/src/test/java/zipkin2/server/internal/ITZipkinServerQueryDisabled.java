@@ -38,7 +38,8 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "spring.config.name=zipkin-server",
     "zipkin.query.enabled=false",
-    "zipkin.ui.enabled=false"
+    "zipkin.ui.enabled=false",
+    "armeria.port=0"
   }
 )
 @RunWith(SpringRunner.class)

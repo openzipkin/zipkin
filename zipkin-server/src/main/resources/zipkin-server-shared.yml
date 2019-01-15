@@ -157,7 +157,7 @@ server.port: -1
 # Additional server ports specified with Armeria configuration.
 armeria:
   ports:
-    - port: ${QUERY_PORT:9411}
+    - port: ${QUERY_PORT:${armeria.port:9411}}
       protocols:
         - http
 

@@ -59,6 +59,8 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
 
+  @Autowired(required = false)
+  ServletWebServerApplicationContext webServerContext;
   /**
    * Extracts a Tomcat {@link Connector} from Spring webapp context.
    */
@@ -70,20 +72,14 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     return container.getTomcat().getConnector();
   }
 
-  /**
-   * Returns a new {@link TomcatService} that redirects the incoming requests to the Tomcat instance
-   * provided by Spring Boot.
-   */
-  @Bean
-  public TomcatService tomcatService(ServletWebServerApplicationContext applicationContext) {
-    return TomcatService.forConnector(getConnector(applicationContext));
-  }
 
-  @Bean ArmeriaServerConfigurator httpCollectorConfigurator(TomcatService tomcatService) {
+  @Bean ArmeriaServerConfigurator httpCollectorConfigurator() {
     return sb -> {
       if (httpQuery != null) sb.annotatedService(httpQuery);
       if (httpCollector != null) sb.annotatedService(httpCollector);
-      sb.serviceUnder("/", tomcatService);
+      if (webServerContext != null) {
+        sb.serviceUnder("/", TomcatService.forConnector(getConnector(webServerContext)));
+      }
     };
   }
 

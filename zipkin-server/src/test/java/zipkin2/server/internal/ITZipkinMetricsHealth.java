@@ -46,7 +46,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = "spring.config.name=zipkin-server"
+  properties = {"spring.config.name=zipkin-server", "armeria.port=0"}
 )
 @RunWith(SpringRunner.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
