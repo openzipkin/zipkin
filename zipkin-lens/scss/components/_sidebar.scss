@@ -8,7 +8,6 @@
   background-color: #6A9FB5;
   z-index: 10000;
   font-size: 11px;
-  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);  
 }
 
 .sidebar__menu {
@@ -33,7 +32,7 @@
   box-sizing: border-box;
   color: $dark-4;
   background: #7baFc6;
-  border-right: 1px solid $gray-9;
+  border-right: 4px solid $gray-10;
 }
 
 .sidebar__page-option-icon {

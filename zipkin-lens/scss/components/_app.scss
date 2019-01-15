@@ -13,7 +13,7 @@
   display: flex;
   align-items: center;
   z-index: 1000;
-  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
+  border-bottom: 1px solid $gray-9;
 }
 
 .app__content {

@@ -1,7 +1,6 @@
 .trace-summary {
   border: 1px solid $gray-8;
   border-radius: 2px;
-  box-shadow: 1px 1px 1px 1px rgba(0,0,0,0.25);
 }
 
 .trace-summary__trace-id {
@@ -20,10 +19,10 @@
 }
 
 .trace-summary__buttons {
-  width: 74px;
+  width: 58px;
   border-left: 1px solid $gray-9;
   padding: 0 2px;
-  font-size: 22px;
+  font-size: 18px;
   display: flex;
   justify-content: space-between;
   align-items: center;
