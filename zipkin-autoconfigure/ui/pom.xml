@@ -53,6 +53,11 @@
       <artifactId>armeria-spring-boot-autoconfigure</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-tomcat</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- In excluding tomcat, we exclude its indirect dep on servlet-api. -->
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -72,6 +77,10 @@
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
       <version>1.11.3</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.validator</groupId>
+      <artifactId>hibernate-validator</artifactId>
     </dependency>
 
     <dependency>

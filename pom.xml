@@ -262,6 +262,12 @@
         </exclusions>
       </dependency>
 
+      <dependency>
+        <groupId>com.linecorp.armeria</groupId>
+        <artifactId>armeria-tomcat</artifactId>
+        <version>${armeria.version}</version>
+      </dependency>
+
       <!-- Makes sure spring doesn't eagerly bind tomcat or slf4j -->
       <dependency>
         <groupId>org.springframework.boot</groupId>

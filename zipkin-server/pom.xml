@@ -81,6 +81,10 @@
     </dependency>
     <dependency>
       <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-tomcat</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-zipkin</artifactId>
     </dependency>
     <!-- Armeria needs a validation implementation -->

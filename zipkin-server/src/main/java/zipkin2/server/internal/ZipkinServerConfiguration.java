@@ -21,17 +21,21 @@ import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.annotation.Options;
 import com.linecorp.armeria.server.cors.CorsService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
+import com.linecorp.armeria.server.tomcat.TomcatService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import java.util.List;
 import java.util.function.Function;
+import org.apache.catalina.connector.Connector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
+import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -55,10 +59,31 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Autowired(required = false)
   ZipkinHttpCollector httpCollector;
 
-  @Bean ArmeriaServerConfigurator httpCollectorConfigurator() {
+  /**
+   * Extracts a Tomcat {@link Connector} from Spring webapp context.
+   */
+  public static Connector getConnector(ServletWebServerApplicationContext applicationContext) {
+    final TomcatWebServer container = (TomcatWebServer) applicationContext.getWebServer();
+
+    // Start the container to make sure all connectors are available.
+    container.start();
+    return container.getTomcat().getConnector();
+  }
+
+  /**
+   * Returns a new {@link TomcatService} that redirects the incoming requests to the Tomcat instance
+   * provided by Spring Boot.
+   */
+  @Bean
+  public TomcatService tomcatService(ServletWebServerApplicationContext applicationContext) {
+    return TomcatService.forConnector(getConnector(applicationContext));
+  }
+
+  @Bean ArmeriaServerConfigurator httpCollectorConfigurator(TomcatService tomcatService) {
     return sb -> {
       if (httpQuery != null) sb.annotatedService(httpQuery);
       if (httpCollector != null) sb.annotatedService(httpCollector);
+      sb.serviceUnder("/", tomcatService);
     };
   }
 
