@@ -1,11 +1,11 @@
 export const getErrorTypeColor = (errorType) => {
   switch (errorType) {
     case 'transient':
-      return '#F4E689';
+      return '#da8b8b';
     case 'critical':
-      return '#FF0000';
+      return '#da8b8b';
     default:
-      return '#5C904B';
+      return '#9bbdda';
   }
 };
 
@@ -28,10 +28,8 @@ export const getServiceNameColor = (serviceName) => {
     case 7:
       return '#F8630E';
     case 8:
-      return '#FFFFFF';
-    case 9:
       return '#FF5700';
     default:
-      return '#FFFFFF';
+      return '#111111';
   }
 };

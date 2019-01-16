@@ -2,20 +2,18 @@
   display: flex;
 
   .date-picker__calendar {
-    min-width: 75px;
-    max-width: 125px;
     &-input {
-      height: $input-line-height;
-      color: $input-color;
-      background-color: $input-bg;
-      border: solid 1px $input-border-color;
+      height: 14px;
+      width: 75px;
+      padding-left: 4px;
+      color: #ffffff;
+      background-color: #454545;
+      border: 0;
       border-radius: 2px;
     }
   }
 
   .date-picker__timepicker {
-    min-width: 50px;
-    max-width: 100px;
-    padding-left: 5px;
+    padding-left: 2px;
   }
 }

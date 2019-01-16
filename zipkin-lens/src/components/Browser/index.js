@@ -1,93 +1,138 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import { CSSTransition } from 'react-transition-group';
-import queryString from 'query-string';
+import ReactSelect from 'react-select';
 
-import Sidebar from './Sidebar';
-import TracesContainer from '../../containers/Browser/Traces/TracesContainer';
+import TraceSummary from './TraceSummary';
+import LoadingOverlay from '../Common/LoadingOverlay';
 
 const propTypes = {
-  location: PropTypes.shape({}).isRequired,
+  traceSummaries: PropTypes.arrayOf(PropTypes.shape({
+    width: PropTypes.number,
+    infoClass: PropTypes.string,
+    spanCount: PropTypes.number,
+    durationStr: PropTypes.string,
+    timestamp: PropTypes.number,
+    servicePercentage: PropTypes.number,
+    serviceSummaries: PropTypes.arrayOf(PropTypes.shape({
+      serviceName: PropTypes.string,
+      spanCount: PropTypes.number,
+    })),
+  })).isRequired,
+  skewCorrectedTracesMap: PropTypes.shape({}).isRequired,
+  isLoading: PropTypes.bool.isRequired,
   clearTraces: PropTypes.func.isRequired,
-  fetchTraces: PropTypes.func.isRequired,
 };
+
+const sortingMethodOptions = [
+  { value: 'LONGEST', label: 'Longest First' },
+  { value: 'SHORTEST', label: 'Shortest First' },
+  { value: 'NEWEST', label: 'Newest First' },
+  { value: 'OLDEST', label: 'Oldest First' },
+];
 
 class Browser extends React.Component {
   constructor(props) {
     super(props);
-
     this.state = {
-      isSidebarShown: true,
+      sortingMethod: 'LONGEST',
     };
-    this.handleSidebarToggle = this.handleSidebarToggle.bind(this);
-  }
-
-  componentDidMount() {
-    /* Trigger initial state change for CSSTransition */
-    setTimeout(() => { this.setState({ isSidebarShown: false }); }, 0);
-
-    const {
-      location,
-      fetchTraces,
-    } = this.props;
-
-    if (location.search !== '' && location.search !== '?') {
-      const query = queryString.parse(location.search);
-      fetchTraces(query);
-    }
-  }
-
-  componentWillReceiveProps({ location }) {
-    const {
-      location: prevLocation,
-      fetchTraces,
-    } = this.props;
-
-    if (location.search !== '' && location.search !== '?' && prevLocation.search !== location.search) {
-      const query = queryString.parse(location.search);
-      fetchTraces(query);
-    }
+    this.handleSortingMethodChange = this.handleSortingMethodChange.bind(this);
   }
 
   componentWillUnmount() {
-    const {
-      clearTraces,
-    } = this.props;
-
+    const { clearTraces } = this.props;
     clearTraces();
   }
 
-  handleSidebarToggle() {
-    const { isSidebarShown } = this.state;
-    this.setState({ isSidebarShown: !isSidebarShown });
+  handleSortingMethodChange(selected) {
+    this.setState({
+      sortingMethod: selected.value,
+    });
+  }
+
+  sortTraceSummaries() {
+    const { traceSummaries } = this.props;
+    const { sortingMethod } = this.state;
+
+    return traceSummaries
+      .sort((a, b) => {
+        switch (sortingMethod) {
+          case 'LONGEST':
+            return b.duration - a.duration;
+          case 'SHORTEST':
+            return a.duration - b.duration;
+          case 'NEWEST':
+            return b.timestamp - a.timestamp;
+          case 'OLDEST':
+            return a.timestamp - b.timestamp;
+          default:
+            return 0;
+        }
+      });
+  }
+
+  renderResultsHeader() {
+    const { traceSummaries } = this.props;
+    const { sortingMethod } = this.state;
+    return (
+      <div className="browser__results-header">
+        <div className="browser__total-results">
+          {`${traceSummaries.length} results`}
+        </div>
+        <div>
+          <ReactSelect
+            onChange={this.handleSortingMethodChange}
+            className="browser__sorting-method-select"
+            options={sortingMethodOptions}
+            value={{
+              value: sortingMethod,
+              label: sortingMethodOptions.find(opt => opt.value === sortingMethod).label,
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  renderResults() {
+    const { skewCorrectedTracesMap } = this.props;
+    const sortedTraceSummaries = this.sortTraceSummaries();
+    return (
+      <div className="browser__results">
+        {
+          sortedTraceSummaries.map(
+            traceSummary => (
+              <div
+                key={traceSummary.traceId}
+                className="browser__trace-summary-wrapper"
+              >
+                <TraceSummary
+
+                  traceId={traceSummary.traceId}
+                  width={traceSummary.width}
+                  infoClass={traceSummary.infoClass}
+                  spanCount={traceSummary.spanCount}
+                  durationStr={traceSummary.durationStr}
+                  timestamp={traceSummary.timestamp}
+                  servicePercentage={traceSummary.servicePercentage}
+                  serviceSummaries={traceSummary.serviceSummaries}
+                  skewCorrectedTrace={skewCorrectedTracesMap[traceSummary.traceId]}
+                />
+              </div>
+            ),
+          )
+        }
+      </div>
+    );
   }
 
   render() {
-    const { location } = this.props;
-    const { isSidebarShown } = this.state;
-
+    const { isLoading } = this.props;
     return (
-      <div>
-        <CSSTransition
-          in={isSidebarShown}
-          classNames="browser__sidebar"
-          timeout={500}
-        >
-          <Sidebar
-            isShown={isSidebarShown}
-            onToggle={this.handleSidebarToggle}
-            location={location}
-          />
-        </CSSTransition>
-        <CSSTransition
-          in={isSidebarShown}
-          classNames="browser__main"
-          timeout={500}
-        >
-          <TracesContainer
-            location={location}
-          />
-        </CSSTransition>
+      <div className="browser">
+        <LoadingOverlay active={isLoading} />
+        {this.renderResultsHeader()}
+        {this.renderResults()}
       </div>
     );
   }

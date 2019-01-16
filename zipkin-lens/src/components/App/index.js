@@ -4,42 +4,36 @@ import { BrowserRouter, Route } from 'react-router-dom';
 
 import Layout from './Layout';
 import BrowserContainer from '../../containers/Browser/BrowserContainer';
-import TraceContainer from '../../containers/Trace/TraceContainer';
+import DetailedTraceSummaryContainer from '../../containers/DetailedTraceSummary/DetailedTraceSummaryContainer';
 import DependenciesContainer from '../../containers/Dependencies/DependenciesContainer';
 import configureStore from '../../store/configure-store';
 
 const App = () => (
   <Provider store={configureStore()}>
     <BrowserRouter>
-      <div>
+      <Layout>
         <Route
           exact
           path="/zipkin"
           render={props => (
-            <Layout {...props}>
-              <BrowserContainer {...props} />
-            </Layout>
+            <BrowserContainer {...props} />
           )}
         />
         <Route
           exact
           path="/zipkin/trace/:traceId"
           render={props => (
-            <Layout {...props}>
-              <TraceContainer {...props} />
-            </Layout>
+            <DetailedTraceSummaryContainer {...props} />
           )}
         />
         <Route
           exact
           path="/zipkin/dependencies"
           render={props => (
-            <Layout {...props}>
-              <DependenciesContainer {...props} />
-            </Layout>
+            <DependenciesContainer {...props} />
           )}
         />
-      </div>
+      </Layout>
     </BrowserRouter>
   </Provider>
 );

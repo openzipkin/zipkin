@@ -4,50 +4,6 @@ import { shallow } from 'enzyme';
 import Browser from './index';
 
 describe('<Browser>', () => {
-  it('should not fetch traces when location.search is empty', () => {
-    const props = {
-      location: {
-        search: '',
-      },
-      clearTraces: () => {},
-      fetchTraces: jest.fn(),
-    };
-    shallow(<Browser {...props} />);
-    const { fetchTraces } = props;
-    expect(fetchTraces.mock.calls.length).toBe(0);
-  });
-
-  it('should fetch traces when location.search is not empty', () => {
-    const props = {
-      location: {
-        search: '?serviceName=serviceA',
-      },
-      clearTraces: () => {},
-      fetchTraces: jest.fn(),
-    };
-    shallow(<Browser {...props} />);
-    const { fetchTraces } = props;
-    expect(fetchTraces.mock.calls.length).toBe(1);
-  });
-
-  it('should fetch traces when location is changed', () => {
-    const props = {
-      location: {
-        search: '?serviceName=serviceA',
-      },
-      clearTraces: () => {},
-      fetchTraces: jest.fn(),
-    };
-    const wrapper = shallow(<Browser {...props} />);
-    wrapper.setProps({
-      location: {
-        search: '?serviceName=serviceB',
-      },
-    });
-    const { fetchTraces } = props;
-    expect(fetchTraces.mock.calls.length).toBe(2);
-  });
-
   it('should clear traces when unmounted', () => {
     const props = {
       location: {
@@ -55,6 +11,9 @@ describe('<Browser>', () => {
       },
       clearTraces: jest.fn(),
       fetchTraces: () => {},
+      traceSummaries: [],
+      skewCorrectedTracesMap: {},
+      isLoading: false,
     };
     const wrapper = shallow(<Browser {...props} />);
     wrapper.unmount();

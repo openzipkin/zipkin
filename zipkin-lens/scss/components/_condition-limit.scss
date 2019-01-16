@@ -1,0 +1,21 @@
+.condition-limit {
+  height: 100%;
+  width: 76px;
+}
+
+.condition-limit__input {
+  height: 100%;
+  padding: 0px 2px 0px 4px;
+  box-sizing: border-box;
+  color: $dark-2;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
+  width: 76px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+}
+
+.condition-limit__input--focused {
+  outline: 0;
+  border: 0;
+}

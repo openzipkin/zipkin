@@ -45,6 +45,7 @@
     "html-webpack-plugin": "^3.2.0",
     "jest": "^23.6.0",
     "node-sass": "^4.9.4",
+    "react-svg-loader": "^2.1.0",
     "redux-mock-store": "^1.5.3",
     "sass-loader": "^7.1.0",
     "style-loader": "^0.21.0",
@@ -74,6 +75,7 @@
     "react-transition-group": "^2.4.0",
     "redux": "^4.0.0",
     "redux-thunk": "^2.3.0",
+    "shortid": "^2.2.14",
     "vizceral-react": "^4.6.5"
   }
 }
