@@ -32,6 +32,7 @@ class SearchCondition extends React.Component {
     this.handleKeyBlur = this.handleKeyBlur.bind(this);
     this.handleValueFocus = this.handleValueFocus.bind(this);
     this.handleValueBlur = this.handleValueBlur.bind(this);
+    this.handleKeyChange = this.handleKeyChange.bind(this);
   }
 
   getOptions() {
@@ -78,11 +79,20 @@ class SearchCondition extends React.Component {
     this.setState({ isValueFocused: false });
   }
 
+  handleKeyChange(selected) {
+    const { onConditionKeyChange } = this.props;
+    onConditionKeyChange(selected.value);
+    if (this.nextFocusRef) {
+      // At this timing, it is possible that the child component
+      // is not yet mounted, so use setTimeout to delay.
+      setTimeout(() => { this.nextFocusRef.focus(); }, 0);
+    }
+  }
+
   render() {
     const {
       keyString,
       children,
-      onConditionKeyChange,
       onDeleteButtonClick,
     } = this.props;
     const { isKeyFocused, isValueFocused, isKeyMenuOpened } = this.state;
@@ -99,14 +109,7 @@ class SearchCondition extends React.Component {
             options={this.getOptions()}
             onFocus={this.handleKeyFocus}
             onBlur={this.handleKeyBlur}
-            onChange={(selected) => {
-              onConditionKeyChange(selected.value);
-              if (this.nextFocusRef) {
-                // At this timing, it is possible that the child component
-                // is not yet mounted, so use setTimeout to delay.
-                setTimeout(() => { this.nextFocusRef.focus(); }, 0);
-              }
-            }}
+            onChange={this.handleKeyChange}
             styles={{
               control: provided => ({
                 ...provided,

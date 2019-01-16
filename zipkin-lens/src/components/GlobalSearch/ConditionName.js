@@ -18,6 +18,8 @@ class ConditionName extends React.Component {
     this.state = {
       isMenuOpened: false,
     };
+    this.handleFocus = this.handleFocus.bind(this);
+    this.handleBlur = this.handleBlur.bind(this);
   }
 
   getMaxLengthOfOptions() {
@@ -47,13 +49,23 @@ class ConditionName extends React.Component {
     return result;
   }
 
+  handleFocus() {
+    const { onFocus } = this.props;
+    onFocus();
+    setTimeout(() => { this.setState({ isMenuOpened: true }); }, 100);
+  }
+
+  handleBlur() {
+    const { onBlur } = this.props;
+    onBlur();
+    this.setState({ isMenuOpened: false });
+  }
+
   render() {
     const {
       value,
       onConditionChange,
       setNextFocusRef,
-      onFocus,
-      onBlur,
       isFocused,
     } = this.props;
 
@@ -68,18 +80,8 @@ class ConditionName extends React.Component {
           ref={(ref) => { setNextFocusRef(ref); }}
           value={{ value, label: value === '' ? 'all' : value }}
           options={this.getOptions()}
-          onFocus={
-            () => {
-              onFocus();
-              setTimeout(() => { this.setState({ isMenuOpened: true }); }, 100);
-            }
-          }
-          onBlur={
-            () => {
-              onBlur();
-              this.setState({ isMenuOpened: false });
-            }
-          }
+          onFocus={this.handleFocus}
+          onBlur={this.handleBlur}
           styles={{
             control: provided => ({
               ...provided,

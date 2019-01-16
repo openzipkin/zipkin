@@ -16,6 +16,8 @@ class ConditionLimit extends React.Component {
     this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleFocus = this.handleFocus.bind(this);
     this.handleBlur = this.handleBlur.bind(this);
+    this.handleValueChange = this.handleValueChange.bind(this);
+    this.handleClick = this.handleClick.bind(this);
   }
 
   handleKeyDown(e) {
@@ -32,9 +34,24 @@ class ConditionLimit extends React.Component {
     this.setState({ isFocused: false });
   }
 
+  handleValueChange(event) {
+    const { onLimitChange } = this.props;
+
+    let newLimit = parseInt(event.target.value, 10);
+    if (Number.isNaN(newLimit)) {
+      newLimit = 0;
+    }
+    onLimitChange(newLimit);
+  }
+
+  handleClick() {
+    this.handleFocus();
+    setTimeout(() => { this.inputRef.focus(); }, 0);
+  }
+
   render() {
     const { isFocused } = this.state;
-    const { limit, onLimitChange } = this.props;
+    const { limit } = this.props;
 
     return (
       <div className="condition-limit">
@@ -45,13 +62,7 @@ class ConditionLimit extends React.Component {
                 ref={(ref) => { this.inputRef = ref; }}
                 type="number"
                 value={limit}
-                onChange={(event) => {
-                  let newLimit = parseInt(event.target.value, 10);
-                  if (Number.isNaN(newLimit)) {
-                    newLimit = 0;
-                  }
-                  onLimitChange(newLimit);
-                }}
+                onChange={this.handleValueChange}
                 className="condition-limit__input condition-limit__input--focused"
                 onKeyDown={this.handleKeyDown}
                 onFocus={this.handleFocus}
@@ -63,12 +74,7 @@ class ConditionLimit extends React.Component {
               <div
                 className="condition-limit__input"
                 role="presentation"
-                onClick={
-                  () => {
-                    this.handleFocus();
-                    setTimeout(() => { this.inputRef.focus(); }, 0);
-                  }
-                }
+                onClick={this.handleClick}
               >
                 {`Max ${limit}`}
               </div>
