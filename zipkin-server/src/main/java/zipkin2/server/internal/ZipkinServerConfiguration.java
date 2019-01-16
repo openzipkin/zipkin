@@ -62,6 +62,10 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Autowired(required = false)
   ServletWebServerApplicationContext webServerContext;
+
+  @Autowired(required = false)
+  MetricsHealthController healthController;
+
   /**
    * Extracts a Tomcat {@link Connector} from Spring webapp context.
    */
@@ -74,7 +78,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   }
 
 
-  @Bean ArmeriaServerConfigurator serverConfigurator(MetricsHealthController healthController) {
+  @Bean ArmeriaServerConfigurator serverConfigurator() {
     return sb -> {
       if (httpQuery != null) {
         sb.annotatedService(httpQuery);
@@ -82,7 +86,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
         sb.annotatedService("/zipkin", httpQuery);
       }
       if (httpCollector != null) sb.annotatedService(httpCollector);
-      sb.annotatedService(healthController);
+      if (healthController != null) sb.annotatedService(healthController);
       // Redirects the prometheus scrape endpoint for backward compatibility
       sb.service("/prometheus", new RedirectService("/actuator/prometheus/"));
       if (webServerContext != null) {
