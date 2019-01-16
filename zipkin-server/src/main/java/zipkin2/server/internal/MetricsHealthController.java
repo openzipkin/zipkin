@@ -22,10 +22,8 @@ import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
-import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.ProducesJson;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
@@ -34,17 +32,8 @@ import java.util.Map;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.health.HealthStatusHttpMapper;
-import org.springframework.context.annotation.Bean;
 
 public class MetricsHealthController {
-
-  @Bean ArmeriaServerConfigurator metricsConfigurator(MetricsHealthController controller) {
-    return sb -> {
-      sb.annotatedService(controller);
-      // Redirects the prometheus scrape endpoint for backward compatibility
-      sb.service("/prometheus/", new RedirectService("/actuator/prometheus/"));
-    };
-  }
 
   final MeterRegistry meterRegistry;
   final HealthEndpoint healthEndpoint;

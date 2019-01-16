@@ -17,6 +17,7 @@ import brave.Tracing;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.annotation.Options;
 import com.linecorp.armeria.server.cors.CorsService;
@@ -73,7 +74,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   }
 
 
-  @Bean ArmeriaServerConfigurator httpCollectorConfigurator() {
+  @Bean ArmeriaServerConfigurator serverConfigurator(MetricsHealthController healthController) {
     return sb -> {
       if (httpQuery != null) {
         sb.annotatedService(httpQuery);
@@ -81,6 +82,9 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
         sb.annotatedService("/zipkin", httpQuery);
       }
       if (httpCollector != null) sb.annotatedService(httpCollector);
+      sb.annotatedService(healthController);
+      // Redirects the prometheus scrape endpoint for backward compatibility
+      sb.service("/prometheus", new RedirectService("/actuator/prometheus/"));
       if (webServerContext != null) {
         sb.serviceUnder("/", TomcatService.forConnector(getConnector(webServerContext)));
       }
