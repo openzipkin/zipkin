@@ -75,7 +75,11 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Bean ArmeriaServerConfigurator httpCollectorConfigurator() {
     return sb -> {
-      if (httpQuery != null) sb.annotatedService(httpQuery);
+      if (httpQuery != null) {
+        sb.annotatedService(httpQuery);
+        // For UI.
+        sb.annotatedService("/zipkin", httpQuery);
+      }
       if (httpCollector != null) sb.annotatedService(httpCollector);
       if (webServerContext != null) {
         sb.serviceUnder("/", TomcatService.forConnector(getConnector(webServerContext)));
