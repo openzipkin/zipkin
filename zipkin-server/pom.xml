@@ -82,6 +82,13 @@
     <dependency>
       <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-tomcat</artifactId>
+      <exclusions>
+        <exclusion>
+          <!-- we do not use JSPs -->
+          <groupId>org.apache.tomcat.embed</groupId>
+          <artifactId>tomcat-embed-jasper</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>com.linecorp.armeria</groupId>

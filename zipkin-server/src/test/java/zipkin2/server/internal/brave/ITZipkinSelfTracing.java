@@ -32,9 +32,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
 @SpringBootTest(
-    classes = ZipkinServer.class,
-    webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-    properties = {"spring.config.name=zipkin-server", "zipkin.self-tracing.enabled=true"})
+  classes = ZipkinServer.class,
+  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  properties = {
+    "spring.config.name=zipkin-server",
+    "zipkin.self-tracing.enabled=true",
+    "armeria.port=0"
+  })
 @RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {
   @Autowired TracingStorageComponent storageComponent;

@@ -66,24 +66,11 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Autowired(required = false)
   MetricsHealthController healthController;
 
-  /**
-   * Extracts a Tomcat {@link Connector} from Spring webapp context.
-   */
-  public static Connector getConnector(ServletWebServerApplicationContext applicationContext) {
-    final TomcatWebServer container = (TomcatWebServer) applicationContext.getWebServer();
-
-    // Start the container to make sure all connectors are available.
-    container.start();
-    return container.getTomcat().getConnector();
-  }
-
-
   @Bean ArmeriaServerConfigurator serverConfigurator() {
     return sb -> {
       if (httpQuery != null) {
         sb.annotatedService(httpQuery);
-        // For UI.
-        sb.annotatedService("/zipkin", httpQuery);
+        sb.annotatedService("/zipkin", httpQuery); // For UI.
       }
       if (httpCollector != null) sb.annotatedService(httpCollector);
       if (healthController != null) sb.annotatedService(healthController);
@@ -93,6 +80,15 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
         sb.serviceUnder("/", TomcatService.forConnector(getConnector(webServerContext)));
       }
     };
+  }
+
+  /** Extracts a Tomcat {@link Connector} from Spring webapp context. */
+  static Connector getConnector(ServletWebServerApplicationContext applicationContext) {
+    final TomcatWebServer container = (TomcatWebServer) applicationContext.getWebServer();
+
+    // Start the container to make sure all connectors are available.
+    container.start();
+    return container.getTomcat().getConnector();
   }
 
   /** Registers health for any components, even those not in this jar. */

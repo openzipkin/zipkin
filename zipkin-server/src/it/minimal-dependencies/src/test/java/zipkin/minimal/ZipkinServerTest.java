@@ -22,6 +22,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
@@ -34,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = "spring.config.name=zipkin-server"
+  properties = {"spring.config.name=zipkin-server", "armeria.port=0"}
 )
 @RunWith(SpringRunner.class)
 public class ZipkinServerTest {
