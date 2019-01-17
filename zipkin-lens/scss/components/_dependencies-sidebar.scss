@@ -1,0 +1,77 @@
+.dependencies-sidebar {
+  padding: 4px;
+  background-color: $gray-11;
+}
+
+.dependencies-sidebar__service-name-container {
+  border-bottom: 1px solid $gray-9;
+  display: flex;
+}
+
+.dependencies-sidebar__service-name {
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.dependencies-sidebar__subtitle {
+  font-size: 18px;
+}
+
+.dependencies-sidebar__subtitle-icon {
+  margin-right: 4px;
+}
+
+.dependencies-sidebar__no-edges {
+  color: $red-1;
+}
+
+.dependencies-sidebar__no-edges-icon {
+  margin-right: 3px;
+}
+
+.dependencies-sidebar__edge-data {
+  margin: 4px 2px 14px 2px;
+}
+
+.dependencies-sidebar__count-data-wrapper {
+  display: flex;
+  background-color: $white;
+  border-radius: 3px;
+  border: 1px solid $gray-9;
+}
+
+.dependencies-sidebar__count-data {
+  display: flex;
+  margin-left: 4px;
+  margin-right: 12px;
+}
+
+.dependencies-sidebar__count-data-label {
+  font-weight: bold;
+  margin-right: 8px;
+
+  &--normal {
+    color: $dark-2;
+  }
+
+  &--danger {
+    color: $red-1;
+  }
+}
+
+.dependencies-sidebar__separator {
+  width: 100%;
+  margin: 10px 0;
+  border-bottom: 1px solid $gray-9;
+}
+
+.dependencies-sidebar__doughnut-wrapper {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.dependencies-sidebar__doughnut {
+  width: 420px;
+  height: 540px;
+}

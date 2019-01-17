@@ -1,50 +1,13 @@
-.rc-time-picker-panel {
-  &-inner {
-    color: $input-color;
-    background-color: $input-bg;
-  }
-  &-input {
-    color: $input-color;
-    background-color: $input-bg;
-  }
-}
-
 .rc-time-picker {
   height: 16px;
 }
 
 .rc-time-picker-input {
-  color: $input-color;
-  background-color: $input-bg;
   border: 0;
   border-radius: 2px;
   height: 16px;
   width: 65px;
   padding-left: 4px;
-  color: #ffffff;
-  background-color: #454545;
-}
-
-.rc-time-picker-panel-select {
-  font-size: $font-size-base;
-  color: $input-color;
-
-  &-active {
-    background-color: $timepicker-select-bg-focused;
-  }
-
-  li {
-    background-color: $timepicker-select-bg;
-    &:hover {
-      background: $timepicker-select-bg-selected;
-    }
-  }
-
-  & > * > &-option-selected {
-    background: $timepicker-select-bg-selected;
-  }
-}
-
-.rc-time-picker-panel-select-option-selected {
-  background: $timepicker-select-bg-selected;
+  color: $white;
+  background-color: $dark-4;
 }

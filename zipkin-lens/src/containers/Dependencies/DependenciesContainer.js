@@ -1,11 +1,12 @@
 import { connect } from 'react-redux';
 
-import Dependencies from '../../components/Dependencies';
+import Dependencies from '../../components/Dependencies'; // eslint-disable-line import/no-named-as-default
 import { fetchDependencies, clearDependencies } from '../../actions/dependencies-action';
+import Graph from '../../util/dependencies-graph';
 
 const mapStateToProps = state => ({
   isLoading: state.dependencies.isLoading,
-  dependencies: state.dependencies.dependencies,
+  graph: new Graph(state.dependencies.dependencies),
 });
 
 const mapDispatchToProps = dispatch => ({
