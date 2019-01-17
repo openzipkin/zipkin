@@ -1,7 +1,7 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 
-import Dependencies from './index';
+import { Dependencies } from './index';
 
 describe('<Dependencies>', () => {
   it('should not fetch dependencies when location.search is empty', () => {
@@ -10,7 +10,14 @@ describe('<Dependencies>', () => {
         search: '',
       },
       isLoading: false,
-      dependencies: [],
+      graph: {
+        allNodes: () => ([]),
+        getTargetEdges: () => ([]),
+        getSourceEdges: () => ([]),
+      },
+      history: {
+        push: () => {},
+      },
       fetchDependencies: jest.fn(),
       clearDependencies: () => {},
     };
@@ -25,7 +32,14 @@ describe('<Dependencies>', () => {
         search: '?endTs=1542620031053',
       },
       isLoading: false,
-      dependencies: [],
+      graph: {
+        allNodes: () => ([]),
+        getTargetEdges: () => ([]),
+        getSourceEdges: () => ([]),
+      },
+      history: {
+        push: () => {},
+      },
       fetchDependencies: jest.fn(),
       clearDependencies: () => {},
     };
@@ -40,7 +54,14 @@ describe('<Dependencies>', () => {
         search: '',
       },
       isLoading: false,
-      dependencies: [],
+      graph: {
+        allNodes: () => ([]),
+        getTargetEdges: () => ([]),
+        getSourceEdges: () => ([]),
+      },
+      history: {
+        push: () => {},
+      },
       fetchDependencies: () => {},
       clearDependencies: jest.fn(),
     };

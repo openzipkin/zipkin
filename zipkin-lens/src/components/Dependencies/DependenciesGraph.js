@@ -5,18 +5,32 @@ import _ from 'lodash';
 import VizceralExt from './VizceralExt';
 
 const propTypes = {
-  detailedService: PropTypes.string,
+  selectedServiceName: PropTypes.string,
   graph: PropTypes.shape({}).isRequired,
-  onDetailedServiceChange: PropTypes.func.isRequired,
-  searchString: PropTypes.string.isRequired,
+  onServiceSelect: PropTypes.func.isRequired,
+  filter: PropTypes.string.isRequired,
 };
 
 const defaultProps = {
-  detailedService: undefined,
+  selectedServiceName: undefined,
 };
 
 const style = {
-  colorConnectionLine: 'rgb(160, 150, 160)',
+  colorText: 'rgb(50, 50, 50)',
+  colorTextDisabled: 'rgb(50, 50, 50)',
+  colorConnectionLine: 'rgb(50, 50, 50)',
+  colorTraffic: {
+    normal: 'rgb(145, 200, 220)',
+    warning: 'rgb(255, 75, 75)',
+    danger: 'rgb(255, 75, 75)',
+  },
+  colorDonutInternalColor: 'rgb(245, 245, 245)',
+  colorDonutInternalColorHighlighted: 'rgb(145, 200, 220)',
+  colorLabelBorder: 'rgb(85, 140, 160)',
+  colorLabelText: 'rgb(50, 50, 50)',
+  colorTrafficHighlighted: {
+    normal: 'rgb(155, 210, 230)',
+  },
 };
 
 class DependenciesGraph extends React.Component {
@@ -26,23 +40,18 @@ class DependenciesGraph extends React.Component {
   }
 
   handleObjectHighlighted(highlightedObject) {
-    const {
-      detailedService,
-      onDetailedServiceChange,
-    } = this.props;
-
+    const { selectedServiceName, onServiceSelect } = this.props;
     if (typeof highlightedObject === 'undefined') {
-      onDetailedServiceChange(undefined);
+      onServiceSelect(undefined);
       return;
     }
-
-    if (highlightedObject.type === 'node' && highlightedObject.getName() !== detailedService) {
-      onDetailedServiceChange(highlightedObject.getName());
+    if (highlightedObject.type === 'node' && highlightedObject.getName() !== selectedServiceName) {
+      onServiceSelect(highlightedObject.getName());
     }
   }
 
   render() {
-    const { graph, searchString } = this.props;
+    const { graph, filter } = this.props;
     let maxVolume = 0;
     if (graph.allEdges().length > 0) {
       const maxVolumeEdge = _.maxBy(
@@ -66,7 +75,7 @@ class DependenciesGraph extends React.Component {
             connections: graph.allEdges(),
           }}
           objectHighlighted={this.handleObjectHighlighted}
-          match={searchString}
+          match={filter}
           styles={style}
         />
       </div>
