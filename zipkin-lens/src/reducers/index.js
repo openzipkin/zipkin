@@ -6,6 +6,8 @@ import traces from './traces';
 import services from './services';
 import dependencies from './dependencies';
 import globalSearch from './global-search';
+import autocompleteKeys from './autocomplete-keys';
+import autocompleteValues from './autocomplete-values';
 
 const reducer = combineReducers({
   spans,
@@ -14,6 +16,8 @@ const reducer = combineReducers({
   services,
   dependencies,
   globalSearch,
+  autocompleteKeys,
+  autocompleteValues,
 });
 
 export default reducer;
