@@ -13,13 +13,7 @@
  */
 package zipkin2.autoconfigure.ui;
 
-import com.linecorp.armeria.server.tomcat.TomcatService;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
-import org.apache.catalina.connector.Connector;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
@@ -27,29 +21,4 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 @EnableWebMvc
 @Import(ZipkinUiAutoConfiguration.class)
 public class TestServer {
-  /**
-   * Extracts a Tomcat {@link Connector} from Spring webapp context.
-   */
-  public static Connector getConnector(ServletWebServerApplicationContext applicationContext) {
-    final TomcatWebServer container = (TomcatWebServer) applicationContext.getWebServer();
-
-    // Start the container to make sure all connectors are available.
-    container.start();
-    return container.getTomcat().getConnector();
-  }
-
-  /**
-   * Returns a new {@link TomcatService} that redirects the incoming requests to the Tomcat instance
-   * provided by Spring Boot.
-   */
-  @Bean
-  public TomcatService tomcatService(ServletWebServerApplicationContext applicationContext) {
-    return TomcatService.forConnector(getConnector(applicationContext));
-  }
-
-  @Bean ArmeriaServerConfigurator httpCollectorConfigurator(TomcatService tomcatService) {
-    return sb -> {
-      sb.serviceUnder("/", tomcatService);
-    };
-  }
 }

@@ -13,11 +13,20 @@
  */
 package zipkin2.autoconfigure.ui;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.server.RedirectService;
+import com.linecorp.armeria.server.file.HttpFileService;
+import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.stream.Collectors;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,19 +37,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
-import org.springframework.http.CacheControl;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.servlet.ModelAndView;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import static org.springframework.web.bind.annotation.RequestMethod.GET;
-import static org.springframework.web.servlet.HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE;
 import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
@@ -68,7 +65,6 @@ import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @Configuration
 @EnableConfigurationProperties(ZipkinUiProperties.class)
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
-@RestController
 class ZipkinUiAutoConfiguration {
 
   @Autowired
@@ -94,66 +90,31 @@ class ZipkinUiAutoConfiguration {
     return soup.html();
   }
 
-  @Bean
-  public WebMvcConfigurer resourceConfigurer(@Value("${zipkin.ui.source-root:classpath:zipkin-ui}") String sourceRoot) {
-    return new WebMvcConfigurer() {
-      @Override
-      public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/zipkin/**")
-          .addResourceLocations(sourceRoot + "/")
-          .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));      }
+  @Bean ArmeriaServerConfigurator uiServerConfigurator(
+    @Value("${zipkin.ui.source-root:classpath:zipkin-ui}") String sourceRoot) throws IOException {
+    HttpFileService uiFileService = HttpFileService.forClassPath(sourceRoot);
+
+    byte[] index;
+    if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {
+      try (BufferedReader reader = new BufferedReader(
+        new InputStreamReader(indexHtml.getInputStream(), StandardCharsets.UTF_8))) {
+        index = reader.lines().collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8);
+      }
+    } else {
+      index = processedIndexHtml().getBytes(StandardCharsets.UTF_8);
+    }
+
+    byte[] config = new ObjectMapper().writeValueAsBytes(ui);
+
+    return sb -> {
+      sb
+        .service("/zipkin/config.json", (((ctx, req) ->
+          HttpResponse.of(HttpHeaders.of(HttpStatus.OK), HttpData.of(config)))))
+        .service("/zipkin/index.html", ((ctx, req) ->
+          HttpResponse.of(HttpHeaders.of(HttpStatus.OK), HttpData.of(index))))
+        .serviceUnder("/zipkin/", uiFileService)
+        .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
+        .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
     };
-  }
-
-  @RequestMapping(value = "/zipkin/config.json", method = GET)
-  public ResponseEntity<ZipkinUiProperties> serveUiConfig() {
-    return ResponseEntity.ok()
-        .cacheControl(CacheControl.maxAge(10, TimeUnit.MINUTES))
-        .contentType(MediaType.APPLICATION_JSON)
-        .body(ui);
-  }
-
-  @RequestMapping(value = "/zipkin/index.html", method = GET)
-  public ResponseEntity<?> serveIndex() throws IOException {
-    ResponseEntity.BodyBuilder result = ResponseEntity.ok()
-      .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
-      .contentType(MediaType.TEXT_HTML);
-    return DEFAULT_BASEPATH.equals(ui.getBasepath())
-      ? result.body(indexHtml)
-      : result.body(processedIndexHtml());
-  }
-
-  /**
-   * This cherry-picks well-known routes the single-page app serves, and forwards to that as opposed
-   * to returning a 404.
-   */
-  // TODO This approach requires maintenance when new UI routes are added. Change to the following:
-  // If the path is a a file w/an extension, treat normally.
-  // Otherwise instead of returning 404, forward to the index.
-  // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-  @RequestMapping(value = {"/zipkin/", "/zipkin/traces/{id}", "/zipkin/dependency", "/zipkin/traceViewer"}, method = GET)
-  public ModelAndView forwardUiEndpoints() {
-    return new ModelAndView("forward:/zipkin/index.html");
-  }
-
-  /** The UI looks for the api relative to where it is mounted, under /zipkin */
-  @RequestMapping(value = "/zipkin/api/**", method = GET)
-  public ModelAndView forwardApi(HttpServletRequest request) {
-    String path = (String) request.getAttribute(PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-    return new ModelAndView("forward:" + path.replaceFirst("/zipkin", ""));
-  }
-
-  /** Borrow favicon from UI assets under /zipkin */
-  @RequestMapping(value = "/favicon.ico", method = GET)
-  public ModelAndView favicon() {
-    return new ModelAndView("forward:/zipkin/favicon.ico");
-  }
-
-  /** Make sure users who aren't familiar with /zipkin get to the right path */
-  @RequestMapping(value = "/", method = GET)
-  public void redirectRoot(HttpServletResponse response) {
-    // return 'Location: ./zipkin/' header (this wouldn't work with ModelAndView's 'redirect:./zipkin/')
-    response.setHeader(HttpHeaders.LOCATION, "./zipkin/");
-    response.setStatus(HttpStatus.FOUND.value());
   }
 }

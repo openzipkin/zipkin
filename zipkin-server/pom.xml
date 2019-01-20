@@ -77,27 +77,15 @@
           <groupId>com.linecorp.armeria</groupId>
           <artifactId>armeria-logback</artifactId>
         </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.linecorp.armeria</groupId>
-      <artifactId>armeria-tomcat</artifactId>
-      <exclusions>
         <exclusion>
-          <!-- we do not use JSPs -->
-          <groupId>org.apache.tomcat.embed</groupId>
-          <artifactId>tomcat-embed-jasper</artifactId>
+          <groupId>javax.validation</groupId>
+          <artifactId>validation-api</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
     <dependency>
       <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-zipkin</artifactId>
-    </dependency>
-    <!-- Armeria needs a validation implementation -->
-    <dependency>
-      <groupId>org.hibernate.validator</groupId>
-      <artifactId>hibernate-validator</artifactId>
     </dependency>
 
     <!-- zipkin requires exporting /health endpoint -->

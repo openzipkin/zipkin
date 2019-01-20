@@ -22,21 +22,17 @@ import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.annotation.Options;
 import com.linecorp.armeria.server.cors.CorsService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
-import com.linecorp.armeria.server.tomcat.TomcatService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import java.util.List;
 import java.util.function.Function;
-import org.apache.catalina.connector.Connector;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.web.embedded.tomcat.TomcatWebServer;
-import org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
@@ -61,9 +57,6 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   ZipkinHttpCollector httpCollector;
 
   @Autowired(required = false)
-  ServletWebServerApplicationContext webServerContext;
-
-  @Autowired(required = false)
   MetricsHealthController healthController;
 
   @Bean ArmeriaServerConfigurator serverConfigurator() {
@@ -76,19 +69,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       if (healthController != null) sb.annotatedService(healthController);
       // Redirects the prometheus scrape endpoint for backward compatibility
       sb.service("/prometheus", new RedirectService("/actuator/prometheus/"));
-      if (webServerContext != null) {
-        sb.serviceUnder("/", TomcatService.forConnector(getConnector(webServerContext)));
-      }
     };
-  }
-
-  /** Extracts a Tomcat {@link Connector} from Spring webapp context. */
-  static Connector getConnector(ServletWebServerApplicationContext applicationContext) {
-    final TomcatWebServer container = (TomcatWebServer) applicationContext.getWebServer();
-
-    // Start the container to make sure all connectors are available.
-    container.start();
-    return container.getTomcat().getConnector();
   }
 
   /** Registers health for any components, even those not in this jar. */

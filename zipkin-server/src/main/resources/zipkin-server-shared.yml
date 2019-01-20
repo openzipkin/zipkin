@@ -150,9 +150,7 @@ server:
     # Includes dynamic json content and large static assets from zipkin-ui
     mime-types: application/json,application/javascript,text/css,image/svg
 
-spring.main.web-application-type: servlet
-
-server.port: -1
+spring.main.web-application-type: none
 
 # Additional server ports specified with Armeria configuration.
 armeria:

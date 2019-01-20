@@ -52,11 +52,12 @@
       <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-spring-boot-autoconfigure</artifactId>
       <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.linecorp.armeria</groupId>
-      <artifactId>armeria-tomcat</artifactId>
-      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>javax.validation</groupId>
+          <artifactId>validation-api</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <!-- In excluding tomcat, we exclude its indirect dep on servlet-api. -->
     <dependency>
