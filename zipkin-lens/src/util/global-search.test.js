@@ -1,7 +1,6 @@
 import queryString from 'query-string';
 
 import {
-  orderedConditionKeyList,
   nextInitialConditionKey,
   buildQueryParametersWithConditions,
   buildApiQueryParameters,
@@ -9,22 +8,26 @@ import {
 } from './global-search';
 
 describe('nextInitialConditionKey', () => {
-  it('should return the first condition key when conditions is empty', () => {
-    expect(nextInitialConditionKey([])).toEqual(orderedConditionKeyList[0]);
+  it('should return the "serviceName" when conditions is empty', () => {
+    expect(nextInitialConditionKey([], [])).toEqual('serviceName');
   });
 
   it('should return the unused condition key', () => {
     expect(nextInitialConditionKey([
-      { key: orderedConditionKeyList[0] },
-      { key: orderedConditionKeyList[1] },
-      { key: orderedConditionKeyList[3] },
-    ])).toEqual(orderedConditionKeyList[2]);
+      { key: 'serviceName' },
+      { key: 'spanName' },
+      { key: 'maxDuration' },
+    ], [])).toEqual('minDuration');
   });
 
-  it('should return the last condition key when all condition keys are used', () => {
-    const conditions = orderedConditionKeyList.map(conditionKey => ({ key: conditionKey }));
-    expect(nextInitialConditionKey(conditions))
-      .toEqual(orderedConditionKeyList[orderedConditionKeyList.length - 1]);
+  it('should return "annotationQuery" when all condition keys are used', () => {
+    expect(nextInitialConditionKey([
+      { key: 'serviceName' },
+      { key: 'spanName' },
+      { key: 'minDuration' },
+      { key: 'maxDuration' },
+      { key: 'annotationQuery' },
+    ], [])).toEqual('annotationQuery');
   });
 });
 
@@ -171,7 +174,7 @@ describe('extractConditionsFromQueryParameters', () => {
       minDuration: '10',
       maxDuration: '100',
       annotationQuery: 'key1=value1 and key2 and key3=value3',
-    });
+    }, []);
     expect(conditions.sort()).toEqual([
       { key: 'serviceName', value: 'serviceA' },
       { key: 'spanName', value: 'spanA' },
@@ -180,6 +183,28 @@ describe('extractConditionsFromQueryParameters', () => {
       { key: 'annotationQuery', value: 'key1=value1' },
       { key: 'annotationQuery', value: 'key2' },
       { key: 'annotationQuery', value: 'key3=value3' },
+    ].sort());
+  });
+
+  it('should return right conditions with autocompleteTags', () => {
+    const { conditions } = extractConditionsFromQueryParameters({
+      serviceName: 'serviceA',
+      spanName: 'spanA',
+      minDuration: '10',
+      maxDuration: '100',
+      annotationQuery: 'key1=value1 and key2 and key3=value3',
+      autocompleteTags: 'key4=value4 and key5=value5',
+    }, []);
+    expect(conditions.sort()).toEqual([
+      { key: 'serviceName', value: 'serviceA' },
+      { key: 'spanName', value: 'spanA' },
+      { key: 'minDuration', value: 10 },
+      { key: 'maxDuration', value: 100 },
+      { key: 'annotationQuery', value: 'key1=value1' },
+      { key: 'annotationQuery', value: 'key2' },
+      { key: 'annotationQuery', value: 'key3=value3' },
+      { key: 'key4', value: 'value4' },
+      { key: 'key5', value: 'value5' },
     ].sort());
   });
 

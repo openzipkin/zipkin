@@ -5,6 +5,8 @@ import GlobalSearch from '../../components/GlobalSearch';
 import { fetchSpans } from '../../actions/spans-action';
 import { fetchServices } from '../../actions/services-action';
 import { fetchTraces } from '../../actions/traces-action';
+import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
+import { fetchAutocompleteValues } from '../../actions/autocomplete-values-action';
 import {
   setLookbackCondition,
   setLimitCondition,
@@ -15,17 +17,25 @@ import {
 } from '../../actions/global-search-action';
 
 const mapStateToProps = state => ({
-  spans: state.spans.spans,
   services: state.services.services,
+  isLoadingServices: state.services.isLoading,
+  spans: state.spans.spans,
+  isLoadingSpans: state.spans.isLoading,
   conditions: state.globalSearch.conditions,
   lookbackCondition: state.globalSearch.lookbackCondition,
   limitCondition: state.globalSearch.limitCondition,
+  autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
+  isLoadingAutocompleteKeys: state.autocompleteKeys.isLoading,
+  autocompleteValues: state.autocompleteValues.autocompleteValues,
+  isLoadingAutocompleteValues: state.autocompleteValues.isLoading,
 });
 
 const mapDispatchToProps = dispatch => ({
   fetchServices: () => dispatch(fetchServices()),
   fetchSpans: serviceName => dispatch(fetchSpans(serviceName)),
   fetchTraces: params => dispatch(fetchTraces(params)),
+  fetchAutocompleteKeys: () => dispatch(fetchAutocompleteKeys()),
+  fetchAutocompleteValues: autocompleteKey => dispatch(fetchAutocompleteValues(autocompleteKey)),
   setLookbackCondition: lookbackCondition => dispatch(setLookbackCondition(lookbackCondition)),
   setLimitCondition: limitCondition => dispatch(setLimitCondition(limitCondition)),
   addCondition: condition => dispatch(addCondition(condition)),

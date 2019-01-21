@@ -2,7 +2,7 @@ import moment from 'moment';
 import shortid from 'shortid';
 
 import * as types from '../constants/action-types';
-import { defaultConditionValues, nextInitialConditionKey } from '../util/global-search';
+import { defaultConditionValues } from '../util/global-search';
 
 const initialState = {
   conditions: [],
@@ -26,21 +26,11 @@ const globalSearch = (state = initialState, action) => {
         limitCondition: action.limitCondition,
       };
     case types.GLOBAL_SEARCH_ADD_CONDITION: {
-      let newCondition;
-      if (action.condition) {
-        newCondition = {
-          key: action.condition.key,
-          value: action.condition.value,
-          _id: shortid.generate(),
-        };
-      } else {
-        const nextConditionKey = nextInitialConditionKey(state.conditions);
-        newCondition = {
-          key: nextConditionKey,
-          value: defaultConditionValues[nextConditionKey],
-          _id: shortid.generate(),
-        };
-      }
+      const newCondition = {
+        key: action.condition.key,
+        value: action.condition.value,
+        _id: shortid.generate(),
+      };
       return {
         ...state,
         conditions: [
@@ -61,7 +51,7 @@ const globalSearch = (state = initialState, action) => {
       const conditions = [...state.conditions];
       const condition = { ...conditions[action.index] };
       condition.key = action.conditionKey;
-      condition.value = defaultConditionValues[condition.key];
+      condition.value = defaultConditionValues(action.conditionKey);
       conditions[action.index] = condition;
       return {
         ...state,

@@ -27,12 +27,18 @@ describe('global search reducer', () => {
   it('should handle GLOBAL_SEARCH_ADD_CONDITION', () => {
     const newState = reducer(
       { conditions: [{ key: 'serviceName', value: 'serviceA' }] },
-      { type: types.GLOBAL_SEARCH_ADD_CONDITION },
+      {
+        type: types.GLOBAL_SEARCH_ADD_CONDITION,
+        condition: {
+          key: 'spanName',
+          value: 'spanA',
+        },
+      },
     );
     expect(newState.conditions[0].key).toEqual('serviceName');
     expect(newState.conditions[0].value).toEqual('serviceA');
     expect(newState.conditions[1].key).toEqual('spanName');
-    expect(newState.conditions[1].value).toEqual('all');
+    expect(newState.conditions[1].value).toEqual('spanA');
   });
 
   it('should handle GLOBAL_SEARCH_DELETE_CONDITION', () => {
@@ -78,8 +84,8 @@ describe('global search reducer', () => {
     );
     expect(state.conditions).toEqual([
       { key: 'serviceName', value: 'serviceA' },
-      { key: 'annotationQuery', value: 'error' }, // changed
-      { key: 'spanName', value: 'all' }, // changed
+      { key: 'annotationQuery', value: '' }, // changed
+      { key: 'spanName', value: undefined }, // changed
       { key: 'maxDuration', value: 100 },
     ]);
   });
