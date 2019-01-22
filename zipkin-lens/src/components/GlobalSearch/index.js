@@ -211,7 +211,6 @@ class GlobalSearch extends React.Component {
       isLoadingSpans,
       autocompleteValues,
       isLoadingAutocompleteValues,
-      fetchAutocompleteValues,
     } = this.props;
     const commonProps = {
       value,
@@ -286,12 +285,45 @@ class GlobalSearch extends React.Component {
     }
   }
 
+  renderSearchCondition(condition, index) {
+    const {
+      conditions,
+      autocompleteKeys,
+      fetchAutocompleteValues,
+    } = this.props;
+
+    const commonProps = {
+      keyString: condition.key,
+      keyOptions: getConditionKeyListWithAvailability(condition.key, conditions, autocompleteKeys),
+      onConditionKeyChange: (conditionKey) => {
+        this.handleConditionKeyChange(index, conditionKey);
+      },
+      onDeleteButtonClick: () => { this.handleDeleteConditionButtonClick(index); },
+    };
+
+    if (isAutocompleteKey(condition.key)) {
+      return (
+        <SearchCondition
+          {...commonProps}
+          onKeyFocus={() => { fetchAutocompleteValues(condition.key); }}
+          onValueFocus={() => { fetchAutocompleteValues(condition.key); }}
+        >
+          { this.renderCondition(condition.key, index, condition.value) }
+        </SearchCondition>
+      );
+    }
+    return (
+      <SearchCondition {...commonProps}>
+        { this.renderCondition(condition.key, index, condition.value) }
+      </SearchCondition>
+    );
+  }
+
   render() {
     const {
       conditions,
       lookbackCondition,
       limitCondition,
-      autocompleteKeys,
     } = this.props;
     return (
       <div className="global-search">
@@ -308,22 +340,7 @@ class GlobalSearch extends React.Component {
                   key={condition._id}
                   className="global-search__search-condition-wrapper"
                 >
-                  <SearchCondition
-                    keyString={condition.key}
-                    keyOptions={
-                      getConditionKeyListWithAvailability(
-                        condition.key, conditions, autocompleteKeys,
-                      )
-                    }
-                    onConditionKeyChange={
-                      (keyName) => { this.handleConditionKeyChange(index, keyName); }
-                    }
-                    onDeleteButtonClick={() => { this.handleDeleteConditionButtonClick(index); }}
-                  >
-                    {
-                      this.renderCondition(condition.key, index, condition.value)
-                    }
-                  </SearchCondition>
+                  { this.renderSearchCondition(condition, index) }
                 </div>
               ))
           }

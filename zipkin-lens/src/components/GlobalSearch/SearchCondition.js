@@ -13,6 +13,17 @@ const propTypes = {
   children: PropTypes.func.isRequired,
   onConditionKeyChange: PropTypes.func.isRequired,
   onDeleteButtonClick: PropTypes.func.isRequired,
+  onKeyFocus: PropTypes.func,
+  onKeyBlur: PropTypes.func,
+  onValueFocus: PropTypes.func,
+  onValueBlur: PropTypes.func,
+};
+
+const defaultProps = {
+  onKeyFocus: undefined,
+  onKeyBlur: undefined,
+  onValueFocus: undefined,
+  onValueBlur: undefined,
 };
 
 class SearchCondition extends React.Component {
@@ -62,20 +73,36 @@ class SearchCondition extends React.Component {
   }
 
   handleKeyFocus() {
+    const { onKeyFocus } = this.props;
+    if (onKeyFocus) {
+      onKeyFocus();
+    }
     this.setState({ isKeyFocused: true });
     setTimeout(() => { this.setState({ isKeyMenuOpened: true }); }, 30);
   }
 
   handleKeyBlur() {
+    const { onKeyBlur } = this.props;
+    if (onKeyBlur) {
+      onKeyBlur();
+    }
     this.setState({ isKeyFocused: false });
     setTimeout(() => { this.setState({ isKeyMenuOpened: false }); }, 30);
   }
 
   handleValueFocus() {
+    const { onValueFocus } = this.props;
+    if (onValueFocus) {
+      onValueFocus();
+    }
     this.setState({ isValueFocused: true });
   }
 
   handleValueBlur() {
+    const { onValueBlur } = this.props;
+    if (onValueBlur) {
+      onValueBlur();
+    }
     this.setState({ isValueFocused: false });
   }
 
@@ -164,5 +191,6 @@ class SearchCondition extends React.Component {
 }
 
 SearchCondition.propTypes = propTypes;
+SearchCondition.defaultProps = defaultProps;
 
 export default SearchCondition;
