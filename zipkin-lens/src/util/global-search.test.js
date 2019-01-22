@@ -5,6 +5,7 @@ import {
   buildQueryParametersWithConditions,
   buildApiQueryParameters,
   extractConditionsFromQueryParameters,
+  getConditionKeyListWithAvailability,
 } from './global-search';
 
 describe('nextInitialConditionKey', () => {
@@ -235,5 +236,40 @@ describe('extractConditionsFromQueryParameters', () => {
       endTs: 1547098357716,
       startTs: 1547098357710,
     });
+  });
+});
+
+describe('getConditionKeyListWithAvailability', () => {
+  it('should return the right availability', () => {
+    const sorter = (a, b) => {
+      const keyA = a.conditionKey.toUpperCase();
+      const keyB = b.conditionKey.toUpperCase();
+      if (keyA < keyB) {
+        return -1;
+      }
+      if (keyA > keyB) {
+        return 1;
+      }
+      return 0;
+    };
+
+    const result = getConditionKeyListWithAvailability(
+      'serviceName',
+      [
+        { key: 'maxDuration' },
+        { key: 'annotationQuery' },
+        { key: 'environment' },
+      ],
+      ['instanceId', 'environment'],
+    );
+    expect(result.sort(sorter)).toEqual([
+      { conditionKey: 'serviceName', isAvailable: true },
+      { conditionKey: 'spanName', isAvailable: true },
+      { conditionKey: 'minDuration', isAvailable: true },
+      { conditionKey: 'maxDuration', isAvailable: false },
+      { conditionKey: 'annotationQuery', isAvailable: true }, // always true
+      { conditionKey: 'instanceId', isAvailable: true },
+      { conditionKey: 'environment', isAvailable: false },
+    ].sort(sorter));
   });
 });
