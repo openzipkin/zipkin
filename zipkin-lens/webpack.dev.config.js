@@ -57,6 +57,7 @@ module.exports = {
   plugins: [
     new HtmlWebpackPlugin({
       template: path.join(__dirname, './static/index.html'),
+      favicon: path.join(__dirname, './static/favicon.ico'),
     }),
     new webpack.DefinePlugin({
       'process.env': {
