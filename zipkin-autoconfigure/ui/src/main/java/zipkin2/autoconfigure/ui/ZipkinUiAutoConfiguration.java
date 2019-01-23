@@ -16,16 +16,18 @@ package zipkin2.autoconfigure.ui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.server.RedirectService;
+import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.file.HttpFileService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -38,6 +40,9 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 
+import static com.linecorp.armeria.common.HttpHeaderNames.CACHE_CONTROL;
+import static com.linecorp.armeria.common.HttpHeaderNames.CONTENT_TYPE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
@@ -66,6 +71,14 @@ import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @EnableConfigurationProperties(ZipkinUiProperties.class)
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 class ZipkinUiAutoConfiguration {
+  static final HttpHeaders CACHE_YEAR =
+    HttpHeaders.of(CACHE_CONTROL, "max-age=" + TimeUnit.DAYS.toSeconds(365));
+  static final HttpHeaders CONFIG_HEADERS = HttpHeaders.of(HttpStatus.OK)
+    .add(HttpHeaders.of(CONTENT_TYPE, "application/json"))
+    .add(HttpHeaders.of(CACHE_CONTROL, "max-age=" + TimeUnit.MINUTES.toSeconds(10)));
+  static final HttpHeaders INDEX_HEADERS = HttpHeaders.of(HttpStatus.OK)
+    .add(HttpHeaders.of(CONTENT_TYPE, "text/html"))
+    .add(HttpHeaders.of(CACHE_CONTROL, "max-age=" + TimeUnit.MINUTES.toSeconds(1)));
 
   @Autowired
   ZipkinUiProperties ui;
@@ -91,27 +104,31 @@ class ZipkinUiAutoConfiguration {
   }
 
   @Bean ArmeriaServerConfigurator uiServerConfigurator(
-    @Value("${zipkin.ui.source-root:classpath:zipkin-ui}") String sourceRoot) throws IOException {
-    HttpFileService uiFileService = HttpFileService.forClassPath(sourceRoot);
+    @Value("${zipkin.ui.source-root:zipkin-ui}") String sourceRoot) throws IOException {
+    // It is a spring convention to prefix with classpath: if found, strip it out.
+    if (sourceRoot.startsWith("classpath:")) sourceRoot.replace("classpath:", "");
+
+    Service<HttpRequest, HttpResponse> uiFileService =
+      new AddHttpHeadersService(HttpFileService.forClassPath(sourceRoot), CACHE_YEAR);
 
     byte[] index;
     if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {
       try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(indexHtml.getInputStream(), StandardCharsets.UTF_8))) {
-        index = reader.lines().collect(Collectors.joining("\n")).getBytes(StandardCharsets.UTF_8);
+        new InputStreamReader(indexHtml.getInputStream(), UTF_8))) {
+        index = reader.lines().collect(Collectors.joining("\n")).getBytes(UTF_8);
       }
     } else {
-      index = processedIndexHtml().getBytes(StandardCharsets.UTF_8);
+      index = processedIndexHtml().getBytes(UTF_8);
     }
 
     byte[] config = new ObjectMapper().writeValueAsBytes(ui);
 
     return sb -> {
       sb
-        .service("/zipkin/config.json", (((ctx, req) ->
-          HttpResponse.of(HttpHeaders.of(HttpStatus.OK), HttpData.of(config)))))
-        .service("/zipkin/index.html", ((ctx, req) ->
-          HttpResponse.of(HttpHeaders.of(HttpStatus.OK), HttpData.of(index))))
+        .service("/zipkin/config.json",
+          (((ctx, req) -> HttpResponse.of(CONFIG_HEADERS, HttpData.of(config)))))
+        .service("/zipkin/index.html",
+          ((ctx, req) -> HttpResponse.of(INDEX_HEADERS, HttpData.of(index))))
         .serviceUnder("/zipkin/", uiFileService)
         .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
         .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
