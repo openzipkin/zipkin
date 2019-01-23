@@ -77,6 +77,7 @@ module.exports = {
     new ExtractTextPlugin('style-[hash].min.css', { allChunks: true }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, './static/index.html'),
+      favicon: path.join(__dirname, './static/favicon.ico'),
     }),
     new webpack.DefinePlugin({
       'process.env': {
