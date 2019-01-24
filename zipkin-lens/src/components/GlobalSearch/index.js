@@ -73,9 +73,11 @@ class GlobalSearch extends React.Component {
     this.handleConditionValueChange = this.handleConditionValueChange.bind(this);
     this.handleLookbackChange = this.handleLookbackChange.bind(this);
     this.handleLimitChange = this.handleLimitChange.bind(this);
+    this.handleKeyPress = this.handleKeyPress.bind(this);
   }
 
   componentDidMount() {
+    document.addEventListener('keydown', this.handleKeyPress);
     const {
       fetchServices,
       fetchSpans,
@@ -114,6 +116,10 @@ class GlobalSearch extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.handleKeyPress);
+  }
+
   getConditionsFromQueryParameters() {
     const { location } = this.props;
     if (location.search !== '' && location.search !== '?') {
@@ -145,11 +151,16 @@ class GlobalSearch extends React.Component {
     });
   }
 
+  handleKeyPress(event) {
+    if (event.key === 'Enter') {
+      this.handleSearchButtonClick();
+    }
+  }
+
   handleSearchButtonClick() {
     const {
       history, conditions, lookbackCondition, limitCondition,
     } = this.props;
-
     const queryParams = buildQueryParametersWithConditions(
       conditions,
       lookbackCondition,
