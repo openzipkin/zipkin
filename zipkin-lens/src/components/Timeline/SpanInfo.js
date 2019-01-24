@@ -3,7 +3,7 @@ import React from 'react';
 import moment from 'moment';
 import ReactTable from 'react-table';
 
-import Badge from '../Common/Badge';
+import ServiceNameBadge from '../Common/ServiceNameBadge';
 import { getServiceNameColor } from '../../util/color';
 
 const propTypes = {
@@ -25,10 +25,9 @@ const renderInfo = span => (
       {
         span.serviceNames
           ? span.serviceNames.map(serviceName => (
-            <Badge
+            <ServiceNameBadge
               key={serviceName}
-              value={serviceName}
-              text={serviceName}
+              serviceName={serviceName}
               className="timeline__span-info-info-aka-badge"
             />
           ))

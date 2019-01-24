@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import SpanInfo from './SpanInfo';
-import Button from '../Common/Button';
 import { getErrorTypeColor, getServiceNameColor } from '../../util/color';
 
 const propTypes = {
@@ -47,13 +46,18 @@ class Span extends React.Component {
         {
           hasChildren
             ? (
-              <Button
+              <div
                 className="timeline__span-service-name-column-button"
                 style={{ left: `${(span.depth - 1) * 14}px` }}
                 onClick={this.handleChildrenToggle}
+                role="presentation"
               >
-                { isChildrenOpened ? '+' : '-' }
-              </Button>
+                {
+                  isChildrenOpened
+                    ? (<span className="fas fa-minus-square" />)
+                    : (<span className="fas fa-plus-square" />)
+                }
+              </div>
             )
             : null
         }
