@@ -2,30 +2,28 @@
   box-sizing: border-box;
   border-radius: 3px;
   border: solid 1px $gray-5;
+  overflow: hidden;
 }
 
 .timeline__header-row {
   height: 30px;
   position: relative;
-  background: $gray-3;
+  background: $gray-10;
   width: 100%;
   overflow: hidden;
-  border-bottom: solid 1px $gray-5;
+  border-bottom: solid 1px $gray-4;
   display: flex;
 }
 
 .timeline__header-row-title-splitter-wrapper {
   display: flex;
-  -webkit-pack: justify !important;
-  -webkit-box-align: center !important;
   justify-content: space-between;
   align-items: center;
-  border-right: 1px solid $gray-9;
+  border-right: 1px solid $gray-7;
   box-sizing: border-box;
 }
 
 .timeline__header-row-title {
-  color: $gray-10;
   font-size: $font-size-base;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -34,9 +32,7 @@
 }
 
 .timeline__header-row-splitter {
-  color: $gray-9;
   font-size: $font-size-sm;
-  text-shadow: 1px 1px 1px $gray-2;
   padding-right: 4px;
   cursor: pointer;
 }
@@ -54,15 +50,13 @@
   &.first {
     width: 0;
   }
-
   &.last {
     width: 0;
   }
 }
 
 .timeline__header-row-time-marker-label {
-  color: $gray-10;
-  font-size: $font-size-xs;
+  font-size: 10px;
   left: 2px;
   position: absolute;
 
@@ -79,10 +73,10 @@
   position: relative;
   display: flex;
   cursor: pointer;
-  background: $dark-5;
+  background: $white;
 
   &:hover {
-    background: $gray-1;
+    background: $gray-10;
   }
 }
 
@@ -121,23 +115,22 @@
 }
 
 .timeline__span-service-name-column-name {
-  color: $gray-10;
-  font-size: $font-size-sm;
+  font-size: 12px;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
 }
 
 .timeline__span-span-name-column-wrapper {
-  border-right: 1px $gray-8 solid;
+  border-right: 1px $gray-7 solid;
   box-sizing: border-box;
   display: flex;
   align-items: center;
 }
 
 .timeline__span-span-name-column {
-  color: $gray-8;
-  font-size: $font-size-sm;
+  color: $gray-4;
+  font-size: 12px;
   padding-left: 4px;
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -149,7 +142,6 @@
   height: 100%;
   position: absolute;
   display: flex;
-  -webkit-box-align: center !important;
   align-items: center;
 }
 
@@ -165,8 +157,8 @@
 }
 
 .timeline__span-duration {
-  color: $white;
-  font-size: $font-size-sm;
+  color: $dark-4;
+  font-size: 12px;
 
   &.left {
     float: left;
@@ -183,16 +175,17 @@
   position: relative;
   width: 100%;
   display: flex;
+  border-top: 1px solid $gray-9;
+  border-bottom: 1px solid $gray-9;
 }
 
 .timeline__span-info-left {
   position: absolute;
   height: 100%;
-  background: $gray-4;
+  background: $gray-10;
   display: flex;
-  -webkit-box-align: center !important;
   align-items: center;
-  border-right: 1px solid $gray-10;
+  border-right: 1px solid $gray-7;
   box-sizing: border-box;
 }
 
@@ -206,8 +199,7 @@
 
 .timeline__span-info-right {
   position: relative;
-  color: $dark-2;
-  background: $gray-9;
+  background: $gray-11;
 }
 
 .timeline__span-info-info {
@@ -221,9 +213,12 @@
 }
 
 .timeline__span-info-info-aka {
-  font-size: $font-size-h3;
+  display: flex;
+  align-items: center;
+  padding: 3px;
 }
 
 .timeline__span-info-info-aka-badge {
-  margin: 3px;
+  font-size: 12px;
+  margin: 1px 3px;
 }
