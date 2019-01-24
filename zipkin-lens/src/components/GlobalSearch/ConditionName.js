@@ -3,13 +3,18 @@ import React from 'react';
 import ReactSelect from 'react-select';
 
 const propTypes = {
-  value: PropTypes.string.isRequired,
+  value: PropTypes.string,
   options: PropTypes.arrayOf(PropTypes.string).isRequired,
   onConditionChange: PropTypes.func.isRequired,
   setNextFocusRef: PropTypes.func.isRequired,
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
+  isLoadingOptions: PropTypes.bool.isRequired,
+};
+
+const defaultProps = {
+  value: undefined,
 };
 
 class ConditionName extends React.Component {
@@ -36,10 +41,7 @@ class ConditionName extends React.Component {
 
   getOptions() {
     const { options } = this.props;
-    const result = [{
-      value: '',
-      label: 'all',
-    }];
+    const result = [];
     options.forEach((option) => {
       result.push({
         value: option,
@@ -61,38 +63,41 @@ class ConditionName extends React.Component {
     this.setState({ isMenuOpened: false });
   }
 
+  calculateOptimumWidth() {
+    const { isFocused, value } = this.props;
+    const maxLengthOfOptions = this.getMaxLengthOfOptions();
+    if (isFocused) {
+      return `${8 * maxLengthOfOptions + 16}px`;
+    }
+    if (!value) {
+      return '36px';
+    }
+    return `${(8 * value.length) + 16}px`;
+  }
+
   render() {
     const {
       value,
       onConditionChange,
       setNextFocusRef,
-      isFocused,
+      isLoadingOptions,
     } = this.props;
+    const { isMenuOpened } = this.state;
 
-    const {
-      isMenuOpened,
-    } = this.state;
-
+    const options = this.getOptions();
     const maxLengthOfOptions = this.getMaxLengthOfOptions();
     return (
       <div className="condition-name">
         <ReactSelect
           ref={(ref) => { setNextFocusRef(ref); }}
-          value={{ value, label: value === '' ? 'all' : value }}
-          options={this.getOptions()}
+          value={{ value, label: value }}
+          options={options}
           onFocus={this.handleFocus}
           onBlur={this.handleBlur}
           styles={{
             control: provided => ({
               ...provided,
-              width: isFocused
-                // When this component is focused, change the width of the
-                // entier component according to the length of the max length
-                // of the option strings.
-                ? `${8 * maxLengthOfOptions + 16}px`
-                // When this component is not focused, change the width of
-                // the entire component according to the length of the value.
-                : `${(8 * value.length) + 16}px`,
+              width: this.calculateOptimumWidth(),
             }),
             // Disable because the dropdown indicator makes UX lower.
             indicatorsContainer: () => ({
@@ -114,6 +119,7 @@ class ConditionName extends React.Component {
           classNamePrefix="condition-name-select"
           blurInputOnSelect
           menuIsOpen={isMenuOpened}
+          isLoading={isLoadingOptions}
         />
       </div>
     );
@@ -121,5 +127,6 @@ class ConditionName extends React.Component {
 }
 
 ConditionName.propTypes = propTypes;
+ConditionName.defaultProps = defaultProps;
 
 export default ConditionName;
