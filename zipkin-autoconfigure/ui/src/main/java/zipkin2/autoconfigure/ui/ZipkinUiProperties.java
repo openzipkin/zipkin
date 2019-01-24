@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,8 +21,8 @@ import org.springframework.util.StringUtils;
 class ZipkinUiProperties {
   static final String DEFAULT_BASEPATH = "/zipkin";
 
-  // TODO: temporary hack to allow people to choose classpath:zipkin-lens
-  private String sourceRoot = "classpath:zipkin-ui";
+  // TODO: temporary hack to allow people to choose zipkin-lens
+  private String resourcePath = "zipkin-ui";
   private String environment;
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
@@ -32,12 +32,12 @@ class ZipkinUiProperties {
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
 
-  public String getSourceRoot() {
-    return sourceRoot;
+  public String getResourcePath() {
+    return resourcePath;
   }
 
-  public void setSourceRoot(String sourceRoot) {
-    this.sourceRoot = sourceRoot;
+  public void setResourcePath(String resourcePath) {
+    this.resourcePath = resourcePath;
   }
 
   public int getDefaultLookback() {

@@ -83,7 +83,7 @@ class ZipkinUiAutoConfiguration {
   @Autowired
   ZipkinUiProperties ui;
 
-  @Value("${zipkin.ui.source-root:classpath:zipkin-ui}/index.html")
+  @Value("classpath:${zipkin.ui.resource-path:zipkin-ui}/index.html")
   Resource indexHtml;
 
   @Bean
@@ -104,12 +104,9 @@ class ZipkinUiAutoConfiguration {
   }
 
   @Bean ArmeriaServerConfigurator uiServerConfigurator(
-    @Value("${zipkin.ui.source-root:zipkin-ui}") String sourceRoot) throws IOException {
-    // It is a spring convention to prefix with classpath: if found, strip it out.
-    if (sourceRoot.startsWith("classpath:")) sourceRoot.replace("classpath:", "");
-
+    @Value("${zipkin.ui.resource-path:zipkin-ui}") String resourcePath) throws IOException {
     Service<HttpRequest, HttpResponse> uiFileService =
-      new AddHttpHeadersService(HttpFileService.forClassPath(sourceRoot), CACHE_YEAR);
+      new AddHttpHeadersService(HttpFileService.forClassPath(resourcePath), CACHE_YEAR);
 
     byte[] index;
     if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {

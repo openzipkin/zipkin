@@ -47,29 +47,6 @@ public class ZipkinUiAutoConfigurationTest {
       .isNotNull();
   }
 
-  //@Test
-  //public void indexContentType() throws IOException {
-  //  context = createContext();
-  //  assertThat(
-  //    context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getHeaders().getContentType())
-  //    .isEqualTo(MediaType.TEXT_HTML);
-  //}
-
-  //@Test
-  //public void invalidIndexHtml() throws IOException {
-  //  // I failed to make Jsoup barf, even on nonsense like: "<head wait no I changed my mind this HTML is totally invalid <<<<<<<<<<<"
-  //  // So let's just run with a case where the file doesn't exist
-  //  context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
-  //  ZipkinUiAutoConfiguration ui = context.getBean(ZipkinUiAutoConfiguration.class);
-  //  ui.indexHtml = new ClassPathResource("does-not-exist.html");
-  //
-  //  thrown.expect(BeanCreationException.class);
-  //  // There's a BeanInstantiationException nested in between BeanCreationException and IOException,
-  //  // so we go one level deeper about causes. There's no `expectRootCause`.
-  //  thrown.expectCause(hasCause(isA(IOException.class)));
-  //  ui.serveIndex();
-  //}
-
   @Test
   public void canOverridesProperty_defaultLookback() {
     context = createContextWithOverridenProperty("zipkin.ui.defaultLookback:100");
@@ -130,39 +107,21 @@ public class ZipkinUiAutoConfigurationTest {
       .isEqualTo(0.1f);
   }
 
-  //@Test
-  //public void defaultBaseUrl_doesNotChangeResource() throws IOException {
-  //  context = createContext();
-  //  Resource index =
-  //    (Resource) context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody();
-  //
-  //  assertThat(index.getInputStream())
-  //    .hasSameContentAs(getClass().getResourceAsStream("/zipkin-ui/index.html"));
-  //}
-
-  //@Test
-  //public void canOverideProperty_basePath() throws IOException {
-  //  context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
-  //
-  //  assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody().toString())
-  //    .contains("<base href=\"/foo/bar/\">");
-  //}
-
   @Test
-  public void canOverideProperty_sourceRoot() throws IOException {
-    context = createContextWithOverridenProperty("zipkin.ui.source-root:classpath:zipkin-lens");
+  public void canOverideProperty_resourcePath() throws IOException {
+    context = createContextWithOverridenProperty("zipkin.ui.resource-path:zipkin-lens");
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml.getDescription())
       .contains("zipkin-lens");
   }
 
-  //@Test
-  //public void canOverideProperty_specialCaseRoot() throws IOException {
-  //  context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
-  //
-  //  assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex().getBody().toString())
-  //    .contains("<base href=\"/\">");
-  //}
+  @Test
+  public void canOverideProperty_specialCaseRoot() throws IOException {
+    context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
+
+    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).processedIndexHtml())
+      .contains("<base href=\"/\">");
+  }
 
   private static AnnotationConfigApplicationContext createContext() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
