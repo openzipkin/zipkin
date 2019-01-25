@@ -335,12 +335,12 @@ class GlobalSearch extends React.Component {
       return (
         <SearchCondition
           {...commonProps}
-          onKeyFocus={() => { 
-            fetchAutocompleteValues(condition.key); 
+          onKeyFocus={() => {
+            fetchAutocompleteValues(condition.key);
             this.handleConditionFocus();
           }}
-          onValueFocus={() => { 
-            fetchAutocompleteValues(condition.key); 
+          onValueFocus={() => {
+            fetchAutocompleteValues(condition.key);
             this.handleConditionFocus();
           }}
           onKeyBlur={this.handleConditionKeyBlur}
