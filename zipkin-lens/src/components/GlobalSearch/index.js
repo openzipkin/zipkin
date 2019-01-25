@@ -75,14 +75,14 @@ class GlobalSearch extends React.Component {
     this.handleConditionValueChange = this.handleConditionValueChange.bind(this);
     this.handleLookbackChange = this.handleLookbackChange.bind(this);
     this.handleLimitChange = this.handleLimitChange.bind(this);
-    this.handleKeyPress = this.handleKeyPress.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
     this.handleConditionFocus = this.handleConditionFocus.bind(this);
     this.handleConditionKeyBlur = this.handleConditionKeyBlur.bind(this);
     this.handleConditionValueBlur = this.handleConditionValueBlur.bind(this);
   }
 
   componentDidMount() {
-    document.addEventListener('keydown', this.handleKeyPress);
+    document.addEventListener('keydown', this.handleKeyDown);
     const {
       fetchServices,
       fetchSpans,
@@ -122,7 +122,7 @@ class GlobalSearch extends React.Component {
   }
 
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.handleKeyPress);
+    document.removeEventListener('keydown', this.handleKeyDown);
   }
 
   getConditionsFromQueryParameters() {
@@ -156,7 +156,7 @@ class GlobalSearch extends React.Component {
     });
   }
 
-  handleKeyPress(event) {
+  handleKeyDown(event) {
     const { isConditionFocused } = this.state;
     if (event.key === 'Enter' && !isConditionFocused) {
       this.handleSearchButtonClick();
@@ -335,8 +335,16 @@ class GlobalSearch extends React.Component {
       return (
         <SearchCondition
           {...commonProps}
-          onKeyFocus={() => { fetchAutocompleteValues(condition.key); }}
-          onValueFocus={() => { fetchAutocompleteValues(condition.key); }}
+          onKeyFocus={() => { 
+            fetchAutocompleteValues(condition.key); 
+            this.handleConditionFocus();
+          }}
+          onValueFocus={() => { 
+            fetchAutocompleteValues(condition.key); 
+            this.handleConditionFocus();
+          }}
+          onKeyBlur={this.handleConditionKeyBlur}
+          onValueBlur={this.handleConditionValueBlur}
         >
           { this.renderCondition(condition.key, index, condition.value) }
         </SearchCondition>
