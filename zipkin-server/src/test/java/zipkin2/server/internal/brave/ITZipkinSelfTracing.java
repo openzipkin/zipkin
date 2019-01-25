@@ -36,8 +36,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
     "spring.config.name=zipkin-server",
-    "zipkin.self-tracing.enabled=true",
-    "armeria.port=0"
+    "zipkin.self-tracing.enabled=true"
   })
 @RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {

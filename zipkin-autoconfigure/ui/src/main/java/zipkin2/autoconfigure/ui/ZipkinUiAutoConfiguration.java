@@ -120,15 +120,13 @@ class ZipkinUiAutoConfiguration {
 
     byte[] config = new ObjectMapper().writeValueAsBytes(ui);
 
-    return sb -> {
-      sb
-        .service("/zipkin/config.json",
-          (((ctx, req) -> HttpResponse.of(CONFIG_HEADERS, HttpData.of(config)))))
-        .service("/zipkin/index.html",
-          ((ctx, req) -> HttpResponse.of(INDEX_HEADERS, HttpData.of(index))))
-        .serviceUnder("/zipkin/", uiFileService)
-        .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
-        .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
-    };
+    return sb -> sb
+      .service("/zipkin/config.json",
+        (((ctx, req) -> HttpResponse.of(CONFIG_HEADERS, HttpData.of(config)))))
+      .service("/zipkin/index.html",
+        ((ctx, req) -> HttpResponse.of(INDEX_HEADERS, HttpData.of(index))))
+      .serviceUnder("/zipkin/", uiFileService)
+      .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
+      .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
   }
 }

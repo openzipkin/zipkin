@@ -143,6 +143,7 @@ zipkin:
     base-path: /zipkin
 
 server:
+  port: ${QUERY_PORT:9411}
   use-forward-headers: true
   compression:
     enabled: true
@@ -152,10 +153,10 @@ server:
 
 spring.main.web-application-type: none
 
-# Additional server ports specified with Armeria configuration.
+# We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
 armeria:
   ports:
-    - port: ${QUERY_PORT:${armeria.port:9411}}
+    - port: ${server.port}
       protocols:
         - http
 

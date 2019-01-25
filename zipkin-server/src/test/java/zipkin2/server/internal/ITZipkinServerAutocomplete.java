@@ -43,8 +43,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
     "spring.config.name=zipkin-server",
-    "zipkin.storage.autocomplete-keys=environment,clnt/finagle.version",
-    "armeria.port=0"
+    "zipkin.storage.autocomplete-keys=environment,clnt/finagle.version"
   }
 )
 @RunWith(SpringRunner.class)

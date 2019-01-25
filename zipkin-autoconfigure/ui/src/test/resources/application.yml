@@ -1,8 +1,8 @@
 spring.main.web-application-type: none
 
-# Additional server ports specified with Armeria configuration.
+# We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
 armeria:
   ports:
-    - port: ${armeria.port}
+    - port: ${server.port}
       protocols:
         - http

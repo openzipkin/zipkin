@@ -41,8 +41,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
     "spring.config.name=zipkin-server",
-    "zipkin.query.allowed-origins=" + ITZipkinServerCORS.ALLOWED_ORIGIN,
-    "armeria.port=0"
+    "zipkin.query.allowed-origins=" + ITZipkinServerCORS.ALLOWED_ORIGIN
   }
 )
 @RunWith(SpringRunner.class)

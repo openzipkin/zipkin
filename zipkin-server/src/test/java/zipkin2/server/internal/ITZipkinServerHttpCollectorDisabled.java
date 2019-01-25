@@ -38,8 +38,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = {
     "zipkin.storage.type=", // cheat and test empty storage type
     "spring.config.name=zipkin-server",
-    "zipkin.collector.http.enabled=false",
-    "armeria.port=0"
+    "zipkin.collector.http.enabled=false"
   })
 @RunWith(SpringRunner.class)
 public class ITZipkinServerHttpCollectorDisabled {

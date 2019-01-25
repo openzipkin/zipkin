@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
   classes = ITZipkinUiAutoConfiguration.TestServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = {"armeria.port=0", "zipkin.ui.base-path=/foozipkin"}
+  properties = "zipkin.ui.base-path=/foozipkin"
 )
 public class ITZipkinUiAutoConfiguration {
 

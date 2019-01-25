@@ -35,7 +35,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = {"spring.config.name=zipkin-server", "armeria.port=0"}
+  properties = {"spring.config.name=zipkin-server", "server.port=0"}
 )
 @RunWith(SpringRunner.class)
 public class ZipkinServerTest {
