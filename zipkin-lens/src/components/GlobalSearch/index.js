@@ -65,7 +65,9 @@ const propTypes = {
 class GlobalSearch extends React.Component {
   constructor(props) {
     super(props);
-
+    this.state = {
+      isConditionFocused: false,
+    };
     this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
     this.handleSearchButtonClick = this.handleSearchButtonClick.bind(this);
     this.handleDeleteConditionButtonClick = this.handleDeleteConditionButtonClick.bind(this);
@@ -74,6 +76,9 @@ class GlobalSearch extends React.Component {
     this.handleLookbackChange = this.handleLookbackChange.bind(this);
     this.handleLimitChange = this.handleLimitChange.bind(this);
     this.handleKeyPress = this.handleKeyPress.bind(this);
+    this.handleConditionFocus = this.handleConditionFocus.bind(this);
+    this.handleConditionKeyBlur = this.handleConditionKeyBlur.bind(this);
+    this.handleConditionValueBlur = this.handleConditionValueBlur.bind(this);
   }
 
   componentDidMount() {
@@ -152,7 +157,8 @@ class GlobalSearch extends React.Component {
   }
 
   handleKeyPress(event) {
-    if (event.key === 'Enter') {
+    const { isConditionFocused } = this.state;
+    if (event.key === 'Enter' && !isConditionFocused) {
       this.handleSearchButtonClick();
     }
   }
@@ -212,6 +218,19 @@ class GlobalSearch extends React.Component {
   handleLimitChange(limitCondition) {
     const { setLimitCondition } = this.props;
     setLimitCondition(limitCondition);
+  }
+
+  handleConditionFocus() {
+    this.setState({ isConditionFocused: true });
+  }
+
+  handleConditionKeyBlur() {
+    this.setState({ isConditionFocused: false });
+  }
+
+  handleConditionValueBlur() {
+    // Delay for avoiding to fetch
+    setTimeout(() => { this.setState({ isConditionFocused: false }); }, 0);
   }
 
   renderCondition(conditionKey, index, value) {
@@ -324,7 +343,13 @@ class GlobalSearch extends React.Component {
       );
     }
     return (
-      <SearchCondition {...commonProps}>
+      <SearchCondition
+        {...commonProps}
+        onKeyFocus={this.handleConditionFocus}
+        onValueFocus={this.handleConditionFocus}
+        onKeyBlur={this.handleConditionKeyBlur}
+        onValueBlur={this.handleConditionValueBlur}
+      >
         { this.renderCondition(condition.key, index, condition.value) }
       </SearchCondition>
     );
