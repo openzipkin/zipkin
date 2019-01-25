@@ -1,5 +1,5 @@
-import PropTypes from 'prop-types';
 import React from 'react';
+import PropTypes from 'prop-types';
 import { withRouter } from 'react-router';
 import moment from 'moment';
 import queryString from 'query-string';

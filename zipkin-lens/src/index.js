@@ -3,9 +3,8 @@ import ReactDOM from 'react-dom';
 
 import App from './components/App';
 
-import '../scss/main.scss';
-
-require('babel-polyfill');
+import 'assets/scss/main.scss';
+// import 'semantic-ui-css/semantic.min.css';
 
 ReactDOM.render(
   <App />,

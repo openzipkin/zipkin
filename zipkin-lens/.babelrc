@@ -1,16 +1,12 @@
 {
-  "presets": [
-    [
-      "env",
-      {
-        "targets": {
-          "browsers": ["last 2 versions", "safari 7"],
-        }
-      },
-    ],
-    "react"
-  ],
+  "presets": ["es2015"],
   "plugins": [
-    "transform-object-rest-spread"
+    "transform-class-properties",
+    "transform-react-jsx",
+    "transform-object-rest-spread",
+    ["module-resolver", {
+      "root": ["./src"],
+    }],
+    ["import-rename", {"^(.*)\\.jsx$": "$1"}]
   ]
 }
