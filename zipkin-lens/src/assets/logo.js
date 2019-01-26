@@ -1,4 +1,4 @@
-import React from 'react'
+import React from 'react';
 
 const logo = props => (
   <svg viewBox="0 0 886 540" fillRule="evenodd" clipRule="evenodd" {...props}>
@@ -27,6 +27,6 @@ const logo = props => (
       strokeWidth={1.4828775}
     />
   </svg>
-)
+);
 
-export default logo
+export default logo;

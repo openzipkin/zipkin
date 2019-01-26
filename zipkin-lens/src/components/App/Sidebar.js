@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-import Logo from "assets/logo";
+import Logo from 'assets/logo';
 
 const propTypes = {
   location: PropTypes.shape({
