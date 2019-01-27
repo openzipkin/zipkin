@@ -65,7 +65,9 @@ const propTypes = {
 class GlobalSearch extends React.Component {
   constructor(props) {
     super(props);
-
+    this.state = {
+      isConditionFocused: false,
+    };
     this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
     this.handleSearchButtonClick = this.handleSearchButtonClick.bind(this);
     this.handleDeleteConditionButtonClick = this.handleDeleteConditionButtonClick.bind(this);
@@ -73,9 +75,14 @@ class GlobalSearch extends React.Component {
     this.handleConditionValueChange = this.handleConditionValueChange.bind(this);
     this.handleLookbackChange = this.handleLookbackChange.bind(this);
     this.handleLimitChange = this.handleLimitChange.bind(this);
+    this.handleKeyDown = this.handleKeyDown.bind(this);
+    this.handleConditionFocus = this.handleConditionFocus.bind(this);
+    this.handleConditionKeyBlur = this.handleConditionKeyBlur.bind(this);
+    this.handleConditionValueBlur = this.handleConditionValueBlur.bind(this);
   }
 
   componentDidMount() {
+    document.addEventListener('keydown', this.handleKeyDown);
     const {
       fetchServices,
       fetchSpans,
@@ -114,6 +121,10 @@ class GlobalSearch extends React.Component {
     }
   }
 
+  componentWillUnmount() {
+    document.removeEventListener('keydown', this.handleKeyDown);
+  }
+
   getConditionsFromQueryParameters() {
     const { location } = this.props;
     if (location.search !== '' && location.search !== '?') {
@@ -145,11 +156,17 @@ class GlobalSearch extends React.Component {
     });
   }
 
+  handleKeyDown(event) {
+    const { isConditionFocused } = this.state;
+    if (event.key === 'Enter' && !isConditionFocused) {
+      this.handleSearchButtonClick();
+    }
+  }
+
   handleSearchButtonClick() {
     const {
       history, conditions, lookbackCondition, limitCondition,
     } = this.props;
-
     const queryParams = buildQueryParametersWithConditions(
       conditions,
       lookbackCondition,
@@ -201,6 +218,19 @@ class GlobalSearch extends React.Component {
   handleLimitChange(limitCondition) {
     const { setLimitCondition } = this.props;
     setLimitCondition(limitCondition);
+  }
+
+  handleConditionFocus() {
+    this.setState({ isConditionFocused: true });
+  }
+
+  handleConditionKeyBlur() {
+    this.setState({ isConditionFocused: false });
+  }
+
+  handleConditionValueBlur() {
+    // Delay for avoiding to fetch
+    setTimeout(() => { this.setState({ isConditionFocused: false }); }, 0);
   }
 
   renderCondition(conditionKey, index, value) {
@@ -305,15 +335,29 @@ class GlobalSearch extends React.Component {
       return (
         <SearchCondition
           {...commonProps}
-          onKeyFocus={() => { fetchAutocompleteValues(condition.key); }}
-          onValueFocus={() => { fetchAutocompleteValues(condition.key); }}
+          onKeyFocus={() => {
+            fetchAutocompleteValues(condition.key);
+            this.handleConditionFocus();
+          }}
+          onValueFocus={() => {
+            fetchAutocompleteValues(condition.key);
+            this.handleConditionFocus();
+          }}
+          onKeyBlur={this.handleConditionKeyBlur}
+          onValueBlur={this.handleConditionValueBlur}
         >
           { this.renderCondition(condition.key, index, condition.value) }
         </SearchCondition>
       );
     }
     return (
-      <SearchCondition {...commonProps}>
+      <SearchCondition
+        {...commonProps}
+        onKeyFocus={this.handleConditionFocus}
+        onValueFocus={this.handleConditionFocus}
+        onKeyBlur={this.handleConditionKeyBlur}
+        onValueBlur={this.handleConditionValueBlur}
+      >
         { this.renderCondition(condition.key, index, condition.value) }
       </SearchCondition>
     );
