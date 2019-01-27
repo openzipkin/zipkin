@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,10 +15,12 @@ package zipkin2.server.internal;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import zipkin2.server.internal.actuate.ActuateArmeriaServerConfigurator;
 import zipkin2.server.internal.brave.TracingConfiguration;
 
 @Configuration
 @Import({
+  ActuateArmeriaServerConfigurator.class,
   ZipkinServerConfiguration.class,
   TracingConfiguration.class,
   ZipkinQueryApiV2.class,
