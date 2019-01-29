@@ -8,6 +8,7 @@ import SearchCondition from './SearchCondition';
 import ConditionDuration from './ConditionDuration';
 import ConditionLimit from './ConditionLimit';
 import ConditionName from './ConditionName';
+import ConditionTraceId from './ConditionTraceId';
 import ConditionAnnotationQuery from './ConditionAnnotationQuery';
 import ConditionLookback from './ConditionLookback';
 import {
@@ -167,6 +168,16 @@ class GlobalSearch extends React.Component {
     const {
       history, conditions, lookbackCondition, limitCondition,
     } = this.props;
+
+    // If traceId is specified, jump to the trace page.
+    const traceIdCondition = conditions.find(condition => condition.key === 'traceId');
+    if (traceIdCondition) {
+      history.push({
+        pathname: `/zipkin/trace/${traceIdCondition.value}`,
+      });
+      return;
+    }
+
     const queryParams = buildQueryParametersWithConditions(
       conditions,
       lookbackCondition,
@@ -279,6 +290,18 @@ class GlobalSearch extends React.Component {
           onFocus, onBlur, setNextFocusRef, isFocused,
         }) => (
           <ConditionDuration
+            {...commonProps}
+            onFocus={onFocus}
+            onBlur={onBlur}
+            setNextFocusRef={setNextFocusRef}
+            isFocused={isFocused}
+          />
+        );
+      case 'traceId':
+        return ({
+          onFocus, onBlur, setNextFocusRef, isFocused,
+        }) => (
+          <ConditionTraceId
             {...commonProps}
             onFocus={onFocus}
             onBlur={onBlur}
