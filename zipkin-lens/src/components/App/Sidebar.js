@@ -17,7 +17,7 @@ const pageInfo = {
     icon: 'fa-search',
   },
   dependencies: {
-    url: '/zipkin/dependencies',
+    url: '/zipkin/dependency',
     label: 'Dependencies',
     icon: 'fa-code-branch',
   },

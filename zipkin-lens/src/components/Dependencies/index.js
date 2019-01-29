@@ -101,7 +101,7 @@ export class Dependencies extends React.Component { // export for testing withou
       lookback: endTs.valueOf() - startTs.valueOf(),
     });
     history.push({
-      pathname: '/zipkin/dependencies',
+      pathname: '/zipkin/dependency',
       search: queryParameters,
     });
   }

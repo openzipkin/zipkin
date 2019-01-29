@@ -173,7 +173,7 @@ class GlobalSearch extends React.Component {
     const traceIdCondition = conditions.find(condition => condition.key === 'traceId');
     if (traceIdCondition) {
       history.push({
-        pathname: `/zipkin/trace/${traceIdCondition.value}`,
+        pathname: `/zipkin/traces/${traceIdCondition.value}`,
       });
       return;
     }
