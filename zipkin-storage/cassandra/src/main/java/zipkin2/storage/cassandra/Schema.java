@@ -101,7 +101,8 @@ final class Schema {
     for (Host host : metadata.getAllHosts()) {
       checkState(
         0 >= VersionNumber.parse("3.11.3").compareTo(host.getCassandraVersion()),
-        "All Cassandra nodes must be running 3.11.3+");
+        "Host %s is running Cassandra %s, but minimum version is 3.11.3",
+        host.getHostId(), host.getCassandraVersion());
     }
     return metadata.getKeyspace(keyspace);
   }
