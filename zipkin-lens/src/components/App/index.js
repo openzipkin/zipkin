@@ -21,14 +21,14 @@ const App = () => (
         />
         <Route
           exact
-          path="/zipkin/trace/:traceId"
+          path="/zipkin/traces/:traceId"
           render={props => (
             <DetailedTraceSummaryContainer {...props} />
           )}
         />
         <Route
           exact
-          path="/zipkin/dependencies"
+          path="/zipkin/dependency"
           render={props => (
             <DependenciesContainer {...props} />
           )}

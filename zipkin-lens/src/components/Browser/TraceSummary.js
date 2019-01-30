@@ -91,7 +91,7 @@ class TraceSummary extends React.Component {
         <a href={`${api.TRACE}/${traceId}`} target="_brank">
           <i className="fas fa-file-download" />
         </a>
-        <Link to={{ pathname: `/zipkin/trace/${traceId}` }}>
+        <Link to={{ pathname: `/zipkin/traces/${traceId}` }}>
           <i className="fas fa-angle-double-right" />
         </Link>
       </div>

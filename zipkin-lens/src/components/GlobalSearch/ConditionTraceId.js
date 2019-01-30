@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-const maxCharacters = 20;
+const maxCharacters = 16;
 
 const propTypes = {
   value: PropTypes.string.isRequired,
@@ -12,7 +12,7 @@ const propTypes = {
   isFocused: PropTypes.bool.isRequired,
 };
 
-class ConditionAnnotationQuery extends React.Component {
+class ConditionTraceId extends React.Component {
   constructor(props) {
     super(props);
     this.inputRef = undefined;
@@ -36,7 +36,7 @@ class ConditionAnnotationQuery extends React.Component {
     } = this.props;
 
     return (
-      <div className="condition-annotation-query">
+      <div className="condition-trace-id">
         <input
           ref={(ref) => {
             setNextFocusRef(ref);
@@ -45,7 +45,7 @@ class ConditionAnnotationQuery extends React.Component {
           type="text"
           value={value}
           onChange={(event) => { onConditionChange(event.target.value); }}
-          className="condition-annotation-query__input"
+          className="condition-trace-id__input"
           style={{
             width: isFocused
               ? `${8 * maxCharacters + 16}px`
@@ -60,6 +60,6 @@ class ConditionAnnotationQuery extends React.Component {
   }
 }
 
-ConditionAnnotationQuery.propTypes = propTypes;
+ConditionTraceId.propTypes = propTypes;
 
-export default ConditionAnnotationQuery;
+export default ConditionTraceId;
