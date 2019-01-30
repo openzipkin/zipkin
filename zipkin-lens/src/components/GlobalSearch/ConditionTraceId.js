@@ -19,8 +19,8 @@ class ConditionTraceId extends React.Component {
     this.handleKeyDown = this.handleKeyDown.bind(this);
   }
 
-  handleKeyDown(e) {
-    if (e.keyCode === 13) {
+  handleKeyDown(event) {
+    if (event.key === 'Enter') {
       this.inputRef.blur();
     }
   }
