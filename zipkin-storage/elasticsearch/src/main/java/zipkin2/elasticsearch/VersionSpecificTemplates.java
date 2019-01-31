@@ -261,7 +261,7 @@ final class VersionSpecificTemplates {
     } else if (version >= 5) {
       return autocompleteIndexTemplate
         .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
-        .replace("KEYWORD", "\"type\": \"text\",\"fielddata\": true\n");
+        .replace("KEYWORD", "\"type\": \"keyword\",\"norms\": false\n");
     }else {
       throw new IllegalStateException(
         "Elasticsearch 2.x, 5.x and 6.x are supported, was: " + version);
