@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.VersionNumber;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
+import java.util.UUID;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -42,10 +43,12 @@ public class SchemaTest {
     when(session.getCluster()).thenReturn(cluster);
     when(cluster.getMetadata()).thenReturn(metadata);
     when(metadata.getAllHosts()).thenReturn(Collections.singleton(host));
+    when(host.getHostId()).thenReturn(UUID.fromString("11111111-1111-1111-1111-111111111111"));
     when(host.getCassandraVersion()).thenReturn(VersionNumber.parse("3.11.2"));
 
     thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("All Cassandra nodes must be running 3.11.3+");
+    thrown.expectMessage(
+      "Host 11111111-1111-1111-1111-111111111111 is running Cassandra 3.11.2, but minimum version is 3.11.3");
 
     Schema.getKeyspaceMetadata(session, "zipkin2");
   }
@@ -60,11 +63,14 @@ public class SchemaTest {
     when(session.getCluster()).thenReturn(cluster);
     when(cluster.getMetadata()).thenReturn(metadata);
     when(metadata.getAllHosts()).thenReturn(ImmutableSet.of(host1, host2));
+    when(host1.getHostId()).thenReturn(UUID.fromString("11111111-1111-1111-1111-111111111111"));
+    when(host2.getHostId()).thenReturn(UUID.fromString("22222222-2222-2222-2222-222222222222"));
     when(host1.getCassandraVersion()).thenReturn(VersionNumber.parse("3.11.3"));
     when(host2.getCassandraVersion()).thenReturn(VersionNumber.parse("3.11.2"));
 
     thrown.expect(IllegalStateException.class);
-    thrown.expectMessage("All Cassandra nodes must be running 3.11.3+");
+    thrown.expectMessage(
+      "Host 22222222-2222-2222-2222-222222222222 is running Cassandra 3.11.2, but minimum version is 3.11.3");
 
     Schema.getKeyspaceMetadata(session, "zipkin2");
   }
