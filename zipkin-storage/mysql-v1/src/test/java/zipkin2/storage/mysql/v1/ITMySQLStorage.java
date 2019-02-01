@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,7 +32,7 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 public class ITMySQLStorage {
 
   static LazyMySQLStorage classRule() {
-    return new LazyMySQLStorage("2.11.12");
+    return new LazyMySQLStorage("2.12.0");
   }
 
   public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
