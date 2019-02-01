@@ -19,6 +19,7 @@ import com.datastax.driver.core.Session;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -254,6 +255,10 @@ public class ITCassandraStorage {
 
     @Override protected Session session() {
       return backend.session;
+    }
+
+    @Override protected InetSocketAddress contactPoint() {
+      return backend.contactPoint();
     }
   }
 

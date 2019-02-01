@@ -15,15 +15,19 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
+import java.net.InetSocketAddress;
 import org.junit.Test;
+import zipkin2.TestObjects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 abstract class ITEnsureSchema {
 
-  protected abstract String keyspace();
+  abstract String keyspace();
 
-  protected abstract Session session();
+  abstract Session session();
+
+  abstract InetSocketAddress contactPoint();
 
   @Test public void installsKeyspaceWhenMissing() {
     Schema.ensureExists(keyspace(), session());
@@ -54,5 +58,22 @@ abstract class ITEnsureSchema {
     assertThat(metadata).isNotNull();
     assertThat(Schema.hasUpgrade1_defaultTtl(metadata)).isTrue();
     assertThat(Schema.hasUpgrade2_autocompleteTags(metadata)).isTrue();
+  }
+
+  /** This tests we don't accidentally rely on new indexes such as autocomplete tags */
+  @Test public void worksWithOldSchema() throws Exception {
+    Schema.applyCqlFile(keyspace(), session(), "/cassandra-schema-cql3-original.txt");
+
+    InetSocketAddress contactPoint = contactPoint();
+    try (CassandraStorage storage = CassandraStorage.newBuilder()
+      .contactPoints(contactPoint.getHostString() + ":" + contactPoint.getPort())
+      .ensureSchema(false)
+      .keyspace(keyspace()).build()) {
+
+      storage.spanConsumer().accept(TestObjects.TRACE).execute();
+
+      assertThat(storage.spanStore().getTrace(TestObjects.TRACE.get(0).traceId()).execute())
+        .containsExactlyInAnyOrderElementsOf(TestObjects.TRACE);
+    }
   }
 }

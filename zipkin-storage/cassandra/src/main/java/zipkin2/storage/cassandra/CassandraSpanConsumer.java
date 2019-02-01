@@ -52,7 +52,8 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     if (searchEnabled) {
       insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
       insertServiceSpanName = new InsertServiceSpan.Factory(storage);
-      insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage);
+      insertAutocompleteValue =
+        !storage.autocompleteKeys().isEmpty() ? new InsertAutocompleteValue.Factory(storage) : null;
     } else {
       insertTraceByServiceSpan = null;
       insertServiceSpanName = null;
