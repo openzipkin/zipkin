@@ -58,6 +58,17 @@ class Sidebar extends React.Component {
           {this.renderPageOption('browser')}
           {this.renderPageOption('dependencies')}
         </div>
+        <div className="sidebar__other-links">
+          <a href="https://github.com/openzipkin/zipkin" target="_blank" rel="noopener noreferrer">
+            <div className="sidebar__other-link fab fa-github" />
+          </a>
+          <a href="https://twitter.com/zipkinproject" target="_blank" rel="noopener noreferrer">
+            <div className="sidebar__other-link fab fa-twitter" />
+          </a>
+          <a href="https://gitter.im/openzipkin/zipkin/" target="_blank" rel="noopener noreferrer">
+            <div className="sidebar__other-link fab fa-gitter" />
+          </a>
+        </div>
       </div>
     );
   }

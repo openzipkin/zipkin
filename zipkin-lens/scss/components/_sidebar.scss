@@ -12,8 +12,7 @@
 
 .sidebar__menu {
   & a {
-    color: #dedede;
-  color: $gray-11;
+    color: $gray-11;
     text-decoration: none;
   }
 }
@@ -56,4 +55,23 @@
   & * {
     fill: $gray-11;
   }
+}
+
+.sidebar__other-links {
+  position: absolute;
+  bottom: 24px;
+  width: 100%;
+  font-size: 24px;
+
+  & a {
+    color: $gray-11;
+    text-decoration: none;
+  }
+}
+
+.sidebar__other-link {
+  padding: 10px 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
