@@ -102,6 +102,24 @@ public abstract class ITSpanStore {
     allShouldWorkWhenEmpty();
   }
 
+  @Test public void getTraces_groupsTracesTogether() throws IOException {
+    Span traceASpan1 = Span.newBuilder()
+      .traceId("a")
+      .id("1")
+      .timestamp((TODAY + 1) * 1000L)
+      .localEndpoint(FRONTEND)
+      .build();
+    Span traceASpan2 = traceASpan1.toBuilder().id("1").timestamp((TODAY + 2) * 1000L).build();
+    Span traceBSpan1 = traceASpan1.toBuilder().traceId("b").build();
+    Span traceBSpan2 = traceASpan2.toBuilder().traceId("b").build();
+
+    accept(traceASpan1, traceBSpan1, traceASpan2, traceBSpan2);
+
+    assertThat(sortTraces(store().getTraces(requestBuilder().build()).execute()))
+      .containsExactlyInAnyOrder(asList(traceASpan1, traceASpan2),
+        asList(traceBSpan1, traceBSpan2));
+  }
+
   @Test public void getTraces_considersBitsAbove64bit() throws IOException {
     // 64-bit trace ID
     Span span1 = Span.newBuilder().traceId(CLIENT_SPAN.traceId().substring(16)).id("1")
