@@ -125,6 +125,14 @@ public abstract class ITDependencies {
     );
   }
 
+  @Test
+  public void zeroLookbackShouldBecomeEmpty() throws Exception {
+    processDependencies(TRACE);
+
+    assertThat(store().getDependencies(TRACE_ENDTS, 0).execute())
+      .isEmpty();
+  }
+
   /** It should be safe to run dependency link jobs twice */
   @Test
   public void replayOverwrites() throws Exception {
