@@ -18,6 +18,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
+
+import com.rabbitmq.client.Channel;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -25,6 +27,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.collector.CollectorMetrics;
+import zipkin2.storage.InMemoryStorage;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
@@ -113,6 +117,25 @@ public class ITRabbitMQCollector {
     Thread.sleep(1000);
     assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(5);
     assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isEqualTo(3);
+  }
+
+  /** See GitHub issue #2068 */
+  @Test
+  public void startsWhenConfiguredQueueAlreadyExists() throws IOException, TimeoutException {
+    Channel channel = rabbit.collector.connection.get().createChannel();
+    // make a queue with non-default properties
+    channel.queueDeclare("zipkin-test2", true, false, false, Collections.singletonMap("x-message-ttl", 36000000));
+    try {
+      RabbitMQCollector.builder()
+        .storage(InMemoryStorage.newBuilder().build())
+        .metrics(CollectorMetrics.NOOP_METRICS)
+        .queue("zipkin-test2")
+        .addresses(Collections.singletonList(rabbit.address())).build()
+        .start().close();
+    } finally {
+      channel.queueDelete("zipkin-test2");
+      channel.close();
+    }
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */

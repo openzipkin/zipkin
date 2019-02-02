@@ -168,7 +168,7 @@ public final class RabbitMQCollector extends CollectorComponent {
             (builder.addresses == null)
                 ? builder.connectionFactory.newConnection()
                 : builder.connectionFactory.newConnection(builder.addresses);
-        connection.createChannel().queueDeclare(builder.queue, true, false, false, null);
+        declareQueueIfMissing(connection);
       } catch (IOException | TimeoutException e) {
         throw new IllegalStateException("Unable to establish connection to RabbitMQ server", e);
       }
@@ -179,7 +179,7 @@ public final class RabbitMQCollector extends CollectorComponent {
         String name = RabbitMQSpanConsumer.class.getName() + i;
         try {
           // this sets up a channel for each consumer thread.
-          // We don't track channels them, as the connection will close its channels implicitly
+          // We don't track channels, as the connection will close its channels implicitly
           Channel channel = connection.createChannel();
           RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
           channel.basicConsume(builder.queue, true, name, consumer);
@@ -188,6 +188,23 @@ public final class RabbitMQCollector extends CollectorComponent {
         }
       }
       return connection;
+    }
+
+    private void declareQueueIfMissing(Connection connection) throws IOException, TimeoutException {
+      Channel channel = connection.createChannel();
+      try {
+        // check if queue already exists
+        channel.queueDeclarePassive(builder.queue);
+        channel.close();
+      } catch (IOException maybeQueueDoesNotExist) {
+        if (maybeQueueDoesNotExist.getCause() != null && maybeQueueDoesNotExist.getCause().getMessage().contains("NOT_FOUND")) {
+          channel = connection.createChannel();
+          channel.queueDeclare(builder.queue, true, false, false, null);
+          channel.close();
+        } else {
+          throw maybeQueueDoesNotExist;
+        }
+      }
     }
   }
 
