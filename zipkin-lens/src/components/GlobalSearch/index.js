@@ -9,7 +9,7 @@ import ConditionDuration from './ConditionDuration';
 import ConditionLimit from './ConditionLimit';
 import ConditionName from './ConditionName';
 import ConditionTraceId from './ConditionTraceId';
-import ConditionAnnotationQuery from './ConditionAnnotationQuery';
+import ConditionTags from './ConditionTags';
 import ConditionLookback from './ConditionLookback';
 import {
   isAutocompleteKey,
@@ -309,11 +309,11 @@ class GlobalSearch extends React.Component {
             isFocused={isFocused}
           />
         );
-      case 'annotationQuery':
+      case 'tags':
         return ({
           onFocus, onBlur, setNextFocusRef, isFocused,
         }) => (
-          <ConditionAnnotationQuery
+          <ConditionTags
             {...commonProps}
             onFocus={onFocus}
             onBlur={onBlur}

@@ -71,7 +71,7 @@ describe('global search reducer', () => {
       {
         type: types.GLOBAL_SEARCH_CHANGE_CONDITION_KEY,
         index: 1,
-        conditionKey: 'annotationQuery',
+        conditionKey: 'tags',
       },
     );
     state = reducer(
@@ -84,7 +84,7 @@ describe('global search reducer', () => {
     );
     expect(state.conditions).toEqual([
       { key: 'serviceName', value: 'serviceA' },
-      { key: 'annotationQuery', value: '' }, // changed
+      { key: 'tags', value: '' }, // changed
       { key: 'spanName', value: undefined }, // changed
       { key: 'maxDuration', value: 100 },
     ]);
