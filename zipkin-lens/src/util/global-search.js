@@ -17,7 +17,7 @@ export const orderedConditionKeyList = autocompleteKeys => ([
   'maxDuration',
   ...autocompleteKeys,
   'traceId',
-  'annotationQuery',
+  'tags',
 ]);
 
 export const isAutocompleteKey = (conditionKey) => {
@@ -27,7 +27,7 @@ export const isAutocompleteKey = (conditionKey) => {
     case 'minDuration':
     case 'maxDuration':
     case 'traceId':
-    case 'annotationQuery':
+    case 'tags':
       return false;
     default:
       return true;
@@ -46,7 +46,7 @@ export const defaultConditionValues = (conditionKey) => {
       return 100;
     case 'traceId':
       return '';
-    case 'annotationQuery':
+    case 'tags':
       return '';
     default: // autocompleteKeys
       return undefined;
@@ -67,13 +67,13 @@ export const nextInitialConditionKey = (conditions, autocompleteKeys) => {
       return conditionKey;
     }
   }
-  return 'annotationQuery';
+  return 'tags';
 };
 
 export const buildQueryParametersWithConditions = (
   conditions, lookbackCondition, limitCondition,
 ) => {
-  const annotationQueryConditions = [];
+  const tagsConditions = [];
   const autocompleteTags = [];
   const conditionMap = {};
 
@@ -87,15 +87,15 @@ export const buildQueryParametersWithConditions = (
         break;
       case 'traceId':
         break; // ignore traceId
-      case 'annotationQuery':
-        annotationQueryConditions.push(condition.value);
+      case 'tags':
+        tagsConditions.push(condition.value);
         break;
       default: // autocompleteTags
         autocompleteTags.push(`${condition.key}=${condition.value}`);
         break;
     }
   });
-  conditionMap.annotationQuery = annotationQueryConditions.join(' and ');
+  conditionMap.tags = tagsConditions.join(' and ');
   conditionMap.autocompleteTags = autocompleteTags.join(' and ');
   conditionMap.limit = limitCondition;
   conditionMap.lookback = lookbackCondition.value;
@@ -111,7 +111,7 @@ export const buildQueryParametersWithConditions = (
 // trace page URL.
 export const buildApiQueryParameters = (queryParameters) => {
   const result = {};
-  let annotationQuery;
+  let tags;
   Object.keys(queryParameters).forEach((conditionKey) => {
     const conditionValue = queryParameters[conditionKey];
     switch (conditionKey) {
@@ -122,18 +122,18 @@ export const buildApiQueryParameters = (queryParameters) => {
       case 'limit':
         result[conditionKey] = conditionValue;
         break;
-      case 'annotationQuery':
-        if (typeof annotationQuery === 'undefined') {
-          annotationQuery = conditionValue;
+      case 'tags':
+        if (typeof tags === 'undefined') {
+          tags = conditionValue;
         } else {
-          annotationQuery = annotationQuery.concat(' and ', conditionValue);
+          tags = tags.concat(' and ', conditionValue);
         }
         break;
       case 'autocompleteTags':
-        if (typeof annotationQuery === 'undefined') {
-          annotationQuery = conditionValue;
+        if (typeof tags === 'undefined') {
+          tags = conditionValue;
         } else {
-          annotationQuery = annotationQuery.concat(' and ', conditionValue);
+          tags = tags.concat(' and ', conditionValue);
         }
         break;
       case 'lookback':
@@ -162,7 +162,8 @@ export const buildApiQueryParameters = (queryParameters) => {
         break;
     }
   });
-  result.annotationQuery = annotationQuery;
+  // In zipkin-server, annotationQuery is used as a name.
+  result.annotationQuery = tags;
   return result;
 };
 
@@ -188,11 +189,11 @@ export const extractConditionsFromQueryParameters = (queryParameters) => {
           value: parseInt(conditionValue, 10),
         });
         break;
-      case 'annotationQuery':
-        conditionValue.split(' and ').forEach((annotationQuery) => {
+      case 'tags':
+        conditionValue.split(' and ').forEach((tags) => {
           conditions.push({
-            key: 'annotationQuery',
-            value: annotationQuery,
+            key: 'tags',
+            value: tags,
           });
         });
         break;
@@ -246,7 +247,7 @@ export const getConditionKeyListWithAvailability = (
 
   // Memo the keys which is already used.
   conditions.forEach((condition) => {
-    if (condition.key === 'annotationQuery') {
+    if (condition.key === 'tags') {
       return;
     }
     existingConditionsMemo[condition.key] = true;

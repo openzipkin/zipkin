@@ -12,7 +12,7 @@ const propTypes = {
   isFocused: PropTypes.bool.isRequired,
 };
 
-class ConditionAnnotationQuery extends React.Component {
+class ConditionTags extends React.Component {
   constructor(props) {
     super(props);
     this.inputRef = undefined;
@@ -36,7 +36,7 @@ class ConditionAnnotationQuery extends React.Component {
     } = this.props;
 
     return (
-      <div className="condition-annotation-query">
+      <div className="condition-tags">
         <input
           ref={(ref) => {
             setNextFocusRef(ref);
@@ -45,7 +45,7 @@ class ConditionAnnotationQuery extends React.Component {
           type="text"
           value={value}
           onChange={(event) => { onConditionChange(event.target.value); }}
-          className="condition-annotation-query__input"
+          className="condition-tags__input"
           style={{
             width: isFocused
               ? `${8 * maxCharacters + 16}px`
@@ -60,6 +60,6 @@ class ConditionAnnotationQuery extends React.Component {
   }
 }
 
-ConditionAnnotationQuery.propTypes = propTypes;
+ConditionTags.propTypes = propTypes;
 
-export default ConditionAnnotationQuery;
+export default ConditionTags;
