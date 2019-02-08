@@ -1,5 +1,4 @@
 @import '../node_modules/rc-calendar/assets/index.css';
-@import '../node_modules/rc-input-number/assets/index.css';
 @import '../node_modules/rc-time-picker/assets/index.css';
 @import '../node_modules/react-table/react-table.css';
 
@@ -10,7 +9,6 @@
 @import 'base/form';
 
 @import 'custom/rc-calendar';
-@import 'custom/rc-input-number';
 @import 'custom/rc-time-picker';
 @import 'custom/react-select';
 @import 'custom/vizceral';
@@ -19,7 +17,6 @@
 @import 'components/browser';
 @import 'components/condition-annotation-query';
 @import 'components/condition-duration';
-@import 'components/condition-limit';
 @import 'components/condition-lookback';
 @import 'components/condition-name';
 @import 'components/condition-trace-id';

@@ -10,7 +10,7 @@ const initialState = {
     value: '1h',
     endTs: moment().valueOf(),
   },
-  limitCondition: 10,
+  limitCondition: '10',
 };
 
 const globalSearch = (state = initialState, action) => {
