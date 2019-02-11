@@ -107,7 +107,7 @@ function sortTreeByTimestamp(root) {
 
     sortChildren(current);
 
-    const { children } = current;
+    const {children} = current;
     for (let i = 0; i < children.length; i += 1) {
       queue.push(children[i]);
     }

@@ -93,11 +93,11 @@ describe('SpanNode', () => {
 
   it('should order children by timestamp', () => {
     const root = new SpanNode();
-    const aa = new SpanNode({ traceId: '1', id: 'aa', timestamp: 2 });
+    const aa = new SpanNode({traceId: '1', id: 'aa', timestamp: 2});
     root.addChild(aa);
-    const bb = new SpanNode({ traceId: '1', id: 'bb', timestamp: 1 });
+    const bb = new SpanNode({traceId: '1', id: 'bb', timestamp: 1});
     root.addChild(bb);
-    const cc = new SpanNode({ traceId: '1', id: 'cc' });
+    const cc = new SpanNode({traceId: '1', id: 'cc'});
     root.addChild(cc);
 
     expect(root.children).to.deep.equal([aa, bb, cc]);
