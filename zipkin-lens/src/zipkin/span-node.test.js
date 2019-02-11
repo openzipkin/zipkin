@@ -89,18 +89,6 @@ describe('SpanNode', () => {
       'a', 'b', 'c', 'd', 'e', 'f', '1', '2',
     ]);
   });
-
-  it('should order children by timestamp', () => {
-    const root = new SpanNode();
-    const aa = new SpanNode({ traceId: '1', id: 'aa', timestamp: 2 });
-    root.addChild(aa);
-    const bb = new SpanNode({ traceId: '1', id: 'bb', timestamp: 1 });
-    root.addChild(bb);
-    const cc = new SpanNode({ traceId: '1', id: 'cc' });
-    root.addChild(cc);
-
-    expect(root.children).toEqual([aa, bb, cc]);
-  });
 });
 
 // originally zipkin2.internal.SpanNodeTest.java
@@ -206,5 +194,23 @@ describe('SpanNodeBuilder', () => {
       },
     );
     expect(root.children.length).toBe(0);
+  });
+
+  it('should order children by timestamp', () => {
+    const trace = [
+      { traceId: 'a', id: '1' },
+      {
+        traceId: 'a', parentId: '1', id: 'a', timestamp: 2,
+      },
+      {
+        traceId: 'a', parentId: '1', id: 'b', timestamp: 1,
+      },
+      { traceId: 'a', parentId: '1', id: 'c' },
+    ].map(clean);
+
+    const root = new SpanNodeBuilder({}).build(trace);
+
+    expect(root.children.map(n => n.span))
+      .toEqual([trace[3], trace[2], trace[1]]); // null first
   });
 });
