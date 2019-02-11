@@ -149,24 +149,36 @@
   position: relative;
 }
 
+.timeline__double-span-bar {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  display: flex;
+  align-items: center;
+}
+
 .timeline__span-bar {
   position: absolute;
   border-radius: 4px;
-  opacity: 0.8;
-  height: 80%;
+  height: 70%;
+
+  &--client {
+    background-color: $gray-9;
+  }
+
+  &--server {}
 }
 
 .timeline__span-duration {
   color: $dark-4;
   font-size: 12px;
+  position: absolute;
 
-  &.left {
-    float: left;
+  &--left {
     padding-left: 8px;
   }
 
-  &.right {
-    float: right;
+  &--right {
     padding-right: 8px;
   }
 }

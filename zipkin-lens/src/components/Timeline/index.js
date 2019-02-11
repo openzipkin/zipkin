@@ -135,6 +135,7 @@ class Timeline extends React.Component {
                   startTs={startTs}
                   endTs={endTs}
                   traceDuration={traceSummary.duration}
+                  traceTimestamp={traceSummary.spans[0].timestamp}
                   numTimeMarkers={DEFAULT_NUM_TICKS}
                   serviceNameColumnWidth={serviceNameColumnWidth}
                   spanNameColumnWidth={spanNameColumnWidth}
