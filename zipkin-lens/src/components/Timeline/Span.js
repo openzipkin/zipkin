@@ -295,10 +295,8 @@ class Span extends React.Component {
               width: `${(1 - (serviceNameColumnWidth + spanNameColumnWidth)) * 100}%`,
             }}
           >
-            <div>
-              {this.renderTimeMarkers()}
-              {this.renderSpanBar()}
-            </div>
+            {this.renderTimeMarkers()}
+            {this.renderSpanBar()}
           </div>
         </div>
         {
