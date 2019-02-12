@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -332,5 +332,19 @@ public class SpanNodeTest {
     SpanNode root = new SpanNode.Builder(logger).build(httpTrace);
     assertThat(root.traverse()).extracting(SpanNode::span)
       .containsExactlyInAnyOrderElementsOf(httpTrace);
+  }
+
+  @Test public void ordersChildrenByTimestamp() {
+    List<Span> trace = asList(
+      Span.newBuilder().traceId("a").id("1").build(),
+      Span.newBuilder().traceId("a").parentId("1").id("a").name("a").timestamp(2L).build(),
+      Span.newBuilder().traceId("a").parentId("1").id("b").name("b").timestamp(1L).build(),
+      Span.newBuilder().traceId("a").parentId("1").id("c").name("c").build()
+    );
+
+    SpanNode root = new SpanNode.Builder(logger).build(trace);
+
+    assertThat(root.children()).extracting(n -> n.span().name())
+      .containsExactly("c", "b", "a"); // null first
   }
 }
