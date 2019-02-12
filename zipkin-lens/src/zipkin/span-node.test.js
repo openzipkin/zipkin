@@ -1,5 +1,5 @@
 import { SpanNode, SpanNodeBuilder } from './span-node';
-import { clean, mergeV2ById } from './span-cleaner';
+import { clean } from './span-cleaner';
 
 // originally zipkin2.internal.SpanNodeTest.java
 describe('queueRootMostSpans', () => {
@@ -106,12 +106,12 @@ describe('SpanNodeBuilder', () => {
 
   // Makes sure that the trace tree is constructed based on parent-child, not by parameter order.
   it('should construct a trace tree', () => {
-    const trace = mergeV2ById([
+    const trace = [
       { traceId: 'a', id: 'a' },
       { traceId: 'a', parentId: 'a', id: 'b' },
       { traceId: 'a', parentId: 'b', id: 'c' },
       { traceId: 'a', parentId: 'c', id: 'd' },
-    ]);
+    ].map(clean);
 
     // TRACE is sorted with root span first, lets reverse them to make
     // sure the trace is stitched together by id.
@@ -139,7 +139,7 @@ describe('SpanNodeBuilder', () => {
   });
 
   it('should allocate spans missing parents to root', () => {
-    const trace = mergeV2ById([
+    const trace = [
       { traceId: 'a', id: 'b', timestamp: 1 },
       {
         traceId: 'a', parentId: 'b', id: 'c', timestamp: 2,
@@ -149,7 +149,7 @@ describe('SpanNodeBuilder', () => {
       },
       { traceId: 'a', id: 'e', timestamp: 4 },
       { traceId: 'a', id: 'f', timestamp: 5 },
-    ]);
+    ].map(clean);
 
     const root = new SpanNodeBuilder({}).build(trace);
 
@@ -162,11 +162,11 @@ describe('SpanNodeBuilder', () => {
 
   // spans are often reported depth-first, so it is possible to not have a root yet
   it('should construct a trace missing a root span', () => {
-    const trace = mergeV2ById([
+    const trace = [
       { traceId: 'a', parentId: 'a', id: 'b' },
       { traceId: 'a', parentId: 'a', id: 'c' },
       { traceId: 'a', parentId: 'a', id: 'd' },
-    ]);
+    ].map(clean);
 
     const root = new SpanNodeBuilder({}).build(trace);
 
@@ -194,5 +194,23 @@ describe('SpanNodeBuilder', () => {
       },
     );
     expect(root.children.length).toBe(0);
+  });
+
+  it('should order children by timestamp', () => {
+    const trace = [
+      { traceId: 'a', id: '1' },
+      {
+        traceId: 'a', parentId: '1', id: 'a', timestamp: 2,
+      },
+      {
+        traceId: 'a', parentId: '1', id: 'b', timestamp: 1,
+      },
+      { traceId: 'a', parentId: '1', id: 'c' },
+    ].map(clean);
+
+    const root = new SpanNodeBuilder({}).build(trace);
+
+    expect(root.children.map(n => n.span))
+      .toEqual([trace[3], trace[2], trace[1]]); // null first
   });
 });
