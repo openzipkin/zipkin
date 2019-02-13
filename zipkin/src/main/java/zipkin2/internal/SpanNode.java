@@ -192,11 +192,14 @@ public final class SpanNode {
 
     /** Sorts children at the same level by {@link Span#timestampAsLong()} ascending */
     void sortTreeByTimestamp(SpanNode root) {
-      Iterator<SpanNode> iterator = root.traverse();
-      while (iterator.hasNext()) {
-        SpanNode current = iterator.next();
+      ArrayDeque<SpanNode> queue = new ArrayDeque<>();
+      queue.add(root);
+
+      while (!queue.isEmpty()) {
+        SpanNode current = queue.pop();
         if (current.children().isEmpty()) continue;
         Collections.sort(current.children(), NODE_COMPARATOR);
+        queue.addAll(current.children());
       }
     }
 
