@@ -114,8 +114,8 @@ final class CassandraSpanConsumer implements SpanConsumer {
   void clear() {
     insertServiceName.clear();
     insertSpanName.clear();
-    insertAutocompleteValue.clear();
     indexer.clear();
+    if (insertAutocompleteValue != null) insertAutocompleteValue.clear();
   }
 
   private static long guessTimestamp(Span span) {
