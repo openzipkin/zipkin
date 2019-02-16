@@ -200,4 +200,27 @@ describe('SpanNodeBuilder', () => {
     expect(root.children.map(n => n.span))
       .to.eql([trace[3], trace[2], trace[1]]); // null first
   });
+
+  it('should order children by timestamp when IPs change ', () => {
+    const trace = [
+      {
+        traceId: '1', parentId: 'a', id: 'c', kind: 'SERVER', shared: true, timestamp: 1,
+        localEndpoint: {serviceName: 'my-service', ipv4: '10.2.3.4'}
+      },
+      {
+        traceId: '1', parentId: 'c', id: 'b', kind: 'CLIENT', timestamp: 2,
+        localEndpoint: {serviceName: 'my-service', ipv4: '169.2.3.4'}
+      },
+      {
+        traceId: '1', parentId: 'c', id: 'a', timestamp: 3,
+        localEndpoint: {serviceName: 'my-service', ipv4: '10.2.3.4'}
+      }
+    ].map(clean);
+
+    const root = new SpanNodeBuilder({}).build(trace);
+
+    const spans = [];
+    root.traverse(span => spans.push(span));
+    expect(spans).to.eql(trace);
+  });
 });

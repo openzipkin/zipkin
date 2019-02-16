@@ -347,4 +347,32 @@ public class SpanNodeTest {
     assertThat(root.children()).extracting(n -> n.span().name())
       .containsExactly("c", "b", "a"); // null first
   }
+
+  @Test public void build_changingIps() {
+    // This trace was taken from the middle of a real broken one, IDs and timestamps changed
+    List<Span> httpTrace = asList(
+      Span.newBuilder()
+        .traceId("1").parentId("a").id("c")
+        .kind(Span.Kind.SERVER)
+        .timestamp(1)
+        .localEndpoint(Endpoint.newBuilder().serviceName("my-service").ip("10.2.3.4").build())
+        .shared(true)
+        .build(),
+      Span.newBuilder()
+        .traceId("1").parentId("c").id("b")
+        .kind(Span.Kind.CLIENT)
+        .timestamp(2)
+        // note the IP is different
+        .localEndpoint(Endpoint.newBuilder().serviceName("my-service").ip("169.2.3.4").build())
+        .build(),
+      Span.newBuilder()
+        .traceId("1").parentId("c").id("a")
+        .timestamp(3)
+        .localEndpoint(Endpoint.newBuilder().serviceName("my-service").ip("10.2.3.4").build())
+        .build());
+
+    SpanNode root = new SpanNode.Builder(logger).build(httpTrace);
+    assertThat(root.traverse()).extracting(SpanNode::span)
+      .containsExactlyElementsOf(httpTrace);
+  }
 }
