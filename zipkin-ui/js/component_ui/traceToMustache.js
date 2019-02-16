@@ -1,3 +1,4 @@
+import {compare} from '../component_data/spanCleaner';
 import {addTimestamps, getMaxDuration, mkDurationStr} from './traceSummary';
 import {newSpanRow} from './spanRow';
 
@@ -53,6 +54,10 @@ function addLayoutDetails(
   }
 }
 
+function nodeByTimestamp(a, b) {
+  return compare(a.span.timestamp, b.span.timestamp);
+}
+
 export function traceToMustache(root, logsUrl) {
   const serviceNameToCount = {};
   let queue = root.queueRootMostSpans();
@@ -71,22 +76,21 @@ export function traceToMustache(root, logsUrl) {
     // This is more than a normal tree traversal, as we are merging any server spans that share the
     // same ID. When that's the case, we pull up any of their children as if they are our own.
     const spansToMerge = [current.span];
-    const isLeafSpan = current.children.length === 0;
-    const childIds = [];
-    const toPrefix = [];
+    const children = [];
     current.children.forEach(child => {
       if (current.span.id === child.span.id) {
         spansToMerge.push(child.span);
-        child.children.forEach(grandChild => {
-          toPrefix.push(grandChild);
-          childIds.push(grandChild.span.id);
-        });
+        child.children.forEach(grandChild => children.push(grandChild));
       } else {
-        toPrefix.push(child);
-        childIds.push(child.span.id);
+        children.push(child);
       }
     });
-    queue = toPrefix.concat(queue);
+
+    // Pulling up children may affect our sort order. We re-sort to ensure rows are added in
+    // timestamp order.
+    children.sort(nodeByTimestamp);
+    queue = children.concat(queue);
+    const childIds = children.map(child => child.span.id);
 
     // The mustache template expects one row per span ID. To get the correct depth class, we need to
     // count distinct span IDs above us.
@@ -98,7 +102,9 @@ export function traceToMustache(root, logsUrl) {
     // If we are the deepest span, mark the trace accordingly
     if (depth > modelview.depth) modelview.depth = depth;
 
+    const isLeafSpan = children.length === 0;
     const spanRow = newSpanRow(spansToMerge, isLeafSpan);
+
     addLayoutDetails(spanRow, timestamp, duration, depth, childIds);
     // NOTE: This will increment both the local and remote service name
     //

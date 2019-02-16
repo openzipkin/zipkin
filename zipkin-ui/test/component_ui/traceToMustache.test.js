@@ -200,5 +200,111 @@ describe('traceToMustache', () => {
       '000000000000000d'
     ]);
   });
+
+  it('should order rows by topologically, then timestamp when endpoints are inconsistent', () => {
+    const traceWithEndpointProblems = [
+      {
+        traceId: 'a',
+        parentId: '1',
+        id: '5',
+        name: 'get /header',
+        timestamp: 359175,
+        duration: 108123,
+        localEndpoint: {
+          serviceName: 'sad_pages',
+          ipv4: '10.1.1.123',
+          port: 31107
+        }
+      },
+      {
+        traceId: 'a',
+        parentId: '1',
+        id: '4',
+        name: 'get /footer',
+        timestamp: 341172,
+        duration: 16640,
+        localEndpoint: {
+          serviceName: 'sad_pages',
+          ipv4: '10.1.1.123',
+          port: 31107
+        }
+      },
+      {
+        traceId: 'a',
+        parentId: '1',
+        id: '3',
+        kind: 'CLIENT',
+        name: 'get',
+        timestamp: 30000,
+        duration: 123000,
+        localEndpoint: {
+          serviceName: 'sad_pages',
+          ipv4: '169.254.0.3',
+          port: 43193
+        }
+      },
+      {
+        traceId: 'a',
+        parentId: '1',
+        id: '2',
+        kind: 'SERVER',
+        name: 'get /token',
+        timestamp: 12137,
+        duration: 12785,
+        localEndpoint: {
+          serviceName: 'phantom',
+          ipv4: '10.1.1.123',
+          port: 32767
+        },
+        shared: true
+      },
+      {
+        traceId: 'a',
+        parentId: '1',
+        id: '2',
+        kind: 'CLIENT',
+        name: 'get',
+        timestamp: 11000,
+        duration: 13000,
+        localEndpoint: {
+          serviceName: 'sad_pages',
+          ipv4: '169.254.0.2',
+          port: 49647
+        }
+      },
+      {
+        traceId: 'a',
+        id: '1',
+        kind: 'SERVER',
+        name: 'get /sad',
+        timestamp: 4857,
+        duration: 525280,
+        localEndpoint: {
+          serviceName: 'sad_pages',
+          ipv4: '10.1.1.123',
+          port: 31107
+        },
+        shared: true
+      },
+      {
+        traceId: 'a',
+        id: '1',
+        kind: 'CLIENT',
+        name: 'get',
+        timestamp: 1,
+        duration: 537000,
+        localEndpoint: {
+          serviceName: 'whelp-main',
+          ipv4: '169.254.0.1',
+          port: 43237
+        }
+      }
+    ];
+
+    const {spans} = traceToMustache(treeCorrectedForClockSkew(traceWithEndpointProblems));
+    spans.map(s => s.timestamp).should.deep.equal([
+      1, 11000, 30000, 341172, 359175 // increasing order
+    ]);
+  });
 });
 
