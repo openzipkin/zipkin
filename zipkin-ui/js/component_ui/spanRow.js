@@ -197,7 +197,7 @@ function parseTagRows(span) {
         key: ConstantNames[key] || key,
         value: span.tags[key]
       };
-      if (localFormatted) tagRow.endpoint = localFormatted;
+      if (localFormatted) tagRow.endpoints = [localFormatted];
       tagRows.push(tagRow);
     });
   }
@@ -236,18 +236,32 @@ function parseTagRows(span) {
   return tagRows;
 }
 
-// This guards to ensure we don't add duplicate annotations on merge
+// This ensures we don't add duplicate annotations on merge
 function maybePushAnnotation(annotations, a) {
-  if (annotations.findIndex(b => a.value === b.value) === -1) {
+  if (annotations.findIndex(b => a.timestamp === b.timestamp && a.value === b.value) === -1) {
     annotations.push(a);
   }
 }
 
-// This guards to ensure we don't add duplicate binary annotations on merge
+// This ensures we only add rows for tags that are unique on key and value on merge
 function maybePushTag(tags, a) {
-  if (tags.findIndex(b => a.key === b.key) === -1) {
+  const sameKeyAndValue = tags.filter(b => a.key === b.key && a.value === b.value);
+  if (sameKeyAndValue.length === 0) {
     tags.push(a);
+    return;
   }
+  if ((a.endpoints || []).length === 0) {
+    return; // no endpoints to merge
+  }
+  // Handle when tags are reported by different endpoints
+  sameKeyAndValue.forEach((t) => {
+    if (!t.endpoints) t.endpoints = []; // eslint-disable-line no-param-reassign
+    a.endpoints.forEach((endpoint) => {
+      if (t.endpoints.indexOf(endpoint) === -1) {
+        t.endpoints.push(endpoint);
+      }
+    });
+  });
 }
 
 // This guards to ensure we don't add duplicate service names on merge
