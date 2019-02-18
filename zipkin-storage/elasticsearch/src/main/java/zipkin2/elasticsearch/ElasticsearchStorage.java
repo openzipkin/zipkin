@@ -275,6 +275,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return ensureIndexTemplates().version();
   }
 
+  char indexTypeDelimiter() {
+    return ensureIndexTemplates().indexTypeDelimiter();
+  }
+
   /** This is a blocking call, only used in tests. */
   public void clear() throws IOException {
     Set<String> toClear = new LinkedHashSet<>();
@@ -356,20 +360,21 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     String index = indexNameFormatter().index();
     try {
       IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
-      EnsureIndexTemplate.apply(http(), index + ":" + SPAN + "_template", templates.span());
+      char indexTypeDelimiter = templates.indexTypeDelimiter();
       EnsureIndexTemplate.apply(
-          http(), index + ":" + DEPENDENCY + "_template", templates.dependency());
+        http(), index + indexTypeDelimiter + SPAN + "_template", templates.span());
       EnsureIndexTemplate.apply(
-        http(), index + ":" + AUTOCOMPLETE + "_template", templates.autocomplete());
+        http(), index + indexTypeDelimiter + DEPENDENCY + "_template", templates.dependency());
+      EnsureIndexTemplate.apply(
+        http(), index + indexTypeDelimiter + AUTOCOMPLETE + "_template", templates.autocomplete());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
     }
   }
 
-  @Memoized
-  public // hosts resolution might imply a network call, and we might make a new okhttp instance
-  HttpCall.Factory http() {
+  @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
+  public HttpCall.Factory http() {
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
     OkHttpClient ok =

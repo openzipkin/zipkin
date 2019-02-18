@@ -23,9 +23,9 @@ import okhttp3.Request;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /** Returns a version-specific span and dependency index template */
@@ -181,7 +181,7 @@ final class VersionSpecificTemplates {
       + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
       + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
       + "    \"index.requests.cache.enable\": true,\n"
-      + "    \"index.mapper.dynamic\": true\n"
+      + "    \"index.mapper.dynamic\": false\n"
       + "  },\n"
       + "  \"mappings\": {\""
       + AUTOCOMPLETE
@@ -228,8 +228,9 @@ final class VersionSpecificTemplates {
   }
 
   private String versionSpecificSpanIndexTemplate(float version) {
+    String result;
     if (version >= 2 && version < 3) {
-      return spanIndexTemplate
+      result = spanIndexTemplate
           .replace("TEMPLATE", "template")
           .replace("STRING", "string")
           .replace("DISABLE_ALL", "\"_all\": {\"enabled\": false}" + (searchEnabled ? ",\n" : ""))
@@ -237,7 +238,7 @@ final class VersionSpecificTemplates {
               "KEYWORD",
               "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": \"not_analyzed\"");
     } else if (version >= 5) {
-      return spanIndexTemplate
+      result = spanIndexTemplate
           .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
           .replace("STRING", "text")
           .replace("DISABLE_ALL", "") // _all isn't supported in 6.x anyway
@@ -246,29 +247,37 @@ final class VersionSpecificTemplates {
               "\"analyzer\": \"traceId_analyzer\" }",
               "\"fielddata\": \"true\", \"analyzer\": \"traceId_analyzer\" }");
     } else {
-      throw new IllegalStateException(
-          "Elasticsearch 2.x, 5.x and 6.x are supported, was: " + version);
+      throw new IllegalStateException("Elasticsearch 2-7.x are supported, was: " + version);
     }
+    return maybeReviseFor7x(version, result);
   }
 
   private String versionSpecificDependencyLinkIndexTemplate(float version) {
-    return dependencyIndexTemplate.replace(
-        "TEMPLATE", version >= 6 ? "index_patterns" : "template");
+    String result = dependencyIndexTemplate.replace(
+      "TEMPLATE", version >= 6 ? "index_patterns" : "template");
+    return maybeReviseFor7x(version, result);
   }
+
   private String versionSpecificAutocompleteIndexTemplate(float version) {
+    String result;
     if (version >= 2 && version < 3) {
-      return autocompleteIndexTemplate
+      result =  autocompleteIndexTemplate
         .replace("TEMPLATE", "template")
         .replace("KEYWORD", "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": "
           + "\"not_analyzed\"");
     } else if (version >= 5) {
-      return autocompleteIndexTemplate
+      result = autocompleteIndexTemplate
         .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
         .replace("KEYWORD", "\"type\": \"keyword\",\"norms\": false\n");
-    }else {
-      throw new IllegalStateException(
-        "Elasticsearch 2.x, 5.x and 6.x are supported, was: " + version);
+    } else {
+      throw new IllegalStateException("Elasticsearch 2-7.x are supported, was: " + version);
     }
+    return maybeReviseFor7x(version, result);
+  }
+
+  private String maybeReviseFor7x(float version, String result) {
+    if (version >= 7) return result.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
+    return result;
   }
 }
 
