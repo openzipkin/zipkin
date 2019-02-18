@@ -157,12 +157,12 @@ describe('SPAN v2 -> spanRow Conversion', () => {
         {
           key: 'http.path',
           value: '/api',
-          endpoint: '127.0.0.1:8080 (frontend)'
+          endpoints: ['127.0.0.1:8080 (frontend)']
         },
         {
           key: 'clnt/finagle.version',
           value: '6.45.0',
-          endpoint: '127.0.0.1:8080 (frontend)'
+          endpoints: ['127.0.0.1:8080 (frontend)']
         },
         {
           key: 'Server Address',
@@ -396,8 +396,8 @@ describe('SPAN v2 -> spanRow Conversion', () => {
         }
       ],
       tags: [
-        {key: 'http.path', value: '/api', endpoint: '192.168.99.101:9000 (backend)'},
-        {key: 'finagle.version', value: '6.45.0', endpoint: '192.168.99.101:9000 (backend)'},
+        {key: 'http.path', value: '/api', endpoints: ['192.168.99.101:9000 (backend)']},
+        {key: 'finagle.version', value: '6.45.0', endpoints: ['192.168.99.101:9000 (backend)']},
         {key: 'Client Address', value: '127.0.0.1:8080 (frontend)'}
       ],
       serviceName: 'backend',
@@ -902,12 +902,12 @@ describe('SPAN v2 -> spanRow Conversion', () => {
         {
           key: 'http.path',
           value: '/api',
-          endpoint: '127.0.0.1:8080 (frontend)'
+          endpoints: ['127.0.0.1:8080 (frontend)']
         },
         {
           key: 'clnt/finagle.version',
           value: '6.45.0',
-          endpoint: '127.0.0.1:8080 (frontend)'
+          endpoints: ['127.0.0.1:8080 (frontend)']
         },
         {
           key: 'Server Address',
@@ -1075,6 +1075,87 @@ describe('newSpanRow', () => {
     })], false);
 
     expect(spanRow.spanName).to.equal(clientSpan.name);
+  });
+
+  it('should dedupe annotations with same timestamp and value', () => {
+    const spanRow = newSpanRow([
+      clean({
+        traceId: '1',
+        parentId: '2',
+        id: '3',
+        kind: 'CLIENT',
+        localEndpoint: frontend,
+        annotations: [{timestamp: 1, value: 'hit'}]
+      }),
+      clean({
+        traceId: '1',
+        parentId: '2',
+        id: '3',
+        kind: 'CLIENT',
+        localEndpoint: frontend,
+        annotations: [{timestamp: 1, value: 'hit'}]
+      }),
+    ], false);
+
+    expect(spanRow.annotations).to.deep.equal([
+      {timestamp: 1, value: 'hit', endpoint: '127.0.0.1:8080 (frontend)', isDerived: false},
+    ]);
+  });
+
+  it('should merge endpoints on shared tag', () => {
+    const spanRow = newSpanRow([
+      clean({
+        traceId: '1',
+        parentId: '2',
+        id: '3',
+        kind: 'CLIENT',
+        localEndpoint: frontend,
+        tags: {'http.path': '/foo'}
+      }),
+      clean({
+        traceId: '1',
+        parentId: '2',
+        id: '3',
+        shared: true,
+        kind: 'SERVER',
+        localEndpoint: backend,
+        tags: {'http.path': '/foo'}
+      })
+    ], false);
+
+    expect(spanRow.tags).to.deep.equal([
+      {key: 'http.path', value: '/foo', endpoints: [
+        '127.0.0.1:8080 (frontend)',
+        '192.168.99.101:9000 (backend)'
+      ]}
+    ]);
+  });
+
+  it('should show difference in tag values per endpoint', () => {
+    const spanRow = newSpanRow([
+      clean({
+        traceId: '1',
+        parentId: '2',
+        id: '3',
+        kind: 'CLIENT',
+        localEndpoint: frontend,
+        tags: {'http.path': '/foo'}
+      }),
+      clean({
+        traceId: '1',
+        parentId: '2',
+        id: '3',
+        shared: true,
+        kind: 'SERVER',
+        localEndpoint: backend,
+        tags: {'http.path': '/foo/redirected'}
+      })
+    ], false);
+
+    expect(spanRow.tags).to.deep.equal([
+      {key: 'http.path', value: '/foo', endpoints: ['127.0.0.1:8080 (frontend)']},
+      {key: 'http.path', value: '/foo/redirected', endpoints: ['192.168.99.101:9000 (backend)']}
+    ]);
   });
 });
 

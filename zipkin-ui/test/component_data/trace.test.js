@@ -98,22 +98,22 @@ describe('convertSuccessResponse', () => {
           {
             key: 'http.method',
             value: 'GET',
-            endpoint: '172.17.0.13 (frontend)'
+            endpoints: ['172.17.0.13 (frontend)']
           },
           {
             key: 'http.path',
             value: '/',
-            endpoint: '172.17.0.13 (frontend)'
+            endpoints: ['172.17.0.13 (frontend)']
           },
           {
             key: 'mvc.controller.class',
             value: 'Frontend',
-            endpoint: '172.17.0.13 (frontend)'
+            endpoints: ['172.17.0.13 (frontend)']
           },
           {
             key: 'mvc.controller.method',
             value: 'callBackend',
-            endpoint: '172.17.0.13 (frontend)'
+            endpoints: ['172.17.0.13 (frontend)']
           },
           {
             key: 'Client Address',
@@ -196,22 +196,22 @@ describe('convertSuccessResponse', () => {
           {
             key: 'http.method',
             value: 'GET',
-            endpoint: '172.17.0.13 (frontend)'
+            endpoints: ['172.17.0.13 (frontend)', '172.17.0.9 (backend)']
           },
           {
             key: 'http.path',
             value: '/api',
-            endpoint: '172.17.0.13 (frontend)'
+            endpoints: ['172.17.0.13 (frontend)', '172.17.0.9 (backend)']
           },
           {
             key: 'mvc.controller.class',
             value: 'Backend',
-            endpoint: '172.17.0.9 (backend)'
+            endpoints: ['172.17.0.9 (backend)']
           },
           {
             key: 'mvc.controller.method',
             value: 'printDate',
-            endpoint: '172.17.0.9 (backend)'
+            endpoints: ['172.17.0.9 (backend)']
           },
           {
             key: 'Client Address',
@@ -270,7 +270,7 @@ describe('convertSuccessResponse', () => {
           {
             key: 'error',
             value: 'request failed',
-            endpoint: '172.17.0.9 (backend)'
+            endpoints: ['172.17.0.9 (backend)']
           }
         ],
         errorType: 'critical'
