@@ -36,7 +36,7 @@
     <maven-invoker-plugin.version>3.2.0</maven-invoker-plugin.version>
 
     <!-- Manual version updates to work around warnings mentioned in UNDERTOW-1355 -->
-    <xnio.version>3.6.5.Final</xnio.version>
+    <xnio.version>3.7.0.Final</xnio.version>
     <jboss-threads.version>2.3.2.Final</jboss-threads.version>
   </properties>
 

@@ -94,7 +94,9 @@ public class SpanNodeTest {
     // child(g) has child h
     g.addChild(h);
 
-    assertThat(a.traverse()).extracting(SpanNode::span).extracting(s -> s.id().replaceAll("0", ""))
+    assertThat(a.traverse()).toIterable()
+      .extracting(SpanNode::span)
+      .extracting(s -> s.id().replaceAll("0", ""))
       .containsExactly("a", "b", "c", "d", "e", "f", "1", "2");
   }
 
@@ -330,7 +332,7 @@ public class SpanNodeTest {
         .build());
 
     SpanNode root = new SpanNode.Builder(logger).build(httpTrace);
-    assertThat(root.traverse()).extracting(SpanNode::span)
+    assertThat(root.traverse()).toIterable().extracting(SpanNode::span)
       .containsExactlyInAnyOrderElementsOf(httpTrace);
   }
 
@@ -372,7 +374,7 @@ public class SpanNodeTest {
         .build());
 
     SpanNode root = new SpanNode.Builder(logger).build(httpTrace);
-    assertThat(root.traverse()).extracting(SpanNode::span)
+    assertThat(root.traverse()).toIterable().extracting(SpanNode::span)
       .containsExactlyElementsOf(httpTrace);
   }
 }
