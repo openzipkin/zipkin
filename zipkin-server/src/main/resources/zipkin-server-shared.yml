@@ -133,6 +133,7 @@ zipkin:
     default-lookback: 3600000
     # When false, disables the "find a trace" screen
     search-enabled: ${SEARCH_ENABLED:true}
+    suggest-lens: ${SUGGEST_LENS:true}
     # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)
     # Multiple sites can be specified, e.g.
     # - .*example1.com
