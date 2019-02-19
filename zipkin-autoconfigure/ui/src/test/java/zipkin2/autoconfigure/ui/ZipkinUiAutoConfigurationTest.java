@@ -156,7 +156,7 @@ public class ZipkinUiAutoConfigurationTest {
   }
 
   @Test
-  public void betaCookieOverridesIndex() {
+  public void lensCookieOverridesIndex() {
     context = createContext();
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex("true").getBody().toString())
