@@ -15,6 +15,7 @@ package zipkin2.autoconfigure.ui;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,6 +34,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.ModelAndView;
@@ -74,16 +76,26 @@ class ZipkinUiAutoConfiguration {
   @Autowired
   ZipkinUiProperties ui;
 
-  @Value("${zipkin.ui.source-root:classpath:zipkin-ui}/index.html")
+  @Value("classpath:zipkin-ui/index.html")
   Resource indexHtml;
+  @Value("classpath:zipkin-lens/index.html")
+  Resource lensIndexHtml;
 
-  @Bean
-  @Lazy
-  String processedIndexHtml() throws IOException {
+  @Bean @Lazy String processedIndexHtml() {
+    return processedIndexHtml(indexHtml);
+  }
+
+  @Bean @Lazy String processedLensIndexHtml() {
+    return processedIndexHtml(lensIndexHtml);
+  }
+
+  String processedIndexHtml(Resource indexHtml) {
     String baseTagValue = "/".equals(ui.getBasepath()) ? "/" : ui.getBasepath() + "/";
     Document soup;
     try (InputStream is = indexHtml.getInputStream()) {
       soup = Jsoup.parse(is, null, baseTagValue);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e); // unexpected
     }
     if (soup.head().getElementsByTag("base").isEmpty()) {
       soup.head().appendChild(
@@ -95,13 +107,13 @@ class ZipkinUiAutoConfiguration {
   }
 
   @Bean
-  public WebMvcConfigurer resourceConfigurer(@Value("${zipkin.ui.source-root:classpath:zipkin-ui}") String sourceRoot) {
+  public WebMvcConfigurer resourceConfigurer() {
     return new WebMvcConfigurer() {
-      @Override
-      public void addResourceHandlers(ResourceHandlerRegistry registry) {
+      @Override public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/zipkin/**")
-          .addResourceLocations(sourceRoot + "/")
-          .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));      }
+          .addResourceLocations("classpath:zipkin-ui/", "classpath:zipkin-lens/")
+          .setCachePeriod((int) TimeUnit.DAYS.toSeconds(365));
+      }
     };
   }
 
@@ -114,10 +126,16 @@ class ZipkinUiAutoConfiguration {
   }
 
   @RequestMapping(value = "/zipkin/index.html", method = GET)
-  public ResponseEntity<?> serveIndex() throws IOException {
+  public ResponseEntity<?> serveIndex(@CookieValue(value = "lens", required = false) String lens) {
     ResponseEntity.BodyBuilder result = ResponseEntity.ok()
       .cacheControl(CacheControl.maxAge(1, TimeUnit.MINUTES))
       .contentType(MediaType.TEXT_HTML);
+
+    if (Boolean.parseBoolean(lens)) {
+      return DEFAULT_BASEPATH.equals(ui.getBasepath())
+        ? result.body(lensIndexHtml)
+        : result.body(processedLensIndexHtml());
+    }
     return DEFAULT_BASEPATH.equals(ui.getBasepath())
       ? result.body(indexHtml)
       : result.body(processedIndexHtml());

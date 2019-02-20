@@ -2,6 +2,7 @@ import $ from 'jquery';
 
 const defaults = {
   environment: '',
+  suggestLens: false,
   queryLimit: 10,
   defaultLookback: 60 * 60 * 1000, // 1 hour
   searchEnabled: true,

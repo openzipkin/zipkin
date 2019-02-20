@@ -141,6 +141,8 @@ zipkin:
     instrumented: .*
     # URL placed into the <base> tag in the HTML
     base-path: /zipkin
+    # When false, disables the "Try Lens UI" button in the navigation page
+    suggest-lens: true
 
 server:
   port: ${QUERY_PORT:9411}

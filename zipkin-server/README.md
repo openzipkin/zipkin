@@ -109,6 +109,7 @@ logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a b
 dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"
+suggestLens | zipkin.ui.suggest-lens | When true, a button will appear on the navigation bar, when pressed switches to the Lens Ui (for Beta testing). Default true
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
