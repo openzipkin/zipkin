@@ -436,11 +436,14 @@
   <build>
     <pluginManagement>
       <plugins>
-        <!-- mvn -N io.takari:maven:wrapper -Dmaven=3.6.0 -->
+        <!-- mvn -N io.takari:maven:wrapper generates the ./mvnw script -->
         <plugin>
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>
-          <version>0.6.1</version>
+          <version>0.7.1</version>
+          <configuration>
+            <maven>3.6.0</maven>
+          </configuration>
         </plugin>
 
         <plugin>
