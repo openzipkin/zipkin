@@ -3,11 +3,12 @@ import React from 'react';
 
 import HeaderRow from './HeaderRow';
 import Span from './Span';
+import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
-  traceSummary: PropTypes.shape({}).isRequired,
+  traceSummary: detailedTraceSummaryPropTypes.isRequired,
 };
 
 const DEFAULT_SERVICE_NAME_COLUMN_WIDTH = 0.20;

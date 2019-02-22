@@ -37,7 +37,7 @@ const propTypes = {
     endTs: PropTypes.number,
     startTs: PropTypes.number,
   }).isRequired,
-  limitCondition: PropTypes.string.isRequired,
+  limitCondition: PropTypes.number.isRequired,
   fetchServices: PropTypes.func.isRequired,
   isLoadingServices: PropTypes.bool.isRequired,
   fetchSpans: PropTypes.func.isRequired,
@@ -104,7 +104,7 @@ class GlobalSearch extends React.Component {
       endTs: lookbackCondition.endTs || moment().valueOf(),
       startTs: lookbackCondition.startTs || moment().valueOf(),
     });
-    setLimitCondition(limitCondition || '10');
+    setLimitCondition(limitCondition || 10);
 
     fetchServices();
     const serviceNameCondition = initialConditions.conditions.find(condition => condition.key === 'serviceName');
