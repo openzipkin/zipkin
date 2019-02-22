@@ -57,6 +57,8 @@
   flex-shrink: 0;
   border: 1px solid $gray-7;
   box-sizing: border-box;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
+
 }
 
 .global-search__condition-lookback-wrapper {
@@ -64,6 +66,10 @@
   border-bottom-right-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;
+  height: 50px;
+  border: 1px solid $gray-7;
+  box-sizing: border-box;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
 }
 
 .global-search__find-button {
