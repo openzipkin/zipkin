@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import SpanInfo from './SpanInfo';
+import TimelineSpanData from './TimelineSpanData';
 import { getErrorTypeColor, getServiceNameColor } from '../../util/color';
 import { detailedSpanPropTypes } from '../../prop-types';
 
@@ -303,7 +303,7 @@ class Span extends React.Component {
         {
           isInfoOpened
             ? (
-              <SpanInfo
+              <TimelineSpanData
                 span={span}
                 serviceNameColumnWidth={serviceNameColumnWidth}
               />
