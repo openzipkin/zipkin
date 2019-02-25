@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import HeaderRow from './HeaderRow';
+import TimelineHeader from './TimelineHeader';
 import Span from './Span';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
@@ -103,7 +103,7 @@ class Timeline extends React.Component {
 
     return (
       <div className="timeline">
-        <HeaderRow
+        <TimelineHeader
           startTs={startTs}
           endTs={endTs}
           serviceNameColumnWidth={serviceNameColumnWidth}

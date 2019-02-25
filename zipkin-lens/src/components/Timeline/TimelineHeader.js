@@ -16,7 +16,7 @@ const propTypes = {
 const LEFT_MOUSE_BUTTON = 0;
 const MIN_COLUMN_WIDTH = 0.075;
 
-class HeaderRow extends React.Component {
+class TimelineHeader extends React.Component {
   constructor(props) {
     super(props);
 
@@ -96,20 +96,20 @@ class HeaderRow extends React.Component {
       const label = startTs + (i / (numTimeMarkers - 1)) * (endTs - startTs);
       const portion = i / (numTimeMarkers - 1);
 
-      let positionClassName = '';
+      let modifier = '';
       if (portion <= 0) {
-        positionClassName = 'first';
+        modifier = '--first';
       } else if (portion >= 1) {
-        positionClassName = 'last';
+        modifier = 'last';
       }
 
       timeMarkers.push(
         <div
           key={portion}
-          className={`timeline__time-marker ${positionClassName}`}
+          className={`timeline-header__time-marker timeline-header__time-marker${modifier}`}
           style={{ left: `${portion * 100}%` }}
         >
-          <span className={`timeline__header-row-time-marker-label ${positionClassName}`}>
+          <span className={`timeline-header__time-marker-label timeline-header__time-marker-label${modifier}`}>
             {formatDuration(label)}
           </span>
         </div>,
@@ -128,16 +128,16 @@ class HeaderRow extends React.Component {
       spanNameColumnWidth,
     } = this.props;
     return (
-      <div className="timeline__header-row" ref={this.setElement}>
+      <div className="timeline-header" ref={this.setElement}>
         <div
-          className="timeline__header-row-title-splitter-wrapper"
+          className="timeline-header__resizable-column"
           style={{ width: `${serviceNameColumnWidth * 100}%` }}
         >
-          <div className="timeline__header-row-title">
+          <div className="timeline-header__column-name">
             Service Name
           </div>
           <div
-            className="timeline__header-row-splitter"
+            className="timeline-header__draggable-splitter"
             role="presentation"
             onMouseDown={
               (e) => { this.handleMouseDown(e, 'service'); }
@@ -147,14 +147,14 @@ class HeaderRow extends React.Component {
           </div>
         </div>
         <div
-          className="timeline__header-row-title-splitter-wrapper"
+          className="timeline-header__resizable-column"
           style={{ width: `${spanNameColumnWidth * 100}%` }}
         >
-          <div className="timeline__header-row-title">
+          <div className="timeline-header__column-name">
             Span Name
           </div>
           <div
-            className="timeline__header-row-splitter"
+            className="timeline-header__draggable-splitter"
             role="presentation"
             onMouseDown={
               (e) => { this.handleMouseDown(e, 'span'); }
@@ -164,7 +164,7 @@ class HeaderRow extends React.Component {
           </div>
         </div>
         <div
-          className="timeline__header-row-time-markers"
+          className="timeline-header__time-markers"
           style={{
             width: `${(1 - (serviceNameColumnWidth + spanNameColumnWidth)) * 100}%`,
           }}
@@ -176,6 +176,6 @@ class HeaderRow extends React.Component {
   }
 }
 
-HeaderRow.propTypes = propTypes;
+TimelineHeader.propTypes = propTypes;
 
-export default HeaderRow;
+export default TimelineHeader;
