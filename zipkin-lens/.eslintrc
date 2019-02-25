@@ -10,7 +10,7 @@
     "prefer-destructuring": ["error", {
       "AssignmentExpression": {"array": false, "object": false},
       "VariableDeclarator": {"array": true, "object": true}
-    }],
+    }]
   },
   "plugins": ["jest"],
   "globals": {
@@ -20,6 +20,13 @@
   "env": {
       "browser": true,
       "jquery": true,
-      "jest/globals": true,
+      "jest/globals": true
+  },
+  "settings": {
+    "import/resolver": {
+      "node": {
+        "moduleDirectory": ["node_modules", "src/"]
+      }
+    }
   }
 }
