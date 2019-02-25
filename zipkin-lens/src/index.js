@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 
 import App from './components/App';
 
-import '../scss/main.scss';
+import 'assets/scss/main.scss';
 
 require('babel-polyfill');
 
