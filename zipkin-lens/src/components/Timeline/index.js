@@ -11,92 +11,81 @@ const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
 };
 
-const DEFAULT_SERVICE_NAME_COLUMN_WIDTH = 0.20;
-const DEFAULT_SPAN_NAME_COLUMN_WIDTH = 0.1;
-const DEFAULT_NUM_TICKS = 5;
+const defaultServiceNameColumnWidth = 0.2;
+const defaultSpanNameColumnWidth = 0.1;
+const defaultNumTimeMarkers = 5;
 
 class Timeline extends React.Component {
   constructor(props) {
     super(props);
-
     this.state = {
-      serviceNameColumnWidth: DEFAULT_SERVICE_NAME_COLUMN_WIDTH,
-      spanNameColumnWidth: DEFAULT_SPAN_NAME_COLUMN_WIDTH,
-      childrenClosed: {},
-      infoOpened: {},
+      serviceNameColumnWidth: defaultServiceNameColumnWidth,
+      spanNameColumnWidth: defaultSpanNameColumnWidth,
+      childrenClosedSpans: {},
+      dataOpenedSpans: {},
     };
-    this.handleServiceNameColumnChange = this.handleServiceNameColumnChange.bind(this);
-    this.handleSpanNameColumnChange = this.handleSpanNameColumnChange.bind(this);
-    this.handleChildrenToggle = this.handleChildrenToggle.bind(this);
-    this.handleInfoToggle = this.handleInfoToggle.bind(this);
+    this.handleServiceNameColumnWidthChange = this.handleServiceNameColumnWidthChange.bind(this);
+    this.handleSpanNameColumnWidthChange = this.handleSpanNameColumnWidthChange.bind(this);
+    this.handleChildrenOpenToggle = this.handleChildrenOpenToggle.bind(this);
+    this.handleDataOpenToggle = this.handleDataOpenToggle.bind(this);
   }
 
-  handleServiceNameColumnChange(value) {
-    this.setState({ serviceNameColumnWidth: value });
+  handleServiceNameColumnWidthChange(serviceNameColumnWidth) {
+    this.setState({ serviceNameColumnWidth });
   }
 
-  handleSpanNameColumnChange(value) {
-    this.setState({ spanNameColumnWidth: value });
+  handleSpanNameColumnWidthChange(spanNameColumnWidth) {
+    this.setState({ spanNameColumnWidth });
   }
 
-  handleChildrenToggle(spanId) {
-    const { childrenClosed } = this.state;
+  handleChildrenOpenToggle(spanId) {
+    const { childrenClosedSpans: prevChildrenClosedSpans } = this.state;
 
-    if (childrenClosed[spanId]) {
-      childrenClosed[spanId] = undefined;
+    let childrenClosedSpans = {};
+    if (prevChildrenClosedSpans[spanId]) {
+      childrenClosedSpans = {
+        ...prevChildrenClosedSpans,
+        [spanId]: undefined,
+      };
     } else {
-      childrenClosed[spanId] = true;
+      childrenClosedSpans = {
+        ...prevChildrenClosedSpans,
+        [spanId]: true,
+      };
     }
-    this.setState({ childrenClosed });
+    this.setState({ childrenClosedSpans });
   }
 
-  handleInfoToggle(spanId) {
-    const { infoOpened } = this.state;
+  handleDataOpenToggle(spanId) {
+    const { dataOpenedSpans: prevDataOpenedSpans } = this.state;
 
-    if (infoOpened[spanId]) {
-      infoOpened[spanId] = false;
+    let dataOpenedSpans = {};
+    if (prevDataOpenedSpans[spanId]) {
+      dataOpenedSpans = {
+        ...prevDataOpenedSpans,
+        [spanId]: false,
+      };
     } else {
-      infoOpened[spanId] = true;
+      dataOpenedSpans = {
+        ...prevDataOpenedSpans,
+        [spanId]: true,
+      };
     }
-    this.setState({ infoOpened });
-  }
-
-  isChildrenOpened(spanId) {
-    const {
-      childrenClosed,
-    } = this.state;
-    if (childrenClosed[spanId]) {
-      return false;
-    }
-    return true;
-  }
-
-  isInfoOpened(spanId) {
-    const {
-      infoOpened,
-    } = this.state;
-    if (infoOpened[spanId]) {
-      return true;
-    }
-    return false;
+    this.setState({ dataOpenedSpans });
   }
 
   render() {
-    const {
-      startTs,
-      endTs,
-      traceSummary,
-    } = this.props;
-
+    const { startTs, endTs, traceSummary } = this.props;
     const {
       serviceNameColumnWidth,
       spanNameColumnWidth,
-      childrenClosed,
+      childrenClosedSpans,
+      dataOpenedSpans,
     } = this.state;
 
     const closed = {};
     for (let i = 0; i < traceSummary.spans.length; i += 1) {
-      if (childrenClosed[traceSummary.spans[i].parentId]) {
+      if (childrenClosedSpans[traceSummary.spans[i].parentId]) {
         closed[traceSummary.spans[i].spanId] = true;
       }
     }
@@ -108,7 +97,7 @@ class Timeline extends React.Component {
           endTs={endTs}
           serviceNameColumnWidth={serviceNameColumnWidth}
           spanNameColumnWidth={spanNameColumnWidth}
-          numTimeMarkers={DEFAULT_NUM_TICKS}
+          numTimeMarkers={defaultNumTimeMarkers}
           onServiceNameColumnWidthChange={this.handleServiceNameColumnChange}
           onSpanNameColumnWidthChange={this.handleSpanNameColumnChange}
         />
@@ -137,15 +126,15 @@ class Timeline extends React.Component {
                   endTs={endTs}
                   traceDuration={traceSummary.duration}
                   traceTimestamp={traceSummary.spans[0].timestamp}
-                  numTimeMarkers={DEFAULT_NUM_TICKS}
+                  numTimeMarkers={defaultNumTimeMarkers}
                   serviceNameColumnWidth={serviceNameColumnWidth}
                   spanNameColumnWidth={spanNameColumnWidth}
                   span={span}
                   hasChildren={hasChildren}
-                  areChildrenOpened={this.isChildrenOpened(span.spanId)}
-                  areDataOpened={this.isInfoOpened(span.spanId)}
-                  onChildrenOpenToggle={this.handleChildrenToggle}
-                  onDataOpenToggle={this.handleInfoToggle}
+                  areChildrenOpened={!childrenClosedSpans[span.spanId]}
+                  areDataOpened={!!dataOpenedSpans[span.spanId]}
+                  onChildrenOpenToggle={this.handleChildrenOpenToggle}
+                  onDataOpenToggle={this.handleDataOpenToggle}
                 />
               );
             },
