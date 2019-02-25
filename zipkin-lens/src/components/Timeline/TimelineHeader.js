@@ -13,41 +13,32 @@ const propTypes = {
   onServiceNameColumnWidthChange: PropTypes.func.isRequired,
 };
 
-const LEFT_MOUSE_BUTTON = 0;
-const MIN_COLUMN_WIDTH = 0.075;
+const leftMouseButton = 0;
+const minServiceNameColumnWidth = 0.1;
+const minSpanNameColumnWidth = 0.075;
+const serviceNameColumn = 'SERVICE_NAME_COLUMN';
+const spanNameColumn = 'SPAN_NAME_COLUMN';
 
 class TimelineHeader extends React.Component {
   constructor(props) {
     super(props);
-
-    this.state = {
-      widthChangingColumn: null,
-    };
-
-    this._element = undefined;
-
-    this.setElement = this.setElement.bind(this);
+    this.state = { resizingColumnName: null };
+    this.element = undefined;
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
   }
 
-  setElement(element) {
-    this._element = element;
-  }
-
   getPosition(clientX) {
-    const { left, width } = this._element.getBoundingClientRect();
+    const { left, width } = this.element.getBoundingClientRect();
     return (clientX - left) / width;
   }
 
-  handleMouseDown(event, column) {
-    if (event.button !== LEFT_MOUSE_BUTTON) {
+  handleMouseDown(event, columnName) {
+    if (event.button !== leftMouseButton) {
       return;
     }
-    this.setState({
-      widthChangingColumn: column,
-    });
+    this.setState({ resizingColumnName: columnName });
     window.addEventListener('mousemove', this.handleMouseMove);
     window.addEventListener('mouseup', this.handleMouseUp);
   }
@@ -58,24 +49,18 @@ class TimelineHeader extends React.Component {
       onServiceNameColumnWidthChange,
       onSpanNameColumnWidthChange,
     } = this.props;
+    const { resizingColumnName } = this.state;
 
-    const {
-      widthChangingColumn,
-    } = this.state;
-
-    switch (widthChangingColumn) {
-      case 'service':
-        onServiceNameColumnWidthChange(
-          Math.max(this.getPosition(event.clientX), MIN_COLUMN_WIDTH),
-        );
-        break;
-      case 'span':
-        onSpanNameColumnWidthChange(
-          Math.max(this.getPosition(event.clientX) - serviceNameColumnWidth, MIN_COLUMN_WIDTH),
-        );
-        break;
-      default:
-        break;
+    if (resizingColumnName === serviceNameColumn) {
+      onServiceNameColumnWidthChange(
+        Math.max(this.getPosition(event.clientX), minServiceNameColumnWidth),
+      );
+    } else if (resizingColumnName === spanNameColumn) {
+      onSpanNameColumnWidthChange(
+        Math.max(
+          this.getPosition(event.clientX) - serviceNameColumnWidth, minSpanNameColumnWidth,
+        ),
+      );
     }
   }
 
@@ -84,11 +69,44 @@ class TimelineHeader extends React.Component {
     window.removeEventListener('mouseup', this.handleMouseUp);
   }
 
-  renderTicks() {
+  renderResizableColumn(columnName) {
+    const { serviceNameColumnWidth, spanNameColumnWidth } = this.props;
+    let label = '';
+    let columnWidth = 0;
+    if (columnName === serviceNameColumn) {
+      label = 'Service Name';
+      columnWidth = serviceNameColumnWidth;
+    } else if (columnName === spanNameColumn) {
+      label = 'Span Name';
+      columnWidth = spanNameColumnWidth;
+    }
+
+    return (
+      <div
+        className="timeline-header__resizable-column"
+        style={{ width: `${columnWidth * 100}%` }}
+      >
+        <div className="timeline-header__column-name">
+          {label}
+        </div>
+        <div
+          className="timeline-header__draggable-splitter"
+          role="presentation"
+          onMouseDown={(e) => { this.handleMouseDown(e, columnName); }}
+        >
+          ||
+        </div>
+      </div>
+    );
+  }
+
+  renderTimeMarkers() {
     const {
       startTs,
       endTs,
       numTimeMarkers,
+      serviceNameColumnWidth,
+      spanNameColumnWidth,
     } = this.props;
 
     const timeMarkers = [];
@@ -116,61 +134,23 @@ class TimelineHeader extends React.Component {
       );
     }
     return (
-      <div>
+      <div
+        className="timeline-header__time-markers"
+        style={{
+          width: `${(1 - (serviceNameColumnWidth + spanNameColumnWidth)) * 100}%`,
+        }}
+      >
         {timeMarkers}
       </div>
     );
   }
 
   render() {
-    const {
-      serviceNameColumnWidth,
-      spanNameColumnWidth,
-    } = this.props;
     return (
-      <div className="timeline-header" ref={this.setElement}>
-        <div
-          className="timeline-header__resizable-column"
-          style={{ width: `${serviceNameColumnWidth * 100}%` }}
-        >
-          <div className="timeline-header__column-name">
-            Service Name
-          </div>
-          <div
-            className="timeline-header__draggable-splitter"
-            role="presentation"
-            onMouseDown={
-              (e) => { this.handleMouseDown(e, 'service'); }
-            }
-          >
-            ||
-          </div>
-        </div>
-        <div
-          className="timeline-header__resizable-column"
-          style={{ width: `${spanNameColumnWidth * 100}%` }}
-        >
-          <div className="timeline-header__column-name">
-            Span Name
-          </div>
-          <div
-            className="timeline-header__draggable-splitter"
-            role="presentation"
-            onMouseDown={
-              (e) => { this.handleMouseDown(e, 'span'); }
-            }
-          >
-            ||
-          </div>
-        </div>
-        <div
-          className="timeline-header__time-markers"
-          style={{
-            width: `${(1 - (serviceNameColumnWidth + spanNameColumnWidth)) * 100}%`,
-          }}
-        >
-          { this.renderTicks() }
-        </div>
+      <div className="timeline-header" ref={(element) => { this.element = element; }}>
+        {this.renderResizableColumn(serviceNameColumn)}
+        {this.renderResizableColumn(spanNameColumn)}
+        {this.renderTimeMarkers()}
       </div>
     );
   }
