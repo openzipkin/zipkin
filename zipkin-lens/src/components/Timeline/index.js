@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import TimelineHeader from './TimelineHeader';
-import Span from './Span';
+import TimelineSpan from './TimelineSpan';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
@@ -131,7 +131,7 @@ class Timeline extends React.Component {
                 return null;
               }
               return (
-                <Span
+                <TimelineSpan
                   key={span.spanId}
                   startTs={startTs}
                   endTs={endTs}
