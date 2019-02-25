@@ -8,25 +8,11 @@ import ServiceNameBadge from '../Common/ServiceNameBadge';
 import { getErrorTypeColor } from '../../util/color';
 import * as api from '../../constants/api';
 import { detailedTraceSummary } from '../../zipkin';
+import { traceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
-  traceId: PropTypes.string.isRequired,
-  width: PropTypes.number.isRequired,
-  infoClass: PropTypes.string,
-  spanCount: PropTypes.number.isRequired,
-  durationStr: PropTypes.string.isRequired,
-  timestamp: PropTypes.number.isRequired,
-  servicePercentage: PropTypes.number,
-  serviceSummaries: PropTypes.arrayOf(PropTypes.shape({
-    serviceName: PropTypes.string,
-    spanCount: PropTypes.number,
-  })).isRequired,
+  traceSummary: traceSummaryPropTypes.isRequired,
   skewCorrectedTrace: PropTypes.shape({}).isRequired,
-};
-
-const defaultProps = {
-  infoClass: 'none',
-  servicePercentage: undefined,
 };
 
 class TraceSummary extends React.Component {
@@ -44,8 +30,8 @@ class TraceSummary extends React.Component {
   }
 
   barColor() {
-    const { infoClass } = this.props;
-    switch (infoClass) {
+    const { traceSummary } = this.props;
+    switch (traceSummary.infoClass) {
       case 'trace-error-transient':
         return getErrorTypeColor('transient');
       case 'trace-error-critical':
@@ -79,7 +65,7 @@ class TraceSummary extends React.Component {
   }
 
   renderButtons() {
-    const { traceId } = this.props;
+    const { traceSummary } = this.props;
     const { isTimelineOpened } = this.state;
     return (
       <div className="trace-summary__buttons">
@@ -88,10 +74,10 @@ class TraceSummary extends React.Component {
           role="presentation"
           onClick={this.handleTimelineOpenToggle}
         />
-        <a href={`${api.TRACE}/${traceId}`} target="_brank">
+        <a href={`${api.TRACE}/${traceSummary.traceId}`} target="_brank">
           <i className="fas fa-file-download" />
         </a>
-        <Link to={{ pathname: `/zipkin/traces/${traceId}` }}>
+        <Link to={{ pathname: `/zipkin/traces/${traceSummary.traceId}` }}>
           <i className="fas fa-angle-double-right" />
         </Link>
       </div>
@@ -99,15 +85,15 @@ class TraceSummary extends React.Component {
   }
 
   renderServiceBadges() {
-    const { serviceSummaries } = this.props;
-    return serviceSummaries.map(summary => (
+    const { traceSummary } = this.props;
+    return traceSummary.serviceSummaries.map(serviceSummary => (
       <div
-        key={summary.serviceName}
+        key={serviceSummary.serviceName}
         className="trace-summary__badge-wrapper"
       >
         <ServiceNameBadge
-          serviceName={summary.serviceName}
-          count={summary.spanCount}
+          serviceName={serviceSummary.serviceName}
+          count={serviceSummary.spanCount}
         />
       </div>
     ));
@@ -133,39 +119,36 @@ class TraceSummary extends React.Component {
   }
 
   render() {
-    const {
-      traceId,
-      width,
-      servicePercentage,
-      spanCount,
-      durationStr,
-      timestamp,
-    } = this.props;
+    const { traceSummary } = this.props;
 
     const upperBarLabel = (
       <div className="trace-summary__upper-bar-label">
         <div>
-          {`${spanCount}spans ${durationStr}`}
+          {`${traceSummary.spanCount}spans ${traceSummary.durationStr}`}
         </div>
         <div>
-          {moment(timestamp / 1000).format('MM/DD HH:mm:ss:SSS')}
+          {moment(traceSummary.timestamp / 1000).format('MM/DD HH:mm:ss:SSS')}
         </div>
       </div>
     );
-    const lowerBarLabel = `${servicePercentage}%`;
+    const lowerBarLabel = `${traceSummary.servicePercentage}%`;
 
     return (
       <div className="trace-summary">
         <div className="trace-summary__trace-id">
           Trace ID:&nbsp;
           <b>
-            {traceId}
+            {traceSummary.traceId}
           </b>
         </div>
         <div className="trace-summary__upper-container">
           <div className="trace-summary__bars">
-            {this.renderBar(width, upperBarLabel)}
-            {servicePercentage ? this.renderBar(servicePercentage, lowerBarLabel) : null}
+            {this.renderBar(traceSummary.width, upperBarLabel)}
+            {
+              traceSummary.servicePercentage
+                ? this.renderBar(traceSummary.servicePercentage, lowerBarLabel)
+                : null
+            }
           </div>
           {this.renderButtons()}
         </div>
@@ -179,6 +162,5 @@ class TraceSummary extends React.Component {
 }
 
 TraceSummary.propTypes = propTypes;
-TraceSummary.defaultProps = defaultProps;
 
 export default TraceSummary;

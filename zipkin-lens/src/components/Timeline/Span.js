@@ -3,6 +3,7 @@ import React from 'react';
 
 import SpanInfo from './SpanInfo';
 import { getErrorTypeColor, getServiceNameColor } from '../../util/color';
+import { detailedSpanPropTypes } from '../../prop-types';
 
 const propTypes = {
   startTs: PropTypes.number.isRequired,
@@ -12,7 +13,7 @@ const propTypes = {
   numTimeMarkers: PropTypes.number.isRequired,
   serviceNameColumnWidth: PropTypes.number.isRequired,
   spanNameColumnWidth: PropTypes.number.isRequired,
-  span: PropTypes.shape({}).isRequired,
+  span: detailedSpanPropTypes.isRequired,
   hasChildren: PropTypes.bool.isRequired,
   isChildrenOpened: PropTypes.bool.isRequired,
   isInfoOpened: PropTypes.bool.isRequired,

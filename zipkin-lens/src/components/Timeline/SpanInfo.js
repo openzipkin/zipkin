@@ -5,10 +5,11 @@ import ReactTable from 'react-table';
 
 import ServiceNameBadge from '../Common/ServiceNameBadge';
 import { getServiceNameColor } from '../../util/color';
+import { detailedSpanPropTypes } from '../../prop-types';
 
 const propTypes = {
   serviceNameColumnWidth: PropTypes.number.isRequired,
-  span: PropTypes.shape({}).isRequired,
+  span: detailedSpanPropTypes.isRequired,
 };
 
 const renderInfo = span => (
