@@ -59,7 +59,7 @@ export const traceSummaryPropTypes = PropTypes.shape({
   timestamp: PropTypes.number.isRequired,
   duration: PropTypes.number.isRequired,
   durationStr: PropTypes.string.isRequired,
-  servicePercentage: PropTypes.number.isRequired,
+  servicePercentage: PropTypes.number,
   serviceSummaries: spanServiceNameSummaries.isRequired,
   infoClass: PropTypes.string,
   spanCount: PropTypes.number.isRequired,
