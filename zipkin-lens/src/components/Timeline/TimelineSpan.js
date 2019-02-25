@@ -15,27 +15,21 @@ const propTypes = {
   spanNameColumnWidth: PropTypes.number.isRequired,
   span: detailedSpanPropTypes.isRequired,
   hasChildren: PropTypes.bool.isRequired,
-  isChildrenOpened: PropTypes.bool.isRequired,
-  isInfoOpened: PropTypes.bool.isRequired,
-  onChildrenToggle: PropTypes.func.isRequired,
-  onInfoToggle: PropTypes.func.isRequired,
+  areChildrenOpened: PropTypes.bool.isRequired,
+  areDataOpened: PropTypes.bool.isRequired,
+  onChildrenOpenToggle: PropTypes.func.isRequired,
+  onDataOpenToggle: PropTypes.func.isRequired,
 };
 
 class TimelineSpan extends React.Component {
   constructor(props) {
     super(props);
-
-    this.handleChildrenToggle = this.handleChildrenToggle.bind(this);
-    this.handleInfoToggle = this.handleInfoToggle.bind(this);
+    this.handleChildrenOpenToggle = this.handleChildrenOpenToggle.bind(this);
+    this.handleDataOpenToggle = this.handleDataOpenToggle.bind(this);
   }
 
   calculateLeftAndWidth(baseLeft, baseWidth) {
-    const {
-      startTs,
-      endTs,
-      traceDuration,
-    } = this.props;
-
+    const { startTs, endTs, traceDuration } = this.props;
     const spanStartTs = baseLeft * traceDuration / 100;
     const spanEndTs = spanStartTs + (baseWidth * traceDuration / 100);
     const newDuration = endTs - startTs;
@@ -77,7 +71,6 @@ class TimelineSpan extends React.Component {
       left = 0;
       width = 0;
     }
-
     return { left, width };
   }
 
@@ -91,19 +84,19 @@ class TimelineSpan extends React.Component {
     return (startTs - traceTimestamp) / traceDuration * 100;
   }
 
-  handleChildrenToggle(e) {
+  handleChildrenOpenToggle(e) {
+    const { span, onChildrenOpenToggle } = this.props;
+    onChildrenOpenToggle(span.spanId);
     e.stopPropagation(); /* Stop event bubbling */
-    const { span, onChildrenToggle } = this.props;
-    onChildrenToggle(span.spanId);
   }
 
-  handleInfoToggle() {
-    const { span, onInfoToggle } = this.props;
-    onInfoToggle(span.spanId);
+  handleDataOpenToggle() {
+    const { span, onDataOpenToggle } = this.props;
+    onDataOpenToggle(span.spanId);
   }
 
   renderServiceNameColumn() {
-    const { span, hasChildren, isChildrenOpened } = this.props;
+    const { span, hasChildren, areChildrenOpened } = this.props;
 
     return (
       <div className="timeline-span__service-name-column">
@@ -113,11 +106,11 @@ class TimelineSpan extends React.Component {
               <div
                 className="timeline-span__open-toggle-button"
                 style={{ left: `${(span.depth - 1) * 14}px` }}
-                onClick={this.handleChildrenToggle}
+                onClick={this.handleChildrenOpenToggle}
                 role="presentation"
               >
                 {
-                  isChildrenOpened
+                  areChildrenOpened
                     ? (<span className="fas fa-minus-square" />)
                     : (<span className="fas fa-plus-square" />)
                 }
@@ -158,7 +151,6 @@ class TimelineSpan extends React.Component {
         />,
       );
     }
-
     return timeMarkers;
   }
 
@@ -197,10 +189,12 @@ class TimelineSpan extends React.Component {
 
     if (clientStart && serverStart && clientFinish && serverFinish) {
       const clientBaseWidth = this.calculateBaseWidth(
-        clientFinish.timestamp, clientStart.timestamp,
+        clientFinish.timestamp,
+        clientStart.timestamp,
       );
       const serverBaseWidth = this.calculateBaseWidth(
-        serverFinish.timestamp, serverStart.timestamp,
+        serverFinish.timestamp,
+        serverStart.timestamp,
       );
       const clientBaseLeft = this.calculateBaseLeft(clientStart.timestamp);
       const serverBaseLeft = this.calculateBaseLeft(serverStart.timestamp);
@@ -253,28 +247,19 @@ class TimelineSpan extends React.Component {
     );
   }
 
-  renderTimeMarkersAndBar() {
-    return (
-      <div>
-        {this.renderTimeMarkers()}
-        {this.renderSpanBar()}
-      </div>
-    );
-  }
-
   render() {
     const {
       span,
       serviceNameColumnWidth,
       spanNameColumnWidth,
-      isInfoOpened,
+      areDataOpened,
     } = this.props;
     return (
       <div>
         <div
           role="presentation"
           className="timeline-span"
-          onClick={this.handleInfoToggle}
+          onClick={this.handleDataOpenToggle}
         >
           <div
             className="timeline-span__service-name-column-wrapper"
@@ -301,7 +286,7 @@ class TimelineSpan extends React.Component {
           </div>
         </div>
         {
-          isInfoOpened
+          areDataOpened
             ? (
               <TimelineSpanData
                 span={span}

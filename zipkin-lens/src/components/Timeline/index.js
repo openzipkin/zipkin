@@ -142,10 +142,10 @@ class Timeline extends React.Component {
                   spanNameColumnWidth={spanNameColumnWidth}
                   span={span}
                   hasChildren={hasChildren}
-                  isChildrenOpened={this.isChildrenOpened(span.spanId)}
-                  isInfoOpened={this.isInfoOpened(span.spanId)}
-                  onChildrenToggle={this.handleChildrenToggle}
-                  onInfoToggle={this.handleInfoToggle}
+                  areChildrenOpened={this.isChildrenOpened(span.spanId)}
+                  areDataOpened={this.isInfoOpened(span.spanId)}
+                  onChildrenOpenToggle={this.handleChildrenToggle}
+                  onDataOpenToggle={this.handleInfoToggle}
                 />
               );
             },
