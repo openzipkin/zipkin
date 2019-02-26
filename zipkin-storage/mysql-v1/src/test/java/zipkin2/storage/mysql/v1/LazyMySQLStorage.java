@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,9 +37,9 @@ public class LazyMySQLStorage implements TestRule {
     if (storage != null) return storage;
 
     try {
-      container = new ZipkinMySQLContainer(version);
-      container.start();
-      System.out.println("Will use TestContainers MySQL instance");
+      //container = new ZipkinMySQLContainer(version);
+      //container.start();
+      //System.out.println("Will use TestContainers MySQL instance");
     } catch (Exception e) {
       // Ignored
     }

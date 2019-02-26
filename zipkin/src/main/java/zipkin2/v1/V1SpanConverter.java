@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -216,14 +216,19 @@ public final class V1SpanConverter {
     zipkin2.Endpoint ca = null, sa = null, ma = null;
     for (int i = 0, length = source.binaryAnnotations.size(); i < length; i++) {
       V1BinaryAnnotation b = source.binaryAnnotations.get(i);
-      if (b.stringValue == null) {
-        if ("ca".equals(b.key)) {
-          ca = b.endpoint;
-        } else if ("sa".equals(b.key)) {
-          sa = b.endpoint;
-        } else if ("ma".equals(b.key)) {
-          ma = b.endpoint;
-        }
+
+      // Peek to see if this is an address annotation. Strictly speaking, address annotations should
+      // have a value of true (not "true" or "1"). However, there are versions of zipkin-ruby in the
+      // wild that create "1" and misinterpreting confuses the question of what is the local
+      // endpoint. Hence, we leniently parse.
+      if ("ca".equals(b.key)) {
+        ca = b.endpoint;
+        continue;
+      } else if ("sa".equals(b.key)) {
+        sa = b.endpoint;
+        continue;
+      } else if ("ma".equals(b.key)) {
+        ma = b.endpoint;
         continue;
       }
 
