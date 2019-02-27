@@ -37,9 +37,9 @@ public class LazyMySQLStorage implements TestRule {
     if (storage != null) return storage;
 
     try {
-      //container = new ZipkinMySQLContainer(version);
-      //container.start();
-      //System.out.println("Will use TestContainers MySQL instance");
+      container = new ZipkinMySQLContainer(version);
+      container.start();
+      System.out.println("Will use TestContainers MySQL instance");
     } catch (Exception e) {
       // Ignored
     }
