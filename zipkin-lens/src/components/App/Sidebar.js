@@ -1,7 +1,7 @@
-import Cookies from 'js-cookie';
 import PropTypes from 'prop-types';
 import React from 'react';
 import { Link } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 import Logo from '../../img/zipkin-logo.svg';
 
@@ -24,15 +24,15 @@ const pageInfo = {
   },
 };
 
-class Sidebar extends React.Component {
-  // Before Zipkin 2.13, Lens was optionally available based on a cookie named 'lens'.
-  // To revert to the classic UI, remove the cookie and reload.
-  goBackToClassic(evt) {
-    evt.preventDefault();
-    Cookies.remove('lens');
-    this.window.location.reload(true);
-  }
+// Before Zipkin 2.13, Lens was optionally available based on a cookie named 'lens'.
+// To revert to the classic UI, remove the cookie and reload.
+const goBackToClassic = (event) => {
+  Cookies.remove('lens');
+  window.location.reload(true);
+  event.preventDefault();
+};
 
+class Sidebar extends React.Component {
   renderPageOption(pageName) {
     const { location } = this.props;
     const { url } = pageInfo[pageName];
@@ -84,7 +84,7 @@ class Sidebar extends React.Component {
         {Cookies.get('lens')
         && (
           <div>
-            <button type="button" onClick={this.goBackToClassic.bind(this)}>
+            <button type="button" onClick={goBackToClassic}>
               <span>Go back to classic Zipkin</span>
             </button>
           </div>
