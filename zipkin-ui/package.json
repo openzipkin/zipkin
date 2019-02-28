@@ -13,7 +13,7 @@
   "author": "https://gitter.im/openzipkin/zipkin",
   "repository": {
     "type": "git",
-    "url": "git://github.com/username/repository.git"
+    "url": "https://github.com/openzipkin/zipkin"
   },
   "license": "Apache-2.0",
   "dependencies": {
