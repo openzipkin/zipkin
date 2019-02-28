@@ -1,16 +1,14 @@
 {
-  "presets": [
-    [
-      "env",
-      {
-        "targets": {
-          "browsers": ["last 2 versions", "safari 7"],
-        }
-      },
-    ],
-    "react"
-  ],
+  "presets": ["@babel/preset-env", "@babel/preset-react"],
   "plugins": [
-    "transform-object-rest-spread"
+    "@babel/plugin-proposal-class-properties",
+    "@babel/plugin-proposal-object-rest-spread",
+    ["module-resolver", {
+      "root": ["./src"],
+    }],
+  ],
+  "ignore": [
+    "__mocks__",
+    "__snapshots__",
   ]
 }

@@ -1,16 +1,16 @@
 {
   "name": "zipkin-lens",
   "version": "0.0.1",
-  "description": "",
+  "description": "The frontend UI for Zipkin",
   "main": "index.js",
   "scripts": {
     "build-css": "node-sass-chokidar --include-path ./src --include-path ./node_modules src/ -o src/",
     "watch-css": "npm run build-css && node-sass-chokidar --include-path ./src --include-path ./node_modules src/ -o src/ --watch --recursive",
     "start-js": "react-scripts start",
-    "start": "PORT=9000 npm-run-all -p watch-css start-js",
+    "start": "cross-env PORT=9000 npm-run-all -p watch-css start-js",
     "build": "npm run build-css && react-scripts build && rm build/static/js/*.map && mkdir -p target/classes/ && mv build target/classes/zipkin-lens/",
     "test": "CI=true react-scripts test --env=jsdom",
-    "test:local": "react-scripts test --env=jsdom",
+    "test:local": "react-scripts test --coverage --env=jsdom",
     "eject": "react-scripts eject",
     "lint": "eslint src --ext=js,jsx;  exit 0",
     "lint:fix": "eslint src --ext=js,jsx --fix;  exit 0"
@@ -19,26 +19,19 @@
     "type": "git",
     "url": "https://github.com/openzipkin/zipkin"
   },
-  "jest": {
-    "setupTestFrameworkScriptFile": "./src/setup-test.js",
-    "modulePaths": [
-      "./jest"
-    ],
-    "moduleNameMapper": {
-      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$": "file-mock.js"
-    }
-  },
   "keywords": [],
   "author": "https://gitter.im/openzipkin/zipkin",
   "license": "Apache-2.0",
   "devDependencies": {
     "@babel/cli": "^7.2.3",
     "@babel/core": "^7.3.3",
-    "babel-core": "^6.26.3",
+    "@babel/plugin-proposal-class-properties": "^7.3.4",
+    "@babel/plugin-proposal-object-rest-spread": "^7.3.4",
+    "@babel/preset-env": "^7.3.4",
+    "@babel/preset-react": "^7.0.0",
+    "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.6.0",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react": "^6.24.1",
+    "babel-loader": "^8.0.5",
     "cross-env": "^5.2.0",
     "enzyme": "^3.7.0",
     "enzyme-adapter-react-16": "^1.7.0",
@@ -49,14 +42,10 @@
     "eslint-plugin-jsx-a11y": "^6.2.1",
     "eslint-plugin-react": "^7.12.4",
     "fetch-mock": "^7.3.0",
-    "file-loader": "^1.1.11",
-    "html-loader": "^0.5.5",
-    "html-webpack-plugin": "^3.2.0",
     "node-fetch": "^2.3.0",
     "node-sass-chokidar": "^1.3.4",
     "npm-run-all": "^4.1.5",
     "react-scripts": "^2.1.5",
-    "react-svg-loader": "^2.1.0",
     "redux-mock-store": "^1.5.3"
   },
   "dependencies": {
@@ -89,5 +78,5 @@
     "not ie <= 11",
     "not op_mini all"
   ],
-  "proxy": "http://localhost:9411"
+  "proxy": "http://locahost:9411/"
 }

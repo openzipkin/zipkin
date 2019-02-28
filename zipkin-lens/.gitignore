@@ -3,3 +3,4 @@
 node_modules
 dist
 src/assets/scss/main.css 
+coverage
