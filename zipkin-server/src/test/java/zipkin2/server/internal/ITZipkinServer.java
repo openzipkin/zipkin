@@ -14,7 +14,6 @@
 package zipkin2.server.internal;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -37,6 +36,7 @@ import zipkin2.TestObjects;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.UTF_8;
@@ -48,7 +48,7 @@ import static zipkin2.TestObjects.UTF_8;
 )
 @RunWith(SpringRunner.class)
 public class ITZipkinServer {
-  static final List<Span> TRACE = Arrays.asList(TestObjects.CLIENT_SPAN);
+  static final List<Span> TRACE = asList(TestObjects.CLIENT_SPAN);
 
   @Autowired InMemoryStorage storage;
   @Value("${local.server.port}") int zipkinPort;
@@ -98,7 +98,34 @@ public class ITZipkinServer {
     Response response = post("/api/v2/spans", body);
     assertThat(response.code()).isEqualTo(400);
     assertThat(response.body().string())
-      .startsWith("Malformed reading List<Span> from json");
+      .startsWith("Expected a JSON_V2 encoded list\n");
+  }
+
+  @Test public void writeSpans_incorrectJsonFormatIsBadRequest_v1_v2() throws Exception {
+    byte[] message = SpanBytesEncoder.JSON_V1.encodeList(TRACE);
+
+    Response response = post("/api/v2/spans", message);
+    assertThat(response.code()).isEqualTo(400);
+    assertThat(response.body().string())
+      .startsWith("Expected a JSON_V2 encoded list, but received: JSON_V1\n");
+  }
+
+  @Test public void writeSpans_incorrectJsonFormatIsBadRequest_v2_v1() throws Exception {
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
+
+    Response response = post("/api/v1/spans", message);
+    assertThat(response.code()).isEqualTo(400);
+    assertThat(response.body().string())
+      .startsWith("Expected a JSON_V1 encoded list, but received: JSON_V2\n");
+  }
+
+  @Test public void writeSpans_ambiguousFormatOk() throws Exception {
+    byte[] message = SpanBytesEncoder.JSON_V2.encodeList(asList(
+      Span.newBuilder().traceId("1").id("1").name("test").build()
+    ));
+
+    assertThat(post("/api/v1/spans", message).code()).isEqualTo(202);
+    assertThat(post("/api/v2/spans", message).code()).isEqualTo(202);
   }
 
   @Test public void writeSpans_malformedGzipIsBadRequest() throws Exception {
@@ -137,7 +164,7 @@ public class ITZipkinServer {
 
     assertThat(response.code()).isEqualTo(400);
     assertThat(response.body().string())
-      .endsWith("reading List<Span> from TBinary");
+      .endsWith("Expected a THRIFT encoded list\n");
   }
 
   @Test public void writeSpans_contentTypeXProtobuf() throws Exception {
@@ -162,7 +189,7 @@ public class ITZipkinServer {
 
     assertThat(response.code()).isEqualTo(400);
     assertThat(response.body().string())
-      .startsWith("Truncated: length 101 > bytes remaining 3 reading List<Span> from proto3");
+      .startsWith("Expected a PROTO3 encoded list\n");
   }
 
   @Test public void v2WiresUp() throws Exception {
@@ -205,9 +232,9 @@ public class ITZipkinServer {
   }
 
   @Test public void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {
-    List<String> services = Arrays.asList("foo", "bar", "baz", "quz");
+    List<String> services = asList("foo", "bar", "baz", "quz");
     for (int i = 0; i < services.size(); i++) {
-      post("/api/v2/spans", SpanBytesEncoder.JSON_V2.encodeList(Arrays.asList(
+      post("/api/v2/spans", SpanBytesEncoder.JSON_V2.encodeList(asList(
         Span.newBuilder().traceId("a").id(i + 1).timestamp(TODAY).name("whopper").localEndpoint(
           Endpoint.newBuilder().serviceName(services.get(i)).build()
         ).build()
