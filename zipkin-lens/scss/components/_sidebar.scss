@@ -75,3 +75,17 @@
   display: flex;
   justify-content: center;
 }
+
+.sidebar__go-back-to-classic-button-wrapper {
+  width: 100%;
+  padding: 18px 4px 4px 4px;
+  box-sizing: border-box;
+}
+
+.sidebar__go-back-to-classic-button {
+  border-radius: 3px;
+  color: $gray-2;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
+  font-weight: bold;
+  cursor: pointer;
+}
