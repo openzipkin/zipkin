@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -98,7 +98,16 @@ public class ITZipkinServer {
     Response response = post("/api/v2/spans", body);
     assertThat(response.code()).isEqualTo(400);
     assertThat(response.body().string())
-      .startsWith("Malformed reading List<Span> from json");
+      .startsWith("Expected a JSON_V2 encoded list\n");
+  }
+
+  @Test public void writeSpans_incorrectJsonFormatIsBadRequest() throws Exception {
+    byte[] message = SpanBytesEncoder.JSON_V1.encodeList(TRACE);
+
+    Response response = post("/api/v2/spans", message);
+    assertThat(response.code()).isEqualTo(400);
+    assertThat(response.body().string())
+      .startsWith("Expected a JSON_V2 encoded list, but received: JSON_V1\n");
   }
 
   @Test public void writeSpans_malformedGzipIsBadRequest() throws Exception {
@@ -137,7 +146,7 @@ public class ITZipkinServer {
 
     assertThat(response.code()).isEqualTo(400);
     assertThat(response.body().string())
-      .endsWith("reading List<Span> from TBinary");
+      .endsWith("Expected a THRIFT encoded list\n");
   }
 
   @Test public void writeSpans_contentTypeXProtobuf() throws Exception {
@@ -162,7 +171,7 @@ public class ITZipkinServer {
 
     assertThat(response.code()).isEqualTo(400);
     assertThat(response.body().string())
-      .startsWith("Truncated: length 101 > bytes remaining 3 reading List<Span> from proto3");
+      .startsWith("Expected a PROTO3 encoded list\n");
   }
 
   @Test public void v2WiresUp() throws Exception {
