@@ -135,9 +135,8 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
         }
       }
 
-      BytesDecoder<Span> detectedDecoder;
       try {
-        detectedDecoder = SpanBytesDecoderDetector.decoderForListMessage(body);
+        SpanBytesDecoderDetector.decoderForListMessage(body);
       } catch (IllegalArgumentException e) {
         metrics.incrementMessagesDropped();
         exchange
@@ -147,12 +146,14 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
         return;
       }
 
-      if (detectedDecoder != decoder) {
+      SpanBytesDecoder unexpectedDecoder = testForUnexpectedFormat(decoder, body);
+      if (unexpectedDecoder != null) {
         metrics.incrementMessagesDropped();
         exchange
           .setStatusCode(400)
           .getResponseSender()
-          .send("Expected a " + decoder + " encoded list, but received: " + detectedDecoder + "\n");
+          .send(
+            "Expected a " + decoder + " encoded list, but received: " + unexpectedDecoder + "\n");
         return;
       }
 
@@ -199,5 +200,41 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
       }
       return outputStream.toByteArray();
     }
+  }
+
+  /**
+   * Some formats clash on partial data. For example, a v1 and v2 span is identical if only the span
+   * name is sent. This looks for unexpected data format.
+   */
+  static SpanBytesDecoder testForUnexpectedFormat(BytesDecoder<Span> decoder, byte[] body) {
+    if (decoder == SpanBytesDecoder.JSON_V2) {
+      if (contains(body, BINARY_ANNOTATION_FIELD_SUFFIX)) {
+        return SpanBytesDecoder.JSON_V1;
+      }
+    } else if (decoder == SpanBytesDecoder.JSON_V1) {
+      if (contains(body, ENDPOINT_FIELD_SUFFIX) || contains(body, TAGS_FIELD)) {
+        return SpanBytesDecoder.JSON_V2;
+      }
+    }
+    return null;
+  }
+
+  static final byte[] BINARY_ANNOTATION_FIELD_SUFFIX =
+    {'y', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '"'};
+  // copy-pasted from SpanBytesDecoderDetector, to avoid making it public
+  static final byte[] ENDPOINT_FIELD_SUFFIX = {'E', 'n', 'd', 'p', 'o', 'i', 'n', 't', '"'};
+  static final byte[] TAGS_FIELD = {'"', 't', 'a', 'g', 's', '"'};
+
+  static boolean contains(byte[] bytes, byte[] subsequence) {
+    bytes:
+    for (int i = 0; i < bytes.length - subsequence.length + 1; i++) {
+      for (int j = 0; j < subsequence.length; j++) {
+        if (bytes[i + j] != subsequence[j]) {
+          continue bytes;
+        }
+      }
+      return true;
+    }
+    return false;
   }
 }
