@@ -139,6 +139,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
       try {
         detectedDecoder = SpanBytesDecoderDetector.decoderForListMessage(body);
       } catch (IllegalArgumentException e) {
+        metrics.incrementMessagesDropped();
         exchange
           .setStatusCode(400)
           .getResponseSender()
@@ -147,6 +148,7 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
       }
 
       if (detectedDecoder != decoder) {
+        metrics.incrementMessagesDropped();
         exchange
           .setStatusCode(400)
           .getResponseSender()
