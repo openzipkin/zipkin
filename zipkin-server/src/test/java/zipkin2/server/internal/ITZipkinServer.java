@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -197,6 +197,11 @@ public class ITZipkinServer {
 
     assertThat(get("/api/v2/spans?serviceName=web").header("Cache-Control"))
       .isNull();
+  }
+
+  @Test public void spanNameQueryWorksWithNonAsciiServiceName() throws Exception {
+    assertThat(get("/api/v2/spans?serviceName=个人信息服务").code())
+      .isEqualTo(200);
   }
 
   @Test public void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {

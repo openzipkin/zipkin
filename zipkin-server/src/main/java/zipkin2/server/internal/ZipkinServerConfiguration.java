@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -40,6 +40,8 @@ import zipkin2.server.internal.brave.TracingStorageComponent;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
+import static io.undertow.UndertowOptions.ALLOW_UNESCAPED_CHARACTERS_IN_URL;
+
 @Configuration
 public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
@@ -69,6 +71,8 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   public UndertowServletWebServerFactory embeddedServletContainerFactory(
       @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
     UndertowServletWebServerFactory factory = new UndertowServletWebServerFactory();
+    // Ensures non-ASCII characters, such as chinese characters, can be in trace queries
+    factory.addBuilderCustomizers(c -> c.setServerOption(ALLOW_UNESCAPED_CHARACTERS_IN_URL, true));
     CorsHandler cors = new CorsHandler(allowedOrigins);
     if (httpCollector != null) {
       factory.addDeploymentInfoCustomizers(
