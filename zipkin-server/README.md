@@ -207,7 +207,8 @@ data layouts based on Zipkin's V1 Thrift model, as opposed to the
 simpler v2 data model currently used.
 
 #### MySQL Storage
-The following apply when `STORAGE_TYPE` is set to `mysql`:
+Zipkin's [MySQL component](../zipkin-storage/mysql-v1) is tested against MySQL
+5.7 and applies when `STORAGE_TYPE` is set to `mysql`:
 
     * `MYSQL_DB`: The database to use. Defaults to "zipkin".
     * `MYSQL_USER` and `MYSQL_PASS`: MySQL authentication, which defaults to empty string.
@@ -215,6 +216,9 @@ The following apply when `STORAGE_TYPE` is set to `mysql`:
     * `MYSQL_TCP_PORT`: Defaults to 3306
     * `MYSQL_MAX_CONNECTIONS`: Maximum concurrent connections, defaults to 10
     * `MYSQL_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
+
+Note: This module is not recommended for production usage. Before using this,
+you must [apply the schema](../zipkin-storage/mysql-v1#applying-the-schema).
 
 Alternatively you can use `MYSQL_JDBC_URL` and specify the complete JDBC url yourself. Note that the URL constructed by
 using the separate settings above will also include the following parameters: 

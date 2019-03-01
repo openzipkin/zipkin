@@ -13,23 +13,23 @@ const propTypes = {
 };
 
 const renderInfo = span => (
-  <div className="timeline__span-info-info">
+  <div className="timeline-span-data__content">
     <div
-      className="timeline__span-info-info-title"
+      className="timeline-span-data__title"
       style={{
         borderColor: getServiceNameColor(span.serviceName),
       }}
     >
       {`${span.serviceName}: ${span.spanName}`}
     </div>
-    <div className="timeline__span-info-info-aka">
+    <div className="timeline-span-data__aka-badges">
       {
         span.serviceNames
           ? span.serviceNames.map(serviceName => (
             <ServiceNameBadge
               key={serviceName}
               serviceName={serviceName}
-              className="timeline__span-info-info-aka-badge"
+              className="timeline-span-data__aka-badge"
             />
           ))
           : null
@@ -72,13 +72,13 @@ const renderInfo = span => (
 );
 
 const SpanInfo = ({ span, serviceNameColumnWidth }) => (
-  <div className="timeline__span-info">
+  <div className="timeline-span-data">
     <div
-      className="timeline__span-info-left"
+      className="timeline-span-data__left-container"
       style={{ width: `${serviceNameColumnWidth * 100}%` }}
     >
       <span
-        className="timeline__span-info-left-depth-marker"
+        className="timeline-span-data__depth-marker"
         style={{
           left: `${span.depth * 14}px`,
           background: `${getServiceNameColor(span.serviceName)}`,
@@ -86,7 +86,7 @@ const SpanInfo = ({ span, serviceNameColumnWidth }) => (
       />
     </div>
     <div
-      className="timeline__span-info-right"
+      className="timeline-span-data__right-container"
       style={{
         left: `${(serviceNameColumnWidth) * 100}%`,
         width: `${(1 - serviceNameColumnWidth) * 100}%`,
