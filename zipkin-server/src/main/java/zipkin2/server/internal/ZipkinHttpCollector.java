@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,6 +27,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.Callback;
 import zipkin2.Span;
+import zipkin2.SpanBytesDecoderDetector;
 import zipkin2.codec.BytesDecoder;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
@@ -133,6 +134,26 @@ class ZipkinHttpCollector implements HttpHandler, HandlerWrapper {
           return;
         }
       }
+
+      BytesDecoder<Span> detectedDecoder;
+      try {
+        detectedDecoder = SpanBytesDecoderDetector.decoderForListMessage(body);
+      } catch (IllegalArgumentException e) {
+        exchange
+          .setStatusCode(400)
+          .getResponseSender()
+          .send("Expected a " + decoder + " encoded list\n");
+        return;
+      }
+
+      if (detectedDecoder != decoder) {
+        exchange
+          .setStatusCode(400)
+          .getResponseSender()
+          .send("Expected a " + decoder + " encoded list, but received: " + detectedDecoder + "\n");
+        return;
+      }
+
       collector.acceptSpans(
           body,
           decoder,
