@@ -13,6 +13,8 @@
  */
 package zipkin2.autoconfigure.prometheus;
 
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.Request;
 import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.Response;
@@ -33,6 +35,7 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
 
 @Configuration class ZipkinPrometheusMetricsAutoConfiguration {
@@ -59,6 +62,15 @@ import org.springframework.util.StringUtils;
   @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator() {
     return serverBuilder -> serverBuilder.decorator(
       s -> new MetricCollectingService<>(s, registry, metricName));
+  }
+
+  // We need to make sure not-found requests are still handled by a service to be decorated for
+  // adding metrics. We add a lowest-precedence path mapping so anything not mapped by another
+  // service is handled by this.
+  @Bean
+  @Order
+  ArmeriaServerConfigurator notFoundMetricCollector() {
+    return sb -> sb.serviceUnder("/", (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
   }
 
   static final class MetricCollectingService<I extends Request, O extends Response>
