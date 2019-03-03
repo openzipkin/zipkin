@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -67,6 +67,13 @@ public class QueryRequestTest {
     thrown.expectMessage("endTs <= 0");
 
     queryBuilder.endTs(0L).build();
+  }
+
+  @Test public void lookbackMustBePositive() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("lookback <= 0");
+
+    queryBuilder.lookback(0).build();
   }
 
   @Test public void limitMustBePositive() {

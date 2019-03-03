@@ -172,6 +172,9 @@ final class ElasticsearchSpanStore implements SpanStore{
 
   @Override
   public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
+    if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
+    if (lookback <= 0) throw new IllegalArgumentException("lookback <= 0");
+
     long beginMillis = Math.max(endTs - lookback, EARLIEST_MS);
 
     // We just return all dependencies in the days that fall within endTs and lookback as

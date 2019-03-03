@@ -5,11 +5,10 @@
 .condition-lookback-select__control {
   height: 50px !important;
   border: 0 !important;
-  border-radius: 0px !important;
+  border-radius: 0 !important;
   cursor: pointer !important;
   color: $dark-2 !important;
-  background: linear-gradient(to bottom, $gray-10, $gray-9) !important;
-  border: 1px solid $gray-7 !important;
+  background: rgba(0, 0, 0, 0) !important;
   box-sizing: border-box !important;
 }
 

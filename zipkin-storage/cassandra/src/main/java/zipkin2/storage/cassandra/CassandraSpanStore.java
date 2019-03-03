@@ -214,6 +214,8 @@ class CassandraSpanStore implements SpanStore { // not final for testing
 
   @Override
   public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
+    if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
+    if (lookback <= 0) throw new IllegalArgumentException("lookback <= 0");
     return dependencies.create(endTs, lookback);
   }
 

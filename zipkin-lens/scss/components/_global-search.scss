@@ -7,18 +7,13 @@
   display: flex;
   flex-wrap: wrap;
   width: 100%;
-  overflow: scroll;
   margin-right: 15px;
   padding: 9px;
   color: $dark-5;
   background: $gray-11;
   border: 1px solid $gray-8;
   border-radius: 3px;
-
   align-items: center;
-  -ms-flex-align: center;
-  -webkit-box-align: center;
-  -webkit-align-items: center;
 }
 
 .global-search__placeholder {
@@ -62,6 +57,8 @@
   flex-shrink: 0;
   border: 1px solid $gray-7;
   box-sizing: border-box;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
+
 }
 
 .global-search__condition-lookback-wrapper {
@@ -69,6 +66,10 @@
   border-bottom-right-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;
+  height: 50px;
+  border: 1px solid $gray-7;
+  box-sizing: border-box;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
 }
 
 .global-search__find-button {

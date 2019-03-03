@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.storage;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -33,6 +34,7 @@ import zipkin2.v1.V1SpanConverter;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.DB;
@@ -322,6 +324,22 @@ public abstract class ITDependencies {
       DependencyLink.newBuilder().parent("frontend").child("backend").callCount(1).build(),
       DependencyLink.newBuilder().parent("backend").child("db").callCount(1).build()
     );
+  }
+
+  @Test public void endTsAndLookbackMustBePositive() throws IOException {
+    try {
+      store().getDependencies(0L, DAY).execute();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("endTs <= 0");
+    }
+
+    try {
+      store().getDependencies(TRACE_ENDTS, 0L).execute();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("lookback <= 0");
+    }
   }
 
   @Test

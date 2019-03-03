@@ -19,18 +19,21 @@ import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.Service;
+import com.linecorp.armeria.server.ServiceRequestContext;
+import com.linecorp.armeria.server.annotation.Cookies;
+import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.file.HttpFile;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
-import java.io.BufferedReader;
+import io.netty.handler.codec.http.cookie.Cookie;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.UncheckedIOException;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -85,16 +88,26 @@ class ZipkinUiAutoConfiguration {
   @Autowired
   ZipkinUiProperties ui;
 
-  @Value("classpath:${zipkin.ui.resource-path:zipkin-ui}/index.html")
+  @Value("classpath:zipkin-ui/index.html")
   Resource indexHtml;
+  @Value("classpath:zipkin-lens/index.html")
+  Resource lensIndexHtml;
 
-  @Bean
-  @Lazy
-  String processedIndexHtml() throws IOException {
+  @Bean @Lazy String processedIndexHtml() {
+    return processedIndexHtml(indexHtml);
+  }
+
+  @Bean @Lazy String processedLensIndexHtml() {
+    return processedIndexHtml(lensIndexHtml);
+  }
+
+  String processedIndexHtml(Resource indexHtml) {
     String baseTagValue = "/".equals(ui.getBasepath()) ? "/" : ui.getBasepath() + "/";
     Document soup;
     try (InputStream is = indexHtml.getInputStream()) {
       soup = Jsoup.parse(is, null, baseTagValue);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e); // unexpected
     }
     if (soup.head().getElementsByTag("base").isEmpty()) {
       soup.head().appendChild(
@@ -105,41 +118,68 @@ class ZipkinUiAutoConfiguration {
     return soup.html();
   }
 
-  @Bean ArmeriaServerConfigurator uiServerConfigurator(
-    @Value("${zipkin.ui.resource-path:zipkin-ui}") String resourcePath) throws IOException {
-    Service<HttpRequest, HttpResponse> uiFileService =
-      new AddHttpHeadersService(HttpFileService.forClassPath(resourcePath), CACHE_YEAR);
-
-    byte[] index;
+  @Bean @Lazy IndexSwitchingService indexSwitchingService() {
+    final HttpService legacyIndex;
+    final HttpService lensIndex;
     if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {
-      try (BufferedReader reader = new BufferedReader(
-        new InputStreamReader(indexHtml.getInputStream(), UTF_8))) {
-        index = reader.lines().collect(Collectors.joining("\n")).getBytes(UTF_8);
-      }
+      legacyIndex = HttpFile.ofResource("zipkin-ui/index.html").asService();
+      lensIndex = HttpFile.ofResource("zipkin-lens/index.html").asService();
     } else {
-      index = processedIndexHtml().getBytes(UTF_8);
+      legacyIndex = HttpFile.of(HttpData.of(processedIndexHtml().getBytes(UTF_8))).asService();
+      lensIndex = HttpFile.of(HttpData.of(processedLensIndexHtml().getBytes(UTF_8))).asService();
     }
 
-    byte[] config = new ObjectMapper().writeValueAsBytes(ui);
+    return new IndexSwitchingService(legacyIndex, lensIndex);
+  }
 
-    HttpFile indexPage = HttpFileBuilder.of(HttpData.of(index)).addHeaders(INDEX_HEADERS).build();
+  @Bean @Lazy ArmeriaServerConfigurator uiServerConfigurator(
+    IndexSwitchingService indexSwitchingService)
+    throws IOException {
+    Service<HttpRequest, HttpResponse> uiFileService =
+      new AddHttpHeadersService(HttpFileService.forClassPath("zipkin-ui")
+        .orElse(HttpFileService.forClassPath("zipkin-lens")), CACHE_YEAR);
+
+
+
+    byte[] config = new ObjectMapper().writeValueAsBytes(ui);
 
     return sb -> sb
       .service("/zipkin/config.json",
         HttpFileBuilder.of(HttpData.of(config)).addHeaders(CONFIG_HEADERS).build().asService())
-      .service("/zipkin/index.html", indexPage.asService())
+      .annotatedService("/zipkin/index.html", indexSwitchingService)
 
       // TODO This approach requires maintenance when new UI routes are added. Change to the following:
       // If the path is a a file w/an extension, treat normally.
       // Otherwise instead of returning 404, forward to the index.
       // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-      .service("/zipkin/", indexPage.asService())
-      .service("/zipkin/traces/{id}", indexPage.asService())
-      .service("/zipkin/dependency", indexPage.asService())
-      .service("/zipkin/traceViewer", indexPage.asService())
+      .annotatedService("/zipkin/", indexSwitchingService)
+      .annotatedService("/zipkin/traces/{id}", indexSwitchingService)
+      .annotatedService("/zipkin/dependency", indexSwitchingService)
+      .annotatedService("/zipkin/traceViewer", indexSwitchingService)
 
       .serviceUnder("/zipkin/", uiFileService)
       .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
       .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
+  }
+
+  static class IndexSwitchingService {
+    final HttpService legacyIndex;
+    final HttpService lensIndex;
+
+    IndexSwitchingService(HttpService legacyIndex, HttpService lensIndex) {
+      this.legacyIndex = legacyIndex;
+      this.lensIndex = lensIndex;
+    }
+
+    @Get("**")
+    public HttpResponse index(ServiceRequestContext ctx, HttpRequest req, Cookies cookies)
+      throws Exception {
+      for (Cookie cookie : cookies) {
+        if (cookie.name().equals("lens") && Boolean.parseBoolean(cookie.value())) {
+          return lensIndex.serve(ctx, req);
+        }
+      }
+      return legacyIndex.serve(ctx, req);
+    }
   }
 }

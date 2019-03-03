@@ -4,20 +4,10 @@ import ReactSelect from 'react-select';
 
 import TraceSummary from './TraceSummary';
 import LoadingOverlay from '../Common/LoadingOverlay';
+import { traceSummariesPropTypes } from '../../prop-types';
 
 const propTypes = {
-  traceSummaries: PropTypes.arrayOf(PropTypes.shape({
-    width: PropTypes.number,
-    infoClass: PropTypes.string,
-    spanCount: PropTypes.number,
-    durationStr: PropTypes.string,
-    timestamp: PropTypes.number,
-    servicePercentage: PropTypes.number,
-    serviceSummaries: PropTypes.arrayOf(PropTypes.shape({
-      serviceName: PropTypes.string,
-      spanCount: PropTypes.number,
-    })),
-  })).isRequired,
+  traceSummaries: traceSummariesPropTypes.isRequired,
   skewCorrectedTracesMap: PropTypes.shape({}).isRequired,
   isLoading: PropTypes.bool.isRequired,
   clearTraces: PropTypes.func.isRequired,
@@ -107,15 +97,7 @@ class Browser extends React.Component {
                 className="browser__trace-summary-wrapper"
               >
                 <TraceSummary
-
-                  traceId={traceSummary.traceId}
-                  width={traceSummary.width}
-                  infoClass={traceSummary.infoClass}
-                  spanCount={traceSummary.spanCount}
-                  durationStr={traceSummary.durationStr}
-                  timestamp={traceSummary.timestamp}
-                  servicePercentage={traceSummary.servicePercentage}
-                  serviceSummaries={traceSummary.serviceSummaries}
+                  traceSummary={traceSummary}
                   skewCorrectedTrace={skewCorrectedTracesMap[traceSummary.traceId]}
                 />
               </div>

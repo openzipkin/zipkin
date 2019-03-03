@@ -13,17 +13,30 @@
  */
 package zipkin2.autoconfigure.ui;
 
+import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.ServiceRequestContext;
+import com.linecorp.armeria.server.annotation.Cookies;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.CoreMatchers.isA;
+import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
 
 public class ZipkinUiAutoConfigurationTest {
 
@@ -39,12 +52,37 @@ public class ZipkinUiAutoConfigurationTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
+  ServiceRequestContext ctx = ServiceRequestContext.of(HttpRequest.of(HttpMethod.GET, "/"));
+
   @Test
   public void indexHtmlFromClasspath() {
     context = createContext();
 
     assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml)
       .isNotNull();
+  }
+
+  @Test
+  public void indexContentType() throws Exception {
+    context = createContext();
+    assertThat(
+      serveIndex().headers().contentType())
+      .isEqualTo(MediaType.HTML_UTF_8);
+  }
+
+  @Test
+  public void invalidIndexHtml() {
+    // I failed to make Jsoup barf, even on nonsense like: "<head wait no I changed my mind this HTML is totally invalid <<<<<<<<<<<"
+    // So let's just run with a case where the file doesn't exist
+    context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
+    ZipkinUiAutoConfiguration ui = context.getBean(ZipkinUiAutoConfiguration.class);
+    ui.indexHtml = new ClassPathResource("does-not-exist.html");
+
+    thrown.expect(RuntimeException.class);
+    // There's a BeanInstantiationException nested in between BeanCreationException and IOException,
+    // so we go one level deeper about causes. There's no `expectRootCause`.
+    thrown.expectCause(hasCause(hasCause(isA(BeanCreationException.class))));
+    serveIndex();
   }
 
   @Test
@@ -108,19 +146,45 @@ public class ZipkinUiAutoConfigurationTest {
   }
 
   @Test
-  public void canOverideProperty_resourcePath() throws IOException {
-    context = createContextWithOverridenProperty("zipkin.ui.resource-path:zipkin-lens");
+  public void defaultBaseUrl_doesNotChangeResource() throws IOException {
+    context = createContext();
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml.getDescription())
+    assertThat(new ByteArrayInputStream(serveIndex().content().array()))
+      .hasSameContentAs(getClass().getResourceAsStream("/zipkin-ui/index.html"));
+  }
+
+  @Test
+  public void canOverideProperty_basePath() {
+    context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
+
+    assertThat(serveIndex().contentUtf8())
+      .contains("<base href=\"/foo/bar/\">");
+  }
+
+  @Test
+  public void lensCookieOverridesIndex() {
+    context = createContext();
+
+    assertThat(serveIndex(new DefaultCookie("lens", "true")).contentUtf8())
       .contains("zipkin-lens");
   }
 
   @Test
-  public void canOverideProperty_specialCaseRoot() throws IOException {
+  public void canOverideProperty_specialCaseRoot() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).processedIndexHtml())
+    assertThat(serveIndex().contentUtf8())
       .contains("<base href=\"/\">");
+  }
+
+  private AggregatedHttpMessage serveIndex(Cookie... cookies) {
+    try {
+      return context.getBean(ZipkinUiAutoConfiguration.class).indexSwitchingService()
+        .index(ctx, ctx.request(), Cookies.of(cookies)).aggregate()
+        .get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static AnnotationConfigApplicationContext createContext() {

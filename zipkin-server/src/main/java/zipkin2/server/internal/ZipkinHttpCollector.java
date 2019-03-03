@@ -40,6 +40,8 @@ import java.util.concurrent.CompletableFuture;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Callback;
 import zipkin2.Span;
+import zipkin2.SpanBytesDecoderDetector;
+import zipkin2.codec.BytesDecoder;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
@@ -48,6 +50,7 @@ import zipkin2.storage.StorageComponent;
 
 import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
 import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
+import static zipkin2.server.internal.BodyIsExceptionMessage.testForUnexpectedFormat;
 
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
 @RequestConverter(UnzippingBytesRequestConverter.class)
@@ -100,6 +103,22 @@ public class ZipkinHttpCollector {
 
   /** This synchronously decodes the message so that users can see data errors. */
   HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, byte[] serializedSpans) {
+    try {
+      SpanBytesDecoderDetector.decoderForListMessage(serializedSpans);
+    } catch (IllegalArgumentException e) {
+      metrics.incrementMessagesDropped();
+      return HttpResponse.of(
+        BAD_REQUEST, MediaType.PLAIN_TEXT_UTF_8, "Expected a " + decoder + " encoded list\n");
+    }
+
+    SpanBytesDecoder unexpectedDecoder = testForUnexpectedFormat(decoder, serializedSpans);
+    if (unexpectedDecoder != null) {
+      metrics.incrementMessagesDropped();
+      return HttpResponse.of(
+        BAD_REQUEST, MediaType.PLAIN_TEXT_UTF_8,
+        "Expected a " + decoder + " encoded list, but received: " + unexpectedDecoder + "\n");
+    }
+
     CompletableCallback result = new CompletableCallback();
     List<Span> spans = new ArrayList<>();
     if (!decoder.decodeList(serializedSpans, spans)) {
@@ -163,5 +182,41 @@ final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
     } else {
       return HttpResponse.of(INTERNAL_SERVER_ERROR, MediaType.ANY_TEXT_TYPE, cause.getMessage());
     }
+  }
+
+  /**
+   * Some formats clash on partial data. For example, a v1 and v2 span is identical if only the span
+   * name is sent. This looks for unexpected data format.
+   */
+  static SpanBytesDecoder testForUnexpectedFormat(BytesDecoder<Span> decoder, byte[] body) {
+    if (decoder == SpanBytesDecoder.JSON_V2) {
+      if (contains(body, BINARY_ANNOTATION_FIELD_SUFFIX)) {
+        return SpanBytesDecoder.JSON_V1;
+      }
+    } else if (decoder == SpanBytesDecoder.JSON_V1) {
+      if (contains(body, ENDPOINT_FIELD_SUFFIX) || contains(body, TAGS_FIELD)) {
+        return SpanBytesDecoder.JSON_V2;
+      }
+    }
+    return null;
+  }
+
+  static final byte[] BINARY_ANNOTATION_FIELD_SUFFIX =
+    {'y', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '"'};
+  // copy-pasted from SpanBytesDecoderDetector, to avoid making it public
+  static final byte[] ENDPOINT_FIELD_SUFFIX = {'E', 'n', 'd', 'p', 'o', 'i', 'n', 't', '"'};
+  static final byte[] TAGS_FIELD = {'"', 't', 'a', 'g', 's', '"'};
+
+  static boolean contains(byte[] bytes, byte[] subsequence) {
+    bytes:
+    for (int i = 0; i < bytes.length - subsequence.length + 1; i++) {
+      for (int j = 0; j < subsequence.length; j++) {
+        if (bytes[i + j] != subsequence[j]) {
+          continue bytes;
+        }
+      }
+      return true;
+    }
+    return false;
   }
 }

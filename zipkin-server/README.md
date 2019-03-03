@@ -109,6 +109,7 @@ logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a b
 dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"
+suggestLens | zipkin.ui.suggest-lens | When true, a button will appear on the navigation bar, when pressed switches to the Lens Ui (for Beta testing). Default true
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
@@ -206,7 +207,8 @@ data layouts based on Zipkin's V1 Thrift model, as opposed to the
 simpler v2 data model currently used.
 
 #### MySQL Storage
-The following apply when `STORAGE_TYPE` is set to `mysql`:
+Zipkin's [MySQL component](../zipkin-storage/mysql-v1) is tested against MySQL
+5.7 and applies when `STORAGE_TYPE` is set to `mysql`:
 
     * `MYSQL_DB`: The database to use. Defaults to "zipkin".
     * `MYSQL_USER` and `MYSQL_PASS`: MySQL authentication, which defaults to empty string.
@@ -214,6 +216,9 @@ The following apply when `STORAGE_TYPE` is set to `mysql`:
     * `MYSQL_TCP_PORT`: Defaults to 3306
     * `MYSQL_MAX_CONNECTIONS`: Maximum concurrent connections, defaults to 10
     * `MYSQL_USE_SSL`: Requires `javax.net.ssl.trustStore` and `javax.net.ssl.trustStorePassword`, defaults to false.
+
+Note: This module is not recommended for production usage. Before using this,
+you must [apply the schema](../zipkin-storage/mysql-v1#applying-the-schema).
 
 Alternatively you can use `MYSQL_JDBC_URL` and specify the complete JDBC url yourself. Note that the URL constructed by
 using the separate settings above will also include the following parameters: 

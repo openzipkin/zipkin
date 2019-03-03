@@ -3,7 +3,7 @@ import React from 'react';
 import NumericInput from 'react-numeric-input';
 
 const propTypes = {
-  limit: PropTypes.string.isRequired,
+  limit: PropTypes.number.isRequired,
   onLimitChange: PropTypes.func.isRequired,
 };
 
@@ -25,7 +25,7 @@ const style = {
   input: {
     width: '100%',
     height: '100%',
-    background: 'linear-gradient(to bottom, #eeeeee, #d8d9d8)',
+    background: 'rgba(0,0,0,0)',
   },
 
   'input:not(.form-control)': {
@@ -43,6 +43,7 @@ const ConditionLimit = ({ limit, onLimitChange }) => (
     format={formatter}
     parse={parser}
     style={style}
+    strict
   />
 );
 

@@ -1,4 +1,4 @@
-import {mergeV2ById} from './spanCleaner';
+import {compare, mergeV2ById} from './spanCleaner';
 
 /*
  * Convenience type representing a trace tree. Multiple Zipkin features require a trace tree. For
@@ -86,6 +86,32 @@ function keyString(id, shared = false, endpoint) {
   if (!shared) return id;
   const endpointString = endpoint ? JSON.stringify(endpoint) : 'x';
   return `${id}-${endpointString}`;
+}
+
+function nodeByTimestamp(a, b) {
+  return compare(a.span.timestamp, b.span.timestamp);
+}
+
+function sortChildren(node) {
+  if (node.children.length > 0) {
+    node.children.sort(nodeByTimestamp);
+  }
+}
+
+function sortTreeByTimestamp(root) {
+  const queue = [];
+  queue.push(root);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+
+    sortChildren(current);
+
+    const {children} = current;
+    for (let i = 0; i < children.length; i += 1) {
+      queue.push(children[i]);
+    }
+  }
 }
 
 class SpanNodeBuilder {
@@ -238,6 +264,9 @@ class SpanNodeBuilder {
         parent.addChild(child);
       }
     });
+
+    sortTreeByTimestamp(this._rootSpan);
+
     return this._rootSpan;
   }
 }

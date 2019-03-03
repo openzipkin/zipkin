@@ -1,12 +1,17 @@
 import PropTypes from 'prop-types';
 import React from 'react';
+import { withRouter } from 'react-router';
 import { Link } from 'react-router-dom';
+import Cookies from 'js-cookie';
 
 import Logo from '../../img/zipkin-logo.svg';
 
 const propTypes = {
   location: PropTypes.shape({
     pathname: PropTypes.string,
+  }).isRequired,
+  history: PropTypes.shape({
+    push: PropTypes.func.isRequired,
   }).isRequired,
 };
 
@@ -24,6 +29,24 @@ const pageInfo = {
 };
 
 class Sidebar extends React.Component {
+  constructor(props) {
+    super(props);
+    this.goBackToClassic = this.goBackToClassic.bind(this);
+  }
+
+  goBackToClassic(event) {
+    const { location, history } = this.props;
+
+    Cookies.remove('lens');
+    if (location.pathname === '/zipkin') {
+      history.push('/zipkin/');
+    } else {
+      history.push(`${location.pathname}`);
+    }
+    window.location.reload(true);
+    event.preventDefault();
+  }
+
   renderPageOption(pageName) {
     const { location } = this.props;
     const { url } = pageInfo[pageName];
@@ -58,6 +81,21 @@ class Sidebar extends React.Component {
           {this.renderPageOption('browser')}
           {this.renderPageOption('dependencies')}
         </div>
+        {
+          Cookies.get('lens')
+            ? (
+              <div className="sidebar__go-back-to-classic-button-wrapper">
+                <button
+                  type="button"
+                  className="sidebar__go-back-to-classic-button"
+                  onClick={this.goBackToClassic}
+                >
+                  Go back to classic Zipkin
+                </button>
+              </div>
+            )
+            : null
+        }
         <div className="sidebar__other-links">
           <a href="https://zipkin.apache.org/" target="_blank" rel="noopener noreferrer">
             <div className="sidebar__other-link fas fa-home" />
@@ -79,4 +117,4 @@ class Sidebar extends React.Component {
 
 Sidebar.propTypes = propTypes;
 
-export default Sidebar;
+export default withRouter(Sidebar);

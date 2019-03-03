@@ -16,11 +16,13 @@ package zipkin2.internal;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.logging.Logger;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -34,6 +36,12 @@ import static java.util.logging.Level.FINE;
  * visiting the tree.
  */
 public final class SpanNode {
+  static final Comparator<SpanNode> NODE_COMPARATOR = new Comparator<SpanNode>() {
+    @Override public int compare(SpanNode left, SpanNode right) {
+      long x = left.span().timestampAsLong(), y = right.span().timestampAsLong();
+      return (x < y) ? -1 : ((x == y) ? 0 : 1); // Long.compareTo is JRE 7+
+    }
+  };
 
   public static SpanNode.Builder newBuilder(Logger logger) {
     return new SpanNode.Builder(logger);
@@ -178,7 +186,21 @@ public final class SpanNode {
           parent.addChild(child);
         }
       }
+      sortTreeByTimestamp(rootSpan);
       return rootSpan;
+    }
+
+    /** Sorts children at the same level by {@link Span#timestampAsLong()} ascending */
+    void sortTreeByTimestamp(SpanNode root) {
+      ArrayDeque<SpanNode> queue = new ArrayDeque<>();
+      queue.add(root);
+
+      while (!queue.isEmpty()) {
+        SpanNode current = queue.pop();
+        if (current.children().isEmpty()) continue;
+        Collections.sort(current.children(), NODE_COMPARATOR);
+        queue.addAll(current.children());
+      }
     }
 
     /**
