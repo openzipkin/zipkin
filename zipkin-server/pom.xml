@@ -77,11 +77,11 @@
           <groupId>com.linecorp.armeria</groupId>
           <artifactId>armeria-logback</artifactId>
         </exclusion>
-        <exclusion>
-          <groupId>javax.validation</groupId>
-          <artifactId>validation-api</artifactId>
-        </exclusion>
       </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-spring-boot-actuator-starter</artifactId>
     </dependency>
     <dependency>
       <groupId>com.linecorp.armeria</groupId>

@@ -20,9 +20,9 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.annotation.Options;
-import com.linecorp.armeria.server.cors.CorsService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import java.util.List;
@@ -32,6 +32,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -48,6 +49,7 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
+@ImportAutoConfiguration(ArmeriaSpringActuatorAutoConfiguration.class)
 public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Autowired(required = false)
@@ -68,7 +70,9 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       if (httpCollector != null) sb.annotatedService(httpCollector);
       if (healthController != null) sb.annotatedService(healthController);
       // Redirects the prometheus scrape endpoint for backward compatibility
-      sb.service("/prometheus", new RedirectService("/actuator/prometheus/"));
+      sb.service("/prometheus", new RedirectService("/actuator/prometheus"));
+      // Redirects the info endpoint for backward compatibility
+      sb.service("/info", new RedirectService("/actuator/info"));
     };
   }
 
@@ -88,7 +92,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     CorsServiceBuilder corsBuilder = allowedOrigins.equals("*") ? CorsServiceBuilder.forAnyOrigin()
       : CorsServiceBuilder.forOrigins(allowedOrigins.split(","));
 
-    Function<Service<HttpRequest, HttpResponse>, CorsService>
+    Function<Service<HttpRequest, HttpResponse>, ? extends Service<HttpRequest, HttpResponse>>
       corsDecorator = corsBuilder.allowRequestMethods(HttpMethod.GET).newDecorator();
 
     return server -> server

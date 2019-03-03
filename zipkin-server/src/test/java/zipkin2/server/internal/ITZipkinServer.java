@@ -248,7 +248,7 @@ public class ITZipkinServer {
 
     // Redirect header should be the proxy, not the backed IP/port
     assertThat(response.header("Location"))
-      .isEqualTo("./zipkin/");
+      .isEqualTo("/zipkin/");
   }
 
   @Test public void infoEndpointIsAvailable() throws IOException {

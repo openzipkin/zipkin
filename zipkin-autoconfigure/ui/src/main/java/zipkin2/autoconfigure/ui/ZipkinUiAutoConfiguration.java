@@ -21,6 +21,7 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.Service;
+import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import java.io.BufferedReader;
@@ -122,9 +123,9 @@ class ZipkinUiAutoConfiguration {
 
     return sb -> sb
       .service("/zipkin/config.json",
-        (((ctx, req) -> HttpResponse.of(CONFIG_HEADERS, HttpData.of(config)))))
+        HttpFileBuilder.of(HttpData.of(config)).addHeaders(CONFIG_HEADERS).build().asService())
       .service("/zipkin/index.html",
-        ((ctx, req) -> HttpResponse.of(INDEX_HEADERS, HttpData.of(index))))
+        HttpFileBuilder.of(HttpData.of(index)).addHeaders(INDEX_HEADERS).build().asService())
       .serviceUnder("/zipkin/", uiFileService)
       .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
       .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
