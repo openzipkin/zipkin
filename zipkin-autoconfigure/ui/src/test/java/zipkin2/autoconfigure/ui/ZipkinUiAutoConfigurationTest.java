@@ -14,11 +14,13 @@
 package zipkin2.autoconfigure.ui;
 
 import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.ServiceRequestContext;
-import com.linecorp.armeria.server.annotation.Cookies;
+import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import java.io.ByteArrayInputStream;
@@ -52,8 +54,6 @@ public class ZipkinUiAutoConfigurationTest {
   @Rule
   public ExpectedException thrown = ExpectedException.none();
 
-  ServiceRequestContext ctx = ServiceRequestContext.of(HttpRequest.of(HttpMethod.GET, "/"));
-
   @Test
   public void indexHtmlFromClasspath() {
     context = createContext();
@@ -67,7 +67,7 @@ public class ZipkinUiAutoConfigurationTest {
     context = createContext();
     assertThat(
       serveIndex().headers().contentType())
-      .isEqualTo(MediaType.HTML_UTF_8);
+      .isEqualTo(MediaType.parse("text/html"));
   }
 
   @Test
@@ -178,9 +178,15 @@ public class ZipkinUiAutoConfigurationTest {
   }
 
   private AggregatedHttpMessage serveIndex(Cookie... cookies) {
+    HttpHeaders headers = HttpHeaders.of(HttpMethod.GET, "/");
+    String encodedCookies = ClientCookieEncoder.LAX.encode(cookies);
+    if (encodedCookies != null) {
+      headers.set(HttpHeaderNames.COOKIE, encodedCookies);
+    }
+    HttpRequest req = HttpRequest.of(headers);
     try {
       return context.getBean(ZipkinUiAutoConfiguration.class).indexSwitchingService()
-        .index(ctx, ctx.request(), Cookies.of(cookies)).aggregate()
+        .serve(ServiceRequestContext.of(req), req).aggregate()
         .get();
     } catch (Exception e) {
       throw new RuntimeException(e);

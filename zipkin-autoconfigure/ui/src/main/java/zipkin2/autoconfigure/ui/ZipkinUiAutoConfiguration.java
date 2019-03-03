@@ -15,24 +15,25 @@ package zipkin2.autoconfigure.ui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
-import com.linecorp.armeria.server.annotation.Cookies;
-import com.linecorp.armeria.server.annotation.Get;
-import com.linecorp.armeria.server.file.HttpFile;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -119,17 +120,21 @@ class ZipkinUiAutoConfiguration {
   }
 
   @Bean @Lazy IndexSwitchingService indexSwitchingService() {
-    final HttpService legacyIndex;
-    final HttpService lensIndex;
+    final HttpFileBuilder legacyIndex;
+    final HttpFileBuilder lensIndex;
     if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {
-      legacyIndex = HttpFile.ofResource("zipkin-ui/index.html").asService();
-      lensIndex = HttpFile.ofResource("zipkin-lens/index.html").asService();
+      legacyIndex = HttpFileBuilder.ofResource("zipkin-ui/index.html");
+      lensIndex = HttpFileBuilder.ofResource("zipkin-lens/index.html");
     } else {
-      legacyIndex = HttpFile.of(HttpData.of(processedIndexHtml().getBytes(UTF_8))).asService();
-      lensIndex = HttpFile.of(HttpData.of(processedLensIndexHtml().getBytes(UTF_8))).asService();
+      legacyIndex = HttpFileBuilder.of(HttpData.of(processedIndexHtml().getBytes(UTF_8)));
+      lensIndex = HttpFileBuilder.of(HttpData.of(processedLensIndexHtml().getBytes(UTF_8)));
     }
 
-    return new IndexSwitchingService(legacyIndex, lensIndex);
+    legacyIndex.setHeaders(INDEX_HEADERS);
+    lensIndex.setHeaders(INDEX_HEADERS);
+
+    return new IndexSwitchingService(
+      legacyIndex.build().asService(), lensIndex.build().asService());
   }
 
   @Bean @Lazy ArmeriaServerConfigurator uiServerConfigurator(
@@ -146,23 +151,23 @@ class ZipkinUiAutoConfiguration {
     return sb -> sb
       .service("/zipkin/config.json",
         HttpFileBuilder.of(HttpData.of(config)).addHeaders(CONFIG_HEADERS).build().asService())
-      .annotatedService("/zipkin/index.html", indexSwitchingService)
+      .service("/zipkin/index.html", indexSwitchingService)
 
       // TODO This approach requires maintenance when new UI routes are added. Change to the following:
       // If the path is a a file w/an extension, treat normally.
       // Otherwise instead of returning 404, forward to the index.
       // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-      .annotatedService("/zipkin/", indexSwitchingService)
-      .annotatedService("/zipkin/traces/{id}", indexSwitchingService)
-      .annotatedService("/zipkin/dependency", indexSwitchingService)
-      .annotatedService("/zipkin/traceViewer", indexSwitchingService)
+      .service("/zipkin/", indexSwitchingService)
+      .service("/zipkin/traces/{id}", indexSwitchingService)
+      .service("/zipkin/dependency", indexSwitchingService)
+      .service("/zipkin/traceViewer", indexSwitchingService)
 
       .serviceUnder("/zipkin/", uiFileService)
       .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
       .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
   }
 
-  static class IndexSwitchingService {
+  static class IndexSwitchingService extends AbstractHttpService {
     final HttpService legacyIndex;
     final HttpService lensIndex;
 
@@ -171,9 +176,11 @@ class ZipkinUiAutoConfiguration {
       this.lensIndex = lensIndex;
     }
 
-    @Get("**")
-    public HttpResponse index(ServiceRequestContext ctx, HttpRequest req, Cookies cookies)
+    @Override
+    public HttpResponse doGet(ServiceRequestContext ctx, HttpRequest req)
       throws Exception {
+      Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(
+        req.headers().get(HttpHeaderNames.COOKIE, ""));
       for (Cookie cookie : cookies) {
         if (cookie.name().equals("lens") && Boolean.parseBoolean(cookie.value())) {
           return lensIndex.serve(ctx, req);

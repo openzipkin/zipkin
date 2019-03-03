@@ -46,13 +46,13 @@ public class ITZipkinServerHttpCollectorDisabled {
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Test public void httpCollectorEndpointReturns405() throws Exception {
+  @Test public void httpCollectorEndpointReturns404() throws Exception {
     Response response = client.newCall(new Request.Builder()
       .url(url(server, "/api/v2/spans"))
       .post(RequestBody.create(null, "[]"))
       .build()).execute();
 
-    assertThat(response.code()).isEqualTo(405);
+    assertThat(response.code()).isEqualTo(404);
   }
 
   /** Shows the same http path still works for GET */
