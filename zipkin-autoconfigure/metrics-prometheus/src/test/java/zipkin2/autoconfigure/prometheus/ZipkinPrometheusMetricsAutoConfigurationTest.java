@@ -44,7 +44,7 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
   @Test public void providesHttpRequestDurationCustomizer() {
     refresh();
 
-    context.getBean(ArmeriaServerConfigurator.class);
+    context.getBeansOfType(ArmeriaServerConfigurator.class);
   }
 
   @Test public void defaultMetricName() {
