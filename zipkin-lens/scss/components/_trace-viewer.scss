@@ -1,0 +1,14 @@
+.trace-viewer {
+  width: 100%;
+}
+
+.trace-viewer__dropzone-wrapper {
+  padding: 10px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.trace-viewer__error-message {
+  padding-left: 10px;
+}

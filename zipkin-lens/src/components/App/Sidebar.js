@@ -26,6 +26,11 @@ const pageInfo = {
     label: 'Dependencies',
     icon: 'fa-code-branch',
   },
+  traceViewer: {
+    url: '/zipkin/traceViewer',
+    label: 'TraceViewer',
+    icon: 'fa-upload',
+  },
 };
 
 class Sidebar extends React.Component {
@@ -80,6 +85,7 @@ class Sidebar extends React.Component {
         <div className="sidebar__menu">
           {this.renderPageOption('browser')}
           {this.renderPageOption('dependencies')}
+          {this.renderPageOption('traceViewer')}
         </div>
         {
           Cookies.get('lens')

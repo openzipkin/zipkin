@@ -11,21 +11,21 @@ const propTypes = {
   onStartAndEndTsChange: PropTypes.func.isRequired,
 };
 
-const GRAPH_HEIGHT = 75;
-const NUM_TICKS = 5;
-const LEFT_MOUSE_BUTTON = 0;
+const graphHeight = 75;
+const numTimeMarkers = 5;
+const leftMouseButton = 0;
 
-const renderTickLines = () => {
+const renderTimeMarkers = () => {
   const timeMarkers = [];
-  for (let i = 1; i < NUM_TICKS - 1; i += 1) {
-    const portion = 100 / (NUM_TICKS - 1) * i;
+  for (let i = 1; i < numTimeMarkers - 1; i += 1) {
+    const portion = 100 / (numTimeMarkers - 1) * i;
     timeMarkers.push(
       <line
         key={portion}
         x1={`${portion}%`}
         x2={`${portion}%`}
         y1="0"
-        y2={GRAPH_HEIGHT}
+        y2={graphHeight}
       />,
     );
   }
@@ -39,7 +39,7 @@ const renderTickLines = () => {
   );
 };
 
-class MiniTraceViewer extends React.Component {
+class MiniTimeline extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
@@ -66,7 +66,7 @@ class MiniTraceViewer extends React.Component {
   }
 
   handleMouseDown(event) {
-    if (event.button !== LEFT_MOUSE_BUTTON) {
+    if (event.button !== leftMouseButton) {
       return;
     }
     const currentX = this.getPosition(event.clientX);
@@ -86,18 +86,9 @@ class MiniTraceViewer extends React.Component {
   }
 
   handleMouseUp(event) {
-    const {
-      traceSummary,
-      onStartAndEndTsChange,
-    } = this.props;
-
-    const {
-      dragStartX,
-    } = this.state;
-
-    this.setState({
-      isDragging: false,
-    });
+    const { traceSummary, onStartAndEndTsChange } = this.props;
+    const { dragStartX } = this.state;
+    this.setState({ isDragging: false });
 
     let startTs;
     let endTs;
@@ -116,24 +107,18 @@ class MiniTraceViewer extends React.Component {
   }
 
   handleDoubleClick() {
-    const {
-      traceSummary,
-      onStartAndEndTsChange,
-    } = this.props;
-
+    const { traceSummary, onStartAndEndTsChange } = this.props;
     onStartAndEndTsChange(0, traceSummary.duration);
   }
 
   renderTicks() {
-    const {
-      traceSummary,
-    } = this.props;
+    const { traceSummary } = this.props;
 
     const timeMarkers = [];
-    for (let i = 0; i < NUM_TICKS; i += 1) {
-      const label = formatDuration((i / (NUM_TICKS - 1)) * (traceSummary.duration));
+    for (let i = 0; i < numTimeMarkers; i += 1) {
+      const label = formatDuration((i / (numTimeMarkers - 1)) * (traceSummary.duration));
 
-      const portion = i / (NUM_TICKS - 1);
+      const portion = i / (numTimeMarkers - 1);
 
       let portionClassName = '';
       if (portion === 0) {
@@ -164,23 +149,10 @@ class MiniTraceViewer extends React.Component {
   }
 
   render() {
-    const {
-      traceSummary,
-      startTs,
-      endTs,
-    } = this.props;
-
-    const {
-      isDragging,
-      dragStartX,
-      dragCurrentX,
-    } = this.state;
-
-    const {
-      spans,
-    } = traceSummary;
-
-    const lineHeight = GRAPH_HEIGHT / spans.length;
+    const { traceSummary, startTs, endTs } = this.props;
+    const { isDragging, dragStartX, dragCurrentX } = this.state;
+    const { spans } = traceSummary;
+    const lineHeight = graphHeight / spans.length;
 
     return (
       <div className="mini-trace-viewer">
@@ -194,10 +166,8 @@ class MiniTraceViewer extends React.Component {
           onMouseDown={this.handleMouseDown}
           onDoubleClick={this.handleDoubleClick}
         >
-          <svg version="1.1" width="100%" height={GRAPH_HEIGHT} xmlns="http://www.w3.org/2000/svg">
-            {
-              renderTickLines()
-            }
+          <svg version="1.1" width="100%" height={graphHeight} xmlns="http://www.w3.org/2000/svg">
+            {renderTimeMarkers()}
             {
               spans.map((span, i) => (
                 <rect
@@ -218,20 +188,20 @@ class MiniTraceViewer extends React.Component {
                       x1={`${dragStartX * 100}%`}
                       x2={`${dragStartX * 100}%`}
                       y1={0}
-                      y2={GRAPH_HEIGHT}
+                      y2={graphHeight}
                     />
                     <line
                       x1={`${dragStartX * 100}%`}
                       x2={`${dragCurrentX * 100}%`}
-                      y1={GRAPH_HEIGHT / 2}
-                      y2={GRAPH_HEIGHT / 2}
+                      y1={graphHeight / 2}
+                      y2={graphHeight / 2}
 
                     />
                     <line
                       x1={`${dragCurrentX * 100}%`}
                       x2={`${dragCurrentX * 100}%`}
                       y1={0}
-                      y2={GRAPH_HEIGHT}
+                      y2={graphHeight}
                     />
                   </g>
                 )
@@ -242,7 +212,7 @@ class MiniTraceViewer extends React.Component {
                 ? (
                   <rect
                     width={`${startTs / traceSummary.duration * 100}%`}
-                    height={GRAPH_HEIGHT}
+                    height={graphHeight}
                     x="0"
                     y="0"
                     fill="rgba(50, 50, 50, 0.2)"
@@ -255,7 +225,7 @@ class MiniTraceViewer extends React.Component {
                 ? (
                   <rect
                     width={`${(traceSummary.duration - endTs) / traceSummary.duration * 100}%`}
-                    height={GRAPH_HEIGHT}
+                    height={graphHeight}
                     x={`${endTs / traceSummary.duration * 100}%`}
                     y="0"
                     fill="rgba(50, 50, 50, 0.2)"
@@ -270,6 +240,6 @@ class MiniTraceViewer extends React.Component {
   }
 }
 
-MiniTraceViewer.propTypes = propTypes;
+MiniTimeline.propTypes = propTypes;
 
-export default MiniTraceViewer;
+export default MiniTimeline;

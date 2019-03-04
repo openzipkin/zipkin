@@ -26,7 +26,7 @@
 @import 'components/detailed-trace-summary';
 @import 'components/global-search';
 @import 'components/loading-overlay';
-@import 'components/mini-trace-viewer';
+@import 'components/mini-timeline';
 @import 'components/search-condition';
 @import 'components/service-name-badge';
 @import 'components/sidebar';
@@ -34,4 +34,6 @@
 @import 'components/timeline-header';
 @import 'components/timeline-span';
 @import 'components/timeline-span-data';
+@import 'components/trace-page';
 @import 'components/trace-summary';
+@import 'components/trace-viewer';
