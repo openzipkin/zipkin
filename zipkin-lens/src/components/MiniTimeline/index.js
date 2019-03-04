@@ -3,11 +3,12 @@ import React from 'react';
 
 import { formatDuration } from '../../util/timestamp';
 import { getServiceNameColor } from '../../util/color';
+import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
-  traceSummary: PropTypes.shape({}).isRequired,
+  traceSummary: detailedTraceSummaryPropTypes.isRequired,
   onStartAndEndTsChange: PropTypes.func.isRequired,
 };
 
@@ -111,7 +112,7 @@ class MiniTimeline extends React.Component {
     onStartAndEndTsChange(0, traceSummary.duration);
   }
 
-  renderTicks() {
+  renderTimeMarkerLabels() {
     const { traceSummary } = this.props;
 
     const timeMarkers = [];
@@ -120,22 +121,24 @@ class MiniTimeline extends React.Component {
 
       const portion = i / (numTimeMarkers - 1);
 
-      let portionClassName = '';
+      let modifier = '';
       if (portion === 0) {
-        portionClassName = 'first';
+        modifier = '--first';
       } else if (portion >= 1) {
-        portionClassName = 'last';
+        modifier = '--last';
       }
 
       timeMarkers.push(
         <div
           key={portion}
-          className="mini-trace-viewer__time-marker"
+          className="mini-timeline__time-marker"
           style={{
             left: `${portion * 100}%`,
           }}
         >
-          <span className={`mini-trace-viewer__time-marker-label ${portionClassName}`}>
+          <span className={
+            `mini-timeline__time-marker-label mini-timeline__time-marker-label${modifier}`}
+          >
             {label}
           </span>
         </div>,
@@ -155,12 +158,12 @@ class MiniTimeline extends React.Component {
     const lineHeight = graphHeight / spans.length;
 
     return (
-      <div className="mini-trace-viewer">
-        <div className="mini-trace-viewer__time-markers-wrapper">
-          {this.renderTicks()}
+      <div className="mini-timeline">
+        <div className="mini-timeline__time-marker-labels-wrapper">
+          {this.renderTimeMarkerLabels()}
         </div>
         <div
-          className="mini-trace-viewer__graph"
+          className="mini-timeline__graph"
           ref={this.setGraphElement}
           role="presentation"
           onMouseDown={this.handleMouseDown}
