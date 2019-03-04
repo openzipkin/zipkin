@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React from 'react';
 
 import Timeline from '../Timeline';
@@ -5,23 +6,18 @@ import MiniTimeline from '../MiniTimeline';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
+  startTs: PropTypes.number,
+  endTs: PropTypes.number,
+  onStartAndEndTsChange: PropTypes.func.isRequired,
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
 };
 
+const defaultProps = {
+  startTs: null,
+  endTs: null,
+};
+
 class DetailedTraceSummary extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = {
-      startTs: null,
-      endTs: null,
-    };
-    this.handleStartAndEndTsChange = this.handleStartAndEndTsChange.bind(this);
-  }
-
-  handleStartAndEndTsChange(startTs, endTs) {
-    this.setState({ startTs, endTs });
-  }
-
   renderHeader() {
     const { traceSummary } = this.props;
     const {
@@ -63,8 +59,12 @@ class DetailedTraceSummary extends React.Component {
   }
 
   render() {
-    const { startTs, endTs } = this.state;
-    const { traceSummary } = this.props;
+    const {
+      startTs,
+      endTs,
+      onStartAndEndTsChange,
+      traceSummary,
+    } = this.props;
 
     return (
       <div className="detailed-trace-summary">
@@ -74,7 +74,7 @@ class DetailedTraceSummary extends React.Component {
             startTs={startTs || 0}
             endTs={endTs || traceSummary.duration}
             traceSummary={traceSummary}
-            onStartAndEndTsChange={this.handleStartAndEndTsChange}
+            onStartAndEndTsChange={onStartAndEndTsChange}
           />
         </div>
         <div className="detailed-trace-summary__timeline-wrapper">
@@ -90,5 +90,6 @@ class DetailedTraceSummary extends React.Component {
 }
 
 DetailedTraceSummary.propTypes = propTypes;
+DetailedTraceSummary.defaultProps = defaultProps;
 
 export default DetailedTraceSummary;

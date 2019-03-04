@@ -17,6 +17,15 @@ const defaultProps = {
 };
 
 class TracePage extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      startTs: null,
+      endTs: null,
+    };
+    this.handleStartAndEndTsChange = this.handleStartAndEndTsChange.bind(this);
+  }
+
   componentDidMount() {
     const { fetchTrace, traceId, traceSummary } = this.props;
     if (!traceSummary || traceSummary.traceId !== traceId) {
@@ -24,7 +33,12 @@ class TracePage extends React.Component {
     }
   }
 
+  handleStartAndEndTsChange(startTs, endTs) {
+    this.setState({ startTs, endTs });
+  }
+
   render() {
+    const { startTs, endTs } = this.state;
     const { isLoading, traceId, traceSummary } = this.props;
     return (
       <div className="trace-page">
@@ -33,7 +47,14 @@ class TracePage extends React.Component {
           {
             (!traceSummary || traceSummary.traceId !== traceId)
               ? null
-              : (<DetailedTraceSummary traceSummary={traceSummary} />)
+              : (
+                <DetailedTraceSummary
+                  startTs={startTs}
+                  endTs={endTs}
+                  onStartAndEndTsChange={this.handleStartAndEndTsChange}
+                  traceSummary={traceSummary}
+                />
+              )
           }
         </div>
       </div>

@@ -25,12 +25,15 @@ class TraceViewer extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
+      startTs: null,
+      endTs: null,
       traceSummary: null,
       cannotOpenFile: false,
       isInvalidFormat: false,
     };
     this.handleDrop = this.handleDrop.bind(this);
     this.handleCancel = this.handleCancel.bind(this);
+    this.handleStartAndEndTsChange = this.handleStartAndEndTsChange.bind(this);
   }
 
   handleDrop(files) {
@@ -49,10 +52,14 @@ class TraceViewer extends React.Component {
           isInvalidFormat: true,
         });
       }
+      const traceSummary = detailedTraceSummary(
+        treeCorrectedForClockSkew(rawTrace),
+      );
+
       this.setState({
-        traceSummary: detailedTraceSummary(
-          treeCorrectedForClockSkew(rawTrace),
-        ),
+        startTs: 0,
+        endTs: traceSummary.duration,
+        traceSummary,
         cannotOpenFile: false,
         isInvalidFormat: false,
       });
@@ -75,6 +82,10 @@ class TraceViewer extends React.Component {
       cannotOpenFile: false,
       isInvalidFormat: false,
     });
+  }
+
+  handleStartAndEndTsChange(startTs, endTs) {
+    this.setState({ startTs, endTs });
   }
 
   renderDropzone() {
@@ -102,7 +113,13 @@ class TraceViewer extends React.Component {
   }
 
   renderTraceSummary() {
-    const { traceSummary, cannotOpenFile, isInvalidFormat } = this.state;
+    const {
+      startTs,
+      endTs,
+      traceSummary,
+      cannotOpenFile,
+      isInvalidFormat,
+    } = this.state;
 
     if (cannotOpenFile) {
       return (
@@ -122,7 +139,12 @@ class TraceViewer extends React.Component {
       return null;
     }
     return (
-      <DetailedTraceSummary traceSummary={traceSummary} />
+      <DetailedTraceSummary
+        startTs={startTs}
+        endTs={endTs}
+        onStartAndEndTsChange={this.handleStartAndEndTsChange}
+        traceSummary={traceSummary}
+      />
     );
   }
 
