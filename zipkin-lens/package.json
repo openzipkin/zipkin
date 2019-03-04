@@ -72,6 +72,7 @@
     "react": "^16.4.1",
     "react-chartjs-2": "^2.7.4",
     "react-dom": "^16.4.1",
+    "react-dropzone": "^9.0.0",
     "react-numeric-input": "^2.2.3",
     "react-redux": "^5.0.7",
     "react-router": "^4.3.1",
