@@ -155,6 +155,7 @@ public class ITZipkinMetricsHealth {
     post("/api/v2/spans", body);
     post("/api/v2/spans", body);
 
+    Thread.sleep(100); // sometimes travis flakes getting the "http.server.requests" timer
     double messagesCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
     // Get the http count from the registry and it should match the summation previous count
     // and count of calls below
