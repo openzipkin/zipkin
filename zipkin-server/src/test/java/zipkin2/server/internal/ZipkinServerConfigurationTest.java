@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,12 +14,14 @@
 package zipkin2.server.internal;
 
 import brave.Tracing;
+import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -42,6 +44,8 @@ public class ZipkinServerConfigurationTest {
 
   @Test public void httpCollector_enabledByDefault() {
     context.register(
+      ArmeriaSpringActuatorAutoConfiguration.class,
+      EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
@@ -56,6 +60,8 @@ public class ZipkinServerConfigurationTest {
   public void httpCollector_canDisable() {
     TestPropertyValues.of("zipkin.collector.http.enabled:false").applyTo(context);
     context.register(
+      ArmeriaSpringActuatorAutoConfiguration.class,
+      EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
@@ -68,6 +74,8 @@ public class ZipkinServerConfigurationTest {
 
   @Test public void query_enabledByDefault() {
     context.register(
+      ArmeriaSpringActuatorAutoConfiguration.class,
+      EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
@@ -81,6 +89,8 @@ public class ZipkinServerConfigurationTest {
   @Test public void query_canDisable() {
     TestPropertyValues.of("zipkin.query.enabled:false").applyTo(context);
     context.register(
+      ArmeriaSpringActuatorAutoConfiguration.class,
+      EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
@@ -98,6 +108,8 @@ public class ZipkinServerConfigurationTest {
   @Test public void selfTracing_canEnable() {
     TestPropertyValues.of("zipkin.self-tracing.enabled:true").applyTo(context);
     context.register(
+      ArmeriaSpringActuatorAutoConfiguration.class,
+      EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class,
@@ -111,6 +123,8 @@ public class ZipkinServerConfigurationTest {
   @Test public void search_canDisable() {
     TestPropertyValues.of("zipkin.storage.search-enabled:false").applyTo(context);
     context.register(
+      ArmeriaSpringActuatorAutoConfiguration.class,
+      EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
       ZipkinServerConfiguration.class

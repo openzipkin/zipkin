@@ -153,6 +153,15 @@ server:
     # Includes dynamic json content and large static assets from zipkin-ui
     mime-types: application/json,application/javascript,text/css,image/svg
 
+spring.main.web-application-type: none
+
+# We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
+armeria:
+  ports:
+    - port: ${server.port}
+      protocols:
+        - http
+
 spring:
   jmx:
      # reduce startup time by excluding unexposed JMX service

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,41 +13,34 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.annotation.Default;
+import com.linecorp.armeria.server.annotation.Get;
+import com.linecorp.armeria.server.annotation.Param;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.CacheControl;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.context.request.WebRequest;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.internal.Nullable;
+import zipkin2.internal.Buffer;
+import zipkin2.internal.JsonCodec;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
-import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
-
-@RestController
-@RequestMapping("/api/v2")
 @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
 public class ZipkinQueryApiV2 {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
-
   final String storageType;
   final StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
   final long defaultLookback;
@@ -71,116 +64,109 @@ public class ZipkinQueryApiV2 {
     this.autocompleteKeys = autocompleteKeys;
   }
 
-  @RequestMapping(
-      value = "/dependencies",
-      method = RequestMethod.GET,
-      produces = APPLICATION_JSON_VALUE)
-  public byte[] getDependencies(
-      @RequestParam(value = "endTs", required = true) long endTs,
-      @Nullable @RequestParam(value = "lookback", required = false) Long lookback)
-      throws IOException {
+  @Get("/api/v2/dependencies")
+  public AggregatedHttpMessage getDependencies(
+    @Param("endTs") long endTs,
+    @Param("lookback") Optional<Long> lookback) throws IOException {
     Call<List<DependencyLink>> call =
-        storage.spanStore().getDependencies(endTs, lookback != null ? lookback : defaultLookback);
-    return DependencyLinkBytesEncoder.JSON_V1.encodeList(call.execute());
+      storage.spanStore().getDependencies(endTs, lookback.orElse(defaultLookback));
+    return jsonResponse(DependencyLinkBytesEncoder.JSON_V1.encodeList(call.execute()));
   }
 
-  @RequestMapping(value = "/services", method = RequestMethod.GET)
-  public ResponseEntity<List<String>> getServiceNames() throws IOException {
+  @Get("/api/v2/services")
+  public AggregatedHttpMessage getServiceNames() throws IOException {
     List<String> serviceNames = storage.spanStore().getServiceNames().execute();
     serviceCount = serviceNames.size();
-    return maybeCacheNames(serviceNames);
+    return maybeCacheNames(serviceCount > 3, serviceNames);
   }
 
-  @RequestMapping(value = "/spans", method = RequestMethod.GET)
-  public ResponseEntity<List<String>> getSpanNames(
-      @RequestParam(value = "serviceName") String serviceName) throws IOException {
-    return maybeCacheNames(storage.spanStore().getSpanNames(serviceName).execute());
+  @Get("/api/v2/spans")
+  public AggregatedHttpMessage getSpanNames(@Param("serviceName") String serviceName) throws IOException {
+    List<String> spanNames = storage.spanStore().getSpanNames(serviceName).execute();
+    return maybeCacheNames(serviceCount > 3, spanNames);
   }
 
-  @RequestMapping(value = "/traces", method = RequestMethod.GET, produces = APPLICATION_JSON_VALUE)
-  public String getTraces(
-      @Nullable @RequestParam(value = "serviceName", required = false) String serviceName,
-      @Nullable @RequestParam(value = "spanName", required = false) String spanName,
-      @Nullable @RequestParam(value = "annotationQuery", required = false) String annotationQuery,
-      @Nullable @RequestParam(value = "minDuration", required = false) Long minDuration,
-      @Nullable @RequestParam(value = "maxDuration", required = false) Long maxDuration,
-      @Nullable @RequestParam(value = "endTs", required = false) Long endTs,
-      @Nullable @RequestParam(value = "lookback", required = false) Long lookback,
-      @RequestParam(value = "limit", defaultValue = "10") int limit)
-      throws IOException {
+  @Get("/api/v2/traces")
+  public AggregatedHttpMessage getTraces(
+    @Param("serviceName") Optional<String> serviceName,
+    @Param("spanName") Optional<String> spanName,
+    @Param("annotationQuery") Optional<String> annotationQuery,
+    @Param("minDuration") Optional<Long> minDuration,
+    @Param("maxDuration") Optional<Long> maxDuration,
+    @Param("endTs") Optional<Long> endTs,
+    @Param("lookback") Optional<Long> lookback,
+    @Default("10") @Param("limit") int limit)
+    throws IOException {
     QueryRequest queryRequest =
-        QueryRequest.newBuilder()
-            .serviceName(serviceName)
-            .spanName(spanName)
-            .parseAnnotationQuery(annotationQuery)
-            .minDuration(minDuration)
-            .maxDuration(maxDuration)
-            .endTs(endTs != null ? endTs : System.currentTimeMillis())
-            .lookback(lookback != null ? lookback : defaultLookback)
-            .limit(limit)
-            .build();
+      QueryRequest.newBuilder()
+        .serviceName(serviceName.orElse(null))
+        .spanName(spanName.orElse(null))
+        .parseAnnotationQuery(annotationQuery.orElse(null))
+        .minDuration(minDuration.orElse(null))
+        .maxDuration(maxDuration.orElse(null))
+        .endTs(endTs.orElse(System.currentTimeMillis()))
+        .lookback(lookback.orElse(defaultLookback))
+        .limit(limit)
+        .build();
 
     List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();
-    return new String(writeTraces(SpanBytesEncoder.JSON_V2, traces), UTF_8);
+    return jsonResponse(writeTraces(SpanBytesEncoder.JSON_V2, traces));
   }
 
-  @RequestMapping(
-      value = "/trace/{traceIdHex}",
-      method = RequestMethod.GET,
-      produces = APPLICATION_JSON_VALUE)
-  public String getTrace(@PathVariable String traceIdHex, WebRequest request) throws IOException {
+  @Get("/api/v2/trace/{traceIdHex}")
+  public AggregatedHttpMessage getTrace(@Param("traceIdHex") String traceIdHex) throws IOException {
     List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
-    if (trace.isEmpty()) throw new TraceNotFoundException(traceIdHex);
-    return new String(SpanBytesEncoder.JSON_V2.encodeList(trace), UTF_8);
+    if (trace == null) {
+      return AggregatedHttpMessage.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
+        traceIdHex + " not found");
+    }
+    return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));
   }
 
-  @GetMapping(value = "/autocompleteKeys", produces = APPLICATION_JSON_VALUE)
-  public ResponseEntity<List<String>> getAutocompleteKeys() {
-    return ResponseEntity.ok()
-      .cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate())
-      .body(autocompleteKeys);
+  static AggregatedHttpMessage jsonResponse(byte[] body) {
+    return AggregatedHttpMessage.of(HttpHeaders.of(200)
+      .contentType(MediaType.JSON)
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length), HttpData.of(body));
   }
 
-  @GetMapping(value = "/autocompleteValues", produces = APPLICATION_JSON_VALUE)
-  public ResponseEntity<List<String>> getAutocompleteValues(@RequestParam String key)
-    throws IOException {
-    return maybeCacheAutocompleteValues(storage.autocompleteTags().getValues(key).execute());
+  static final Buffer.Writer<String> QUOTED_STRING_WRITER = new Buffer.Writer<String>() {
+    @Override public int sizeInBytes(String value) {
+      return Buffer.utf8SizeInBytes(value) + 2; // quotes
+    }
+
+    @Override public void write(String value, Buffer buffer) {
+      buffer.writeByte('"').writeUtf8(value).writeByte('"');
+    }
+  };
+
+  @Get("/api/v2/autocompleteKeys")
+  public AggregatedHttpMessage getAutocompleteKeys() {
+    return maybeCacheNames(true, autocompleteKeys);
+  }
+
+  @Get("/api/v2/autocompleteValues")
+  public AggregatedHttpMessage getAutocompleteValues(@Param("key") String key) throws IOException {
+    List<String> values = storage.autocompleteTags().getValues(key).execute();
+    return maybeCacheNames(values.size() > 3, values);
   }
 
   /**
-   * We cache tag values to minimize the number of requests made to the storage backend. The tag
-   * values doesn't change frequently and cache expires in 5 minutes
-   *
+   * We cache names if there are more than 3 names. This helps people getting started: if we cache
+   * empty results, users have more questions. We assume caching becomes a concern when zipkin is in
+   * active use, and active use usually implies more than 3 services.
    */
-  ResponseEntity<List<String>> maybeCacheAutocompleteValues(List<String> values) {
-    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
-    if (values.size() > 3) {
-      response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
+  AggregatedHttpMessage maybeCacheNames(boolean shouldCacheControl, List<String> values) {
+    byte[] body = JsonCodec.writeList(QUOTED_STRING_WRITER, values);
+    HttpHeaders headers = HttpHeaders.of(200)
+      .contentType(MediaType.JSON)
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
+    if (shouldCacheControl) {
+      headers = headers.add(
+        HttpHeaderNames.CACHE_CONTROL,
+        CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate().getHeaderValue()
+      );
     }
-    return response.body(values);
-  }
-
-  @ExceptionHandler(TraceNotFoundException.class)
-  @ResponseStatus(HttpStatus.NOT_FOUND)
-  public void notFound() {}
-
-  static class TraceNotFoundException extends RuntimeException {
-    TraceNotFoundException(String traceIdHex) {
-      super("Cannot find trace " + traceIdHex);
-    }
-  }
-
-  /**
-   * We cache names if there are more than 3 services. This helps people getting started: if we
-   * cache empty results, users have more questions. We assume caching becomes a concern when zipkin
-   * is in active use, and active use usually implies more than 3 services.
-   */
-  ResponseEntity<List<String>> maybeCacheNames(List<String> names) {
-    ResponseEntity.BodyBuilder response = ResponseEntity.ok();
-    if (serviceCount > 3) {
-      response.cacheControl(CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate());
-    }
-    return response.body(names);
+    return AggregatedHttpMessage.of(headers, HttpData.of(body));
   }
 
   // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library

@@ -13,8 +13,18 @@
  */
 package zipkin2.autoconfigure.ui;
 
+import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.ServiceRequestContext;
+import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
+import io.netty.handler.codec.http.cookie.Cookie;
+import io.netty.handler.codec.http.cookie.DefaultCookie;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -25,8 +35,6 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
-import org.springframework.http.MediaType;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.isA;
@@ -55,11 +63,11 @@ public class ZipkinUiAutoConfigurationTest {
   }
 
   @Test
-  public void indexContentType() {
+  public void indexContentType() throws Exception {
     context = createContext();
     assertThat(
-      context.getBean(ZipkinUiAutoConfiguration.class).serveIndex(null).getHeaders().getContentType())
-      .isEqualTo(MediaType.TEXT_HTML);
+      serveIndex().headers().contentType())
+      .isEqualTo(MediaType.parse("text/html"));
   }
 
   @Test
@@ -70,11 +78,11 @@ public class ZipkinUiAutoConfigurationTest {
     ZipkinUiAutoConfiguration ui = context.getBean(ZipkinUiAutoConfiguration.class);
     ui.indexHtml = new ClassPathResource("does-not-exist.html");
 
-    thrown.expect(BeanCreationException.class);
+    thrown.expect(RuntimeException.class);
     // There's a BeanInstantiationException nested in between BeanCreationException and IOException,
     // so we go one level deeper about causes. There's no `expectRootCause`.
-    thrown.expectCause(hasCause(isA(UncheckedIOException.class)));
-    ui.serveIndex(null);
+    thrown.expectCause(hasCause(hasCause(isA(BeanCreationException.class))));
+    serveIndex();
   }
 
   @Test
@@ -140,10 +148,8 @@ public class ZipkinUiAutoConfigurationTest {
   @Test
   public void defaultBaseUrl_doesNotChangeResource() throws IOException {
     context = createContext();
-    Resource index =
-      (Resource) context.getBean(ZipkinUiAutoConfiguration.class).serveIndex(null).getBody();
 
-    assertThat(index.getInputStream())
+    assertThat(new ByteArrayInputStream(serveIndex().content().array()))
       .hasSameContentAs(getClass().getResourceAsStream("/zipkin-ui/index.html"));
   }
 
@@ -151,7 +157,7 @@ public class ZipkinUiAutoConfigurationTest {
   public void canOverideProperty_basePath() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex(null).getBody().toString())
+    assertThat(serveIndex().contentUtf8())
       .contains("<base href=\"/foo/bar/\">");
   }
 
@@ -159,7 +165,7 @@ public class ZipkinUiAutoConfigurationTest {
   public void lensCookieOverridesIndex() {
     context = createContext();
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex("true").getBody().toString())
+    assertThat(serveIndex(new DefaultCookie("lens", "true")).contentUtf8())
       .contains("zipkin-lens");
   }
 
@@ -167,8 +173,24 @@ public class ZipkinUiAutoConfigurationTest {
   public void canOverideProperty_specialCaseRoot() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).serveIndex(null).getBody().toString())
+    assertThat(serveIndex().contentUtf8())
       .contains("<base href=\"/\">");
+  }
+
+  private AggregatedHttpMessage serveIndex(Cookie... cookies) {
+    HttpHeaders headers = HttpHeaders.of(HttpMethod.GET, "/");
+    String encodedCookies = ClientCookieEncoder.LAX.encode(cookies);
+    if (encodedCookies != null) {
+      headers.set(HttpHeaderNames.COOKIE, encodedCookies);
+    }
+    HttpRequest req = HttpRequest.of(headers);
+    try {
+      return context.getBean(ZipkinUiAutoConfiguration.class).indexSwitchingService()
+        .serve(ServiceRequestContext.of(req), req).aggregate()
+        .get();
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   private static AnnotationConfigApplicationContext createContext() {

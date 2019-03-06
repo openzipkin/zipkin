@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -20,7 +21,7 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
@@ -30,7 +31,7 @@ import zipkin2.codec.SpanBytesEncoder;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.server.internal.ITZipkinServer.TRACE;
+import static zipkin2.server.internal.ITZipkinServer.url;
 
 /**
  * Integration test suite for autocomplete tags.
@@ -48,7 +49,7 @@ import static zipkin2.server.internal.ITZipkinServer.TRACE;
 @RunWith(SpringRunner.class)
 public class ITZipkinServerAutocomplete {
 
-  @Value("${local.server.port}") int zipkinPort;
+  @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
   @Test public void setsCacheControlOnAutocompleteKeysEndpoint() throws Exception {
@@ -77,13 +78,13 @@ public class ITZipkinServerAutocomplete {
 
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + zipkinPort + path)
+      .url(url(server, path))
       .build()).execute();
   }
 
   private Response post(String path, byte[] body) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + zipkinPort + path)
+      .url(url(server, path))
       .post(RequestBody.create(null, body))
       .build()).execute();
   }

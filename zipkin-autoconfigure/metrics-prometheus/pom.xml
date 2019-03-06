@@ -42,9 +42,9 @@
       <version>${micrometer.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-undertow</artifactId>
-      <version>${spring-boot.version}</version>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-spring-boot-autoconfigure</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
