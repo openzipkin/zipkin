@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -91,7 +91,8 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
 
     long spanId = row.getValue(ZipkinSpans.ZIPKIN_SPANS.ID);
     boolean error = false;
-    String lcService = null, srService = null, csService = null, caService = null, saService = null;
+    String lcService = null, srService = null, csService = null, caService = null, saService = null,
+      maService = null, mrService = null, msService = null;
     while (hasNext()) { // there are more values for this trace
       if (spanId != delegate.peek().getValue(ZipkinSpans.ZIPKIN_SPANS.ID)) {
         break; // if we are in a new span
@@ -110,6 +111,15 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
           break;
         case "cs":
           csService = value;
+          break;
+        case "ma":
+          maService = value;
+          break;
+        case "mr":
+          mrService = value;
+          break;
+        case "ms":
+          msService = value;
           break;
         case "sa":
           saService = value;
@@ -155,6 +165,18 @@ final class DependencyLinkV2SpanIterator implements Iterator<Span> {
           .build();
     } else if (csService != null) {
       return result.kind(Span.Kind.SERVER).localEndpoint(ep(caService)).build();
+    } else if (mrService != null) {
+      return result
+        .kind(Span.Kind.CONSUMER)
+        .localEndpoint(ep(mrService))
+        .remoteEndpoint(ep(maService))
+        .build();
+    } else if (msService != null) {
+      return result
+        .kind(Span.Kind.PRODUCER)
+        .localEndpoint(ep(msService))
+        .remoteEndpoint(ep(maService))
+        .build();
     }
     return result.build();
   }

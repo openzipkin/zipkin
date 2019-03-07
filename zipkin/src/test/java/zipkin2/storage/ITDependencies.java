@@ -55,6 +55,7 @@ import static zipkin2.TestObjects.midnightUTC;
  * integrated storage doesn't fail due to mismapping of data, for example.
  */
 public abstract class ITDependencies {
+  static final Endpoint KAFKA = Endpoint.newBuilder().serviceName("kafka").build();
   static final List<DependencyLink> LINKS = asList(
     DependencyLink.newBuilder().parent("frontend").child("backend").callCount(1L).build(),
     DependencyLink.newBuilder().parent("backend").child("db").callCount(1L).errorCount(1L).build()
@@ -368,6 +369,31 @@ public abstract class ITDependencies {
     assertThat(store().getDependencies(TRACE_ENDTS, DAY).execute()).containsOnly(
       DependencyLink.newBuilder().parent("frontend").child("backend").callCount(1).build(),
       DependencyLink.newBuilder().parent("backend").child("db").callCount(1).build()
+    );
+  }
+
+  @Test
+  public void instrumentedProducerAndConsumer() throws Exception {
+    List<Span> trace = asList(
+      Span.newBuilder().traceId("10").id("10").name("send")
+        .timestamp((TODAY + 50L) * 1000L).duration(1)
+        .kind(Kind.PRODUCER)
+        .localEndpoint(FRONTEND)
+        .remoteEndpoint(KAFKA)
+        .build(),
+      Span.newBuilder().traceId("10").parentId("10").id("11").name("receive")
+        .timestamp((TODAY + 100) * 1000L).duration(1)
+        .kind(Kind.CONSUMER)
+        .remoteEndpoint(KAFKA)
+        .localEndpoint(BACKEND)
+        .build()
+    );
+
+    processDependencies(trace);
+
+    assertThat(store().getDependencies(TRACE_ENDTS, DAY).execute()).containsOnly(
+      DependencyLink.newBuilder().parent("frontend").child("kafka").callCount(1).build(),
+      DependencyLink.newBuilder().parent("kafka").child("backend").callCount(1).build()
     );
   }
 
