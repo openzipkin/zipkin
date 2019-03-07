@@ -24,6 +24,7 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
+import org.springframework.boot.actuate.metrics.export.prometheus.PrometheusScrapeEndpoint;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -45,6 +46,7 @@ public class ZipkinServerConfigurationTest {
   @Test public void httpCollector_enabledByDefault() {
     context.register(
       ArmeriaSpringActuatorAutoConfiguration.class,
+      PrometheusScrapeEndpointConfiguration.class,
       EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -56,11 +58,19 @@ public class ZipkinServerConfigurationTest {
     assertThat(context.getBean(ZipkinHttpCollector.class)).isNotNull();
   }
 
+  // TODO: Remove when removing workaround for https://github.com/line/armeria/issues/1637
+  @Deprecated static class PrometheusScrapeEndpointConfiguration {
+    @Bean PrometheusScrapeEndpoint prometheusEndpoint() {
+      return new PrometheusScrapeEndpoint(null);
+    }
+  }
+
   @Test(expected = NoSuchBeanDefinitionException.class)
   public void httpCollector_canDisable() {
     TestPropertyValues.of("zipkin.collector.http.enabled:false").applyTo(context);
     context.register(
       ArmeriaSpringActuatorAutoConfiguration.class,
+      PrometheusScrapeEndpointConfiguration.class,
       EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -75,6 +85,7 @@ public class ZipkinServerConfigurationTest {
   @Test public void query_enabledByDefault() {
     context.register(
       ArmeriaSpringActuatorAutoConfiguration.class,
+      PrometheusScrapeEndpointConfiguration.class,
       EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -90,6 +101,7 @@ public class ZipkinServerConfigurationTest {
     TestPropertyValues.of("zipkin.query.enabled:false").applyTo(context);
     context.register(
       ArmeriaSpringActuatorAutoConfiguration.class,
+      PrometheusScrapeEndpointConfiguration.class,
       EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -109,6 +121,7 @@ public class ZipkinServerConfigurationTest {
     TestPropertyValues.of("zipkin.self-tracing.enabled:true").applyTo(context);
     context.register(
       ArmeriaSpringActuatorAutoConfiguration.class,
+      PrometheusScrapeEndpointConfiguration.class,
       EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,
@@ -124,6 +137,7 @@ public class ZipkinServerConfigurationTest {
     TestPropertyValues.of("zipkin.storage.search-enabled:false").applyTo(context);
     context.register(
       ArmeriaSpringActuatorAutoConfiguration.class,
+      PrometheusScrapeEndpointConfiguration.class,
       EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinServerConfigurationTest.Config.class,

@@ -15,6 +15,9 @@ package zipkin2.server.internal;
 
 import brave.Tracing;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
@@ -27,6 +30,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
+import org.springframework.boot.actuate.metrics.export.prometheus.PrometheusScrapeEndpoint;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -57,7 +61,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Autowired(required = false)
   MetricsHealthController healthController;
 
-  @Bean ArmeriaServerConfigurator serverConfigurator() {
+  @Bean ArmeriaServerConfigurator serverConfigurator(PrometheusScrapeEndpoint prom) {
     return sb -> {
       if (httpQuery != null) {
         sb.annotatedService(httpQuery);
@@ -69,6 +73,14 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       sb.service("/prometheus", new RedirectService("/actuator/prometheus"));
       // Redirects the info endpoint for backward compatibility
       sb.service("/info", new RedirectService("/actuator/info"));
+
+      // TODO: Workaround for https://github.com/line/armeria/issues/1637
+      MediaType promMedia = MediaType.parse("text/plain; version=0.0.4; charset=utf-8");
+      sb.decorator(
+        delegate -> (ctx, req) -> {
+          if (!"/actuator/prometheus".equals(req.path())) return delegate.serve(ctx, req);
+          return HttpResponse.of(HttpStatus.OK, promMedia, prom.scrape());
+        });
     };
   }
 
