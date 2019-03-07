@@ -20,6 +20,7 @@ import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.Response;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
+import com.linecorp.armeria.server.PathMapping;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.SimpleDecoratingService;
@@ -65,12 +66,13 @@ import org.springframework.util.StringUtils;
   }
 
   // We need to make sure not-found requests are still handled by a service to be decorated for
-  // adding metrics. We add a lowest-precedence path mapping so anything not mapped by another
+  // adding metrics. We add a lower precedence path mapping so anything not mapped by another
   // service is handled by this.
   @Bean
-  @Order
+  @Order(1)
   ArmeriaServerConfigurator notFoundMetricCollector() {
-    return sb -> sb.serviceUnder("/", (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
+    // Use glob instead of catch-all to avoid adding it to the trie router.
+    return sb -> sb.service(PathMapping.ofGlob("/**"), (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
   }
 
   static final class MetricCollectingService<I extends Request, O extends Response>
