@@ -23,6 +23,7 @@ import com.linecorp.armeria.server.annotation.Default;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.Param;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -156,6 +157,7 @@ public class ZipkinQueryApiV2 {
    * active use, and active use usually implies more than 3 services.
    */
   AggregatedHttpMessage maybeCacheNames(boolean shouldCacheControl, List<String> values) {
+    Collections.sort(values);
     byte[] body = JsonCodec.writeList(QUOTED_STRING_WRITER, values);
     HttpHeaders headers = HttpHeaders.of(200)
       .contentType(MediaType.JSON)

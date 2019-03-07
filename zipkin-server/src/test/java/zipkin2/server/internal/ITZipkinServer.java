@@ -247,6 +247,10 @@ public class ITZipkinServer {
 
     assertThat(get("/api/v2/spans?serviceName=web").header("Cache-Control"))
       .isEqualTo("max-age=300, must-revalidate");
+
+    // Check that the response is alphabetically sorted.
+    assertThat(get("/api/v2/services").body().string())
+      .isEqualTo("[\"bar\",\"baz\",\"foo\",\"quz\"]");
   }
 
   @Test public void shouldAllowAnyOriginByDefault() throws Exception {
