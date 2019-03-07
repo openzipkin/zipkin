@@ -41,11 +41,13 @@ const renderInfo = span => (
       data={
         span.annotations.map(a => (
           {
-            // moment.js only supports millisecond precision, however our timestamps have microsecond
-            // precision. So we use moment.js to generate the human readable time with just milliseconds
-            // and then append the last 3 digits of the timestamp which are the microseconds.
+            // moment.js only supports millisecond precision, however our timestamps have
+            // microsecond precision. So we use moment.js to generate the human readable time
+            // with just milliseconds and then append the last 3 digits of the timestamp
+            // which are the microseconds.
             // NOTE: a.timestamp % 1000 would save a string conversion but drops leading zeros.
-            duration: moment(a.timestamp / 1000).format('MM/DD HH:mm:ss.SSS') + a.timestamp.toString().slice(-3),
+            duration:
+              moment(a.timestamp / 1000).format('MM/DD HH:mm:ss.SSS') + a.timestamp.toString().slice(-3),
             relativeTime: a.relativeTime,
             annotation: a.value,
             address: a.endpoint,
@@ -69,7 +71,7 @@ const renderInfo = span => (
         [
           { Header: 'Key', accessor: 'key' },
           // `white-space: normal` makes long text wrap correctly.
-          { Header: 'Value', accessor: 'value', style: {'white-space': 'normal'} },
+          { Header: 'Value', accessor: 'value', style: { 'white-space': 'normal' } },
         ]
       }
     />
