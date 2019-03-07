@@ -22,7 +22,9 @@ export const fetchServices = () => async (dispatch) => {
       throw Error(res.statusText);
     }
     const services = await res.json();
-    dispatch(fetchServicesSuccess(services));
+    // alphabetically sort service names since the api returns
+    // them out of order
+    dispatch(fetchServicesSuccess(services.sort()));
   } catch (err) {
     dispatch(fetchServicesFailure());
   }
