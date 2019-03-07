@@ -71,7 +71,8 @@ import org.springframework.util.StringUtils;
   @Bean
   @Order(1)
   ArmeriaServerConfigurator notFoundMetricCollector() {
-    return sb -> sb.service(PathMapping.ofCatchAll(), (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
+    // Use glob instead of catch-all to avoid adding it to the trie router.
+    return sb -> sb.service(PathMapping.ofGlob("/**"), (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
   }
 
   static final class MetricCollectingService<I extends Request, O extends Response>
