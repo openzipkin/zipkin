@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -154,6 +154,20 @@ public class SpanBytesDecoderDetectorTest {
     byte[] message = SpanBytesEncoder.THRIFT.encodeList(asList(span1, span2));
     assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
         .isEqualTo(SpanBytesDecoder.THRIFT);
+  }
+
+
+  /**
+   * We encoded incorrectly for years, so we have to read this data eventhough it is wrong.
+   *
+   * <p>See openzipkin/zipkin-reporter-java#133
+   */
+  @Test
+  public void decoderForListMessage_thrift_incorrectFirstByte() {
+    byte[] message = SpanBytesEncoder.THRIFT.encodeList(asList(span1, span2));
+    message[0] = 11; // We made a typo.. it should have been 12
+    assertThat(SpanBytesDecoderDetector.decoderForListMessage(message))
+      .isEqualTo(SpanBytesDecoder.THRIFT);
   }
 
   @Test(expected = IllegalArgumentException.class)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -69,7 +69,9 @@ public final class SpanBytesDecoderDetector {
   /** @throws IllegalArgumentException if the input isn't a json, proto3 or thrift list message. */
   public static BytesDecoder<Span> decoderForListMessage(byte[] spans) {
     BytesDecoder<Span> decoder = detectDecoder(spans);
-    if (spans[0] != 12 /* List[ThriftSpan] */ && !protobuf3(spans) && spans[0] != '[') {
+    if (spans[0] != 12 /* List[ThriftSpan] */
+      && spans[0] != 11 /* openzipkin/zipkin-reporter-java#133 */
+      && !protobuf3(spans) && spans[0] != '[') {
       throw new IllegalArgumentException("Expected json, proto3 or thrift list encoding");
     }
     return decoder;
