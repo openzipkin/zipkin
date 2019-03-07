@@ -15,18 +15,13 @@ package zipkin2.server.internal;
 
 import brave.Tracing;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.RedirectService;
-import com.linecorp.armeria.server.Service;
-import com.linecorp.armeria.server.annotation.Options;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import java.util.List;
-import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
@@ -39,6 +34,7 @@ import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -87,21 +83,12 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     registry.addRedirectViewController("/info", "/actuator/info");
   }
 
-  @Bean ArmeriaServerConfigurator corsConfigurator(
+  /** Configures the server at the last because of the specified {@link Order} annotation. */
+  @Order @Bean ArmeriaServerConfigurator corsConfigurator(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
-    CorsServiceBuilder corsBuilder = allowedOrigins.equals("*") ? CorsServiceBuilder.forAnyOrigin()
-      : CorsServiceBuilder.forOrigins(allowedOrigins.split(","));
-
-    Function<Service<HttpRequest, HttpResponse>, ? extends Service<HttpRequest, HttpResponse>>
-      corsDecorator = corsBuilder.allowRequestMethods(HttpMethod.GET).newDecorator();
-
-    return server -> server
-      .annotatedService(new Object() { // don't know how else to enable options for CORS preflight!
-        @Options("glob:/**")
-        public void options() {
-        }
-      })
-      .decorator(corsDecorator);
+    CorsServiceBuilder corsBuilder =
+      CorsServiceBuilder.forOrigins(allowedOrigins.split(",")).allowRequestMethods(HttpMethod.GET);
+    return builder -> builder.decorator(corsBuilder::build);
   }
 
   @Bean

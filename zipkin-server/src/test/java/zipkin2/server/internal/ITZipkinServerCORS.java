@@ -96,6 +96,7 @@ public class ITZipkinServerCORS {
     return client.newCall(new Request.Builder()
       .url(url(server, path))
       .header("Origin", origin)
+      .header("access-control-request-method",  "GET")
       .method("OPTIONS", null)
       .build()).execute();
   }
