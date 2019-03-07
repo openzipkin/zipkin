@@ -74,7 +74,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       // Redirects the info endpoint for backward compatibility
       sb.service("/info", new RedirectService("/actuator/info"));
 
-      // Workaround for https://github.com/line/armeria/issues/1637
+      // TODO: Workaround for https://github.com/line/armeria/issues/1637
       MediaType promMedia = MediaType.parse("text/plain; version=0.0.4; charset=utf-8");
       sb.decorator(
         delegate -> (ctx, req) -> {
