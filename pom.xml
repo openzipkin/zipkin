@@ -51,7 +51,7 @@
 
     <armeria.version>0.80.0</armeria.version>
     <brave.version>5.6.1</brave.version>
-    <cassandra-driver-core.version>3.7.0</cassandra-driver-core.version>
+    <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
     <okhttp.version>3.13.1</okhttp.version>
     <okio.version>1.17.3</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
