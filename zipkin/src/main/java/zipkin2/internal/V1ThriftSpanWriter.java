@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -167,13 +167,13 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return EMPTY_ARRAY;
 
-    Buffer result = new Buffer(ThriftCodec.listSizeInBytes(this, spans));
+    Buffer result = Buffer.allocate(ThriftCodec.listSizeInBytes(this, spans));
     ThriftCodec.writeList(this, spans, result);
     return result.toByteArray();
   }
 
   public byte[] write(Span onlySpan) {
-    Buffer result = new Buffer(sizeInBytes(onlySpan));
+    Buffer result = Buffer.allocate(sizeInBytes(onlySpan));
     write(onlySpan, result);
     return result.toByteArray();
   }
@@ -182,7 +182,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return 0;
 
-    Buffer result = new Buffer(out, pos);
+    Buffer result = Buffer.wrap(out, pos);
     ThriftCodec.writeList(this, spans, result);
 
     return result.pos() - pos;
@@ -190,7 +190,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
 
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
-    Buffer buffer = new Buffer(ThriftEndpointCodec.sizeInBytes(localEndpoint));
+    Buffer buffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(localEndpoint));
     ThriftEndpointCodec.write(localEndpoint, buffer);
     return buffer.toByteArray();
   }

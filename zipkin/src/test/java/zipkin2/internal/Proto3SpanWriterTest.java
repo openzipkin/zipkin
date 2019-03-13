@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,7 +21,7 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 public class Proto3SpanWriterTest {
-  Buffer buf = new Buffer(2048); // bigger than needed to test sizeOf
+  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
 
   Proto3SpanWriter writer = new Proto3SpanWriter();
 

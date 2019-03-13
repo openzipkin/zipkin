@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -104,20 +104,27 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
   public void write(V1Span value, Buffer b) {
     b.writeAscii("{\"traceId\":\"");
     if (value.traceIdHigh() != 0L) b.writeLongHex(value.traceIdHigh());
-    b.writeLongHex(value.traceId()).writeByte('"');
+    b.writeLongHex(value.traceId());
+    b.writeByte('"');
     if (value.parentId() != 0L) {
-      b.writeAscii(",\"parentId\":\"").writeLongHex(value.parentId()).writeByte('"');
+      b.writeAscii(",\"parentId\":\"");
+      b.writeLongHex(value.parentId());
+      b.writeByte('"');
     }
-    b.writeAscii(",\"id\":\"").writeLongHex(value.id()).writeByte('"');
+    b.writeAscii(",\"id\":\"");
+    b.writeLongHex(value.id());
+    b.writeByte('"');
     b.writeAscii(",\"name\":\"");
     if (value.name() != null) b.writeUtf8(jsonEscape(value.name()));
     b.writeByte('"');
 
     if (value.timestamp() != 0L) {
-      b.writeAscii(",\"timestamp\":").writeAscii(value.timestamp());
+      b.writeAscii(",\"timestamp\":");
+      b.writeAscii(value.timestamp());
     }
     if (value.duration() != 0L) {
-      b.writeAscii(",\"duration\":").writeAscii(value.duration());
+      b.writeAscii(",\"duration\":");
+      b.writeAscii(value.duration());
     }
 
     int annotationCount = value.annotations().size();
@@ -160,7 +167,8 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
         if (a.stringValue() != null) {
           writeBinaryAnnotation(a.key(), a.stringValue(), endpointBytes, b);
         } else {
-          b.writeAscii("{\"key\":\"").writeAscii(a.key());
+          b.writeAscii("{\"key\":\"");
+          b.writeAscii(a.key());
           b.writeAscii("\",\"value\":true,\"endpoint\":");
           b.write(endpointBytes);
           b.writeByte('}');
@@ -182,7 +190,7 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
 
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
-    Buffer buffer = new Buffer(endpointSizeInBytes(localEndpoint, true));
+    Buffer buffer = Buffer.allocate(endpointSizeInBytes(localEndpoint, true));
     V2SpanWriter.writeEndpoint(localEndpoint, buffer, true);
     return buffer.toByteArray();
   }
@@ -199,9 +207,15 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
   }
 
   static void writeBinaryAnnotation(String key, String value, @Nullable byte[] endpoint, Buffer b) {
-    b.writeAscii("{\"key\":\"").writeUtf8(jsonEscape(key));
-    b.writeAscii("\",\"value\":\"").writeUtf8(jsonEscape(value)).writeByte('"');
-    if (endpoint != null) b.writeAscii(",\"endpoint\":").write(endpoint);
+    b.writeAscii("{\"key\":\"");
+    b.writeUtf8(jsonEscape(key));
+    b.writeAscii("\",\"value\":\"");
+    b.writeUtf8(jsonEscape(value));
+    b.writeByte('"');
+    if (endpoint != null) {
+      b.writeAscii(",\"endpoint\":");
+      b.write(endpoint);
+    }
     b.writeAscii("}");
   }
 }

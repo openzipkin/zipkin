@@ -136,7 +136,9 @@ public class ZipkinQueryApiV2 {
     }
 
     @Override public void write(String value, Buffer buffer) {
-      buffer.writeByte('"').writeUtf8(value).writeByte('"');
+      buffer.writeByte('"');
+      buffer.writeUtf8(value);
+      buffer.writeByte('"');
     }
   };
 

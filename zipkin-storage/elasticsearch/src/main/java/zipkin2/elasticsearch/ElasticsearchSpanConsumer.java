@@ -128,9 +128,11 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         int sizeInBytes = 27; // {"tagKey":"","tagValue":""}
         sizeInBytes += jsonEscapedSizeInBytes(tag.getKey());
         sizeInBytes += jsonEscapedSizeInBytes(tag.getValue());
-        zipkin2.internal.Buffer b = new zipkin2.internal.Buffer(sizeInBytes);
-        b.writeAscii("{\"tagKey\":\"").writeUtf8(jsonEscape(tag.getKey()));
-        b.writeAscii("\",\"tagValue\":\"").writeUtf8(jsonEscape(tag.getValue()));
+        zipkin2.internal.Buffer b = zipkin2.internal.Buffer.allocate(sizeInBytes);
+        b.writeAscii("{\"tagKey\":\"");
+        b.writeUtf8(jsonEscape(tag.getKey()));
+        b.writeAscii("\",\"tagValue\":\"");
+        b.writeUtf8(jsonEscape(tag.getValue()));
         b.writeAscii("\"}");
         byte[] document = b.toByteArray();
         indexer.add(idx, AUTOCOMPLETE, document, id);

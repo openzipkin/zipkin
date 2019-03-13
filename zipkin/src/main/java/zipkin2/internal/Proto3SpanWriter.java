@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -48,7 +48,7 @@ final class Proto3SpanWriter implements Buffer.Writer<Span> {
       int sizeOfValue = sizeOfValues[i] = SPAN.sizeOfValue(spans.get(i));
       sizeInBytes += sizeOfLengthDelimitedField(sizeOfValue);
     }
-    Buffer result = new Buffer(sizeInBytes);
+    Buffer result = Buffer.allocate(sizeInBytes);
     for (int i = 0; i < lengthOfSpans; i++) {
       writeSpan(spans.get(i), sizeOfValues[i], result);
     }
@@ -57,7 +57,7 @@ final class Proto3SpanWriter implements Buffer.Writer<Span> {
 
   byte[] write(Span onlySpan) {
     int sizeOfValue = SPAN.sizeOfValue(onlySpan);
-    Buffer result = new Buffer(sizeOfLengthDelimitedField(sizeOfValue));
+    Buffer result = Buffer.allocate(sizeOfLengthDelimitedField(sizeOfValue));
     writeSpan(onlySpan, sizeOfValue, result);
     return result.toByteArray();
   }
@@ -73,10 +73,10 @@ final class Proto3SpanWriter implements Buffer.Writer<Span> {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return 0;
 
-    Buffer result = new Buffer(out, pos);
+    Buffer result = Buffer.wrap(out, pos);
     for (int i = 0; i < lengthOfSpans; i++) {
       SPAN.write(result, spans.get(i));
     }
-    return result.pos - pos;
+    return result.pos() - pos;
   }
 }

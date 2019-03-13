@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -74,11 +74,11 @@ final class Proto3ZipkinFields {
     }
 
     @Override Endpoint readValue(Buffer buffer, int length) {
-      int endPos = buffer.pos + length;
+      int endPos = buffer.pos() + length;
 
       // now, we are in the endpoint fields
       Endpoint.Builder builder = Endpoint.newBuilder();
-      while (buffer.pos < endPos) {
+      while (buffer.pos() < endPos) {
         int nextKey = buffer.readVarint32();
         switch (nextKey) {
           case SERVICE_NAME_KEY:
@@ -138,12 +138,12 @@ final class Proto3ZipkinFields {
     @Override boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder) {
       int length = readLengthPrefix(b);
       if (length == 0) return false;
-      int endPos = b.pos + length;
+      int endPos = b.pos() + length;
 
       // now, we are in the annotation fields
       long timestamp = 0L;
       String value = null;
-      while (b.pos < endPos) {
+      while (b.pos() < endPos) {
         int nextKey = b.readVarint32();
         switch (nextKey) {
           case TIMESTAMP_KEY:
@@ -186,11 +186,11 @@ final class Proto3ZipkinFields {
     @Override boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder) {
       int length = readLengthPrefix(b);
       if (length == 0) return false;
-      int endPos = b.pos + length;
+      int endPos = b.pos() + length;
 
       // now, we are in the tag fields
       String key = null, value = ""; // empty tags allowed
-      while (b.pos < endPos) {
+      while (b.pos() < endPos) {
         int nextKey = b.readVarint32();
         switch (nextKey) {
           case KEY_KEY:
@@ -312,11 +312,11 @@ final class Proto3ZipkinFields {
     }
 
     @Override Span readValue(Buffer buffer, int length) {
-      int endPos = buffer.pos + length;
+      int endPos = buffer.pos() + length;
 
       // now, we are in the span fields
       Span.Builder builder = Span.newBuilder();
-      while (buffer.pos < endPos) {
+      while (buffer.pos() < endPos) {
         int nextKey = buffer.readVarint32();
         switch (nextKey) {
           case TRACE_ID_KEY:
@@ -370,11 +370,11 @@ final class Proto3ZipkinFields {
   }
 
   static void logAndSkip(Buffer buffer, int nextKey) {
-    int nextWireType = wireType(nextKey, buffer.pos);
+    int nextWireType = wireType(nextKey, buffer.pos());
     if (LOG.isLoggable(FINE)) {
-      int nextFieldNumber = fieldNumber(nextKey, buffer.pos);
+      int nextFieldNumber = fieldNumber(nextKey, buffer.pos());
       LOG.fine(String.format("Skipping field: byte=%s, fieldNumber=%s, wireType=%s",
-        buffer.pos, nextFieldNumber, nextWireType));
+        buffer.pos(), nextFieldNumber, nextWireType));
     }
     skipValue(buffer, nextWireType);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -55,11 +55,15 @@ public enum DependencyLinkBytesEncoder implements BytesEncoder<DependencyLink> {
     }
 
     @Override public void write(DependencyLink value, Buffer b) {
-      b.writeAscii("{\"parent\":\"").writeUtf8(jsonEscape(value.parent()));
-      b.writeAscii("\",\"child\":\"").writeUtf8(jsonEscape(value.child()));
-      b.writeAscii("\",\"callCount\":").writeAscii(value.callCount());
+      b.writeAscii("{\"parent\":\"");
+      b.writeUtf8(jsonEscape(value.parent()));
+      b.writeAscii("\",\"child\":\"");
+      b.writeUtf8(jsonEscape(value.child()));
+      b.writeAscii("\",\"callCount\":");
+      b.writeAscii(value.callCount());
       if (value.errorCount() > 0) {
-        b.writeAscii(",\"errorCount\":").writeAscii(value.errorCount());
+        b.writeAscii(",\"errorCount\":");
+        b.writeAscii(value.errorCount());
       }
       b.writeByte('}');
     }
