@@ -133,7 +133,7 @@ public class SpanBytesDecoderTest {
 
   @Test public void niceErrorOnMalformed_inputSpans_PROTO3() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 101 > bytes remaining 3 reading List<Span> from proto3");
+    thrown.expectMessage("Malformed reading List<Span> from proto3");
 
     SpanBytesDecoder.PROTO3.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }

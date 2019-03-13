@@ -158,7 +158,7 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Annotation protoAnnotation = PROTO_SPAN.getAnnotations(0);
 
-    Buffer zipkinBytes = new Buffer(ANNOTATION.sizeInBytes(zipkinAnnotation));
+    Buffer zipkinBytes = Buffer.allocate(ANNOTATION.sizeInBytes(zipkinAnnotation));
     ANNOTATION.write(zipkinBytes, zipkinAnnotation);
 
     assertThat(zipkinBytes.toByteArray())
@@ -170,7 +170,7 @@ public class Proto3CodecInteropTest {
     Annotation protoAnnotation = PROTO_SPAN.getAnnotations(0);
 
     Buffer zipkinBytes =
-      new Buffer(writeSpan(Span.newBuilder().addAnnotations(protoAnnotation).build()), 0);
+      Buffer.wrap(writeSpan(Span.newBuilder().addAnnotations(protoAnnotation).build()), 0);
     assertThat(zipkinBytes.readVarint32())
       .isEqualTo(ANNOTATION.key);
 
@@ -189,7 +189,7 @@ public class Proto3CodecInteropTest {
   }
 
   @Test public void localEndpoint_write_matchesProto3() throws IOException {
-    Buffer zipkinBytes = new Buffer(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
+    Buffer zipkinBytes = Buffer.allocate(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
     LOCAL_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.localEndpoint());
 
     assertThat(zipkinBytes.toByteArray())
@@ -198,7 +198,7 @@ public class Proto3CodecInteropTest {
   }
 
   @Test public void remoteEndpoint_write_matchesProto3() throws IOException {
-    Buffer zipkinBytes = new Buffer(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
+    Buffer zipkinBytes = Buffer.allocate(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
     REMOTE_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.remoteEndpoint());
 
     assertThat(zipkinBytes.toByteArray())
@@ -220,7 +220,7 @@ public class Proto3CodecInteropTest {
   @Test public void writeTagField_matchesProto3() throws IOException {
     MapEntry<String, String> entry = entry("clnt/finagle.version", "6.45.0");
     TagField field = new TagField(TAG_KEY);
-    Buffer zipkinBytes = new Buffer(field.sizeInBytes(entry));
+    Buffer zipkinBytes = Buffer.allocate(field.sizeInBytes(entry));
     field.write(zipkinBytes, entry);
 
     Span oneField = Span.newBuilder().putTags(entry.key, entry.value).build();
@@ -235,7 +235,7 @@ public class Proto3CodecInteropTest {
   @Test public void writeTagField_matchesProto3_emptyValue() throws IOException {
     MapEntry<String, String> entry = entry("error", "");
     TagField field = new TagField(TAG_KEY);
-    Buffer zipkinBytes = new Buffer(field.sizeInBytes(entry));
+    Buffer zipkinBytes = Buffer.allocate(field.sizeInBytes(entry));
     field.write(zipkinBytes, entry);
 
     Span oneField = Span.newBuilder().putTags(entry.key, entry.value).build();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,14 +35,14 @@ import static zipkin2.internal.ThriftField.TYPE_STRUCT;
 public class V1ThriftSpanWriterTest {
   Span span = Span.newBuilder().traceId("1").id("2").build();
   Endpoint endpoint = Endpoint.newBuilder().serviceName("frontend").ip("1.2.3.4").build();
-  Buffer buf = new Buffer(2048); // bigger than needed to test sizeOf
+  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
 
   V1ThriftSpanWriter writer = new V1ThriftSpanWriter();
   byte[] endpointBytes;
 
   @Before
   public void init() {
-    Buffer endpointBuffer = new Buffer(ThriftEndpointCodec.sizeInBytes(endpoint));
+    Buffer endpointBuffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
     ThriftEndpointCodec.write(endpoint, endpointBuffer);
     endpointBytes = endpointBuffer.toByteArray();
   }
@@ -52,7 +52,7 @@ public class V1ThriftSpanWriterTest {
   public void endpoint_highPort() {
     int highPort = 63840;
     Endpoint endpoint = Endpoint.newBuilder().ip("127.0.0.1").port(63840).build();
-    Buffer endpointBuffer = new Buffer(ThriftEndpointCodec.sizeInBytes(endpoint));
+    Buffer endpointBuffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
     ThriftEndpointCodec.write(endpoint, endpointBuffer);
     byte[] buff = endpointBuffer.toByteArray();
 
@@ -111,7 +111,7 @@ public class V1ThriftSpanWriterTest {
   public void doesntWriteAnnotationsWhenMissingTimestamp() {
     writer.write(span.toBuilder().kind(CLIENT).build(), buf);
 
-    Buffer buf2 = new Buffer(2048);
+    Buffer buf2 = Buffer.allocate(2048);
     writer.write(span, buf2);
 
     assertThat(buf.toByteArray()).containsExactly(buf.toByteArray());
@@ -234,7 +234,7 @@ public class V1ThriftSpanWriterTest {
   public void skipsTimestampAndDuration_shared() {
     writer.write(span.toBuilder().kind(SERVER).timestamp(5).duration(10).shared(true).build(), buf);
 
-    Buffer buf2 = new Buffer(2048);
+    Buffer buf2 = Buffer.allocate(2048);
     writer.write(span.toBuilder().kind(SERVER).build(), buf2);
 
     assertThat(buf.toByteArray()).containsExactly(buf.toByteArray());

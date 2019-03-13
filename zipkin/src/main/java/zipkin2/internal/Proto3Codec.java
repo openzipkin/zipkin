@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -43,7 +43,7 @@ public final class Proto3Codec {
 
   public static boolean read(byte[] bytes, Collection<Span> out) {
     if (bytes.length == 0) return false;
-    Buffer buffer = new Buffer(bytes, 0);
+    Buffer buffer = Buffer.wrap(bytes, 0);
     try {
       Span span = SPAN.read(buffer);
       if (span == null) return false;
@@ -55,15 +55,15 @@ public final class Proto3Codec {
   }
 
   public static @Nullable Span readOne(byte[] bytes) {
-    return SPAN.read(new Buffer(bytes, 0));
+    return SPAN.read(Buffer.wrap(bytes, 0));
   }
 
   public static boolean readList(byte[] bytes, Collection<Span> out) {
     int length = bytes.length;
     if (length == 0) return false;
-    Buffer buffer = new Buffer(bytes, 0);
+    Buffer buffer = Buffer.wrap(bytes, 0);
     try {
-      while (buffer.pos < length) {
+      while (buffer.pos() < length) {
         Span span = SPAN.read(buffer);
         if (span == null) return false;
         out.add(span);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 package zipkin2.internal;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -41,25 +42,25 @@ public class BufferBenchmarks {
   static final Charset UTF_8 = Charset.forName("UTF-8");
   // Order id = d07c4daa-0fa9-4c03-90b1-e06c4edae250 doesn't exist
   static final String CHINESE_UTF8 = "订单d07c4daa-0fa9-4c03-90b1-e06c4edae250不存在";
-  static final int CHINESE_UTF8_SIZE = CHINESE_UTF8.getBytes(UTF_8).length;
+  static final int CHINESE_UTF8_SIZE = UTF_8.encode(CHINESE_UTF8).remaining();
   /* length-prefixing a 1 KiB span */
   static final int TEST_INT = 1024;
   /* epoch micros timestamp */
   static final long TEST_LONG = 1472470996199000L;
-  Buffer buffer = new Buffer(8);
+  Buffer buffer = Buffer.allocate(8);
 
   @Benchmark public int utf8SizeInBytes_chinese() {
     return Buffer.utf8SizeInBytes(CHINESE_UTF8);
   }
 
   @Benchmark public byte[] writeUtf8_chinese() {
-    Buffer bufferUtf8 = new Buffer(CHINESE_UTF8_SIZE);
+    Buffer bufferUtf8 = Buffer.allocate(CHINESE_UTF8_SIZE);
     bufferUtf8.writeUtf8(CHINESE_UTF8);
     return bufferUtf8.toByteArray();
   }
 
-  @Benchmark public byte[] writeUtf8_chinese_jdk() {
-    return CHINESE_UTF8.getBytes(UTF_8);
+  @Benchmark public ByteBuffer writeUtf8_chinese_jdk() {
+    return UTF_8.encode(CHINESE_UTF8);
   }
 
   @Benchmark public int varIntSizeInBytes_32() {
@@ -71,21 +72,21 @@ public class BufferBenchmarks {
   }
 
   @Benchmark public int writeVarint_32() {
-    buffer.pos = 0;
+    buffer.reset();
     buffer.writeVarint(TEST_INT);
-    return buffer.pos;
+    return buffer.pos();
   }
 
   @Benchmark public int writeVarint_64() {
-    buffer.pos = 0;
+    buffer.reset();
     buffer.writeVarint(TEST_LONG);
-    return buffer.pos;
+    return buffer.pos();
   }
 
   @Benchmark public int writeLongLe() {
-    buffer.pos = 0;
+    buffer.reset();
     buffer.writeLongLe(TEST_LONG);
-    return buffer.pos;
+    return buffer.pos();
   }
 
   // Convenience main entry-point

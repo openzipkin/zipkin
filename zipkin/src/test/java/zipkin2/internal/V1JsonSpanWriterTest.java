@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -24,13 +24,13 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 
 public class V1JsonSpanWriterTest {
   V1JsonSpanWriter writer = new V1JsonSpanWriter();
-  Buffer buf = new Buffer(2048); // bigger than needed to test sizeOf
+  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
 
   @Test
   public void sizeInBytes() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(writer.sizeInBytes(CLIENT_SPAN)).isEqualTo(buf.pos);
+    assertThat(writer.sizeInBytes(CLIENT_SPAN)).isEqualTo(buf.pos());
   }
 
   @Test

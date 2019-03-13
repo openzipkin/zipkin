@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,35 +13,20 @@
  */
 package zipkin2.internal;
 
-public final class Buffer {
-  public interface Writer<T> {
-    int sizeInBytes(T value);
+public abstract class Buffer {
 
-    void write(T value, Buffer buffer);
+  public static Buffer wrap(byte[] bytes, int pos) {
+    return new ByteArrayBuffer(bytes, pos);
   }
 
-  private final byte[] buf;
-  int pos; // visible for testing
-
-  public Buffer(int size) {
-    buf = new byte[size];
+  public static Buffer allocate(int sizeInBytes) {
+    return new ByteArrayBuffer(sizeInBytes);
   }
 
-  public Buffer(byte[] buf, int pos) {
-    this.buf = buf;
-    this.pos = pos;
-  }
-
-  public Buffer writeByte(int v) {
-    buf[pos++] = (byte) v;
-    return this;
-  }
-
-  public Buffer write(byte[] v) {
-    System.arraycopy(v, 0, buf, pos, v.length);
-    pos += v.length;
-    return this;
-  }
+  static final byte[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
+  static final char[] HEX_DIGITS = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+  };
 
   /**
    * This returns the bytes needed to transcode a UTF-16 Java String to UTF-8 bytes.
@@ -82,65 +67,6 @@ public final class Buffer {
     return sizeInBytes;
   }
 
-  public Buffer writeAscii(String v) {
-    for (int i = 0, len = v.length(); i < len; i++) {
-      buf[pos++] = (byte) v.charAt(i);
-    }
-    return this;
-  }
-
-  /**
-   * This transcodes a UTF-16 Java String to UTF-8 bytes.
-   *
-   * <p>This looks most similar to {@code io.netty.buffer.ByteBufUtil.writeUtf8(AbstractByteBuf,
-   * int, CharSequence, int)} v4.1, modified including features to address ASCII runs of text.
-   */
-  public Buffer writeUtf8(String string) {
-    for (int i = 0, len = string.length(); i < len; i++) {
-      char ch = string.charAt(i);
-      if (ch < 0x80) { // 7-bit ASCII character
-        buf[pos++] = (byte) ch;
-        // This could be an ASCII run, or possibly entirely ASCII
-        while (i < len - 1) {
-          ch = string.charAt(i + 1);
-          if (ch >= 0x80) break;
-          i++;
-          buf[pos++] = (byte) ch; // another 7-bit ASCII character
-        }
-      } else if (ch < 0x800) { // 11-bit character
-        buf[pos++] = (byte) (0xc0 | (ch >> 6));
-        buf[pos++] = (byte) (0x80 | (ch & 0x3f));
-      } else if (ch < 0xd800 || ch > 0xdfff) { // 16-bit character
-        buf[pos++] = (byte) (0xe0 | (ch >> 12));
-        buf[pos++] = (byte) (0x80 | ((ch >> 6) & 0x3f));
-        buf[pos++] = (byte) (0x80 | (ch & 0x3f));
-      } else { // Possibly a 21-bit character
-        if (!Character.isHighSurrogate(ch)) { // Malformed or not UTF-8
-          buf[pos++] = '?';
-          continue;
-        }
-        if (i == len - 1) { // Truncated or not UTF-8
-          buf[pos++] = '?';
-          break;
-        }
-        char low = string.charAt(++i);
-        if (!Character.isLowSurrogate(low)) { // Malformed or not UTF-8
-          buf[pos++] = '?';
-          buf[pos++] = (byte) (Character.isHighSurrogate(low) ? '?' : low);
-          continue;
-        }
-        // Write the 21-bit character using 4 bytes
-        // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630
-        int codePoint = Character.toCodePoint(ch, low);
-        buf[pos++] = (byte) (0xf0 | (codePoint >> 18));
-        buf[pos++] = (byte) (0x80 | ((codePoint >> 12) & 0x3f));
-        buf[pos++] = (byte) (0x80 | ((codePoint >> 6) & 0x3f));
-        buf[pos++] = (byte) (0x80 | (codePoint & 0x3f));
-      }
-    }
-    return this;
-  }
-
   /**
    * Binary search for character width which favors matching lower numbers.
    *
@@ -156,42 +82,19 @@ public final class Buffer {
       negative = true;
     }
     int width =
-        v < 100000000L
-            ? v < 10000L
-                ? v < 100L ? v < 10L ? 1 : 2 : v < 1000L ? 3 : 4
-                : v < 1000000L ? v < 100000L ? 5 : 6 : v < 10000000L ? 7 : 8
-            : v < 1000000000000L
-                ? v < 10000000000L ? v < 1000000000L ? 9 : 10 : v < 100000000000L ? 11 : 12
-                : v < 1000000000000000L
-                    ? v < 10000000000000L ? 13 : v < 100000000000000L ? 14 : 15
-                    : v < 100000000000000000L
-                        ? v < 10000000000000000L ? 16 : 17
-                        : v < 1000000000000000000L ? 18 : 19;
+      v < 100000000L
+        ? v < 10000L
+        ? v < 100L ? v < 10L ? 1 : 2 : v < 1000L ? 3 : 4
+        : v < 1000000L ? v < 100000L ? 5 : 6 : v < 10000000L ? 7 : 8
+        : v < 1000000000000L
+          ? v < 10000000000L ? v < 1000000000L ? 9 : 10 : v < 100000000000L ? 11 : 12
+          : v < 1000000000000000L
+            ? v < 10000000000000L ? 13 : v < 100000000000000L ? 14 : 15
+            : v < 100000000000000000L
+              ? v < 10000000000000000L ? 16 : 17
+              : v < 1000000000000000000L ? 18 : 19;
     return negative ? width + 1 : width; // conditionally add room for negative sign
   }
-
-  public Buffer writeAscii(long v) {
-    if (v == 0) return writeByte('0');
-    if (v == Long.MIN_VALUE) return writeAscii("-9223372036854775808");
-
-    int width = asciiSizeInBytes(v);
-    int pos = this.pos += width; // We write backwards from right to left.
-
-    boolean negative = false;
-    if (v < 0) {
-      negative = true;
-      v = -v; // needs to be positive so we can use this for an array index
-    }
-    while (v != 0) {
-      int digit = (int) (v % 10);
-      buf[--pos] = DIGITS[digit];
-      v /= 10;
-    }
-    if (negative) buf[--pos] = '-';
-    return this;
-  }
-
-  static final byte[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
 
   /**
    * A base 128 varint encodes 7 bits at a time, this checks how many bytes are needed to represent
@@ -210,15 +113,6 @@ public final class Buffer {
     return 5;
   }
 
-  // com.squareup.wire.ProtoWriter.writeVarint v2.3.0
-  void writeVarint(int v) {
-    while ((v & ~0x7f) != 0) {
-      buf[pos++] = (byte) ((v & 0x7f) | 0x80);
-      v >>>= 7;
-    }
-    buf[pos++] = (byte) v;
-  }
-
   /** Like {@link #varintSizeInBytes(int)}, except for uint64. */
   public static int varintSizeInBytes(long v) {
     if ((v & (0xffffffffffffffffL << 7)) == 0) return 1;
@@ -233,104 +127,9 @@ public final class Buffer {
     return 10;
   }
 
-  // com.squareup.wire.ProtoWriter.writeVarint v2.3.0
-  void writeVarint(long v) {
-    while ((v & ~0x7fL) != 0) {
-      buf[pos++] = (byte) ((v & 0x7f) | 0x80);
-      v >>>= 7;
-    }
-    buf[pos++] = (byte) v;
-  }
-
-  /** Inspired by {@code okio.Buffer.writeLong} */
-  public Buffer writeLongHex(long v) {
-    writeHexByte(buf, pos + 0, (byte) ((v >>> 56L) & 0xff));
-    writeHexByte(buf, pos + 2, (byte) ((v >>> 48L) & 0xff));
-    writeHexByte(buf, pos + 4, (byte) ((v >>> 40L) & 0xff));
-    writeHexByte(buf, pos + 6, (byte) ((v >>> 32L) & 0xff));
-    writeHexByte(buf, pos + 8, (byte) ((v >>> 24L) & 0xff));
-    writeHexByte(buf, pos + 10, (byte) ((v >>> 16L) & 0xff));
-    writeHexByte(buf, pos + 12, (byte) ((v >>> 8L) & 0xff));
-    writeHexByte(buf, pos + 14, (byte) (v & 0xff));
-    pos += 16;
-    return this;
-  }
-
-  static final char[] HEX_DIGITS = {
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-  };
-
   static void writeHexByte(byte[] data, int pos, byte b) {
     data[pos + 0] = (byte) HEX_DIGITS[(b >> 4) & 0xf];
     data[pos + 1] = (byte) HEX_DIGITS[b & 0xf];
-  }
-
-  void writeLongLe(long v) {
-    buf[pos++] = (byte) (v & 0xff);
-    buf[pos++] = (byte) ((v >> 8) & 0xff);
-    buf[pos++] = (byte) ((v >> 16) & 0xff);
-    buf[pos++] = (byte) ((v >> 24) & 0xff);
-    buf[pos++] = (byte) ((v >> 32) & 0xff);
-    buf[pos++] = (byte) ((v >> 40) & 0xff);
-    buf[pos++] = (byte) ((v >> 48) & 0xff);
-    buf[pos++] = (byte) ((v >> 56) & 0xff);
-  }
-
-  long readLongLe() {
-    return (buf[pos++] & 0xffL)
-        | (buf[pos++] & 0xffL) << 8
-        | (buf[pos++] & 0xffL) << 16
-        | (buf[pos++] & 0xffL) << 24
-        | (buf[pos++] & 0xffL) << 32
-        | (buf[pos++] & 0xffL) << 40
-        | (buf[pos++] & 0xffL) << 48
-        | (buf[pos++] & 0xffL) << 56;
-  }
-
-  /** This needs to be checked externally to not overrun the underlying array */
-  byte readByte() {
-    return buf[pos++];
-  }
-
-  /**
-   * @return the value read. Use {@link Buffer#varintSizeInBytes(int)} to tell how many bytes.
-   * @throws IllegalArgumentException if more than 32 bits were encoded
-   */
-  // hard-coded as this is used commonly, for example reading tags
-  int readVarint32() {
-    int lastIndex = buf.length - 1;
-    checkNotTruncated(pos, lastIndex);
-
-    byte b; // negative number implies MSB set
-    if ((b = buf[pos++]) >= 0) {
-      return b;
-    }
-    int result = b & 0x7f;
-
-    checkNotTruncated(pos, lastIndex);
-    if ((b = buf[pos++]) >= 0) {
-      return result | b << 7;
-    }
-    result |= (b & 0x7f) << 7;
-
-    checkNotTruncated(pos, lastIndex);
-    if ((b = buf[pos++]) >= 0) {
-      return result | b << 14;
-    }
-    result |= (b & 0x7f) << 14;
-
-    checkNotTruncated(pos, lastIndex);
-    if ((b = buf[pos++]) >= 0) {
-      return result | b << 21;
-    }
-    result |= (b & 0x7f) << 21;
-
-    checkNotTruncated(pos, lastIndex);
-    b = buf[pos];
-    if ((b & 0xf0) != 0) {
-      throw new IllegalArgumentException("Greater than 32-bit varint at position " + pos);
-    }
-    return result | b << 28;
   }
 
   static void checkNotTruncated(int pos, int lastIndex) {
@@ -339,51 +138,214 @@ public final class Buffer {
     }
   }
 
+  public abstract void writeByte(int v);
+
+  public abstract void write(byte[] v);
+
+  public void writeAscii(String v) {
+    for (int i = 0, len = v.length(); i < len; i++) {
+      writeByte(v.charAt(i));
+    }
+  }
+
+  /**
+   * This transcodes a UTF-16 Java String to UTF-8 bytes.
+   *
+   * <p>This looks most similar to {@code io.netty.buffer.ByteBufUtil.writeUtf8(AbstractByteBuf,
+   * int, CharSequence, int)} v4.1, modified including features to address ASCII runs of text.
+   */
+  public void writeUtf8(String string) {
+    for (int i = 0, len = string.length(); i < len; i++) {
+      char ch = string.charAt(i);
+      if (ch < 0x80) { // 7-bit ASCII character
+        writeByte(ch);
+        // This could be an ASCII run, or possibly entirely ASCII
+        while (i < len - 1) {
+          ch = string.charAt(i + 1);
+          if (ch >= 0x80) break;
+          i++;
+          writeByte(ch); // another 7-bit ASCII character
+        }
+      } else if (ch < 0x800) { // 11-bit character
+        writeByte(0xc0 | (ch >> 6));
+        writeByte(0x80 | (ch & 0x3f));
+      } else if (ch < 0xd800 || ch > 0xdfff) { // 16-bit character
+        writeByte(0xe0 | (ch >> 12));
+        writeByte(0x80 | ((ch >> 6) & 0x3f));
+        writeByte(0x80 | (ch & 0x3f));
+      } else { // Possibly a 21-bit character
+        if (!Character.isHighSurrogate(ch)) { // Malformed or not UTF-8
+          writeByte('?');
+          continue;
+        }
+        if (i == len - 1) { // Truncated or not UTF-8
+          writeByte('?');
+          break;
+        }
+        char low = string.charAt(++i);
+        if (!Character.isLowSurrogate(low)) { // Malformed or not UTF-8
+          writeByte('?');
+          writeByte(Character.isHighSurrogate(low) ? '?' : low);
+          continue;
+        }
+        // Write the 21-bit character using 4 bytes
+        // See http://www.unicode.org/versions/Unicode7.0.0/ch03.pdf#G2630
+        int codePoint = Character.toCodePoint(ch, low);
+        writeByte(0xf0 | (codePoint >> 18));
+        writeByte(0x80 | ((codePoint >> 12) & 0x3f));
+        writeByte(0x80 | ((codePoint >> 6) & 0x3f));
+        writeByte(0x80 | (codePoint & 0x3f));
+      }
+    }
+  }
+
+  // Adapted from okio.Buffer.writeDecimalLong
+  public void writeAscii(long v) {
+    if (v == 0) {
+      writeByte('0');
+      return;
+    }
+
+    if (v == Long.MIN_VALUE) {
+      writeAscii("-9223372036854775808");
+      return;
+    }
+
+    if (v < 0) {
+      writeByte('-');
+      v = -v; // needs to be positive so we can use this for an array index
+    }
+
+    writeBackwards(v);
+  }
+
+  abstract void writeBackwards(long v);
+
+  // com.squareup.wire.ProtoWriter.writeVarint v2.3.0
+  void writeVarint(int v) {
+    while ((v & ~0x7f) != 0) {
+      writeByte((byte) ((v & 0x7f) | 0x80));
+      v >>>= 7;
+    }
+    writeByte((byte) v);
+  }
+
+  // com.squareup.wire.ProtoWriter.writeVarint v2.3.0
+  void writeVarint(long v) {
+    while ((v & ~0x7fL) != 0) {
+      writeByte((byte) ((v & 0x7f) | 0x80));
+      v >>>= 7;
+    }
+    writeByte((byte) v);
+  }
+
+  public abstract void writeLongHex(long v);
+
+  void writeLongLe(long v) {
+    writeByte((byte) (v & 0xff));
+    writeByte((byte) ((v >> 8) & 0xff));
+    writeByte((byte) ((v >> 16) & 0xff));
+    writeByte((byte) ((v >> 24) & 0xff));
+    writeByte((byte) ((v >> 32) & 0xff));
+    writeByte((byte) ((v >> 40) & 0xff));
+    writeByte((byte) ((v >> 48) & 0xff));
+    writeByte((byte) ((v >> 56) & 0xff));
+  }
+
+  // reset for reading
+  public abstract void reset();
+
+  long readLongLe() {
+    ensureLength(this, 8);
+    return (readByteUnsafe() & 0xffL)
+      | (readByteUnsafe() & 0xffL) << 8
+      | (readByteUnsafe() & 0xffL) << 16
+      | (readByteUnsafe() & 0xffL) << 24
+      | (readByteUnsafe() & 0xffL) << 32
+      | (readByteUnsafe() & 0xffL) << 40
+      | (readByteUnsafe() & 0xffL) << 48
+      | (readByteUnsafe() & 0xffL) << 56;
+  }
+
+  final byte readByte() {
+    ensureLength(this, 1);
+    return readByteUnsafe();
+  }
+
+  /** This needs to be checked externally to not overrun the underlying array */
+  abstract byte readByteUnsafe();
+
+  abstract byte[] readByteArray(int byteCount);
+
   /**
    * @return the value read. Use {@link Buffer#varintSizeInBytes(long)} to tell how many bytes.
    * @throws IllegalArgumentException if more than 64 bits were encoded
    */
-  long readVarint64() {
-    int lastIndex = buf.length - 1;
-    checkNotTruncated(pos, lastIndex);
-
+  // included in the main api as this is used commonly, for example reading proto tags
+  int readVarint32() {
     byte b; // negative number implies MSB set
-    if ((b = buf[pos++]) >= 0) {
+    if ((b = readByte()) >= 0) {
+      return b;
+    }
+    int result = b & 0x7f;
+
+    if ((b = readByte()) >= 0) {
+      return result | b << 7;
+    }
+    result |= (b & 0x7f) << 7;
+
+    if ((b = readByte()) >= 0) {
+      return result | b << 14;
+    }
+    result |= (b & 0x7f) << 14;
+
+    if ((b = readByte()) >= 0) {
+      return result | b << 21;
+    }
+    result |= (b & 0x7f) << 21;
+
+    b = readByte();
+    if ((b & 0xf0) != 0) {
+      throw new IllegalArgumentException("Greater than 32-bit varint at position " + (pos() - 1));
+    }
+    return result | b << 28;
+  }
+
+  long readVarint64() {
+    byte b; // negative number implies MSB set
+    if ((b = readByte()) >= 0) {
       return b;
     }
 
     long result = b & 0x7f;
     for (int i = 1; b < 0 && i < 10; i++) {
-      checkNotTruncated(pos, lastIndex);
-      b = buf[pos++];
+      b = readByte();
       if (i == 9 && (b & 0xf0) != 0) {
-        throw new IllegalArgumentException("Greater than 64-bit varint at position " + (pos - 1));
+        throw new IllegalArgumentException("Greater than 64-bit varint at position " + (pos() - 1));
       }
       result |= (long) (b & 0x7f) << (i * 7);
     }
     return result;
   }
 
-  int remaining() {
-    return buf.length - pos;
+  abstract int remaining();
+
+  abstract boolean skip(int maxCount);
+
+  public abstract int pos();
+
+  public abstract byte[] toByteArray();
+
+  public interface Writer<T> {
+    int sizeInBytes(T value);
+
+    void write(T value, Buffer buffer);
   }
 
-  boolean skip(int maxCount) {
-    int nextPos = pos + maxCount;
-    if (nextPos > buf.length) {
-      pos = buf.length;
-      return false;
+  static void ensureLength(Buffer buffer, int length) {
+    if (length > buffer.remaining()) {
+      throw new IllegalArgumentException(
+        "Truncated: length " + length + " > bytes remaining " + buffer.remaining());
     }
-    pos = nextPos;
-    return true;
-  }
-
-  public int pos() {
-    return pos;
-  }
-
-  public byte[] toByteArray() {
-    // assert pos == buf.length;
-    return buf;
   }
 }

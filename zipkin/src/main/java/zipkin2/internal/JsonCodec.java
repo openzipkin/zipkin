@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -166,7 +166,7 @@ public final class JsonCodec {
 
   /** Inability to encode is a programming bug. */
   public static <T> byte[] write(Buffer.Writer<T> writer, T value) {
-    Buffer b = new Buffer(writer.sizeInBytes(value));
+    Buffer b = Buffer.allocate(writer.sizeInBytes(value));
     try {
       writer.write(value, b);
     } catch (RuntimeException e) {
@@ -205,7 +205,7 @@ public final class JsonCodec {
 
   public static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
     if (value.isEmpty()) return new byte[] {'[', ']'};
-    Buffer result = new Buffer(sizeInBytes(writer, value));
+    Buffer result = Buffer.allocate(sizeInBytes(writer, value));
     writeList(writer, value, result);
     return result.toByteArray();
   }
@@ -217,9 +217,9 @@ public final class JsonCodec {
       return 2;
     }
     int initialPos = pos;
-    Buffer result = new Buffer(out, pos);
+    Buffer result = Buffer.wrap(out, pos);
     writeList(writer, value, result);
-    return result.pos - initialPos;
+    return result.pos() - initialPos;
   }
 
   public static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {
