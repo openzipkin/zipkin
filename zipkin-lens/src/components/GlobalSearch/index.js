@@ -11,6 +11,7 @@ import ConditionName from './ConditionName';
 import ConditionTraceId from './ConditionTraceId';
 import ConditionTags from './ConditionTags';
 import ConditionLookback from './ConditionLookback';
+import GlobalDropdownMenu from './GlobalDropdownMenu';
 import {
   isAutocompleteKey,
   defaultConditionValues,
@@ -437,6 +438,9 @@ class GlobalSearch extends React.Component {
             lookback={lookbackCondition}
             onLookbackChange={this.handleLookbackChange}
           />
+        </div>
+        <div className="global-search__dropdown-menu-wrapper">
+          <GlobalDropdownMenu />
         </div>
       </div>
     );
