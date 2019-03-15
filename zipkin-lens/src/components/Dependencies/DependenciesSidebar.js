@@ -57,8 +57,6 @@ const renderDoughnut = (edges, isTarget) => {
   }
 
   const data = {
-    maintainAspectRatio: false,
-    responsive: false,
     labels: isTarget ? edges.map(edge => edge.target) : edges.map(edge => edge.source),
     datasets: [{
       data: edges.map(e => e.metrics.normal + e.metrics.danger),
@@ -67,12 +65,19 @@ const renderDoughnut = (edges, isTarget) => {
         : edges.map(e => getServiceNameColor(e.source)),
     }],
   };
+  const options = {
+    maintainAspectRatio: false,
+    legend: {
+      display: false,
+    },
+  };
   return (
     <div className="dependencies-sidebar__doughnut">
       <Doughnut
+        width={320}
+        height={320}
         data={data}
-        width={420}
-        height={540}
+        options={options}
       />
     </div>
   );
