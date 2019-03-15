@@ -16,7 +16,9 @@ package zipkin2.autoconfigure.ui;
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.stream.Stream;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -52,6 +54,35 @@ public class ITZipkinUiAutoConfiguration {
       .isEqualTo("max-age=31536000");
   }
 
+  @Test public void redirectsIndex() throws Exception {
+    String index = get("/zipkin/index.html").body().string();
+
+    client = new OkHttpClient.Builder().followRedirects(true).build();
+
+    Stream.of("/zipkin", "/").forEach(path -> {
+      try {
+        assertThat(get(path).body().string()).isEqualTo(index);
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    });
+  }
+
+  /** Browsers honor conditional requests such as eTag. Let's make sure the server does */
+  @Test public void conditionalRequests() throws Exception {
+    Stream.of("/zipkin/config.json", "/zipkin/index.html", "/zipkin/test.txt").forEach(path -> {
+      try {
+        String etag = get(path).header("etag");
+        assertThat(conditionalGet(path, etag).code())
+          .isEqualTo(304);
+        assertThat(conditionalGet(path, "aargh").body().contentLength())
+          .isPositive();
+      } catch (IOException e) {
+        throw new UncheckedIOException(e);
+      }
+    });
+  }
+
   /**
    * The test sets the property {@code zipkin.ui.base-path=/foozipkin}, which should reflect in
    * index.html
@@ -85,6 +116,13 @@ public class ITZipkinUiAutoConfiguration {
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
       .url("http://localhost:" + server.activePort().get().localAddress().getPort() + path)
+      .build()).execute();
+  }
+
+  private Response conditionalGet(String path, String etag) throws IOException {
+    return client.newCall(new Request.Builder()
+      .url("http://localhost:" + server.activePort().get().localAddress().getPort() + path)
+      .header("If-None-Match", etag)
       .build()).execute();
   }
 }
