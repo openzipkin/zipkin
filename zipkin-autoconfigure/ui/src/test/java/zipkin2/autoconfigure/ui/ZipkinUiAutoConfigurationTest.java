@@ -63,11 +63,11 @@ public class ZipkinUiAutoConfigurationTest {
   }
 
   @Test
-  public void indexContentType() throws Exception {
+  public void indexContentType() {
     context = createContext();
     assertThat(
       serveIndex().headers().contentType())
-      .isEqualTo(MediaType.parse("text/html"));
+      .isEqualTo(MediaType.HTML_UTF_8);
   }
 
   @Test
