@@ -16,17 +16,19 @@ package zipkin2.autoconfigure.ui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
+import com.linecorp.armeria.server.ServerCacheControl;
+import com.linecorp.armeria.server.ServerCacheControlBuilder;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
-import com.linecorp.armeria.server.file.HttpFileService;
+import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
@@ -46,8 +48,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 
-import static com.linecorp.armeria.common.HttpHeaderNames.CACHE_CONTROL;
-import static com.linecorp.armeria.common.HttpHeaderNames.CONTENT_TYPE;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
@@ -77,15 +77,6 @@ import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @EnableConfigurationProperties(ZipkinUiProperties.class)
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 class ZipkinUiAutoConfiguration {
-  static final HttpHeaders CACHE_YEAR =
-    HttpHeaders.of(CACHE_CONTROL, "max-age=" + TimeUnit.DAYS.toSeconds(365));
-  static final HttpHeaders CONFIG_HEADERS = HttpHeaders.of(HttpStatus.OK)
-    .add(HttpHeaders.of(CONTENT_TYPE, "application/json"))
-    .add(HttpHeaders.of(CACHE_CONTROL, "max-age=" + TimeUnit.MINUTES.toSeconds(10)));
-  static final HttpHeaders INDEX_HEADERS = HttpHeaders.of(HttpStatus.OK)
-    .add(HttpHeaders.of(CONTENT_TYPE, "text/html"))
-    .add(HttpHeaders.of(CACHE_CONTROL, "max-age=" + TimeUnit.MINUTES.toSeconds(1)));
-
   @Autowired
   ZipkinUiProperties ui;
 
@@ -130,27 +121,30 @@ class ZipkinUiAutoConfiguration {
       lensIndex = HttpFileBuilder.of(HttpData.of(processedLensIndexHtml().getBytes(UTF_8)));
     }
 
-    legacyIndex.setHeaders(INDEX_HEADERS);
-    lensIndex.setHeaders(INDEX_HEADERS);
+    ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
+    legacyIndex.contentType(MediaType.HTML_UTF_8).cacheControl(maxAgeMinute);
+    lensIndex.contentType(MediaType.HTML_UTF_8).cacheControl(maxAgeMinute);
 
     return new IndexSwitchingService(
       legacyIndex.build().asService(), lensIndex.build().asService());
   }
 
   @Bean @Lazy ArmeriaServerConfigurator uiServerConfigurator(
-    IndexSwitchingService indexSwitchingService)
-    throws IOException {
+    IndexSwitchingService indexSwitchingService) throws IOException {
+    ServerCacheControl maxAgeYear =
+      new ServerCacheControlBuilder().maxAgeSeconds(TimeUnit.DAYS.toSeconds(365)).build();
     Service<HttpRequest, HttpResponse> uiFileService =
-      new AddHttpHeadersService(HttpFileService.forClassPath("zipkin-ui")
-        .orElse(HttpFileService.forClassPath("zipkin-lens")), CACHE_YEAR);
-
-
+      HttpFileServiceBuilder.forClassPath("zipkin-ui").cacheControl(maxAgeYear).build()
+        .orElse(HttpFileServiceBuilder.forClassPath("zipkin-lens").cacheControl(maxAgeYear).build());
 
     byte[] config = new ObjectMapper().writeValueAsBytes(ui);
 
     return sb -> sb
-      .service("/zipkin/config.json",
-        HttpFileBuilder.of(HttpData.of(config)).addHeaders(CONFIG_HEADERS).build().asService())
+      .service("/zipkin/config.json", HttpFileBuilder.of(HttpData.of(config))
+        .cacheControl(new ServerCacheControlBuilder().maxAgeSeconds(600).build())
+        .contentType(MediaType.JSON_UTF_8)
+        .build()
+        .asService())
       .service("/zipkin/index.html", indexSwitchingService)
 
       // TODO This approach requires maintenance when new UI routes are added. Change to the following:
@@ -162,9 +156,10 @@ class ZipkinUiAutoConfiguration {
       .service("/zipkin/dependency", indexSwitchingService)
       .service("/zipkin/traceViewer", indexSwitchingService)
 
-      .serviceUnder("/zipkin/", uiFileService)
       .service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
-      .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
+      .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"))
+      .service("/zipkin", new RedirectService(HttpStatus.FOUND, "/zipkin/"))
+      .serviceUnder("/zipkin/", uiFileService);
   }
 
   static class IndexSwitchingService extends AbstractHttpService {
