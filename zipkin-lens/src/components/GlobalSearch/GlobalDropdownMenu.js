@@ -7,6 +7,7 @@ const propTypes = {
   history: PropTypes.shape({
     push: PropTypes.func.isRequired,
   }).isRequired,
+  setTrace: PropTypes.func.isRequired,
 };
 
 // This selector (class name) is used to specify a modal parent component.
@@ -21,7 +22,7 @@ class GlobalDropdownMenu extends React.Component {
       traceId: '',
     };
     this.handleOpenModalToggle = this.handleOpenModalToggle.bind(this);
-    this.handleTraceIdKeyDown = this.handleTraceIdKeyDown.bind(this);
+    this.handleTraceIdButtonClick = this.handleTraceIdButtonClick.bind(this);
     this.handleTraceIdChange = this.handleTraceIdChange.bind(this);
     this.handleTraceJsonChange = this.handleTraceJsonChange.bind(this);
   }
@@ -31,14 +32,13 @@ class GlobalDropdownMenu extends React.Component {
     this.setState({ isModalOpened: !isModalOpened });
   }
 
-  handleTraceIdKeyDown(event) {
+  handleTraceIdButtonClick(event) {
     const { history } = this.props;
     const { traceId } = this.state;
-    if (event.key === 'Enter') {
-      history.push({
-        pathname: `/zipkin/traces/${traceId}`,
-      });
-    }
+    history.push({
+      pathname: `/zipkin/traces/${traceId}`,
+    });
+    this.setState({ isModalOpened: false });
     event.stopPropagation();
   }
 
@@ -49,8 +49,26 @@ class GlobalDropdownMenu extends React.Component {
   }
 
   handleTraceJsonChange(event) {
-    const file = event.target.files[0];
-    console.log(file);
+    const { history, setTrace } = this.props;
+
+    const [file] = event.target.files;
+    const fileReader = new FileReader();
+
+    fileReader.onload = () => {
+      const { result } = fileReader;
+      let rawTrace;
+      try {
+        rawTrace = JSON.parse(result);
+        setTrace(rawTrace);
+        history.push({
+          pathname: '/zipkin/traceViewer',
+        });
+      } catch (error) {
+        // Do nothing
+      }
+    };
+    fileReader.readAsText(file);
+    this.setState({ isModalOpened: false });
   }
 
   renderModal() {
@@ -64,13 +82,21 @@ class GlobalDropdownMenu extends React.Component {
       >
         <div className="global-dropdown-menu__trace-id">
           <div className="global-dropdown-menu__trace-id-label">Trace ID</div>
-          <input
-            className="global-dropdown-menu__trace-id-input"
-            type="text"
-            value={traceId}
-            onChange={this.handleTraceIdChange}
-            onKeyDown={this.handleTraceIdKeyDown}
-          />
+          <div className="global-dropdown-menu__trace-id-search">
+            <input
+              className="global-dropdown-menu__trace-id-input"
+              type="text"
+              value={traceId}
+              onChange={this.handleTraceIdChange}
+            />
+            <span
+              className="global-dropdown-menu__trace-id-button"
+              role="presentation"
+              onClick={this.handleTraceIdButtonClick}
+            >
+              <i className="fas fa-search" />
+            </span>
+          </div>
         </div>
         <div className="global-dropdown-menu__trace-json">
           <input

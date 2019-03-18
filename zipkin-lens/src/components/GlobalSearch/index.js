@@ -11,7 +11,7 @@ import ConditionName from './ConditionName';
 import ConditionTraceId from './ConditionTraceId';
 import ConditionTags from './ConditionTags';
 import ConditionLookback from './ConditionLookback';
-import GlobalDropdownMenu from './GlobalDropdownMenu';
+import GlobalDropdownMenuContainer from '../../containers/GlobalSearch/GlobalDropdownMenuContainer';
 import {
   isAutocompleteKey,
   defaultConditionValues,
@@ -440,7 +440,7 @@ class GlobalSearch extends React.Component {
           />
         </div>
         <div className="global-search__dropdown-menu-wrapper">
-          <GlobalDropdownMenu />
+          <GlobalDropdownMenuContainer />
         </div>
       </div>
     );
