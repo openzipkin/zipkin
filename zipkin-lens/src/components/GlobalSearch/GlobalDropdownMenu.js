@@ -15,6 +15,7 @@ const modalWrapperClass = 'global-dropdown-menu__modal-wrapper';
 class GlobalDropdownMenu extends React.Component {
   constructor(props) {
     super(props);
+    this.fileInpueElement = undefined;
     this.state = {
       isModalOpened: false,
       traceId: '',
@@ -22,6 +23,7 @@ class GlobalDropdownMenu extends React.Component {
     this.handleOpenModalToggle = this.handleOpenModalToggle.bind(this);
     this.handleTraceIdKeyDown = this.handleTraceIdKeyDown.bind(this);
     this.handleTraceIdChange = this.handleTraceIdChange.bind(this);
+    this.handleTraceJsonChange = this.handleTraceJsonChange.bind(this);
   }
 
   handleOpenModalToggle() {
@@ -46,6 +48,11 @@ class GlobalDropdownMenu extends React.Component {
     });
   }
 
+  handleTraceJsonChange(event) {
+    const file = event.target.files[0];
+    console.log(file);
+  }
+
   renderModal() {
     const { isModalOpened, traceId } = this.state;
     return (
@@ -65,8 +72,19 @@ class GlobalDropdownMenu extends React.Component {
             onKeyDown={this.handleTraceIdKeyDown}
           />
         </div>
-        <div className="global-dropdown-menu__menu">
-          Open JSON
+        <div className="global-dropdown-menu__trace-json">
+          <input
+            type="file"
+            style={{ display: 'none' }}
+            ref={(element) => { this.fileInpueElement = element; }}
+            onChange={this.handleTraceJsonChange}
+          />
+          <div
+            role="presentation"
+            onClick={() => { this.fileInpueElement.click(); }}
+          >
+            Choose JSON file...
+          </div>
         </div>
       </Modal>
     );
