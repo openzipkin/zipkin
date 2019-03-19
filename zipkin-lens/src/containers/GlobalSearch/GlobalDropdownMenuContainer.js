@@ -1,10 +1,10 @@
 import { connect } from 'react-redux';
 
 import GlobalDropdownMenu from '../../components/GlobalSearch/GlobalDropdownMenu';
-import { setTrace } from '../../actions/trace-viewer-action';
+import { loadTrace } from '../../actions/trace-viewer-action';
 
 const mapDispatchToProps = dispatch => ({
-  setTrace: trace => dispatch(setTrace(trace)),
+  loadTrace: trace => dispatch(loadTrace(trace)),
 });
 
 const GlobalDropdownMenuContainer = connect(

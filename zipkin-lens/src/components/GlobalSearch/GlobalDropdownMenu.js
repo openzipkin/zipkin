@@ -7,7 +7,7 @@ const propTypes = {
   history: PropTypes.shape({
     push: PropTypes.func.isRequired,
   }).isRequired,
-  setTrace: PropTypes.func.isRequired,
+  loadTrace: PropTypes.func.isRequired,
 };
 
 // This selector (class name) is used to specify a modal parent component.
@@ -49,7 +49,7 @@ class GlobalDropdownMenu extends React.Component {
   }
 
   handleTraceJsonChange(event) {
-    const { history, setTrace } = this.props;
+    const { history, loadTrace } = this.props;
 
     const [file] = event.target.files;
     const fileReader = new FileReader();
@@ -59,7 +59,7 @@ class GlobalDropdownMenu extends React.Component {
       let rawTrace;
       try {
         rawTrace = JSON.parse(result);
-        setTrace(rawTrace);
+        loadTrace(rawTrace);
         history.push({
           pathname: '/zipkin/traceViewer',
         });

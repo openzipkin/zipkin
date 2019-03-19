@@ -6,7 +6,7 @@ const initialState = {
 
 const traceViewer = (state = initialState, action) => {
   switch (action.type) {
-    case types.TRACE_VIEWER_SET_TRACE:
+    case types.TRACE_VIEWER__LOAD_TRACE:
       return {
         ...state,
         trace: action.trace,
