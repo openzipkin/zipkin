@@ -59,12 +59,22 @@ class GlobalDropdownMenu extends React.Component {
 
     fileReader.onload = () => {
       const { result } = fileReader;
+
+      let rawTrace;
       try {
-        const rawTrace = JSON.parse(result);
+        rawTrace = JSON.parse(result);
+      } catch (error) {
+        loadTraceFailure('This file is not JSON');
+        history.push({
+          pathname: '/zipkin/traceViewer',
+        });
+        return;
+      }
+      try {
         ensureV2(rawTrace);
         loadTrace(rawTrace);
       } catch (error) {
-        loadTraceFailure(error.message);
+        loadTraceFailure('V1 format is not supported');
       }
       history.push({
         pathname: '/zipkin/traceViewer',
