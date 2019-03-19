@@ -1,3 +1,4 @@
+import PropTypes from 'prop-types';
 import React from 'react';
 
 import DetailedTraceSummary from '../DetailedTraceSummary';
@@ -5,6 +6,8 @@ import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
+  isMalformedFile: PropTypes.bool.isRequired,
+  errorMessage: PropTypes.string.isRequired,
 };
 
 const defaultProps = {
@@ -27,7 +30,20 @@ class TraceViewer extends React.Component {
 
   render() {
     const { startTs, endTs } = this.state;
-    const { traceSummary } = this.props;
+    const { traceSummary, isMalformedFile, errorMessage } = this.props;
+
+    if (isMalformedFile) {
+      return (
+        <div className="trace-viewer__error-message-wrapper">
+          <div className="trace-viewer__error-message">
+            Error:
+            &nbsp;
+            {errorMessage}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="trace-viewer">
         {

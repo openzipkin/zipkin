@@ -3,11 +3,14 @@ import React from 'react';
 import { withRouter } from 'react-router';
 import Modal from 'react-modal';
 
+import { ensureV2 } from '../../util/trace';
+
 const propTypes = {
   history: PropTypes.shape({
     push: PropTypes.func.isRequired,
   }).isRequired,
   loadTrace: PropTypes.func.isRequired,
+  loadTraceFailure: PropTypes.func.isRequired,
 };
 
 // This selector (class name) is used to specify a modal parent component.
@@ -49,24 +52,31 @@ class GlobalDropdownMenu extends React.Component {
   }
 
   handleTraceJsonChange(event) {
-    const { history, loadTrace } = this.props;
+    const { history, loadTrace, loadTraceFailure } = this.props;
 
     const [file] = event.target.files;
     const fileReader = new FileReader();
 
     fileReader.onload = () => {
       const { result } = fileReader;
-      let rawTrace;
       try {
-        rawTrace = JSON.parse(result);
+        const rawTrace = JSON.parse(result);
+        ensureV2(rawTrace);
         loadTrace(rawTrace);
-        history.push({
-          pathname: '/zipkin/traceViewer',
-        });
       } catch (error) {
-        // Do nothing
+        loadTraceFailure(error.message);
       }
+      history.push({
+        pathname: '/zipkin/traceViewer',
+      });
     };
+    fileReader.onabort = () => {
+      loadTraceFailure('Failed to load the file');
+      history.push({
+        pathname: '/zipkin/traceViewer',
+      });
+    };
+    fileReader.onerror = fileReader.onabort;
     fileReader.readAsText(file);
     this.setState({ isModalOpened: false });
   }
