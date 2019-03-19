@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,15 @@
  */
 package zipkin2.collector.kafka;
 
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -53,6 +56,7 @@ final class KafkaCollectorWorker implements Runnable {
   /** Kafka topic partitions currently assigned to this worker. List is not modifiable. */
   final AtomicReference<List<TopicPartition>> assignedPartitions =
       new AtomicReference<>(Collections.emptyList());
+  final AtomicBoolean running = new AtomicBoolean(true);
 
   KafkaCollectorWorker(KafkaCollector.Builder builder) {
     properties = builder.properties;
@@ -78,8 +82,8 @@ final class KafkaCollectorWorker implements Runnable {
           }
         });
       LOG.info("Kafka consumer starting polling loop.");
-      while (true) {
-        final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(1000);
+      while (running.get()) {
+        final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(Duration.of(1000, ChronoUnit.MILLIS));
         LOG.debug("Kafka polling returned batch of {} messages.", consumerRecords.count());
         for (ConsumerRecord<byte[], byte[]> record : consumerRecords) {
           metrics.incrementMessages();
@@ -103,16 +107,19 @@ final class KafkaCollectorWorker implements Runnable {
           }
         }
       }
-    } catch (InterruptException e) {
-      // Interrupts are normal on shutdown, intentionally swallow
     } catch (RuntimeException | Error e) {
       LOG.warn("Unexpected error in polling loop spans", e);
       throw e;
     } finally {
-      LOG.info("Kafka consumer polling loop stopped.");
-      LOG.info("Closing Kafka consumer...");
-      LOG.info("Kafka consumer closed.");
+      LOG.info("Kafka consumer polling loop stopped. Kafka consumer closed.");
     }
+  }
+
+  /**
+   * Stop the polling loop
+   */
+  public void stop() {
+    running.set(false);
   }
 
   /* span key or trace ID key */
