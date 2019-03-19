@@ -118,7 +118,7 @@ class TimelineHeader extends React.Component {
       if (portion <= 0) {
         modifier = '--first';
       } else if (portion >= 1) {
-        modifier = 'last';
+        modifier = '--last';
       }
 
       timeMarkers.push(

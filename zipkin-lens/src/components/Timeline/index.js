@@ -98,8 +98,8 @@ class Timeline extends React.Component {
           serviceNameColumnWidth={serviceNameColumnWidth}
           spanNameColumnWidth={spanNameColumnWidth}
           numTimeMarkers={defaultNumTimeMarkers}
-          onServiceNameColumnWidthChange={this.handleServiceNameColumnChange}
-          onSpanNameColumnWidthChange={this.handleSpanNameColumnChange}
+          onServiceNameColumnWidthChange={this.handleServiceNameColumnWidthChange}
+          onSpanNameColumnWidthChange={this.handleSpanNameColumnWidthChange}
         />
         {
           traceSummary.spans.map(
