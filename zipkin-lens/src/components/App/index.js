@@ -22,7 +22,7 @@ class App extends React.Component {
           <Layout>
             <Route
               exact
-              path="/zipkin"
+              path="/zipkin/"
               render={props => (
                 <BrowserContainer {...props} />
               )}
