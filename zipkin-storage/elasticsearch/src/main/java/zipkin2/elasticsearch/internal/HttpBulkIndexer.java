@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,74 +13,70 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import okio.Buffer;
+import okio.BufferedSource;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
+import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.internal.client.RequestBuilder;
+import zipkin2.elasticsearch.internal.client.ResponseConverter;
+import zipkin2.elasticsearch.internal.client.RestCall;
+import zipkin2.internal.Nullable;
+
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okio.Buffer;
-import okio.BufferedSource;
-import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.internal.client.HttpCall;
-import zipkin2.internal.Nullable;
 
+import static okio.Okio.buffer;
+import static okio.Okio.source;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class HttpBulkIndexer {
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   final String tag;
-  final HttpCall.Factory http;
+  final RestClient client;
   final String pipeline;
   final boolean flushOnWrites;
 
   // Mutated for each call to add
   final Buffer body = new Buffer();
   final Set<String> indices;
-  final HttpCall.BodyConverter<Void> maybeFlush;
+  final ResponseConverter<Void> maybeFlush;
 
   public HttpBulkIndexer(String tag, ElasticsearchStorage es) {
     this.tag = tag;
-    http = es.http();
+    final RestClient client = es.client();
+    this.client = client;
     pipeline = es.pipeline();
     flushOnWrites = es.flushOnWrites();
     if (flushOnWrites) {
       indices = new LinkedHashSet<>();
       maybeFlush =
-          new HttpCall.BodyConverter<Void>() {
+          new ResponseConverter<Void>() {
             @Override
-            public Void convert(BufferedSource b) throws IOException {
-              CheckForErrors.INSTANCE.convert(b);
+            public Void convert(Response response) throws IOException {
+              checkForErrors(response);
               if (indices.isEmpty()) return null;
-              ElasticsearchStorage.flush(http, join(indices));
+              ElasticsearchStorage.flush(client, join(indices));
               return null;
             }
           };
     } else {
       indices = null;
-      maybeFlush = CheckForErrors.INSTANCE;
+      maybeFlush = HttpBulkIndexer::checkForErrors;
     }
   }
 
-  enum CheckForErrors implements HttpCall.BodyConverter<Void> {
-    INSTANCE;
-
-    @Override
-    public Void convert(BufferedSource b) throws IOException {
+  private static Void checkForErrors(Response response) throws IOException{
+    try (BufferedSource b = buffer(source(response.getEntity().getContent()))) {
       String content = b.readUtf8();
       if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
       return null;
-    }
-
-    @Override
-    public String toString() {
-      return "CheckForErrors";
     }
   }
 
@@ -106,20 +102,13 @@ public final class HttpBulkIndexer {
   }
 
   /** Creates a bulk request when there is more than one object to store */
-  public HttpCall<Void> newCall() {
-    HttpUrl url =
-        pipeline != null
-            ? http.baseUrl.newBuilder("_bulk").addQueryParameter("pipeline", pipeline).build()
-            : http.baseUrl.resolve("_bulk");
-
-    Request request =
-        new Request.Builder()
-            .url(url)
-            .tag(tag)
-            .post(RequestBody.create(APPLICATION_JSON, body.readByteString()))
-            .build();
-
-    return http.newCall(request, maybeFlush);
+  public RestCall<Void> newCall() {
+    RequestBuilder requestBuilder = RequestBuilder.post("_bulk").tag(tag);
+    if (pipeline != null) {
+      requestBuilder.parameter("pipeline", pipeline);
+    }
+    Request request = requestBuilder.jsonEntity(body.readUtf8()).build();
+    return new RestCall<Void>(this.client, request, maybeFlush);
   }
 
   static String join(Collection<String> parts) {

@@ -418,6 +418,12 @@
         <version>${HikariCP.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>org.elasticsearch.client</groupId>
+        <artifactId>elasticsearch-rest-client</artifactId>
+        <version>6.6.2</version>
+      </dependency>
+
       <!-- Don't bring in brave's transitive dep on zipkin -->
       <dependency>
         <groupId>io.zipkin.brave</groupId>

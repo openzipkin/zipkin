@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,8 @@ package zipkin2.elasticsearch.integration;
 
 import com.google.common.io.Closer;
 import java.util.Arrays;
+import java.util.Collections;
+
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import org.junit.AssumptionViolatedException;
@@ -78,6 +80,7 @@ public class ElasticsearchStorageRule extends ExternalResource {
   }
 
   public ElasticsearchStorage.Builder computeStorageBuilder() {
+    /* TODO https://www.elastic.co/guide/en/elasticsearch/client/java-rest/current/java-rest-low-usage-logging.html
     OkHttpClient ok =
         Boolean.valueOf(System.getenv("ES_DEBUG"))
             ? new OkHttpClient.Builder()
@@ -89,7 +92,9 @@ public class ElasticsearchStorageRule extends ExternalResource {
                             chain.request().newBuilder().removeHeader("Accept-Encoding").build()))
                 .build()
             : new OkHttpClient();
-    return ElasticsearchStorage.newBuilder(ok)
+     */
+    return ElasticsearchStorage.newBuilder()
+        .hosts(Collections.singletonList("localhost"))
         .index(index)
         .flushOnWrites(true)
         .hosts(Arrays.asList(baseUrl()));

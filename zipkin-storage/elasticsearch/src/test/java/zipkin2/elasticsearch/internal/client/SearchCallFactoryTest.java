@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,8 @@ import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -28,12 +30,14 @@ public class SearchCallFactoryTest {
   @Rule
   public MockWebServer es = new MockWebServer();
 
-  SearchCallFactory client =
-    new SearchCallFactory(new HttpCall.Factory(new OkHttpClient(), es.url("")));
+  RestClient client =
+    RestClient.builder(new HttpHost(es.getHostName(), es.getPort())).build();
+
+  SearchCallFactory searchClient = new SearchCallFactory(client);
 
   @After
-  public void close() {
-    client.http.ok.dispatcher().executorService().shutdownNow();
+  public void close() throws IOException {
+    client.close();
   }
 
   /** Declaring queries alphabetically helps simplify amazon signature logic */
@@ -41,8 +45,8 @@ public class SearchCallFactoryTest {
   public void lenientSearchOrdersQueryAlphabetically() {
     es.enqueue(new MockResponse());
 
-    assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null)
-        .queryParameterNames())
+    assertThat(searchClient.lenientSearch(asList("zipkin:span-2016-10-01"), null)
+        .parameterNames())
         .containsExactly("allow_no_indices", "expand_wildcards", "ignore_unavailable");
   }
 }

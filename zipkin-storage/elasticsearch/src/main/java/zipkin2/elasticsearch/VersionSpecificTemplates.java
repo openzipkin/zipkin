@@ -14,15 +14,18 @@
 package zipkin2.elasticsearch;
 
 import com.squareup.moshi.JsonReader;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.RestClient;
+import zipkin2.elasticsearch.internal.client.JsonResponseConverter;
+import zipkin2.elasticsearch.internal.client.RequestBuilder;
+import zipkin2.elasticsearch.internal.client.ResponseConverter;
+
 import java.io.IOException;
 import java.util.logging.Logger;
-import okhttp3.Request;
-import okio.BufferedSource;
-import zipkin2.elasticsearch.internal.client.HttpCall;
 
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /** Returns a version-specific span and dependency index template */
@@ -188,8 +191,8 @@ final class VersionSpecificTemplates {
       + "        \"tagValue\": { KEYWORD }\n"
       + "  }}}\n"
       + "}";
-  IndexTemplates get(HttpCall.Factory callFactory) throws IOException {
-    float version = getVersion(callFactory);
+  IndexTemplates get(RestClient client) throws IOException {
+    float version = getVersion(client);
     return IndexTemplates.newBuilder()
         .version(version)
         .span(versionSpecificSpanIndexTemplate(version))
@@ -198,17 +201,15 @@ final class VersionSpecificTemplates {
         .build();
   }
 
-  static float getVersion(HttpCall.Factory callFactory) throws IOException {
-    Request getNode = new Request.Builder().url(callFactory.baseUrl).tag("get-node").build();
-    return callFactory.newCall(getNode, ReadVersionNumber.INSTANCE).execute();
+  static float getVersion(RestClient client) throws IOException {
+    Request getNode = RequestBuilder.get().tag("get-node").build();
+    return READ_VERSION_NUMBER_RESPONSE_CONVERTER.convert(client.performRequest(getNode));
   }
 
-  enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
-    INSTANCE;
-
+  private static final ResponseConverter<Float> READ_VERSION_NUMBER_RESPONSE_CONVERTER = new JsonResponseConverter<Float>() {
     @Override
-    public Float convert(BufferedSource content) throws IOException {
-      JsonReader version = enterPath(JsonReader.of(content), "version", "number");
+    public Float read(JsonReader jsonReader) throws IOException {
+      JsonReader version = enterPath(jsonReader, "version", "number");
       if (version == null) throw new IllegalStateException(".version.number not in response");
       String versionString = version.nextString();
       float result = Float.valueOf(versionString.substring(0, 3));
@@ -217,12 +218,7 @@ final class VersionSpecificTemplates {
       }
       return result;
     }
-
-    @Override
-    public String toString() {
-      return "GetVersion";
-    }
-  }
+  };
 
   private String versionSpecificSpanIndexTemplate(float version) {
     if (version >= 2 && version < 3) {

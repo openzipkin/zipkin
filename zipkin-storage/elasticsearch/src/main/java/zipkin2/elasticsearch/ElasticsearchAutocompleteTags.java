@@ -32,7 +32,7 @@ final class ElasticsearchAutocompleteTags implements AutocompleteTags {
   final Call<List<String>> keysCall;
 
   ElasticsearchAutocompleteTags(ElasticsearchStorage es) {
-    this.search = new SearchCallFactory(es.http());
+    this.search = new SearchCallFactory(es.client());
     this.indexNameFormatter = es.indexNameFormatter();
     this.enabled = es.searchEnabled() && !es.autocompleteKeys().isEmpty();
     this.namesLookback = es.namesLookback();

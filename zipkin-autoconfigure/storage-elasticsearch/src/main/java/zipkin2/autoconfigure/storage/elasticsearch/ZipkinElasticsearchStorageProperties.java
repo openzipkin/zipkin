@@ -48,11 +48,6 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
   /**
-   * When set, controls the volume of HTTP logging of the Elasticsearch Api. Options are BASIC,
-   * HEADERS, BODY
-   */
-  private HttpLoggingInterceptor.Level httpLogging;
-  /**
    * Controls the connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api
    * requests. Defaults to 10000 (10 seconds)
    */
@@ -154,14 +149,6 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.password = password;
   }
 
-  public HttpLoggingInterceptor.Level getHttpLogging() {
-    return httpLogging;
-  }
-
-  public void setHttpLogging(HttpLoggingInterceptor.Level httpLogging) {
-    this.httpLogging = httpLogging;
-  }
-
   public int getTimeout() {
     return timeout;
   }
@@ -170,15 +157,17 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.timeout = timeout;
   }
 
-  public ElasticsearchStorage.Builder toBuilder(OkHttpClient client) {
-    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder(client);
+  public ElasticsearchStorage.Builder toBuilder() {
+    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder();
     if (hosts != null) builder.hosts(hosts);
+    if (username != null && password != null) builder.credentialsProvider(username, password);
     return builder
         .index(index)
         .dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0))
         .pipeline(pipeline)
         .maxRequests(maxRequests)
         .indexShards(indexShards)
-        .indexReplicas(indexReplicas);
+        .indexReplicas(indexReplicas)
+        .connectTimeout(timeout);
   }
 }

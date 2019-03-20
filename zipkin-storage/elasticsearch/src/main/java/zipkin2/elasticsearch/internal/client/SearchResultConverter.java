@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -20,10 +20,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import okio.BufferedSource;
+import org.elasticsearch.client.Response;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
-public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>> {
+public class SearchResultConverter<T> extends JsonResponseConverter<List<T>> {
   final JsonAdapter<T> adapter;
   final List<T> defaultValue;
 
@@ -36,8 +37,8 @@ public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>>
     this.defaultValue = Collections.emptyList();
   }
 
-  @Override public List<T> convert(BufferedSource content) throws IOException {
-    JsonReader hits = enterPath(JsonReader.of(content), "hits", "hits");
+  @Override public List<T> read(JsonReader reader) throws IOException {
+    JsonReader hits = enterPath(reader, "hits", "hits");
     if (hits == null || hits.peek() != JsonReader.Token.BEGIN_ARRAY) return defaultValue;
 
     List<T> result = new ArrayList<>();

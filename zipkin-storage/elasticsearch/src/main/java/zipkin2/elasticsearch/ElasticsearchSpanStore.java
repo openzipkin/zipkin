@@ -13,21 +13,22 @@
  */
 package zipkin2.elasticsearch;
 
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.Aggregation;
-import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.elasticsearch.internal.client.RestCall;
 import zipkin2.elasticsearch.internal.client.SearchCallFactory;
 import zipkin2.elasticsearch.internal.client.SearchRequest;
 import zipkin2.storage.GroupByTraceId;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StrictTraceId;
+
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 
@@ -47,7 +48,7 @@ final class ElasticsearchSpanStore implements SpanStore{
   final int namesLookback;
 
   ElasticsearchSpanStore(ElasticsearchStorage es) {
-    this.search = new SearchCallFactory(es.http());
+    this.search = new SearchCallFactory(es.client());
     this.groupByTraceId = GroupByTraceId.create(es.strictTraceId());
     this.allSpanIndices = new String[] {es.indexNameFormatter().formatType(SPAN)};
     this.indexNameFormatter = es.indexNameFormatter();
@@ -103,7 +104,7 @@ final class ElasticsearchSpanStore implements SpanStore{
     SearchRequest esRequest =
         SearchRequest.create(indices).filters(filters).addAggregation(traceIdTimestamp);
 
-    HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
+    RestCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
 
     Call<List<List<Span>>> result =
         traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);

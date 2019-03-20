@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,13 +15,11 @@ package zipkin2.elasticsearch.internal.client;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import java.io.IOException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.RestClient;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,19 +27,28 @@ import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.internal.Nullable;
 
+import java.io.IOException;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
-public class HttpCallTest {
+public class RestCallTest {
   @Rule
   public MockWebServer mws = new MockWebServer();
 
-  HttpCall.Factory http = new HttpCall.Factory(new OkHttpClient(), mws.url(""));
-  Request request = new Request.Builder().url(http.baseUrl).build();
+  RestClient client =
+    RestClient.builder(new HttpHost(mws.getHostName(), mws.getPort())).build();
+  Request request = RequestBuilder.get("/").build();
 
   @After
-  public void close() {
-    http.close();
+  public void close() throws IOException {
+    client.close();
+  }
+
+  private <V> RestCall<V> newCall(Request request, ResponseConverter<V> responseConverter) {
+    return new RestCall<>(client, request, responseConverter);
   }
 
   @Test
@@ -49,7 +56,7 @@ public class HttpCallTest {
     mws.enqueue(new MockResponse());
 
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
-    http.newCall(request, b -> {
+    newCall(request, b -> {
       throw new LinkageError();
     }).enqueue(new Callback<Object>() {
       @Override public void onSuccess(@Nullable Object value) {
@@ -73,7 +80,7 @@ public class HttpCallTest {
   public void executionException_conversionException() throws Exception {
     mws.enqueue(new MockResponse());
 
-    Call<?> call = http.newCall(request, b -> {
+    Call<?> call = newCall(request, b -> {
       throw new IllegalArgumentException("eeek");
     });
 
@@ -89,7 +96,7 @@ public class HttpCallTest {
   public void executionException_httpFailure() throws Exception {
     mws.enqueue(new MockResponse().setResponseCode(500));
 
-    Call<?> call = http.newCall(request, b -> null);
+    Call<?> call = newCall(request, b -> null);
 
     try {
       call.execute();

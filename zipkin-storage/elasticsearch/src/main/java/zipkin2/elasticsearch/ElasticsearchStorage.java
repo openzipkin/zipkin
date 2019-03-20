@@ -16,28 +16,41 @@ package zipkin2.elasticsearch;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.squareup.moshi.JsonReader;
-import java.io.IOException;
-import java.util.Collections;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import okio.Buffer;
 import okio.BufferedSource;
+import org.apache.http.HttpHost;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.apache.http.impl.nio.reactor.IOReactorConfig;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
-import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.elasticsearch.internal.client.JsonResponseConverter;
+import zipkin2.elasticsearch.internal.client.RequestBuilder;
+import zipkin2.elasticsearch.internal.client.ResponseConverter;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
@@ -55,13 +68,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     List<String> get();
   }
 
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
-
-  public static Builder newBuilder(OkHttpClient client) {
+  public static Builder newBuilder() {
     return new $AutoValue_ElasticsearchStorage.Builder()
-        .client(client)
         .hosts(Collections.singletonList("http://localhost:9200"))
         .maxRequests(64)
+        .connectTimeout(1000)
         .strictTraceId(true)
         .searchEnabled(true)
         .index("zipkin")
@@ -69,26 +80,16 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .indexShards(5)
         .indexReplicas(1)
         .namesLookback(86400000)
-        .shutdownClientOnClose(false)
         .flushOnWrites(false)
         .autocompleteKeys(Collections.emptyList())
         .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
         .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
 
-  public static Builder newBuilder() {
-    Builder result = newBuilder(new OkHttpClient());
-    result.shutdownClientOnClose(true);
-    return result;
-  }
-
   abstract Builder toBuilder();
 
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
-    abstract Builder client(OkHttpClient client);
-
-    public abstract Builder shutdownClientOnClose(boolean shutdownClientOnClose);
 
     /**
      * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
@@ -119,6 +120,26 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     public abstract Builder hostsSupplier(HostsSupplier hosts);
 
     /**
+     * Basic HTTP Authentication provider
+     */
+    public final Builder credentialsProvider(String username, String password) {
+      UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(username, password);
+      CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+      credentialsProvider.setCredentials(AuthScope.ANY, credentials);
+      return credentialsProvider(credentialsProvider);
+    }
+
+    /**
+     * HTTP Authentication provider
+     */
+    public abstract Builder credentialsProvider(CredentialsProvider credentialsProvider);
+
+    /**
+     * Customize underlying Commons HTTP Client settings
+     */
+    public abstract Builder httpClientCustomizer(RestClientBuilder.HttpClientConfigCallback httpClientCustomizer);
+
+    /**
      * Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64
      *
      * <p>A backlog is not permitted. Once this number of requests are in-flight, future requests
@@ -126,6 +147,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      * traffic surge.
      */
     public abstract Builder maxRequests(int maxRequests);
+
+    /**
+     * Socket connection timeout in ms, defaults to 1s
+     */
+    public abstract Builder connectTimeout(int connectTimeout);
 
     /**
      * Only valid when the destination is Elasticsearch 5.x. Indicates the ingest pipeline used
@@ -212,11 +238,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     Builder() {}
   }
 
-  abstract OkHttpClient client();
-
-  abstract boolean shutdownClientOnClose();
-
   public abstract HostsSupplier hostsSupplier();
+
+  @Nullable
+  public abstract RestClientBuilder.HttpClientConfigCallback httpClientCustomizer();
 
   @Nullable
   public abstract String pipeline();
@@ -224,6 +249,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public abstract boolean flushOnWrites();
 
   public abstract int maxRequests();
+
+  public abstract int connectTimeout();
+
+  @Nullable
+  public abstract CredentialsProvider credentialsProvider();
 
   public abstract boolean strictTraceId();
 
@@ -276,28 +306,23 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   void clear(String index) throws IOException {
     Request deleteRequest =
-        new Request.Builder()
-            .url(http().baseUrl.newBuilder().addPathSegment(index).build())
-            .delete()
-            .tag("delete-index")
+        RequestBuilder.delete(index)
+          .tag("delete-index")
             .build();
 
-    http().newCall(deleteRequest, BodyConverters.NULL).execute();
+    client().performRequest(deleteRequest);
 
-    flush(http(), index);
+    flush(client(), index);
   }
 
   /** This is a blocking call, only used in tests. */
-  public static void flush(HttpCall.Factory factory, String index) throws IOException {
+  public static void flush(RestClient client, String index) throws IOException {
     Request flushRequest =
-        new Request.Builder()
-            .url(
-                factory.baseUrl.newBuilder().addPathSegment(index).addPathSegment("_flush").build())
-            .post(RequestBody.create(APPLICATION_JSON, ""))
+        RequestBuilder.post(index, "_flush")
             .tag("flush-index")
             .build();
 
-    factory.newCall(flushRequest, BodyConverters.NULL).execute();
+    client.performRequest(flushRequest);
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
@@ -308,23 +333,20 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   CheckResult ensureClusterReady(String index) {
     Request request =
-        new Request.Builder()
-            .url(http().baseUrl.resolve("/_cluster/health/" + index))
+        RequestBuilder.get("_cluster", "health", index)
             .tag("get-cluster-health")
             .build();
 
     try {
-      return http().newCall(request, ReadStatus.INSTANCE).execute();
+      return READ_STATUS.convert(client().performRequest(request));
     } catch (IOException | RuntimeException e) {
       return CheckResult.failed(e);
     }
   }
 
-  enum ReadStatus implements HttpCall.BodyConverter<CheckResult> {
-    INSTANCE;
-
+  private static final ResponseConverter<CheckResult> READ_STATUS = new JsonResponseConverter<CheckResult>() {
     @Override
-    public CheckResult convert(BufferedSource b) throws IOException {
+    public CheckResult read(BufferedSource b) throws IOException {
       b.request(Long.MAX_VALUE); // Buffer the entire body.
       Buffer body = b.buffer();
       JsonReader status = enterPath(JsonReader.of(body.clone()), "status");
@@ -336,50 +358,70 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       }
       return CheckResult.OK;
     }
-
-    @Override
-    public String toString() {
-      return "ReadStatus";
-    }
-  }
+  };
 
   @Memoized // since we don't want overlapping calls to apply the index templates
   IndexTemplates ensureIndexTemplates() {
     String index = indexNameFormatter().index();
     try {
-      IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
-      EnsureIndexTemplate.apply(http(), index + ":" + SPAN + "_template", templates.span());
+      IndexTemplates templates = new VersionSpecificTemplates(this).get(client());
+      EnsureIndexTemplate.apply(client(), index + ":" + SPAN + "_template", templates.span());
       EnsureIndexTemplate.apply(
-          http(), index + ":" + DEPENDENCY + "_template", templates.dependency());
+          client(), index + ":" + DEPENDENCY + "_template", templates.dependency());
       EnsureIndexTemplate.apply(
-        http(), index + ":" + AUTOCOMPLETE + "_template", templates.autocomplete());
+        client(), index + ":" + AUTOCOMPLETE + "_template", templates.autocomplete());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
     }
   }
 
+  private static HttpHost parseHost(String host) {
+    try {
+      URL url = new URL(host.trim());
+      return new HttpHost(url.getHost(), url.getPort(), url.getProtocol());
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException("Invalid Elasticsearch host " + host, e);
+    }
+  }
+
   @Memoized
-  public // hosts resolution might imply a network call, and we might make a new okhttp instance
-  HttpCall.Factory http() {
+  public RestClient client() {
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
-    OkHttpClient ok =
-        hosts.size() == 1
-            ? client()
-            : client()
-                .newBuilder()
-                .dns(PseudoAddressRecordSet.create(hosts, client().dns()))
-                .build();
-    ok.dispatcher().setMaxRequests(maxRequests());
-    ok.dispatcher().setMaxRequestsPerHost(maxRequests());
-    return new HttpCall.Factory(ok, HttpUrl.parse(hosts.get(0)));
+    HttpHost[] httpHosts= hosts.stream()
+      .map(ElasticsearchStorage::parseHost)
+      .toArray(s -> new HttpHost[s]);
+    RestClientBuilder restClientBuilder = RestClient.builder(httpHosts)
+      .setHttpClientConfigCallback(this::customizeHttpClient)
+      .setRequestConfigCallback(this::customizeRequestConfig);
+    return restClientBuilder.build();
+  }
+
+  private HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+    // TODO Fix mapping max requests -> max conn total
+    httpClientBuilder.setMaxConnTotal(maxRequests());
+    if (credentialsProvider() != null) {
+      httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider());
+    }
+    if (httpClientCustomizer() != null) {
+      httpClientCustomizer().customizeHttpClient(httpClientBuilder);
+    }
+    return httpClientBuilder;
+  }
+
+  private  RequestConfig.Builder customizeRequestConfig(RequestConfig.Builder requestConfigBuilder) {
+    if (connectTimeout()>0) requestConfigBuilder.setConnectTimeout(connectTimeout());
+    return requestConfigBuilder;
   }
 
   @Override
   public void close() {
-    if (!shutdownClientOnClose()) return;
-    http().close();
+    try {
+      client().close();
+    } catch (IOException e) {
+      throw Platform.get().uncheckedIOException(e);
+    }
   }
 
   ElasticsearchStorage() {}

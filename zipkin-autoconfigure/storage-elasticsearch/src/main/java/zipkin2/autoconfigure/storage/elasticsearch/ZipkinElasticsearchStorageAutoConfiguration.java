@@ -40,21 +40,6 @@ import zipkin2.storage.StorageComponent;
 public class ZipkinElasticsearchStorageAutoConfiguration {
 
   @Bean
-  @Qualifier("zipkinElasticsearchHttp")
-  @Conditional(HttpLoggingSet.class)
-  Interceptor loggingInterceptor(ZipkinElasticsearchStorageProperties es) {
-    Logger logger = Logger.getLogger(ElasticsearchStorage.class.getName());
-    return new HttpLoggingInterceptor(logger::info).setLevel(es.getHttpLogging());
-  }
-
-  @Bean
-  @Qualifier("zipkinElasticsearchHttp")
-  @Conditional(BasicAuthRequired.class)
-  Interceptor basicAuthInterceptor(ZipkinElasticsearchStorageProperties es) {
-    return new BasicAuthInterceptor(es);
-  }
-
-  @Bean
   @ConditionalOnMissingBean
   StorageComponent storage(ElasticsearchStorage.Builder esHttpBuilder) {
     return esHttpBuilder.build();
@@ -63,15 +48,13 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
   @Bean
   ElasticsearchStorage.Builder esHttpBuilder(
       ZipkinElasticsearchStorageProperties elasticsearch,
-      @Qualifier("zipkinElasticsearchHttp") OkHttpClient client,
       @Value("${zipkin.query.lookback:86400000}") int namesLookback,
       @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
       @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
       @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
       @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
       @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
-    return elasticsearch
-        .toBuilder(client)
+    return elasticsearch.toBuilder()
         .namesLookback(namesLookback)
         .strictTraceId(strictTraceId)
         .searchEnabled(searchEnabled)

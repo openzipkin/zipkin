@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,41 +15,38 @@ package zipkin2.elasticsearch.internal.client;
 
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
-import java.util.List;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
+import org.elasticsearch.client.Request;
+import org.elasticsearch.client.RestClient;
 import zipkin2.internal.Nullable;
 
-public class SearchCallFactory {
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
+import java.util.List;
 
-  final HttpCall.Factory http;
+public class SearchCallFactory {
+  final RestClient client;
   final JsonAdapter<SearchRequest> searchRequest =
       new Moshi.Builder().build().adapter(SearchRequest.class);
 
-  public SearchCallFactory(HttpCall.Factory http) {
-    this.http = http;
+  public SearchCallFactory(RestClient client) {
+    this.client = client;
   }
 
-  public <V> HttpCall<V> newCall(SearchRequest request, HttpCall.BodyConverter<V> bodyConverter) {
-    Request httpRequest = new Request.Builder().url(lenientSearch(request.indices, request.type))
-        .post(RequestBody.create(APPLICATION_JSON, searchRequest.toJson(request)))
-        .header("Accept-Encoding", "gzip")
+  public <V> RestCall<V> newCall(SearchRequest request, ResponseConverter<V> responseConverter) {
+    Request httpRequest = lenientSearch(request.indices, request.type)
+        .jsonEntity(searchRequest.toJson(request))
         .tag(request.tag()).build();
-    return http.newCall(httpRequest, bodyConverter);
+    return new RestCall<>(client, httpRequest, responseConverter);
   }
 
   /** Matches the behavior of {@code IndicesOptions#lenientExpandOpen()} */
-  HttpUrl lenientSearch(List<String> indices, @Nullable String type) {
-    HttpUrl.Builder builder = http.baseUrl.newBuilder().addPathSegment(join(indices));
-    if (type != null) builder.addPathSegment(type);
-    return builder.addPathSegment("_search")
-                  // keep these in alphabetical order as it simplifies amazon signatures!
-                  .addQueryParameter("allow_no_indices", "true")
-                  .addQueryParameter("expand_wildcards", "open")
-                  .addQueryParameter("ignore_unavailable", "true").build();
+  RequestBuilder lenientSearch(List<String> indices, @Nullable String type) {
+    RequestBuilder builder = type == null ?
+      RequestBuilder.post(join(indices), "_search") :
+      RequestBuilder.post(join(indices), type, "_search") ;
+    // keep these in alphabetical order as it simplifies amazon signatures!
+    // TODO Elasticsearch Client uses an HashMap and doesn't guarantee parameter order
+    return builder.parameter("allow_no_indices", "true")
+                  .parameter("expand_wildcards", "open")
+                  .parameter("ignore_unavailable", "true");
   }
 
   static String join(List<String> parts) {

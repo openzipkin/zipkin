@@ -13,10 +13,10 @@
  */
 package zipkin2.elasticsearch;
 
-import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import org.apache.http.impl.nio.client.HttpAsyncClientBuilder;
+import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -91,11 +91,10 @@ public class ElasticsearchStorageTest {
   @Test
   public void check_oneHostDown() {
     storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder().connectTimeout(100, TimeUnit.MILLISECONDS).build();
     storage =
-        ElasticsearchStorage.newBuilder(client)
+        ElasticsearchStorage.newBuilder()
             .hosts(asList("http://1.2.3.4:" + es.getPort(), es.url("").toString()))
+            .connectTimeout(100)
             .build();
 
     es.enqueue(new MockResponse().setBody(healthResponse));
@@ -103,17 +102,24 @@ public class ElasticsearchStorageTest {
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
   }
 
+  private static final RestClientBuilder.HttpClientConfigCallback SSL_LOCALHOST_HTTP_CLIENT_CUSTOMIZER = new RestClientBuilder.HttpClientConfigCallback() {
+    @Override
+    public HttpAsyncClientBuilder customizeHttpClient(HttpAsyncClientBuilder httpClientBuilder) {
+      return httpClientBuilder.setSSLHostnameVerifier((host, session) -> true)
+        .setSSLContext(localhost().sslContext());
+    }
+  };
+
+
   @Test
   public void check_ssl() throws Exception {
     storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder()
-            .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
-            .hostnameVerifier((host, session) -> true)
-            .build();
     es.useHttps(localhost().sslSocketFactory(), false);
 
-    storage = ElasticsearchStorage.newBuilder(client).hosts(asList(es.url("").toString())).build();
+    storage = ElasticsearchStorage.newBuilder()
+      .hosts(asList(es.url("").toString()))
+      .httpClientCustomizer(SSL_LOCALHOST_HTTP_CLIENT_CUSTOMIZER)
+      .build();
 
     es.enqueue(new MockResponse().setBody(healthResponse));
 
@@ -122,18 +128,14 @@ public class ElasticsearchStorageTest {
     assertThat(es.takeRequest().getTlsVersion()).isNotNull();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void multipleSslNotYetSupported() {
     storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder()
-          .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
-            .build();
     es.useHttps(localhost().sslSocketFactory(), false);
-
     storage =
-        ElasticsearchStorage.newBuilder(client)
+        ElasticsearchStorage.newBuilder()
             .hosts(asList("https://1.2.3.4:" + es.getPort(), es.url("").toString()))
+            .httpClientCustomizer(SSL_LOCALHOST_HTTP_CLIENT_CUSTOMIZER)
             .build();
 
     storage.check();

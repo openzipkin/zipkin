@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -58,7 +58,7 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(1.7f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.client())).isEqualTo(1.7f);
   }
 
   @Test
@@ -79,7 +79,7 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(2.4f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.client())).isEqualTo(2.4f);
   }
 
   @Test
@@ -101,7 +101,7 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(5.0f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.client())).isEqualTo(5.0f);
   }
 
   @Test
@@ -123,6 +123,6 @@ public class VersionSpecificTemplatesTest {
                     + "  \"tagline\" : \"You Know, for Search\"\n"
                     + "}"));
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(6.0f);
+    assertThat(VersionSpecificTemplates.getVersion(storage.client())).isEqualTo(6.0f);
   }
 }
