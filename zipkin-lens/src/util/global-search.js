@@ -16,7 +16,6 @@ export const orderedConditionKeyList = autocompleteKeys => ([
   'minDuration',
   'maxDuration',
   ...autocompleteKeys,
-  'traceId',
   'tags',
 ]);
 
@@ -26,7 +25,6 @@ export const isAutocompleteKey = (conditionKey) => {
     case 'spanName':
     case 'minDuration':
     case 'maxDuration':
-    case 'traceId':
     case 'tags':
       return false;
     default:
@@ -44,8 +42,6 @@ export const defaultConditionValues = (conditionKey) => {
       return 10;
     case 'maxDuration':
       return 100;
-    case 'traceId':
-      return '';
     case 'tags':
       return '';
     default: // autocompleteKeys
@@ -85,8 +81,6 @@ export const buildQueryParametersWithConditions = (
       case 'maxDuration':
         conditionMap[condition.key] = condition.value;
         break;
-      case 'traceId':
-        break; // ignore traceId
       case 'tags':
         tagsConditions.push(condition.value);
         break;

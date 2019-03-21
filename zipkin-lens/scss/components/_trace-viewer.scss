@@ -1,0 +1,17 @@
+.trace-viewer {
+
+}
+
+.trace-viewer__error-message-wrapper {
+  display: flex;
+  justify-content: center;
+}
+
+.trace-viewer__error-message {
+  margin-top: 5px;
+  padding: 10px;
+  opacity: 0.75;
+  background-color: #ff0000;
+  color: $white;
+  border-radius: 5px;
+}

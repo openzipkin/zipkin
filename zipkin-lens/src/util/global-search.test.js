@@ -27,7 +27,6 @@ describe('nextInitialConditionKey', () => {
       { key: 'spanName' },
       { key: 'minDuration' },
       { key: 'maxDuration' },
-      { key: 'traceId' },
       { key: 'tags' },
     ], [])).toEqual('tags');
   });
@@ -277,7 +276,6 @@ describe('getConditionKeyListWithAvailability', () => {
       { conditionKey: 'spanName', isAvailable: true },
       { conditionKey: 'minDuration', isAvailable: true },
       { conditionKey: 'maxDuration', isAvailable: false },
-      { conditionKey: 'traceId', isAvailable: true },
       { conditionKey: 'tags', isAvailable: true }, // always true
       { conditionKey: 'instanceId', isAvailable: true },
       { conditionKey: 'environment', isAvailable: false },

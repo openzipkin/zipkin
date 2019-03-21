@@ -8,9 +8,9 @@ import SearchCondition from './SearchCondition';
 import ConditionDuration from './ConditionDuration';
 import ConditionLimit from './ConditionLimit';
 import ConditionName from './ConditionName';
-import ConditionTraceId from './ConditionTraceId';
 import ConditionTags from './ConditionTags';
 import ConditionLookback from './ConditionLookback';
+import GlobalDropdownMenuContainer from '../../containers/GlobalSearch/GlobalDropdownMenuContainer';
 import {
   isAutocompleteKey,
   defaultConditionValues,
@@ -169,15 +169,6 @@ class GlobalSearch extends React.Component {
       history, conditions, lookbackCondition, limitCondition,
     } = this.props;
 
-    // If traceId is specified, jump to the trace page.
-    const traceIdCondition = conditions.find(condition => condition.key === 'traceId');
-    if (traceIdCondition) {
-      history.push({
-        pathname: `/zipkin/traces/${traceIdCondition.value}`,
-      });
-      return;
-    }
-
     const queryParams = buildQueryParametersWithConditions(
       conditions,
       lookbackCondition,
@@ -290,18 +281,6 @@ class GlobalSearch extends React.Component {
           onFocus, onBlur, setNextFocusRef, isFocused,
         }) => (
           <ConditionDuration
-            {...commonProps}
-            onFocus={onFocus}
-            onBlur={onBlur}
-            setNextFocusRef={setNextFocusRef}
-            isFocused={isFocused}
-          />
-        );
-      case 'traceId':
-        return ({
-          onFocus, onBlur, setNextFocusRef, isFocused,
-        }) => (
-          <ConditionTraceId
             {...commonProps}
             onFocus={onFocus}
             onBlur={onBlur}
@@ -437,6 +416,9 @@ class GlobalSearch extends React.Component {
             lookback={lookbackCondition}
             onLookbackChange={this.handleLookbackChange}
           />
+        </div>
+        <div className="global-search__dropdown-menu-wrapper">
+          <GlobalDropdownMenuContainer />
         </div>
       </div>
     );

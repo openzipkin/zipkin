@@ -1,0 +1,80 @@
+.global-dropdown-menu {
+  height: 50px;
+  display: flex;
+  align-items: center;
+}
+
+.global-dropdown-menu__modal-wrapper {
+  position:relative;
+}
+
+.global-dropdown-menu__button {
+  width: 35px;
+  height: 35px;
+  font-size: 24px;
+  border-radius: 3px;
+  border: solid 1px $gray-7;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
+}
+
+.global-dropdown-menu__modal {
+}
+
+.global-dropdown-menu__overlay {
+  position: absolute;
+  right: 0;
+  top: 20px;
+  background-color: $white;
+  border: solid $gray-7 1px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.global-dropdown-menu__trace-id {
+  width: 100%;
+  padding: 3px 4px 6px 4px;
+  box-sizing: border-box;
+  border-bottom: 1px solid $gray-7;
+}
+
+.global-dropdown-menu__trace-id-label {
+  font-size: 16px;
+}
+
+.global-dropdown-menu__trace-id-search {
+  display: flex;
+}
+
+.global-dropdown-menu__trace-id-input {
+  border: solid $gray-8 1px;
+  border-radius: 2px;
+  height: 18px;
+  width: 160px;
+  margin-right: 3px;
+}
+
+.global-dropdown-menu__trace-id-button {
+  width: 20px;
+  height: 20px;
+  background: linear-gradient(to bottom, $gray-10, $gray-9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 3px;
+  border: solid 1px $gray-7;
+  cursor: pointer;
+}
+
+.global-dropdown-menu__trace-json {
+  font-size: 16px;
+  padding: 3px 4px 3px 4px;
+  box-sizing: border-box;
+  cursor: pointer;
+  &:hover {
+    background-color: $gray-10;
+  }
+}

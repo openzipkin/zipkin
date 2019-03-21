@@ -72,6 +72,10 @@
   background: linear-gradient(to bottom, $gray-10, $gray-9);
 }
 
+.global-search__dropdown-menu-wrapper {
+  margin-left: 10px;
+}
+
 .global-search__find-button {
   width: 28px;
   height: 28px;
