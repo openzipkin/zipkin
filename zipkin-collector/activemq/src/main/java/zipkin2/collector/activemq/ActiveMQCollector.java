@@ -25,6 +25,7 @@ import zipkin2.storage.StorageComponent;
 import javax.jms.*;
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.IllegalStateException;
 import java.util.concurrent.atomic.AtomicReference;
 
 
@@ -147,73 +148,53 @@ public final class ActiveMQCollector extends CollectorComponent {
   static final class LazyInit  {
     final Builder builder;
     final AtomicReference<CheckResult> failure = new AtomicReference<>();
-    ActivemqConnection activemqConnection;
+    Connection connection;
 
     LazyInit(Builder builder) {
       this.builder = builder;
     }
 
-    protected ActivemqConnection compute() {
+    protected Connection  compute() {
       try {
-        builder.connectionFactory.setBrokerURL(builder.addresses);
-        Connection connection = builder.connectionFactory.createConnection();
-        connection.start();
-        activemqConnection = new ActivemqConnection(connection);
+        builder.connectionFactory.setBrokerURL("failover:("+builder.addresses+")?initialReconnectDelay=100");
+        connection = builder.connectionFactory.createConnection();
         Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        connection.start();
         Destination destination = session.createQueue(builder.queue);
         MessageConsumer messageConsumer = session.createConsumer(destination);
-
         Collector collector = builder.delegate.build();
         CollectorMetrics metrics = builder.metrics;
-
-        messageConsumer.setMessageListener(new ActiveMQSpanConsumer(collector,metrics));
+        messageConsumer.setMessageListener(new ActiveMQSpanConsumerMessageListener(collector,metrics));
       }catch (Exception e){
-
+        throw new IllegalStateException("Unable to establish connection to ActiveMQ server", e);
       }
-      return activemqConnection;
+      return connection;
     }
 
     void close() throws IOException {
-      ActivemqConnection maybeConnection = activemqConnection;
+      Connection maybeConnection = connection;
       if (maybeConnection != null) {
-        maybeConnection.close();
+        try {
+          maybeConnection.close();
+        }catch (Exception e){
+          throw new IOException(e);
+        }
+
       }
     }
 
-    ActivemqConnection get() {
-      if (activemqConnection == null) {
+    Connection get() {
+      if (connection == null) {
         synchronized (this) {
-          if (activemqConnection == null) {
-            activemqConnection = compute();
+          if (connection == null) {
+            connection = compute();
           }
         }
       }
-      return activemqConnection;
+      return connection;
     }
 
 
-  }
-
-  static class  ActivemqConnection  implements Closeable {
-    Connection connection = null;
-
-    public ActivemqConnection(Connection connection ){
-      this.connection = connection;
-    }
-
-    @Override
-    public int hashCode() {
-      return super.hashCode();
-    }
-
-    @Override
-    public void close() throws IOException {
-      try {
-        connection.close();
-      }catch (Exception e){
-        throw new IOException(e);
-      }
-    }
   }
 
 
@@ -221,11 +202,11 @@ public final class ActiveMQCollector extends CollectorComponent {
    * Consumes spans from messages on a ActiveMQ queue. Malformed messages will be discarded. Errors
    * in the storage component will similarly be ignored, with no retry of the message.
    */
-  static class ActiveMQSpanConsumer implements MessageListener {
+  static class ActiveMQSpanConsumerMessageListener implements MessageListener {
     final Collector collector;
     final CollectorMetrics metrics;
 
-    ActiveMQSpanConsumer(Collector collector, CollectorMetrics metrics) {
+    ActiveMQSpanConsumerMessageListener(Collector collector, CollectorMetrics metrics) {
       this.collector = collector;
       this.metrics = metrics;
     }
