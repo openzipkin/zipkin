@@ -24,6 +24,8 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.ProducesJson;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
@@ -60,8 +62,8 @@ public class MetricsHealthController {
   @Get("/metrics")
   @ProducesJson
   public ObjectNode fetchMetricsFromMicrometer() {
-    ObjectNode metrics = factory.objectNode();
-    // Iterate over the meters and get the Zipkin Custom meters for constructing the Metrics endpoint
+    ObjectNode metricsJson = factory.objectNode();
+    // Get the Zipkin Custom meters for constructing the Metrics endpoint
     for (Meter meter : meterRegistry.getMeters()) {
       String name = meter.getId().getName();
       if (!name.startsWith("zipkin_collector")) continue;
@@ -69,15 +71,15 @@ public class MetricsHealthController {
       if (transport == null) continue;
       switch (meter.getId().getType()) {
         case COUNTER:
-          metrics.put("counter." + name + "." + transport,
-            meterRegistry.get(name).counter().count());
+          metricsJson.put("counter." + name + "." + transport,
+            ((Counter) meter).count());
           continue;
         case GAUGE:
-          metrics.put("gauge." + name + "." + transport,
-            meterRegistry.get(name).gauge().value());
+          metricsJson.put("gauge." + name + "." + transport,
+            ((Gauge) meter).value());
       }
     }
-    return metrics;
+    return metricsJson;
   }
 
   // Delegates the health endpoint from the Actuator to the root context path and can be deprecated
