@@ -34,6 +34,14 @@ zipkin:
       virtual-host: ${RABBIT_VIRTUAL_HOST:/}
       useSsl: ${RABBIT_USE_SSL:false}
       uri: ${RABBIT_URI:}
+    activemq:
+      # RabbitMQ server address list (comma-separated list of tcp://host:port)
+      addresses: ${ACTIVE_ADDRESSES:}
+      # TCP connection timeout in milliseconds
+      connection-timeout: ${ACTIVE_CONNECTION_TIMEOUT:60000}
+      password: ${ACTIVE_PASSWORD:guest}
+      queue: ${ACTIVE_QUEUE:zipkin}
+      username: ${ACTIVE_USER:guest}
   query:
     enabled: ${QUERY_ENABLED:true}
     # 1 day in millis

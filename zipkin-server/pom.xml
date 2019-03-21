@@ -208,6 +208,14 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- RabbitMQ Collector -->
+    <dependency>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>zipkin-autoconfigure-collector-activemq</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
     <!--Prometheus metrics-->
     <dependency>
       <groupId>io.zipkin.java</groupId>
