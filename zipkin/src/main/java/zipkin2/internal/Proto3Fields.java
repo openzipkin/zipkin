@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 package zipkin2.internal;
 
-import java.util.Map;
+import zipkin2.Endpoint;
 
 import static zipkin2.internal.JsonCodec.UTF_8;
 
@@ -90,6 +90,13 @@ final class Proto3Fields {
     }
   }
 
+  /**
+   * Leniently skips out null, but not on empty string, allowing tag "error" -> "" to serialize
+   * properly.
+   *
+   * <p>This won't result in empty {@link zipkin2.Span#name()} or {@link Endpoint#serviceName()}
+   * because in both cases constructors coerce empty values to null.
+   */
   static abstract class LengthDelimitedField<T> extends Field {
     LengthDelimitedField(int key) {
       super(key);
@@ -99,14 +106,12 @@ final class Proto3Fields {
     final int sizeInBytes(T value) {
       if (value == null) return 0;
       int sizeOfValue = sizeOfValue(value);
-      if (sizeOfValue == 0) return 0;
       return sizeOfLengthDelimitedField(sizeOfValue);
     }
 
     final void write(Buffer b, T value) {
       if (value == null) return;
       int sizeOfValue = sizeOfValue(value);
-      if (sizeOfValue == 0) return;
       b.writeByte(key);
       b.writeVarint(sizeOfValue); // length prefix
       writeValue(b, value);

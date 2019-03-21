@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -25,6 +25,7 @@ import zipkin2.Span;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.TRACE;
+import static zipkin2.codec.SpanBytesEncoderTest.ERROR_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.LOCAL_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.NO_ANNOTATIONS_ROOT_SERVER_SPAN;
 import static zipkin2.codec.SpanBytesEncoderTest.SPAN;
@@ -54,6 +55,16 @@ public class SpanBytesDecoderTest {
   @Test public void localSpanRoundTrip_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(LOCAL_SPAN)))
       .isEqualTo(LOCAL_SPAN);
+  }
+
+  @Test public void errorSpanRoundTrip_JSON_V2() {
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(ERROR_SPAN)))
+      .isEqualTo(ERROR_SPAN);
+  }
+
+  @Test public void errorSpanRoundTrip_PROTO3() {
+    assertThat(SpanBytesDecoder.PROTO3.decodeOne(SpanBytesEncoder.PROTO3.encode(ERROR_SPAN)))
+      .isEqualTo(ERROR_SPAN);
   }
 
   @Test public void spanRoundTrip_64bitTraceId_JSON_V2() {

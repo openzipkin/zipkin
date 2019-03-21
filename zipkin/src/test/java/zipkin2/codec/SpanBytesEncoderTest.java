@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -92,6 +92,16 @@ public class SpanBytesEncoderTest {
           .localEndpoint(Endpoint.newBuilder().serviceName("isao01").ip("10.23.14.72").build())
           .build();
 
+  /** the following skeletal span is used in dependency linking */
+  public static final Span ERROR_SPAN =
+    Span.newBuilder()
+      .traceId("dc955a1d4768875d")
+      .id("dc955a1d4768875d")
+      .localEndpoint(Endpoint.newBuilder().serviceName("isao01").build())
+      .kind(Span.Kind.CLIENT)
+      .putTag("error", "")
+      .build();
+
   Span span = SPAN;
 
   @Test
@@ -130,6 +140,18 @@ public class SpanBytesEncoderTest {
   @Test
   public void localSpan_PROTO3() {
     assertThat(SpanBytesEncoder.PROTO3.encode(LOCAL_SPAN)).hasSize(58);
+  }
+
+  @Test
+  public void errorSpan_JSON_V2() {
+    assertThat(new String(SpanBytesEncoder.JSON_V2.encode(ERROR_SPAN), UTF_8))
+      .isEqualTo(
+        "{\"traceId\":\"dc955a1d4768875d\",\"id\":\"dc955a1d4768875d\",\"kind\":\"CLIENT\",\"localEndpoint\":{\"serviceName\":\"isao01\"},\"tags\":{\"error\":\"\"}}");
+  }
+
+  @Test
+  public void errorSpan_PROTO3() {
+    assertThat(SpanBytesEncoder.PROTO3.encode(ERROR_SPAN)).hasSize(45);
   }
 
   @Test

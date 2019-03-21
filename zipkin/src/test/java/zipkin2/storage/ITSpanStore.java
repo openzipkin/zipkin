@@ -242,6 +242,34 @@ public abstract class ITSpanStore {
   }
 
   /**
+   * The following skeletal span is used in dependency linking.
+   *
+   * <p>Notably this guards empty tag values work
+   */
+  @Test public void readback_minimalErrorSpan() throws Exception {
+    Span errorSpan = Span.newBuilder()
+      .traceId("dc955a1d4768875d")
+      .id("dc955a1d4768875d")
+      .timestamp(TODAY * 1000L)
+      .localEndpoint(Endpoint.newBuilder().serviceName("isao01").build())
+      .kind(Span.Kind.CLIENT)
+      .putTag("error", "")
+      .build();
+    accept(errorSpan);
+
+    assertThat(store().getTraces(requestBuilder().build()).execute())
+      .flatExtracting(l -> l).contains(errorSpan);
+
+    assertThat(store().getTraces(requestBuilder().parseAnnotationQuery("error").build()).execute())
+      .flatExtracting(l -> l).contains(errorSpan);
+    assertThat(store().getTraces(requestBuilder().parseAnnotationQuery("error=1").build()).execute())
+      .isEmpty();
+
+    assertThat(store().getTrace(errorSpan.traceId()).execute())
+      .contains(errorSpan);
+  }
+
+  /**
    * While large spans are discouraged, and maybe not indexed, we should be able to read them back.
    */
   @Test public void readsBackLargeValues() throws IOException {
@@ -564,29 +592,6 @@ public abstract class ITSpanStore {
     assertThat(store().getTraces(
       requestBuilder().serviceName("frontend").parseAnnotationQuery("local=app").build()
     ).execute()).isEmpty();
-  }
-
-  /** Make sure empty binary annotation values don't crash */
-  @Test public void getTraces_tagWithEmptyValue() throws IOException {
-    Span span = Span.newBuilder()
-      .traceId("1")
-      .name("call1")
-      .id(1)
-      .timestamp((TODAY + 1) * 1000)
-      .localEndpoint(FRONTEND)
-      .putTag("empty", "").build();
-
-    accept(span);
-
-    assertThat(store().getTraces(requestBuilder().serviceName("frontend").build()).execute())
-      .containsExactly(asList(span));
-
-    assertThat(store().getTraces(
-      requestBuilder().serviceName("frontend").parseAnnotationQuery("empty").build()
-    ).execute()).containsExactly(asList(span));
-
-    assertThat(store().getTrace(span.traceId()).execute())
-      .containsExactly(span);
   }
 
   /** limit should apply to traces closest to endTs */
