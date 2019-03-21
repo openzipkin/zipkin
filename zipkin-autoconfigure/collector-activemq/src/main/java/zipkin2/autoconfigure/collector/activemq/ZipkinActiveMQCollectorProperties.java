@@ -17,15 +17,13 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.collector.activemq.ActiveMQCollector;
 
-import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
 /** Properties for configuring and building a {@link zipkin2.collector.activemq.ActiveMQCollector}. */
-@ConfigurationProperties("zipkin.collector.rabbitmq")
+@ConfigurationProperties("zipkin.collector.activemq")
 class ZipkinActiveMQCollectorProperties {
-  static final URI EMPTY_URI = URI.create("");
 
   /** RabbitMQ server addresses in the form of a (comma-separated) list of host:port pairs */
   private String addresses;

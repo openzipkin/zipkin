@@ -55,7 +55,7 @@ class ZipkinActiveMQCollectorAutoConfiguration {
   static final class ActiveMQAddressesOrUriSet implements Condition {
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
-      return !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.addresses"));
+      return !isEmpty(context.getEnvironment().getProperty("zipkin.collector.activemq.addresses"));
     }
 
     private static boolean isEmpty(String s) {
