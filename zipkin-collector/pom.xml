@@ -39,6 +39,7 @@
     <module>rabbitmq</module>
     <module>scribe</module>
     <module>kafka08</module>
+    <module>activemq</module>
   </modules>
 
   <dependencies>
