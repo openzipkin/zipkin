@@ -67,9 +67,6 @@
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>3.3.1</HikariCP.version>
     <log4j.version>2.11.2</log4j.version>
-    <!-- Be careful to set this as a provided dep, so that it doesn't interfere with dependencies
-         from other projects. For example, cassandra and spring boot set guava versions -->
-    <guava.version>19.0</guava.version>
 
     <junit.version>4.12</junit.version>
     <powermock.version>2.0.0</powermock.version>
@@ -236,6 +233,19 @@
         <groupId>io.zipkin.java</groupId>
         <artifactId>zipkin-server</artifactId>
         <version>${project.version}</version>
+      </dependency>
+
+      <!-- Borrowing grpc 0.19 version of guava until we port zipkin-gcp to armeria -->
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>26.0-android</version>
+        <exclusions>
+          <exclusion>
+            <groupId>*</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
 
       <dependency>

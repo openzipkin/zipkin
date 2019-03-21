@@ -131,7 +131,7 @@ public class CassandraStorageRule extends ExternalResource {
             }
 
             HostAndPort hap = HostAndPort.fromParts(getContainerIpAddress(), getMappedPort(9042));
-            InetSocketAddress address = new InetSocketAddress(hap.getHostText(), hap.getPort());
+            InetSocketAddress address = new InetSocketAddress(hap.getHost(), hap.getPort());
 
             try (Cluster cluster = getCluster(address);
                 Session session = cluster.newSession()) {
