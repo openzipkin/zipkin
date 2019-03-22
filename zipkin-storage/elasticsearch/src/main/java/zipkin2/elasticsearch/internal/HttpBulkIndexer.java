@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -95,7 +95,7 @@ public final class HttpBulkIndexer {
     // the _type parameter is needed for Elasticsearch <6.x
     body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
     if (id != null) {
-      body.writeUtf8(",\"_id\":\"").writeUtf8(jsonEscape(id)).writeByte('"');
+      body.writeUtf8(",\"_id\":\"").writeUtf8(jsonEscape(id).toString()).writeByte('"');
     }
     body.writeUtf8("}}\n");
   }

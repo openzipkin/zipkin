@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,10 +15,11 @@ package zipkin2.internal;
 
 public final class JsonEscaper {
   /** Exposed for ElasticSearch HttpBulkIndexer */
-  public static String jsonEscape(String v) {
-    if (v.isEmpty()) return v;
-    int afterReplacement = 0;
+  public static CharSequence jsonEscape(CharSequence v) {
     int length = v.length();
+    if (length == 0) return v;
+
+    int afterReplacement = 0;
     StringBuilder builder = null;
     for (int i = 0; i < length; i++) {
       char c = v.charAt(i);
@@ -34,23 +35,19 @@ public final class JsonEscaper {
         continue;
       }
       if (afterReplacement < i) { // write characters between the last replacement and now
-        if (builder == null) builder = new StringBuilder();
+        if (builder == null) builder = new StringBuilder(length);
         builder.append(v, afterReplacement, i);
       }
-      if (builder == null) builder = new StringBuilder();
+      if (builder == null) builder = new StringBuilder(length);
       builder.append(replacement);
       afterReplacement = i + 1;
     }
-    String escaped;
-    if (builder == null) { // then we didn't escape anything
-      escaped = v;
-    } else {
-      if (afterReplacement < length) {
-        builder.append(v, afterReplacement, length);
-      }
-      escaped = builder.toString();
+    if (builder == null) return v; // then we didn't escape anything
+
+    if (afterReplacement < length) {
+      builder.append(v, afterReplacement, length);
     }
-    return escaped;
+    return builder;
   }
 
   /*
@@ -84,7 +81,7 @@ public final class JsonEscaper {
   private static final String U2028 = "\\u2028";
   private static final String U2029 = "\\u2029";
 
-  public static int jsonEscapedSizeInBytes(String v) {
+  public static int jsonEscapedSizeInBytes(CharSequence v) {
     boolean ascii = true;
     int escapingOverhead = 0;
     for (int i = 0, length = v.length(); i < length; i++) {
