@@ -36,7 +36,7 @@ public abstract class Buffer {
    *
    * <p>Later, ASCII run and malformed surrogate logic borrowed from okio.Utf8
    */
-  public static int utf8SizeInBytes(String string) {
+  public static int utf8SizeInBytes(CharSequence string) {
     int sizeInBytes = 0;
     for (int i = 0, len = string.length(); i < len; i++) {
       char ch = string.charAt(i);
@@ -154,7 +154,7 @@ public abstract class Buffer {
    * <p>This looks most similar to {@code io.netty.buffer.ByteBufUtil.writeUtf8(AbstractByteBuf,
    * int, CharSequence, int)} v4.1, modified including features to address ASCII runs of text.
    */
-  public void writeUtf8(String string) {
+  public void writeUtf8(CharSequence string) {
     for (int i = 0, len = string.length(); i < len; i++) {
       char ch = string.charAt(i);
       if (ch < 0x80) { // 7-bit ASCII character
