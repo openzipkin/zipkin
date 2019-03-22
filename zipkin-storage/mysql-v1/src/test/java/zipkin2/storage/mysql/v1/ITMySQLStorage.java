@@ -21,6 +21,8 @@ import org.jooq.DSLContext;
 import org.jooq.Query;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
+import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import zipkin2.DependencyLink;
@@ -40,6 +42,9 @@ public class ITMySQLStorage {
 
     @Override protected StorageComponent storage() {
       return storage.get();
+    }
+
+    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
     }
 
     @Override public void clear() {

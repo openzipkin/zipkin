@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
@@ -134,6 +135,9 @@ public class ITCassandraStorage {
         // Now, block until writes complete, notably so we can read them.
         blockWhileInFlight(storage);
       }
+    }
+
+    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
     }
 
     @Before @Override public void clear() {

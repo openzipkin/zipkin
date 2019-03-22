@@ -27,7 +27,6 @@ import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin2.TestObjects;
 import zipkin2.internal.Trace;
 
 import static java.util.Arrays.asList;
@@ -103,12 +102,19 @@ public abstract class ITSpanStore {
     allShouldWorkWhenEmpty();
   }
 
-  @Test public void dupesOk() throws IOException {
-    accept(TestObjects.TRACE.toArray(new Span[0]));
-    accept(TestObjects.TRACE.toArray(new Span[0]));
+  /**
+   * Ideally, storage backends can deduplicate identical documents as this will prevent some
+   * analysis problems such as double-counting dependency links or other statistics. While this test
+   * exists, it is known not all backends will be able to cheaply make it pass. In other words, it
+   * is optional.
+   */
+  @Test public void deduplicates() throws IOException {
+    // simulate a re-processed message
+    accept(LOTS_OF_SPANS[0]);
+    accept(LOTS_OF_SPANS[0]);
 
-    assertThat(sortTrace(store().getTrace(TestObjects.TRACE.get(0).traceId()).execute()))
-      .containsExactlyInAnyOrderElementsOf(TestObjects.TRACE);
+    assertThat(sortTrace(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()))
+      .containsExactly(LOTS_OF_SPANS[0]);
   }
 
   @Test public void getTraces_groupsTracesTogether() throws IOException {
