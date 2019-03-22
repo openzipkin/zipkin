@@ -161,6 +161,8 @@ armeria:
     - port: ${server.port}
       protocols:
         - http
+  gracefulShutdownQuietPeriodMillis: -1
+  gracefulShutdownTimeoutMillis: -1
 
 spring:
   jmx:
