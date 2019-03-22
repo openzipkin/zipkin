@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,10 +14,11 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
-import com.google.common.util.concurrent.UncheckedTimeoutException;
-import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.mockwebserver.MockResponse;
@@ -61,11 +62,14 @@ public class HttpCallTest {
       }
     });
 
-    SimpleTimeLimiter timeLimiter = new SimpleTimeLimiter();
+    ExecutorService cached = Executors.newCachedThreadPool();
+    SimpleTimeLimiter timeLimiter = SimpleTimeLimiter.create(cached);
     try {
-      timeLimiter.callWithTimeout(q::take, 100, TimeUnit.MILLISECONDS, true);
-      failBecauseExceptionWasNotThrown(UncheckedTimeoutException.class);
-    } catch (UncheckedTimeoutException expected) {
+      timeLimiter.callWithTimeout(q::take, 100, TimeUnit.MILLISECONDS);
+      failBecauseExceptionWasNotThrown(TimeoutException.class);
+    } catch (TimeoutException expected) {
+    } finally {
+      cached.shutdownNow();
     }
   }
 
