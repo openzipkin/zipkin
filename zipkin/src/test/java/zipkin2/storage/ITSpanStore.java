@@ -224,7 +224,7 @@ public abstract class ITSpanStore {
       .build()).execute()).isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
-      .minDuration(CLIENT_SPAN.duration())
+      .minDuration(CLIENT_SPAN.durationAsLong())
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
@@ -236,6 +236,7 @@ public abstract class ITSpanStore {
       .id(CLIENT_SPAN.id())
       .timestamp(CLIENT_SPAN.timestampAsLong())
       .duration(CLIENT_SPAN.durationAsLong())
+      .localEndpoint(CLIENT_SPAN.localEndpoint())
       .build();
     accept(missingDuration);
     accept(lateDuration);
@@ -245,7 +246,7 @@ public abstract class ITSpanStore {
       .build()).execute()).isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
-      .minDuration(CLIENT_SPAN.duration())
+      .minDuration(CLIENT_SPAN.durationAsLong())
       .build()).execute()).flatExtracting(Trace::merge).containsExactly(CLIENT_SPAN);
   }
 
@@ -253,13 +254,13 @@ public abstract class ITSpanStore {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
-      .minDuration(CLIENT_SPAN.duration() - 2)
-      .maxDuration(CLIENT_SPAN.duration() - 1)
+      .minDuration(CLIENT_SPAN.durationAsLong() - 2)
+      .maxDuration(CLIENT_SPAN.durationAsLong() - 1)
       .build()).execute()).isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
-      .minDuration(CLIENT_SPAN.duration())
-      .maxDuration(CLIENT_SPAN.duration())
+      .minDuration(CLIENT_SPAN.durationAsLong())
+      .maxDuration(CLIENT_SPAN.durationAsLong())
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
