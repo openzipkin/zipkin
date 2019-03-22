@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -247,22 +247,26 @@ public abstract class ITSpanStore {
    * <p>Notably this guards empty tag values work
    */
   @Test public void readback_minimalErrorSpan() throws Exception {
+    String serviceName = "isao01";
     Span errorSpan = Span.newBuilder()
       .traceId("dc955a1d4768875d")
       .id("dc955a1d4768875d")
       .timestamp(TODAY * 1000L)
-      .localEndpoint(Endpoint.newBuilder().serviceName("isao01").build())
+      .localEndpoint(Endpoint.newBuilder().serviceName(serviceName).build())
       .kind(Span.Kind.CLIENT)
       .putTag("error", "")
       .build();
     accept(errorSpan);
 
-    assertThat(store().getTraces(requestBuilder().build()).execute())
+    QueryRequest.Builder requestBuilder =
+      requestBuilder().serviceName(serviceName); // so this doesn't die on cassandra v1
+
+    assertThat(store().getTraces(requestBuilder.build()).execute())
       .flatExtracting(l -> l).contains(errorSpan);
 
-    assertThat(store().getTraces(requestBuilder().parseAnnotationQuery("error").build()).execute())
+    assertThat(store().getTraces(requestBuilder.parseAnnotationQuery("error").build()).execute())
       .flatExtracting(l -> l).contains(errorSpan);
-    assertThat(store().getTraces(requestBuilder().parseAnnotationQuery("error=1").build()).execute())
+    assertThat(store().getTraces(requestBuilder.parseAnnotationQuery("error=1").build()).execute())
       .isEmpty();
 
     assertThat(store().getTrace(errorSpan.traceId()).execute())
