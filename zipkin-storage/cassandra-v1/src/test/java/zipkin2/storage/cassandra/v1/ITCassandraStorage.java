@@ -77,6 +77,9 @@ public class ITCassandraStorage {
     @Override @Test @Ignore("Duration unsupported") public void getTraces_maxDuration() {
     }
 
+    @Override @Test @Ignore("Duration unsupported") public void getTraces_lateDuration() {
+    }
+
     @Test public void overFetchesToCompensateForDuplicateIndexData() throws IOException {
       int traceCount = 2000;
 
