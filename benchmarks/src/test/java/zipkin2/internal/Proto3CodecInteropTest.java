@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -100,12 +100,12 @@ public class Proto3CodecInteropTest {
     .addSpans(PROTO_SPAN).build();
 
   @Test public void encodeIsCompatible() throws Exception {
-    byte[] buff = new byte[computeMessageSize(1, PROTO_SPAN)];
-    CodedOutputStream out = CodedOutputStream.newInstance(buff);
+    byte[] googleBytes = new byte[computeMessageSize(1, PROTO_SPAN)];
+    CodedOutputStream out = CodedOutputStream.newInstance(googleBytes);
     out.writeMessage(1, PROTO_SPAN);
 
     assertThat(SpanBytesEncoder.PROTO3.encode(ZIPKIN_SPAN))
-      .containsExactly(buff);
+      .containsExactly(googleBytes);
   }
 
   @Test public void decodeOneIsCompatible() {
@@ -119,27 +119,27 @@ public class Proto3CodecInteropTest {
   }
 
   @Test public void encodeListIsCompatible_buff() throws Exception {
-    byte[] buff = new byte[PROTO_SPANS.getSerializedSize()];
-    CodedOutputStream out = CodedOutputStream.newInstance(buff);
+    byte[] googleBytes = new byte[PROTO_SPANS.getSerializedSize()];
+    CodedOutputStream out = CodedOutputStream.newInstance(googleBytes);
     PROTO_SPANS.writeTo(out);
 
-    byte[] zipkin_buff = new byte[10 + buff.length];
+    byte[] zipkin_buff = new byte[10 + googleBytes.length];
     assertThat(SpanBytesEncoder.PROTO3.encodeList(ZIPKIN_SPANS, zipkin_buff, 5))
-      .isEqualTo(buff.length);
+      .isEqualTo(googleBytes.length);
 
     assertThat(zipkin_buff)
       .startsWith(0, 0, 0, 0, 0)
-      .containsSequence(buff)
+      .containsSequence(googleBytes)
       .endsWith(0, 0, 0, 0, 0);
   }
 
   @Test public void encodeListIsCompatible() throws Exception {
-    byte[] buff = new byte[PROTO_SPANS.getSerializedSize()];
-    CodedOutputStream out = CodedOutputStream.newInstance(buff);
+    byte[] googleBytes = new byte[PROTO_SPANS.getSerializedSize()];
+    CodedOutputStream out = CodedOutputStream.newInstance(googleBytes);
     PROTO_SPANS.writeTo(out);
 
     assertThat(SpanBytesEncoder.PROTO3.encodeList(ZIPKIN_SPANS))
-      .containsExactly(buff);
+      .containsExactly(googleBytes);
   }
 
   @Test public void span_sizeInBytes_matchesProto3() {
@@ -158,10 +158,10 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Annotation protoAnnotation = PROTO_SPAN.getAnnotations(0);
 
-    Buffer buffer = new Buffer(ANNOTATION.sizeInBytes(zipkinAnnotation));
-    ANNOTATION.write(buffer, zipkinAnnotation);
+    Buffer zipkinBytes = new Buffer(ANNOTATION.sizeInBytes(zipkinAnnotation));
+    ANNOTATION.write(zipkinBytes, zipkinAnnotation);
 
-    assertThat(buffer.toByteArray())
+    assertThat(zipkinBytes.toByteArray())
       .containsExactly(writeSpan(Span.newBuilder().addAnnotations(protoAnnotation).build()));
   }
 
@@ -169,13 +169,13 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Annotation protoAnnotation = PROTO_SPAN.getAnnotations(0);
 
-    Buffer buffer =
+    Buffer zipkinBytes =
       new Buffer(writeSpan(Span.newBuilder().addAnnotations(protoAnnotation).build()), 0);
-    assertThat(buffer.readVarint32())
+    assertThat(zipkinBytes.readVarint32())
       .isEqualTo(ANNOTATION.key);
 
     zipkin2.Span.Builder builder = zipkinSpanBuilder();
-    ANNOTATION.readLengthPrefixAndValue(buffer, builder);
+    ANNOTATION.readLengthPrefixAndValue(zipkinBytes, builder);
     assertThat(builder.build().annotations())
       .containsExactly(zipkinAnnotation);
   }
@@ -189,19 +189,19 @@ public class Proto3CodecInteropTest {
   }
 
   @Test public void localEndpoint_write_matchesProto3() throws IOException {
-    Buffer buffer = new Buffer(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
-    LOCAL_ENDPOINT.write(buffer, ZIPKIN_SPAN.localEndpoint());
+    Buffer zipkinBytes = new Buffer(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
+    LOCAL_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.localEndpoint());
 
-    assertThat(buffer.toByteArray())
+    assertThat(zipkinBytes.toByteArray())
       .containsExactly(
         writeSpan(Span.newBuilder().setLocalEndpoint(PROTO_SPAN.getLocalEndpoint()).build()));
   }
 
   @Test public void remoteEndpoint_write_matchesProto3() throws IOException {
-    Buffer buffer = new Buffer(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
-    REMOTE_ENDPOINT.write(buffer, ZIPKIN_SPAN.remoteEndpoint());
+    Buffer zipkinBytes = new Buffer(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
+    REMOTE_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.remoteEndpoint());
 
-    assertThat(buffer.toByteArray())
+    assertThat(zipkinBytes.toByteArray())
       .containsExactly(
         writeSpan(Span.newBuilder().setRemoteEndpoint(PROTO_SPAN.getRemoteEndpoint()).build()));
   }
@@ -220,16 +220,31 @@ public class Proto3CodecInteropTest {
   @Test public void writeTagField_matchesProto3() throws IOException {
     MapEntry<String, String> entry = entry("clnt/finagle.version", "6.45.0");
     TagField field = new TagField(TAG_KEY);
-    Buffer buffer = new Buffer(field.sizeInBytes(entry));
-    field.write(buffer, entry);
+    Buffer zipkinBytes = new Buffer(field.sizeInBytes(entry));
+    field.write(zipkinBytes, entry);
 
     Span oneField = Span.newBuilder().putTags(entry.key, entry.value).build();
-    byte[] buff = new byte[oneField.getSerializedSize()];
-    CodedOutputStream out = CodedOutputStream.newInstance(buff);
+    byte[] googleBytes = new byte[oneField.getSerializedSize()];
+    CodedOutputStream out = CodedOutputStream.newInstance(googleBytes);
     oneField.writeTo(out);
 
-    assertThat(buffer.toByteArray())
-      .containsExactly(buff);
+    assertThat(zipkinBytes.toByteArray())
+      .containsExactly(googleBytes);
+  }
+
+  @Test public void writeTagField_matchesProto3_emptyValue() throws IOException {
+    MapEntry<String, String> entry = entry("error", "");
+    TagField field = new TagField(TAG_KEY);
+    Buffer zipkinBytes = new Buffer(field.sizeInBytes(entry));
+    field.write(zipkinBytes, entry);
+
+    Span oneField = Span.newBuilder().putTags(entry.key, entry.value).build();
+    byte[] googleBytes = new byte[oneField.getSerializedSize()];
+    CodedOutputStream out = CodedOutputStream.newInstance(googleBytes);
+    oneField.writeTo(out);
+
+    assertThat(zipkinBytes.toByteArray())
+      .containsExactly(googleBytes);
   }
 
   static ByteString decodeHex(String s) {
@@ -237,9 +252,9 @@ public class Proto3CodecInteropTest {
   }
 
   static byte[] writeSpan(Span span) throws IOException {
-    byte[] buff = new byte[span.getSerializedSize()];
-    span.writeTo(CodedOutputStream.newInstance(buff));
-    return buff;
+    byte[] googleBytes = new byte[span.getSerializedSize()];
+    span.writeTo(CodedOutputStream.newInstance(googleBytes));
+    return googleBytes;
   }
 
   static zipkin2.Span.Builder zipkinSpanBuilder() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -239,6 +239,38 @@ public abstract class ITSpanStore {
       .minDuration(CLIENT_SPAN.duration())
       .maxDuration(CLIENT_SPAN.duration())
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
+  }
+
+  /**
+   * The following skeletal span is used in dependency linking.
+   *
+   * <p>Notably this guards empty tag values work
+   */
+  @Test public void readback_minimalErrorSpan() throws Exception {
+    String serviceName = "isao01";
+    Span errorSpan = Span.newBuilder()
+      .traceId("dc955a1d4768875d")
+      .id("dc955a1d4768875d")
+      .timestamp(TODAY * 1000L)
+      .localEndpoint(Endpoint.newBuilder().serviceName(serviceName).build())
+      .kind(Span.Kind.CLIENT)
+      .putTag("error", "")
+      .build();
+    accept(errorSpan);
+
+    QueryRequest.Builder requestBuilder =
+      requestBuilder().serviceName(serviceName); // so this doesn't die on cassandra v1
+
+    assertThat(store().getTraces(requestBuilder.build()).execute())
+      .flatExtracting(l -> l).contains(errorSpan);
+
+    assertThat(store().getTraces(requestBuilder.parseAnnotationQuery("error").build()).execute())
+      .flatExtracting(l -> l).contains(errorSpan);
+    assertThat(store().getTraces(requestBuilder.parseAnnotationQuery("error=1").build()).execute())
+      .isEmpty();
+
+    assertThat(store().getTrace(errorSpan.traceId()).execute())
+      .contains(errorSpan);
   }
 
   /**
@@ -564,29 +596,6 @@ public abstract class ITSpanStore {
     assertThat(store().getTraces(
       requestBuilder().serviceName("frontend").parseAnnotationQuery("local=app").build()
     ).execute()).isEmpty();
-  }
-
-  /** Make sure empty binary annotation values don't crash */
-  @Test public void getTraces_tagWithEmptyValue() throws IOException {
-    Span span = Span.newBuilder()
-      .traceId("1")
-      .name("call1")
-      .id(1)
-      .timestamp((TODAY + 1) * 1000)
-      .localEndpoint(FRONTEND)
-      .putTag("empty", "").build();
-
-    accept(span);
-
-    assertThat(store().getTraces(requestBuilder().serviceName("frontend").build()).execute())
-      .containsExactly(asList(span));
-
-    assertThat(store().getTraces(
-      requestBuilder().serviceName("frontend").parseAnnotationQuery("empty").build()
-    ).execute()).containsExactly(asList(span));
-
-    assertThat(store().getTrace(span.traceId()).execute())
-      .containsExactly(span);
   }
 
   /** limit should apply to traces closest to endTs */
