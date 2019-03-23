@@ -56,6 +56,9 @@ public class ITElasticsearchStorageV5 {
     @Test @Ignore @Override public void getSpanNames_mapsNameToRemoteServiceName() {
     }
 
+    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
+    }
+
     @Before @Override public void clear() throws IOException {
       storage.clear();
     }

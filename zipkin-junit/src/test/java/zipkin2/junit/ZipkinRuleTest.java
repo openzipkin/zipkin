@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -97,13 +97,15 @@ public class ZipkinRuleTest {
   /** The raw query can show affects like redundant rows in the data store. */
   @Test
   public void storeSpans_readbackRaw() {
-    String traceId = LOTS_OF_SPANS[0].traceId();
+    Span missingDuration = LOTS_OF_SPANS[0].toBuilder().duration(null).build();
+    Span withDuration = LOTS_OF_SPANS[0];
 
     // write the span to zipkin directly
-    zipkin.storeSpans(asList(LOTS_OF_SPANS[0]));
-    zipkin.storeSpans(asList(LOTS_OF_SPANS[0]));
+    zipkin.storeSpans(asList(missingDuration));
+    zipkin.storeSpans(asList(withDuration));
 
-    assertThat(zipkin.getTrace(traceId)).containsExactly(LOTS_OF_SPANS[0], LOTS_OF_SPANS[0]);
+    assertThat(zipkin.getTrace(missingDuration.traceId()))
+      .containsExactly(missingDuration, withDuration);
   }
 
   @Test

@@ -80,6 +80,9 @@ public class ITCassandraStorage {
     @Override @Test @Ignore("Duration unsupported") public void getTraces_lateDuration() {
     }
 
+    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
+    }
+
     @Test public void overFetchesToCompensateForDuplicateIndexData() throws IOException {
       int traceCount = 2000;
 
