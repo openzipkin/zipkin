@@ -124,7 +124,7 @@ public abstract class ITSpanStore {
       .timestamp((TODAY + 1) * 1000L)
       .localEndpoint(FRONTEND)
       .build();
-    Span traceASpan2 = traceASpan1.toBuilder().id("1").timestamp((TODAY + 2) * 1000L).build();
+    Span traceASpan2 = traceASpan1.toBuilder().id("2").timestamp((TODAY + 2) * 1000L).build();
     Span traceBSpan1 = traceASpan1.toBuilder().traceId("b").build();
     Span traceBSpan2 = traceASpan2.toBuilder().traceId("b").build();
 
