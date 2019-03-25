@@ -17,9 +17,9 @@ If the URI is set, the following properties will be ignored.
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.activemq.addresses` | `ACTIVE_ADDRESSES` | Comma-separated list of ActiveMQ addresses, ex. `localhost:5672,localhost:5673`
-`zipkin.collector.activemq.password` | `ACTIVE_PASSWORD`| Password to use when connecting to ActiveMQ. Defaults to `guest`
-`zipkin.collector.activemq.username` | `ACTIVE_USER` | Username to use when connecting to ActiveMQ. Defaults to `guest`
+`zipkin.collector.activemq.addresses` | `ACTIVE_ADDRESSES` | Comma-separated list of ActiveMQ addresses, ex. `tcp://localhost:61616,tcp://localhost2:61616`
+`zipkin.collector.activemq.password` | `ACTIVE_PASSWORD`| Password to use when connecting to ActiveMQ. Defaults to `system`
+`zipkin.collector.activemq.username` | `ACTIVE_USER` | Username to use when connecting to ActiveMQ. Defaults to `manager`
 
 ### Caveats
 
