@@ -57,8 +57,7 @@ public class ITRabbitMQCollector {
   public void startFailsWithInvalidRabbitMqServer() throws Exception {
     // we can be pretty certain RabbitMQ isn't running on localhost port 80
     String notRabbitMqAddress = "localhost:80";
-    try (RabbitMQCollector collector =
-        builder().addresses(Collections.singletonList(notRabbitMqAddress)).build()) {
+    try (RabbitMQCollector collector = builder().addresses(Collections.singletonList(notRabbitMqAddress)).build()) {
       thrown.expect(IllegalStateException.class);
       thrown.expectMessage("Unable to establish connection to RabbitMQ server");
       collector.start();

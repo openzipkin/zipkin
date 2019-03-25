@@ -10,16 +10,16 @@ The following configuration can be set for the ActiveMQ Collector.
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.activemq.connection-timeout` | `ACTIVE_CONNECTION_TIMEOUT` | Milliseconds to wait establishing a connection. Defaults to `60000` (1 minute)
-`zipkin.collector.activemq.queue` | `ACTIVE_QUEUE` | Queue from which to collect span messages. Defaults to `zipkin`
+`zipkin.collector.activemq.connection-timeout` | `ACTIVEMQ_CONNECTION_TIMEOUT` | Milliseconds to wait establishing a connection. Defaults to `60000` (1 minute)
+`zipkin.collector.activemq.queue` | `ACTIVEMQ_QUEUE` | Queue from which to collect span messages. Defaults to `zipkin`
 
 If the URI is set, the following properties will be ignored.
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.activemq.addresses` | `ACTIVE_ADDRESSES` | Comma-separated list of ActiveMQ addresses, ex. `tcp://localhost:61616,tcp://localhost2:61616`
-`zipkin.collector.activemq.password` | `ACTIVE_PASSWORD`| Password to use when connecting to ActiveMQ. Defaults to `system`
-`zipkin.collector.activemq.username` | `ACTIVE_USER` | Username to use when connecting to ActiveMQ. Defaults to `manager`
+`zipkin.collector.activemq.addresses` | `ACTIVEMQ_ADDRESSES` | Comma-separated list of ActiveMQ addresses, ex. `tcp://localhost:61616,tcp://localhost2:61616`
+`zipkin.collector.activemq.password` | `ACTIVEMQ_PASSWORD`| Password to use when connecting to ActiveMQ. Defaults to `system`
+`zipkin.collector.activemq.username` | `ACTIVEMQ_USER` | Username to use when connecting to ActiveMQ. Defaults to `manager`
 
 ### Caveats
 
@@ -46,7 +46,7 @@ one-off spans to ActiveMQ to be collected by this collector.
 1. Start ActiveMQ server
 2. Start Zipkin server
 ```bash
-$ ACTIVE_ADDRESSES=tcp://localhost:61616 java -jar zipkin.jar
+$ ACTIVEMQ_ADDRESSES=tcp://localhost:61616 java -jar zipkin.jar
 ```
 3. Save an array of spans to a file like `sample-spans.json`
 ```json

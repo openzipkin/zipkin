@@ -157,14 +157,14 @@ public final class ActiveMQCollector extends CollectorComponent {
       try {
         builder.connectionFactory.setBrokerURL("failover:("+builder.addresses+")?initialReconnectDelay=100");
         connection = builder.connectionFactory.createConnection();
-        Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         connection.start();
+        Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
         Destination destination = session.createQueue(builder.queue);
         MessageConsumer messageConsumer = session.createConsumer(destination);
         Collector collector = builder.delegate.build();
         CollectorMetrics metrics = builder.metrics;
         messageConsumer.setMessageListener(new ActiveMQSpanConsumerMessageListener(collector,metrics));
-      }catch (Exception e){
+      }catch (JMSException e){
         throw new IllegalStateException("Unable to establish connection to ActiveMQ server", e);
       }
       return connection;

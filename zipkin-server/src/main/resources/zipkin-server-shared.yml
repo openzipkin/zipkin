@@ -36,12 +36,12 @@ zipkin:
       uri: ${RABBIT_URI:}
     activemq:
       # RabbitMQ server address list (comma-separated list of tcp://host:port)
-      addresses: ${ACTIVE_ADDRESSES:}
+      addresses: ${ACTIVEMQ_ADDRESSES:}
       # TCP connection timeout in milliseconds
-      connection-timeout: ${ACTIVE_CONNECTION_TIMEOUT:60000}
-      password: ${ACTIVE_PASSWORD:guest}
-      queue: ${ACTIVE_QUEUE:zipkin}
-      username: ${ACTIVE_USER:guest}
+      connection-timeout: ${ACTIVEMQ_CONNECTION_TIMEOUT:60000}
+      password: ${ACTIVEMQ_PASSWORD:system}
+      queue: ${ACTIVEMQ_QUEUE:zipkin}
+      username: ${ACTIVEMQ_USER:manager}
   query:
     enabled: ${QUERY_ENABLED:true}
     # 1 day in millis

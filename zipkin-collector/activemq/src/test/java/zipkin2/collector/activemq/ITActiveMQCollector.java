@@ -43,6 +43,17 @@ public class ITActiveMQCollector {
     assertThat(activemq.collector.check().ok()).isTrue();
   }
 
+  @Test
+  public void startFailsWithInvalidActiveMqServer() throws Exception {
+    // we can be pretty certain ActiveMQ isn't running on localhost port 61614
+    String notActiveMqAddress = "localhost:61614";
+    try (ActiveMQCollector collector = ActiveMQCollector.builder().addresses(notActiveMqAddress).build()) {
+      thrown.expect(IllegalStateException.class);
+      thrown.expectMessage("Unable to establish connection to ActiveMQ server");
+      collector.start();
+    }
+  }
+
 
 
 }
