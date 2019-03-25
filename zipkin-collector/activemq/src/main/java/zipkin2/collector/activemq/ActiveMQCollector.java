@@ -23,13 +23,12 @@ import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
 
 import javax.jms.*;
-import java.io.Closeable;
 import java.io.IOException;
 import java.lang.IllegalStateException;
 import java.util.concurrent.atomic.AtomicReference;
 
 
-/** This collector consumes encoded binary messages from a RabbitMQ queue. */
+/** This collector consumes encoded binary messages from a ActiveMQ queue. */
 public final class ActiveMQCollector extends CollectorComponent {
 
   static final Callback<Void> NOOP =
@@ -45,7 +44,7 @@ public final class ActiveMQCollector extends CollectorComponent {
     return new Builder();
   }
 
-  /** Configuration including defaults needed to consume spans from a RabbitMQ queue. */
+  /** Configuration including defaults needed to consume spans from a ActiveMQ queue. */
   public static final class Builder extends CollectorComponent.Builder {
     Collector.Builder delegate = Collector.newBuilder(ActiveMQCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
@@ -88,7 +87,7 @@ public final class ActiveMQCollector extends CollectorComponent {
     }
 
     /**
-     * Queue zipkin spans will be consumed from. Defaults to "zipkin-spans".
+     * Queue zipkin spans will be consumed from. Defaults to "zipkin".
      */
     public Builder queue(String queue) {
       if (queue == null) {
@@ -98,13 +97,13 @@ public final class ActiveMQCollector extends CollectorComponent {
     }
 
     public Builder username(String username) {
-      ((ActiveMQConnectionFactory)connectionFactory).setUserName(username);
+      connectionFactory.setUserName(username);
       return this;
     }
 
     /** The password to use when connecting to the broker. Defaults to "guest" */
     public Builder password(String password) {
-      ((ActiveMQConnectionFactory)connectionFactory).setPassword(password);
+      connectionFactory.setPassword(password);
       return this;
     }
 
