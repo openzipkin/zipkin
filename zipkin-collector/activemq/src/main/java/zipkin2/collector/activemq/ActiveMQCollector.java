@@ -213,13 +213,17 @@ public final class ActiveMQCollector extends CollectorComponent {
     @Override
     public void onMessage(Message message) {
       metrics.incrementMessages();
-      if(message instanceof BytesMessage) {
-        try {
-          byte [] data = new byte[(int)((BytesMessage)message).getBodyLength()];
-          ((BytesMessage)message).readBytes(data);
+      try {
+        if(message instanceof BytesMessage) {
+            byte [] data = new byte[(int)((BytesMessage)message).getBodyLength()];
+            ((BytesMessage)message).readBytes(data);
+            this.collector.acceptSpans(data, NOOP);
+        }else if(message instanceof TextMessage){
+          String text = ((TextMessage)message).getText();
+          byte [] data = text.getBytes();
           this.collector.acceptSpans(data, NOOP);
-        }catch (Exception e){
         }
+      }catch (Exception e){
       }
     }
 
