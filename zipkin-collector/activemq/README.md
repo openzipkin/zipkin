@@ -17,9 +17,9 @@ If the URI is set, the following properties will be ignored.
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.activemq.addresses` | `ACTIVE_ADDRESSES` | Comma-separated list of RabbitMQ addresses, ex. `localhost:5672,localhost:5673`
-`zipkin.collector.activemq.password` | `ACTIVE_PASSWORD`| Password to use when connecting to RabbitMQ. Defaults to `guest`
-`zipkin.collector.activemq.username` | `ACTIVE_USER` | Username to use when connecting to RabbitMQ. Defaults to `guest`
+`zipkin.collector.activemq.addresses` | `ACTIVE_ADDRESSES` | Comma-separated list of ActiveMQ addresses, ex. `localhost:5672,localhost:5673`
+`zipkin.collector.activemq.password` | `ACTIVE_PASSWORD`| Password to use when connecting to ActiveMQ. Defaults to `guest`
+`zipkin.collector.activemq.username` | `ACTIVE_USER` | Username to use when connecting to ActiveMQ. Defaults to `guest`
 
 ### Caveats
 
@@ -38,7 +38,7 @@ A list of Spans in JSON. The first character must be '[' (decimal 91).
 
 ## Local testing
 
-The following assumes you are running an instance of RabbitMQ locally on the default port (61616).
+The following assumes you are running an instance of ActiveMQ locally on the default port (61616).
 You can download and install ActiveMQ following [instructions available here](http://activemq.apache.org/download.html).
 With the [ActiveMQ Management Admin](http://localhost:8161/admin/) you can easily publish
 one-off spans to ActiveMQ to be collected by this collector.
