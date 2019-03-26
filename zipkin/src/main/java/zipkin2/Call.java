@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -183,7 +183,7 @@ public abstract class Call<V> implements Cloneable {
   /** Returns a copy of this object, so you can make an identical follow-up request. */
   @Override public abstract Call<V> clone();
 
-  static final class Constant<V> extends Base<V> {
+  static class Constant<V> extends Base<V> { // not final for mock testing
     final V v;
 
     Constant(V v) {

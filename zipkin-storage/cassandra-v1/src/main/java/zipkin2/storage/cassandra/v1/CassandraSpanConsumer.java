@@ -104,7 +104,6 @@ final class CassandraSpanConsumer implements SpanConsumer {
       insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
     }
     indexer.index(spansToIndex.build(), calls);
-    if (calls.size() == 1) return calls.get(0);
     return AggregateCall.newVoidCall(calls);
   }
 

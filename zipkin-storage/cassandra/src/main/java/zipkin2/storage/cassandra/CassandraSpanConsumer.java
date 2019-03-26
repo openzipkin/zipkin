@@ -130,7 +130,6 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {
       insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
     }
-    if (calls.size() == 1) return calls.get(0);
     return AggregateCall.newVoidCall(calls);
   }
 
