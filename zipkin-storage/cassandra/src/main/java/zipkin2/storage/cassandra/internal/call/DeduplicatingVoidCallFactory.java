@@ -38,7 +38,7 @@ public abstract class DeduplicatingVoidCallFactory<I> {
     delayLimiter.clear();
   }
 
-  static final class InvalidatingVoidCall<I> extends Call.Base<Void> {
+  public static final class InvalidatingVoidCall<I> extends Call.Base<Void> {
     final Call<Void> delegate;
     final DelayLimiter<I> delayLimiter;
     final I input;

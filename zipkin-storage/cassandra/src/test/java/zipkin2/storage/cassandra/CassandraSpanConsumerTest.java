@@ -22,6 +22,7 @@ import org.junit.Test;
 import org.mockito.Mockito;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static java.util.Collections.singletonList;
@@ -101,7 +102,7 @@ public class CassandraSpanConsumerTest {
     Call<Void> call = consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
       .extracting("input.service", "input.span")
       .containsExactly(tuple(FRONTEND.serviceName(), span.name()));
   }
@@ -113,7 +114,7 @@ public class CassandraSpanConsumerTest {
     Call<Void> call = consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
       .extracting("input.service", "input.span")
       .containsExactly(
         tuple(BACKEND.serviceName(), span.name()), tuple(FRONTEND.serviceName(), span.name()));
@@ -126,7 +127,7 @@ public class CassandraSpanConsumerTest {
     Call<Void> call = consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof InsertServiceSpan)
+      .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
       .extracting("input.service", "input.span")
       .containsExactly(tuple(FRONTEND.serviceName(), ""));
   }
@@ -238,7 +239,7 @@ public class CassandraSpanConsumerTest {
         .build();
 
     assertThat(consumer.accept(singletonList(span)))
-      .extracting("delegate.input.annotation_query")
+      .extracting("input.annotation_query")
       .allSatisfy(q -> assertThat(q).isNull());
   }
 
