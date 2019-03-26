@@ -21,14 +21,14 @@ import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.Map;
 import zipkin2.Call;
-import zipkin2.storage.cassandra.internal.call.DeduplicatingCall;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
+import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
 
-final class InsertAutocompleteValue extends DeduplicatingCall<Map.Entry<String, String>> {
+final class InsertAutocompleteValue extends ResultSetFutureCall<Void> {
 
-  static class Factory
-    extends DeduplicatingCall.Factory<Map.Entry<String, String>, InsertAutocompleteValue> {
+  static class Factory extends DeduplicatingVoidCallFactory<Map.Entry<String, String>> {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -41,7 +41,7 @@ final class InsertAutocompleteValue extends DeduplicatingCall<Map.Entry<String, 
       preparedStatement = session.prepare(insertQuery);
     }
 
-    @Override protected InsertAutocompleteValue newCall(Map.Entry<String, String> input) {
+    @Override protected Call<Void> newCall(Map.Entry<String, String> input) {
       return new InsertAutocompleteValue(this, input);
     }
   }
@@ -50,7 +50,6 @@ final class InsertAutocompleteValue extends DeduplicatingCall<Map.Entry<String, 
   final Map.Entry<String, String> input;
 
   InsertAutocompleteValue(Factory factory, Map.Entry<String, String> input) {
-    super(factory, input);
     this.factory = factory;
     this.input = input;
   }
@@ -61,11 +60,15 @@ final class InsertAutocompleteValue extends DeduplicatingCall<Map.Entry<String, 
       .setString("value", input.getValue()));
   }
 
+  @Override public Void map(ResultSet input) {
+    return null;
+  }
+
   @Override public String toString() {
     return "InsertAutocompleteValue(" + input + ")";
   }
 
-  @Override public Call<ResultSet> clone() {
+  @Override public Call<Void> clone() {
     return new InsertAutocompleteValue(factory, input);
   }
 }

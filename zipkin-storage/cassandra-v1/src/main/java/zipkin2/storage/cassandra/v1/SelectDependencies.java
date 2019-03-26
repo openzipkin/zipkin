@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,7 +32,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.internal.DateUtil.getDays;
 
-final class SelectDependencies extends ResultSetFutureCall {
+final class SelectDependencies extends ResultSetFutureCall<List<DependencyLink>> {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
@@ -48,7 +48,7 @@ final class SelectDependencies extends ResultSetFutureCall {
 
     Call<List<DependencyLink>> create(long endTs, long lookback) {
       List<Date> days = getDays(endTs, lookback);
-      return new SelectDependencies(this, days).map(ConvertDependenciesResponse.INSTANCE);
+      return new SelectDependencies(this, days);
     }
   }
 
@@ -75,24 +75,13 @@ final class SelectDependencies extends ResultSetFutureCall {
     return new SelectDependencies(factory, days);
   }
 
-  enum ConvertDependenciesResponse implements Mapper<ResultSet, List<DependencyLink>> {
-    INSTANCE;
-
-    @Override
-    public List<DependencyLink> map(ResultSet rs) {
-      List<DependencyLink> unmerged = new ArrayList<>();
-      for (Row row : rs) {
-        ByteBuffer encodedDayOfDependencies = row.getBytes("dependencies");
-        for (DependencyLink link : Dependencies.fromThrift(encodedDayOfDependencies).links()) {
-          unmerged.add(link);
-        }
-      }
-      return DependencyLinker.merge(unmerged);
+  @Override
+  public List<DependencyLink> map(ResultSet rs) {
+    List<DependencyLink> unmerged = new ArrayList<>();
+    for (Row row : rs) {
+      ByteBuffer encodedDayOfDependencies = row.getBytes("dependencies");
+      unmerged.addAll(Dependencies.fromThrift(encodedDayOfDependencies).links());
     }
-
-    @Override
-    public String toString() {
-      return "MergeDependencies";
-    }
+    return DependencyLinker.merge(unmerged);
   }
 }

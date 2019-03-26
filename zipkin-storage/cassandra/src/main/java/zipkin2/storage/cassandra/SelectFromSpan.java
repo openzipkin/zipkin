@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -40,7 +41,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
-final class SelectFromSpan extends ResultSetFutureCall {
+final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
 
   static class Factory {
     final Session session;
@@ -115,6 +116,10 @@ final class SelectFromSpan extends ResultSetFutureCall {
   protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(
         factory.preparedStatement.bind().setSet("trace_id", trace_id).setInt("limit_", limit_));
+  }
+
+  @Override public ResultSet map(ResultSet input) {
+    return input;
   }
 
   @Override
@@ -197,24 +202,23 @@ final class SelectFromSpan extends ResultSetFutureCall {
           }
         }
         if (!row.isNull("l_ep")) {
-          builder = builder.localEndpoint(row.get("l_ep", Schema.EndpointUDT.class).toEndpoint());
+          builder.localEndpoint(row.get("l_ep", Schema.EndpointUDT.class).toEndpoint());
         }
         if (!row.isNull("r_ep")) {
-          builder = builder.remoteEndpoint(row.get("r_ep", Schema.EndpointUDT.class).toEndpoint());
+          builder.remoteEndpoint(row.get("r_ep", Schema.EndpointUDT.class).toEndpoint());
         }
         if (!row.isNull("shared")) {
-          builder = builder.shared(row.getBool("shared"));
+          builder.shared(row.getBool("shared"));
         }
         if (!row.isNull("debug")) {
-          builder = builder.shared(row.getBool("debug"));
+          builder.shared(row.getBool("debug"));
         }
         for (Schema.AnnotationUDT udt : row.getList("annotations", Schema.AnnotationUDT.class)) {
-          builder =
-              builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
+          builder.addAnnotation(udt.toAnnotation().timestamp(), udt.toAnnotation().value());
         }
         for (Entry<String, String> tag :
             row.getMap("tags", String.class, String.class).entrySet()) {
-          builder = builder.putTag(tag.getKey(), tag.getValue());
+          builder.putTag(tag.getKey(), tag.getValue());
         }
         result.add(builder.build());
       };

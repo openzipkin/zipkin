@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.cassandra;
 
-import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.utils.UUIDs;
 import java.util.ArrayList;
@@ -25,9 +24,9 @@ import java.util.UUID;
 import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.internal.AggregateCall;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
-import zipkin2.storage.cassandra.internal.call.AggregateCall;
 
 import static zipkin2.storage.cassandra.CassandraUtil.durationIndexBucket;
 
@@ -116,23 +115,23 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
         if (autocompleteKeys.contains(entry.getKey())) autocompleteTags.add(entry);
       }
     }
-    List<Call<ResultSet>> calls = new ArrayList<>();
+    List<Call<Void>> calls = new ArrayList<>();
     for (InsertSpan.Input span : spans) {
       calls.add(insertSpan.create(span));
     }
     if (searchEnabled) {
       for (InsertServiceSpan.Input serviceSpan : serviceSpans) {
-        calls.add(insertServiceSpanName.create(serviceSpan));
+        insertServiceSpanName.maybeAdd(serviceSpan, calls);
       }
       for (InsertTraceByServiceSpan.Input serviceSpan : traceByServiceSpans) {
         calls.add(insertTraceByServiceSpan.create(serviceSpan));
       }
     }
-    for (Map.Entry<String, String> entry : autocompleteTags) {
-      calls.add(insertAutocompleteValue.create(entry));
+    for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {
+      insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
     }
     if (calls.size() == 1) return calls.get(0).map(r -> null);
-    return new StoreSpansCall(calls);
+    return AggregateCall.newVoidCall(calls);
   }
 
   static long guessTimestamp(Span span) {
@@ -143,33 +142,5 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       }
     }
     return 0L; // return a timestamp that won't match a query
-  }
-
-  static final class StoreSpansCall extends AggregateCall<ResultSet, Void> {
-    StoreSpansCall(List<Call<ResultSet>> calls) {
-      super(calls);
-    }
-
-    volatile boolean empty = true;
-
-    @Override
-    protected Void newOutput() {
-      return null;
-    }
-
-    @Override
-    protected void append(ResultSet input, Void output) {
-      empty = false;
-    }
-
-    @Override
-    protected boolean isEmpty(Void output) {
-      return empty;
-    }
-
-    @Override
-    public StoreSpansCall clone() {
-      return new StoreSpansCall(cloneCalls());
-    }
   }
 }

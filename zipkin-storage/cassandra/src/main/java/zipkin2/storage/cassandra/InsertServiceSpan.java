@@ -14,16 +14,18 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
-import zipkin2.storage.cassandra.internal.call.DeduplicatingCall;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
+import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
-final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input> {
+final class InsertServiceSpan extends ResultSetFutureCall<Void> {
 
   @AutoValue
   abstract static class Input {
@@ -35,7 +37,7 @@ final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input>
     }
   }
 
-  static class Factory extends DeduplicatingCall.Factory<Input, InsertServiceSpan> {
+  static class Factory extends DeduplicatingVoidCallFactory<Input> {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -61,7 +63,6 @@ final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input>
   final Input input;
 
   InsertServiceSpan(Factory factory, Input input) {
-    super(factory, input);
     this.factory = factory;
     this.input = input;
   }
@@ -70,6 +71,10 @@ final class InsertServiceSpan extends DeduplicatingCall<InsertServiceSpan.Input>
     return factory.session.executeAsync(factory.preparedStatement.bind()
       .setString("service", input.service())
       .setString("span", input.span()));
+  }
+
+  @Override public Void map(ResultSet input) {
+    return null;
   }
 
   @Override public String toString() {

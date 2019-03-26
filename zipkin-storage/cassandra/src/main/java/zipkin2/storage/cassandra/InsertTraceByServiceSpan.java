@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,13 +22,11 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import java.util.UUID;
 import zipkin2.Call;
-import zipkin2.internal.Nullable;
-import zipkin2.storage.StorageComponent;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-final class InsertTraceByServiceSpan extends ResultSetFutureCall {
+final class InsertTraceByServiceSpan extends ResultSetFutureCall<Void> {
 
   @AutoValue
   abstract static class Input {
@@ -65,7 +63,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
     }
 
     /**
-     * While {@link zipkin2.Span#duration} cannot be zero, zero duration in milliseconds is
+     * While {@link zipkin2.Span#duration()} cannot be zero, zero duration in milliseconds is
      * permitted, as it implies the span took less than 1 millisecond (1-999us).
      */
     Input newInput(
@@ -79,7 +77,7 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
           durationMillis);
     }
 
-    Call<ResultSet> create(Input input) {
+    Call<Void> create(Input input) {
       return new InsertTraceByServiceSpan(this, input);
     }
   }
@@ -108,6 +106,10 @@ final class InsertTraceByServiceSpan extends ResultSetFutureCall {
       bound.setLong("duration", input.duration());
     }
     return factory.session.executeAsync(bound);
+  }
+
+  @Override public Void map(ResultSet input) {
+    return null;
   }
 
   @Override

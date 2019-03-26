@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -28,7 +29,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-final class SelectSpanNames extends ResultSetFutureCall {
+final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
 
   static class Factory {
     final Session session;
@@ -69,6 +70,10 @@ final class SelectSpanNames extends ResultSetFutureCall {
             .bind()
             .setString("service_name", service_name)
             .setInt("limit_", 1000)); // no one is ever going to browse so many span names
+  }
+
+  @Override public ResultSet map(ResultSet input) {
+    return input;
   }
 
   @Override

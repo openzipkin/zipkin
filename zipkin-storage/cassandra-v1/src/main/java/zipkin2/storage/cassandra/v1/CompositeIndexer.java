@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,7 +41,7 @@ final class CompositeIndexer {
             factory.create(new InsertTraceIdByAnnotation(bucketCount)));
   }
 
-  void index(List<V1Span> spans, List<Call<ResultSet>> calls) {
+  void index(List<V1Span> spans, List<Call<Void>> calls) {
     for (Indexer optimizer : indexers) {
       optimizer.index(spans, calls);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,8 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
 
-final class InsertSpan extends ResultSetFutureCall {
+final class InsertSpan extends ResultSetFutureCall<Void> {
+
   @AutoValue
   abstract static class Input {
     abstract UUID ts_uuid();
@@ -141,7 +142,7 @@ final class InsertSpan extends ResultSetFutureCall {
           Boolean.TRUE.equals(span.shared()));
     }
 
-    Call<ResultSet> create(Input span) {
+    Call<Void> create(Input span) {
       return new InsertSpan(this, span);
     }
   }
@@ -210,6 +211,10 @@ final class InsertSpan extends ResultSetFutureCall {
       }
     }
     return factory.session.executeAsync(bound);
+  }
+
+  @Override public Void map(ResultSet input) {
+    return null;
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import zipkin2.Call;
+import zipkin2.internal.AggregateCall;
 
 public final class AggregateIntoSet<T> extends AggregateCall<Set<T>, Set<T>> {
   public AggregateIntoSet(List<Call<Set<T>>> calls) {
