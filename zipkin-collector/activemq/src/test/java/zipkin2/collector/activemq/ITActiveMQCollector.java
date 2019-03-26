@@ -20,9 +20,12 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Span;
 import zipkin2.TestObjects;
+import zipkin2.codec.SpanBytesEncoder;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Java6Assertions.assertThat;
 
@@ -54,6 +57,71 @@ public class ITActiveMQCollector {
     }
   }
 
+
+  /** Ensures list encoding works: a json encoded list of spans */
+  @Test
+  public void messageWithMultipleSpans_json() throws Exception {
+    byte[] message = SpanBytesEncoder.JSON_V1.encodeList(spans);
+    activemq.publish(message);
+
+    Thread.sleep(1000);
+    assertThat(activemq.storage.acceptedSpanCount()).isEqualTo(spans.size());
+
+    assertThat(activemq.activemqMetrics.messages()).isEqualTo(1);
+    assertThat(activemq.activemqMetrics.bytes()).isEqualTo(message.length);
+    assertThat(activemq.activemqMetrics.spans()).isEqualTo(spans.size());
+  }
+
+  /** Ensures list encoding works: a version 2 json list of spans */
+  @Test
+  public void messageWithMultipleSpans_json2() throws Exception {
+    messageWithMultipleSpans(SpanBytesEncoder.JSON_V2);
+  }
+
+  /** Ensures list encoding works: proto3 ListOfSpans */
+  @Test
+  public void messageWithMultipleSpans_proto3() throws Exception {
+    messageWithMultipleSpans(SpanBytesEncoder.PROTO3);
+  }
+
+  void messageWithMultipleSpans(SpanBytesEncoder encoder)
+    throws IOException, TimeoutException, InterruptedException {
+
+    byte[] message = encoder.encodeList(spans);
+    activemq.publish(message);
+
+    Thread.sleep(10000);
+    assertThat(activemq.storage.acceptedSpanCount()).isEqualTo(spans.size());
+
+    assertThat(activemq.activemqMetrics.messages()).isEqualTo(1);
+    assertThat(activemq.activemqMetrics.bytes()).isEqualTo(message.length);
+    assertThat(activemq.activemqMetrics.spans()).isEqualTo(spans.size());
+  }
+
+  /** Ensures malformed spans don't hang the collector */
+  @Test
+  public void skipsMalformedData() throws Exception {
+    activemq.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
+    activemq.publish(new byte[0]);
+    activemq.publish("[\"='".getBytes()); // screwed up json
+    activemq.publish("malformed".getBytes());
+    activemq.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
+
+    Thread.sleep(1000);
+    assertThat(activemq.activemqMetrics.messages()).isEqualTo(5);
+    assertThat(activemq.activemqMetrics.messagesDropped()).isEqualTo(3);
+  }
+
+  /** Guards against errors that leak from storage, such as InvalidQueryException */
+  @Test
+  public void skipsOnSpanConsumerException() {
+    // TODO: reimplement
+  }
+
+  @Test
+  public void messagesDistributedAcrossMultipleThreadsSuccessfully() {
+    // TODO: reimplement
+  }
 
 
 }

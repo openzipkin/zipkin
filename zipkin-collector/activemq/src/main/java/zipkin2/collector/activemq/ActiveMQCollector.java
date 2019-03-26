@@ -70,6 +70,7 @@ public final class ActiveMQCollector extends CollectorComponent {
       if (metrics == null) {
         throw new NullPointerException("metrics == null");
       }
+      this.metrics = metrics.forTransport("activemq");
       this.delegate.metrics(this.metrics);
       return this;
     }
@@ -155,7 +156,7 @@ public final class ActiveMQCollector extends CollectorComponent {
 
     protected Connection  compute() {
       try {
-        builder.connectionFactory.setBrokerURL("failover:("+builder.addresses+")?initialReconnectDelay=100");
+        builder.connectionFactory.setBrokerURL("failover:("+builder.addresses+")?initialReconnectDelay=100&maxReconnectAttempts=10");
         connection = builder.connectionFactory.createConnection();
         connection.start();
         Session session=connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
