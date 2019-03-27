@@ -29,7 +29,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.v1.Tables.TABLE_AUTOCOMPLETE_TAGS;
 
-final class SelectAutocompleteValues extends ResultSetFutureCall {
+final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
@@ -63,6 +63,10 @@ final class SelectAutocompleteValues extends ResultSetFutureCall {
       .bind()
       .setString("key", key)
       .setInt("limit_", 1000)); // no one is ever going to browse so many tag values
+  }
+
+  @Override public ResultSet map(ResultSet input) {
+    return input;
   }
 
   @Override public Call<ResultSet> clone() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -40,7 +41,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
+final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet> {
   @AutoValue
   abstract static class Input {
     abstract String service();
@@ -216,6 +217,10 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall {
         .setInt("limit_", input.limit_())
         .setFetchSize(input.limit_());
     return factory.session.executeAsync(bound);
+  }
+
+  @Override public ResultSet map(ResultSet input) {
+    return input;
   }
 
   @Override

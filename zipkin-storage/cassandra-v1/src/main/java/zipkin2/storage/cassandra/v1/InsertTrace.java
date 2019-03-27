@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -27,7 +27,7 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 
-final class InsertTrace extends ResultSetFutureCall {
+final class InsertTrace extends ResultSetFutureCall<Void> {
   private static final Logger LOG = LoggerFactory.getLogger(InsertTrace.class);
 
   @AutoValue
@@ -86,7 +86,7 @@ final class InsertTrace extends ResultSetFutureCall {
       return new AutoValue_InsertTrace_Input(v1.traceId(), ts_micro, span_name, v1Bytes);
     }
 
-    Call<ResultSet> create(Input span) {
+    Call<Void> create(Input span) {
       return new InsertTrace(this, span);
     }
   }
@@ -109,6 +109,10 @@ final class InsertTrace extends ResultSetFutureCall {
             .setBytesUnsafe("ts", factory.timestampCodec.serialize(input.ts()))
             .setString("span_name", input.span_name())
             .setBytes("span", ByteBuffer.wrap(input.span())));
+  }
+
+  @Override public Void map(ResultSet input) {
+    return null;
   }
 
   @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,6 +14,7 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -40,7 +41,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
-final class SelectFromTraces extends ResultSetFutureCall {
+final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
 
   static class Factory {
     final Session session;
@@ -92,6 +93,10 @@ final class SelectFromTraces extends ResultSetFutureCall {
   protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(
         factory.preparedStatement.bind().setSet("trace_id", trace_id).setInt("limit_", limit_));
+  }
+
+  @Override public ResultSet map(ResultSet input) {
+    return input;
   }
 
   @Override

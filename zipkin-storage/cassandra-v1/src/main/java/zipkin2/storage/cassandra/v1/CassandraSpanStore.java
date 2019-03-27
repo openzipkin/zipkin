@@ -27,9 +27,9 @@ import zipkin2.Call;
 import zipkin2.Call.FlatMapper;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.internal.AggregateCall;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanStore;
-import zipkin2.storage.cassandra.internal.call.AggregateCall;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.DiscreteDomain.integers;

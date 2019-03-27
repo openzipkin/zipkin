@@ -14,6 +14,7 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -29,7 +30,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 import static com.google.common.base.Preconditions.checkNotNull;
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_SPANS;
 
-final class SelectSpanNames extends ResultSetFutureCall {
+final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
 
   static class Factory {
     final Session session;
@@ -67,6 +68,10 @@ final class SelectSpanNames extends ResultSetFutureCall {
       .bind()
       .setString("service", service)
       .setInt("limit_", 1000)); // no one is ever going to browse so many span names
+  }
+
+  @Override public ResultSet map(ResultSet input) {
+    return input;
   }
 
   @Override

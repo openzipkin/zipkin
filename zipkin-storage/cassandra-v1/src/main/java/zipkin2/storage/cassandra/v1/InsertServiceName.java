@@ -14,15 +14,17 @@
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import zipkin2.storage.cassandra.internal.call.DeduplicatingCall;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
+import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-final class InsertServiceName extends DeduplicatingCall<String> {
+final class InsertServiceName extends ResultSetFutureCall<Void> {
 
-  static class Factory extends DeduplicatingCall.Factory<String, InsertServiceName> {
+  static class Factory extends DeduplicatingVoidCallFactory<String> {
     final Session session;
     final PreparedStatement preparedStatement;
 
@@ -44,7 +46,6 @@ final class InsertServiceName extends DeduplicatingCall<String> {
   final String service_name;
 
   InsertServiceName(Factory factory, String service_name) {
-    super(factory, service_name);
     this.factory = factory;
     this.service_name = service_name;
   }
@@ -52,6 +53,10 @@ final class InsertServiceName extends DeduplicatingCall<String> {
   @Override protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(
       factory.preparedStatement.bind().setString("service_name", service_name));
+  }
+
+  @Override public Void map(ResultSet input) {
+    return null;
   }
 
   @Override public String toString() {

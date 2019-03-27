@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
+import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
@@ -51,7 +52,7 @@ import static zipkin2.storage.cassandra.Schema.TABLE_SPAN;
  * and over-fetch function of 3 * intended limit will work. See {@link
  * CassandraStorage#indexFetchMultiplier()} for an associated parameter.
  */
-final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
+final class SelectTraceIdsFromSpan extends ResultSetFutureCall<ResultSet> {
   @AutoValue
   abstract static class Input {
     @Nullable
@@ -139,6 +140,10 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall {
         .setInt("limit_", input.limit_())
         .setFetchSize(input.limit_());
     return factory.session.executeAsync(bound);
+  }
+
+  @Override public ResultSet map(ResultSet input) {
+    return input;
   }
 
   @Override

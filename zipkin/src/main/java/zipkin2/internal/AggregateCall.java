@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,22 +11,55 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.storage.cassandra.internal.call;
+package zipkin2.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.internal.Nullable;
 
+/**
+ * A call that blocks on others to complete before invoking a callback or returning from {@link
+ * #execute()}. The first error will be returned upstream, later ones will be suppressed.
+ */
 public abstract class AggregateCall<I, O> extends Call.Base<O> {
+
+  public static Call<Void> newVoidCall(List<Call<Void>> calls) {
+    if (calls.isEmpty()) throw new IllegalArgumentException("calls were empty");
+    if (calls.size() == 1) return calls.get(0);
+    return new AggregateVoidCall(calls);
+  }
+
+  static final class AggregateVoidCall extends AggregateCall<Void, Void> {
+    AggregateVoidCall(List<Call<Void>> calls) {
+      super(calls);
+    }
+
+    volatile boolean empty = true;
+
+    @Override protected Void newOutput() {
+      return null;
+    }
+
+    @Override protected void append(Void input, Void output) {
+      empty = false;
+    }
+
+    @Override protected boolean isEmpty(Void output) {
+      return empty;
+    }
+
+    @Override public AggregateVoidCall clone() {
+      return new AggregateVoidCall(cloneCalls());
+    }
+  }
+
   final Logger log = Logger.getLogger(getClass().getName());
   final List<Call<I>> calls;
 
@@ -43,57 +76,35 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   protected abstract boolean isEmpty(O output);
 
   @Override protected O doExecute() throws IOException {
-    final CountDownLatch countDown = new CountDownLatch(1);
-    final AtomicReference<Object> result = new AtomicReference<>();
-
-    doEnqueue(new Callback<O>() {
-      @Override public void onSuccess(O value) {
-        result.set(value);
-        countDown.countDown();
-      }
-
-      @Override public void onError(Throwable t) {
-        result.set(t);
-        countDown.countDown();
-      }
-
-      @Override public String toString() {
-        return "AwaitSuccessOrError";
-      }
-    });
-
-    boolean interrupted = false;
-    try {
-      while (true) {
-        try {
-          countDown.await();
-          Object value = result.get();
-          if (value instanceof Throwable) {
-            if (value instanceof Error) throw (Error) value;
-            if (value instanceof RuntimeException) throw (RuntimeException) value;
-            if (value instanceof IOException) throw (IOException) value;
-            // Don't set interrupted status when the callback received InterruptedException
-            throw new RuntimeException((Throwable) value);
-          }
-          return (O) value;
-        } catch (InterruptedException e) {
-          interrupted = true;
+    int length = calls.size();
+    Throwable firstError = null;
+    O result = newOutput();
+    for (int i = 0; i < length; i++) {
+      Call<I> call = calls.get(i);
+      try {
+        append(call.execute(), result);
+      } catch (IOException | RuntimeException | Error e) {
+        if (firstError == null) {
+          firstError = e;
+        } else if (log.isLoggable(Level.INFO)) {
+          log.log(Level.INFO, "error from " + call, e);
         }
       }
-    } finally {
-      if (interrupted) {
-        Thread.currentThread().interrupt();
-      }
     }
+    if (firstError == null) return result;
+    if (firstError instanceof Error) throw (Error) firstError;
+    if (firstError instanceof RuntimeException) throw (RuntimeException) firstError;
+    throw (IOException) firstError;
   }
 
   @Override protected void doEnqueue(Callback<O> callback) {
     int length = calls.size();
     AtomicInteger remaining = new AtomicInteger(length);
+    AtomicReference firstError = new AtomicReference();
     O result = newOutput();
     for (int i = 0; i < length; i++) {
       Call<I> call = calls.get(i);
-      call.enqueue(new CountdownCallback(call, remaining, result, callback));
+      call.enqueue(new CountdownCallback(call, remaining, firstError, result, callback));
     }
   }
 
@@ -106,24 +117,29 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   class CountdownCallback implements Callback<I> {
     final Call<I> call;
     final AtomicInteger remaining;
+    final AtomicReference<Throwable> firstError;
     @Nullable final O result;
     final Callback<O> callback;
 
-    CountdownCallback(Call<I> call, AtomicInteger remaining, O result, Callback<O> callback) {
+    CountdownCallback(Call<I> call, AtomicInteger remaining, AtomicReference<Throwable> firstError,
+      O result,
+      Callback<O> callback) {
       this.call = call;
       this.remaining = remaining;
+      this.firstError = firstError;
       this.result = result;
       this.callback = callback;
     }
 
     @Override public void onSuccess(I value) {
       synchronized (callback) {
-        try {
-          append(value, result);
-        } finally {
-          if (remaining.decrementAndGet() == 0) {
-            callback.onSuccess(result);
-          }
+        append(value, result);
+        if (remaining.decrementAndGet() > 0) return;
+        Throwable error = firstError.get();
+        if (error != null) {
+          callback.onError(error);
+        } else {
+          callback.onSuccess(result);
         }
       }
     }
@@ -132,18 +148,15 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
       if (log.isLoggable(Level.INFO)) {
         log.log(Level.INFO, "error from " + call, throwable);
       }
-      if (remaining.decrementAndGet() > 0) return;
       synchronized (callback) {
-        if (isEmpty(result)) {
-          callback.onError(throwable);
-        } else {
-          callback.onSuccess(result);
-        }
+        firstError.compareAndSet(null, throwable);
+        if (remaining.decrementAndGet() > 0) return;
+        callback.onError(firstError.get());
       }
     }
   }
 
-  protected List<Call<I>> cloneCalls() {
+  protected final List<Call<I>> cloneCalls() {
     int length = calls.size();
     if (length == 1) return Collections.singletonList(calls.get(0).clone());
     List<Call<I>> result = new ArrayList<>(length);

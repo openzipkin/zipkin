@@ -85,7 +85,7 @@ final class Indexer {
     abstract String partitionKey();
   }
 
-  final class IndexCall extends ResultSetFutureCall {
+  final class IndexCall extends ResultSetFutureCall<Void> {
 
     final Input input;
 
@@ -106,6 +106,10 @@ final class Indexer {
       return session.executeAsync(bound);
     }
 
+    @Override public Void map(ResultSet input) {
+      return null;
+    }
+
     @Override
     public String toString() {
       return input.toString().replace("Input", "IndexTrace");
@@ -117,7 +121,7 @@ final class Indexer {
     }
   }
 
-  void index(List<V1Span> spans, List<Call<ResultSet>> calls) {
+  void index(List<V1Span> spans, List<Call<Void>> calls) {
     // First parse each span into partition keys used to support query requests
     Builder<PartitionKeyToTraceId, Long> parsed = ImmutableSetMultimap.builder();
     for (V1Span span : spans) {

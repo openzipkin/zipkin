@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,6 @@ import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.exceptions.DriverInternalError;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Uninterruptibles;
-import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -29,32 +28,38 @@ import zipkin2.Callback;
  * com.datastax.driver.core.ResultSetFuture}.
  */
 // some copy/pasting is ok here as debugging is obscured when the type hierarchy gets deep.
-public abstract class ResultSetFutureCall extends Call.Base<ResultSet> {
+public abstract class ResultSetFutureCall<V> extends Call.Base<V>
+  implements Call.Mapper<ResultSet, V> {
   /** Defers I/O until {@link #enqueue(Callback)} or {@link #execute()} are called. */
   protected abstract ListenableFuture<ResultSet> newFuture();
 
   volatile ListenableFuture<ResultSet> future;
 
   @Override
-  protected ResultSet doExecute() throws IOException {
-    return getUninterruptibly(future = newFuture());
+  protected V doExecute() {
+    return map(getUninterruptibly(future = newFuture()));
   }
 
   @Override
-  protected void doEnqueue(Callback<ResultSet> callback) {
+  protected void doEnqueue(Callback<V> callback) {
     // Similar to Futures.addCallback except doesn't double-wrap
     class CallbackListener implements Runnable {
       @Override
       public void run() {
         try {
-          callback.onSuccess(getUninterruptibly(future));
+          callback.onSuccess(map(getUninterruptibly(future)));
         } catch (RuntimeException | Error e) {
           propagateIfFatal(e);
           callback.onError(e);
         }
       }
     }
-    (future = newFuture()).addListener(new CallbackListener(), DirectExecutor.INSTANCE);
+    try {
+      (future = newFuture()).addListener(new CallbackListener(), DirectExecutor.INSTANCE);
+    } catch (RuntimeException | Error e) {
+      callback.onError(e);
+      throw e;
+    }
   }
 
   @Override

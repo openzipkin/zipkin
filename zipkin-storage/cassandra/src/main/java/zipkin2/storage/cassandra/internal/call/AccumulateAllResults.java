@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,7 +35,7 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
   }
 
   @AutoValue
-  static abstract class FetchMoreResults extends ResultSetFutureCall {
+  static abstract class FetchMoreResults extends ResultSetFutureCall<ResultSet> {
     static FetchMoreResults create(ResultSet resultSet) {
       return new AutoValue_AccumulateAllResults_FetchMoreResults(resultSet);
     }
@@ -44,6 +44,10 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
 
     @Override protected ListenableFuture<ResultSet> newFuture() {
       return resultSet().fetchMoreResults();
+    }
+
+    @Override public ResultSet map(ResultSet input) {
+      return input;
     }
 
     @Override public Call<ResultSet> clone() {

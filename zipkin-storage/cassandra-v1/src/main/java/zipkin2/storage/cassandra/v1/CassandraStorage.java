@@ -26,7 +26,7 @@ import zipkin2.storage.QueryRequest;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
-import zipkin2.storage.cassandra.internal.call.DeduplicatingCall;
+import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -37,7 +37,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * is enabled via SLF4J. Trace level includes bound values.
  *
  * <p>Redundant requests to store service or span names are ignored for an hour to reduce load. This
- * feature is implemented by {@link DeduplicatingCall}.
+ * feature is implemented by {@link DeduplicatingVoidCallFactory}.
  *
  * <p>Schema is installed by default from "/cassandra-schema-cql3.txt"
  */
