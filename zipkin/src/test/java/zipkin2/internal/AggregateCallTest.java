@@ -48,16 +48,16 @@ public class AggregateCallTest {
   @Mock Callback<Void> callback;
 
   @Test(expected = IllegalArgumentException.class)
-  public void newVoidCall_emptyNotAllowed() throws Exception {
+  public void newVoidCall_emptyNotAllowed() {
     AggregateCall.newVoidCall(asList());
   }
 
-  @Test public void newVoidCall_singletonReturnsOnlyElement() throws Exception {
+  @Test public void newVoidCall_singletonReturnsOnlyElement() {
     assertThat(AggregateCall.newVoidCall(asList(call1)))
       .isEqualTo(call1);
   }
 
-  @Test public void newVoidCall_joinsMultipleCalls() throws Exception {
+  @Test public void newVoidCall_joinsMultipleCalls() {
     assertThat(AggregateCall.newVoidCall(asList(call1, call2)))
       .isInstanceOf(AggregateCall.AggregateVoidCall.class)
       .extracting("calls")

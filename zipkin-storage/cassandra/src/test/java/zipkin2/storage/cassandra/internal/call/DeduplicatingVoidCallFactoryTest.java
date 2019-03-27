@@ -59,7 +59,7 @@ public class DeduplicatingVoidCallFactoryTest {
     }
   }
 
-  Function<String, Call<Void>> delegate = s -> new AddToValueCall(s);
+  Function<String, Call<Void>> delegate = AddToValueCall::new;
   TestDeduplicatingVoidCallFactory callFactory = new TestDeduplicatingVoidCallFactory(delegate);
 
   @Test public void dedupesSameCalls() throws Exception {
