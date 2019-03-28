@@ -28,6 +28,7 @@ import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.DependencyLink;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -36,6 +37,7 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Matchers.isA;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -75,7 +77,7 @@ public class AggregateCallTest {
     verifyNoMoreInteractions(call1, call2);
   }
 
-  @Test public void submit() {
+  @Test public void enqueue() {
     successCallback(call1);
     successCallback(call2);
 
@@ -90,7 +92,7 @@ public class AggregateCallTest {
     verifyNoMoreInteractions(call1, call2);
   }
 
-  @Test public void submit_cancel() {
+  @Test public void enqueue_cancel() {
     call1 = Call.create(null);
     call2 = Call.create(null);
 
@@ -146,7 +148,7 @@ public class AggregateCallTest {
 
   /** This shows that regardless of success or error, we block on completion */
   @Test(timeout = 1000L)
-  public void submit_blocksOnCompletion() throws InterruptedException {
+  public void enqueue_blocksOnCompletion() throws InterruptedException {
     CountDownLatch callsLatch = new CountDownLatch(10);
     ExecutorService exec = Executors.newFixedThreadPool(10);
 
@@ -210,7 +212,7 @@ public class AggregateCallTest {
     assertThat(result.get()).isNotNull();
   }
 
-  @Test public void submit_errorDoesntStopOtherCalls() {
+  @Test public void enqueue_errorDoesntStopOtherCalls() {
     Exception e = new IllegalArgumentException();
     errorCallback(call1, e);
     successCallback(call2);
@@ -238,5 +240,57 @@ public class AggregateCallTest {
       ((Callback<Void>) a.getArgument(0)).onError(e);
       return a;
     }).when(call).enqueue(any(Callback.class));
+  }
+
+  @Test public void execute_finish() throws Exception {
+    Call<List<DependencyLink>> call = new AggregateDependencyLinks(asList(
+      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
+      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))
+    ));
+
+    assertThat(call.execute())
+      .containsExactly(DependencyLink.newBuilder().parent("a").child("b").callCount(4).build());
+  }
+
+  @Test public void enqueue_finish() {
+    Call<List<DependencyLink>> call = new AggregateDependencyLinks(asList(
+      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(1).build())),
+      Call.create(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(3).build()))
+    ));
+
+    Callback<List<DependencyLink>> callback = mock(Callback.class);
+
+    call.enqueue(callback);
+
+    verify(callback)
+      .onSuccess(asList(DependencyLink.newBuilder().parent("a").child("b").callCount(4).build()));
+  }
+
+  static final class AggregateDependencyLinks
+    extends AggregateCall<List<DependencyLink>, List<DependencyLink>> {
+    AggregateDependencyLinks(List<? extends Call<List<DependencyLink>>> calls) {
+      super(calls);
+    }
+
+    @Override protected List<DependencyLink> newOutput() {
+      return new ArrayList<>();
+    }
+
+    @Override protected void append(List<DependencyLink> input, List<DependencyLink> output) {
+      output.addAll(input);
+    }
+
+    // this is the part we are testing, that we can peform a finish step
+    @Override protected List<DependencyLink> finish(List<DependencyLink> done) {
+      return DependencyLinker.merge(done);
+    }
+
+    @Override protected boolean isEmpty(List<DependencyLink> output) {
+      return output.isEmpty();
+    }
+
+    @Override public AggregateDependencyLinks clone() {
+      return new AggregateDependencyLinks(cloneCalls());
+    }
   }
 }

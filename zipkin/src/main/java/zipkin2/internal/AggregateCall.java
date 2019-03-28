@@ -27,6 +27,9 @@ import zipkin2.Callback;
 /**
  * A call that blocks on others to complete before invoking a callback or returning from {@link
  * #execute()}. The first error will be returned upstream, later ones will be suppressed.
+ *
+ * @param <I> the type of returned from {@link Call#execute()}
+ * @param <O> the type representing the aggregate success value
  */
 public abstract class AggregateCall<I, O> extends Call.Base<O> {
 
@@ -61,9 +64,9 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   }
 
   final Logger log = Logger.getLogger(getClass().getName());
-  final List<Call<I>> calls;
+  final List<? extends Call<I>> calls;
 
-  protected AggregateCall(List<Call<I>> calls) {
+  protected AggregateCall(List<? extends Call<I>> calls) {
     assert !calls.isEmpty() : "do not create empty aggregate calls";
     assert calls.size() > 1 : "do not create single-element aggregates";
     this.calls = calls;
@@ -74,6 +77,11 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
   protected abstract void append(I input, O output);
 
   protected abstract boolean isEmpty(O output);
+
+  /** Customizes the aggregated result. For example, summarizing or making immutable. */
+  protected O finish(O output) {
+    return output;
+  }
 
   @Override protected O doExecute() throws IOException {
     int length = calls.size();
@@ -91,7 +99,7 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
         }
       }
     }
-    if (firstError == null) return result;
+    if (firstError == null) return finish(result);
     if (firstError instanceof Error) throw (Error) firstError;
     if (firstError instanceof RuntimeException) throw (RuntimeException) firstError;
     throw (IOException) firstError;
@@ -139,7 +147,7 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
         if (error != null) {
           callback.onError(error);
         } else {
-          callback.onSuccess(result);
+          callback.onSuccess(finish(result));
         }
       }
     }
