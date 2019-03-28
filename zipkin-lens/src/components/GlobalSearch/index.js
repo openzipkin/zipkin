@@ -115,13 +115,6 @@ class GlobalSearch extends React.Component {
     this.fetchTraces(location);
   }
 
-  componentWillReceiveProps({ location }) {
-    const { location: previousLocation } = this.props;
-    if (location.search !== '' && location.search !== '?' && previousLocation.search !== location.search) {
-      this.fetchTraces(location);
-    }
-  }
-
   componentWillUnmount() {
     document.removeEventListener('keydown', this.handleKeyDown);
   }
@@ -174,10 +167,12 @@ class GlobalSearch extends React.Component {
       lookbackCondition,
       limitCondition,
     );
-    history.push({
+    const location = {
       pathname: '/zipkin',
       search: queryParams,
-    });
+    };
+    history.push(location);
+    this.fetchTraces(location);
   }
 
   // Replaces the key of the "index"-th condition with "keyName" and clear value.
