@@ -41,7 +41,7 @@ export class Dependencies extends React.Component { // export for testing withou
   }
 
   componentDidMount() {
-    const { location, fetchDependencies } = this.props;
+    const { location } = this.props;
 
     const queryParams = queryString.parse(location.search);
     const endTs = queryParams.endTs ? moment(parseInt(queryParams.endTs, 10)) : moment();
@@ -53,28 +53,20 @@ export class Dependencies extends React.Component { // export for testing withou
       startTs,
       endTs,
     });
-
-    if (location.search !== '' && location.search !== '?') {
-      const query = queryString.parse(location.search);
-      fetchDependencies(query);
-    }
-  }
-
-  componentWillReceiveProps({ location }) {
-    const {
-      location: prevLocation,
-      fetchDependencies,
-    } = this.props;
-
-    if (location.search !== '' && location.search !== '?' && prevLocation.search !== location.search) {
-      const query = queryString.parse(location.search);
-      fetchDependencies(query);
-    }
+    this.fetchDependencies(location);
   }
 
   componentWillUnmount() {
     const { clearDependencies } = this.props;
     clearDependencies();
+  }
+
+  fetchDependencies(location) {
+    const { fetchDependencies } = this.props;
+    if (location.search !== '' && location.search !== '?') {
+      const queryParameters = queryString.parse(location.search);
+      fetchDependencies(queryParameters);
+    }
   }
 
   handleStartTsChange(startTs) {
@@ -100,10 +92,12 @@ export class Dependencies extends React.Component { // export for testing withou
       endTs: endTs.valueOf(),
       lookback: endTs.valueOf() - startTs.valueOf(),
     });
-    history.push({
+    const location = {
       pathname: '/zipkin/dependency',
       search: queryParameters,
-    });
+    };
+    history.push(location);
+    this.fetchDependencies(location);
   }
 
   renderSearch() {
