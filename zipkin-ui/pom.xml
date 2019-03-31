@@ -31,7 +31,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <frontend-maven-plugin.version>1.6</frontend-maven-plugin.version>
+    <frontend-maven-plugin.version>1.7.5</frontend-maven-plugin.version>
   </properties>
 
   <dependencies>
