@@ -49,13 +49,13 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <armeria.version>0.81.0</armeria.version>
+    <armeria.version>0.83.0</armeria.version>
     <brave.version>5.6.3</brave.version>
     <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
     <okhttp.version>3.14.0</okhttp.version>
     <okio.version>1.17.3</okio.version>
     <!-- important to keep this in sync with spring-boot-dependencies -->
-    <jooq.version>3.11.9</jooq.version>
+    <jooq.version>3.11.10</jooq.version>
     <micrometer.version>1.1.3</micrometer.version>
     <spring-boot.version>2.1.3.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
@@ -63,17 +63,20 @@
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>2.4.0</mariadb-java-client.version>
+    <mariadb-java-client.version>2.4.1</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>3.3.1</HikariCP.version>
     <log4j.version>2.11.2</log4j.version>
 
     <junit.version>4.12</junit.version>
     <powermock.version>2.0.0</powermock.version>
+    <!-- Up to v2.25.7 of mockito has a conflict https://github.com/mockito/mockito/issues/1606
+    java.lang.NoSuchMethodError: net.bytebuddy.dynamic.loading.MultipleParentClassLoader$Builder.appendMostSpecific(Ljava/util/Collection;)Lnet/bytebuddy/dynamic/loading/MultipleParentClassLoader$Builder
+    -->
     <mockito.version>2.23.4</mockito.version>
-    <assertj.version>3.12.0</assertj.version>
+    <assertj.version>3.12.2</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <testcontainers.version>1.10.6</testcontainers.version>
+    <testcontainers.version>1.11.1</testcontainers.version>
 
     <auto-value.version>1.6.3</auto-value.version>
     <animal-sniffer-maven-plugin.version>1.17</animal-sniffer-maven-plugin.version>
@@ -81,7 +84,7 @@
     <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
     <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-    <maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
+    <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
     <license-maven-plugin.version>3.0</license-maven-plugin.version>
     <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
     <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
@@ -441,9 +444,9 @@
         </exclusions>
       </dependency>
       <dependency>
-        <groupId>io.zipkin.brave.cassandra</groupId>
+        <groupId>org.apache.zipkin.brave.cassandra</groupId>
         <artifactId>brave-instrumentation-cassandra-driver</artifactId>
-        <version>0.10.1</version>
+        <version>0.10.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -469,7 +472,7 @@
         <plugin>
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>
-          <version>0.7.4</version>
+          <version>0.7.5</version>
           <configuration>
             <maven>3.6.0</maven>
           </configuration>

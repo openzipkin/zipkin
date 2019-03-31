@@ -32,7 +32,7 @@
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
     <jmh.version>1.21</jmh.version>
-    <protobuf.version>3.6.1</protobuf.version>
+    <protobuf.version>3.7.0</protobuf.version>
   </properties>
 
   <dependencies>
@@ -83,7 +83,7 @@
       <extension>
         <groupId>kr.motd.maven</groupId>
         <artifactId>os-maven-plugin</artifactId>
-        <version>1.6.1</version>
+        <version>1.6.2</version>
       </extension>
     </extensions>
     <plugins>

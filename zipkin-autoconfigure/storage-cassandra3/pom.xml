@@ -40,7 +40,7 @@
       <artifactId>zipkin-storage-cassandra-v1</artifactId>
     </dependency>
     <dependency>
-      <groupId>io.zipkin.brave.cassandra</groupId>
+      <groupId>org.apache.zipkin.brave.cassandra</groupId>
       <artifactId>brave-instrumentation-cassandra-driver</artifactId>
       <optional>true</optional>
     </dependency>
