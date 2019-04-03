@@ -26,6 +26,7 @@ import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
@@ -211,6 +212,10 @@ public abstract class CassandraStorage extends StorageComponent {
   @Override
   public SpanStore spanStore() {
     return new CassandraSpanStore(this);
+  }
+
+  @Override public ServiceAndSpanNames serviceAndSpanNames() {
+    return (CassandraSpanStore) spanStore();
   }
 
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */

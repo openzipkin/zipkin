@@ -43,6 +43,7 @@ final class Schema {
   static final String TABLE_SPAN = "span";
   static final String TABLE_TRACE_BY_SERVICE_SPAN = "trace_by_service_span";
   static final String TABLE_SERVICE_SPANS = "span_by_service";
+  static final String TABLE_SERVICE_REMOTE_SERVICES = "remote_service_by_service";
   static final String TABLE_DEPENDENCY = "dependency";
   static final String TABLE_AUTOCOMPLETE_TAGS = "autocomplete_tags";
 
@@ -50,6 +51,7 @@ final class Schema {
   static final String SCHEMA_RESOURCE = "/zipkin2-schema.cql";
   static final String INDEX_RESOURCE = "/zipkin2-schema-indexes.cql";
   static final String UPGRADE_1 = "/zipkin2-schema-upgrade-1.cql";
+  static final String UPGRADE_2 = "/zipkin2-schema-upgrade-2.cql";
 
   private Schema() {
   }
@@ -123,11 +125,19 @@ final class Schema {
       LOG.info("Upgrading schema {}", UPGRADE_1);
       applyCqlFile(keyspace, session, UPGRADE_1);
     }
+    if (!hasUpgrade2_remoteService(result)) {
+      LOG.info("Upgrading schema {}", UPGRADE_2);
+      applyCqlFile(keyspace, session, UPGRADE_2);
+    }
     return result;
   }
 
   static boolean hasUpgrade1_autocompleteTags(KeyspaceMetadata keyspaceMetadata) {
     return keyspaceMetadata.getTable(TABLE_AUTOCOMPLETE_TAGS) != null;
+  }
+
+  static boolean hasUpgrade2_remoteService(KeyspaceMetadata keyspaceMetadata) {
+    return keyspaceMetadata.getTable(TABLE_SERVICE_REMOTE_SERVICES) != null;
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {

@@ -57,7 +57,7 @@ abstract class ITEnsureSchema {
     assertThat(metadata.getTable("autocomplete_tags")).isNotNull();
   }
 
-  @Test public void upgradesOldSchema() {
+  @Test public void upgradesOldSchema_autocomplete() {
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-indexes-original.cql");
 
@@ -66,6 +66,18 @@ abstract class ITEnsureSchema {
     KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
     assertThat(metadata).isNotNull();
     assertThat(Schema.hasUpgrade1_autocompleteTags(metadata)).isTrue();
+  }
+
+  @Test public void upgradesOldSchema_remoteService() {
+    Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
+    Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-indexes-original.cql");
+    Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-upgrade-1.cql");
+
+    Schema.ensureExists(keyspace(), true, session());
+
+    KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
+    assertThat(metadata).isNotNull();
+    assertThat(Schema.hasUpgrade2_remoteService(metadata)).isTrue();
   }
 
   /** This tests we don't accidentally rely on new indexes such as autocomplete tags */

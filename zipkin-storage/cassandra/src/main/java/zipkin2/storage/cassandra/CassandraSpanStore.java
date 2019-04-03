@@ -30,19 +30,21 @@ import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
 
 import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimestamp;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-class CassandraSpanStore implements SpanStore { // not final for testing
+class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not final for testing
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
   private final int maxTraceCols;
   private final int indexFetchMultiplier;
   private final boolean strictTraceId, searchEnabled;
   private final SelectFromSpan.Factory spans;
   private final SelectDependencies.Factory dependencies;
+  private final SelectRemoteServiceNames.Factory remoteServiceNames;
   private final SelectSpanNames.Factory spanNames;
   private final Call<List<String>> serviceNames;
   private final int indexTtl;
@@ -62,12 +64,15 @@ class CassandraSpanStore implements SpanStore { // not final for testing
     if (searchEnabled) {
       KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace());
       indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
+      // TODO: schema guard!
+      remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
       spanNames = new SelectSpanNames.Factory(session);
       serviceNames = new SelectServiceNames.Factory(session).create();
       traceIdsFromServiceSpan = new SelectTraceIdsFromServiceSpan.Factory(session);
       spanTable = initialiseSelectTraceIdsFromSpan(session);
     } else {
       indexTtl = 0;
+      remoteServiceNames = null;
       spanNames = null;
       serviceNames = null;
       spanTable = null;
@@ -204,6 +209,11 @@ class CassandraSpanStore implements SpanStore { // not final for testing
   public Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return serviceNames.clone();
+  }
+
+  @Override public Call<List<String>> getRemoteServiceNames(String serviceName) {
+    if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
+    return remoteServiceNames.create(serviceName);
   }
 
   @Override
