@@ -64,7 +64,7 @@ import zipkin2.internal.DependencyLinker;
  * }</pre>
  */
 public final class InMemoryStorage extends StorageComponent implements SpanStore, SpanConsumer,
-  AutocompleteTags {
+  AutocompleteTags, ServiceAndSpanNames {
 
   public static Builder newBuilder() {
     return new Builder();
@@ -138,6 +138,17 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
         return new LinkedHashSet<>();
       }
     };
+  /**
+   * This is an index of {@link Span#remoteServiceName()} by {@link Endpoint#serviceName() service
+   * name}
+   */
+  private final SortedMultimap<String, String> serviceToRemoteServiceNames =
+    new SortedMultimap<String, String>(STRING_COMPARATOR) {
+      @Override
+      Collection<String> valueContainer() {
+        return new LinkedHashSet<>();
+      }
+    };
 
   private final SortedMultimap<String, String> autocompleteTags =
     new SortedMultimap<String, String>(STRING_COMPARATOR) {
@@ -170,6 +181,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     traceIdToTraceIdTimeStamps.clear();
     spansByTraceIdTimeStamp.clear();
     serviceToTraceIds.clear();
+    serviceToRemoteServiceNames.clear();
     serviceToSpanNames.clear();
     autocompleteTags.clear();
   }
@@ -188,14 +200,17 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       acceptedSpanCount++;
 
       if (!searchEnabled) continue;
-      String spanName = span.name();
-      if (span.localServiceName() != null) {
-        serviceToTraceIds.put(span.localServiceName(), lowTraceId);
-        if (spanName != null) serviceToSpanNames.put(span.localServiceName(), spanName);
-      }
-      if (span.remoteServiceName() != null) {
-        serviceToTraceIds.put(span.remoteServiceName(), lowTraceId);
-        if (spanName != null) serviceToSpanNames.put(span.remoteServiceName(), spanName);
+      String serviceName = span.localServiceName();
+      if (serviceName != null) {
+        serviceToTraceIds.put(serviceName, lowTraceId);
+        String remoteServiceName = span.remoteServiceName();
+        if (remoteServiceName != null) {
+          serviceToRemoteServiceNames.put(serviceName, remoteServiceName);
+        }
+        String spanName = span.name();
+        if (spanName != null) {
+          serviceToSpanNames.put(serviceName, spanName);
+        }
       }
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
         if (autocompleteKeys.contains(tag.getKey())) {
@@ -230,6 +245,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     }
     if (searchEnabled) {
       for (String orphanedService : serviceToTraceIds.removeServiceIfTraceId(lowTraceId)) {
+        serviceToRemoteServiceNames.remove(orphanedService);
         serviceToSpanNames.remove(orphanedService);
       }
     }
@@ -333,10 +349,15 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return Call.create(filtered);
   }
 
-  @Override
-  public synchronized Call<List<String>> getServiceNames() {
+  @Override public Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return Call.create(new ArrayList<>(serviceToTraceIds.keySet()));
+  }
+
+  @Override public Call<List<String>> getRemoteServiceNames(String service) {
+    if (service.isEmpty() || !searchEnabled) return Call.emptyList();
+    service = service.toLowerCase(Locale.ROOT); // service names are always lowercase!
+    return Call.create(new ArrayList<>(serviceToRemoteServiceNames.get(service)));
   }
 
   @Override
@@ -504,8 +525,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return traceId.length() == 32 ? traceId.substring(16) : traceId;
   }
 
-  @Override
-  public InMemoryStorage spanStore() {
+  @Override public InMemoryStorage spanStore() {
     return this;
   }
 
@@ -513,13 +533,15 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return this;
   }
 
-  @Override
-  public SpanConsumer spanConsumer() {
+  @Override public InMemoryStorage serviceAndSpanNames() {
     return this;
   }
 
-  @Override
-  public void close() {
+  @Override public SpanConsumer spanConsumer() {
+    return this;
+  }
+
+  @Override public void close() {
   }
 
   static final class TraceIdTimestamp {

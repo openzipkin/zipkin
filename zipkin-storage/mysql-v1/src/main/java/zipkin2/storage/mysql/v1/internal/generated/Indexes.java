@@ -55,6 +55,7 @@ public class Indexes {
     public static final Index ZIPKIN_DEPENDENCIES_PRIMARY = Indexes0.ZIPKIN_DEPENDENCIES_PRIMARY;
     public static final Index ZIPKIN_SPANS_NAME = Indexes0.ZIPKIN_SPANS_NAME;
     public static final Index ZIPKIN_SPANS_PRIMARY = Indexes0.ZIPKIN_SPANS_PRIMARY;
+    public static final Index ZIPKIN_SPANS_REMOTE_SERVICE_NAME = Indexes0.ZIPKIN_SPANS_REMOTE_SERVICE_NAME;
     public static final Index ZIPKIN_SPANS_START_TS = Indexes0.ZIPKIN_SPANS_START_TS;
     public static final Index ZIPKIN_SPANS_TRACE_ID_HIGH = Indexes0.ZIPKIN_SPANS_TRACE_ID_HIGH;
 
@@ -73,6 +74,7 @@ public class Indexes {
         public static Index ZIPKIN_DEPENDENCIES_PRIMARY = Internal.createIndex("PRIMARY", ZipkinDependencies.ZIPKIN_DEPENDENCIES, new OrderField[] { ZipkinDependencies.ZIPKIN_DEPENDENCIES.DAY, ZipkinDependencies.ZIPKIN_DEPENDENCIES.PARENT, ZipkinDependencies.ZIPKIN_DEPENDENCIES.CHILD }, true);
         public static Index ZIPKIN_SPANS_NAME = Internal.createIndex("name", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.NAME }, false);
         public static Index ZIPKIN_SPANS_PRIMARY = Internal.createIndex("PRIMARY", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID, ZipkinSpans.ZIPKIN_SPANS.ID }, true);
+        public static Index ZIPKIN_SPANS_REMOTE_SERVICE_NAME = Internal.createIndex("remote_service_name", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.REMOTE_SERVICE_NAME }, false);
         public static Index ZIPKIN_SPANS_START_TS = Internal.createIndex("start_ts", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.START_TS }, false);
         public static Index ZIPKIN_SPANS_TRACE_ID_HIGH = Internal.createIndex("trace_id_high", ZipkinSpans.ZIPKIN_SPANS, new OrderField[] { ZipkinSpans.ZIPKIN_SPANS.TRACE_ID_HIGH, ZipkinSpans.ZIPKIN_SPANS.TRACE_ID }, false);
     }

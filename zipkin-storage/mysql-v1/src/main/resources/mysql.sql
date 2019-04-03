@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS zipkin_spans (
   `trace_id` BIGINT NOT NULL,
   `id` BIGINT NOT NULL,
   `name` VARCHAR(255) NOT NULL,
+  `remote_service_name` VARCHAR(255),
   `parent_id` BIGINT,
   `debug` BIT(1),
   `start_ts` BIGINT COMMENT 'Span.timestamp(): epoch micros used for endTs query and to implement TTL',
@@ -12,6 +13,7 @@ CREATE TABLE IF NOT EXISTS zipkin_spans (
 
 ALTER TABLE zipkin_spans ADD INDEX(`trace_id_high`, `trace_id`) COMMENT 'for getTracesByIds';
 ALTER TABLE zipkin_spans ADD INDEX(`name`) COMMENT 'for getTraces and getSpanNames';
+ALTER TABLE zipkin_spans ADD INDEX(`remote_service_name`) COMMENT 'for getTraces and getRemoteServiceNames';
 ALTER TABLE zipkin_spans ADD INDEX(`start_ts`) COMMENT 'for getTraces ordering and range';
 
 CREATE TABLE IF NOT EXISTS zipkin_annotations (

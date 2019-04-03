@@ -742,21 +742,6 @@ public abstract class ITSpanStore {
       .contains("frontend");
   }
 
-  @Test public void getServiceNames_includesRemoteServiceName() throws Exception {
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getServiceNames().execute())
-      .contains(CLIENT_SPAN.remoteServiceName());
-  }
-
-  /** Our storage services aren't 100% consistent on this. we should reconsider at some point */
-  @Test public void getSpanNames_mapsNameToRemoteServiceName() throws Exception {
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getSpanNames(CLIENT_SPAN.remoteServiceName()).execute())
-      .contains(CLIENT_SPAN.name());
-  }
-
   @Test public void getSpanNames() throws Exception {
     assertThat(store().getSpanNames("frontend").execute())
       .isEmpty();

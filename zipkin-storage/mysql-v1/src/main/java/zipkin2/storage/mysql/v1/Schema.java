@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -43,6 +43,7 @@ final class Schema {
   final boolean hasPreAggregatedDependencies;
   final boolean hasIpv6;
   final boolean hasErrorCount;
+  final boolean hasRemoteServiceName;
   final boolean strictTraceId;
 
   Schema(DataSource datasource, DSLContexts context, boolean strictTraceId) {
@@ -50,10 +51,12 @@ final class Schema {
     hasPreAggregatedDependencies = HasPreAggregatedDependencies.test(datasource, context);
     hasIpv6 = HasIpv6.test(datasource, context);
     hasErrorCount = HasErrorCount.test(datasource, context);
+    hasRemoteServiceName = HasRemoteServiceName.test(datasource, context);
     this.strictTraceId = strictTraceId;
 
     spanIdFields = list(ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID);
     spanFields = list(ZIPKIN_SPANS.fields());
+    spanIdFields.remove(ZIPKIN_SPANS.REMOTE_SERVICE_NAME); // not used to recreate the span
     annotationFields = list(ZIPKIN_ANNOTATIONS.fields());
     dependencyLinkFields = list(ZIPKIN_DEPENDENCIES.fields());
     dependencyLinkerFields =

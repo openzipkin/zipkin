@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -109,5 +109,18 @@ public class SchemaTest {
         new DataAccessException(sqlException.getMessage(), sqlException));
 
     assertThat(schema.hasPreAggregatedDependencies).isFalse();
+  }
+
+  @Test
+  public void hasRemoteServiceName_falseWhenKnownSQLState() throws SQLException {
+    SQLSyntaxErrorException sqlException = new SQLSyntaxErrorException(
+      "Unknown column 'zipkin_spans.remote_serviceName' in 'field list'",
+      "42S22", 1054);
+
+    // cheats to lower mock count: this exception is really thrown during execution of the query
+    when(dataSource.getConnection()).thenThrow(
+      new DataAccessException(sqlException.getMessage(), sqlException));
+
+    assertThat(schema.hasRemoteServiceName).isFalse();
   }
 }

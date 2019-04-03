@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -59,6 +59,18 @@ public class ITInMemoryStorage {
 
     @Override protected StorageComponent.Builder storageBuilder() {
       return InMemoryStorage.newBuilder();
+    }
+
+    @Override public void clear() {
+      // no need.. the test rule does this
+    }
+  }
+
+  public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
+    InMemoryStorage storage = InMemoryStorage.newBuilder().build();
+
+    @Override protected InMemoryStorage storage() {
+      return storage;
     }
 
     @Override public void clear() {

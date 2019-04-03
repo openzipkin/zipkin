@@ -38,9 +38,9 @@ final class ZipkinMySQLContainer extends GenericContainer<ZipkinMySQLContainer> 
   @Override protected void containerIsStarting(InspectContainerResponse containerInfo) {
     try {
       dataSource = new MariaDbDataSource(
-          getContainerIpAddress(),
-          getMappedPort(getExposedPorts().get(0)),
-          "zipkin"
+        getContainerIpAddress(),
+        getMappedPort(getExposedPorts().get(0)),
+        "zipkin"
       );
       dataSource.setUser("zipkin");
       dataSource.setPassword("zipkin");
@@ -51,11 +51,11 @@ final class ZipkinMySQLContainer extends GenericContainer<ZipkinMySQLContainer> 
 
   @Override protected void containerIsStarted(InspectContainerResponse containerInfo) {
     String[] scripts = {
-        // Drop all previously created tables in zipkin.*
-        "drop_zipkin_tables.sql",
+      // Drop all previously created tables in zipkin.*
+      "drop_zipkin_tables.sql",
 
-        // Populate the schema
-        "mysql.sql"
+      // Populate the schema
+      "mysql.sql"
     };
 
     try (Connection connection = dataSource.getConnection()) {

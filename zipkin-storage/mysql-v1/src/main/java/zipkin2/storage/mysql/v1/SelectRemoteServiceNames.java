@@ -21,11 +21,11 @@ import static zipkin2.storage.mysql.v1.SelectAnnotationServiceNames.localService
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
-final class SelectSpanNames implements Function<DSLContext, List<String>> {
+final class SelectRemoteServiceNames implements Function<DSLContext, List<String>> {
   final Schema schema;
   final String serviceName;
 
-  SelectSpanNames(Schema schema, String serviceName) {
+  SelectRemoteServiceNames(Schema schema, String serviceName) {
     this.schema = schema;
     this.serviceName = serviceName;
   }
@@ -33,19 +33,19 @@ final class SelectSpanNames implements Function<DSLContext, List<String>> {
   @Override
   public List<String> apply(DSLContext context) {
     return context
-      .selectDistinct(ZIPKIN_SPANS.NAME)
+      .selectDistinct(ZIPKIN_SPANS.REMOTE_SERVICE_NAME)
       .from(ZIPKIN_SPANS)
       .join(ZIPKIN_ANNOTATIONS)
       .on(schema.joinCondition(ZIPKIN_ANNOTATIONS))
       .where(
         localServiceNameCondition().and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(serviceName)))
-      .and(ZIPKIN_SPANS.NAME.notEqual(""))
-      .orderBy(ZIPKIN_SPANS.NAME)
-      .fetch(ZIPKIN_SPANS.NAME);
+      .and(ZIPKIN_SPANS.REMOTE_SERVICE_NAME.notEqual(""))
+      .orderBy(ZIPKIN_SPANS.REMOTE_SERVICE_NAME)
+      .fetch(ZIPKIN_SPANS.REMOTE_SERVICE_NAME);
   }
 
   @Override
   public String toString() {
-    return "SelectSpanNames{serviceName=" + serviceName + "}";
+    return "SelectRemoteServiceNames{serviceName=" + serviceName + "}";
   }
 }
