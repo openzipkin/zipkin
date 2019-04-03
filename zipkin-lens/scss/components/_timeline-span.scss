@@ -4,10 +4,11 @@
   position: relative;
   display: flex;
   cursor: pointer;
-  background: $white;
+  background-color: $white;
 
   &:hover {
-    background: $gray-10;
+    color: $white;
+    background-color: $gray-3;
   }
 }
 
@@ -30,6 +31,10 @@
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+}
+
+.timeline-span:hover .timeline-span__span-name-column {
+  color: $gray-10;
 }
 
 .timeline-span__bar-wrapper {
@@ -56,7 +61,6 @@
 }
 
 .timeline-span__duration {
-  color: $dark-4;
   font-size: 12px;
   position: absolute;
 
