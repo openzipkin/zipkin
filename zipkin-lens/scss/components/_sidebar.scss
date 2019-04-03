@@ -5,7 +5,7 @@
   height: 100vh;
   width: 80px;
   color: $gray-11;
-  background-color: #6A9FB5;
+  background-color: $blue-4;
   z-index: 10000;
   font-size: 11px;
 }
@@ -22,6 +22,9 @@
   justify-content: center;
   padding: 4px;
   box-sizing: border-box;
+  &:hover {
+    background-color: $blue-5;
+  }
 }
 
 .sidebar__page-option--selected {
@@ -30,8 +33,8 @@
   padding: 4px;
   box-sizing: border-box;
   color: $dark-4;
-  background: #7baFc6;
-  border-right: 4px solid $gray-10;
+  background-color: $blue-5;
+  border-left: 4px solid $gray-8;
 }
 
 .sidebar__page-option-icon {
