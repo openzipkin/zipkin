@@ -24,9 +24,10 @@ class TraceSummary extends React.Component {
     this.handleTimelineOpenToggle = this.handleTimelineOpenToggle.bind(this);
   }
 
-  handleTimelineOpenToggle() {
+  handleTimelineOpenToggle(event) {
     const { isTimelineOpened } = this.state;
     this.setState({ isTimelineOpened: !isTimelineOpened });
+    event.stopPropagation();
   }
 
   barColor() {
@@ -43,11 +44,7 @@ class TraceSummary extends React.Component {
 
   renderBar(width, label) {
     return (
-      <div
-        className="trace-summary__bar-container"
-        role="presentation"
-        onClick={this.handleTimelineOpenToggle}
-      >
+      <div className="trace-summary__bar-container">
         <div
           className="trace-summary__bar-wrapper"
           style={{ width: `${width}%` }}
@@ -135,25 +132,31 @@ class TraceSummary extends React.Component {
 
     return (
       <div className="trace-summary">
-        <div className="trace-summary__trace-id">
-          Trace ID:&nbsp;
-          <b>
-            {traceSummary.traceId}
-          </b>
-        </div>
-        <div className="trace-summary__upper-container">
-          <div className="trace-summary__bars">
-            {this.renderBar(traceSummary.width, upperBarLabel)}
-            {
-              traceSummary.servicePercentage
-                ? this.renderBar(traceSummary.servicePercentage, lowerBarLabel)
-                : null
-            }
+        <div
+          className="trace-summary__summary"
+          role="presentation"
+          onClick={this.handleTimelineOpenToggle}
+        >
+          <div className="trace-summary__trace-id">
+            Trace ID:&nbsp;
+            <b>
+              {traceSummary.traceId}
+            </b>
           </div>
-          {this.renderButtons()}
-        </div>
-        <div className="trace-summary__lower-container">
-          {this.renderServiceBadges()}
+          <div className="trace-summary__upper-container">
+            <div className="trace-summary__bars">
+              {this.renderBar(traceSummary.width, upperBarLabel)}
+              {
+                traceSummary.servicePercentage
+                  ? this.renderBar(traceSummary.servicePercentage, lowerBarLabel)
+                  : null
+              }
+            </div>
+            {this.renderButtons()}
+          </div>
+          <div className="trace-summary__lower-container">
+            {this.renderServiceBadges()}
+          </div>
         </div>
         {this.renderTimeline()}
       </div>
