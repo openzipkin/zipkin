@@ -52,10 +52,6 @@ public class ITElasticsearchStorageV6 {
       return storage;
     }
 
-    // we don't map this in elasticsearch
-    @Test @Ignore @Override public void getSpanNames_mapsNameToRemoteServiceName() {
-    }
-
     @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
     }
 
