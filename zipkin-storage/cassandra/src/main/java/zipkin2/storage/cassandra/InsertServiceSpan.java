@@ -29,6 +29,10 @@ final class InsertServiceSpan extends ResultSetFutureCall<Void> {
 
   @AutoValue
   abstract static class Input {
+    static Input create(String service_name, String span_name) {
+      return new AutoValue_InsertServiceSpan_Input(service_name, span_name);
+    }
+
     abstract String service();
 
     abstract String span();
@@ -51,7 +55,7 @@ final class InsertServiceSpan extends ResultSetFutureCall<Void> {
     }
 
     Input newInput(String service_name, String span_name) {
-      return new AutoValue_InsertServiceSpan_Input(service_name, span_name);
+      return Input.create(service_name, span_name);
     }
 
     @Override protected InsertServiceSpan newCall(Input input) {

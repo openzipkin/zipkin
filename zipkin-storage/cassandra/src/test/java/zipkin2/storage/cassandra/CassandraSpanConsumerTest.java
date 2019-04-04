@@ -108,16 +108,18 @@ public class CassandraSpanConsumerTest {
   }
 
   @Test
-  public void serviceSpanKeys_addsRemoteServiceName() {
+  public void serviceRemoteServiceKeys_addsRemoteServiceName() {
     Span span = spanWithoutAnnotationsOrTags.toBuilder().remoteEndpoint(BACKEND).build();
 
     Call<Void> call = consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
       .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
-      .extracting("input.service", "input.span")
+      .extracting("input")
       .containsExactly(
-        tuple(BACKEND.serviceName(), span.name()), tuple(FRONTEND.serviceName(), span.name()));
+        InsertServiceSpan.Input.create(FRONTEND.serviceName(), span.name()),
+        InsertServiceRemoteService.Input.create(FRONTEND.serviceName(),BACKEND.serviceName() )
+      );
   }
 
   @Test

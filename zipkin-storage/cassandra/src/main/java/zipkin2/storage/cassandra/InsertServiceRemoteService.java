@@ -29,6 +29,10 @@ final class InsertServiceRemoteService extends ResultSetFutureCall<Void> {
 
   @AutoValue
   abstract static class Input {
+    static Input create(String service_name, String remote_service_name) {
+      return new AutoValue_InsertServiceRemoteService_Input(service_name, remote_service_name);
+    }
+
     abstract String service();
 
     abstract String remoteService();
@@ -51,7 +55,7 @@ final class InsertServiceRemoteService extends ResultSetFutureCall<Void> {
     }
 
     Input newInput(String service_name, String remote_service_name) {
-      return new AutoValue_InsertServiceRemoteService_Input(service_name, remote_service_name);
+      return Input.create(service_name, remote_service_name);
     }
 
     @Override protected InsertServiceRemoteService newCall(Input input) {

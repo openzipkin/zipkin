@@ -75,14 +75,22 @@ final class Schema {
     String compactionClass =
       keyspaceMetadata.getTable("span").getOptions().getCompaction().get("class");
 
-    return new Metadata(compactionClass);
+    return new Metadata(
+      compactionClass,
+      hasUpgrade1_autocompleteTags(keyspaceMetadata),
+      hasUpgrade2_remoteService(keyspaceMetadata)
+    );
   }
 
   static final class Metadata {
     final String compactionClass;
+    final boolean hasAutocompleteTags, hasRemoteServiceByService;
 
-    Metadata(String compactionClass) {
+    Metadata(String compactionClass, boolean hasAutocompleteTags,
+      boolean hasRemoteServiceByService) {
       this.compactionClass = compactionClass;
+      this.hasAutocompleteTags = hasAutocompleteTags;
+      this.hasRemoteServiceByService = hasRemoteServiceByService;
     }
   }
 

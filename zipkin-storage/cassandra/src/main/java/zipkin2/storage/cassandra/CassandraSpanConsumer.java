@@ -42,20 +42,25 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
 
   CassandraSpanConsumer(CassandraStorage storage) {
     session = storage.session();
+    Schema.Metadata metadata = storage.metadata();
     strictTraceId = storage.strictTraceId();
     searchEnabled = storage.searchEnabled();
     autocompleteKeys = new LinkedHashSet<>(storage.autocompleteKeys());
-    // warns when schema problems exist
-    Schema.readMetadata(session);
 
     insertSpan = new InsertSpan.Factory(session, strictTraceId, searchEnabled);
     if (searchEnabled) {
       insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
       insertServiceSpan = new InsertServiceSpan.Factory(storage);
-      // TODO: guard on schema
-      insertServiceRemoteService = new InsertServiceRemoteService.Factory(storage);
-      insertAutocompleteValue =
-        !storage.autocompleteKeys().isEmpty() ? new InsertAutocompleteValue.Factory(storage) : null;
+      if (metadata.hasRemoteServiceByService) {
+        insertServiceRemoteService = new InsertServiceRemoteService.Factory(storage);
+      } else {
+        insertServiceRemoteService = null;
+      }
+      if (metadata.hasAutocompleteTags && !storage.autocompleteKeys().isEmpty()) {
+        insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage);
+      } else {
+        insertAutocompleteValue = null;
+      }
     } else {
       insertTraceByServiceSpan = null;
       insertServiceRemoteService = null;
@@ -68,8 +73,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
    * This fans out into many requests, last count was 2 * spans.size. If any of these fail, the
    * returned future will fail. Most callers drop or log the result.
    */
-  @Override
-  public Call<Void> accept(List<Span> input) {
+  @Override public Call<Void> accept(List<Span> input) {
     if (input.isEmpty()) return Call.create(null);
 
     Set<InsertSpan.Input> spans = new LinkedHashSet<>();
@@ -105,8 +109,9 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       // service span index is refreshed regardless of timestamp
       serviceSpans.add(insertServiceSpan.newInput(service, span));
 
-      if (null != s.remoteServiceName()) {
-        serviceRemoteServices.add(insertServiceRemoteService.newInput(service, s.remoteServiceName()));
+      if (insertServiceRemoteService != null && s.remoteServiceName() != null) {
+        serviceRemoteServices.add(
+          insertServiceRemoteService.newInput(service, s.remoteServiceName()));
       }
 
       if (ts_micro == 0L) continue; // search is only valid with a timestamp, don't index w/o it!
@@ -129,15 +134,19 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       for (InsertServiceSpan.Input serviceSpan : serviceSpans) {
         insertServiceSpan.maybeAdd(serviceSpan, calls);
       }
-      for (InsertServiceRemoteService.Input serviceRemoteService : serviceRemoteServices) {
-        insertServiceRemoteService.maybeAdd(serviceRemoteService, calls);
+      if (insertServiceRemoteService != null) {
+        for (InsertServiceRemoteService.Input serviceRemoteService : serviceRemoteServices) {
+          insertServiceRemoteService.maybeAdd(serviceRemoteService, calls);
+        }
       }
       for (InsertTraceByServiceSpan.Input serviceSpan : traceByServiceSpans) {
         calls.add(insertTraceByServiceSpan.create(serviceSpan));
       }
     }
-    for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {
-      insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
+    if (insertAutocompleteValue != null) {
+      for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {
+        insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
+      }
     }
     return AggregateCall.newVoidCall(calls);
   }

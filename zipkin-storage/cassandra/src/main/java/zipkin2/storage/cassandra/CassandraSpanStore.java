@@ -53,6 +53,7 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
 
   CassandraSpanStore(CassandraStorage storage) {
     Session session = storage.session();
+    Schema.Metadata metadata = storage.metadata();
     maxTraceCols = storage.maxTraceCols();
     indexFetchMultiplier = storage.indexFetchMultiplier();
     strictTraceId = storage.strictTraceId();
@@ -64,8 +65,11 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     if (searchEnabled) {
       KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace());
       indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
-      // TODO: schema guard!
-      remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
+      if (metadata.hasRemoteServiceByService) {
+        remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
+      } else {
+        remoteServiceNames = null;
+      }
       spanNames = new SelectSpanNames.Factory(session);
       serviceNames = new SelectServiceNames.Factory(session).create();
       traceIdsFromServiceSpan = new SelectTraceIdsFromServiceSpan.Factory(session);
@@ -212,7 +216,9 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
   }
 
   @Override public Call<List<String>> getRemoteServiceNames(String serviceName) {
-    if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
+    if (serviceName.isEmpty() || !searchEnabled || remoteServiceNames == null) {
+      return Call.emptyList();
+    }
     return remoteServiceNames.create(serviceName);
   }
 

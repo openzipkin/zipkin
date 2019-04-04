@@ -23,7 +23,9 @@ class CassandraAutocompleteTags implements AutocompleteTags {
   final SelectAutocompleteValues.Factory valuesCallFactory;
 
   CassandraAutocompleteTags(CassandraStorage storage) {
-    enabled = storage.searchEnabled() && !storage.autocompleteKeys().isEmpty();
+    enabled = storage.searchEnabled()
+      && !storage.autocompleteKeys().isEmpty()
+      && storage.metadata().hasAutocompleteTags;
     keysCall = Call.create(storage.autocompleteKeys());
     valuesCallFactory = enabled ? new SelectAutocompleteValues.Factory(storage.session()) : null;
   }

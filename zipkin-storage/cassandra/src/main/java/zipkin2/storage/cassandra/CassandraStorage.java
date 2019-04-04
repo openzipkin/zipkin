@@ -232,6 +232,10 @@ public abstract class CassandraStorage extends StorageComponent {
     return new CassandraSpanConsumer(this);
   }
 
+  @Memoized Schema.Metadata metadata() { // warn once when schema problems exist
+    return Schema.readMetadata(session());
+  }
+
   @Override
   public CheckResult check() {
     try {
