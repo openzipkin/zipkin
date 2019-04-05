@@ -16,12 +16,12 @@ package zipkin2.storage.cassandra.v1;
 import zipkin2.Span;
 import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
-import zipkin2.storage.SpanStore;
+import zipkin2.storage.ServiceAndSpanNames;
 
 final class Tables {
 
   /**
-   * This index supports {@link SpanStore#getServiceNames()}}.
+   * This index supports {@link ServiceAndSpanNames#getServiceNames()}}.
    *
    * <p>The cardinality of {@link Span#localServiceName()} values is expected to be stable and low.
    * There may be hot partitions, but each partition only includes a single column. Hence bucketing
@@ -30,10 +30,19 @@ final class Tables {
   static final String SERVICE_NAMES = "service_names";
 
   /**
-   * This index supports {@link SpanStore#getSpanNames(String)}.
+   * This index supports {@link ServiceAndSpanNames#getRemoteServiceNames(String)}.
    *
-   * <p>The compound partition key includes {@link Span#localServiceName()} and a constant bucket (0).
-   * This is because span names are bounded (and will throw an exception if aren't!).
+   * <p>The cardinality of {@link Span#remoteServiceName()} values is expected to be stable and
+   * low. There may be hot partitions, but each partition only includes a single column. Hence
+   * bucketing would be unnecessary.
+   */
+  static final String REMOTE_SERVICE_NAMES = "remote_service_names";
+
+  /**
+   * This index supports {@link ServiceAndSpanNames#getSpanNames(String)}.
+   *
+   * <p>The compound partition key includes {@link Span#localServiceName()} and a constant bucket
+   * (0). This is because span names are bounded (and will throw an exception if aren't!).
    */
   static final String SPAN_NAMES = "span_names";
 
@@ -83,6 +92,9 @@ final class Tables {
    * (random number between 0 and 9).
    */
   static final String ANNOTATIONS_INDEX = "annotations_index";
+
+  /** This table supports {@link ServiceAndSpanNames#getRemoteServiceNames(String)}. */
+  static final String TABLE_SERVICE_REMOTE_SERVICES = "remote_service_by_service";
 
   private Tables() {
   }

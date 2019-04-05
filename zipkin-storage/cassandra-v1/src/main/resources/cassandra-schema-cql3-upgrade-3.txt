@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS zipkin.remote_service_names (
+    service_name text,
+    remote_service_name text,
+    PRIMARY KEY (service_name, remote_service_name)
+)
+    WITH compaction = {'class': 'org.apache.cassandra.db.compaction.LeveledCompactionStrategy', 'unchecked_tombstone_compaction': 'true', 'tombstone_threshold': '0.2'}
+    AND default_time_to_live =  259200;

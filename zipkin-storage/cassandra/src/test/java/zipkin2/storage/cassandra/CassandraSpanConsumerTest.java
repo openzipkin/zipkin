@@ -129,7 +129,7 @@ public class CassandraSpanConsumerTest {
     Call<Void> call = consumer.accept(singletonList(span));
 
     assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof DeduplicatingVoidCallFactory.InvalidatingVoidCall)
+      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .extracting("input.service", "input.span")
       .containsExactly(tuple(FRONTEND.serviceName(), ""));
   }

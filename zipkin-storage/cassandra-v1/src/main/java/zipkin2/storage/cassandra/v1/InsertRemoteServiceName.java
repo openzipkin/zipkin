@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.storage.cassandra;
+package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
@@ -23,19 +23,13 @@ import com.google.auto.value.AutoValue;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
-
-final class InsertServiceRemoteService extends ResultSetFutureCall<Void> {
+final class InsertRemoteServiceName extends ResultSetFutureCall<Void> {
 
   @AutoValue
   abstract static class Input {
-    static Input create(String service, String remote_service) {
-      return new AutoValue_InsertServiceRemoteService_Input(service, remote_service);
-    }
+    abstract String service_name();
 
-    abstract String service();
-
-    abstract String remoteService();
+    abstract String remote_service_name();
 
     Input() {
     }
@@ -45,36 +39,37 @@ final class InsertServiceRemoteService extends ResultSetFutureCall<Void> {
     final Session session;
     final PreparedStatement preparedStatement;
 
-    Factory(CassandraStorage storage) {
-      super(storage.autocompleteTtl(), storage.autocompleteCardinality());
+    Factory(CassandraStorage storage, int indexTtl) {
+      super(storage.autocompleteTtl, storage.autocompleteCardinality);
       session = storage.session();
-      Insert insertQuery = QueryBuilder.insertInto(TABLE_SERVICE_REMOTE_SERVICES)
-        .value("service", QueryBuilder.bindMarker("service"))
-        .value("remote_service", QueryBuilder.bindMarker("remote_service"));
+      Insert insertQuery = QueryBuilder.insertInto(Tables.SPAN_NAMES)
+        .value("service_name", QueryBuilder.bindMarker("service_name"))
+        .value("remote_service_name", QueryBuilder.bindMarker("remote_service_name"));
+      if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));
       preparedStatement = session.prepare(insertQuery);
     }
 
-    Input newInput(String service, String remote_service) {
-      return Input.create(service, remote_service);
+    Input newInput(String service_name, String remote_service_name) {
+      return new AutoValue_InsertRemoteServiceName_Input(service_name, remote_service_name);
     }
 
-    @Override protected InsertServiceRemoteService newCall(Input input) {
-      return new InsertServiceRemoteService(this, input);
+    @Override protected InsertRemoteServiceName newCall(Input input) {
+      return new InsertRemoteServiceName(this, input);
     }
   }
 
   final Factory factory;
   final Input input;
 
-  InsertServiceRemoteService(Factory factory, Input input) {
+  InsertRemoteServiceName(Factory factory, Input input) {
     this.factory = factory;
     this.input = input;
   }
 
   @Override protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(factory.preparedStatement.bind()
-      .setString("service", input.service())
-      .setString("remote_service", input.remoteService()));
+      .setString("service_name", input.service_name())
+      .setString("remote_service_name", input.remote_service_name()));
   }
 
   @Override public Void map(ResultSet input) {
@@ -82,10 +77,10 @@ final class InsertServiceRemoteService extends ResultSetFutureCall<Void> {
   }
 
   @Override public String toString() {
-    return input.toString().replace("Input", "InsertServiceRemoteService");
+    return input.toString().replace("Input", "InsertSpanName");
   }
 
-  @Override public InsertServiceRemoteService clone() {
-    return new InsertServiceRemoteService(factory, input);
+  @Override public InsertRemoteServiceName clone() {
+    return new InsertRemoteServiceName(factory, input);
   }
 }

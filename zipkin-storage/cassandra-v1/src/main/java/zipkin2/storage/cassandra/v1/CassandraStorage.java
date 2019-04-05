@@ -23,6 +23,7 @@ import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
@@ -325,9 +326,12 @@ public final class CassandraStorage extends StorageComponent {
     return session.get();
   }
 
+  Schema.Metadata metadata() {
+    return session.metadata();
+  }
+
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */
-  @Override
-  public SpanStore spanStore() {
+  @Override public SpanStore spanStore() {
     if (spanStore == null) {
       synchronized (this) {
         if (spanStore == null) {
@@ -336,6 +340,10 @@ public final class CassandraStorage extends StorageComponent {
       }
     }
     return spanStore;
+  }
+
+  @Override public ServiceAndSpanNames serviceAndSpanNames() {
+    return (ServiceAndSpanNames) spanStore();
   }
 
   @Override public AutocompleteTags autocompleteTags() {

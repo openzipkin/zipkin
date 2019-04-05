@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,6 +19,7 @@ final class LazySession {
   private final SessionFactory sessionFactory;
   private final CassandraStorage storage;
   private volatile Session session;
+  private volatile Schema.Metadata metadata; // guarded by session
 
   LazySession(SessionFactory sessionFactory, CassandraStorage storage) {
     this.sessionFactory = sessionFactory;
@@ -30,10 +31,16 @@ final class LazySession {
       synchronized (this) {
         if (session == null) {
           session = sessionFactory.create(storage);
+          metadata = Schema.readMetadata(session); // warn only once when schema problems exist
         }
       }
     }
     return session;
+  }
+
+  Schema.Metadata metadata() {
+    get();
+    return metadata;
   }
 
   void close() {

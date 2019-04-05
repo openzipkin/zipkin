@@ -75,11 +75,21 @@ final class Schema {
     String compactionClass =
       keyspaceMetadata.getTable("span").getOptions().getCompaction().get("class");
 
-    return new Metadata(
-      compactionClass,
-      hasUpgrade1_autocompleteTags(keyspaceMetadata),
-      hasUpgrade2_remoteService(keyspaceMetadata)
-    );
+    boolean hasAutocompleteTags = hasUpgrade1_autocompleteTags(keyspaceMetadata);
+    if (!hasAutocompleteTags) {
+      LOG.warn(
+        "schema lacks autocomplete indexing: apply {}, or set CassandraStorage.ensureSchema=true",
+        UPGRADE_1);
+    }
+
+    boolean hasRemoteServiceByService = hasUpgrade2_remoteService(keyspaceMetadata);
+    if (!hasRemoteServiceByService) {
+      LOG.warn(
+        "schema lacks remote service indexing: apply {}, or set CassandraStorage.ensureSchema=true",
+        UPGRADE_2);
+    }
+
+    return new Metadata(compactionClass, hasAutocompleteTags, hasRemoteServiceByService);
   }
 
   static final class Metadata {

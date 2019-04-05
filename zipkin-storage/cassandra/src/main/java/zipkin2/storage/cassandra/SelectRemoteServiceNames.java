@@ -16,15 +16,11 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import zipkin2.Call;
-import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
+import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -35,22 +31,20 @@ final class SelectRemoteServiceNames extends ResultSetFutureCall<ResultSet> {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final AccumulateNamesAllResults accumulateNamesIntoSet = new AccumulateNamesAllResults();
+    final DistinctSortedStrings remoteServices = new DistinctSortedStrings("remote_service");
 
     Factory(Session session) {
       this.session = session;
-      this.preparedStatement =
-          session.prepare(
-              QueryBuilder.select("remote_service")
-                  .from(TABLE_SERVICE_REMOTE_SERVICES)
-                  .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
-                  .limit(QueryBuilder.bindMarker("limit_")));
+      this.preparedStatement = session.prepare(QueryBuilder.select("remote_service")
+        .from(TABLE_SERVICE_REMOTE_SERVICES)
+        .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
+        .limit(QueryBuilder.bindMarker("limit_")));
     }
 
     Call<List<String>> create(String serviceName) {
       if (serviceName == null || serviceName.isEmpty()) return Call.emptyList();
       String service = checkNotNull(serviceName, "serviceName").toLowerCase();
-      return new SelectRemoteServiceNames(this, service).flatMap(accumulateNamesIntoSet);
+      return new SelectRemoteServiceNames(this, service).flatMap(remoteServices);
     }
   }
 
@@ -82,25 +76,5 @@ final class SelectRemoteServiceNames extends ResultSetFutureCall<ResultSet> {
   @Override
   public SelectRemoteServiceNames clone() {
     return new SelectRemoteServiceNames(factory, service);
-  }
-
-  static class AccumulateNamesAllResults extends AccumulateAllResults<List<String>> {
-    @Override
-    protected Supplier<List<String>> supplier() {
-      return ArrayList::new; // TODO: list might not be ok due to not distinct
-    }
-
-    @Override
-    protected BiConsumer<Row, List<String>> accumulator() {
-      return (row, list) -> {
-        String result = row.getString("remote_service");
-        if (!result.isEmpty()) list.add(result);
-      };
-    }
-
-    @Override
-    public String toString() {
-      return "AccumulateNamesAllResults{}";
-    }
   }
 }

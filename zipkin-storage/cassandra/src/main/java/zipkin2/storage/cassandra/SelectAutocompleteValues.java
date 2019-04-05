@@ -16,15 +16,11 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import zipkin2.Call;
-import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
+import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_AUTOCOMPLETE_TAGS;
@@ -34,7 +30,7 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final AccumulateAutocompleteValues accumulateAutocompleteValues;
+    final DistinctSortedStrings values = new DistinctSortedStrings("value");
 
     Factory(Session session) {
       this.session = session;
@@ -43,11 +39,10 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
           .from(TABLE_AUTOCOMPLETE_TAGS)
           .where(QueryBuilder.eq("key", QueryBuilder.bindMarker("key")))
           .limit(QueryBuilder.bindMarker("limit_")));
-      this.accumulateAutocompleteValues = new AccumulateAutocompleteValues();
     }
 
     Call<List<String>> create(String key) {
-      return new SelectAutocompleteValues(this, key).flatMap(accumulateAutocompleteValues);
+      return new SelectAutocompleteValues(this, key).flatMap(values);
     }
   }
 
@@ -60,8 +55,7 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
   }
 
   @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement
-      .bind()
+    return factory.session.executeAsync(factory.preparedStatement.bind()
       .setString("key", key)
       .setInt("limit_", 1000)); // no one is ever going to browse so many tag values
   }
@@ -72,23 +66,5 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
 
   @Override public Call<ResultSet> clone() {
     return new SelectAutocompleteValues(factory, key);
-  }
-
-  static class AccumulateAutocompleteValues extends AccumulateAllResults<List<String>> {
-    @Override protected Supplier<List<String>> supplier() {
-      return ArrayList::new; // list is ok because it is distinct results
-    }
-
-    @Override protected BiConsumer<Row, List<String>> accumulator() {
-      return (row, list) -> {
-        String result = row.getString("value");
-        if (!result.isEmpty()) list.add(result);
-      };
-    }
-
-    @Override
-    public String toString() {
-      return "AccumulateAutocompleteValues{}";
-    }
   }
 }

@@ -18,6 +18,7 @@ import com.datastax.driver.core.Row;
 import com.google.auto.value.AutoValue;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Call.FlatMapper;
@@ -27,10 +28,16 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
 
   protected abstract BiConsumer<Row, T> accumulator();
 
+  /** Customizes the aggregated result. For example, summarizing or making immutable. */
+  protected Function<T, T> finisher() {
+    return Function.identity();
+  }
+
   @Override public Call<T> map(ResultSet rs) {
     return new AutoValue_AccumulateAllResults_AccumulateNextResults<>(
       supplier().get(),
-      accumulator()
+      accumulator(),
+      finisher()
     ).map(rs);
   }
 
@@ -61,6 +68,8 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
 
     abstract BiConsumer<Row, T> accumulator();
 
+    abstract Function<T, T> finisher();
+
     /** Iterates through the rows in each page, flatmapping on more results until exhausted */
     @Override public Call<T> map(ResultSet rs) {
       while (rs.getAvailableWithoutFetching() > 0) {
@@ -68,7 +77,7 @@ public abstract class AccumulateAllResults<T> implements FlatMapper<ResultSet, T
       }
       // Return collected results if there are no more pages
       return rs.getExecutionInfo().getPagingState() == null && rs.isExhausted()
-        ? Call.create(pendingResults())
+        ? Call.create(finisher().apply(pendingResults()))
         : FetchMoreResults.create(rs).flatMap(this);
     }
   }

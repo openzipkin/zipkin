@@ -23,31 +23,45 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
+import static com.google.common.base.Preconditions.checkNotNull;
+
+final class SelectRemoteServiceNames extends ResultSetFutureCall<ResultSet> {
+
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final DistinctSortedStrings services = new DistinctSortedStrings("service");
+    final DistinctSortedStrings remoteServiceNames =
+      new DistinctSortedStrings("remote_service_name");
 
     Factory(Session session) {
       this.session = session;
-      this.preparedStatement = session.prepare(
-        QueryBuilder.select("service_name").distinct().from(Tables.SERVICE_NAMES));
+      this.preparedStatement = session.prepare(QueryBuilder.select("remote_service_name")
+        .from(Tables.REMOTE_SERVICE_NAMES)
+        .where(QueryBuilder.eq("service_name", QueryBuilder.bindMarker("service_name")))
+        .limit(QueryBuilder.bindMarker("limit_")));
     }
 
-    Call<List<String>> create() {
-      return new SelectServiceNames(this).flatMap(services);
+    Call<List<String>> create(String serviceName) {
+      if (serviceName == null || serviceName.isEmpty()) return Call.emptyList();
+      String service = checkNotNull(serviceName, "serviceName").toLowerCase();
+      return new SelectRemoteServiceNames(this, service).flatMap(remoteServiceNames);
     }
   }
 
   final Factory factory;
+  final String service_name;
 
-  SelectServiceNames(Factory factory) {
+  SelectRemoteServiceNames(Factory factory, String service_name) {
     this.factory = factory;
+    this.service_name = service_name;
   }
 
-  @Override protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement.bind());
+  @Override
+  protected ResultSetFuture newFuture() {
+    return factory.session.executeAsync(factory.preparedStatement.bind()
+      .setString("service_name", service_name)
+      // no one is ever going to browse so many remote service names
+      .setInt("limit_", 1000));
   }
 
   @Override public ResultSet map(ResultSet input) {
@@ -55,10 +69,10 @@ final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
   }
 
   @Override public String toString() {
-    return "SelectServiceNames{}";
+    return "SelectRemoteServiceNames{service_name=" + service_name + "}";
   }
 
-  @Override public SelectServiceNames clone() {
-    return new SelectServiceNames(factory);
+  @Override public SelectRemoteServiceNames clone() {
+    return new SelectRemoteServiceNames(factory, service_name);
   }
 }

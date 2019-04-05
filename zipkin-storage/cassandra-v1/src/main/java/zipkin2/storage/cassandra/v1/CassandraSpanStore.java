@@ -29,6 +29,7 @@ import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.internal.AggregateCall;
 import zipkin2.storage.QueryRequest;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -36,7 +37,7 @@ import static com.google.common.collect.DiscreteDomain.integers;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.sortTraceIdsByDescTimestamp;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.sortTraceIdsByDescTimestampMapper;
 
-public final class CassandraSpanStore implements SpanStore {
+public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames {
   private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
 
   private final int maxTraceCols;
@@ -48,6 +49,7 @@ public final class CassandraSpanStore implements SpanStore {
   private final SelectFromTraces.Factory spans;
   private final SelectDependencies.Factory dependencies;
   private final Call<List<String>> serviceNames;
+  private final SelectRemoteServiceNames.Factory remoteServiceNames;
   private final SelectSpanNames.Factory spanNames;
   private final SelectTraceIdTimestampFromServiceName.Factory selectTraceIdsByServiceName;
   private final SelectTraceIdTimestampFromServiceNames.Factory selectTraceIdsByServiceNames;
@@ -55,7 +57,7 @@ public final class CassandraSpanStore implements SpanStore {
   private final SelectTraceIdTimestampFromAnnotations.Factory selectTraceIdsByAnnotation;
 
   CassandraSpanStore(CassandraStorage storage) {
-    this.session = storage.session.get();
+    session = storage.session();
     this.maxTraceCols = storage.maxTraceCols;
     this.indexFetchMultiplier = storage.indexFetchMultiplier;
     this.strictTraceId = storage.strictTraceId;
@@ -67,6 +69,11 @@ public final class CassandraSpanStore implements SpanStore {
 
     spans = new SelectFromTraces.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
+    if (storage.metadata().hasRemoteServiceByService) {
+      remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
+    } else {
+      remoteServiceNames = null;
+    }
     spanNames = new SelectSpanNames.Factory(session);
     serviceNames = new SelectServiceNames.Factory(session).create();
 
@@ -156,6 +163,11 @@ public final class CassandraSpanStore implements SpanStore {
   @Override
   public Call<List<String>> getServiceNames() {
     return serviceNames.clone();
+  }
+
+  @Override public Call<List<String>> getRemoteServiceNames(String serviceName) {
+    if (serviceName.isEmpty() || remoteServiceNames == null) return Call.emptyList();
+    return remoteServiceNames.create(serviceName);
   }
 
   @Override
