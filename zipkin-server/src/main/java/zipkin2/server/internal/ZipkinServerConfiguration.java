@@ -92,7 +92,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       //
       // The reason is that our former CORS implementation accidentally allowed POST. People doing
       // browser-based tracing relied on this, so we can't remove it by default. In the future, we
-      // could split the collector's CORS policy into a different property, still allowing POST by
+      // could split the collector's CORS policy into a different property, still allowing POST
       // with content-type by default.
       .allowRequestMethods(HttpMethod.GET, HttpMethod.POST)
       .allowRequestHeaders(HttpHeaderNames.CONTENT_TYPE);
