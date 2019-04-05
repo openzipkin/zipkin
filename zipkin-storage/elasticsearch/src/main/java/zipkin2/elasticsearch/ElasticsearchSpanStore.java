@@ -70,6 +70,10 @@ final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
       filters.addTerm("localEndpoint.serviceName", request.serviceName());
     }
 
+    if (request.remoteServiceName() != null) {
+      filters.addTerm("remoteEndpoint.serviceName", request.remoteServiceName());
+    }
+
     if (request.spanName() != null) {
       filters.addTerm("name", request.spanName());
     }

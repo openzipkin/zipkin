@@ -88,6 +88,14 @@ public abstract class ITServiceAndSpanNames {
       .containsExactlyInAnyOrderElementsOf(remoteServiceNames);
   }
 
+  /** Ensures the service name index returns distinct results */
+  @Test public void getRemoteServiceNames_dedupes() throws IOException {
+    for (int i = 0; i < 50; i++) accept(CLIENT_SPAN.toBuilder().id(i + 1).build());
+
+    assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute())
+      .containsExactly(CLIENT_SPAN.remoteServiceName());
+  }
+
   @Test public void getRemoteServiceNames_noRemoteServiceName() throws IOException {
     accept(Span.newBuilder().traceId("a").id("a").localEndpoint(FRONTEND).build());
 
@@ -106,7 +114,6 @@ public abstract class ITServiceAndSpanNames {
 
     assertThat(serviceAndSpanNames().getSpanNames(CLIENT_SPAN.remoteServiceName()).execute())
       .isEmpty();
-    ;
   }
 
   @Test public void getSpanNames() throws Exception {
@@ -133,6 +140,14 @@ public abstract class ITServiceAndSpanNames {
 
     assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
       .containsExactlyInAnyOrderElementsOf(spanNames);
+  }
+
+  /** Ensures the span name index returns distinct results */
+  @Test public void getSpanNames_dedupes() throws IOException {
+    for (int i = 0; i < 50; i++) accept(CLIENT_SPAN.toBuilder().id(i + 1).build());
+
+    assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
+      .containsExactly(CLIENT_SPAN.name());
   }
 
   @Test public void getSpanNames_noSpanName() throws IOException {

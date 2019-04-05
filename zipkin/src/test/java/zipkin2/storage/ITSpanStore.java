@@ -90,6 +90,7 @@ public abstract class ITSpanStore {
   @Test public void allShouldWorkWhenEmpty() throws IOException {
     QueryRequest.Builder q = requestBuilder().serviceName("service");
     assertThat(store().getTraces(q.build()).execute()).isEmpty();
+    assertThat(store().getTraces(q.remoteServiceName("remotey").build()).execute()).isEmpty();
     assertThat(store().getTraces(q.spanName("methodcall").build()).execute()).isEmpty();
     assertThat(store().getTraces(q.parseAnnotationQuery("custom").build()).execute()).isEmpty();
     assertThat(store().getTraces(q.parseAnnotationQuery("BAH=BEH").build()).execute()).isEmpty();
@@ -208,6 +209,33 @@ public abstract class ITSpanStore {
     assertThat(store().getTraces(requestBuilder()
       .serviceName("frontend")
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
+  }
+
+  @Test public void getTraces_remoteServiceName() throws Exception {
+    accept(CLIENT_SPAN);
+
+    assertThat(store().getTraces(requestBuilder()
+      .remoteServiceName(CLIENT_SPAN.remoteServiceName() + 1)
+      .build()).execute()).isEmpty();
+
+    assertThat(store().getTraces(requestBuilder()
+      .remoteServiceName(CLIENT_SPAN.remoteServiceName())
+      .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
+
+    assertThat(store().getTraces(requestBuilder()
+      .remoteServiceName("frontend")
+      .remoteServiceName(CLIENT_SPAN.remoteServiceName())
+      .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
+  }
+
+  @Test public void getTraces_remoteServiceName_128() throws Exception {
+    // add a trace with the same trace ID truncated to 64 bits, except the span name.
+    accept(CLIENT_SPAN.toBuilder()
+      .traceId(CLIENT_SPAN.traceId().substring(16))
+      .name("bar")
+      .build());
+
+    getTraces_remoteServiceName();
   }
 
   @Test public void getTraces_spanName() throws Exception {
@@ -397,6 +425,9 @@ public abstract class ITSpanStore {
     assertThat(store().getTraces(builder.build()).execute())
       .hasSize(traceCount);
 
+    assertThat(store().getTraces(builder.remoteServiceName(span.remoteServiceName()).build()).execute())
+      .hasSize(traceCount);
+
     assertThat(store().getTraces(builder.spanName(span.name()).build()).execute())
       .hasSize(traceCount);
 
@@ -428,6 +459,11 @@ public abstract class ITSpanStore {
       // service2 root of trace 3, but middle of 1 and 2.
       .containsExactlyInAnyOrder("0000000000000003", "0000000000000002", "0000000000000001");
 
+    // Remote service name should apply to the duration filter
+    query = q.serviceName("service1").remoteServiceName("service2").maxDuration(50_000L).build();
+    assertThat(store().getTraces(query).execute()).extracting(t -> t.get(0).traceId())
+      .containsExactly("0000000000000002");
+
     // Span name should apply to the duration filter
     query = q.serviceName("service2").spanName("zip").maxDuration(50_000L).build();
     assertThat(store().getTraces(query).execute()).extracting(t -> t.get(0).traceId())
@@ -454,12 +490,19 @@ public abstract class ITSpanStore {
     );
 
     assertThat(store().getTraces(
-      requestBuilder().serviceName("frontend").build()
+      requestBuilder().serviceName(CLIENT_SPAN.localServiceName()).build()
     ).execute()).isEmpty();
 
     assertThat(store().getTraces(
       requestBuilder()
-        .serviceName("frontend")
+        .serviceName(CLIENT_SPAN.localServiceName())
+        .spanName(CLIENT_SPAN.remoteServiceName())
+        .build()
+    ).execute()).isEmpty();
+
+    assertThat(store().getTraces(
+      requestBuilder()
+        .serviceName(CLIENT_SPAN.localServiceName())
         .spanName(CLIENT_SPAN.name())
         .build()
     ).execute()).isEmpty();
@@ -468,12 +511,19 @@ public abstract class ITSpanStore {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(
-      requestBuilder().serviceName("frontend").build()
+      requestBuilder().serviceName(CLIENT_SPAN.localServiceName()).build()
     ).execute()).isNotEmpty();
 
     assertThat(store().getTraces(
       requestBuilder()
-        .serviceName("frontend")
+        .serviceName(CLIENT_SPAN.localServiceName())
+        .remoteServiceName(CLIENT_SPAN.remoteServiceName())
+        .build()
+    ).execute()).isNotEmpty();
+
+    assertThat(store().getTraces(
+      requestBuilder()
+        .serviceName(CLIENT_SPAN.localServiceName())
         .spanName(CLIENT_SPAN.name())
         .build()
     ).execute()).isNotEmpty();
@@ -732,55 +782,15 @@ public abstract class ITSpanStore {
       .containsExactlyInAnyOrder(trace);
   }
 
-  @Test public void getServiceNames_includesLocalServiceName() throws Exception {
-    assertThat(store().getServiceNames().execute())
-      .isEmpty();
-
+  @Test public void remoteServiceName_goesLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
-    assertThat(store().getServiceNames().execute())
-      .contains("frontend");
+    assertThat(store().getTraces(
+      requestBuilder().serviceName("frontend").remoteServiceName("BaCkEnD").build()
+    ).execute()).hasSize(1);
   }
 
-  @Test public void getSpanNames() throws Exception {
-    assertThat(store().getSpanNames("frontend").execute())
-      .isEmpty();
-
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getSpanNames("frontend" + 1).execute())
-      .isEmpty();
-
-    assertThat(store().getSpanNames("frontend").execute())
-      .contains(CLIENT_SPAN.name());
-  }
-
-  @Test public void getSpanNames_allReturned() throws IOException {
-    // Assure a default spanstore limit isn't hit by assuming if 50 are returned, all are returned
-    List<String> spanNames = new ArrayList<>();
-    for (int i = 0; i < 50; i++) {
-      String suffix = i < 10 ? "0" + i : String.valueOf(i);
-      accept(CLIENT_SPAN.toBuilder().id(i + 1).name("yak" + suffix).build());
-      spanNames.add("yak" + suffix);
-    }
-
-    assertThat(store().getSpanNames("frontend").execute())
-      .containsExactlyInAnyOrderElementsOf(spanNames);
-  }
-
-  @Test public void getAllServiceNames_noServiceName() throws IOException {
-    accept(Span.newBuilder().traceId("a").id("a").build());
-
-    assertThat(store().getServiceNames().execute()).isEmpty();
-  }
-
-  @Test public void getSpanNames_noSpanName() throws IOException {
-    accept(Span.newBuilder().traceId("a").id("a").localEndpoint(FRONTEND).build());
-
-    assertThat(store().getSpanNames("frontend").execute()).isEmpty();
-  }
-
-  @Test public void spanNamesGoLowercase() throws IOException {
+  @Test public void spanName_goesLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(
@@ -823,31 +833,38 @@ public abstract class ITSpanStore {
     Span targz = Span.newBuilder().traceId("1").id(1L)
       .name("targz").timestamp(offsetMicros + 100L).duration(200_000L)
       .localEndpoint(service1)
+      .remoteEndpoint(service3)
       .putTag("lc", "archiver").build();
     Span tar = Span.newBuilder().traceId("1").id(2L).parentId(1L)
       .name("tar").timestamp(offsetMicros + 200L).duration(150_000L)
       .localEndpoint(service2)
+      .remoteEndpoint(service2)
       .putTag("lc", "archiver").build();
     Span gz = Span.newBuilder().traceId("1").id(3L).parentId(1L)
       .name("gz").timestamp(offsetMicros + 250L).duration(50_000L)
       .localEndpoint(service3)
+      .remoteEndpoint(service1)
       .putTag("lc", "archiver").build();
     Span zip = Span.newBuilder().traceId("3").id(3L)
       .name("zip").timestamp(offsetMicros + 130L).duration(50_000L)
       .addAnnotation(offsetMicros + 130L, "zip")
       .localEndpoint(service2)
+      .remoteEndpoint(service2)
       .putTag("lc", "archiver").build();
 
     List<Span> trace1 = asList(targz, tar, gz);
     List<Span> trace2 = asList(
       targz.toBuilder().traceId("2").timestamp(offsetMicros + 110L)
         .localEndpoint(service3)
+        .remoteEndpoint(service1)
         .putTag("lc", "archiver-v2").build(),
       tar.toBuilder().traceId("2").timestamp(offsetMicros + 210L)
         .localEndpoint(service2)
+        .remoteEndpoint(service2)
         .putTag("lc", "archiver").build(),
       gz.toBuilder().traceId("2").timestamp(offsetMicros + 260L)
         .localEndpoint(service1)
+        .remoteEndpoint(service2)
         .putTag("lc", "archiver").build());
     List<Span> trace3 = asList(zip);
 

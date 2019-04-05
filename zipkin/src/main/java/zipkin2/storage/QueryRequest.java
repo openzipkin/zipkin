@@ -22,7 +22,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import zipkin2.Annotation;
-import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
 
@@ -39,8 +38,8 @@ import zipkin2.internal.Nullable;
  */
 public final class QueryRequest {
   /**
-   * When present, corresponds to the {@link Span#localEndpoint() local} {@link
-   * Endpoint#serviceName() service name} and constrains all other parameters.
+   * When present, corresponds to the {@link Span#localServiceName() local service name} and
+   * constrains all other parameters.
    *
    * @see ServiceAndSpanNames#getServiceNames()
    */
@@ -49,10 +48,10 @@ public final class QueryRequest {
   }
 
   /**
-   * When present, only include traces with this {@link Span#remoteEndpoint() remote} {@link
-   * Endpoint#serviceName() service name}.
+   * When present, only include traces with this {@link Span#remoteServiceName() remote service
+   * name}.
    *
-   * @see ServiceAndSpanNames#getRemoteServiceNames()
+   * @see ServiceAndSpanNames#getRemoteServiceNames(String)
    */
   @Nullable public String remoteServiceName() {
     return remoteServiceName;
@@ -243,6 +242,7 @@ public final class QueryRequest {
     public final QueryRequest build() {
       // coerce service and span names to lowercase
       if (serviceName != null) serviceName = serviceName.toLowerCase(Locale.ROOT);
+      if (remoteServiceName != null) remoteServiceName = remoteServiceName.toLowerCase(Locale.ROOT);
       if (spanName != null) spanName = spanName.toLowerCase(Locale.ROOT);
 
       // remove any accidental empty strings

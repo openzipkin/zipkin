@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -37,9 +37,11 @@ import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
 import static java.util.stream.Collectors.groupingBy;
+import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.row;
 import static zipkin2.storage.mysql.v1.MySQLSpanConsumer.UTF_8;
 import static zipkin2.storage.mysql.v1.Schema.maybeGet;
+import static zipkin2.storage.mysql.v1.SelectAnnotationServiceNames.localServiceNameCondition;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
@@ -210,15 +212,18 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     }
 
     List<SelectField<?>> distinctFields = new ArrayList<>(schema.spanIdFields);
-    distinctFields.add(ZIPKIN_SPANS.START_TS.max());
-    SelectConditionStep<Record> dsl =
-        context
-            .selectDistinct(distinctFields)
-            .from(table)
-            .where(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback() * 1000, endTs));
+    distinctFields.add(max(ZIPKIN_SPANS.START_TS));
+    SelectConditionStep<Record> dsl = context.selectDistinct(distinctFields)
+      .from(table)
+      .where(ZIPKIN_SPANS.START_TS.between(endTs - request.lookback() * 1000, endTs));
 
     if (request.serviceName() != null) {
-      dsl.and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName()));
+      dsl.and(localServiceNameCondition()
+        .and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(request.serviceName())));
+    }
+
+    if (request.remoteServiceName() != null) {
+      dsl.and(ZIPKIN_SPANS.REMOTE_SERVICE_NAME.eq(request.remoteServiceName()));
     }
 
     if (request.spanName() != null) {
@@ -231,7 +236,7 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
       dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration()));
     }
     return dsl.groupBy(schema.spanIdFields)
-        .orderBy(ZIPKIN_SPANS.START_TS.max().desc())
+        .orderBy(max(ZIPKIN_SPANS.START_TS).desc())
         .limit(request.limit());
   }
 
