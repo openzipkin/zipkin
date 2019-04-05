@@ -14,6 +14,7 @@
 package zipkin2.server.internal;
 
 import brave.Tracing;
+import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
@@ -86,8 +87,15 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   /** Configures the server at the last because of the specified {@link Order} annotation. */
   @Order @Bean ArmeriaServerConfigurator corsConfigurator(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
-    CorsServiceBuilder corsBuilder =
-      CorsServiceBuilder.forOrigins(allowedOrigins.split(",")).allowRequestMethods(HttpMethod.GET);
+    CorsServiceBuilder corsBuilder = CorsServiceBuilder.forOrigins(allowedOrigins.split(","))
+      // NOTE: The property says query, and the UI does not use POST, but we allow POST?
+      //
+      // The reason is that our former CORS implementation accidentally allowed POST. People doing
+      // browser-based tracing relied on this, so we can't remove it by default. In the future, we
+      // could split the collector's CORS policy into a different property, still allowing POST by
+      // with content-type by default.
+      .allowRequestMethods(HttpMethod.GET, HttpMethod.POST)
+      .allowRequestHeaders(HttpHeaderNames.CONTENT_TYPE);
     return builder -> builder.decorator(corsBuilder::build);
   }
 
