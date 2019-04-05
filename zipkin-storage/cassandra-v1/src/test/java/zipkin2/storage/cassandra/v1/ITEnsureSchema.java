@@ -19,6 +19,7 @@ import java.net.InetSocketAddress;
 import org.junit.Test;
 import zipkin2.TestObjects;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 abstract class ITEnsureSchema {
@@ -68,12 +69,19 @@ abstract class ITEnsureSchema {
     try (CassandraStorage storage = CassandraStorage.newBuilder()
       .contactPoints(contactPoint.getHostString() + ":" + contactPoint.getPort())
       .ensureSchema(false)
+      .autocompleteKeys(asList("environment"))
       .keyspace(keyspace()).build()) {
 
       storage.spanConsumer().accept(TestObjects.TRACE).execute();
 
       assertThat(storage.spanStore().getTrace(TestObjects.TRACE.get(0).traceId()).execute())
         .containsExactlyInAnyOrderElementsOf(TestObjects.TRACE);
+
+      assertThat(storage.autocompleteTags().getValues("environment").execute())
+        .isEmpty(); // instead of an exception
+      String serviceName = TestObjects.TRACE.get(0).localServiceName();
+      assertThat(storage.serviceAndSpanNames().getRemoteServiceNames(serviceName).execute())
+        .isEmpty(); // instead of an exception
     }
   }
 }

@@ -93,9 +93,6 @@ final class Tables {
    */
   static final String ANNOTATIONS_INDEX = "annotations_index";
 
-  /** This table supports {@link ServiceAndSpanNames#getRemoteServiceNames(String)}. */
-  static final String TABLE_SERVICE_REMOTE_SERVICES = "remote_service_by_service";
-
   private Tables() {
   }
 }

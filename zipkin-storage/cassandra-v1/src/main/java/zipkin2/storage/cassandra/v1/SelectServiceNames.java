@@ -27,7 +27,7 @@ final class SelectServiceNames extends ResultSetFutureCall<ResultSet> {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final DistinctSortedStrings services = new DistinctSortedStrings("service");
+    final DistinctSortedStrings services = new DistinctSortedStrings("service_name");
 
     Factory(Session session) {
       this.session = session;

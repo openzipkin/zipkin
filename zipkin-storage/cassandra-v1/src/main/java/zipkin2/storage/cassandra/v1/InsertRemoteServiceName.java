@@ -42,7 +42,7 @@ final class InsertRemoteServiceName extends ResultSetFutureCall<Void> {
     Factory(CassandraStorage storage, int indexTtl) {
       super(storage.autocompleteTtl, storage.autocompleteCardinality);
       session = storage.session();
-      Insert insertQuery = QueryBuilder.insertInto(Tables.SPAN_NAMES)
+      Insert insertQuery = QueryBuilder.insertInto(Tables.REMOTE_SERVICE_NAMES)
         .value("service_name", QueryBuilder.bindMarker("service_name"))
         .value("remote_service_name", QueryBuilder.bindMarker("remote_service_name"));
       if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));

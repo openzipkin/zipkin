@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
-import static zipkin2.storage.cassandra.v1.Tables.TABLE_SERVICE_REMOTE_SERVICES;
+import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
@@ -134,7 +134,7 @@ final class Schema {
   }
 
   static boolean hasUpgrade3_remoteService(KeyspaceMetadata keyspaceMetadata) {
-    return keyspaceMetadata.getTable(TABLE_SERVICE_REMOTE_SERVICES) != null;
+    return keyspaceMetadata.getTable(REMOTE_SERVICE_NAMES) != null;
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
