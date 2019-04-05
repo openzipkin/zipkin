@@ -15,6 +15,7 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -25,8 +26,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
-import zipkin2.TestObjects;
-import zipkin2.codec.SpanBytesEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.server.internal.ITZipkinServer.url;
@@ -54,8 +53,8 @@ public class ITZipkinServerCORS {
 
   /** Notably, javascript makes pre-flight requests, and won't POST spans if disallowed! */
   @Test public void shouldAllowConfiguredOrigin_preflight() throws Exception {
-    shouldPermitPreflight(optionsForOrigin("/api/v2/traces", ALLOWED_ORIGIN));
-    shouldPermitPreflight(optionsForOrigin("/api/v2/spans", ALLOWED_ORIGIN));
+    shouldPermitPreflight(optionsForOrigin("GET", "/api/v2/traces", ALLOWED_ORIGIN));
+    shouldPermitPreflight(optionsForOrigin("POST", "/api/v2/spans", ALLOWED_ORIGIN));
   }
 
   static void shouldPermitPreflight(Response response) {
@@ -63,8 +62,11 @@ public class ITZipkinServerCORS {
       .withFailMessage(response.toString())
       .isTrue();
     assertThat(response.header("vary")).contains("origin");
-    assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).contains(ALLOWED_ORIGIN);
+    assertThat(response.header("access-control-allow-methods"))
+      .contains(response.request().header("access-control-request-method"));
+    assertThat(response.header("access-control-allow-credentials")).isNull();
+    assertThat(response.header("access-control-allow-headers")).contains("content-type");
   }
 
   @Test public void shouldAllowConfiguredOrigin() throws Exception {
@@ -73,10 +75,11 @@ public class ITZipkinServerCORS {
   }
 
   static void shouldAllowConfiguredOrigin(Response response) {
-    assertThat(response.isSuccessful()).isTrue();
     assertThat(response.header("vary")).contains("origin");
+    assertThat(response.header("access-control-allow-origin"))
+      .contains(response.request().header("origin"));
     assertThat(response.header("access-control-allow-credentials")).isNull();
-    assertThat(response.header("access-control-allow-origin")).contains(ALLOWED_ORIGIN);
+    assertThat(response.header("access-control-allow-headers")).contains("content-type");
   }
 
   @Test public void shouldDisallowOrigin() throws Exception {
@@ -85,18 +88,18 @@ public class ITZipkinServerCORS {
   }
 
   static void shouldDisallowOrigin(Response response) {
-    // TODO: double-check we really want success on disallow from CORS (instead of 403)
-    assertThat(response.isSuccessful()).isTrue();
     assertThat(response.header("vary")).isNull(); // TODO: We used to set vary: origin
     assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).isNull();
+    assertThat(response.header("access-control-allow-headers")).isNull();
   }
 
-  private Response optionsForOrigin(String path, String origin) throws IOException {
+  private Response optionsForOrigin(String method, String path, String origin) throws IOException {
     return client.newCall(new Request.Builder()
       .url(url(server, path))
       .header("Origin", origin)
-      .header("access-control-request-method",  "GET")
+      .header("access-control-request-method", method)
+      .header("access-control-request-headers", "content-type")
       .method("OPTIONS", null)
       .build()).execute();
   }
@@ -112,7 +115,7 @@ public class ITZipkinServerCORS {
     return client.newCall(new Request.Builder()
       .url(url(server, "/api/v2/spans"))
       .header("Origin", origin)
-      .post(RequestBody.create(null, SpanBytesEncoder.JSON_V2.encodeList(TestObjects.TRACE)))
+      .post(RequestBody.create(MediaType.parse("application/json"), "[]"))
       .build()).execute();
   }
 }
