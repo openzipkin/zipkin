@@ -100,6 +100,8 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
 
       // Empty values allow for api queries with blank service or span name
       String service = s.localServiceName() != null ? s.localServiceName() : "";
+      String span =
+        null != s.name() ? s.name() : ""; // Empty value allows for api queries without span name
 
       if (null == s.localServiceName()) continue; // don't index further w/o a service name
 
@@ -108,13 +110,11 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
         serviceRemoteServices.add(
           insertServiceRemoteService.newInput(service, s.remoteServiceName()));
       }
-      if (s.name() != null) serviceSpans.add(insertServiceSpan.newInput(service, s.name()));
+      serviceSpans.add(insertServiceSpan.newInput(service, span));
 
       if (ts_micro == 0L) continue; // search is only valid with a timestamp, don't index w/o it!
       int bucket = durationIndexBucket(ts_micro); // duration index is milliseconds not microseconds
       long duration = s.durationAsLong() / 1000L;
-      String span =
-        null != s.name() ? s.name() : ""; // Empty value allows for api queries without span name
       traceByServiceSpans.add(
         insertTraceByServiceSpan.newInput(service, span, bucket, ts_uuid, s.traceId(), duration));
       if (span.isEmpty()) continue;
