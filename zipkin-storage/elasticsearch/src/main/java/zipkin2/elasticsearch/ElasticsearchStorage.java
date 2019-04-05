@@ -35,6 +35,7 @@ import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 import zipkin2.storage.AutocompleteTags;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
@@ -247,6 +248,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public SpanStore spanStore() {
     ensureIndexTemplates();
     return new ElasticsearchSpanStore(this);
+  }
+
+  @Override
+  public ServiceAndSpanNames serviceAndSpanNames() {
+    return (ServiceAndSpanNames) spanStore();
   }
 
   @Override

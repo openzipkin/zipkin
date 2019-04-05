@@ -26,12 +26,13 @@ import zipkin2.elasticsearch.internal.client.SearchCallFactory;
 import zipkin2.elasticsearch.internal.client.SearchRequest;
 import zipkin2.storage.GroupByTraceId;
 import zipkin2.storage.QueryRequest;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StrictTraceId;
 
 import static java.util.Arrays.asList;
 
-final class ElasticsearchSpanStore implements SpanStore{
+final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
 
   static final String SPAN = "span";
   static final String DEPENDENCY = "dependency";
@@ -93,20 +94,20 @@ final class ElasticsearchSpanStore implements SpanStore{
     // be no significant difference in user experience since span start times are usually very
     // close to each other in human time.
     Aggregation traceIdTimestamp =
-        Aggregation.terms("traceId", request.limit())
-            .addSubAggregation(Aggregation.min("timestamp_millis"))
-            .orderBy("timestamp_millis", "desc");
+      Aggregation.terms("traceId", request.limit())
+        .addSubAggregation(Aggregation.min("timestamp_millis"))
+        .orderBy("timestamp_millis", "desc");
 
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest esRequest =
-        SearchRequest.create(indices).filters(filters).addAggregation(traceIdTimestamp);
+      SearchRequest.create(indices).filters(filters).addAggregation(traceIdTimestamp);
 
     HttpCall<List<String>> traceIdsCall = search.newCall(esRequest, BodyConverters.KEYS);
 
     Call<List<List<Span>>> result =
-        traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);
+      traceIdsCall.flatMap(new GetSpansByTraceId(search, indices)).map(groupByTraceId);
     // Elasticsearch lookup by trace ID is by the full 128-bit length, but there's still a chance of
     // clash on lower-64 bit. When strict trace ID is enabled, we only filter client-side on clash.
     return strictTraceId ? result.map(StrictTraceId.filterTraces(request)) : result;
@@ -124,8 +125,7 @@ final class ElasticsearchSpanStore implements SpanStore{
     return search.newCall(request, BodyConverters.SPANS);
   }
 
-  @Override
-  public Call<List<String>> getServiceNames() {
+  @Override public Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
 
     long endMillis = System.currentTimeMillis();
@@ -134,20 +134,21 @@ final class ElasticsearchSpanStore implements SpanStore{
     List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
-    // Service name queries include both local and remote endpoints. This is different than
-    // Span name, as a span name can only be on a local endpoint.
-    SearchRequest.Filters filters = new SearchRequest.Filters();
-    filters.addRange("timestamp_millis", beginMillis, endMillis);
-    SearchRequest request =
-        SearchRequest.create(indices)
-            .filters(filters)
-            .addAggregation(Aggregation.terms("localEndpoint.serviceName", Integer.MAX_VALUE))
-            .addAggregation(Aggregation.terms("remoteEndpoint.serviceName", Integer.MAX_VALUE));
+    SearchRequest request = SearchRequest.create(indices)
+      .filters(new SearchRequest.Filters().addRange("timestamp_millis", beginMillis, endMillis))
+      .addAggregation(Aggregation.terms("localEndpoint.serviceName", Integer.MAX_VALUE));
     return search.newCall(request, BodyConverters.KEYS);
   }
 
-  @Override
-  public Call<List<String>> getSpanNames(String serviceName) {
+  @Override public Call<List<String>> getRemoteServiceNames(String serviceName) {
+    return aggregatedFieldByServiceName(serviceName, "remoteEndpoint.serviceName");
+  }
+
+  @Override public Call<List<String>> getSpanNames(String serviceName) {
+    return aggregatedFieldByServiceName(serviceName, "name");
+  }
+
+  Call<List<String>> aggregatedFieldByServiceName(String serviceName, String term) {
     if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
 
     long endMillis = System.currentTimeMillis();
@@ -157,15 +158,12 @@ final class ElasticsearchSpanStore implements SpanStore{
     if (indices.isEmpty()) return Call.emptyList();
 
     // A span name is only valid on a local endpoint, as a span name is defined locally
-    SearchRequest.Filters filters =
-        new SearchRequest.Filters()
-            .addRange("timestamp_millis", beginMillis, endMillis)
-            .addTerm("localEndpoint.serviceName", serviceName.toLowerCase(Locale.ROOT));
+    SearchRequest.Filters filters = new SearchRequest.Filters()
+      .addRange("timestamp_millis", beginMillis, endMillis)
+      .addTerm("localEndpoint.serviceName", serviceName.toLowerCase(Locale.ROOT));
 
-    SearchRequest request =
-        SearchRequest.create(indices)
-            .filters(filters)
-            .addAggregation(Aggregation.terms("name", Integer.MAX_VALUE));
+    SearchRequest request = SearchRequest.create(indices).filters(filters)
+      .addAggregation(Aggregation.terms(term, Integer.MAX_VALUE));
 
     return search.newCall(request, BodyConverters.KEYS);
   }
