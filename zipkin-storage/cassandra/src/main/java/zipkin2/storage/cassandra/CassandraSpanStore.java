@@ -65,7 +65,7 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     if (searchEnabled) {
       KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace());
       indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
-      if (metadata.hasRemoteServiceByService) {
+      if (metadata.hasRemoteService) {
         remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
       } else {
         remoteServiceNames = null;

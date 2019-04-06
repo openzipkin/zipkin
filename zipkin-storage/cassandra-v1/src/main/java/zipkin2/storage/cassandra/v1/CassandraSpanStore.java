@@ -69,7 +69,7 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
 
     spans = new SelectFromTraces.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
-    if (storage.metadata().hasRemoteServiceByService) {
+    if (storage.metadata().hasRemoteService) {
       remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
     } else {
       remoteServiceNames = null;

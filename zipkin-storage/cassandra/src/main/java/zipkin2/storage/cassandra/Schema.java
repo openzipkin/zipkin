@@ -82,25 +82,25 @@ final class Schema {
         UPGRADE_1);
     }
 
-    boolean hasRemoteServiceByService = hasUpgrade2_remoteService(keyspaceMetadata);
-    if (!hasRemoteServiceByService) {
+    boolean hasRemoteService = hasUpgrade2_remoteService(keyspaceMetadata);
+    if (!hasRemoteService) {
       LOG.warn(
         "schema lacks remote service indexing: apply {}, or set CassandraStorage.ensureSchema=true",
         UPGRADE_2);
     }
 
-    return new Metadata(compactionClass, hasAutocompleteTags, hasRemoteServiceByService);
+    return new Metadata(compactionClass, hasAutocompleteTags, hasRemoteService);
   }
 
   static final class Metadata {
     final String compactionClass;
-    final boolean hasAutocompleteTags, hasRemoteServiceByService;
+    final boolean hasAutocompleteTags, hasRemoteService;
 
     Metadata(String compactionClass, boolean hasAutocompleteTags,
-      boolean hasRemoteServiceByService) {
+      boolean hasRemoteService) {
       this.compactionClass = compactionClass;
       this.hasAutocompleteTags = hasAutocompleteTags;
-      this.hasRemoteServiceByService = hasRemoteServiceByService;
+      this.hasRemoteService = hasRemoteService;
     }
   }
 

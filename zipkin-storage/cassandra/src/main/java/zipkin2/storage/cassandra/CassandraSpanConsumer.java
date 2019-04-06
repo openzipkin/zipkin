@@ -50,7 +50,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     insertSpan = new InsertSpan.Factory(session, strictTraceId, searchEnabled);
     if (searchEnabled) {
       insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
-      if (metadata.hasRemoteServiceByService) {
+      if (metadata.hasRemoteService) {
         insertServiceRemoteService = new InsertServiceRemoteService.Factory(storage);
       } else {
         insertServiceRemoteService = null;

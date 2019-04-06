@@ -49,7 +49,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
     insertTrace = new InsertTrace.Factory(session, metadata, spanTtl);
     insertServiceName = new InsertServiceName.Factory(storage, indexTtl);
     insertSpanName = new InsertSpanName.Factory(storage, indexTtl);
-    if (metadata.hasRemoteServiceByService) {
+    if (metadata.hasRemoteService) {
       insertRemoteServiceName = new InsertRemoteServiceName.Factory(storage, indexTtl);
     } else {
       insertRemoteServiceName = null;
