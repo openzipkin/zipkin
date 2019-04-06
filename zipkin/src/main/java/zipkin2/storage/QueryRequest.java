@@ -303,18 +303,19 @@ public final class QueryRequest {
       timestamp > endTs() * 1000) {
       return false;
     }
-    Set<String> serviceNames = new LinkedHashSet<>();
     boolean testedDuration = minDuration() == null && maxDuration() == null;
 
-    String remoteServiceNameToMatch = remoteServiceName(), spanNameToMatch = spanName();
+    String serviceNameToMatch = serviceName();
+    String remoteServiceNameToMatch = remoteServiceName();
+    String spanNameToMatch = spanName();
     Map<String, String> annotationQueryRemaining = new LinkedHashMap<>(annotationQuery());
 
     for (Span span : spans) {
       String localServiceName = span.localServiceName();
 
-      if (localServiceName != null) serviceNames.add(localServiceName);
-
+      // service name, when present, constrains other queries.
       if (serviceName() == null || serviceName().equals(localServiceName)) {
+        serviceNameToMatch = null;
         for (Annotation a : span.annotations()) {
           if ("".equals(annotationQueryRemaining.get(a.value()))) {
             annotationQueryRemaining.remove(a.value());
@@ -334,18 +335,17 @@ public final class QueryRequest {
         if (spanNameToMatch != null && spanNameToMatch.equals(span.name())) {
           spanNameToMatch = null;
         }
-      }
-
-      if ((serviceName() == null || serviceName().equals(localServiceName)) && !testedDuration) {
-        if (minDuration() != null && maxDuration() != null) {
-          testedDuration =
-            span.durationAsLong() >= minDuration() && span.durationAsLong() <= maxDuration();
-        } else if (minDuration() != null) {
-          testedDuration = span.durationAsLong() >= minDuration();
+        if (!testedDuration) {
+          if (minDuration() != null && maxDuration() != null) {
+            testedDuration =
+              span.durationAsLong() >= minDuration() && span.durationAsLong() <= maxDuration();
+          } else if (minDuration() != null) {
+            testedDuration = span.durationAsLong() >= minDuration();
+          }
         }
       }
     }
-    return (serviceName() == null || serviceNames.contains(serviceName()))
+    return (serviceName() == null || serviceNameToMatch == null)
       && remoteServiceNameToMatch == null
       && spanNameToMatch == null
       && annotationQueryRemaining.isEmpty()
