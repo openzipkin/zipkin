@@ -30,7 +30,6 @@
     <module>benchmarks</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
-    <module>zipkin-server-grpc</module>
     <module>zipkin-autoconfigure</module>
     <module>zipkin-server</module>
   </modules>
@@ -613,7 +612,6 @@
         <artifactId>retrolambda-maven-plugin</artifactId>
       </plugin>
 
-      <!--
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-maven-plugin</artifactId>
@@ -632,8 +630,7 @@
             </goals>
           </execution>
         </executions>
-    </plugin>
-    -->
+      </plugin>
 
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
@@ -696,7 +693,6 @@
             <exclude>apache-cassandra-*/**</exclude>
             <exclude>elasticsearch-*/**</exclude>
             <exclude>kafka_*/**</exclude>
-            <exclude>src/main/proto/**</exclude>
             <exclude>src/test/resources/**</exclude>
             <exclude>src/main/resources/**</exclude>
           </excludes>

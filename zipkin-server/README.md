@@ -370,15 +370,17 @@ Example usage:
 $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```
 
-### GRPC Collector (Experimental)
+### gRPC Collector (Experimental)
 
-You can start a GRPC server as an alternative for collecting spans by setting `GRPC_SERVER_ENABLED` to `true`. You may want to only deploy a server with GRPC running in which case you would disable the HTTP collector and query endpoints:
+You can enable a gRPC span collector endpoint by setting `GRPC_SERVER_ENABLED=true`. The
+`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal http (9411).
+
+
+If you need to deploy a collector-only server, you can disable other http endpoints like so:
 
 ```bash
 GRPC_COLLECTOR_ENABLED=true HTTP_COLLECTOR_ENABLED=false QUERY_ENABLED=false java -jar zipkin.jar
 ```
-
-The server will run on port 9412 by default but can be overridden using `GRPC_SERVER_PORT`.
 
 As this service is experimental, it is not recommended to run this in production environments.
 

@@ -123,22 +123,23 @@
     <!-- Experimental GRPC collector -->
     <dependency>
       <groupId>io.zipkin.java</groupId>
-      <artifactId>zipkin-autoconfigure-grpc-server</artifactId>
+      <artifactId>zipkin-autoconfigure-collector-grpc</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
 
     <dependency>
       <groupId>io.grpc</groupId>
-      <artifactId>grpc-protobuf</artifactId>
+      <artifactId>grpc-testing</artifactId>
       <version>${grpc.version}</version>
       <scope>test</scope>
     </dependency>
 
+    <!-- to test the grpc endpoint with google's library -->
     <dependency>
       <groupId>io.grpc</groupId>
-      <artifactId>grpc-testing</artifactId>
-      <version>1.19.0</version>
+      <artifactId>grpc-netty-shaded</artifactId>
+      <version>${grpc.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -324,7 +325,7 @@
         <activeByDefault>true</activeByDefault>
       </activation>
       <build>
-       <plugins>
+        <plugins>
           <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-invoker-plugin</artifactId>
@@ -364,6 +365,58 @@
       </resource>
     </resources>
     <plugins>
+      <!-- protobuf-maven-plugin cannot get proto definitions from dependencies, so we will -->
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <!-- protobuf-maven-plugin can't take two source directories,
+           which we need until zipkin.proto is updated -->
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>copy-test-grpc-proto</id>
+            <phase>generate-test-sources</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <outputDirectory>${unpack-proto.directory}</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>src/test/proto</directory>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.xolstice.maven.plugins</groupId>
+        <artifactId>protobuf-maven-plugin</artifactId>
+        <executions>
+          <!-- structs need to be compiled before the service that uses them -->
+          <execution>
+            <id>compile-proto</id>
+            <goals>
+              <goal>test-compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>compile-proto-service</id>
+            <goals>
+              <goal>test-compile-custom</goal>
+            </goals>
+            <configuration>
+              <pluginId>grpc-java</pluginId>
+              <pluginArtifact>
+                io.grpc:protoc-gen-grpc-java:${grpc.version}:exe:${os.detected.classifier}
+              </pluginArtifact>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>

@@ -95,7 +95,10 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       // could split the collector's CORS policy into a different property, still allowing POST
       // with content-type by default.
       .allowRequestMethods(HttpMethod.GET, HttpMethod.POST)
-      .allowRequestHeaders(HttpHeaderNames.CONTENT_TYPE);
+      .allowRequestHeaders(HttpHeaderNames.CONTENT_TYPE,
+        // Use literals to avoid a runtime dependency on armeria-grpc types
+        HttpHeaderNames.of("X-GRPC-WEB"))
+      .exposeHeaders("grpc-status", "grpc-message", "armeria.grpc.ThrowableProto-bin");
     return builder -> builder.decorator(corsBuilder::build);
   }
 

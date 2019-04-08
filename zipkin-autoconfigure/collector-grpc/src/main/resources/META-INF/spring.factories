@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+zipkin2.autoconfigure.server.grpc.ZipkinGrpcCollectorAutoConfiguration
