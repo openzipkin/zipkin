@@ -17,25 +17,19 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.utils.UUIDs;
 import com.google.auto.value.AutoValue;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.cassandra.CassandraSpanStore.TimestampRange;
-import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
+import zipkin2.storage.cassandra.internal.call.AccumulateTraceIdTsUuid;
 import zipkin2.storage.cassandra.internal.call.AggregateIntoSet;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
@@ -143,11 +137,6 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
       return new AggregateIntoSet<>(bucketedTraceIdCalls);
     }
 
-    /** Applies all deferred service names to all input templates */
-    FlatMapper<List<String>, Set<Entry<String, Long>>> newFlatMapper(List<Input> inputTemplates) {
-      return new FlatMapServicesToInputs(inputTemplates);
-    }
-
     Call<Set<Entry<String, Long>>> newCall(Input input) {
       return new SelectTraceIdsFromServiceSpan(
               this,
@@ -156,6 +145,11 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
                   : selectTraceIdsByServiceSpanName,
               input)
           .flatMap(new AccumulateTraceIdTsUuid());
+    }
+
+    /** Applies all deferred service names to all input templates */
+    FlatMapper<List<String>, Set<Entry<String, Long>>> newFlatMapper(List<Input> inputTemplates) {
+      return new FlatMapServicesToInputs(inputTemplates);
     }
 
     class FlatMapServicesToInputs implements FlatMapper<List<String>, Set<Entry<String, Long>>> {
@@ -231,27 +225,5 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
   @Override
   public SelectTraceIdsFromServiceSpan clone() {
     return new SelectTraceIdsFromServiceSpan(factory, preparedStatement, input);
-  }
-
-  static final class AccumulateTraceIdTsUuid
-      extends AccumulateAllResults<Set<Entry<String, Long>>> {
-
-    @Override
-    protected Supplier<Set<Entry<String, Long>>> supplier() {
-      return LinkedHashSet::new; // because results are not distinct
-    }
-
-    @Override
-    protected BiConsumer<Row, Set<Entry<String, Long>>> accumulator() {
-      return (row, result) ->
-          result.add(
-              new AbstractMap.SimpleEntry<>(
-                  row.getString("trace_id"), UUIDs.unixTimestamp(row.getUUID("ts"))));
-    }
-
-    @Override
-    public String toString() {
-      return "AccumulateTraceIdTsUuid{}";
-    }
   }
 }

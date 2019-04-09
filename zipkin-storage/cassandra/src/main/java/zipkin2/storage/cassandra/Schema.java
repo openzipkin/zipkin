@@ -42,6 +42,7 @@ final class Schema {
 
   static final String TABLE_SPAN = "span";
   static final String TABLE_TRACE_BY_SERVICE_SPAN = "trace_by_service_span";
+  static final String TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE = "trace_by_service_remote_service";
   static final String TABLE_SERVICE_SPANS = "span_by_service";
   static final String TABLE_SERVICE_REMOTE_SERVICES = "remote_service_by_service";
   static final String TABLE_DEPENDENCY = "dependency";

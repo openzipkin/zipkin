@@ -34,6 +34,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
   final Session session;
   final boolean strictTraceId, searchEnabled;
   final InsertSpan.Factory insertSpan;
+  @Nullable final InsertTraceByServiceRemoteService.Factory insertTraceByServiceRemoteService;
   @Nullable final InsertTraceByServiceSpan.Factory insertTraceByServiceSpan;
   @Nullable final InsertServiceSpan.Factory insertServiceSpan;
   @Nullable final InsertServiceRemoteService.Factory insertServiceRemoteService;
@@ -51,8 +52,11 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     if (searchEnabled) {
       insertTraceByServiceSpan = new InsertTraceByServiceSpan.Factory(session, strictTraceId);
       if (metadata.hasRemoteService) {
+        insertTraceByServiceRemoteService =
+          new InsertTraceByServiceRemoteService.Factory(session, strictTraceId);
         insertServiceRemoteService = new InsertServiceRemoteService.Factory(storage);
       } else {
+        insertTraceByServiceRemoteService = null;
         insertServiceRemoteService = null;
       }
       insertServiceSpan = new InsertServiceSpan.Factory(storage);
@@ -62,6 +66,7 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
         insertAutocompleteValue = null;
       }
     } else {
+      insertTraceByServiceRemoteService = null;
       insertTraceByServiceSpan = null;
       insertServiceRemoteService = null;
       insertServiceSpan = null;
@@ -79,6 +84,8 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
     Set<InsertSpan.Input> spans = new LinkedHashSet<>();
     Set<InsertServiceRemoteService.Input> serviceRemoteServices = new LinkedHashSet<>();
     Set<InsertServiceSpan.Input> serviceSpans = new LinkedHashSet<>();
+    Set<InsertTraceByServiceRemoteService.Input> traceByServiceRemoteServices =
+      new LinkedHashSet<>();
     Set<InsertTraceByServiceSpan.Input> traceByServiceSpans = new LinkedHashSet<>();
     Set<Map.Entry<String, String>> autocompleteTags = new LinkedHashSet<>();
 
@@ -106,9 +113,9 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       if (null == s.localServiceName()) continue; // don't index further w/o a service name
 
       // service span and remote service indexes is refreshed regardless of timestamp
-      if (insertServiceRemoteService != null && s.remoteServiceName() != null) {
-        serviceRemoteServices.add(
-          insertServiceRemoteService.newInput(service, s.remoteServiceName()));
+      String remoteService = s.remoteServiceName();
+      if (insertServiceRemoteService != null && remoteService != null) {
+        serviceRemoteServices.add(insertServiceRemoteService.newInput(service, remoteService));
       }
       serviceSpans.add(insertServiceSpan.newInput(service, span));
 
@@ -118,6 +125,12 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       traceByServiceSpans.add(
         insertTraceByServiceSpan.newInput(service, span, bucket, ts_uuid, s.traceId(), duration));
       if (span.isEmpty()) continue;
+
+      if (insertServiceRemoteService != null && remoteService != null) {
+        traceByServiceRemoteServices.add(
+          insertTraceByServiceRemoteService.newInput(service, remoteService, bucket, ts_uuid,
+            s.traceId()));
+      }
       traceByServiceSpans.add( // Allows lookup without the span name
         insertTraceByServiceSpan.newInput(service, "", bucket, ts_uuid, s.traceId(), duration));
 
@@ -140,6 +153,9 @@ class CassandraSpanConsumer implements SpanConsumer { // not final for testing
       }
       for (InsertTraceByServiceSpan.Input serviceSpan : traceByServiceSpans) {
         calls.add(insertTraceByServiceSpan.create(serviceSpan));
+      }
+      for (InsertTraceByServiceRemoteService.Input serviceRemoteService : traceByServiceRemoteServices) {
+        calls.add(insertTraceByServiceRemoteService.create(serviceRemoteService));
       }
     }
     for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {

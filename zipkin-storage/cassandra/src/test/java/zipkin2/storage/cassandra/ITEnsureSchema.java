@@ -18,9 +18,12 @@ import com.datastax.driver.core.Session;
 import java.net.InetSocketAddress;
 import org.junit.Test;
 import zipkin2.TestObjects;
+import zipkin2.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.DAY;
+import static zipkin2.TestObjects.TODAY;
 
 abstract class ITEnsureSchema {
 
@@ -102,6 +105,12 @@ abstract class ITEnsureSchema {
         .isEmpty(); // instead of an exception
       String serviceName = TestObjects.TRACE.get(0).localServiceName();
       assertThat(storage.serviceAndSpanNames().getRemoteServiceNames(serviceName).execute())
+        .isEmpty(); // instead of an exception
+      assertThat(storage.spanStore().getTraces(QueryRequest.newBuilder()
+        .endTs(TODAY)
+        .lookback(DAY)
+        .limit(10)
+        .remoteServiceName("foo").build()).execute())
         .isEmpty(); // instead of an exception
     }
   }
