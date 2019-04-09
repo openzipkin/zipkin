@@ -30,19 +30,6 @@
     <main.basedir>${project.basedir}/../..</main.basedir>
   </properties>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <!-- Import dependency management from Spring Boot -->
-        <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-dependencies</artifactId>
-        <version>${spring-boot.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -52,12 +39,6 @@
       <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-spring-boot-autoconfigure</artifactId>
       <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>javax.validation</groupId>
-          <artifactId>validation-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <!-- In excluding tomcat, we exclude its indirect dep on servlet-api. -->
     <dependency>
@@ -79,22 +60,7 @@
       <artifactId>jsoup</artifactId>
       <version>1.11.3</version>
     </dependency>
-    <dependency>
-      <groupId>org.hibernate.validator</groupId>
-      <artifactId>hibernate-validator</artifactId>
-    </dependency>
 
-    <dependency>
-      <groupId>org.springframework</groupId>
-      <artifactId>spring-test</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-undertow</artifactId>
-      <version>${spring-boot.version}</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>

@@ -50,6 +50,10 @@
     <main.basedir>${project.basedir}</main.basedir>
 
     <armeria.version>0.83.0</armeria.version>
+    <grpc.version>1.19.0</grpc.version>
+    <protobuf.version>3.7.0</protobuf.version>
+    <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
+
     <brave.version>5.6.3</brave.version>
     <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
     <okhttp.version>3.14.0</okhttp.version>
@@ -221,6 +225,12 @@
 
       <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
+        <artifactId>zipkin-collector-grpc</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-lens</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -271,6 +281,10 @@
           <exclusion>
             <groupId>com.linecorp.armeria</groupId>
             <artifactId>armeria-logback</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
           </exclusion>
         </exclusions>
       </dependency>
@@ -448,6 +462,17 @@
         <artifactId>brave-instrumentation-cassandra-driver</artifactId>
         <version>0.10.2</version>
       </dependency>
+
+      <dependency>
+        <groupId>io.zipkin.proto3</groupId>
+        <artifactId>zipkin-proto3</artifactId>
+        <version>0.1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -466,6 +491,13 @@
   </dependencies>
 
   <build>
+    <extensions>
+      <extension>
+        <groupId>kr.motd.maven</groupId>
+        <artifactId>os-maven-plugin</artifactId>
+        <version>1.6.2</version>
+      </extension>
+    </extensions>
     <pluginManagement>
       <plugins>
         <!-- mvn -N io.takari:maven:wrapper generates the ./mvnw script -->
@@ -589,6 +621,38 @@
               </configuration>
             </execution>
           </executions>
+        </plugin>
+
+        <!-- The below plugins compile google grpc proto stubs in the test tree -->
+        <plugin>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <executions>
+            <!-- protobuf-maven-plugin cannot get proto definitions from dependencies: this will -->
+            <execution>
+              <id>unpack-proto</id>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>unpack-dependencies</goal>
+              </goals>
+              <configuration>
+                <includeArtifactIds>zipkin-proto3</includeArtifactIds>
+                <includes>**/*.proto</includes>
+                <outputDirectory>${unpack-proto.directory}</outputDirectory>
+              </configuration>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>org.xolstice.maven.plugins</groupId>
+          <artifactId>protobuf-maven-plugin</artifactId>
+          <version>0.6.1</version>
+          <configuration>
+            <protoSourceRoot>${project.build.directory}/main/proto</protoSourceRoot>
+            <protoTestSourceRoot>${project.build.directory}/test/proto</protoTestSourceRoot>
+            <protocArtifact>
+              com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
+            </protocArtifact>
+          </configuration>
         </plugin>
       </plugins>
     </pluginManagement>

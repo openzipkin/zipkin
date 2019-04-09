@@ -60,6 +60,14 @@
       <version>${spring-boot.version}</version>
       <scope>test</scope>
     </dependency>
+    <!-- A couple tests need SpringRunner to inject resources -->
+    <dependency>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
+      <!-- hard code this as opposed to pinning the whole dependency tree with spring-boot bom -->
+      <version>5.1.6.RELEASE</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>
