@@ -60,8 +60,6 @@ final class CassandraSpanConsumer implements SpanConsumer {
    */
   @Override
   public Call<Void> accept(List<Span> rawSpans) {
-    ImmutableList.Builder<V1Span> spansToIndex = ImmutableList.builder();
-
     V2SpanConverter converter = V2SpanConverter.create();
     V1ThriftSpanWriter encoder = new V1ThriftSpanWriter();
 
@@ -70,6 +68,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
     Set<InsertSpanName.Input> insertSpanNames = new LinkedHashSet<>();
     Set<Map.Entry<String, String>> autocompleteTags = new LinkedHashSet<>();
 
+    List<Call<Void>> calls = new ArrayList<>();
     for (Span v2 : rawSpans) {
       V1Span span = converter.convert(v2);
       // indexing occurs by timestamp, so derive one if not present.
@@ -87,10 +86,9 @@ final class CassandraSpanConsumer implements SpanConsumer {
         if (autocompleteKeys.contains(entry.getKey())) autocompleteTags.add(entry);
       }
       if (ts_micro == 0L) continue; // search is only valid with a timestamp, don't index w/o it!
-      spansToIndex.add(span);
+      indexer.index(v2, calls);
     }
 
-    List<Call<Void>> calls = new ArrayList<>();
     for (InsertTrace.Input insert : insertTraces) {
       calls.add(insertTrace.create(insert));
     }
@@ -103,7 +101,6 @@ final class CassandraSpanConsumer implements SpanConsumer {
     for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {
       insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
     }
-    indexer.index(spansToIndex.build(), calls);
     return AggregateCall.newVoidCall(calls);
   }
 

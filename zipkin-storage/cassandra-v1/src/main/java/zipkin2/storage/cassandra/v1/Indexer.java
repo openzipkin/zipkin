@@ -32,10 +32,11 @@ import java.util.concurrent.ConcurrentMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
+import zipkin2.Span;
+import zipkin2.internal.HexCodec;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
-import zipkin2.v1.V1Annotation;
 import zipkin2.v1.V1Span;
 
 /**
@@ -121,23 +122,22 @@ final class Indexer {
     }
   }
 
-  void index(List<V1Span> spans, List<Call<Void>> calls) {
+  void index(Span span, List<Call<Void>> calls) {
     // First parse each span into partition keys used to support query requests
     Builder<PartitionKeyToTraceId, Long> parsed = ImmutableSetMultimap.builder();
-    for (V1Span span : spans) {
-      Long timestamp = guessTimestamp(span);
-      if (timestamp == null) continue;
-      for (String partitionKey : index.partitionKeys(span)) {
-        parsed.put(
-            new PartitionKeyToTraceId(index.table(), partitionKey, span.traceId()),
-            1000 * (timestamp / 1000)); // index precision is millis
-      }
+    long timestamp = span.timestampAsLong();
+    if (timestamp == 0L) return;
+    for (String partitionKey : index.partitionKeys(span)) {
+      parsed.put(
+        new PartitionKeyToTraceId(index.table(), partitionKey, span.traceId()),
+        1000 * (timestamp / 1000)); // index precision is millis
     }
 
     // The parsed results may include inserts that already occur, or are redundant as they don't
     // impact QueryRequest.endTs or QueryRequest.loopback. For example, a parsed timestamp could
     // be between timestamps of rows that already exist for a particular trace.
     ImmutableSetMultimap<PartitionKeyToTraceId, Long> maybeInsert = parsed.build();
+    if (maybeInsert.isEmpty()) return;
 
     ImmutableSetMultimap<PartitionKeyToTraceId, Long> toInsert;
     if (sharedState == null) { // special-case when caching is disabled.
@@ -155,10 +155,9 @@ final class Indexer {
 
     // For each entry, insert a new row in the index table asynchronously
     for (Map.Entry<PartitionKeyToTraceId, Long> entry : toInsert.entries()) {
-      calls.add(
-          new IndexCall(
-              new AutoValue_Indexer_Input(
-                  entry.getKey().traceId, entry.getValue(), entry.getKey().partitionKey)));
+      long traceId = HexCodec.lowerHexToUnsignedLong(entry.getKey().traceId);
+      calls.add(new IndexCall(
+        new AutoValue_Indexer_Input(traceId, entry.getValue(), entry.getKey().partitionKey)));
     }
   }
 
@@ -220,7 +219,7 @@ final class Indexer {
 
     BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey);
 
-    Set<String> partitionKeys(V1Span span);
+    Set<String> partitionKeys(Span span);
   }
 
   static class Factory {
@@ -241,29 +240,5 @@ final class Indexer {
     Indexer create(IndexSupport index) {
       return new Indexer(session, indexTtl, sharedState, index);
     }
-  }
-
-  /**
-   * Instrumentation should set timestamp when recording a span so that guess-work isn't needed.
-   * Since a lot of instrumentation don't, we have to make some guesses.
-   *
-   * <pre><ul>
-   *   <li>If there is a "cs" annotation, use that</li>
-   *   <li>Fall back to "sr" annotation</li>
-   *   <li>Otherwise, return null</li>
-   * </ul></pre>
-   */
-  static Long guessTimestamp(V1Span span) {
-    if (span.timestamp() != 0L || span.annotations().isEmpty()) return span.timestamp();
-    Long rootServerRecv = null;
-    for (int i = 0, length = span.annotations().size(); i < length; i++) {
-      V1Annotation annotation = span.annotations().get(i);
-      if (annotation.value().equals("cs")) {
-        return annotation.timestamp();
-      } else if (annotation.value().equals("sr")) {
-        rootServerRecv = annotation.timestamp();
-      }
-    }
-    return rootServerRecv;
   }
 }

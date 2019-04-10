@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.Session;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheBuilderSpec;
@@ -22,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import zipkin2.Call;
+import zipkin2.Span;
 import zipkin2.v1.V1Span;
 
 final class CompositeIndexer {
@@ -41,10 +41,8 @@ final class CompositeIndexer {
             factory.create(new InsertTraceIdByAnnotation(bucketCount)));
   }
 
-  void index(List<V1Span> spans, List<Call<Void>> calls) {
-    for (Indexer optimizer : indexers) {
-      optimizer.index(spans, calls);
-    }
+  void index(Span span, List<Call<Void>> calls) {
+    for (Indexer indexer : indexers) indexer.index(span, calls);
   }
 
   public void clear() {

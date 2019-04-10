@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,9 +16,11 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.google.common.collect.ImmutableSet;
+import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import zipkin2.v1.V1Span;
+import zipkin2.Span;
 
 // QueryRequest.serviceName
 final class InsertTraceIdByServiceName implements Indexer.IndexSupport {
@@ -50,7 +52,11 @@ final class InsertTraceIdByServiceName implements Indexer.IndexSupport {
   }
 
   @Override
-  public Set<String> partitionKeys(V1Span span) {
-    return span.serviceNames();
+  public Set<String> partitionKeys(Span span) {
+    if (span.localServiceName() == null) return Collections.emptySet();
+    if (span.remoteServiceName() == null) return Collections.singleton(span.localServiceName());
+
+    // TODO: https://github.com/openzipkin/zipkin/pull/2484 will obviate this
+    return ImmutableSet.of(span.localServiceName(), span.remoteServiceName());
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,11 +30,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import zipkin2.Annotation;
 import zipkin2.Call;
+import zipkin2.Span;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
-import zipkin2.v1.V1Annotation;
-import zipkin2.v1.V1BinaryAnnotation;
 import zipkin2.v1.V1Span;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -69,34 +69,23 @@ final class CassandraUtil {
   }
 
   /**
-   * Returns keys that concatenate the serviceName associated with an annotation or a binary
-   * annotation.
-   *
-   * <p>Note: in the case of binary annotations, only string types are returned, as that's the only
-   * queryable type, per {@link QueryRequest#annotationQuery()}.
+   * Returns keys that concatenate the serviceName associated with an annotation or tag.
    *
    * @see QueryRequest#annotationQuery()
    */
-  static Set<String> annotationKeys(V1Span span) {
+  static Set<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
-    for (V1Annotation a : span.annotations()) {
+    String localServiceName = span.localServiceName();
+    if (localServiceName == null) return Collections.emptySet();
+    for (Annotation a : span.annotations()) {
       // don't index core annotations as they aren't queryable
       if (CORE_ANNOTATIONS.contains(a.value())) continue;
-
-      if (a.endpoint() != null && a.endpoint().serviceName() != null) {
-        annotationKeys.add(a.endpoint().serviceName() + ":" + a.value());
-      }
+      annotationKeys.add(localServiceName + ":" + a.value());
     }
-    for (V1BinaryAnnotation b : span.binaryAnnotations()) {
-      if (b.stringValue() != null
-          && b.endpoint() != null
-          && b.endpoint().serviceName() != null
-          && b.stringValue().length() <= LONGEST_VALUE_TO_INDEX) {
-        String value = b.stringValue();
-        if (value.length() > LONGEST_VALUE_TO_INDEX) continue;
-
-        annotationKeys.add(b.endpoint().serviceName() + ":" + b.key());
-        annotationKeys.add(b.endpoint().serviceName() + ":" + b.key() + ":" + value);
+    for (Map.Entry<String, String> e : span.tags().entrySet()) {
+      if (e.getValue().length() <= LONGEST_VALUE_TO_INDEX) {
+        annotationKeys.add(localServiceName + ":" + e.getKey());
+        annotationKeys.add(localServiceName + ":" + e.getKey() + ":" + e.getValue());
       }
     }
     return annotationKeys;
