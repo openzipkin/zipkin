@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,17 +17,21 @@ final class PartitionKeyToTraceId {
 
   final String table;
   final String partitionKey; // ends up as a partition key, ignoring bucketing
-  final long traceId; // clustering key
+  final String traceId; // clustering key
 
-  PartitionKeyToTraceId(String table, String partitionKey, long traceId) {
+  PartitionKeyToTraceId(String table, String partitionKey, String traceId) {
     this.table = table;
     this.partitionKey = partitionKey;
-    this.traceId = traceId;
+    this.traceId = lowerTraceId(traceId); // cassandra trace ID is lower 64 bits
+  }
+
+  static String lowerTraceId(String traceId) {
+    return traceId.length() <= 16 ? traceId : traceId.substring(16);
   }
 
   @Override
   public String toString() {
-    return "(" + table + "," + partitionKey + "," + /* TODO hex */ traceId + ")";
+    return "(" + table + "," + partitionKey + "," + traceId + ")";
   }
 
   @Override
@@ -37,7 +41,7 @@ final class PartitionKeyToTraceId {
       PartitionKeyToTraceId that = (PartitionKeyToTraceId) o;
       return this.table.equals(that.table)
           && this.partitionKey.equals(that.partitionKey)
-          && this.traceId == that.traceId;
+          && this.traceId.equals(that.traceId);
     }
     return false;
   }
@@ -50,7 +54,7 @@ final class PartitionKeyToTraceId {
     h *= 1000003;
     h ^= partitionKey.hashCode();
     h *= 1000003;
-    h ^= (int) (h ^ ((traceId >>> 32) ^ traceId));
+    h ^= traceId.hashCode();
     return h;
   }
 }

@@ -27,7 +27,7 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static zipkin2.storage.cassandra.v1.Tables.TABLE_AUTOCOMPLETE_TAGS;
+import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 
 final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
   static class Factory {
@@ -39,7 +39,7 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
       this.session = session;
       this.preparedStatement = session.prepare(
         QueryBuilder.select("value")
-          .from(TABLE_AUTOCOMPLETE_TAGS)
+          .from(AUTOCOMPLETE_TAGS)
           .where(QueryBuilder.eq("key", QueryBuilder.bindMarker("key")))
           .limit(QueryBuilder.bindMarker("limit_")));
       this.accumulateAutocompleteValues = new AccumulateAutocompleteValues();

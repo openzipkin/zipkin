@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,7 +19,7 @@ import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import java.util.Set;
-import zipkin2.v1.V1Span;
+import zipkin2.Span;
 
 // QueryRequest.spanName
 final class InsertTraceIdBySpanName implements Indexer.IndexSupport {
@@ -40,13 +40,12 @@ final class InsertTraceIdBySpanName implements Indexer.IndexSupport {
   }
 
   @Override
-  public Set<String> partitionKeys(V1Span span) {
-    if (span.name() == null) return Collections.emptySet();
+  public Set<String> partitionKeys(Span span) {
+    if (span.localServiceName() == null || span.name() == null) return Collections.emptySet();
+    String serviceSpan = span.localServiceName() + "." + span.name();
+    if (span.remoteServiceName() == null) return Collections.singleton(serviceSpan);
 
-    ImmutableSet.Builder<String> result = ImmutableSet.builder();
-    for (String serviceName : span.serviceNames()) {
-      result.add(serviceName + "." + span.name());
-    }
-    return result.build();
+    // TODO: https://github.com/openzipkin/zipkin/pull/2484 will obviate this
+    return ImmutableSet.of(serviceSpan, span.remoteServiceName() + "." + span.name());
   }
 }

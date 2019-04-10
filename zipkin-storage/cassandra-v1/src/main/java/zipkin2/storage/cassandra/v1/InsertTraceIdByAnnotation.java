@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,7 +18,7 @@ import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
-import zipkin2.v1.V1Span;
+import zipkin2.Span;
 
 import static zipkin2.storage.cassandra.v1.CassandraUtil.annotationKeys;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.toByteBuffer;
@@ -52,7 +52,7 @@ final class InsertTraceIdByAnnotation implements Indexer.IndexSupport {
   }
 
   @Override
-  public Set<String> partitionKeys(V1Span span) {
+  public Set<String> partitionKeys(Span span) {
     return annotationKeys(span);
   }
 }

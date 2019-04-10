@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Charsets.UTF_8;
-import static zipkin2.storage.cassandra.v1.Tables.TABLE_AUTOCOMPLETE_TAGS;
+import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
@@ -106,7 +106,7 @@ final class Schema {
   }
 
   static boolean hasUpgrade2_autocompleteTags(KeyspaceMetadata keyspaceMetadata) {
-    return keyspaceMetadata.getTable(TABLE_AUTOCOMPLETE_TAGS) != null;
+    return keyspaceMetadata.getTable(AUTOCOMPLETE_TAGS) != null;
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {

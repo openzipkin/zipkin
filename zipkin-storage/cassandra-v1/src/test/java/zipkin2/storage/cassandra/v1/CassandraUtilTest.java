@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -18,8 +18,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
-import zipkin2.v1.V1Span;
-import zipkin2.v1.V2SpanConverter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
@@ -28,7 +26,6 @@ import static zipkin2.TestObjects.FRONTEND;
 public class CassandraUtilTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
-  V2SpanConverter converter = V2SpanConverter.create();
   QueryRequest request = QueryRequest.newBuilder().endTs(1).limit(1).lookback(1).build();
 
   @Test
@@ -69,8 +66,10 @@ public class CassandraUtilTest {
 
   @Test
   public void annotationKeys_skipsCoreAndAddressAnnotations() {
-    V1Span v1 = converter.convert(CLIENT_SPAN);
-    assertThat(CassandraUtil.annotationKeys(v1))
+    // pretend redundant data was added to the span.
+    Span span = CLIENT_SPAN.toBuilder()
+      .addAnnotation(CLIENT_SPAN.timestampAsLong(), "cs").build();
+    assertThat(CassandraUtil.annotationKeys(span))
         .containsExactly(
             "frontend:foo",
             "frontend:clnt/finagle.version",
@@ -80,7 +79,7 @@ public class CassandraUtilTest {
   }
 
   @Test
-  public void annotationKeys_skipsBinaryAnnotationsLongerThan256chars() {
+  public void annotationKeys_skipsTagsLongerThan256chars() {
     // example long value
     String arn =
         "arn:aws:acm:us-east-1:123456789012:certificate/12345678-1234-1234-1234-123456789012";
@@ -96,7 +95,7 @@ public class CassandraUtilTest {
             .putTag("http.url", url)
             .build();
 
-    assertThat(CassandraUtil.annotationKeys(converter.convert(span)))
+    assertThat(CassandraUtil.annotationKeys(span))
         .containsOnly("frontend:aws.arn", "frontend:aws.arn:" + arn);
   }
 }

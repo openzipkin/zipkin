@@ -24,7 +24,7 @@ import zipkin2.Call;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
-import static zipkin2.storage.cassandra.v1.Tables.TABLE_AUTOCOMPLETE_TAGS;
+import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 
 final class InsertAutocompleteValue extends ResultSetFutureCall<Void> {
 
@@ -35,7 +35,7 @@ final class InsertAutocompleteValue extends ResultSetFutureCall<Void> {
     Factory(CassandraStorage storage, int indexTtl) {
       super(storage.autocompleteTtl, storage.autocompleteCardinality);
       session = storage.session();
-      Insert insertQuery = QueryBuilder.insertInto(TABLE_AUTOCOMPLETE_TAGS)
+      Insert insertQuery = QueryBuilder.insertInto(AUTOCOMPLETE_TAGS)
         .value("key", QueryBuilder.bindMarker("key"))
         .value("value", QueryBuilder.bindMarker("value"));
       if (indexTtl > 0) insertQuery.using(QueryBuilder.ttl(indexTtl));

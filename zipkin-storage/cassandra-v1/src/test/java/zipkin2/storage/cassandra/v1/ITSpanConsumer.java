@@ -72,7 +72,7 @@ abstract class ITSpanConsumer {
           .parentId(trace[0].id())
           .id(i + 1)
           .name(String.valueOf(i + 1))
-          .timestamp(trace[0].timestamp() + i * 1000) // child span timestamps happen 1 ms later
+          .timestamp(trace[0].timestampAsLong() + i * 1000) // child span timestamps happen 1 ms later
           .addAnnotation(trace[0].annotations().get(0).timestamp() + i * 1000, "bar")
           .build();
     }
@@ -105,7 +105,7 @@ abstract class ITSpanConsumer {
   static String getTagValue(CassandraStorage storage, String key) {
     return storage
       .session()
-      .execute("SELECT value from " + Tables.TABLE_AUTOCOMPLETE_TAGS + " WHERE key='environment'")
+      .execute("SELECT value from " + Tables.AUTOCOMPLETE_TAGS + " WHERE key='" + key + "'")
       .one()
       .getString(0);
   }
@@ -128,7 +128,7 @@ abstract class ITSpanConsumer {
         .build();
     accept(storage.spanConsumer(), trace);
 
-    assertThat(rowCount(Tables.TABLE_AUTOCOMPLETE_TAGS))
+    assertThat(rowCount(Tables.AUTOCOMPLETE_TAGS))
       .isGreaterThanOrEqualTo(1L);
 
     assertThat(getTagValue(storage, "environment")).isEqualTo("dev");
