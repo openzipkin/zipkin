@@ -18,15 +18,13 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.utils.UUIDs;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Call;
+import zipkin2.Call.FlatMapper;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
@@ -132,9 +130,8 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     }
     for (String annotationKey : annotationKeys) {
       callsToIntersect.add(
-        spanTable
-          .newCall(request.serviceName(), annotationKey, timestampRange, traceIndexFetchSize)
-          .map(CollapseToMap.INSTANCE));
+        spanTable.newCall(request.serviceName(), annotationKey, timestampRange, traceIndexFetchSize)
+      );
     }
 
     // Bucketed calls can be expensive when service name isn't specified. This guards against abuse.
@@ -184,17 +181,16 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
         "Start bucket (" + startBucket + ") > end bucket (" + endBucket + ")");
     }
 
-    // template input with an empty service name, potentially revisiting later
+    // "" isn't a real value. it is used to template bucketed calls and replaced later
     String serviceName = null != request.serviceName() ? request.serviceName() : "";
 
     // TODO: ideally, the buckets are traversed backwards, only spawning queries for older buckets
     // if younger buckets are empty. This will be an async continuation, punted for now.
-    List<SelectTraceIdsFromServiceSpan.Input> bucketedSpanToTraceIdInputs = new ArrayList<>();
-    List<SelectTraceIdsFromServiceRemoteService.Input> bucketedRemoteServiceToTraceIdInputs =
-      new ArrayList<>();
+    List<SelectTraceIdsFromServiceSpan.Input> serviceSpans = new ArrayList<>();
+    List<SelectTraceIdsFromServiceRemoteService.Input> serviceRemoteServices = new ArrayList<>();
     String remoteService = request.remoteServiceName();
     for (int bucket = endBucket; bucket >= startBucket; bucket--) {
-      bucketedSpanToTraceIdInputs.add(
+      serviceSpans.add(
         traceIdsFromServiceSpan.newInput(
           serviceName,
           spanName,
@@ -204,7 +200,7 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
           timestampRange,
           traceIndexFetchSize));
       if (remoteService != null && traceIdsFromServiceRemoteService != null) {
-        bucketedRemoteServiceToTraceIdInputs.add(
+        serviceRemoteServices.add(
           traceIdsFromServiceRemoteService.newInput(
             serviceName,
             remoteService,
@@ -216,37 +212,34 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
 
     if ("".equals(serviceName)) {
       // If we have no service name, we have to lookup service names before running trace ID queries
-      Call<List<String>> serviceNamesCall = getServiceNames();
-      if (remoteService != null && traceIdsFromServiceRemoteService != null) {
-        // TODO(adrian) clean this up
-        return serviceNamesCall.flatMap(
-          new Call.FlatMapper<List<String>, Map<String, Long>>() {
-            Call.FlatMapper<List<String>, Set<Entry<String, Long>>> left =
-              traceIdsFromServiceSpan.newFlatMapper(bucketedSpanToTraceIdInputs);
-            Call.FlatMapper<List<String>, Set<Entry<String, Long>>> right =
-              traceIdsFromServiceRemoteService.newFlatMapper(bucketedRemoteServiceToTraceIdInputs);
-
-            @Override public Call<Map<String, Long>> map(List<String> input) {
-              Call<Map<String, Long>> leftCall = left.map(input).map(CollapseToMap.INSTANCE);
-              Call<Map<String, Long>> rightCall = right.map(input).map(CollapseToMap.INSTANCE);
-              return new IntersectMaps(asList(leftCall, rightCall));
-            }
-          });
+      Call<List<String>> serviceNames = getServiceNames();
+      if (serviceRemoteServices.isEmpty()) {
+        return serviceNames.flatMap(traceIdsFromServiceSpan.newFlatMapper(serviceSpans));
       }
-      return serviceNamesCall.flatMap(
-        traceIdsFromServiceSpan.newFlatMapper(bucketedSpanToTraceIdInputs))
-        .map(CollapseToMap.INSTANCE);
+      return serviceNames.flatMap(new AggregateFlatMapper<>(
+        traceIdsFromServiceSpan.newFlatMapper(serviceSpans),
+        traceIdsFromServiceRemoteService.newFlatMapper(serviceRemoteServices)
+      ));
     }
-    if (remoteService != null && traceIdsFromServiceRemoteService != null) {
-      Call<Map<String, Long>> leftCall =
-        traceIdsFromServiceSpan.newCall(bucketedSpanToTraceIdInputs).map(CollapseToMap.INSTANCE);
-      Call<Map<String, Long>> rightCall =
-        traceIdsFromServiceRemoteService.newCall(bucketedRemoteServiceToTraceIdInputs)
-          .map(CollapseToMap.INSTANCE);
-      return new IntersectMaps(asList(leftCall, rightCall));
-    } else {
-      return traceIdsFromServiceSpan.newCall(bucketedSpanToTraceIdInputs)
-        .map(CollapseToMap.INSTANCE);
+    if (serviceRemoteServices.isEmpty()) {
+      return traceIdsFromServiceSpan.newCall(serviceSpans);
+    }
+    return new IntersectMaps<>(asList(
+      traceIdsFromServiceSpan.newCall(serviceSpans),
+      traceIdsFromServiceRemoteService.newCall(serviceRemoteServices)
+    ));
+  }
+
+  static class AggregateFlatMapper<K, V> implements FlatMapper<List<K>, Map<K, V>> {
+    final FlatMapper<List<K>, Map<K, V>> left, right;
+
+    AggregateFlatMapper(FlatMapper<List<K>, Map<K, V>> left, FlatMapper<List<K>, Map<K, V>> right) {
+      this.left = left;
+      this.right = right;
+    }
+
+    @Override public Call<Map<K, V>> map(List<K> input) {
+      return new IntersectMaps<>(asList(left.map(input), right.map(input)));
     }
   }
 
@@ -298,21 +291,5 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     result.endMillis = Math.max(request.endTs(), oldestData);
     result.endUUID = UUIDs.endOf(result.endMillis);
     return result;
-  }
-
-  enum CollapseToMap implements Call.Mapper<Set<Entry<String, Long>>, Map<String, Long>> {
-    INSTANCE;
-
-    @Override
-    public Map<String, Long> map(Set<Entry<String, Long>> input) {
-      Map<String, Long> result = new LinkedHashMap<>();
-      input.forEach(m -> result.put(m.getKey(), m.getValue()));
-      return result;
-    }
-
-    @Override
-    public String toString() {
-      return "CollapseToMap";
-    }
   }
 }

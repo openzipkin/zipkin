@@ -13,30 +13,30 @@
  */
 package zipkin2.storage.cassandra.internal.call;
 
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import zipkin2.Call;
 import zipkin2.internal.AggregateCall;
 
-public final class AggregateIntoSet<T> extends AggregateCall<Set<T>, Set<T>> {
-  public AggregateIntoSet(List<Call<Set<T>>> calls) {
+public final class AggregateIntoMap<K, V> extends AggregateCall<Map<K, V>, Map<K, V>> {
+  public AggregateIntoMap(List<Call<Map<K, V>>> calls) {
     super(calls);
   }
 
-  @Override protected Set<T> newOutput() {
-    return new LinkedHashSet<>();
+  @Override protected Map<K, V> newOutput() {
+    return new LinkedHashMap<>();
   }
 
-  @Override protected void append(Set<T> input, Set<T> output) {
-    output.addAll(input);
+  @Override protected void append(Map<K, V> input, Map<K, V> output) {
+    output.putAll(input);
   }
 
-  @Override protected boolean isEmpty(Set<T> output) {
+  @Override protected boolean isEmpty(Map<K, V> output) {
     return output.isEmpty();
   }
 
-  @Override public AggregateIntoSet<T> clone() {
-    return new AggregateIntoSet<>(cloneCalls());
+  @Override public AggregateIntoMap<K, V> clone() {
+    return new AggregateIntoMap<>(cloneCalls());
   }
 }

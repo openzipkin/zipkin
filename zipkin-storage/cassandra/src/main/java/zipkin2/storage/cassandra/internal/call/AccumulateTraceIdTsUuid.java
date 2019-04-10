@@ -15,25 +15,21 @@ package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.Row;
 import com.datastax.driver.core.utils.UUIDs;
-import java.util.AbstractMap;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
 public final class AccumulateTraceIdTsUuid
-  extends AccumulateAllResults<Set<Map.Entry<String, Long>>> {
+  extends AccumulateAllResults<Map<String, Long>> {
 
-  @Override protected Supplier<Set<Map.Entry<String, Long>>> supplier() {
-    return LinkedHashSet::new; // because results are not distinct
+  @Override protected Supplier<Map<String, Long>> supplier() {
+    return LinkedHashMap::new; // because results are not distinct
   }
 
-  @Override protected BiConsumer<Row, Set<Map.Entry<String, Long>>> accumulator() {
+  @Override protected BiConsumer<Row, Map<String, Long>> accumulator() {
     return (row, result) ->
-      result.add(
-        new AbstractMap.SimpleEntry<>(row.getString("trace_id"),
-          UUIDs.unixTimestamp(row.getUUID("ts"))));
+      result.put(row.getString("trace_id"), UUIDs.unixTimestamp(row.getUUID("ts")));
   }
 
   @Override public String toString() {
