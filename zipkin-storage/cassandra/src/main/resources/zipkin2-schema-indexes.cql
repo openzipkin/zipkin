@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS zipkin2.span_by_service (
     AND read_repair_chance = 0
     AND dclocal_read_repair_chance = 0
     AND speculative_retry = '95percentile'
-    AND comment = 'Secondary table for looking up span names by a service name.';
+    AND comment = 'Secondary table for looking up span names by a service name. To compensate for hot partitions, we deduplicate write client side, use LeveledCompactionStrategy with a low threshold and add row caching.';
 
 CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (
     service text,
@@ -74,7 +74,7 @@ CREATE TABLE IF NOT EXISTS zipkin2.remote_service_by_service (
     AND read_repair_chance = 0
     AND dclocal_read_repair_chance = 0
     AND speculative_retry = '95percentile'
-    AND comment = 'Secondary table for looking up remote service names by a service name.';
+    AND comment = 'Secondary table for looking up remote service names by a service name. To compensate for hot partitions, we deduplicate write client side, use LeveledCompactionStrategy with a low threshold and add row caching.';
 
 CREATE TABLE IF NOT EXISTS zipkin2.autocomplete_tags (
     key     text,
@@ -88,4 +88,4 @@ CREATE TABLE IF NOT EXISTS zipkin2.autocomplete_tags (
     AND read_repair_chance = 0
     AND dclocal_read_repair_chance = 0
     AND speculative_retry = '95percentile'
-    AND comment = 'Secondary table for looking up tag key and values for a service';
+    AND comment = 'Secondary table for looking up span tag values for auto-complete purposes. To compensate for hot partitions, we deduplicate write client side, use LeveledCompactionStrategy with a low threshold and add row caching.';
