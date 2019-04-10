@@ -118,20 +118,19 @@ public class CassandraSpanConsumerTest {
       .extracting("input")
       .containsExactly(
         InsertServiceSpan.Input.create(FRONTEND.serviceName(), span.name()),
-        InsertServiceRemoteService.Input.create(FRONTEND.serviceName(),BACKEND.serviceName() )
+        InsertServiceRemoteService.Input.create(FRONTEND.serviceName(), BACKEND.serviceName())
       );
   }
 
   @Test
-  public void serviceSpanKeys_appendsEmptyWhenNoName() {
-    Span span = spanWithoutAnnotationsOrTags.toBuilder().name(null).build();
+  public void serviceRemoteServiceKeys_skipsRemoteServiceNameWhenNoLocalService() {
+    Span span = spanWithoutAnnotationsOrTags.toBuilder()
+      .localEndpoint(null)
+      .remoteEndpoint(BACKEND).build();
 
     Call<Void> call = consumer.accept(singletonList(span));
 
-    assertEnclosedCalls(call)
-      .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
-      .extracting("input.service", "input.span")
-      .containsExactly(tuple(FRONTEND.serviceName(), ""));
+    assertThat(call).isInstanceOf(InsertSpan.class);
   }
 
   @Test
@@ -168,7 +167,7 @@ public class CassandraSpanConsumerTest {
     assertEnclosedCalls(call)
       .filteredOn(c -> c instanceof InsertTraceByServiceSpan)
       .extracting("input.duration")
-      .containsOnly(span.duration() / 1000L);
+      .containsOnly(span.durationAsLong() / 1000L);
   }
 
   @Test

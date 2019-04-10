@@ -42,7 +42,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * <p>Schema is installed by default from "/cassandra-schema-cql3.txt"
  */
-public final class CassandraStorage extends StorageComponent {
+public class CassandraStorage extends StorageComponent { // not final for mocking
 
   public static Builder newBuilder() {
     return new Builder();

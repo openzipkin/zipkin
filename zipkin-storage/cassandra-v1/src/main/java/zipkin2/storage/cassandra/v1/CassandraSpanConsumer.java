@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilderSpec;
-import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -123,7 +122,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
     for (Map.Entry<String, String> autocompleteTag : autocompleteTags) {
       insertAutocompleteValue.maybeAdd(autocompleteTag, calls);
     }
-    return AggregateCall.newVoidCall(calls);
+    return calls.isEmpty() ? Call.create(null) : AggregateCall.newVoidCall(calls);
   }
 
   /** Clears any caches */

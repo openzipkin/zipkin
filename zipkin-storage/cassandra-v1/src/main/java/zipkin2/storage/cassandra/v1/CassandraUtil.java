@@ -35,7 +35,6 @@ import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
-import zipkin2.v1.V1Span;
 
 import static com.google.common.base.Preconditions.checkArgument;
 

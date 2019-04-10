@@ -16,11 +16,9 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import java.util.Set;
 import zipkin2.Span;
-import zipkin2.v1.V1Span;
 
 // QueryRequest.remoteServiceName
 final class InsertTraceIdByRemoteServiceName implements Indexer.IndexSupport {
