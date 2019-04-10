@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.Session;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheBuilderSpec;
 import com.google.common.collect.ImmutableSet;
@@ -22,7 +21,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import zipkin2.Call;
 import zipkin2.Span;
-import zipkin2.v1.V1Span;
 
 final class CompositeIndexer {
 
@@ -31,14 +29,17 @@ final class CompositeIndexer {
   // Shared for all indexes to make data management easier (ex. maximumSize)
   private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
 
-  CompositeIndexer(Session session, CacheBuilderSpec spec, int bucketCount, int indexTtl) {
+  CompositeIndexer(CassandraStorage storage, CacheBuilderSpec spec, int indexTtl) {
     this.sharedState = CacheBuilder.from(spec).<PartitionKeyToTraceId, Pair>build().asMap();
-    Indexer.Factory factory = new Indexer.Factory(session, indexTtl, sharedState);
-    this.indexers =
-        ImmutableSet.of(
-            factory.create(new InsertTraceIdByServiceName(bucketCount)),
-            factory.create(new InsertTraceIdBySpanName()),
-            factory.create(new InsertTraceIdByAnnotation(bucketCount)));
+    Indexer.Factory factory = new Indexer.Factory(storage.session(), indexTtl, sharedState);
+    ImmutableSet.Builder<Indexer> indexers = ImmutableSet.builder();
+    indexers.add(factory.create(new InsertTraceIdByServiceName(storage.bucketCount)));
+    if (storage.metadata().hasRemoteService) {
+      indexers.add(factory.create(new InsertTraceIdByRemoteServiceName()));
+    }
+    indexers.add(factory.create(new InsertTraceIdBySpanName()));
+    indexers.add(factory.create(new InsertTraceIdByAnnotation(storage.bucketCount)));
+    this.indexers = indexers.build();
   }
 
   void index(Span span, List<Call<Void>> calls) {

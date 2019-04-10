@@ -213,7 +213,8 @@ public final class CassandraStorage extends StorageComponent {
      * Defaults to 100000.
      *
      * <p>This is used to obviate redundant inserts into {@link Tables#SERVICE_NAME_INDEX}, {@link
-     * Tables#SERVICE_SPAN_NAME_INDEX} and {@link Tables#ANNOTATIONS_INDEX}.
+     * Tables#SERVICE_REMOTE_SERVICE_NAME_INDEX}, {@link Tables#SERVICE_SPAN_NAME_INDEX} and {@link
+     * Tables#ANNOTATIONS_INDEX}.
      *
      * <p>Corresponds to the count of rows inserted into between {@link #indexCacheTtl} and now.
      * This is bounded so that collectors that get large trace volume don't run out of memory before

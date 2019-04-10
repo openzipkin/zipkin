@@ -53,6 +53,7 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
   private final SelectSpanNames.Factory spanNames;
   private final SelectTraceIdTimestampFromServiceName.Factory selectTraceIdsByServiceName;
   private final SelectTraceIdTimestampFromServiceNames.Factory selectTraceIdsByServiceNames;
+  private final SelectTraceIdTimestampFromServiceRemoteServiceName.Factory selectTraceIdsByRemoteServiceName;
   private final SelectTraceIdTimestampFromServiceSpanName.Factory selectTraceIdsBySpanName;
   private final SelectTraceIdTimestampFromAnnotations.Factory selectTraceIdsByAnnotation;
 
@@ -70,8 +71,11 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
     spans = new SelectFromTraces.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
     if (storage.metadata().hasRemoteService) {
+      selectTraceIdsByRemoteServiceName =
+        new SelectTraceIdTimestampFromServiceRemoteServiceName.Factory(session, timestampCodec);
       remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
     } else {
+      selectTraceIdsByRemoteServiceName = null;
       remoteServiceNames = null;
     }
     spanNames = new SelectSpanNames.Factory(session);
@@ -107,14 +111,25 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
     List<Call<Set<Pair>>> callsToIntersect = new ArrayList<>();
     List<String> annotationKeys = CassandraUtil.annotationKeys(request);
     if (request.serviceName() != null) {
-      if (request.spanName() != null) {
-        callsToIntersect.add(
-            this.selectTraceIdsBySpanName.newCall(
-                request.serviceName(),
-                request.spanName(),
-                request.endTs() * 1000,
-                request.lookback() * 1000,
-                traceIndexFetchSize));
+      if (request.spanName() != null|| request.remoteServiceName() != null) {
+        if (request.spanName() != null) {
+          callsToIntersect.add(
+            selectTraceIdsBySpanName.newCall(
+              request.serviceName(),
+              request.spanName(),
+              request.endTs() * 1000,
+              request.lookback() * 1000,
+              traceIndexFetchSize));
+        }
+        if (request.remoteServiceName() != null && selectTraceIdsByRemoteServiceName != null) {
+          callsToIntersect.add(
+            selectTraceIdsByRemoteServiceName.newCall(
+              request.serviceName(),
+              request.remoteServiceName(),
+              request.endTs() * 1000,
+              request.lookback() * 1000,
+              traceIndexFetchSize));
+        }
       } else {
         callsToIntersect.add(
             selectTraceIdsByServiceName.newCall(

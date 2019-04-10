@@ -16,32 +16,36 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import java.util.Set;
 import zipkin2.Span;
+import zipkin2.v1.V1Span;
 
-// QueryRequest.spanName
-final class InsertTraceIdBySpanName implements Indexer.IndexSupport {
+// QueryRequest.remoteServiceName
+final class InsertTraceIdByRemoteServiceName implements Indexer.IndexSupport {
 
   @Override
   public String table() {
-    return Tables.SERVICE_SPAN_NAME_INDEX;
+    return Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX;
   }
 
   @Override
   public Insert declarePartitionKey(Insert insert) {
-    return insert.value("service_span_name", QueryBuilder.bindMarker("service_span_name"));
+    return insert.value("service_remote_service_name",
+      QueryBuilder.bindMarker("service_remote_service_name"));
   }
 
   @Override
   public BoundStatement bindPartitionKey(BoundStatement bound, String partitionKey) {
-    return bound.setString("service_span_name", partitionKey);
+    return bound.setString("service_remote_service_name", partitionKey);
   }
 
   @Override
   public Set<String> partitionKeys(Span span) {
-    if (span.localServiceName() == null || span.name() == null) return Collections.emptySet();
-    String serviceSpan = span.localServiceName() + "." + span.name();
-    return Collections.singleton(serviceSpan);
+    if (span.localServiceName() == null || span.remoteServiceName() == null) {
+      return Collections.emptySet();
+    }
+    return Collections.singleton(span.localServiceName() + "." + span.remoteServiceName());
   }
 }

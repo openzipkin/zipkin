@@ -59,7 +59,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
     } else {
       insertAutocompleteValue = null;
     }
-    indexer = new CompositeIndexer(session, indexCacheSpec, storage.bucketCount, indexTtl);
+    indexer = new CompositeIndexer(storage, indexCacheSpec, indexTtl);
     autocompleteKeys = new LinkedHashSet<>(storage.autocompleteKeys);
   }
 

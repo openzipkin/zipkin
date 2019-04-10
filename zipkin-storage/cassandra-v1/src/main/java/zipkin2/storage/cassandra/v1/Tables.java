@@ -61,11 +61,22 @@ final class Tables {
 
   /**
    * This index supports trace id lookups by {@link QueryRequest#serviceName()} and {@link
+   * QueryRequest#remoteServiceName()}, within the interval of {@link QueryRequest#endTs()} - {@link
+   * QueryRequest#lookback()}.
+   *
+   * <p>The partition key is "{@link Span#localServiceName() $serviceName}.{@link
+   * Span#remoteServiceName() $remoteServiceName}", which is expected to be diverse enough to not
+   * cause hot partitions.
+   */
+  static final String SERVICE_REMOTE_SERVICE_NAME_INDEX = "service_remote_service_name_index";
+
+  /**
+   * This index supports trace id lookups by {@link QueryRequest#serviceName()} and {@link
    * QueryRequest#spanName()}, within the interval of {@link QueryRequest#endTs()} - {@link
    * QueryRequest#lookback()}.
    *
-   * <p>The partition key is "{@link Span#localServiceName() $serviceName}.{@link Span#name()
-   * $spanName}", which is expected to be diverse enough to not cause hot partitions.
+   * <p>The partition key is "{@link Span#localServiceName() $serviceName}.{@link
+   * Span#name() $spanName}", which is expected to be diverse enough to not cause hot partitions.
    */
   static final String SERVICE_SPAN_NAME_INDEX = "service_span_name_index";
 

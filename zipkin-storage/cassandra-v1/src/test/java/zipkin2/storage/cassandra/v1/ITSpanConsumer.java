@@ -78,15 +78,17 @@ abstract class ITSpanConsumer {
     }
 
     accept(storage.spanConsumer(), trace);
-    assertThat(rowCount("annotations_index")).isEqualTo(5L);
-    assertThat(rowCount("service_span_name_index")).isEqualTo(2L);
-    assertThat(rowCount("service_name_index")).isEqualTo(2L);
+    assertThat(rowCount(Tables.ANNOTATIONS_INDEX)).isEqualTo(5L);
+    assertThat(rowCount(Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX)).isEqualTo(1L);
+    assertThat(rowCount(Tables.SERVICE_NAME_INDEX)).isEqualTo(1L);
+    assertThat(rowCount(Tables.SERVICE_SPAN_NAME_INDEX)).isEqualTo(1L);
 
     // redundant store doesn't change the indexes
     accept(storage.spanConsumer(), trace);
-    assertThat(rowCount("annotations_index")).isEqualTo(5L);
-    assertThat(rowCount("service_span_name_index")).isEqualTo(2L);
-    assertThat(rowCount("service_name_index")).isEqualTo(2L);
+    assertThat(rowCount(Tables.ANNOTATIONS_INDEX)).isEqualTo(5L);
+    assertThat(rowCount(Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX)).isEqualTo(1L);
+    assertThat(rowCount(Tables.SERVICE_NAME_INDEX)).isEqualTo(1L);
+    assertThat(rowCount(Tables.SERVICE_SPAN_NAME_INDEX)).isEqualTo(1L);
   }
 
   void accept(SpanConsumer consumer, Span... spans) throws IOException {
@@ -123,7 +125,7 @@ abstract class ITSpanConsumer {
         .name("1")
         .putTag("environment", "dev")
         .putTag("a", "b")
-        .timestamp(trace[0].timestamp() * 1000) // child span timestamps happen 1 ms later
+        .timestamp(trace[0].timestampAsLong()  * 1000) // child span timestamps happen 1 ms later
         .addAnnotation(trace[0].annotations().get(0).timestamp() + 1000, "bar")
         .build();
     accept(storage.spanConsumer(), trace);
