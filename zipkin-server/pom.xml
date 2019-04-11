@@ -369,29 +369,6 @@
       <plugin>
         <artifactId>maven-dependency-plugin</artifactId>
       </plugin>
-      <!-- protobuf-maven-plugin can't take two source directories,
-           which we need until zipkin.proto is updated -->
-      <plugin>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>3.1.0</version>
-        <executions>
-          <execution>
-            <id>copy-test-grpc-proto</id>
-            <phase>generate-test-sources</phase>
-            <goals>
-              <goal>copy-resources</goal>
-            </goals>
-            <configuration>
-              <outputDirectory>${unpack-proto.directory}</outputDirectory>
-              <resources>
-                <resource>
-                  <directory>src/test/proto</directory>
-                </resource>
-              </resources>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
       <plugin>
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
