@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -272,10 +272,10 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
       }
 
       int flag = (ipv6[10] & 0xff) << 8 | (ipv6[11] & 0xff);
-      if (flag != 0 && flag != -1) return false; // IPv4-Compatible or IPv4-Mapped
+      if (flag != 0) return false; // IPv4-Compatible or IPv4-Mapped
 
       byte o1 = ipv6[12], o2 = ipv6[13], o3 = ipv6[14], o4 = ipv6[15];
-      if (flag == 0 && o1 == 0 && o2 == 0 && o3 == 0 && o4 == 1) {
+      if (o1 == 0 && o2 == 0 && o3 == 0 && o4 == 1) {
         return false; // ::1 is localhost, not an embedded compat address
       }
 

@@ -18,7 +18,6 @@ import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
 import com.google.common.io.Closer;
-import com.google.common.net.HostAndPort;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
@@ -130,8 +129,8 @@ public class CassandraStorageRule extends ExternalResource {
               throw new ContainerLaunchException("Container failed to start");
             }
 
-            HostAndPort hap = HostAndPort.fromParts(getContainerIpAddress(), getMappedPort(9042));
-            InetSocketAddress address = new InetSocketAddress(hap.getHost(), hap.getPort());
+            InetSocketAddress address =
+              new InetSocketAddress(getContainerIpAddress(), getMappedPort(9042));
 
             try (Cluster cluster = getCluster(address);
                 Session session = cluster.newSession()) {

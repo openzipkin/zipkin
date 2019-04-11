@@ -24,7 +24,7 @@ import com.datastax.driver.core.policies.RoundRobinPolicy;
 import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closer;
-import com.google.common.net.HostAndPort;
+import zipkin2.internal.HostAndPort;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
