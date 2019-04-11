@@ -36,4 +36,13 @@ public class NonAsciiServiceNameTest {
 
     assertEquals(200, response.code());
   }
+
+  @Test
+  public void remoteServiceNameQueryWorksWithNonAsciiServiceName() throws IOException {
+    Response response = client.newCall(new Request.Builder()
+      .url("http://localhost:" + zipkin.port() + "/api/v2/remoteServices?serviceName=个人信息服务")
+      .build()).execute();
+
+    assertEquals(200, response.code());
+  }
 }
