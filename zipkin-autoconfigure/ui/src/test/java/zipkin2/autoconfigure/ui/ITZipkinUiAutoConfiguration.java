@@ -84,8 +84,8 @@ public class ITZipkinUiAutoConfiguration {
         String etag = get(path).header("etag");
         assertThat(conditionalGet(path, etag).code())
           .isEqualTo(304);
-        assertThat(conditionalGet(path, "aargh").body().contentLength())
-          .isPositive();
+        assertThat(conditionalGet(path, "aargh").code())
+          .isEqualTo(200);
       } catch (IOException e) {
         throw new UncheckedIOException(e);
       }
