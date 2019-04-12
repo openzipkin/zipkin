@@ -53,6 +53,8 @@
     <grpc.version>1.19.0</grpc.version>
     <protobuf.version>3.7.0</protobuf.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
+    <!-- This is from armeria, but be careful to avoid >= v20 apis -->
+    <guava.version>27.0.1-jre</guava.version>
 
     <brave.version>5.6.3</brave.version>
     <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
@@ -246,19 +248,6 @@
         <groupId>io.zipkin.java</groupId>
         <artifactId>zipkin-server</artifactId>
         <version>${project.version}</version>
-      </dependency>
-
-      <!-- Borrowing grpc 0.19 version of guava until we port zipkin-gcp to armeria -->
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>26.0-android</version>
-        <exclusions>
-          <exclusion>
-            <groupId>*</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <dependency>
