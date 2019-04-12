@@ -25,7 +25,6 @@ import com.datastax.driver.core.policies.TokenAwarePolicy;
 import com.datastax.driver.mapping.MappingManager;
 import com.google.common.collect.Sets;
 import com.google.common.io.Closer;
-import zipkin2.internal.HostAndPort;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -35,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.storage.cassandra.Schema.AnnotationUDT;
 import zipkin2.storage.cassandra.Schema.EndpointUDT;
+import zipkin2.storage.cassandra.internal.HostAndPort;
 
 /**
  * Creates a session and ensures schema if configured. Closes the cluster and session if any
@@ -125,8 +125,8 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
   static List<InetSocketAddress> parseContactPoints(CassandraStorage cassandra) {
     List<InetSocketAddress> result = new ArrayList<>();
     for (String contactPoint : cassandra.contactPoints().split(",")) {
-      HostAndPort parsed = HostAndPort.fromString(contactPoint);
-      result.add(new InetSocketAddress(parsed.getHost(), parsed.getPortOrDefault(9042)));
+      HostAndPort parsed = HostAndPort.fromString(contactPoint, 9042);
+      result.add(new InetSocketAddress(parsed.getHost(), parsed.getPort()));
     }
     return result;
   }

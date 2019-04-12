@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.internal;
+package zipkin2.storage.cassandra.internal;
 
 import zipkin2.Endpoint;
 
