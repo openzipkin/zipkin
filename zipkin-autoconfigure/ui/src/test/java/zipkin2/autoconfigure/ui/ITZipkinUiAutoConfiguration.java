@@ -13,6 +13,11 @@
  */
 package zipkin2.autoconfigure.ui;
 
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import java.io.InputStream;
@@ -37,7 +42,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(
   classes = ITZipkinUiAutoConfiguration.TestServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = "zipkin.ui.base-path=/foozipkin"
+  properties = {
+    "zipkin.ui.base-path=/foozipkin",
+    "server.compression.enabled=true",
+    "server.compression.min-response-size=128"
+  }
 )
 public class ITZipkinUiAutoConfiguration {
 
@@ -83,6 +92,14 @@ public class ITZipkinUiAutoConfiguration {
     });
   }
 
+  /** Some assets are pretty big. ensure they use compression. */
+  @Test public void supportsCompression() throws Exception {
+    assertThat(getContentEncodingFromRequestThatAcceptsGzip("/zipkin/test.txt"))
+      .isNull(); // too small to compress
+    assertThat(getContentEncodingFromRequestThatAcceptsGzip("/zipkin/config.json"))
+      .isEqualTo("gzip");
+  }
+
   /**
    * The test sets the property {@code zipkin.ui.base-path=/foozipkin}, which should reflect in
    * index.html
@@ -115,14 +132,26 @@ public class ITZipkinUiAutoConfiguration {
 
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + server.activePort().get().localAddress().getPort() + path)
+      .url("http://localhost:" + port() + path)
       .build()).execute();
   }
 
   private Response conditionalGet(String path, String etag) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + server.activePort().get().localAddress().getPort() + path)
+      .url("http://localhost:" + port() + path)
       .header("If-None-Match", etag)
       .build()).execute();
+  }
+
+  private String getContentEncodingFromRequestThatAcceptsGzip(String path) {
+    // We typically use OkHttp in our tests, but that automatically unzips..
+    AggregatedHttpMessage response = HttpClient.of("http://localhost:" + port())
+        .execute(HttpHeaders.of(HttpMethod.GET, path).set(HttpHeaderNames.ACCEPT_ENCODING, "gzip"))
+        .aggregate().join();
+    return response.headers().get(HttpHeaderNames.CONTENT_ENCODING);
+  }
+
+  private int port() {
+    return server.activePort().get().localAddress().getPort();
   }
 }
