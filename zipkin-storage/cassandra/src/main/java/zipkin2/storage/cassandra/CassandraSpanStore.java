@@ -36,10 +36,12 @@ import zipkin2.storage.cassandra.internal.call.IntersectMaps;
 
 import static java.util.Arrays.asList;
 import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimestamp;
+import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
 class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not final for testing
   static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
+
   final int indexFetchMultiplier;
   final boolean searchEnabled;
   final SelectFromSpan.Factory spans;
@@ -130,7 +132,7 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     List<String> annotationKeys = CassandraUtil.annotationKeys(request);
     for (String annotationKey : annotationKeys) {
       if (spanTable == null) {
-        throw new UnsupportedOperationException(request.annotationQueryString()
+        throw new IllegalArgumentException(request.annotationQueryString()
           + " query unsupported due to missing annotation_query index");
       }
       callsToIntersect.add(
@@ -195,7 +197,11 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     String remoteService = request.remoteServiceName();
     for (int bucket = endBucket; bucket >= startBucket; bucket--) {
       boolean addSpanQuery = true;
-      if (remoteService != null && traceIdsFromServiceRemoteService != null) {
+      if (remoteService != null) {
+        if (traceIdsFromServiceRemoteService == null) {
+          throw new IllegalArgumentException("remoteService=" + remoteService
+            + " unsupported due to missing table " + TABLE_SERVICE_REMOTE_SERVICES);
+        }
         serviceRemoteServices.add(
           traceIdsFromServiceRemoteService.newInput(
             serviceName,

@@ -67,6 +67,10 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     }
 
     SelectSpansAndAnnotations create(QueryRequest request) {
+      if (request.remoteServiceName() != null && !schema.hasRemoteServiceName) {
+        throw new IllegalArgumentException("remoteService=" + request.remoteServiceName()
+          + " unsupported due to missing column zipkin_spans.remote_service_name");
+      }
       return new SelectSpansAndAnnotations(schema) {
         @Override
         Condition traceIdCondition(DSLContext context) {

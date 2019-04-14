@@ -37,6 +37,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.DiscreteDomain.integers;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.sortTraceIdsByDescTimestamp;
 import static zipkin2.storage.cassandra.v1.CassandraUtil.sortTraceIdsByDescTimestampMapper;
+import static zipkin2.storage.cassandra.v1.Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX;
 
 public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames {
   static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
@@ -126,7 +127,8 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
     List<Call<Set<Pair>>> callsToIntersect = new ArrayList<>();
     List<String> annotationKeys = CassandraUtil.annotationKeys(request);
     if (request.serviceName() != null) {
-      if (request.spanName() != null || request.remoteServiceName() != null) {
+      String remoteService = request.remoteServiceName();
+      if (request.spanName() != null || remoteService != null) {
         if (request.spanName() != null) {
           callsToIntersect.add(
             selectTraceIdsBySpanName.newCall(
@@ -136,11 +138,15 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
               request.lookback() * 1000,
               traceIndexFetchSize));
         }
-        if (request.remoteServiceName() != null && selectTraceIdsByRemoteServiceName != null) {
+        if (remoteService != null) {
+          if (selectTraceIdsByRemoteServiceName == null) {
+            throw new IllegalArgumentException("remoteService=" + remoteService
+              + " unsupported due to missing table " + SERVICE_REMOTE_SERVICE_NAME_INDEX);
+          }
           callsToIntersect.add(
             selectTraceIdsByRemoteServiceName.newCall(
               request.serviceName(),
-              request.remoteServiceName(),
+              remoteService,
               request.endTs() * 1000,
               request.lookback() * 1000,
               traceIndexFetchSize));

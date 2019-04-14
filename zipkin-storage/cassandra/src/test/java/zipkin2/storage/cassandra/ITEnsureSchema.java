@@ -22,6 +22,8 @@ import zipkin2.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
 
@@ -106,13 +108,21 @@ abstract class ITEnsureSchema {
       String serviceName = TestObjects.TRACE.get(0).localServiceName();
       assertThat(storage.serviceAndSpanNames().getRemoteServiceNames(serviceName).execute())
         .isEmpty(); // instead of an exception
-      assertThat(storage.spanStore().getTraces(QueryRequest.newBuilder()
-        .endTs(TODAY)
-        .lookback(DAY)
-        .limit(10)
-        .serviceName("invalid1")
-        .remoteServiceName("invalid2").build()).execute())
-        .isEmpty(); // instead of an exception
+
+      // Make sure there is a good message if a query will return incorrectly
+      try {
+        storage.spanStore().getTraces(QueryRequest.newBuilder()
+          .endTs(TODAY)
+          .lookback(DAY)
+          .limit(10)
+          .serviceName(serviceName)
+          .remoteServiceName(CLIENT_SPAN.remoteServiceName()).build()).execute();
+
+        failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+      } catch (IllegalArgumentException e) { // instead of returning invalid results
+        assertThat(e).hasMessage(
+          "remoteService=backend unsupported due to missing table remote_service_by_service");
+      }
     }
   }
 }
