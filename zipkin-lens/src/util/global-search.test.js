@@ -16,6 +16,7 @@ describe('nextInitialConditionKey', () => {
   it('should return the unused condition key', () => {
     expect(nextInitialConditionKey([
       { key: 'serviceName' },
+      { key: 'remoteServiceName' },
       { key: 'spanName' },
       { key: 'maxDuration' },
     ], [])).toEqual('minDuration');
@@ -24,6 +25,7 @@ describe('nextInitialConditionKey', () => {
   it('should return "tags" when all condition keys are used', () => {
     expect(nextInitialConditionKey([
       { key: 'serviceName' },
+      { key: 'remoteServiceName' },
       { key: 'spanName' },
       { key: 'minDuration' },
       { key: 'maxDuration' },
@@ -37,6 +39,7 @@ describe('buildQueryParametersWithConditions', () => {
     const queryParameters = buildQueryParametersWithConditions(
       [
         { key: 'serviceName', value: 'serviceA' },
+        { key: 'remoteServiceName', value: 'serviceB' },
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
@@ -48,6 +51,7 @@ describe('buildQueryParametersWithConditions', () => {
     );
     expect(queryString.parse(queryParameters)).toEqual({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -61,6 +65,7 @@ describe('buildQueryParametersWithConditions', () => {
     const queryParameters = buildQueryParametersWithConditions(
       [
         { key: 'serviceName', value: 'serviceA' },
+        { key: 'remoteServiceName', value: 'serviceB' },
         { key: 'spanName', value: 'spanA' },
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
@@ -73,6 +78,7 @@ describe('buildQueryParametersWithConditions', () => {
     );
     expect(queryString.parse(queryParameters)).toEqual({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -126,6 +132,7 @@ describe('buildApiQueryParameters', () => {
   it('should return right query parameters', () => {
     const apiQueryParameters = buildApiQueryParameters({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -135,6 +142,7 @@ describe('buildApiQueryParameters', () => {
     });
     expect(apiQueryParameters).toEqual({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -147,6 +155,7 @@ describe('buildApiQueryParameters', () => {
   it('should return right query parameters with custom lookback', () => {
     const apiQueryParameters = buildApiQueryParameters({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -157,6 +166,7 @@ describe('buildApiQueryParameters', () => {
     });
     expect(apiQueryParameters).toEqual({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -180,6 +190,7 @@ describe('extractConditionsFromQueryParameters', () => {
   it('should return right conditions', () => {
     const { conditions } = extractConditionsFromQueryParameters({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -187,6 +198,7 @@ describe('extractConditionsFromQueryParameters', () => {
     }, []);
     expect(conditions.sort()).toEqual([
       { key: 'serviceName', value: 'serviceA' },
+      { key: 'remoteServiceName', value: 'serviceB' },
       { key: 'spanName', value: 'spanA' },
       { key: 'minDuration', value: 10 },
       { key: 'maxDuration', value: 100 },
@@ -199,6 +211,7 @@ describe('extractConditionsFromQueryParameters', () => {
   it('should return right conditions with autocompleteTags', () => {
     const { conditions } = extractConditionsFromQueryParameters({
       serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
       spanName: 'spanA',
       minDuration: '10',
       maxDuration: '100',
@@ -207,6 +220,7 @@ describe('extractConditionsFromQueryParameters', () => {
     }, []);
     expect(conditions.sort()).toEqual([
       { key: 'serviceName', value: 'serviceA' },
+      { key: 'remoteServiceName', value: 'serviceB' },
       { key: 'spanName', value: 'spanA' },
       { key: 'minDuration', value: 10 },
       { key: 'maxDuration', value: 100 },
@@ -273,6 +287,7 @@ describe('getConditionKeyListWithAvailability', () => {
     );
     expect(result.sort(sorter)).toEqual([
       { conditionKey: 'serviceName', isAvailable: true },
+      { conditionKey: 'remoteServiceName', isAvailable: true },
       { conditionKey: 'spanName', isAvailable: true },
       { conditionKey: 'minDuration', isAvailable: true },
       { conditionKey: 'maxDuration', isAvailable: false },

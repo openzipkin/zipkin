@@ -3,9 +3,11 @@ import $ from 'jquery';
 import timeago from 'timeago'; // eslint-disable-line no-unused-vars
 import queryString from 'query-string';
 import DefaultData from '../component_data/default';
+import RemoteServiceNamesData from '../component_data/remoteServiceNames';
 import SpanNamesData from '../component_data/spanNames';
 import ServiceNamesData from '../component_data/serviceNames';
 import ServiceNameUI from '../component_ui/serviceName';
+import RemoteServiceNameUI from '../component_ui/remoteServiceName';
 import SpanNameUI from '../component_ui/spanName';
 import LookbackUI from '../component_ui/lookback';
 import InfoPanelUI from '../component_ui/infoPanel';
@@ -77,9 +79,11 @@ const DefaultPageComponent = component(function DefaultPage() {
         ...modelView
       }));
 
+      RemoteServiceNamesData.attachTo(document);
       SpanNamesData.attachTo(document);
       ServiceNamesData.attachTo(document);
       ServiceNameUI.attachTo('#serviceName');
+      RemoteServiceNameUI.attachTo('#remoteServiceName');
       SpanNameUI.attachTo('#spanName');
       LookbackUI.attachTo('#lookback');
       InfoPanelUI.attachTo('#infoPanel');

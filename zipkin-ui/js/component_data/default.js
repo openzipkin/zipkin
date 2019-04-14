@@ -50,6 +50,9 @@ export function convertToApiQuery(source) {
   if (query.serviceName === 'all') {
     delete query.serviceName;
   }
+  if (query.remoteServiceName === 'all') {
+    delete query.remoteServiceName;
+  }
   if (query.spanName === 'all') {
     delete query.spanName;
   }
