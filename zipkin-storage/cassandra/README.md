@@ -83,8 +83,10 @@ of tables from 7 down to 4 (from the original cassandra schema). SASI
 also moves some write-amplification from CassandraSpanConsumer into C*.
 
 CassandraSpanConsumer directly writes to the tables `span`,
-`trace_by_service_span` and `span_by_service`. The latter two
-amplify writes by a factor of the distinct service names in a span.
+`trace_by_service_remote_service` `trace_by_service_span` and
+`span_by_service`. The latter service based indexes amplify writes by a
+factor of the distinct service names (`Span.localServiceName`).
+
 Other amplification happens internally to C*, visible in the increase
 write latency (although write latency remains performant at single digit
 milliseconds).
@@ -104,21 +106,46 @@ in a single trace ID query against the above two indexes.
 Note: annotations with values longer than 256 characters are not written to the
 `annotation_query` SASI, as they aren't intended for use in user queries.
 
+#### `trace_by_service_X` indexing
+
+`trace_by_service_X` rows are answers to a shard of trace query. A query
+request is broken down into possibly multiple shards based on our index
+implementation.
+
+Ex. `GET /api/v2/traces?serviceName=tweetiebird%remoteService=s3`
+
+Breaks down into two query shards (this example omits time range and limit)
+* `(service=tweetiebird, span=)`
+* `(service=tweetiebird, remote_service=s3)`
+
+The results intersect prioritizing on timestamp to return the distinct
+trace IDs needed for a follow-up fetch.
+
+#### `trace_by_service_remote_service` indexing
+
+For example, a span in trace ID 1 named "get" created by "tweetiebird",
+accessing the remote service "s3" results in the following row:
+
+* `service=service1, span=remote_service, ts=timestamp_millis, trace_id=1`
+
+This index is only used when the `remoteServiceName` query is used. Ex.
+1. `GET /api/v2/traces?serviceName=tweetiebird&remoteServiceName=s3`
+1. `GET /api/v2/traces?serviceName=tweetiebird&maxDuration=199500&remoteServiceName=s3`
+
 #### `trace_by_service_span` indexing
 
-`trace_by_service_span` rows represent a shard of a user query. For example, a
-span in trace ID 1 named "get" created by "service1", taking 20 milliseconds
-results in the following rows:
+For example, a span in trace ID 1 named "get" created by "service1",
+taking 20 milliseconds results in the following rows:
 
-1. `service=service1, span=targz, trace_id=1, duration=200`
-2. `service=service1, span=, trace_id=1, duration=200`
+1. `service=service1, span=get, trace_id=1, ts=timestamp_millis, duration=200`
+2. `service=service1, span=, trace_id=1, ts=timestamp_millis, duration=200`
 
 Here are corresponding queries that relate to the above rows:
-1. `GET /api/v2/traces?serviceName=service1&spanName=targz`
-1. `GET /api/v2/traces?serviceName=service1&spanName=targz&minDuration=200000`
+1. `GET /api/v2/traces?serviceName=service1&spanName=get`
+1. `GET /api/v2/traces?serviceName=service1&spanName=get&minDuration=200000`
 1. `GET /api/v2/traces?serviceName=service1&minDuration=200000`
-2. `GET /api/v2/traces?spanName=targz`
-2. `GET /api/v2/traces?duration=199500`
+1. `GET /api/v2/traces?spanName=get`
+1. `GET /api/v2/traces?maxDuration=199500`
 
 As you'll notice, the duration component is optional, and stored in
 millisecond resolution as opposed to microsecond (which the query represents).
@@ -128,10 +155,6 @@ The reason we can query on `duration` is due to a SASI index. Eventhough the
 search granularity is millisecond, original duration data remains microsecond
 granularity. Meanwhile, write performance is dramatically better than writing
 discrete values, due to fewer distinct writes.
-
-You might wonder how the last two queries work, considering they don't know
-the service name associated with index rows. When needed, this implementation
-performs a service name fetch, resulting in a fan-out composition over row 2.
 
 #### Disabling indexing
 Indexing is a good default, but some sites who don't use Zipkin UI's
