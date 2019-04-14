@@ -65,7 +65,16 @@ public class ITCassandraStorage {
       return storage;
     }
 
-    @Override @Test @Ignore("Multiple services unsupported") public void getTraces_tags() {
+    @Override @Test @Ignore("All services query unsupported when combined with other qualifiers")
+    public void getTraces_tags() {
+    }
+
+    @Override @Test @Ignore("All services query unsupported when combined with other qualifiers")
+    public void getTraces_remoteServiceName_withoutServiceName() {
+    }
+
+    @Override @Test @Ignore("All services query unsupported when combined with other qualifiers")
+    public void getTraces_spanName_noServiceName() {
     }
 
     @Override @Test @Ignore("Duration unsupported") public void getTraces_duration() {
@@ -168,7 +177,7 @@ public class ITCassandraStorage {
 
     @Before public void connect() {
       storage =
-        backend.computeStorageBuilder().keyspace(keyspace(testName)).strictTraceId(false).build();
+        backend.computeStorageBuilder().keyspace(keyspace(testName)).searchEnabled(false).build();
     }
 
     @Override protected StorageComponent storage() {

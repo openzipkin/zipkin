@@ -215,15 +215,24 @@ public abstract class ITSpanStore {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
+      .serviceName(CLIENT_SPAN.localServiceName())
       .remoteServiceName(CLIENT_SPAN.remoteServiceName() + 1)
       .build()).execute()).isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
+      .serviceName(CLIENT_SPAN.localServiceName())
       .remoteServiceName(CLIENT_SPAN.remoteServiceName())
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
+  }
+
+  @Test public void getTraces_remoteServiceName_withoutServiceName() throws Exception {
+    accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
-      .remoteServiceName("frontend")
+      .remoteServiceName(CLIENT_SPAN.remoteServiceName() + 1)
+      .build()).execute()).isEmpty();
+
+    assertThat(store().getTraces(requestBuilder()
       .remoteServiceName(CLIENT_SPAN.remoteServiceName())
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
@@ -242,15 +251,24 @@ public abstract class ITSpanStore {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
+      .serviceName(CLIENT_SPAN.localServiceName())
       .spanName(CLIENT_SPAN.name() + 1)
       .build()).execute()).isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
+      .serviceName(CLIENT_SPAN.localServiceName())
       .spanName(CLIENT_SPAN.name())
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
+  }
+
+  @Test public void getTraces_spanName_noServiceName() throws Exception {
+    accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
-      .spanName("frontend")
+      .spanName(CLIENT_SPAN.name() + 1)
+      .build()).execute()).isEmpty();
+
+    assertThat(store().getTraces(requestBuilder()
       .spanName(CLIENT_SPAN.name())
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
