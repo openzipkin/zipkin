@@ -43,11 +43,12 @@ public class ZipkinServerTest {
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
-  @Test public void readsBackSpanName() throws Exception {
+  @Test public void readsBackNames() throws Exception {
     String service = "web";
     Span span = Span.newBuilder().traceId("463ac35c9f6413ad48485a3953bb6124").id("a")
       .name("test-span")
       .localEndpoint(Endpoint.newBuilder().serviceName(service).build())
+      .remoteEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .addAnnotation(System.currentTimeMillis() * 1000L, "hello").build();
 
     byte[] spansInJson = SpanBytesEncoder.JSON_V2.encodeList(Collections.singletonList(span));
@@ -64,6 +65,12 @@ public class ZipkinServerTest {
     assertThat(get.isSuccessful()).isTrue();
     assertThat(get.body().string())
       .isEqualTo("[\"" + span.name() + "\"]");
+
+    // read back the remote service name, given its service
+    get = get("/api/v2/remoteServices?serviceName=" + service);
+    assertThat(get.isSuccessful()).isTrue();
+    assertThat(get.body().string())
+      .isEqualTo("[\"" + span.remoteServiceName() + "\"]");
   }
 
   private Response get(String path) throws IOException {

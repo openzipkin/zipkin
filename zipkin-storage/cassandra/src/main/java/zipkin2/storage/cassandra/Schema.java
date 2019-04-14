@@ -42,7 +42,9 @@ final class Schema {
 
   static final String TABLE_SPAN = "span";
   static final String TABLE_TRACE_BY_SERVICE_SPAN = "trace_by_service_span";
+  static final String TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE = "trace_by_service_remote_service";
   static final String TABLE_SERVICE_SPANS = "span_by_service";
+  static final String TABLE_SERVICE_REMOTE_SERVICES = "remote_service_by_service";
   static final String TABLE_DEPENDENCY = "dependency";
   static final String TABLE_AUTOCOMPLETE_TAGS = "autocomplete_tags";
 
@@ -50,6 +52,7 @@ final class Schema {
   static final String SCHEMA_RESOURCE = "/zipkin2-schema.cql";
   static final String INDEX_RESOURCE = "/zipkin2-schema-indexes.cql";
   static final String UPGRADE_1 = "/zipkin2-schema-upgrade-1.cql";
+  static final String UPGRADE_2 = "/zipkin2-schema-upgrade-2.cql";
 
   private Schema() {
   }
@@ -73,14 +76,32 @@ final class Schema {
     String compactionClass =
       keyspaceMetadata.getTable("span").getOptions().getCompaction().get("class");
 
-    return new Metadata(compactionClass);
+    boolean hasAutocompleteTags = hasUpgrade1_autocompleteTags(keyspaceMetadata);
+    if (!hasAutocompleteTags) {
+      LOG.warn(
+        "schema lacks autocomplete indexing: apply {}, or set CassandraStorage.ensureSchema=true",
+        UPGRADE_1);
+    }
+
+    boolean hasRemoteService = hasUpgrade2_remoteService(keyspaceMetadata);
+    if (!hasRemoteService) {
+      LOG.warn(
+        "schema lacks remote service indexing: apply {}, or set CassandraStorage.ensureSchema=true",
+        UPGRADE_2);
+    }
+
+    return new Metadata(compactionClass, hasAutocompleteTags, hasRemoteService);
   }
 
   static final class Metadata {
     final String compactionClass;
+    final boolean hasAutocompleteTags, hasRemoteService;
 
-    Metadata(String compactionClass) {
+    Metadata(String compactionClass, boolean hasAutocompleteTags,
+      boolean hasRemoteService) {
       this.compactionClass = compactionClass;
+      this.hasAutocompleteTags = hasAutocompleteTags;
+      this.hasRemoteService = hasRemoteService;
     }
   }
 
@@ -123,11 +144,19 @@ final class Schema {
       LOG.info("Upgrading schema {}", UPGRADE_1);
       applyCqlFile(keyspace, session, UPGRADE_1);
     }
+    if (!hasUpgrade2_remoteService(result)) {
+      LOG.info("Upgrading schema {}", UPGRADE_2);
+      applyCqlFile(keyspace, session, UPGRADE_2);
+    }
     return result;
   }
 
   static boolean hasUpgrade1_autocompleteTags(KeyspaceMetadata keyspaceMetadata) {
     return keyspaceMetadata.getTable(TABLE_AUTOCOMPLETE_TAGS) != null;
+  }
+
+  static boolean hasUpgrade2_remoteService(KeyspaceMetadata keyspaceMetadata) {
+    return keyspaceMetadata.getTable(TABLE_SERVICE_REMOTE_SERVICES) != null;
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {

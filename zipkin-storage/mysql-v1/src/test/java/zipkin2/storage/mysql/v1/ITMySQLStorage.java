@@ -120,6 +120,18 @@ public class ITMySQLStorage {
     }
   }
 
+  public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
+    @ClassRule public static LazyMySQLStorage storage = classRule();
+
+    @Override protected StorageComponent storage() {
+      return storage.get();
+    }
+
+    @Override public void clear() {
+      storage.get().clear();
+    }
+  }
+
   public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
     @ClassRule public static LazyMySQLStorage storage = classRule();
 

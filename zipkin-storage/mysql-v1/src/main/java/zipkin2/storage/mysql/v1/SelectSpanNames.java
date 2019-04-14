@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.function.Function;
 import org.jooq.DSLContext;
 
+import static zipkin2.storage.mysql.v1.SelectAnnotationServiceNames.localServiceNameCondition;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
@@ -36,7 +37,8 @@ final class SelectSpanNames implements Function<DSLContext, List<String>> {
       .from(ZIPKIN_SPANS)
       .join(ZIPKIN_ANNOTATIONS)
       .on(schema.joinCondition(ZIPKIN_ANNOTATIONS))
-      .where(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(serviceName))
+      .where(
+        localServiceNameCondition().and(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME.eq(serviceName)))
       .and(ZIPKIN_SPANS.NAME.notEqual(""))
       .orderBy(ZIPKIN_SPANS.NAME)
       .fetch(ZIPKIN_SPANS.NAME);

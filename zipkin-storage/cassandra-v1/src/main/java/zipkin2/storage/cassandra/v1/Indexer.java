@@ -37,7 +37,6 @@ import zipkin2.internal.HexCodec;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
-import zipkin2.v1.V1Span;
 
 /**
  * Inserts index rows into Cassandra according to {@link IndexSupport} of a table. This skips
@@ -79,6 +78,10 @@ final class Indexer {
 
   @AutoValue
   abstract static class Input {
+    static Input create(long trace_id, long ts, String partitionKey) {
+      return new AutoValue_Indexer_Input(trace_id, ts, partitionKey);
+    }
+
     abstract long trace_id();
 
     abstract long ts();
@@ -90,8 +93,8 @@ final class Indexer {
 
     final Input input;
 
-    IndexCall(Input input) {
-      this.input = input;
+    IndexCall(long trace_id, long ts, String partitionKey) {
+      this.input = Input.create(trace_id, ts, partitionKey);
     }
 
     @Override
@@ -118,7 +121,7 @@ final class Indexer {
 
     @Override
     public IndexCall clone() {
-      return new IndexCall(input);
+      return new IndexCall(input.trace_id(), input.ts(), input.partitionKey());
     }
   }
 
@@ -156,8 +159,7 @@ final class Indexer {
     // For each entry, insert a new row in the index table asynchronously
     for (Map.Entry<PartitionKeyToTraceId, Long> entry : toInsert.entries()) {
       long traceId = HexCodec.lowerHexToUnsignedLong(entry.getKey().traceId);
-      calls.add(new IndexCall(
-        new AutoValue_Indexer_Input(traceId, entry.getValue(), entry.getKey().partitionKey)));
+      calls.add(new IndexCall(traceId, entry.getValue(), entry.getKey().partitionKey));
     }
   }
 

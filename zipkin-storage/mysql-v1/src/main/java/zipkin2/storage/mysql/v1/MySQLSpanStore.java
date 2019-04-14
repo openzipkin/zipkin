@@ -19,13 +19,14 @@ import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.storage.GroupByTraceId;
 import zipkin2.storage.QueryRequest;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StrictTraceId;
 
 import static zipkin2.internal.DateUtil.getDays;
 import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 
-final class MySQLSpanStore implements SpanStore {
+final class MySQLSpanStore implements SpanStore, ServiceAndSpanNames {
 
   final DataSourceCall.Factory dataSourceCallFactory;
   final Schema schema;
@@ -71,6 +72,13 @@ final class MySQLSpanStore implements SpanStore {
   @Override public Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return getServiceNamesCall.clone();
+  }
+
+  @Override public Call<List<String>> getRemoteServiceNames(String serviceName) {
+    if (serviceName.isEmpty() || !searchEnabled || !schema.hasRemoteServiceName) {
+      return Call.emptyList();
+    }
+    return dataSourceCallFactory.create(new SelectRemoteServiceNames(schema, serviceName));
   }
 
   @Override public Call<List<String>> getSpanNames(String serviceName) {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,24 +28,40 @@ import zipkin2.internal.Nullable;
 /**
  * Invoking this request retrieves traces matching the below filters.
  *
- * <p> Results should be filtered against {@link #endTs}, subject to {@link #limit} and {@link
+ * <p>Results should be filtered against {@link #endTs}, subject to {@link #limit} and {@link
  * #lookback}. For example, if endTs is 10:20 today, limit is 10, and lookback is 7 days, traces
  * returned should be those nearest to 10:20 today, not 10:20 a week ago.
  *
- * <p> Time units of {@link #endTs} and {@link #lookback} are milliseconds as opposed to
+ * <p>Time units of {@link #endTs} and {@link #lookback} are milliseconds as opposed to
  * microseconds, the grain of {@link Span#timestamp()}. Milliseconds is a more familiar and
  * supported granularity for query, index and windowing functions.
  */
 public final class QueryRequest {
   /**
-   * When present, corresponds to {@link zipkin2.Endpoint#serviceName} and constrains all other
-   * parameters.
+   * When present, corresponds to the {@link Span#localServiceName() local service name} and
+   * constrains all other parameters.
+   *
+   * @see ServiceAndSpanNames#getServiceNames()
    */
   @Nullable public String serviceName() {
     return serviceName;
   }
 
-  /** When present, only include traces with this {@link Span#name} */
+  /**
+   * When present, only include traces with this {@link Span#remoteServiceName() remote service
+   * name}.
+   *
+   * @see ServiceAndSpanNames#getRemoteServiceNames(String)
+   */
+  @Nullable public String remoteServiceName() {
+    return remoteServiceName;
+  }
+
+  /**
+   * When present, only include traces with this {@link Span#name()}
+   *
+   * @see ServiceAndSpanNames#getSpanNames(String)
+   */
   @Nullable public String spanName() {
     return spanName;
   }
@@ -57,7 +73,7 @@ public final class QueryRequest {
    *
    * <p>Multiple entries are combined with AND, and AND against other conditions.
    */
-  public Map<String, String> annotationQuery(){
+  public Map<String, String> annotationQuery() {
     return annotationQuery;
   }
 
@@ -126,7 +142,7 @@ public final class QueryRequest {
   }
 
   public static final class Builder {
-    String serviceName, spanName;
+    String serviceName, remoteServiceName, spanName;
     Map<String, String> annotationQuery = Collections.emptyMap();
     Long minDuration, maxDuration;
     long endTs, lookback;
@@ -134,6 +150,7 @@ public final class QueryRequest {
 
     Builder(QueryRequest source) {
       serviceName = source.serviceName;
+      remoteServiceName = source.remoteServiceName;
       spanName = source.spanName;
       annotationQuery = source.annotationQuery;
       minDuration = source.minDuration;
@@ -146,6 +163,12 @@ public final class QueryRequest {
     /** @see QueryRequest#serviceName() */
     public Builder serviceName(@Nullable String serviceName) {
       this.serviceName = serviceName;
+      return this;
+    }
+
+    /** @see QueryRequest#remoteServiceName() */
+    public Builder remoteServiceName(@Nullable String remoteServiceName) {
+      this.remoteServiceName = remoteServiceName;
       return this;
     }
 
@@ -219,11 +242,13 @@ public final class QueryRequest {
     public final QueryRequest build() {
       // coerce service and span names to lowercase
       if (serviceName != null) serviceName = serviceName.toLowerCase(Locale.ROOT);
+      if (remoteServiceName != null) remoteServiceName = remoteServiceName.toLowerCase(Locale.ROOT);
       if (spanName != null) spanName = spanName.toLowerCase(Locale.ROOT);
 
       // remove any accidental empty strings
       annotationQuery.remove("");
-      if ("".equals(serviceName)) serviceName = null ;
+      if ("".equals(serviceName)) serviceName = null;
+      if ("".equals(remoteServiceName)) remoteServiceName = null;
       if ("".equals(spanName) || "all".equals(spanName)) spanName = null;
 
       if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
@@ -240,6 +265,7 @@ public final class QueryRequest {
 
       return new QueryRequest(
         serviceName,
+        remoteServiceName,
         spanName,
         annotationQuery,
         minDuration,
@@ -277,18 +303,19 @@ public final class QueryRequest {
       timestamp > endTs() * 1000) {
       return false;
     }
-    Set<String> serviceNames = new LinkedHashSet<>();
     boolean testedDuration = minDuration() == null && maxDuration() == null;
 
+    String serviceNameToMatch = serviceName();
+    String remoteServiceNameToMatch = remoteServiceName();
     String spanNameToMatch = spanName();
     Map<String, String> annotationQueryRemaining = new LinkedHashMap<>(annotationQuery());
 
     for (Span span : spans) {
       String localServiceName = span.localServiceName();
 
-      if (localServiceName != null) serviceNames.add(localServiceName);
-
+      // service name, when present, constrains other queries.
       if (serviceName() == null || serviceName().equals(localServiceName)) {
+        serviceNameToMatch = null;
         for (Annotation a : span.annotations()) {
           if ("".equals(annotationQueryRemaining.get(a.value()))) {
             annotationQueryRemaining.remove(a.value());
@@ -301,27 +328,31 @@ public final class QueryRequest {
             annotationQueryRemaining.remove(t.getKey());
           }
         }
-        if (spanNameToMatch == null || spanNameToMatch.equals(span.name())) {
+        if (remoteServiceNameToMatch != null && remoteServiceNameToMatch.equals(
+          span.remoteServiceName())) {
+          remoteServiceNameToMatch = null;
+        }
+        if (spanNameToMatch != null && spanNameToMatch.equals(span.name())) {
           spanNameToMatch = null;
         }
-      }
-
-      if ((serviceName() == null || serviceName().equals(localServiceName)) && !testedDuration) {
-        if (minDuration() != null && maxDuration() != null) {
-          testedDuration = span.durationAsLong() >= minDuration() && span.durationAsLong() <= maxDuration();
-        } else if (minDuration() != null) {
-          testedDuration = span.durationAsLong() >= minDuration();
+        if (!testedDuration) {
+          if (minDuration() != null && maxDuration() != null) {
+            testedDuration =
+              span.durationAsLong() >= minDuration() && span.durationAsLong() <= maxDuration();
+          } else if (minDuration() != null) {
+            testedDuration = span.durationAsLong() >= minDuration();
+          }
         }
       }
     }
-    return (serviceName() == null || serviceNames.contains(serviceName()))
+    return (serviceName() == null || serviceNameToMatch == null)
+      && remoteServiceNameToMatch == null
       && spanNameToMatch == null
       && annotationQueryRemaining.isEmpty()
       && testedDuration;
   }
 
-
-  final String serviceName, spanName;
+  final String serviceName, remoteServiceName, spanName;
   final Map<String, String> annotationQuery;
   final Long minDuration, maxDuration;
   final long endTs, lookback;
@@ -329,6 +360,7 @@ public final class QueryRequest {
 
   QueryRequest(
     @Nullable String serviceName,
+    @Nullable String remoteServiceName,
     @Nullable String spanName,
     Map<String, String> annotationQuery,
     @Nullable Long minDuration,
@@ -337,6 +369,7 @@ public final class QueryRequest {
     long lookback,
     int limit) {
     this.serviceName = serviceName;
+    this.remoteServiceName = remoteServiceName;
     this.spanName = spanName;
     this.annotationQuery = annotationQuery;
     this.minDuration = minDuration;
@@ -350,6 +383,7 @@ public final class QueryRequest {
   public String toString() {
     return "QueryRequest{"
       + "serviceName=" + serviceName + ", "
+      + "remoteServiceName=" + remoteServiceName + ", "
       + "spanName=" + spanName + ", "
       + "annotationQuery=" + annotationQuery + ", "
       + "minDuration=" + minDuration + ", "

@@ -22,10 +22,8 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.datastax.driver.core.querybuilder.Select;
 import com.google.auto.value.AutoValue;
-import java.util.AbstractMap;
-import java.util.LinkedHashSet;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
@@ -97,7 +95,7 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<ResultSet> {
                   .allowFiltering());
     }
 
-    Call<Set<Entry<String, Long>>> newCall(
+    Call<Map<String, Long>> newCall(
         @Nullable String serviceName,
         String annotationKey,
         TimestampRange timestampRange,
@@ -156,24 +154,20 @@ final class SelectTraceIdsFromSpan extends ResultSetFutureCall<ResultSet> {
     return input.toString().replace("Input", "SelectTraceIdsFromSpan");
   }
 
-  static final class AccumulateTraceIdTsLong
-      extends AccumulateAllResults<Set<Entry<String, Long>>> {
+  static final class AccumulateTraceIdTsLong extends AccumulateAllResults<Map<String, Long>> {
 
-    @Override
-    protected Supplier<Set<Entry<String, Long>>> supplier() {
-      return LinkedHashSet::new; // because results are not distinct
+    @Override protected Supplier<Map<String, Long>> supplier() {
+      return LinkedHashMap::new; // because results are not distinct
     }
 
-    @Override
-    protected BiConsumer<Row, Set<Entry<String, Long>>> accumulator() {
+    @Override protected BiConsumer<Row, Map<String, Long>> accumulator() {
       return (row, result) -> {
         if (row.isNull("ts")) return;
-        result.add(new AbstractMap.SimpleEntry<>(row.getString("trace_id"), row.getLong("ts")));
+        result.put(row.getString("trace_id"), row.getLong("ts"));
       };
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "AccumulateTraceIdTsLong{}";
     }
   }

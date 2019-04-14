@@ -38,6 +38,31 @@ public abstract class StorageComponent extends Component {
       @Override public Call<List<String>> getValues(String key) {
         return Call.emptyList();
       }
+
+      @Override public String toString() {
+        return "EmptyAutocompleteTags{}";
+      }
+    };
+  }
+
+  public ServiceAndSpanNames serviceAndSpanNames() { // delegates to deprecated methods.
+    SpanStore delegate = spanStore();
+    return new ServiceAndSpanNames() {
+      @Override public Call<List<String>> getServiceNames() {
+        return delegate.getServiceNames();
+      }
+
+      @Override public Call<List<String>> getRemoteServiceNames(String serviceName) {
+        return Call.emptyList(); // incorrect for not yet ported 3rd party storage components.
+      }
+
+      @Override public Call<List<String>> getSpanNames(String serviceName) {
+        return delegate.getSpanNames(serviceName);
+      }
+
+      @Override public String toString() {
+        return "ServiceAndSpanNames{" + delegate + "}";
+      }
     };
   }
 
@@ -95,19 +120,21 @@ public abstract class StorageComponent extends Component {
      * The use case is typically to support 100% sampled data, or when traces are searched using
      * alternative means such as a logging index.
      *
-     * <p>Refer to implementation docs for the impact of this parameter. Operations that use indexes
+     * <p>Refer to implementation docs for the impact of this parameter. Operations that use
+     * indexes
      * should return empty as opposed to throwing an exception.
      */
     public abstract Builder searchEnabled(boolean searchEnabled);
 
     /**
-     * Autocomplete is used by the UI to suggest getValues for site-specific tags, such as environment
-     * names. The getKeys here would appear in {@link Span#tags() span tags}. Good choices for
-     * autocomplete are limited in cardinality for the same reasons as service and span names.
+     * Autocomplete is used by the UI to suggest getValues for site-specific tags, such as
+     * environment names. The getKeys here would appear in {@link Span#tags() span tags}. Good
+     * choices for autocomplete are limited in cardinality for the same reasons as service and span
+     * names.
      *
      * For example, "http.url" would be a bad choice for autocomplete, not just because it isn't
-     * site-specific (such as environment would be), but also as there are unlimited getValues due to
-     * factors such as unique ids in the path.
+     * site-specific (such as environment would be), but also as there are unlimited getValues due
+     * to factors such as unique ids in the path.
      *
      * @param keys controls the span values stored for auto-complete.
      */
@@ -122,8 +149,9 @@ public abstract class StorageComponent extends Component {
       return this;
     }
 
-    /** How many autocomplete key/value pairs to suppress at a time.  */
-    public Builder autocompleteCardinality(int autocompleteCardinality) { // not abstract as added later
+    /** How many autocomplete key/value pairs to suppress at a time. */
+    public Builder autocompleteCardinality(
+      int autocompleteCardinality) { // not abstract as added later
       Logger.getLogger(getClass().getName()).info("autocompleteCardinality not yet supported");
       return this;
     }

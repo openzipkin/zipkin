@@ -52,10 +52,6 @@ public class ITElasticsearchStorageV5 {
       return storage;
     }
 
-    // we don't map this in elasticsearch
-    @Test @Ignore @Override public void getSpanNames_mapsNameToRemoteServiceName() {
-    }
-
     @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
     }
 
@@ -92,6 +88,25 @@ public class ITElasticsearchStorageV5 {
 
     @Before public void connect() {
       storage = backend.computeStorageBuilder().index(index(testName)).strictTraceId(false).build();
+    }
+
+    @Override protected StorageComponent storage() {
+      return storage;
+    }
+
+    @Before @Override public void clear() throws IOException {
+      storage.clear();
+    }
+  }
+
+  public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
+    @ClassRule public static ElasticsearchStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    ElasticsearchStorage storage;
+
+    @Before public void connect() {
+      storage = backend.computeStorageBuilder().index(index(testName)).build();
     }
 
     @Override protected StorageComponent storage() {

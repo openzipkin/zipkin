@@ -38,7 +38,7 @@ zipkin:
     enabled: ${QUERY_ENABLED:true}
     # 1 day in millis
     lookback: ${QUERY_LOOKBACK:86400000}
-    # The Cache-Control max-age (seconds) for /api/v2/services and /api/v2/spans
+    # The Cache-Control max-age (seconds) for /api/v2/services, /api/v2/remoteServices and /api/v2/spans
     names-max-age: 300
     # CORS allowed-origins.
     allowed-origins: "*"

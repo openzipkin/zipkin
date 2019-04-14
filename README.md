@@ -93,13 +93,20 @@ It stores spans as json and has been designed for larger scale.
 Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
 ### Disabling search
-Search is enabled by default, primarily in support of the `GET /traces`,
-`GET /spans` and `GET /services` endpoints used by the "Find a Trace"
-screen in Zipkin's UI. When search is disabled, traces can only be
-retrieved by ID.
+The following API endpoints provide search features, and are enabled by
+default. Search primarily allows the trace list screen of the UI operate.
+* `GET /services` - Distinct Span.localServiceName
+* `GET /remoteServices?serviceName=X` - Distinct Span.remoteServiceName by Span.localServiceName
+* `GET /spans?serviceName=X` - Distinct Span.name by Span.localServiceName
+* `GET /autocompleteKeys` - Distinct keys of Span.tags subject to configurable whitelist
+* `GET /autocompleteValues?key=X` - Distinct values of Span.tags by key
+* `GET /traces` - Traces matching a query possibly including the above criteria
 
-Sites who use another service (such as logs) to find trace IDs can
-disable search to reduce storage costs or increase write throughput.
+
+When search is disabled, traces can only be retrieved by ID
+(`GET /trace/{traceId}`). Disabling search is only viable when there is
+an alternative way to find trace IDs, such as logs. Disabling search can
+reduce storage costs or increase write throughput.
 
 `StorageComponent.Builder.searchEnabled(false)` is implied when a zipkin
 is run with the env variable `SEARCH_ENABLED=false`.

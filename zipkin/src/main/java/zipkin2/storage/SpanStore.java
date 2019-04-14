@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -51,15 +51,19 @@ public interface SpanStore {
 
   /**
    * Retrieves all {@link Span#localEndpoint() local} and {@link Span#remoteEndpoint() remote}
-   * {@link Endpoint#serviceName service names}, sorted lexicographically.
+   * {@link Endpoint#serviceName() service names}, sorted lexicographically.
+   *
+   * @deprecated use {@link ServiceAndSpanNames#getServiceNames()}
    */
-  Call<List<String>> getServiceNames();
+  @Deprecated Call<List<String>> getServiceNames();
 
   /**
    * Retrieves all {@link Span#name() span names} recorded by a {@link Span#localEndpoint()
    * service}, sorted lexicographically.
+   *
+   * @deprecated use {@link ServiceAndSpanNames#getSpanNames(String)}
    */
-  Call<List<String>> getSpanNames(String serviceName);
+  @Deprecated Call<List<String>> getSpanNames(String serviceName);
 
   /**
    * Returns dependency links derived from spans in an interval contained by (endTs - lookback) or
@@ -77,9 +81,9 @@ public interface SpanStore {
    * <p>Spans are grouped by the right-most 16 characters of the trace ID. This ensures call counts
    * are not incremented twice due to one hop downgrading from 128 to 64-bit trace IDs.
    *
-   * @param endTs only return links from spans where {@link Span#timestamp} are at or before this
+   * @param endTs only return links from spans where {@link Span#timestamp()} are at or before this
    * time in epoch milliseconds.
-   * @param lookback only return links from spans where {@link Span#timestamp} are at or after
+   * @param lookback only return links from spans where {@link Span#timestamp()} are at or after
    * (endTs - lookback) in milliseconds.
    */
   Call<List<DependencyLink>> getDependencies(long endTs, long lookback);

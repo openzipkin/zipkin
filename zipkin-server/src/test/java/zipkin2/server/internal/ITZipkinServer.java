@@ -225,6 +225,9 @@ public class ITZipkinServer {
 
     assertThat(get("/api/v2/spans?serviceName=web").header("Cache-Control"))
       .isNull();
+
+    assertThat(get("/api/v2/remoteServices?serviceName=web").header("Cache-Control"))
+      .isNull();
   }
 
   @Test public void spanNameQueryWorksWithNonAsciiServiceName() throws Exception {
@@ -232,13 +235,19 @@ public class ITZipkinServer {
       .isEqualTo(200);
   }
 
+  @Test public void remoteServiceNameQueryWorksWithNonAsciiServiceName() throws Exception {
+    assertThat(get("/api/v2/remoteServices?serviceName=个人信息服务").code())
+      .isEqualTo(200);
+  }
+
   @Test public void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {
     List<String> services = asList("foo", "bar", "baz", "quz");
     for (int i = 0; i < services.size(); i++) {
       post("/api/v2/spans", SpanBytesEncoder.JSON_V2.encodeList(asList(
-        Span.newBuilder().traceId("a").id(i + 1).timestamp(TODAY).name("whopper").localEndpoint(
-          Endpoint.newBuilder().serviceName(services.get(i)).build()
-        ).build()
+        Span.newBuilder().traceId("a").id(i + 1).timestamp(TODAY).name("whopper")
+          .localEndpoint(Endpoint.newBuilder().serviceName(services.get(i)).build())
+          .remoteEndpoint(Endpoint.newBuilder().serviceName(services.get(i) + 1).build())
+          .build()
       )));
     }
 
@@ -246,6 +255,9 @@ public class ITZipkinServer {
       .isEqualTo("max-age=300, must-revalidate");
 
     assertThat(get("/api/v2/spans?serviceName=web").header("Cache-Control"))
+      .isEqualTo("max-age=300, must-revalidate");
+
+    assertThat(get("/api/v2/remoteServices?serviceName=web").header("Cache-Control"))
       .isEqualTo("max-age=300, must-revalidate");
 
     // Check that the response is alphabetically sorted.

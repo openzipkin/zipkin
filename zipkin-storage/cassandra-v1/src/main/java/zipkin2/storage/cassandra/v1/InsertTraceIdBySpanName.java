@@ -16,7 +16,6 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.google.common.collect.ImmutableSet;
 import java.util.Collections;
 import java.util.Set;
 import zipkin2.Span;
@@ -43,9 +42,6 @@ final class InsertTraceIdBySpanName implements Indexer.IndexSupport {
   public Set<String> partitionKeys(Span span) {
     if (span.localServiceName() == null || span.name() == null) return Collections.emptySet();
     String serviceSpan = span.localServiceName() + "." + span.name();
-    if (span.remoteServiceName() == null) return Collections.singleton(serviceSpan);
-
-    // TODO: https://github.com/openzipkin/zipkin/pull/2484 will obviate this
-    return ImmutableSet.of(serviceSpan, span.remoteServiceName() + "." + span.name());
+    return Collections.singleton(serviceSpan);
   }
 }

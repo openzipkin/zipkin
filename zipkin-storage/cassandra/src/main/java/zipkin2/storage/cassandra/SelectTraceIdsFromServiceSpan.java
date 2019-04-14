@@ -17,26 +17,19 @@ import com.datastax.driver.core.BoundStatement;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import com.datastax.driver.core.utils.UUIDs;
 import com.google.auto.value.AutoValue;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Map;
 import java.util.UUID;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.cassandra.CassandraSpanStore.TimestampRange;
-import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
-import zipkin2.storage.cassandra.internal.call.AggregateIntoSet;
+import zipkin2.storage.cassandra.internal.call.AccumulateTraceIdTsUuid;
+import zipkin2.storage.cassandra.internal.call.AggregateIntoMap;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
@@ -132,23 +125,18 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
           limit);
     }
 
-    Call<Set<Entry<String, Long>>> newCall(List<Input> inputs) {
-      if (inputs.isEmpty()) return Call.create(Collections.emptySet());
+    Call<Map<String, Long>> newCall(List<Input> inputs) {
+      if (inputs.isEmpty()) return Call.create(Collections.emptyMap());
       if (inputs.size() == 1) return newCall(inputs.get(0));
 
-      List<Call<Set<Entry<String, Long>>>> bucketedTraceIdCalls = new ArrayList<>();
+      List<Call<Map<String, Long>>> bucketedTraceIdCalls = new ArrayList<>();
       for (SelectTraceIdsFromServiceSpan.Input input : inputs) {
         bucketedTraceIdCalls.add(newCall(input));
       }
-      return new AggregateIntoSet<>(bucketedTraceIdCalls);
+      return new AggregateIntoMap<>(bucketedTraceIdCalls);
     }
 
-    /** Applies all deferred service names to all input templates */
-    FlatMapper<List<String>, Set<Entry<String, Long>>> newFlatMapper(List<Input> inputTemplates) {
-      return new FlatMapServicesToInputs(inputTemplates);
-    }
-
-    Call<Set<Entry<String, Long>>> newCall(Input input) {
+    Call<Map<String, Long>> newCall(Input input) {
       return new SelectTraceIdsFromServiceSpan(
               this,
               input.start_duration() != null
@@ -158,16 +146,20 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
           .flatMap(new AccumulateTraceIdTsUuid());
     }
 
-    class FlatMapServicesToInputs implements FlatMapper<List<String>, Set<Entry<String, Long>>> {
+    /** Applies all deferred service names to all input templates */
+    FlatMapper<List<String>, Map<String, Long>> newFlatMapper(List<Input> inputTemplates) {
+      return new FlatMapServicesToInputs(inputTemplates);
+    }
+
+    class FlatMapServicesToInputs implements FlatMapper<List<String>, Map<String, Long>> {
       final List<SelectTraceIdsFromServiceSpan.Input> inputTemplates;
 
       FlatMapServicesToInputs(List<SelectTraceIdsFromServiceSpan.Input> inputTemplates) {
         this.inputTemplates = inputTemplates;
       }
 
-      @Override
-      public Call<Set<Entry<String, Long>>> map(List<String> serviceNames) {
-        List<Call<Set<Entry<String, Long>>>> bucketedTraceIdCalls = new ArrayList<>();
+      @Override public Call<Map<String, Long>> map(List<String> serviceNames) {
+        List<Call<Map<String, Long>>> bucketedTraceIdCalls = new ArrayList<>();
 
         for (String service : serviceNames) { // fan out every input for each service name
           List<SelectTraceIdsFromServiceSpan.Input> scopedInputs = new ArrayList<>();
@@ -177,14 +169,17 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
           bucketedTraceIdCalls.add(newCall(scopedInputs));
         }
 
-        if (bucketedTraceIdCalls.isEmpty()) return Call.create(Collections.emptySet());
+        if (bucketedTraceIdCalls.isEmpty()) return Call.create(Collections.emptyMap());
         if (bucketedTraceIdCalls.size() == 1) return bucketedTraceIdCalls.get(0);
-        return new AggregateIntoSet<>(bucketedTraceIdCalls);
+        return new AggregateIntoMap<>(bucketedTraceIdCalls);
       }
 
-      @Override
-      public String toString() {
-        return "FlatMapServicesToInputs{" + inputTemplates + "}";
+      @Override public String toString() {
+        List<String> inputs = new ArrayList<>();
+        for (Input input : inputTemplates) {
+          inputs.add(input.toString().replace("Input", "SelectTraceIdsFromServiceSpan"));
+        }
+        return "FlatMapServicesToInputs{" + inputs + "}";
       }
     }
   }
@@ -201,12 +196,10 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
 
   @Override
   protected ResultSetFuture newFuture() {
-    BoundStatement bound =
-        preparedStatement
-            .bind()
-            .setString("service", input.service())
-            .setString("span", input.span())
-            .setInt("bucket", input.bucket());
+    BoundStatement bound = preparedStatement.bind()
+      .setString("service", input.service())
+      .setString("span", input.span())
+      .setInt("bucket", input.bucket());
     if (input.start_duration() != null) {
       bound.setLong("start_duration", input.start_duration());
       bound.setLong("end_duration", input.end_duration());
@@ -231,27 +224,5 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
   @Override
   public SelectTraceIdsFromServiceSpan clone() {
     return new SelectTraceIdsFromServiceSpan(factory, preparedStatement, input);
-  }
-
-  static final class AccumulateTraceIdTsUuid
-      extends AccumulateAllResults<Set<Entry<String, Long>>> {
-
-    @Override
-    protected Supplier<Set<Entry<String, Long>>> supplier() {
-      return LinkedHashSet::new; // because results are not distinct
-    }
-
-    @Override
-    protected BiConsumer<Row, Set<Entry<String, Long>>> accumulator() {
-      return (row, result) ->
-          result.add(
-              new AbstractMap.SimpleEntry<>(
-                  row.getString("trace_id"), UUIDs.unixTimestamp(row.getUUID("ts"))));
-    }
-
-    @Override
-    public String toString() {
-      return "AccumulateTraceIdTsUuid{}";
-    }
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -38,6 +38,10 @@ public abstract class ITSearchEnabledFalse {
     return storage().spanStore();
   }
 
+  protected ServiceAndSpanNames names() {
+    return storage().serviceAndSpanNames();
+  }
+
   /** Clears store between tests. */
   @Before public abstract void clear() throws Exception;
 
@@ -64,16 +68,22 @@ public abstract class ITSearchEnabledFalse {
       .build()).execute()).isEmpty();
   }
 
-  @Test public void getSpanNames_isEmpty() throws Exception {
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getSpanNames(CLIENT_SPAN.name()).execute()).isEmpty();
-  }
-
   @Test public void getServiceNames_isEmpty() throws Exception {
     accept(CLIENT_SPAN);
 
-    assertThat(store().getServiceNames().execute()).isEmpty();
+    assertThat(names().getServiceNames().execute()).isEmpty();
+  }
+
+  @Test public void getRemoteServiceNames_isEmpty() throws Exception {
+    accept(CLIENT_SPAN);
+
+    assertThat(names().getRemoteServiceNames(CLIENT_SPAN.localServiceName()).execute()).isEmpty();
+  }
+
+  @Test public void getSpanNames_isEmpty() throws Exception {
+    accept(CLIENT_SPAN);
+
+    assertThat(names().getSpanNames(CLIENT_SPAN.localServiceName()).execute()).isEmpty();
   }
 
   protected void accept(Span... spans) throws IOException {

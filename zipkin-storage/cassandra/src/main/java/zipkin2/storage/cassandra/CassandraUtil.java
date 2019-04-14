@@ -42,8 +42,8 @@ final class CassandraUtil {
   static final int LONGEST_VALUE_TO_INDEX = 256;
 
   /**
-   * Time window covered by a single bucket of the {@link Schema#TABLE_TRACE_BY_SERVICE_SPAN}, in
-   * seconds. Default: 1 day
+   * Time window covered by a single bucket of the {@link Schema#TABLE_TRACE_BY_SERVICE_SPAN} and
+   * {@link Schema#TABLE_TRACE_BY_SERVICE_REMOTE_SERVICE}, in seconds. Default: 1 day
    */
   private static final long DURATION_INDEX_BUCKET_WINDOW_SECONDS =
       Long.getLong("zipkin.store.cassandra.internal.durationIndexBucket", 24 * 60 * 60);

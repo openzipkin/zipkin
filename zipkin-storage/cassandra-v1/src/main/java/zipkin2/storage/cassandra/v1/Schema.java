@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
 import com.google.common.io.CharStreams;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import static com.google.common.base.Charsets.UTF_8;
 import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
+import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
@@ -33,6 +35,7 @@ final class Schema {
   static final String SCHEMA = "/cassandra-schema-cql3.txt";
   static final String UPGRADE_1 = "/cassandra-schema-cql3-upgrade-1.txt";
   static final String UPGRADE_2 = "/cassandra-schema-cql3-upgrade-2.txt";
+  static final String UPGRADE_3 = "/cassandra-schema-cql3-upgrade-3.txt";
 
   private Schema() {
   }
@@ -53,16 +56,39 @@ final class Schema {
         "schema lacks default ttls: apply {}, or set CassandraStorage.ensureSchema=true",
         UPGRADE_1);
     }
-    return new Metadata(compactionClass, hasDefaultTtl);
+    boolean hasAutocompleteTags = hasUpgrade2_autocompleteTags(keyspaceMetadata);
+    if (!hasAutocompleteTags) {
+      LOG.warn(
+        "schema lacks autocomplete indexing: apply {}, or set CassandraStorage.ensureSchema=true",
+        UPGRADE_2);
+    }
+
+    boolean hasRemoteService = hasUpgrade3_remoteService(keyspaceMetadata);
+    if (!hasRemoteService) {
+      LOG.warn(
+        "schema lacks remote service indexing: apply {}, or set CassandraStorage.ensureSchema=true",
+        UPGRADE_3);
+    }
+
+    ProtocolVersion protocolVersion =
+      session.getCluster().getConfiguration().getProtocolOptions().getProtocolVersion();
+
+    return new Metadata(protocolVersion, compactionClass, hasDefaultTtl, hasAutocompleteTags,
+      hasRemoteService);
   }
 
   static final class Metadata {
+    final ProtocolVersion protocolVersion;
     final String compactionClass;
-    final boolean hasDefaultTtl;
+    final boolean hasDefaultTtl, hasAutocompleteTags, hasRemoteService;
 
-    Metadata(String compactionClass, boolean hasDefaultTtl) {
+    Metadata(ProtocolVersion protocolVersion, String compactionClass, boolean hasDefaultTtl,
+      boolean hasAutocompleteTags, boolean hasRemoteService) {
+      this.protocolVersion = protocolVersion;
       this.compactionClass = compactionClass;
       this.hasDefaultTtl = hasDefaultTtl;
+      this.hasAutocompleteTags = hasAutocompleteTags;
+      this.hasRemoteService = hasRemoteService;
     }
   }
 
@@ -96,6 +122,10 @@ final class Schema {
       LOG.info("Upgrading schema {}", UPGRADE_2);
       applyCqlFile(keyspace, session, UPGRADE_2);
     }
+    if (!hasUpgrade3_remoteService(keyspaceMetadata)) {
+      LOG.info("Upgrading schema {}", UPGRADE_3);
+      applyCqlFile(keyspace, session, UPGRADE_3);
+    }
   }
 
   static boolean hasUpgrade1_defaultTtl(KeyspaceMetadata keyspaceMetadata) {
@@ -107,6 +137,10 @@ final class Schema {
 
   static boolean hasUpgrade2_autocompleteTags(KeyspaceMetadata keyspaceMetadata) {
     return keyspaceMetadata.getTable(AUTOCOMPLETE_TAGS) != null;
+  }
+
+  static boolean hasUpgrade3_remoteService(KeyspaceMetadata keyspaceMetadata) {
+    return keyspaceMetadata.getTable(REMOTE_SERVICE_NAMES) != null;
   }
 
   static void applyCqlFile(String keyspace, Session session, String resource) {

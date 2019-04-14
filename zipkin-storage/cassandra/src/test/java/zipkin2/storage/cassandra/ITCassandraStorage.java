@@ -17,7 +17,6 @@ import com.datastax.driver.core.Host;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.Uninterruptibles;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -37,6 +36,7 @@ import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
+import static com.google.common.util.concurrent.Uninterruptibles.sleepUninterruptibly;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
@@ -85,12 +85,13 @@ public class ITCassandraStorage {
 
       // Index ends up containing more rows than services * trace count, and cannot be de-duped
       // in a server-side query.
+      int localServiceCount = storage().serviceAndSpanNames().getServiceNames().execute().size();
       assertThat(storage
         .session()
         .execute("SELECT COUNT(*) from trace_by_service_span")
         .one()
         .getLong(0))
-        .isGreaterThan(traceCount * store().getServiceNames().execute().size());
+        .isGreaterThan(traceCount * localServiceCount);
 
       // Implementation over-fetches on the index to allow the user to receive unsurprising results.
       QueryRequest request = requestBuilder()
@@ -208,6 +209,25 @@ public class ITCassandraStorage {
     }
   }
 
+  public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
+    @ClassRule public static CassandraStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    CassandraStorage storage;
+
+    @Before public void connect() {
+      storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
+    }
+
+    @Override protected StorageComponent storage() {
+      return storage;
+    }
+
+    @Before @Override public void clear() {
+      dropKeyspace(backend.session(), keyspace(testName));
+    }
+  }
+
   public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
     @ClassRule public static CassandraStorageRule backend = classRule();
     @Rule public TestName testName = new TestName();
@@ -286,7 +306,7 @@ public class ITCassandraStorage {
     while (true) {
       for (Host host : state.getConnectedHosts()) {
         if (state.getInFlightQueries(host) > 0) {
-          Uninterruptibles.sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
+          sleepUninterruptibly(100, TimeUnit.MILLISECONDS);
           state = storage.session().getState();
           continue refresh;
         }

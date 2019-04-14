@@ -23,6 +23,7 @@ import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
 import zipkin2.storage.QueryRequest;
+import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
@@ -41,7 +42,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  *
  * <p>Schema is installed by default from "/cassandra-schema-cql3.txt"
  */
-public final class CassandraStorage extends StorageComponent {
+public class CassandraStorage extends StorageComponent { // not final for mocking
 
   public static Builder newBuilder() {
     return new Builder();
@@ -212,7 +213,8 @@ public final class CassandraStorage extends StorageComponent {
      * Defaults to 100000.
      *
      * <p>This is used to obviate redundant inserts into {@link Tables#SERVICE_NAME_INDEX}, {@link
-     * Tables#SERVICE_SPAN_NAME_INDEX} and {@link Tables#ANNOTATIONS_INDEX}.
+     * Tables#SERVICE_REMOTE_SERVICE_NAME_INDEX}, {@link Tables#SERVICE_SPAN_NAME_INDEX} and {@link
+     * Tables#ANNOTATIONS_INDEX}.
      *
      * <p>Corresponds to the count of rows inserted into between {@link #indexCacheTtl} and now.
      * This is bounded so that collectors that get large trace volume don't run out of memory before
@@ -325,9 +327,12 @@ public final class CassandraStorage extends StorageComponent {
     return session.get();
   }
 
+  Schema.Metadata metadata() {
+    return session.metadata();
+  }
+
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */
-  @Override
-  public SpanStore spanStore() {
+  @Override public SpanStore spanStore() {
     if (spanStore == null) {
       synchronized (this) {
         if (spanStore == null) {
@@ -336,6 +341,10 @@ public final class CassandraStorage extends StorageComponent {
       }
     }
     return spanStore;
+  }
+
+  @Override public ServiceAndSpanNames serviceAndSpanNames() {
+    return (ServiceAndSpanNames) spanStore();
   }
 
   @Override public AutocompleteTags autocompleteTags() {

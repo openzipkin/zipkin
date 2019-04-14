@@ -173,4 +173,8 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
     }
     return result;
   }
+
+  @Override public String toString() {
+    return "AggregateCall{" + calls + "}";
+  }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,6 +28,7 @@ import org.jooq.TableField;
 import zipkin2.Call;
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.v1.V1Annotation;
 import zipkin2.v1.V1BinaryAnnotation;
@@ -91,12 +92,9 @@ final class MySQLSpanConsumer implements SpanConsumer {
           if (!Boolean.TRUE.equals(v2.shared())) updateFields.put(ZIPKIN_SPANS.START_TS, timestamp);
         }
 
-        if (v1Span.name() != null && !v1Span.name().equals("unknown")) {
-          insertSpan.set(ZIPKIN_SPANS.NAME, v1Span.name());
-          updateFields.put(ZIPKIN_SPANS.NAME, v1Span.name());
-        } else {
-          // old code wrote empty span name
-          insertSpan.set(ZIPKIN_SPANS.NAME, "");
+        updateName(v1Span.name(), ZIPKIN_SPANS.NAME, insertSpan, updateFields);
+        if (schema.hasRemoteServiceName) {
+          updateName(v2.remoteServiceName(), ZIPKIN_SPANS.REMOTE_SERVICE_NAME, insertSpan, updateFields);
         }
 
         long duration = v1Span.duration();
@@ -187,6 +185,17 @@ final class MySQLSpanConsumer implements SpanConsumer {
     @Override
     public String toString() {
       return "BatchInsertSpansAndAnnotations{spans=" + spans + "}";
+    }
+  }
+
+  static void updateName(@Nullable String name, TableField<Record, String> column,
+    InsertSetMoreStep<Record> insertSpan, Map<TableField<Record, ?>, Object> updateFields) {
+    if (name != null && !name.equals("unknown")) {
+      insertSpan.set(column, name);
+      updateFields.put(column, name);
+    } else {
+      // old code wrote empty span name
+      insertSpan.set(column, "");
     }
   }
 }

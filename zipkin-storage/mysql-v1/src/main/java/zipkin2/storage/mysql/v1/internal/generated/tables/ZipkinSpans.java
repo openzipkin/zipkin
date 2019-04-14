@@ -52,7 +52,7 @@ import zipkin2.storage.mysql.v1.internal.generated.Zipkin;
 @SuppressWarnings({ "all", "unchecked", "rawtypes" })
 public class ZipkinSpans extends TableImpl<Record> {
 
-    private static final long serialVersionUID = -2037396969;
+    private static final long serialVersionUID = 530960242;
 
     /**
      * The reference instance of <code>zipkin.zipkin_spans</code>
@@ -86,6 +86,11 @@ public class ZipkinSpans extends TableImpl<Record> {
      * The column <code>zipkin.zipkin_spans.name</code>.
      */
     public final TableField<Record, String> NAME = createField("name", org.jooq.impl.SQLDataType.VARCHAR(255).nullable(false), this, "");
+
+    /**
+     * The column <code>zipkin.zipkin_spans.remote_service_name</code>.
+     */
+    public final TableField<Record, String> REMOTE_SERVICE_NAME = createField("remote_service_name", org.jooq.impl.SQLDataType.VARCHAR(255).defaultValue(org.jooq.impl.DSL.inline("NULL", org.jooq.impl.SQLDataType.VARCHAR)), this, "");
 
     /**
      * The column <code>zipkin.zipkin_spans.parent_id</code>.
@@ -153,7 +158,7 @@ public class ZipkinSpans extends TableImpl<Record> {
      */
     @Override
     public List<Index> getIndexes() {
-        return Arrays.<Index>asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_PRIMARY, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH);
+        return Arrays.<Index>asList(Indexes.ZIPKIN_SPANS_NAME, Indexes.ZIPKIN_SPANS_PRIMARY, Indexes.ZIPKIN_SPANS_REMOTE_SERVICE_NAME, Indexes.ZIPKIN_SPANS_START_TS, Indexes.ZIPKIN_SPANS_TRACE_ID_HIGH);
     }
 
     /**

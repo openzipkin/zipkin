@@ -13,10 +13,10 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.common.AggregatedHttpMessage;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpHeaders;
-import com.linecorp.armeria.common.AggregatedHttpMessage;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.annotation.Default;
@@ -45,7 +45,10 @@ public class ZipkinQueryApiV2 {
   final String storageType;
   final StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
   final long defaultLookback;
-  /** The Cache-Control max-age (seconds) for /api/v2/services and /api/v2/spans */
+  /**
+   * The Cache-Control max-age (seconds) for /api/v2/services /api/v2/remoteServices and
+   * /api/v2/spans
+   */
   final int namesMaxAge;
   final List<String> autocompleteKeys;
 
@@ -76,20 +79,29 @@ public class ZipkinQueryApiV2 {
 
   @Get("/api/v2/services")
   public AggregatedHttpMessage getServiceNames() throws IOException {
-    List<String> serviceNames = storage.spanStore().getServiceNames().execute();
+    List<String> serviceNames = storage.serviceAndSpanNames().getServiceNames().execute();
     serviceCount = serviceNames.size();
     return maybeCacheNames(serviceCount > 3, serviceNames);
   }
 
   @Get("/api/v2/spans")
   public AggregatedHttpMessage getSpanNames(@Param("serviceName") String serviceName) throws IOException {
-    List<String> spanNames = storage.spanStore().getSpanNames(serviceName).execute();
+    List<String> spanNames = storage.serviceAndSpanNames().getSpanNames(serviceName).execute();
     return maybeCacheNames(serviceCount > 3, spanNames);
+  }
+
+  @Get("/api/v2/remoteServices")
+  public AggregatedHttpMessage getRemoteServiceNames(@Param("serviceName") String serviceName)
+    throws IOException {
+    List<String> remoteServiceNames =
+      storage.serviceAndSpanNames().getRemoteServiceNames(serviceName).execute();
+    return maybeCacheNames(serviceCount > 3, remoteServiceNames);
   }
 
   @Get("/api/v2/traces")
   public AggregatedHttpMessage getTraces(
     @Param("serviceName") Optional<String> serviceName,
+    @Param("remoteServiceName") Optional<String> remoteServiceName,
     @Param("spanName") Optional<String> spanName,
     @Param("annotationQuery") Optional<String> annotationQuery,
     @Param("minDuration") Optional<Long> minDuration,
@@ -101,6 +113,7 @@ public class ZipkinQueryApiV2 {
     QueryRequest queryRequest =
       QueryRequest.newBuilder()
         .serviceName(serviceName.orElse(null))
+        .remoteServiceName(remoteServiceName.orElse(null))
         .spanName(spanName.orElse(null))
         .parseAnnotationQuery(annotationQuery.orElse(null))
         .minDuration(minDuration.orElse(null))

@@ -44,6 +44,16 @@ public class QueryRequestTest {
       .isNull();
   }
 
+  @Test public void remoteServiceNameCanBeNull() {
+    assertThat(queryBuilder.build().remoteServiceName())
+      .isNull();
+  }
+
+  @Test public void remoteServiceName_coercesEmptyToNull() {
+    assertThat(queryBuilder.remoteServiceName("").build().remoteServiceName())
+      .isNull();
+  }
+
   @Test public void spanName_coercesAllToNull() {
     assertThat(queryBuilder.spanName("all").build().spanName())
       .isNull();
@@ -200,6 +210,18 @@ public class QueryRequestTest {
       .isFalse();
 
     assertThat(request.test(asList(span.toBuilder().name("aloha").build())))
+      .isTrue();
+  }
+
+  @Test public void test_remoteServiceName() {
+    QueryRequest request = queryBuilder
+      .remoteServiceName("db")
+      .build();
+
+    assertThat(request.test(asList(span)))
+      .isFalse();
+
+    assertThat(request.test(asList(span.toBuilder().remoteEndpoint(Endpoint.newBuilder().serviceName("db").build()).build())))
       .isTrue();
   }
 

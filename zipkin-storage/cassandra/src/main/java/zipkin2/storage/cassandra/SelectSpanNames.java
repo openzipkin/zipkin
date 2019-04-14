@@ -16,15 +16,11 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.PreparedStatement;
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
-import com.datastax.driver.core.Row;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
-import java.util.function.Supplier;
 import zipkin2.Call;
-import zipkin2.storage.cassandra.internal.call.AccumulateAllResults;
+import zipkin2.storage.cassandra.internal.call.DistinctSortedStrings;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -35,22 +31,21 @@ final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
   static class Factory {
     final Session session;
     final PreparedStatement preparedStatement;
-    final AccumulateNamesAllResults accumulateNamesIntoSet = new AccumulateNamesAllResults();
+    final DistinctSortedStrings spans = new DistinctSortedStrings("span");
 
     Factory(Session session) {
       this.session = session;
       this.preparedStatement =
-          session.prepare(
-              QueryBuilder.select("span")
-                  .from(TABLE_SERVICE_SPANS)
-                  .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
-                  .limit(QueryBuilder.bindMarker("limit_")));
+        session.prepare(QueryBuilder.select("span")
+          .from(TABLE_SERVICE_SPANS)
+          .where(QueryBuilder.eq("service", QueryBuilder.bindMarker("service")))
+          .limit(QueryBuilder.bindMarker("limit_")));
     }
 
     Call<List<String>> create(String serviceName) {
       if (serviceName == null || serviceName.isEmpty()) return Call.emptyList();
       String service = checkNotNull(serviceName, "serviceName").toLowerCase();
-      return new SelectSpanNames(this, service).flatMap(accumulateNamesIntoSet);
+      return new SelectSpanNames(this, service).flatMap(spans);
     }
   }
 
@@ -62,10 +57,8 @@ final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
     this.service = service;
   }
 
-  @Override
-  protected ResultSetFuture newFuture() {
-    return factory.session.executeAsync(factory.preparedStatement
-      .bind()
+  @Override protected ResultSetFuture newFuture() {
+    return factory.session.executeAsync(factory.preparedStatement.bind()
       .setString("service", service)
       .setInt("limit_", 1000)); // no one is ever going to browse so many span names
   }
@@ -74,33 +67,11 @@ final class SelectSpanNames extends ResultSetFutureCall<ResultSet> {
     return input;
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "SelectSpanNames{service=" + service + "}";
   }
 
-  @Override
-  public SelectSpanNames clone() {
+  @Override public SelectSpanNames clone() {
     return new SelectSpanNames(factory, service);
-  }
-
-  static class AccumulateNamesAllResults extends AccumulateAllResults<List<String>> {
-    @Override
-    protected Supplier<List<String>> supplier() {
-      return ArrayList::new; // TODO: list might not be ok due to not distinct
-    }
-
-    @Override
-    protected BiConsumer<Row, List<String>> accumulator() {
-      return (row, list) -> {
-        String result = row.getString("span");
-        if (!result.isEmpty()) list.add(result);
-      };
-    }
-
-    @Override
-    public String toString() {
-      return "AccumulateNamesAllResults{}";
-    }
   }
 }
