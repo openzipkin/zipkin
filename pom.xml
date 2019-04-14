@@ -495,7 +495,7 @@
           <artifactId>maven</artifactId>
           <version>0.7.5</version>
           <configuration>
-            <maven>3.6.0</maven>
+            <maven>3.6.1</maven>
           </configuration>
         </plugin>
 
