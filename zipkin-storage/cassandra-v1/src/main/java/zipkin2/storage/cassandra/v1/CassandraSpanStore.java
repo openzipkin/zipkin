@@ -28,6 +28,7 @@ import zipkin2.Call.FlatMapper;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.internal.AggregateCall;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
@@ -38,39 +39,52 @@ import static zipkin2.storage.cassandra.v1.CassandraUtil.sortTraceIdsByDescTimes
 import static zipkin2.storage.cassandra.v1.CassandraUtil.sortTraceIdsByDescTimestampMapper;
 
 public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames {
-  private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
+  static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
 
-  private final int maxTraceCols;
-  private final int indexFetchMultiplier;
-  private final boolean strictTraceId;
-  private final Session session;
-  private final TimestampCodec timestampCodec;
-  private final Set<Integer> buckets;
-  private final SelectFromTraces.Factory spans;
-  private final SelectDependencies.Factory dependencies;
-  private final Call<List<String>> serviceNames;
-  private final SelectRemoteServiceNames.Factory remoteServiceNames;
-  private final SelectSpanNames.Factory spanNames;
-  private final SelectTraceIdTimestampFromServiceName.Factory selectTraceIdsByServiceName;
-  private final SelectTraceIdTimestampFromServiceNames.Factory selectTraceIdsByServiceNames;
-  private final SelectTraceIdTimestampFromServiceRemoteServiceName.Factory selectTraceIdsByRemoteServiceName;
-  private final SelectTraceIdTimestampFromServiceSpanName.Factory selectTraceIdsBySpanName;
-  private final SelectTraceIdTimestampFromAnnotations.Factory selectTraceIdsByAnnotation;
+  final int maxTraceCols;
+  final int indexFetchMultiplier;
+  final boolean strictTraceId, searchEnabled;
+  final TimestampCodec timestampCodec;
+  final Set<Integer> buckets;
+  final SelectFromTraces.Factory spans;
+  final SelectDependencies.Factory dependencies;
+
+  // Everything below here is null when search is disabled
+  @Nullable final Call<List<String>> serviceNames;
+  @Nullable final SelectRemoteServiceNames.Factory remoteServiceNames;
+  @Nullable final SelectSpanNames.Factory spanNames;
+  @Nullable final SelectTraceIdTimestampFromServiceName.Factory selectTraceIdsByServiceName;
+  @Nullable final SelectTraceIdTimestampFromServiceNames.Factory selectTraceIdsByServiceNames;
+  @Nullable final SelectTraceIdTimestampFromServiceRemoteServiceName.Factory selectTraceIdsByRemoteServiceName;
+  @Nullable final SelectTraceIdTimestampFromServiceSpanName.Factory selectTraceIdsBySpanName;
+  @Nullable final SelectTraceIdTimestampFromAnnotations.Factory selectTraceIdsByAnnotation;
 
   CassandraSpanStore(CassandraStorage storage) {
-    session = storage.session();
-    this.maxTraceCols = storage.maxTraceCols;
-    this.indexFetchMultiplier = storage.indexFetchMultiplier;
-    this.strictTraceId = storage.strictTraceId;
-
-    ProtocolVersion protocolVersion =
-        session.getCluster().getConfiguration().getProtocolOptions().getProtocolVersion();
-    this.timestampCodec = new TimestampCodec(protocolVersion);
-    this.buckets = ContiguousSet.create(Range.closedOpen(0, storage.bucketCount), integers());
+    Session session = storage.session();
+    Schema.Metadata metadata = storage.metadata();
+    maxTraceCols = storage.maxTraceCols;
+    indexFetchMultiplier = storage.indexFetchMultiplier;
+    strictTraceId = storage.strictTraceId;
+    searchEnabled = storage.searchEnabled;
+    timestampCodec = new TimestampCodec(metadata.protocolVersion);
+    buckets = ContiguousSet.create(Range.closedOpen(0, storage.bucketCount), integers());
 
     spans = new SelectFromTraces.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
-    if (storage.metadata().hasRemoteService) {
+
+    if (!searchEnabled) {
+      serviceNames = null;
+      remoteServiceNames = null;
+      spanNames = null;
+      selectTraceIdsByServiceName = null;
+      selectTraceIdsByServiceNames = null;
+      selectTraceIdsByRemoteServiceName = null;
+      selectTraceIdsBySpanName = null;
+      selectTraceIdsByAnnotation = null;
+      return;
+    }
+
+    if (metadata.hasRemoteService) {
       selectTraceIdsByRemoteServiceName =
         new SelectTraceIdTimestampFromServiceRemoteServiceName.Factory(session, timestampCodec);
       remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
@@ -82,36 +96,37 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
     serviceNames = new SelectServiceNames.Factory(session).create();
 
     selectTraceIdsByServiceName =
-        new SelectTraceIdTimestampFromServiceName.Factory(session, timestampCodec, buckets);
+      new SelectTraceIdTimestampFromServiceName.Factory(session, timestampCodec, buckets);
 
-    if (protocolVersion.compareTo(ProtocolVersion.V4) < 0) {
+    if (metadata.protocolVersion.compareTo(ProtocolVersion.V4) < 0) {
       LOG.warn("Please update Cassandra to 2.2 or later, as some features may fail");
       // Log vs failing on "Partition KEY part service_name cannot be restricted by IN relation"
       selectTraceIdsByServiceNames = null;
     } else {
       selectTraceIdsByServiceNames =
-          new SelectTraceIdTimestampFromServiceNames.Factory(session, timestampCodec, buckets);
+        new SelectTraceIdTimestampFromServiceNames.Factory(session, timestampCodec, buckets);
     }
 
     selectTraceIdsBySpanName =
-        new SelectTraceIdTimestampFromServiceSpanName.Factory(session, timestampCodec);
+      new SelectTraceIdTimestampFromServiceSpanName.Factory(session, timestampCodec);
 
     selectTraceIdsByAnnotation =
-        new SelectTraceIdTimestampFromAnnotations.Factory(session, timestampCodec, buckets);
+      new SelectTraceIdTimestampFromAnnotations.Factory(session, timestampCodec, buckets);
   }
 
   @Override
   public Call<List<List<Span>>> getTraces(QueryRequest request) {
-    checkArgument(
-        request.minDuration() == null,
-        "getTraces with duration is unsupported. Upgrade to the new cassandra3 schema.");
+    if (!searchEnabled) return Call.emptyList();
+
+    checkArgument(request.minDuration() == null,
+      "getTraces with duration is unsupported. Upgrade to cassandra3.");
     // Over fetch on indexes as they don't return distinct (trace id, timestamp) rows.
     final int traceIndexFetchSize = request.limit() * indexFetchMultiplier;
 
     List<Call<Set<Pair>>> callsToIntersect = new ArrayList<>();
     List<String> annotationKeys = CassandraUtil.annotationKeys(request);
     if (request.serviceName() != null) {
-      if (request.spanName() != null|| request.remoteServiceName() != null) {
+      if (request.spanName() != null || request.remoteServiceName() != null) {
         if (request.spanName() != null) {
           callsToIntersect.add(
             selectTraceIdsBySpanName.newCall(
@@ -132,25 +147,30 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
         }
       } else {
         callsToIntersect.add(
-            selectTraceIdsByServiceName.newCall(
-                request.serviceName(),
-                request.endTs() * 1000,
-                request.lookback() * 1000,
-                traceIndexFetchSize));
+          selectTraceIdsByServiceName.newCall(
+            request.serviceName(),
+            request.endTs() * 1000,
+            request.lookback() * 1000,
+            traceIndexFetchSize));
       }
       for (String annotationKey : annotationKeys) {
         callsToIntersect.add(
-            selectTraceIdsByAnnotation.newCall(
-                annotationKey,
-                request.endTs() * 1000,
-                request.lookback() * 1000,
-                traceIndexFetchSize));
+          selectTraceIdsByAnnotation.newCall(
+            annotationKey,
+            request.endTs() * 1000,
+            request.lookback() * 1000,
+            traceIndexFetchSize));
       }
     } else {
       checkArgument(
           selectTraceIdsByServiceNames != null,
           "getTraces without serviceName requires Cassandra 2.2 or later");
-      checkArgument(annotationKeys.isEmpty(), "annotationQuery unsupported without serviceName");
+      if (!annotationKeys.isEmpty()
+        || request.remoteServiceName() != null
+        || request.spanName() != null) {
+        throw new IllegalArgumentException(
+          "getTraces without serviceName supports no other qualifiers. Upgrade to cassandra3.");
+      }
       FlatMapper<List<String>, Set<Pair>> flatMapper =
           selectTraceIdsByServiceNames.newFlatMapper(
               request.endTs() * 1000, request.lookback() * 1000, traceIndexFetchSize);
@@ -177,17 +197,21 @@ public final class CassandraSpanStore implements SpanStore, ServiceAndSpanNames 
 
   @Override
   public Call<List<String>> getServiceNames() {
+    if (!searchEnabled) return Call.emptyList();
     return serviceNames.clone();
   }
 
-  @Override public Call<List<String>> getRemoteServiceNames(String serviceName) {
-    if (serviceName.isEmpty() || remoteServiceNames == null) return Call.emptyList();
+  @Override
+  public Call<List<String>> getRemoteServiceNames(String serviceName) {
+    if (serviceName.isEmpty() || !searchEnabled || remoteServiceNames == null) {
+      return Call.emptyList();
+    }
     return remoteServiceNames.create(serviceName);
   }
 
   @Override
   public Call<List<String>> getSpanNames(String serviceName) {
-    if (serviceName.isEmpty()) return Call.emptyList();
+    if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
     return spanNames.create(serviceName);
   }
 

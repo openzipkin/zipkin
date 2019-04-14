@@ -11,8 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.storage.cassandra;
+package zipkin2.storage.cassandra.v1;
 
+import com.datastax.driver.core.ProtocolVersion;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Test;
@@ -20,10 +21,12 @@ import org.mockito.Mockito;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.storage.QueryRequest;
-import zipkin2.storage.cassandra.SelectTraceIdsFromServiceSpan.Factory.FlatMapServicesToInputs;
+import zipkin2.storage.cassandra.v1.SelectTraceIdTimestampFromServiceNames.Factory.FlatMapServiceNamesToInput;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
 
@@ -37,56 +40,41 @@ public class CassandraSpanStoreTest {
   @Test public void getTraces_fansOutAgainstServices() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.build());
 
-    assertThat(call.toString()).contains(FlatMapServicesToInputs.class.getSimpleName());
+    assertThat(call.toString()).contains(FlatMapServiceNamesToInput.class.getSimpleName());
   }
 
-  @Test public void getTraces_withSpanNameButNoServiceName() {
-    Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.spanName("get").build());
-
-    assertThat(call.toString())
-      .contains(FlatMapServicesToInputs.class.getSimpleName())
-      .contains("span=get"); // no need to look at two indexes
+  @Test(expected = IllegalArgumentException.class)
+  public void getTraces_withSpanNameButNoServiceName() {
+    spanStore.getTraces(queryBuilder.spanName("get").build());
   }
 
-  @Test public void getTraces_withTagButNoServiceName() {
-    Call<List<List<Span>>> call = spanStore.getTraces(
+  @Test(expected = IllegalArgumentException.class)
+  public void getTraces_withTagButNoServiceName() {
+    spanStore.getTraces(
       queryBuilder.annotationQuery(Collections.singletonMap("environment", "production")).build());
-
-    assertThat(call.toString())
-      .doesNotContain(FlatMapServicesToInputs.class.getSimpleName()) // works against the span table
-      .contains("l_service=null, annotation_query=environment=production");
   }
 
-  @Test public void getTraces_withDurationButNoServiceName() {
-    Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.minDuration(1000L).build());
-
-    assertThat(call.toString())
-      .contains(FlatMapServicesToInputs.class.getSimpleName())
-      .contains("start_duration=1,");
+  @Test(expected = IllegalArgumentException.class)
+  public void getTraces_withDurationButNoServiceName() {
+    spanStore.getTraces(queryBuilder.minDuration(100L).build());
   }
 
-  @Test public void getTraces_withRemoteServiceNameButNoServiceName() {
-    Call<List<List<Span>>> call =
-      spanStore.getTraces(queryBuilder.remoteServiceName("backend").build());
-
-    assertThat(call.toString())
-      .contains(FlatMapServicesToInputs.class.getSimpleName())
-      .contains("remote_service=backend,")
-      .doesNotContain("span="); // no need to look at two indexes
+  @Test(expected = IllegalArgumentException.class)
+  public void getTraces_withRemoteServiceNameButNoServiceName() {
+    spanStore.getTraces(queryBuilder.remoteServiceName("backend").build());
   }
 
   @Test public void getTraces() {
     Call<List<List<Span>>> call = spanStore.getTraces(queryBuilder.serviceName("frontend").build());
 
-    assertThat(call.toString()).contains("service=frontend, span=,");
+    assertThat(call.toString()).contains("service_name=frontend,");
   }
 
   @Test public void getTraces_withSpanName() {
     Call<List<List<Span>>> call = spanStore.getTraces(
       queryBuilder.serviceName("frontend").spanName("get").build());
 
-    assertThat(call.toString())
-      .contains("service=frontend, span=get,");
+    assertThat(call.toString()).contains("service_span_name=frontend.get,");
   }
 
   @Test public void getTraces_withRemoteServiceName() {
@@ -94,7 +82,7 @@ public class CassandraSpanStoreTest {
       queryBuilder.serviceName("frontend").remoteServiceName("backend").build());
 
     assertThat(call.toString())
-      .contains("service=frontend, remote_service=backend,")
+      .contains("service_remote_service_name=frontend.backend,")
       .doesNotContain("service=frontend, span="); // no need to look at two indexes
   }
 
@@ -103,8 +91,8 @@ public class CassandraSpanStoreTest {
       queryBuilder.serviceName("frontend").remoteServiceName("backend").spanName("get").build());
 
     assertThat(call.toString()) // needs to look at two indexes
-      .contains("service=frontend, remote_service=backend,")
-      .contains("service=frontend, span=get,");
+      .contains("service_remote_service_name=frontend.backend,")
+      .contains("service_span_name=frontend.get,");
   }
 
   @Test public void searchDisabled_doesntMakeRemoteQueryRequests() {
@@ -117,10 +105,10 @@ public class CassandraSpanStoreTest {
   }
 
   static CassandraSpanStore spanStore(CassandraStorage.Builder builder) {
-    return new CassandraSpanStore(
-      builder
-        .sessionFactory(mock(CassandraStorage.SessionFactory.class, Mockito.RETURNS_MOCKS))
-        .build()) {
-    };
+    CassandraStorage storage =
+      spy(builder.sessionFactory(mock(SessionFactory.class, Mockito.RETURNS_MOCKS)).build());
+    doReturn(new Schema.Metadata(ProtocolVersion.V4, "", true, true, true))
+      .when(storage).metadata();
+    return new CassandraSpanStore(storage);
   }
 }

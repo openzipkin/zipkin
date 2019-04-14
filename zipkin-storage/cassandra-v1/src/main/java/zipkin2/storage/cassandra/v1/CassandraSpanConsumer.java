@@ -25,6 +25,7 @@ import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.AggregateCall;
+import zipkin2.internal.Nullable;
 import zipkin2.internal.V1ThriftSpanWriter;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.v1.V1Span;
@@ -32,34 +33,48 @@ import zipkin2.v1.V2SpanConverter;
 
 final class CassandraSpanConsumer implements SpanConsumer {
   final InsertTrace.Factory insertTrace;
-  final InsertServiceName.Factory insertServiceName;
-  final InsertRemoteServiceName.Factory insertRemoteServiceName;
-  final InsertSpanName.Factory insertSpanName;
-  final Schema.Metadata metadata;
-  final CompositeIndexer indexer;
-  final InsertAutocompleteValue.Factory insertAutocompleteValue;
+  final boolean searchEnabled;
   final Set<String> autocompleteKeys;
+
+  // Everything below here is null when search is disabled
+  @Nullable final InsertServiceName.Factory insertServiceName;
+  @Nullable final InsertRemoteServiceName.Factory insertRemoteServiceName;
+  @Nullable final InsertSpanName.Factory insertSpanName;
+  @Nullable final CompositeIndexer indexer;
+  @Nullable final InsertAutocompleteValue.Factory insertAutocompleteValue;
 
   CassandraSpanConsumer(CassandraStorage storage, CacheBuilderSpec indexCacheSpec) {
     Session session = storage.session();
-    metadata = storage.metadata();
-    int indexTtl = metadata.hasDefaultTtl ? 0 : storage.indexTtl;
+    Schema.Metadata metadata = storage.metadata();
+    searchEnabled = storage.searchEnabled;
+    autocompleteKeys = new LinkedHashSet<>(storage.autocompleteKeys);
     int spanTtl = metadata.hasDefaultTtl ? 0 : storage.spanTtl;
+
     insertTrace = new InsertTrace.Factory(session, metadata, spanTtl);
+
+    if (!searchEnabled) {
+      insertServiceName = null;
+      insertRemoteServiceName = null;
+      insertSpanName = null;
+      indexer = null;
+      insertAutocompleteValue = null;
+      return;
+    }
+
+    int indexTtl = metadata.hasDefaultTtl ? 0 : storage.indexTtl;
     insertServiceName = new InsertServiceName.Factory(storage, indexTtl);
-    insertSpanName = new InsertSpanName.Factory(storage, indexTtl);
     if (metadata.hasRemoteService) {
       insertRemoteServiceName = new InsertRemoteServiceName.Factory(storage, indexTtl);
     } else {
       insertRemoteServiceName = null;
     }
+    insertSpanName = new InsertSpanName.Factory(storage, indexTtl);
+    indexer = new CompositeIndexer(storage, indexCacheSpec, indexTtl);
     if (metadata.hasAutocompleteTags && !storage.autocompleteKeys.isEmpty()) {
       insertAutocompleteValue = new InsertAutocompleteValue.Factory(storage, indexTtl);
     } else {
       insertAutocompleteValue = null;
     }
-    indexer = new CompositeIndexer(storage, indexCacheSpec, indexTtl);
-    autocompleteKeys = new LinkedHashSet<>(storage.autocompleteKeys);
   }
 
   /**
@@ -85,6 +100,8 @@ final class CassandraSpanConsumer implements SpanConsumer {
       if (ts_micro == 0L) ts_micro = guessTimestamp(v2);
 
       insertTraces.add(insertTrace.newInput(span, encoder.write(v2), ts_micro));
+
+      if (!searchEnabled) continue;
 
       if (insertAutocompleteValue != null) {
         for (Map.Entry<String, String> entry : v2.tags().entrySet()) {

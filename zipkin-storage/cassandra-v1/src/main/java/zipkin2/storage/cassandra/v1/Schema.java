@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.KeyspaceMetadata;
+import com.datastax.driver.core.ProtocolVersion;
 import com.datastax.driver.core.Session;
 import com.google.common.io.CharStreams;
 import java.io.IOException;
@@ -66,19 +67,24 @@ final class Schema {
     if (!hasRemoteService) {
       LOG.warn(
         "schema lacks remote service indexing: apply {}, or set CassandraStorage.ensureSchema=true",
-        UPGRADE_2);
+        UPGRADE_3);
     }
 
-    return new Metadata(compactionClass, hasDefaultTtl, hasAutocompleteTags,
+    ProtocolVersion protocolVersion =
+      session.getCluster().getConfiguration().getProtocolOptions().getProtocolVersion();
+
+    return new Metadata(protocolVersion, compactionClass, hasDefaultTtl, hasAutocompleteTags,
       hasRemoteService);
   }
 
   static final class Metadata {
+    final ProtocolVersion protocolVersion;
     final String compactionClass;
     final boolean hasDefaultTtl, hasAutocompleteTags, hasRemoteService;
 
-    Metadata(String compactionClass, boolean hasDefaultTtl, boolean hasAutocompleteTags,
-      boolean hasRemoteService) {
+    Metadata(ProtocolVersion protocolVersion, String compactionClass, boolean hasDefaultTtl,
+      boolean hasAutocompleteTags, boolean hasRemoteService) {
+      this.protocolVersion = protocolVersion;
       this.compactionClass = compactionClass;
       this.hasDefaultTtl = hasDefaultTtl;
       this.hasAutocompleteTags = hasAutocompleteTags;

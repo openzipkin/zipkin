@@ -13,6 +13,7 @@
  */
 package zipkin2.storage.cassandra.v1;
 
+import com.datastax.driver.core.ProtocolVersion;
 import com.google.common.cache.CacheBuilderSpec;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,6 +33,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.FRONTEND;
+import static zipkin2.TestObjects.TODAY;
 
 public class CassandraSpanConsumerTest {
   CassandraSpanConsumer consumer = spanConsumer(CassandraStorage.newBuilder());
@@ -42,13 +44,20 @@ public class CassandraSpanConsumerTest {
       .id("1")
       .name("get")
       .localEndpoint(FRONTEND)
-      .timestamp(1472470996199000L)
+      .timestamp(TODAY * 1000L)
       .duration(207000L)
       .build();
 
   @Test public void emptyInput_emptyCall() {
     Call<Void> call = consumer.accept(Collections.emptyList());
     assertThat(call).hasSameClassAs(Call.create(null));
+  }
+
+  @Test public void doesntIndexWhenOnlyIncludesTimestamp() {
+    Span span = Span.newBuilder().traceId("a").id("1").timestamp(TODAY * 1000L).build();
+
+    assertThat(consumer.accept(singletonList(span)))
+      .isInstanceOf(ResultSetFutureCall.class);
   }
 
   @Test public void doesntIndexWhenMissingLocalServiceName() {
@@ -67,6 +76,19 @@ public class CassandraSpanConsumerTest {
       .filteredOn(c -> c instanceof Indexer.IndexCall)
       .extracting("input.partitionKey")
       .containsExactly("frontend", "frontend.get");
+  }
+
+  @Test public void searchDisabled_doesntIndex() {
+    consumer = spanConsumer(CassandraStorage.newBuilder().searchEnabled(false));
+
+    Span span = spanWithoutAnnotationsOrTags.toBuilder()
+      .addAnnotation(TODAY * 1000L, "annotation")
+      .putTag("foo", "bar")
+      .duration(10000L)
+      .build();
+
+    assertThat(consumer.accept(singletonList(span)))
+      .isInstanceOf(InsertTrace.class);
   }
 
   @Test public void doesntIndexWhenMissingTimestamp() {
@@ -112,7 +134,7 @@ public class CassandraSpanConsumerTest {
   static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {
     CassandraStorage storage =
       spy(builder.sessionFactory(mock(SessionFactory.class, Mockito.RETURNS_MOCKS)).build());
-    doReturn(new Schema.Metadata("", true, true, true))
+    doReturn(new Schema.Metadata(ProtocolVersion.V4, "", true, true, true))
       .when(storage).metadata();
     return new CassandraSpanConsumer(storage, CacheBuilderSpec.parse(""));
   }

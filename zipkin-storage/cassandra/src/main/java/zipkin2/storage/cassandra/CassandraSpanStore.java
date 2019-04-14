@@ -27,6 +27,7 @@ import zipkin2.Call;
 import zipkin2.Call.FlatMapper;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
@@ -38,55 +39,57 @@ import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimest
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
 class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not final for testing
-  private static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
-  private final int maxTraceCols;
-  private final int indexFetchMultiplier;
-  private final boolean strictTraceId, searchEnabled;
-  private final SelectFromSpan.Factory spans;
-  private final SelectDependencies.Factory dependencies;
-  private final SelectRemoteServiceNames.Factory remoteServiceNames;
-  private final SelectSpanNames.Factory spanNames;
-  private final Call<List<String>> serviceNames;
-  private final int indexTtl;
-  private final SelectTraceIdsFromSpan.Factory spanTable;
-  private final SelectTraceIdsFromServiceSpan.Factory traceIdsFromServiceSpan;
-  private final SelectTraceIdsFromServiceRemoteService.Factory traceIdsFromServiceRemoteService;
+  static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
+  final int indexFetchMultiplier;
+  final boolean searchEnabled;
+  final SelectFromSpan.Factory spans;
+  final SelectDependencies.Factory dependencies;
+
+  // Everything below here is null when search is disabled
+  final int indexTtl; // zero when disabled
+  @Nullable final Call<List<String>> serviceNames;
+  @Nullable final SelectRemoteServiceNames.Factory remoteServiceNames;
+  @Nullable final SelectSpanNames.Factory spanNames;
+  @Nullable final SelectTraceIdsFromSpan.Factory spanTable;
+  @Nullable final SelectTraceIdsFromServiceSpan.Factory traceIdsFromServiceSpan;
+  @Nullable final SelectTraceIdsFromServiceRemoteService.Factory traceIdsFromServiceRemoteService;
 
   CassandraSpanStore(CassandraStorage storage) {
     Session session = storage.session();
     Schema.Metadata metadata = storage.metadata();
-    maxTraceCols = storage.maxTraceCols();
+    int maxTraceCols = storage.maxTraceCols();
     indexFetchMultiplier = storage.indexFetchMultiplier();
-    strictTraceId = storage.strictTraceId();
+    boolean strictTraceId = storage.strictTraceId();
     searchEnabled = storage.searchEnabled();
 
     spans = new SelectFromSpan.Factory(session, strictTraceId, maxTraceCols);
     dependencies = new SelectDependencies.Factory(session);
 
-    if (searchEnabled) {
-      KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace());
-      indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
-      if (metadata.hasRemoteService) {
-        remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
-        traceIdsFromServiceRemoteService =
-          new SelectTraceIdsFromServiceRemoteService.Factory(session);
-      } else {
-        remoteServiceNames = null;
-        traceIdsFromServiceRemoteService = null;
-      }
-      spanNames = new SelectSpanNames.Factory(session);
-      serviceNames = new SelectServiceNames.Factory(session).create();
-      traceIdsFromServiceSpan = new SelectTraceIdsFromServiceSpan.Factory(session);
-      spanTable = initialiseSelectTraceIdsFromSpan(session);
-    } else {
+    if (!searchEnabled) {
       indexTtl = 0;
+      serviceNames = null;
       remoteServiceNames = null;
       spanNames = null;
-      serviceNames = null;
       spanTable = null;
       traceIdsFromServiceSpan = null;
       traceIdsFromServiceRemoteService = null;
+      return;
     }
+
+    KeyspaceMetadata md = Schema.ensureKeyspaceMetadata(session, storage.keyspace());
+    indexTtl = md.getTable(TABLE_TRACE_BY_SERVICE_SPAN).getOptions().getDefaultTimeToLive();
+    serviceNames = new SelectServiceNames.Factory(session).create();
+    if (metadata.hasRemoteService) {
+      remoteServiceNames = new SelectRemoteServiceNames.Factory(session);
+      traceIdsFromServiceRemoteService =
+        new SelectTraceIdsFromServiceRemoteService.Factory(session);
+    } else {
+      remoteServiceNames = null;
+      traceIdsFromServiceRemoteService = null;
+    }
+    spanNames = new SelectSpanNames.Factory(session);
+    traceIdsFromServiceSpan = new SelectTraceIdsFromServiceSpan.Factory(session);
+    spanTable = initialiseSelectTraceIdsFromSpan(session);
   }
 
   /**
@@ -94,7 +97,7 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
    *
    * <p>If dropped, trying to search by annotation in the UI will throw an IllegalStateException.
    */
-  private static SelectTraceIdsFromSpan.Factory initialiseSelectTraceIdsFromSpan(Session session) {
+  static SelectTraceIdsFromSpan.Factory initialiseSelectTraceIdsFromSpan(Session session) {
     try {
       return new SelectTraceIdsFromSpan.Factory(session);
     } catch (DriverException ex) {
@@ -125,10 +128,11 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     List<Call<Map<String, Long>>> callsToIntersect = new ArrayList<>();
 
     List<String> annotationKeys = CassandraUtil.annotationKeys(request);
-    if (null == spanTable && !annotationKeys.isEmpty()) {
-      throw new IllegalStateException("The annotation_query index is not available");
-    }
     for (String annotationKey : annotationKeys) {
+      if (spanTable == null) {
+        throw new UnsupportedOperationException(request.annotationQueryString()
+          + " query unsupported due to missing annotation_query index");
+      }
       callsToIntersect.add(
         spanTable.newCall(request.serviceName(), annotationKey, timestampRange, traceIndexFetchSize)
       );
@@ -190,6 +194,20 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     List<SelectTraceIdsFromServiceRemoteService.Input> serviceRemoteServices = new ArrayList<>();
     String remoteService = request.remoteServiceName();
     for (int bucket = endBucket; bucket >= startBucket; bucket--) {
+      boolean addSpanQuery = true;
+      if (remoteService != null && traceIdsFromServiceRemoteService != null) {
+        serviceRemoteServices.add(
+          traceIdsFromServiceRemoteService.newInput(
+            serviceName,
+            remoteService,
+            bucket,
+            timestampRange,
+            traceIndexFetchSize));
+        // If the remote service query can satisfy the request, don't make a redundant span query
+        addSpanQuery = !spanName.isEmpty() || minDuration != null;
+      }
+      if (!addSpanQuery) continue;
+
       serviceSpans.add(
         traceIdsFromServiceSpan.newInput(
           serviceName,
@@ -199,15 +217,6 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
           maxDuration,
           timestampRange,
           traceIndexFetchSize));
-      if (remoteService != null && traceIdsFromServiceRemoteService != null) {
-        serviceRemoteServices.add(
-          traceIdsFromServiceRemoteService.newInput(
-            serviceName,
-            remoteService,
-            bucket,
-            timestampRange,
-            traceIndexFetchSize));
-      }
     }
 
     if ("".equals(serviceName)) {
@@ -215,6 +224,9 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
       Call<List<String>> serviceNames = getServiceNames();
       if (serviceRemoteServices.isEmpty()) {
         return serviceNames.flatMap(traceIdsFromServiceSpan.newFlatMapper(serviceSpans));
+      } else if (serviceSpans.isEmpty()) {
+        return serviceNames.flatMap(
+          traceIdsFromServiceRemoteService.newFlatMapper(serviceRemoteServices));
       }
       return serviceNames.flatMap(new AggregateFlatMapper<>(
         traceIdsFromServiceSpan.newFlatMapper(serviceSpans),
@@ -223,11 +235,14 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     }
     if (serviceRemoteServices.isEmpty()) {
       return traceIdsFromServiceSpan.newCall(serviceSpans);
+    } else if (serviceSpans.isEmpty()) {
+      return traceIdsFromServiceRemoteService.newCall(serviceRemoteServices);
+    } else {
+      return new IntersectMaps<>(asList(
+        traceIdsFromServiceSpan.newCall(serviceSpans),
+        traceIdsFromServiceRemoteService.newCall(serviceRemoteServices)
+      ));
     }
-    return new IntersectMaps<>(asList(
-      traceIdsFromServiceSpan.newCall(serviceSpans),
-      traceIdsFromServiceRemoteService.newCall(serviceRemoteServices)
-    ));
   }
 
   static class AggregateFlatMapper<K, V> implements FlatMapper<List<K>, Map<K, V>> {

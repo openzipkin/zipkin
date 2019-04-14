@@ -158,8 +158,7 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
         this.inputTemplates = inputTemplates;
       }
 
-      @Override
-      public Call<Map<String, Long>> map(List<String> serviceNames) {
+      @Override public Call<Map<String, Long>> map(List<String> serviceNames) {
         List<Call<Map<String, Long>>> bucketedTraceIdCalls = new ArrayList<>();
 
         for (String service : serviceNames) { // fan out every input for each service name
@@ -175,9 +174,12 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
         return new AggregateIntoMap<>(bucketedTraceIdCalls);
       }
 
-      @Override
-      public String toString() {
-        return "FlatMapServicesToInputs{" + inputTemplates + "}";
+      @Override public String toString() {
+        List<String> inputs = new ArrayList<>();
+        for (Input input : inputTemplates) {
+          inputs.add(input.toString().replace("Input", "SelectTraceIdsFromServiceSpan"));
+        }
+        return "FlatMapServicesToInputs{" + inputs + "}";
       }
     }
   }
@@ -194,12 +196,10 @@ final class SelectTraceIdsFromServiceSpan extends ResultSetFutureCall<ResultSet>
 
   @Override
   protected ResultSetFuture newFuture() {
-    BoundStatement bound =
-        preparedStatement
-            .bind()
-            .setString("service", input.service())
-            .setString("span", input.span())
-            .setInt("bucket", input.bucket());
+    BoundStatement bound = preparedStatement.bind()
+      .setString("service", input.service())
+      .setString("span", input.span())
+      .setInt("bucket", input.bucket());
     if (input.start_duration() != null) {
       bound.setLong("start_duration", input.start_duration());
       bound.setLong("end_duration", input.end_duration());

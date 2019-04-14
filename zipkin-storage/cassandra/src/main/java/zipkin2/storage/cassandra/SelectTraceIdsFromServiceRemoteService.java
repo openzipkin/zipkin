@@ -134,7 +134,11 @@ final class SelectTraceIdsFromServiceRemoteService extends ResultSetFutureCall<R
       }
 
       @Override public String toString() {
-        return "FlatMapServicesToInputs{" + inputTemplates + "}";
+        List<String> inputs = new ArrayList<>();
+        for (Input input : inputTemplates) {
+          inputs.add(input.toString().replace("Input", "SelectTraceIdsFromServiceRemoteService"));
+        }
+        return "FlatMapServicesToInputs{" + inputs + "}";
       }
     }
   }

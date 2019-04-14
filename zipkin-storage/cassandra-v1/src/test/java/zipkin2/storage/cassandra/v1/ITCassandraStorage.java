@@ -102,12 +102,13 @@ public class ITCassandraStorage {
 
       // Index ends up containing more rows than services * trace count, and cannot be de-duped
       // in a server-side query.
+      int localServiceCount = storage().serviceAndSpanNames().getServiceNames().execute().size();
       assertThat(storage
         .session()
         .execute("SELECT COUNT(*) from service_name_index")
         .one()
         .getLong(0))
-        .isGreaterThan(traceCount * store().getServiceNames().execute().size());
+        .isGreaterThan(traceCount * localServiceCount);
 
       // Implementation over-fetches on the index to allow the user to receive unsurprising results.
       QueryRequest request = requestBuilder()
@@ -152,6 +153,26 @@ public class ITCassandraStorage {
         // Now, block until writes complete, notably so we can read them.
         blockWhileInFlight(storage);
       }
+    }
+
+    @Before @Override public void clear() {
+      dropKeyspace(backend.session(), keyspace(testName));
+    }
+  }
+
+  public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
+    @ClassRule public static CassandraStorageRule backend = classRule();
+    @Rule public TestName testName = new TestName();
+
+    CassandraStorage storage;
+
+    @Before public void connect() {
+      storage =
+        backend.computeStorageBuilder().keyspace(keyspace(testName)).strictTraceId(false).build();
+    }
+
+    @Override protected StorageComponent storage() {
+      return storage;
     }
 
     @Before @Override public void clear() {

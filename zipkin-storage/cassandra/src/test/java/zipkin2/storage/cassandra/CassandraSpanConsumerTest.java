@@ -42,7 +42,7 @@ public class CassandraSpanConsumerTest {
       .id("1")
       .name("get")
       .localEndpoint(FRONTEND)
-      .timestamp(1472470996199000L)
+      .timestamp(TODAY * 1000L)
       .duration(207000L)
       .build();
 
@@ -234,7 +234,7 @@ public class CassandraSpanConsumerTest {
     Span span =
       spanWithoutAnnotationsOrTags
         .toBuilder()
-        .addAnnotation(TODAY, "annotation")
+        .addAnnotation(TODAY * 1000L, "annotation")
         .putTag("foo", "bar")
         .duration(10000L)
         .build();
@@ -242,6 +242,13 @@ public class CassandraSpanConsumerTest {
     assertThat(consumer.accept(singletonList(span)))
       .extracting("input.annotation_query")
       .allSatisfy(q -> assertThat(q).isNull());
+  }
+
+  @Test public void doesntIndexWhenOnlyIncludesTimestamp() {
+    Span span = Span.newBuilder().traceId("a").id("1").timestamp(TODAY * 1000L).build();
+
+    assertThat(consumer.accept(singletonList(span)))
+      .isInstanceOf(ResultSetFutureCall.class);
   }
 
   static AbstractListAssert<?, List<? extends Call<Void>>, Call<Void>, ObjectAssert<Call<Void>>>

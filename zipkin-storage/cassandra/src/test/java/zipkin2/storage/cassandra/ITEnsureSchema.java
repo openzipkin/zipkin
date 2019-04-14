@@ -110,7 +110,8 @@ abstract class ITEnsureSchema {
         .endTs(TODAY)
         .lookback(DAY)
         .limit(10)
-        .remoteServiceName("foo").build()).execute())
+        .serviceName("frontend")
+        .remoteServiceName("backend").build()).execute())
         .isEmpty(); // instead of an exception
     }
   }

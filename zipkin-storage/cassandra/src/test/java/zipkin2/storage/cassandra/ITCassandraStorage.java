@@ -85,12 +85,13 @@ public class ITCassandraStorage {
 
       // Index ends up containing more rows than services * trace count, and cannot be de-duped
       // in a server-side query.
+      int localServiceCount = storage().serviceAndSpanNames().getServiceNames().execute().size();
       assertThat(storage
         .session()
         .execute("SELECT COUNT(*) from trace_by_service_span")
         .one()
         .getLong(0))
-        .isGreaterThan(traceCount * store().getServiceNames().execute().size());
+        .isGreaterThan(traceCount * localServiceCount);
 
       // Implementation over-fetches on the index to allow the user to receive unsurprising results.
       QueryRequest request = requestBuilder()
