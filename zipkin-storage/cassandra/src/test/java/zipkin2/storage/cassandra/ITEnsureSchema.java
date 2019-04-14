@@ -110,8 +110,8 @@ abstract class ITEnsureSchema {
         .endTs(TODAY)
         .lookback(DAY)
         .limit(10)
-        .serviceName("frontend")
-        .remoteServiceName("backend").build()).execute())
+        .serviceName("invalid1")
+        .remoteServiceName("invalid2").build()).execute())
         .isEmpty(); // instead of an exception
     }
   }
