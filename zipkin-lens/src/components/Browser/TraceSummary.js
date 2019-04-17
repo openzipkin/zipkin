@@ -119,9 +119,10 @@ class TraceSummary extends React.Component {
     const { traceSummary } = this.props;
 
     const upperBarLabel = (
-      <div className="trace-summary__upper-bar-label">
-        <div>
-          {`${traceSummary.spanCount} spans ${traceSummary.durationStr}`}
+        <div className="trace-summary__upper-bar-label">
+        <div className="trace-summary__upper-bar-label-meta">
+          <div className="trace-summary__upper-bar-label-duration">{`${traceSummary.durationStr}`}</div>
+          <div className="trace-summary__upper-bar-label-spans">&nbsp;{`- ${traceSummary.spanCount} spans`}</div>
         </div>
         <div>
           {moment(traceSummary.timestamp / 1000).format('MM/DD HH:mm:ss:SSS')}
