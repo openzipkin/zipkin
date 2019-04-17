@@ -31,6 +31,7 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
+import java.util.concurrent.RejectedExecutionException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -186,6 +187,16 @@ public class CollectorTest {
   }
 
   @Test
+  public void errorAcceptingSpans_onErrorRejectedExecution() {
+    RuntimeException error = new RejectedExecutionException("slow down");
+    collector.handleStorageError(TRACE, error, callback);
+
+    verify(callback).onError(error);
+    assertThat(messages)
+      .containsOnly("Cannot store spans [1, 1, 2, ...] due to RejectedExecutionException(slow down)");
+    verify(metrics).incrementSpansDropped(4);
+  }
+
   public void handleStorageError_onErrorWithNullMessage() {
     RuntimeException error = new RuntimeException();
     collector.handleStorageError(TRACE, error, callback);

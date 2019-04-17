@@ -23,6 +23,7 @@ import java.util.logging.Logger;
 import okhttp3.HttpUrl;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
@@ -40,8 +41,10 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private String index = "zipkin";
   /** The date separator used to create the index name. Default to -. */
   private String dateSeparator = "-";
-  /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 */
+  /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 (overriden by throttle settings) */
   private int maxRequests = 64;
+  /** Overrides maximum in-flight requests to match throttling settings if throttling is enabled. */
+  private Integer throttleMaxConcurrency;
   /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
   private int indexShards = 5;
   /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
@@ -60,6 +63,13 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
    * requests. Defaults to 10000 (10 seconds)
    */
   private int timeout = 10_000;
+
+  public ZipkinElasticsearchStorageProperties(@Value("${zipkin.storage.throttle.enabled:false}") boolean throttleEnabled,
+                                              @Value("${zipkin.storage.throttle.maxConcurrency:200}") int throttleMaxConcurrency) {
+    if (throttleEnabled) {
+      this.throttleMaxConcurrency = throttleMaxConcurrency;
+    }
+  }
 
   public String getPipeline() {
     return pipeline;
@@ -180,7 +190,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
         .index(index)
         .dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0))
         .pipeline(pipeline)
-        .maxRequests(maxRequests)
+        .maxRequests(throttleMaxConcurrency == null ? maxRequests : throttleMaxConcurrency)
         .indexShards(indexShards)
         .indexReplicas(indexReplicas);
   }

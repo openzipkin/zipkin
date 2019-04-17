@@ -62,6 +62,7 @@
     <armeria.version>0.84.0</armeria.version>
     <!-- This is from armeria, but be careful to avoid >= v20 apis -->
     <guava.version>27.0.1-jre</guava.version>
+    <netflix.concurrency.limits.version>0.2.0</netflix.concurrency.limits.version>
 
     <!-- only used for proto interop testing -->
     <wire.version>3.0.0-alpha01</wire.version>

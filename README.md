@@ -94,6 +94,9 @@ It stores spans as json and has been designed for larger scale.
 
 Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
+### Throttling
+As part of a [Collector surge and error handling](https://cwiki.apache.org/confluence/display/ZIPKIN/Collector+surge+and+error+handling) discussion that took place a throttling mechanism was added to allow more fine-grained control over how Zipkin interacts with the various `StorageComponents`.  In particular, for those installations which use a push-based Collector (such as the HTTP rest API), enabling the throttle can allow Zipkin to buffer some messages in order to avoid aggressively dropping them.  See [zipkin-server](zipkin-server#throttled-storage) for configuration information.
+
 ### Disabling search
 The following API endpoints provide search features, and are enabled by
 default. Search primarily allows the trace list screen of the UI operate.

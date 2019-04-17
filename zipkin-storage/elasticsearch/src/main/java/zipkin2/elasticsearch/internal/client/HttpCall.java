@@ -105,6 +105,11 @@ public final class HttpCall<V> extends Call<V> {
     return new HttpCall<V>(call.clone(), semaphore, bodyConverter);
   }
 
+  @Override
+  public String toString() {
+    return "HttpCall(" + call + ")";
+  }
+
   static class V2CallbackAdapter<V> implements okhttp3.Callback {
     final Semaphore semaphore;
     final BodyConverter<V> bodyConverter;
