@@ -168,7 +168,7 @@ class GlobalSearch extends React.Component {
       limitCondition,
     );
     const location = {
-      pathname: '/zipkin',
+      pathname: '/zipkin/',
       search: queryParams,
     };
     history.push(location);
