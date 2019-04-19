@@ -12,6 +12,23 @@ const propTypes = {
   span: detailedSpanPropTypes.isRequired,
 };
 
+const renderIdData = (key, value) => {
+  if (!value) {
+    return null;
+  }
+  return (
+    <div className="timeline-span-data__id-data">
+      <div className="timeline-span-data__id-data-key">
+        {key}
+        :&nbsp;
+      </div>
+      <div className="timeline-span-data__id-data-value">
+        {value}
+      </div>
+    </div>
+  );
+};
+
 const renderData = span => (
   <div className="timeline-span-data__content">
     <div
@@ -75,6 +92,10 @@ const renderData = span => (
         ]
       }
     />
+    <div className="timeline-span-data__ids">
+      {renderIdData('Span ID', span.spanId)}
+      {renderIdData('Parent ID', span.parentId)}
+    </div>
   </div>
 );
 
