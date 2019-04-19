@@ -82,6 +82,20 @@
   justify-content: space-between;
 }
 
+.trace-summary__upper-bar-label-meta {
+  display: table-row;
+}
+
+.trace-summary__upper-bar-label-duration {
+  font-weight: bold;
+  display: table-cell;
+}
+
+.trace-summary__upper-bar-label-spans {
+  font-weight: lighter;
+  display: table-cell;
+}
+
 .trace-summary__bar-label {
   position: absolute;
   top: 0;
