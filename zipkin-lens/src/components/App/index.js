@@ -24,30 +24,22 @@ class App extends React.Component {
             <Route
               exact
               path="/zipkin/"
-              render={props => (
-                <BrowserContainer {...props} />
-              )}
+              component={BrowserContainer}
             />
             <Route
               exact
               path="/zipkin/traces/:traceId"
-              render={props => (
-                <TracePageContainer {...props} />
-              )}
+              component={TracePageContainer}
             />
             <Route
               exact
               path="/zipkin/dependency"
-              render={props => (
-                <DependenciesContainer {...props} />
-              )}
+              component={DependenciesContainer}
             />
             <Route
               exact
               path="/zipkin/traceViewer"
-              render={props => (
-                <TraceViewerContainer {...props} />
-              )}
+              render={TraceViewerContainer}
             />
           </Layout>
         </BrowserRouter>
