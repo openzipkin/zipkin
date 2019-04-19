@@ -1,31 +1,14 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { withRouter } from 'react-router';
-import { Link } from 'react-router-dom';
 import Cookies from 'js-cookie';
 
-import Logo from '../../img/zipkin-logo.svg';
+import SidebarPageOption from './SidebarPageOption';
+import Logo from '../../../img/zipkin-logo.svg';
 
 const propTypes = {
-  location: PropTypes.shape({
-    pathname: PropTypes.string,
-  }).isRequired,
-  history: PropTypes.shape({
-    push: PropTypes.func.isRequired,
-  }).isRequired,
-};
-
-const pageInfo = {
-  browser: {
-    url: '/zipkin',
-    label: 'Search',
-    icon: 'fa-search',
-  },
-  dependencies: {
-    url: '/zipkin/dependency',
-    label: 'Dependencies',
-    icon: 'fa-code-branch',
-  },
+  location: PropTypes.shape({ pathname: PropTypes.string }).isRequired,
+  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
 class Sidebar extends React.Component {
@@ -47,28 +30,8 @@ class Sidebar extends React.Component {
     event.preventDefault();
   }
 
-  renderPageOption(pageName) {
-    const { location } = this.props;
-    const { url } = pageInfo[pageName];
-    const isSelected = location.pathname === url;
-    return (
-      <div className={`sidebar__page-option${isSelected ? '--selected' : ''}`}>
-        <Link
-          to={{ pathname: url }}
-          className={`sidebar__page-option-link${isSelected ? '--selected' : ''}`}
-        >
-          <div className="sidebar__page-option-icon">
-            <i className={`fas ${pageInfo[pageName].icon}`} />
-          </div>
-          <div>
-            {pageInfo[pageName].label}
-          </div>
-        </Link>
-      </div>
-    );
-  }
-
   render() {
+    const { location } = this.props;
     return (
       <div className="sidebar">
         <div
@@ -78,8 +41,8 @@ class Sidebar extends React.Component {
           <Logo className="sidebar__brand-logo" />
         </div>
         <div className="sidebar__menu">
-          {this.renderPageOption('browser')}
-          {this.renderPageOption('dependencies')}
+          <SidebarPageOption location={location} pageName="browser" />
+          <SidebarPageOption location={location} pageName="dependencies" />
         </div>
         {
           Cookies.get('lens')
