@@ -62,15 +62,6 @@
       <version>${cassandra-driver-core.version}</version>
     </dependency>
 
-    <!-- for integration tests -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
     <!-- To test nuance of load balancing behavior -->
     <dependency>
       <groupId>org.mockito</groupId>

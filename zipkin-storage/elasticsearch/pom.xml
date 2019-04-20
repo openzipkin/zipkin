@@ -64,15 +64,6 @@
       <artifactId>moshi</artifactId>
     </dependency>
 
-    <!-- for TestObjects -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-
     <!-- For HttpCallTest -->
     <dependency>
       <groupId>com.google.guava</groupId>

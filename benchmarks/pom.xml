@@ -90,6 +90,13 @@
           </execution>
         </executions>
       </plugin>
+      <!-- The benchmark test suite is not a valid dependency to others -->
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
       <plugin>
         <artifactId>maven-install-plugin</artifactId>
         <configuration>
