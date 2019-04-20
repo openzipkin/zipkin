@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import ReactSelect from 'react-select';
 
+import { sortingMethods, sortingMethodOptions, sortTraceSummaries } from './sorting';
 import TraceSummary from './TraceSummary';
 import LoadingOverlay from '../Common/LoadingOverlay';
 import { traceSummariesPropTypes } from '../../prop-types';
@@ -13,18 +14,11 @@ const propTypes = {
   clearTraces: PropTypes.func.isRequired,
 };
 
-const sortingMethodOptions = [
-  { value: 'LONGEST', label: 'Longest First' },
-  { value: 'SHORTEST', label: 'Shortest First' },
-  { value: 'NEWEST', label: 'Newest First' },
-  { value: 'OLDEST', label: 'Oldest First' },
-];
-
 class Browser extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      sortingMethod: 'LONGEST',
+      sortingMethod: sortingMethods.LONGEST,
     };
     this.handleSortingMethodChange = this.handleSortingMethodChange.bind(this);
   }
@@ -38,27 +32,6 @@ class Browser extends React.Component {
     this.setState({
       sortingMethod: selected.value,
     });
-  }
-
-  sortTraceSummaries() {
-    const { traceSummaries } = this.props;
-    const { sortingMethod } = this.state;
-
-    return traceSummaries
-      .sort((a, b) => {
-        switch (sortingMethod) {
-          case 'LONGEST':
-            return b.duration - a.duration;
-          case 'SHORTEST':
-            return a.duration - b.duration;
-          case 'NEWEST':
-            return b.timestamp - a.timestamp;
-          case 'OLDEST':
-            return a.timestamp - b.timestamp;
-          default:
-            return 0;
-        }
-      });
   }
 
   renderResultsHeader() {
@@ -85,8 +58,9 @@ class Browser extends React.Component {
   }
 
   renderResults() {
-    const { skewCorrectedTracesMap } = this.props;
-    const sortedTraceSummaries = this.sortTraceSummaries();
+    const { skewCorrectedTracesMap, traceSummaries } = this.props;
+    const { sortingMethod } = this.state;
+    const sortedTraceSummaries = sortTraceSummaries(traceSummaries, sortingMethod);
     return (
       <div className="browser__results">
         {
