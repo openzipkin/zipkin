@@ -22,13 +22,6 @@ services:
   - rabbitmq
 
 before_install:
-  # parameters used during a release
-  # allocate commits to CI, not the owner of the deploy key
-  - git config user.name "zipkinci"
-  - git config user.email "zipkinci+zipkin-dev@googlegroups.com"
-  # setup https authentication credentials, used by ./mvnw release:prepare
-  - git config credential.helper "store --file=.git/credentials"
-  - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
   # Required for Elasticsearch 5 (See https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
   - sudo sysctl -w vm.max_map_count=262144
@@ -41,13 +34,10 @@ before_install:
   # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
   - echo "MAVEN_OPTS='-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'" > ~/.mavenrc
 
-install:
   # Override default travis to use the maven wrapper
   # skip license on travis due to #1512
-  - ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Dlicense.skip=true
-
-script:
-  - ./travis/publish.sh
+install: ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Dlicense.skip=true
+script: ./mvnw clean verify -B -Dlicense.skip=true
 
 # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
 # See https://github.com/travis-ci/travis-ci/issues/1532
@@ -55,23 +45,9 @@ branches:
   except:
     - /^[0-9]/
 
-env:
-  global:
-  # Ex. travis encrypt BINTRAY_USER=your_github_account
-  - secure: "Ce34YTvUPNNmPaM98FWG9+QGI9aW9DBuWIvc5viCsNhlxGywWujlzvKFj2LVjdAp3ft8tpCd79ZHe3hMrfZ/SAzsT2qwNcAsUmE9YgjAFKyS7TS2CP2PMS+U7iFchCBZnCv7L6LUCClQa+pMBrSNNOJxDGK3woDxkf1FjgOY6hQ="
-  # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx --add
-  - secure: "gIWukQGUH6VoOldxuvYHaIeTGC4QBja5+ZUJPIhx5BlcXWweGwBlVeTTvBzdvYb3qcTjdr+tCDyonKuDsfxzxkPL7+aMK4f1Wxk8YyFouzrx/S2H9di3h4MptUk8S8JpAq7S5itWbb0fz0+R1qzCgDZR7ZBMpJWty2UIKho7zoo="
-  # Ex. travis encrypt GH_TOKEN=XXX-https://github.com/settings/tokens-XXX --add
-  - secure: "KcPZBFo+C3vovhNAYR9Gy71b5XUe/HzQtqL1Qe1erDka3AlA4R5JFFtJSs0sCLVzqENm6E3L+Wu6iFIV7jXXTGxpqGLH3yysdBX6tQngjp7Kwe3jnbPP0nCwnoj5FrDWaOA2hsPH5p1PtoNpxU7tqjnEAlXPYOpG7pHxBRY3eLI="
-  # Ex. travis encrypt SONATYPE_USER=your_sonatype_account
-  - secure: "EEIGkGWsje/NZmqEnS8Dhk92KAsFqq070hVCwEwUwUdRe4tZpL3eTOtSD8/Ul5ICtIApC08Mr4g+4sSkjztlCbkxycUSnUsfAJV3vTHyPnvdoztE1Yh6hm4UfTPbMNVFcigxMLOnApeaeB7x9CeRGPRbHuUONs44fuLPKDoYMo4="
-  # Ex. travis encrypt SONATYPE_PASSWORD=your_sonatype_password
-  - secure: "hk1tiOe9D5ASlykwUbvSQlWR0Zz5FdFGhTxQSLZlVayypspaZm5igPJS8t9UfAlCgHc8WGrnUwybqzHUQzIRTd9etF9KXoUZcrinXh5Et0hd3V0OyMOpmgRdWinOqgE8oUXz2uZXTWbLu7uW365TUb4GKCdmK89iFnVXsCoR8wM="
-
 notifications:
   webhooks:
     urls:
       - https://webhooks.gitter.im/e/637e968b45032d16ee26
     on_success: change
     on_failure: always
-    on_start: false
