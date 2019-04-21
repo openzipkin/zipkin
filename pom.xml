@@ -227,12 +227,6 @@
 
       <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-collector-grpc</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-lens</artifactId>
         <version>${project.version}</version>
       </dependency>
