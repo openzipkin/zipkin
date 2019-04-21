@@ -16,6 +16,7 @@ package zipkin2.server.internal;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.brave.TracingConfiguration;
+import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
 
 @Configuration
@@ -25,6 +26,7 @@ import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
   TracingConfiguration.class,
   ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class,
+  ZipkinKafkaCollectorConfiguration.class,
   MetricsHealthController.class,
 })
 public class InternalZipkinConfiguration {
