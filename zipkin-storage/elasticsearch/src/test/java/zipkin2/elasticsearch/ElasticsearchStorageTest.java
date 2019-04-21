@@ -122,7 +122,7 @@ public class ElasticsearchStorageTest {
     assertThat(es.takeRequest().getTlsVersion()).isNotNull();
   }
 
-  @Test(expected = IllegalArgumentException.class)
+  @Test
   public void multipleSslNotYetSupported() {
     storage.close();
     OkHttpClient client =
@@ -136,6 +136,7 @@ public class ElasticsearchStorageTest {
             .hosts(asList("https://1.2.3.4:" + es.getPort(), es.url("").toString()))
             .build();
 
-    storage.check();
+    assertThat(storage.check().error())
+      .isInstanceOf(IllegalArgumentException.class);
   }
 }

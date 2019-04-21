@@ -313,14 +313,13 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   CheckResult ensureClusterReady(String index) {
-    Request request =
-        new Request.Builder()
-            .url(http().baseUrl.resolve("/_cluster/health/" + index))
-            .tag("get-cluster-health")
-            .build();
-
     try {
-      return http().newCall(request, ReadStatus.INSTANCE).execute();
+      HttpCall.Factory http = http();
+      Request request = new Request.Builder()
+        .url(http.baseUrl.resolve("/_cluster/health/" + index))
+        .tag("get-cluster-health")
+        .build();
+      return http.newCall(request, ReadStatus.INSTANCE).execute();
     } catch (IOException | RuntimeException e) {
       return CheckResult.failed(e);
     }
