@@ -59,9 +59,33 @@ Under the covers, the server uses [Spring Boot - Logback integration](http://doc
 ## Metrics
 
 Metrics are exported to the path `/metrics` and extend [defaults reported by spring-boot](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html).
+They are also exported to the path `/prometheus`.
 
-Metrics are also exported to the path `/prometheus` if the `zipkin-autoconfigure-metrics-prometheus` is available in the classpath.
-See the prometheus metrics [README](../zipkin-autoconfigure/metrics-prometheus/README.md) for more information.
+### Example Prometheus configuration
+Here's an example `/prometheus` configuration, using the Prometheus
+exposition [text format version 0.0.4](https://prometheus.io/docs/instrumenting/exposition_formats/)
+
+```yaml
+  - job_name: 'zipkin'
+    scrape_interval: 5s
+    metrics_path: '/prometheus'
+    static_configs:
+      - targets: ['localhost:9411']
+    metric_relabel_configs:
+      # Response code count
+      - source_labels: [__name__]
+        regex: '^status_(\d+)_(.*)$'
+        replacement: '${1}'
+        target_label: status
+      - source_labels: [__name__]
+        regex: '^status_(\d+)_(.*)$'
+        replacement: '${2}'
+        target_label: path
+      - source_labels: [__name__]
+        regex: '^status_(\d+)_(.*)$'
+        replacement: 'http_requests_total'
+        target_label: __name__
+```
 
 ### Collector
 

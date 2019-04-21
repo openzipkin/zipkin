@@ -42,7 +42,6 @@
     <module>storage-cassandra3</module>
     <module>storage-elasticsearch</module>
     <module>storage-cassandra</module>
-    <module>metrics-prometheus</module>
   </modules>
 
   <dependencies>

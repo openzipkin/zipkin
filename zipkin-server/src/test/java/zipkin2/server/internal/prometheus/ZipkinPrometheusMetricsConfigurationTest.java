@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.prometheus;
+package zipkin2.server.internal.prometheus;
 
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import org.junit.After;
@@ -24,7 +24,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinPrometheusMetricsAutoConfigurationTest {
+public class ZipkinPrometheusMetricsConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
   public void refresh() {
@@ -32,7 +32,7 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
       PropertyPlaceholderAutoConfiguration.class,
       MetricsAutoConfiguration.class,
       PrometheusMetricsExportAutoConfiguration.class,
-      ZipkinPrometheusMetricsAutoConfiguration.class
+      ZipkinPrometheusMetricsConfiguration.class
     );
     context.refresh();
   }
@@ -50,7 +50,7 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
   @Test public void defaultMetricName() {
     refresh();
 
-    assertThat(context.getBean(ZipkinPrometheusMetricsAutoConfiguration.class).metricName)
+    assertThat(context.getBean(ZipkinPrometheusMetricsConfiguration.class).metricName)
       .isEqualTo("http.server.requests");
   }
 
@@ -58,7 +58,7 @@ public class ZipkinPrometheusMetricsAutoConfigurationTest {
     TestPropertyValues.of("management.metrics.web.server.requests-metric-name:foo").applyTo(context);
     refresh();
 
-    assertThat(context.getBean(ZipkinPrometheusMetricsAutoConfiguration.class).metricName)
+    assertThat(context.getBean(ZipkinPrometheusMetricsConfiguration.class).metricName)
       .isEqualTo("foo");
   }
 }

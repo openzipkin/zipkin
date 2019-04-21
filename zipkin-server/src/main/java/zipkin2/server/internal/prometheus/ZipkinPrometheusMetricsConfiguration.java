@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.prometheus;
+package zipkin2.server.internal.prometheus;
 
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
@@ -39,19 +39,20 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
 
-@Configuration class ZipkinPrometheusMetricsAutoConfiguration {
+@Configuration
+public class ZipkinPrometheusMetricsConfiguration {
   // from io.micrometer.spring.web.servlet.WebMvcTags
   private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
   private static final Tag URI_REDIRECTION = Tag.of("uri", "REDIRECTION");
   private static final Tag URI_TRACE_V2 = Tag.of("uri", "/api/v2/trace/{traceId}");
-  // single-page app requests are forwarded to index: ZipkinUiAutoConfiguration.forwardUiEndpoints
+  // single-page app requests are forwarded to index: ZipkinUiConfiguration.forwardUiEndpoints
   private static final Tag URI_CROSSROADS = Tag.of("uri", "/zipkin/index.html");
 
   final PrometheusMeterRegistry registry;
   // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
   final String metricName;
 
-  ZipkinPrometheusMetricsAutoConfiguration(
+  ZipkinPrometheusMetricsConfiguration(
     PrometheusMeterRegistry registry,
     @Value("${management.metrics.web.server.requests-metric-name:http.server.requests}")
       String metricName
@@ -134,7 +135,6 @@ import org.springframework.util.StringUtils;
   }
 
   /** Ensure metrics cardinality doesn't blow up on variables */
-  // TODO: this should really live in the zipkin-server codebase!
   private static Tag uri(RequestLog requestLog) {
     int status = requestLog.statusCode();
     if (status > 299 && status < 400) return URI_REDIRECTION;
