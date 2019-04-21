@@ -37,7 +37,6 @@
 
   <modules>
     <module>ui</module>
-    <module>collector-rabbitmq</module>
     <module>collector-kafka08</module>
     <module>collector-scribe</module>
     <module>storage-cassandra3</module>

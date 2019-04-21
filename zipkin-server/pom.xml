@@ -206,8 +206,8 @@
 
     <!-- RabbitMQ Collector -->
     <dependency>
-      <groupId>io.zipkin.java</groupId>
-      <artifactId>zipkin-autoconfigure-collector-rabbitmq</artifactId>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-collector-rabbitmq</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>

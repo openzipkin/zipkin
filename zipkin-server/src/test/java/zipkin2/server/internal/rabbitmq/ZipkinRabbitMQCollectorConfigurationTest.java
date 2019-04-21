@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.collector.rabbitmq;
+package zipkin2.server.internal.rabbitmq;
 
 import org.junit.After;
 import org.junit.Ignore;
@@ -32,7 +32,7 @@ import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinRabbitMQCollectorAutoConfigurationTest {
+public class ZipkinRabbitMQCollectorConfigurationTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -50,7 +50,7 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
     context = new AnnotationConfigApplicationContext();
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
-        ZipkinRabbitMQCollectorAutoConfiguration.class,
+        ZipkinRabbitMQCollectorConfiguration.class,
         InMemoryConfiguration.class);
     context.refresh();
 
@@ -67,7 +67,7 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
     .applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
-        ZipkinRabbitMQCollectorAutoConfiguration.class,
+        ZipkinRabbitMQCollectorConfiguration.class,
         InMemoryConfiguration.class);
     context.refresh();
 
@@ -82,7 +82,7 @@ public class ZipkinRabbitMQCollectorAutoConfigurationTest {
     TestPropertyValues.of("zipkin.collector.rabbitmq.addresses=localhost:5672").applyTo(context);
     context.register(
         PropertyPlaceholderAutoConfiguration.class,
-        ZipkinRabbitMQCollectorAutoConfiguration.class,
+        ZipkinRabbitMQCollectorConfiguration.class,
         InMemoryConfiguration.class);
     context.refresh();
 
