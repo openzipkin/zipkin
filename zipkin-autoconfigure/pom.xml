@@ -38,9 +38,7 @@
   <modules>
     <module>collector-kafka08</module>
     <module>collector-scribe</module>
-    <module>storage-cassandra3</module>
     <module>storage-elasticsearch</module>
-    <module>storage-cassandra</module>
   </modules>
 
   <dependencies>

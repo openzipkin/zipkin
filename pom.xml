@@ -185,18 +185,6 @@
 
       <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-storage-cassandra-v1</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-storage-cassandra</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-collector-kafka08</artifactId>
         <version>${project.version}</version>
       </dependency>
@@ -429,12 +417,6 @@
           </exclusion>
         </exclusions>
       </dependency>
-      <dependency>
-        <groupId>org.apache.zipkin.brave.cassandra</groupId>
-        <artifactId>brave-instrumentation-cassandra-driver</artifactId>
-        <version>0.10.2</version>
-      </dependency>
-
       <dependency>
         <groupId>io.zipkin.proto3</groupId>
         <artifactId>zipkin-proto3</artifactId>

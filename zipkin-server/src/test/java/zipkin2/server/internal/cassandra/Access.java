@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.storage.cassandra;
+package zipkin2.server.internal.cassandra;
 
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -21,6 +21,6 @@ public final class Access {
 
   public static void registerCassandra(AnnotationConfigApplicationContext context) {
     context.register(
-        PropertyPlaceholderAutoConfiguration.class, ZipkinCassandraStorageAutoConfiguration.class);
+        PropertyPlaceholderAutoConfiguration.class, ZipkinCassandraStorageConfiguration.class);
   }
 }

@@ -1,3 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-zipkin2.autoconfigure.storage.cassandra.ZipkinCassandraStorageAutoConfiguration,\
-zipkin2.autoconfigure.storage.cassandra.TracingZipkinCassandraStorageAutoConfiguration

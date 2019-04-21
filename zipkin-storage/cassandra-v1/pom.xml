@@ -37,6 +37,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-storage-cassandra</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>

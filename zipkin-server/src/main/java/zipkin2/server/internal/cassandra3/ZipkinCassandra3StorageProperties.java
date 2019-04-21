@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,18 +11,20 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.storage.cassandra;
+package zipkin2.server.internal.cassandra3;
 
 import java.io.Serializable;
-import java.util.concurrent.TimeUnit;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import zipkin2.storage.cassandra.v1.CassandraStorage;
+import zipkin2.storage.cassandra.CassandraStorage;
 
-@ConfigurationProperties("zipkin.storage.cassandra")
-class ZipkinCassandraStorageProperties implements Serializable { // for Spark jobs
+import static zipkin2.storage.cassandra.CassandraStorage.Builder;
+import static zipkin2.storage.cassandra.CassandraStorage.newBuilder;
+
+@ConfigurationProperties("zipkin.storage.cassandra3")
+class ZipkinCassandra3StorageProperties implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
-  private String keyspace = "zipkin";
+  private String keyspace = "zipkin3";
   private String contactPoints = "localhost";
   private String localDc;
   private int maxConnections = 8;
@@ -30,12 +32,6 @@ class ZipkinCassandraStorageProperties implements Serializable { // for Spark jo
   private boolean useSsl = false;
   private String username;
   private String password;
-  private int spanTtl = (int) TimeUnit.DAYS.toSeconds(7);
-  private int indexTtl = (int) TimeUnit.DAYS.toSeconds(3);
-  /** See {@link CassandraStorage.Builder#indexCacheMax(int)} */
-  private int indexCacheMax = 100000;
-  /** See {@link CassandraStorage.Builder#indexCacheTtl(int)} */
-  private int indexCacheTtl = 60;
   /** See {@link CassandraStorage.Builder#indexFetchMultiplier(int)} */
   private int indexFetchMultiplier = 3;
 
@@ -103,46 +99,6 @@ class ZipkinCassandraStorageProperties implements Serializable { // for Spark jo
     this.password = "".equals(password) ? null : password;
   }
 
-  /** @deprecated See {@link CassandraStorage.Builder#spanTtl(int)} */
-  @Deprecated
-  public int getSpanTtl() {
-    return spanTtl;
-  }
-
-  /** @deprecated See {@link CassandraStorage.Builder#spanTtl(int)} */
-  @Deprecated
-  public void setSpanTtl(int spanTtl) {
-    this.spanTtl = spanTtl;
-  }
-
-  /** @deprecated See {@link CassandraStorage.Builder#indexTtl(int)} */
-  @Deprecated
-  public int getIndexTtl() {
-    return indexTtl;
-  }
-
-  /** @deprecated See {@link CassandraStorage.Builder#indexTtl(int)} */
-  @Deprecated
-  public void setIndexTtl(int indexTtl) {
-    this.indexTtl = indexTtl;
-  }
-
-  public int getIndexCacheMax() {
-    return indexCacheMax;
-  }
-
-  public void setIndexCacheMax(int indexCacheMax) {
-    this.indexCacheMax = indexCacheMax;
-  }
-
-  public int getIndexCacheTtl() {
-    return indexCacheTtl;
-  }
-
-  public void setIndexCacheTtl(int indexCacheTtl) {
-    this.indexCacheTtl = indexCacheTtl;
-  }
-
   public int getIndexFetchMultiplier() {
     return indexFetchMultiplier;
   }
@@ -151,8 +107,8 @@ class ZipkinCassandraStorageProperties implements Serializable { // for Spark jo
     this.indexFetchMultiplier = indexFetchMultiplier;
   }
 
-  public CassandraStorage.Builder toBuilder() {
-    return CassandraStorage.newBuilder()
+  public Builder toBuilder() {
+    return newBuilder()
         .keyspace(keyspace)
         .contactPoints(contactPoints)
         .localDc(localDc)
@@ -161,10 +117,6 @@ class ZipkinCassandraStorageProperties implements Serializable { // for Spark jo
         .useSsl(useSsl)
         .username(username)
         .password(password)
-        .spanTtl(spanTtl)
-        .indexTtl(indexTtl)
-        .indexCacheMax(indexCacheMax)
-        .indexCacheTtl(indexCacheTtl)
         .indexFetchMultiplier(indexFetchMultiplier);
   }
 }
