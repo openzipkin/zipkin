@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.ui;
+package zipkin2.server.internal.ui;
 
 import com.linecorp.armeria.common.AggregatedHttpMessage;
 import com.linecorp.armeria.common.HttpHeaderNames;
@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
 
-public class ZipkinUiAutoConfigurationTest {
+public class ZipkinUiConfigurationTest {
 
   AnnotationConfigApplicationContext context;
 
@@ -58,7 +58,7 @@ public class ZipkinUiAutoConfigurationTest {
   public void indexHtmlFromClasspath() {
     context = createContext();
 
-    assertThat(context.getBean(ZipkinUiAutoConfiguration.class).indexHtml)
+    assertThat(context.getBean(ZipkinUiConfiguration.class).indexHtml)
       .isNotNull();
   }
 
@@ -75,7 +75,7 @@ public class ZipkinUiAutoConfigurationTest {
     // I failed to make Jsoup barf, even on nonsense like: "<head wait no I changed my mind this HTML is totally invalid <<<<<<<<<<<"
     // So let's just run with a case where the file doesn't exist
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
-    ZipkinUiAutoConfiguration ui = context.getBean(ZipkinUiAutoConfiguration.class);
+    ZipkinUiConfiguration ui = context.getBean(ZipkinUiConfiguration.class);
     ui.indexHtml = new ClassPathResource("does-not-exist.html");
 
     thrown.expect(RuntimeException.class);
@@ -185,7 +185,7 @@ public class ZipkinUiAutoConfigurationTest {
     }
     HttpRequest req = HttpRequest.of(headers);
     try {
-      return context.getBean(ZipkinUiAutoConfiguration.class).indexSwitchingService()
+      return context.getBean(ZipkinUiConfiguration.class).indexSwitchingService()
         .serve(ServiceRequestContext.of(req), req).aggregate()
         .get();
     } catch (Exception e) {
@@ -195,7 +195,7 @@ public class ZipkinUiAutoConfigurationTest {
 
   private static AnnotationConfigApplicationContext createContext() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
+    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiConfiguration.class);
     context.refresh();
     return context;
   }
@@ -204,7 +204,7 @@ public class ZipkinUiAutoConfigurationTest {
     String pair) {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(pair).applyTo(context);
-    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiAutoConfiguration.class);
+    context.register(PropertyPlaceholderAutoConfiguration.class, ZipkinUiConfiguration.class);
     context.refresh();
     return context;
   }

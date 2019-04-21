@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.ui;
+package zipkin2.server.internal.ui;
 
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpMessage;
@@ -40,7 +40,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
-  classes = ITZipkinUiAutoConfiguration.TestServer.class,
+  classes = ITZipkinUiConfiguration.TestServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
     "zipkin.ui.base-path=/foozipkin",
@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThat;
     "server.compression.min-response-size=128"
   }
 )
-public class ITZipkinUiAutoConfiguration {
+public class ITZipkinUiConfiguration {
 
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
@@ -117,7 +117,7 @@ public class ITZipkinUiAutoConfiguration {
   }
 
   @EnableAutoConfiguration
-  @Import(ZipkinUiAutoConfiguration.class)
+  @Import(ZipkinUiConfiguration.class)
   public static class TestServer {
   }
 

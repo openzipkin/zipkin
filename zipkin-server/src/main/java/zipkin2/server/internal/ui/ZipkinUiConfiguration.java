@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.ui;
+package zipkin2.server.internal.ui;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpData;
@@ -58,7 +58,7 @@ import org.springframework.core.io.Resource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.toList;
-import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
+import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
  * Zipkin-UI is a single-page application mounted at /zipkin. For simplicity, assume paths mentioned
@@ -85,7 +85,7 @@ import static zipkin2.autoconfigure.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @Configuration
 @EnableConfigurationProperties({ZipkinUiProperties.class, CompressionProperties.class})
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
-class ZipkinUiAutoConfiguration {
+public class ZipkinUiConfiguration {
   @Autowired
   ZipkinUiProperties ui;
 

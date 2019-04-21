@@ -20,10 +20,12 @@ import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
 import zipkin2.server.internal.prometheus.ZipkinPrometheusMetricsConfiguration;
 import zipkin2.server.internal.rabbitmq.ZipkinRabbitMQCollectorConfiguration;
+import zipkin2.server.internal.ui.ZipkinUiConfiguration;
 
 @Configuration
 @Import({
   ZipkinServerConfiguration.class,
+  ZipkinUiConfiguration.class,
   ZipkinMySQLStorageConfiguration.class,
   TracingConfiguration.class,
   ZipkinQueryApiV2.class,
