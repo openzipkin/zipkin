@@ -214,9 +214,9 @@
 
     <!--Prometheus metrics-->
     <dependency>
-      <groupId>io.zipkin.java</groupId>
-      <artifactId>zipkin-autoconfigure-metrics-prometheus</artifactId>
-      <version>${project.version}</version>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>${micrometer.version}</version>
     </dependency>
 
     <!-- Trace api controller activity with Brave -->

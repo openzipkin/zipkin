@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.brave.TracingConfiguration;
 import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
+import zipkin2.server.internal.prometheus.ZipkinPrometheusMetricsConfiguration;
 import zipkin2.server.internal.rabbitmq.ZipkinRabbitMQCollectorConfiguration;
 
 @Configuration
@@ -30,6 +31,7 @@ import zipkin2.server.internal.rabbitmq.ZipkinRabbitMQCollectorConfiguration;
   ZipkinKafkaCollectorConfiguration.class,
   ZipkinRabbitMQCollectorConfiguration.class,
   MetricsHealthController.class,
+  ZipkinPrometheusMetricsConfiguration.class
 })
 public class InternalZipkinConfiguration {
 }
