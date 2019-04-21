@@ -106,10 +106,18 @@
 
     <!-- Static content for the web UI -->
     <dependency>
-      <groupId>io.zipkin.java</groupId>
-      <artifactId>zipkin-autoconfigure-ui</artifactId>
-      <version>${project.version}</version>
-      <optional>true</optional>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-ui</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.zipkin2</groupId>
+      <artifactId>zipkin-lens</artifactId>
+    </dependency>
+    <dependency>
+      <!-- HTML library for injecting configurable <base> tag -->
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>1.11.3</version>
     </dependency>
 
     <!-- Cassandra backend -->
