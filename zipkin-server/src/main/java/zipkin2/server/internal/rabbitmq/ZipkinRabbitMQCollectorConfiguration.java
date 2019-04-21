@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.collector.rabbitmq;
+package zipkin2.server.internal.rabbitmq;
 
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
@@ -30,9 +30,9 @@ import zipkin2.storage.StorageComponent;
 
 /** Auto-configuration for {@link RabbitMQCollector}. */
 @Configuration
-@Conditional(ZipkinRabbitMQCollectorAutoConfiguration.RabbitMQAddressesOrUriSet.class)
+@Conditional(ZipkinRabbitMQCollectorConfiguration.RabbitMQAddressesOrUriSet.class)
 @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
-class ZipkinRabbitMQCollectorAutoConfiguration {
+public class ZipkinRabbitMQCollectorConfiguration {
 
   @Bean(initMethod = "start")
   RabbitMQCollector rabbitMq(
