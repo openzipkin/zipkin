@@ -197,12 +197,6 @@
 
       <dependency>
         <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-storage-mysql-v1</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
         <artifactId>zipkin-collector-kafka08</artifactId>
         <version>${project.version}</version>
       </dependency>

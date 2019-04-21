@@ -176,6 +176,7 @@ spring:
     exclude:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration
 info:
   zipkin:
     version: "@project.version@"

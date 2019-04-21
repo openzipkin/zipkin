@@ -16,14 +16,16 @@ package zipkin2.server.internal;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.brave.TracingConfiguration;
+import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
 
 @Configuration
 @Import({
   ZipkinServerConfiguration.class,
+  ZipkinMySQLStorageConfiguration.class,
   TracingConfiguration.class,
   ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class,
-  MetricsHealthController.class
+  MetricsHealthController.class,
 })
 public class InternalZipkinConfiguration {
 }
