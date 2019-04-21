@@ -20,7 +20,7 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin2.autoconfigure.storage.cassandra3.Access;
+import zipkin2.server.internal.cassandra3.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

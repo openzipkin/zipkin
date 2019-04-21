@@ -20,11 +20,11 @@ import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin2.autoconfigure.storage.cassandra.Access;
+import zipkin2.server.internal.cassandra.Access;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinCassandraStorageAutoConfigurationTest {
+public class ZipkinCassandraStorageConfigurationTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
