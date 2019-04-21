@@ -19,6 +19,7 @@ import brave.http.HttpAdapter;
 import brave.http.HttpSampler;
 import brave.http.HttpTracing;
 import brave.propagation.CurrentTraceContext;
+import brave.propagation.ThreadLocalSpan;
 import brave.sampler.BoundarySampler;
 import brave.sampler.Sampler;
 import com.linecorp.armeria.common.tracing.RequestContextCurrentTraceContext;
@@ -53,14 +54,12 @@ public class TracingConfiguration {
   // Brave. During initialization, if we eagerly reference StorageComponent from within Brave,
   // BraveTracedStorageComponentEnhancer won't be able to process it. TL;DR; if you take out Lazy
   // here, self-tracing will not affect the storage component, which reduces its effectiveness.
-  @Bean
-  Sender sender(@Lazy StorageComponent storage) {
+  @Bean Sender sender(@Lazy StorageComponent storage) {
     return new LocalSender(storage);
   }
 
   /** Configuration for how to buffer spans into messages for Zipkin */
-  @Bean
-  Reporter<Span> reporter(
+  @Bean Reporter<Span> reporter(
       Sender sender,
       @Value("${zipkin.self-tracing.message-timeout:1}") int messageTimeout,
       CollectorMetrics metrics) {
@@ -76,9 +75,16 @@ public class TracingConfiguration {
       .build();
   }
 
+  /**
+   * There's no attribute namespace shared across request and response. Hence, we need to save off a
+   * reference to the span in scope, so that we can close it in the response.
+   */
+  @Bean ThreadLocalSpan threadLocalSpan(Tracing tracing) {
+    return ThreadLocalSpan.create(tracing.tracer());
+  }
+
   /** Controls aspects of tracing such as the name that shows up in the UI */
-  @Bean
-  Tracing tracing(
+  @Bean Tracing tracing(
       @Lazy Reporter<Span> reporter, @Value("${zipkin.self-tracing.sample-rate:1.0}") float rate) {
     return Tracing.newBuilder()
         .localServiceName("zipkin-server")

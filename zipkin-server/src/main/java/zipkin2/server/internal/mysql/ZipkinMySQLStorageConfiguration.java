@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.storage.mysql;
+package zipkin2.server.internal.mysql;
 
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import zipkin2.storage.StorageComponent;
 import zipkin2.storage.mysql.v1.MySQLStorage;
@@ -33,33 +34,27 @@ import zipkin2.storage.mysql.v1.MySQLStorage;
 @EnableConfigurationProperties(ZipkinMySQLStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
 @ConditionalOnMissingBean(StorageComponent.class)
-class ZipkinMySQLStorageAutoConfiguration {
-  @Autowired(required = false)
-  ZipkinMySQLStorageProperties mysql;
+@Import(TracingZipkinMySQLStorageAutoConfiguration.class)
+public class ZipkinMySQLStorageConfiguration {
+  @Autowired(required = false) ZipkinMySQLStorageProperties mysql;
+  @Autowired(required = false) ExecuteListenerProvider mysqlListener;
 
-  @Autowired(required = false)
-  @Qualifier("tracingExecuteListenerProvider")
-  ExecuteListenerProvider listener;
-
-  @Bean
-  @ConditionalOnMissingBean(Executor.class)
-  Executor executor() {
+  @Bean @ConditionalOnMissingBean
+  Executor mysqlExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
     executor.setThreadNamePrefix("ZipkinMySQLStorage-");
     executor.initialize();
     return executor;
   }
 
-  @Bean
-  @ConditionalOnMissingBean(DataSource.class)
+  @Bean @ConditionalOnMissingBean
   DataSource mysqlDataSource() {
     return mysql.toDataSource();
   }
 
-  @Bean
-  StorageComponent storage(
-    Executor executor,
-    DataSource dataSource,
+  @Bean StorageComponent storage(
+    Executor mysqlExecutor,
+    DataSource mysqlDataSource,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
     @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
     @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys) {
@@ -67,9 +62,9 @@ class ZipkinMySQLStorageAutoConfiguration {
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
       .autocompleteKeys(autocompleteKeys)
-      .executor(executor)
-      .datasource(dataSource)
-      .listenerProvider(listener)
+      .executor(mysqlExecutor)
+      .datasource(mysqlDataSource)
+      .listenerProvider(mysqlListener)
       .build();
   }
 }
