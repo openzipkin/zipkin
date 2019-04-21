@@ -7,7 +7,7 @@ a list of spans in json or TBinaryProtocol big-endian encoding. These
 spans are pushed to a span consumer.
 
 For information about running this collector as a module in Zipkin server, see
-[zipkin-autoconfigure/collector-kafka10](../../zipkin-autoconfigure/collector-kafka10/).
+the [Zipkin Server README](../../zipkin-server/README.md).
 
 When using this collector as a library outside of Zipkin server,
 [zipkin2.collector.kafka.KafkaCollector.Builder](src/main/java/zipkin2/collector/kafka/KafkaCollector.java)

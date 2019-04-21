@@ -265,8 +265,8 @@ A collector supporting Scribe is available as an external module. See
 
 ### Kafka Collector
 The Kafka collector is enabled when `KAFKA_BOOTSTRAP_SERVERS` is set to
-a v0.10+ server. The following apply and are further documented [here](../zipkin-autoconfigure/collector-kafka/).
-
+a v0.10+ server. The following settings apply in this case. Some settings
+correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apache.org/documentation/#newconsumerconfigs).
 
 Variable | New Consumer Config | Description
 --- | --- | ---
@@ -281,6 +281,22 @@ Example usage:
 $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -jar zipkin.jar
 ```
 
+#### Other Kafka consumer properties
+You may need to set other
+[Kafka consumer properties](https://kafka.apache.org/documentation/#newconsumerconfigs), in
+addition to the ones with explicit properties defined by the collector. In this case, you need to
+prefix that property name with `zipkin.collector.kafka.overrides` and pass it as a system property
+argument.
+
+For example, to override `auto.offset.reset`, you can set a system property named
+`zipkin.collector.kafka.overrides.auto.offset.reset`:
+
+```bash
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+```
+
+#### Detailed examples
+
 Example targeting Kafka running in Docker:
 
 ```bash
@@ -294,18 +310,28 @@ $ docker run -d -p 9092:9092 \
 $ java -jar zipkin.jar
 ```
 
-#### Overriding other properties
-You may need to override other consumer properties than what zipkin
-explicitly defines. In such case, you need to prefix that property name
-with "zipkin.collector.kafka.overrides" and pass it as a CLI argument or
-system property.
-
-For example, to override "overrides.auto.offset.reset", you can set a
-prefixed system property:
+Multiple bootstrap servers:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 java -jar zipkin.jar
 ```
+
+Alternate topic name(s):
+
+```bash
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+    java -Dzipkin.collector.kafka.topic=zapkin,zipken -jar zipkin.jar
+```
+
+Specifying bootstrap servers as a system property, instead of an environment variable:
+
+```bash
+$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 -jar zipkin.jar
+```
+
+#### Migration from Kafka < 0.8.1
+
+As explained [on kafka wiki](https://cwiki.apache.org/confluence/display/KAFKA/Committing+and+fetching+consumer+offsets+in+Kafka), offsets were stored in ZooKeeper. This has changed and offsets are now stored directly in Kafka. You need to update offsets in Kafka 0.10 by following the instructions.
 
 #### Kafka (Legacy) Collector
 The default collector is for Kafka 0.10.x+ brokers. You can use Kafka

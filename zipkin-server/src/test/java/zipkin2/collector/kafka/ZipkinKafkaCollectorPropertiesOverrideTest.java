@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import zipkin2.autoconfigure.collector.kafka.Access;
+import zipkin2.server.internal.kafka.Access;
 
 @RunWith(Parameterized.class)
 public class ZipkinKafkaCollectorPropertiesOverrideTest {

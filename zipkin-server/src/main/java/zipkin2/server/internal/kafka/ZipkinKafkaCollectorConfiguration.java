@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.autoconfigure.collector.kafka;
+package zipkin2.server.internal.kafka;
 
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -31,8 +31,8 @@ import zipkin2.storage.StorageComponent;
  */
 @Configuration
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
-@Conditional(ZipkinKafkaCollectorAutoConfiguration.KafkaBootstrapServersSet.class)
-class ZipkinKafkaCollectorAutoConfiguration { // makes simple type name unique for /actuator/conditions
+@Conditional(ZipkinKafkaCollectorConfiguration.KafkaBootstrapServersSet.class)
+public class ZipkinKafkaCollectorConfiguration { // makes simple type name unique for /actuator/conditions
 
   @Bean(initMethod = "start")
   KafkaCollector kafka(
