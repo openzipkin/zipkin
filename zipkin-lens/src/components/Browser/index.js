@@ -1,9 +1,9 @@
 import PropTypes from 'prop-types';
 import React from 'react';
-import ReactSelect from 'react-select';
 
-import { sortingMethods, sortingMethodOptions, sortTraceSummaries } from './sorting';
-import TraceSummary from './TraceSummary';
+import { sortingMethods } from './sorting';
+import BrowserHeader from './BrowserHeader';
+import BrowserResults from './BrowserResults';
 import LoadingOverlay from '../Common/LoadingOverlay';
 import { traceSummariesPropTypes } from '../../prop-types';
 
@@ -17,9 +17,7 @@ const propTypes = {
 class Browser extends React.Component {
   constructor(props) {
     super(props);
-    this.state = {
-      sortingMethod: sortingMethods.LONGEST,
-    };
+    this.state = { sortingMethod: sortingMethods.LONGEST };
     this.handleSortingMethodChange = this.handleSortingMethodChange.bind(this);
   }
 
@@ -29,66 +27,25 @@ class Browser extends React.Component {
   }
 
   handleSortingMethodChange(selected) {
-    this.setState({
-      sortingMethod: selected.value,
-    });
-  }
-
-  renderResultsHeader() {
-    const { traceSummaries } = this.props;
-    const { sortingMethod } = this.state;
-    return (
-      <div className="browser__results-header">
-        <div className="browser__total-results">
-          {`${traceSummaries.length} results`}
-        </div>
-        <div>
-          <ReactSelect
-            onChange={this.handleSortingMethodChange}
-            className="browser__sorting-method-select"
-            options={sortingMethodOptions}
-            value={{
-              value: sortingMethod,
-              label: sortingMethodOptions.find(opt => opt.value === sortingMethod).label,
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  renderResults() {
-    const { skewCorrectedTracesMap, traceSummaries } = this.props;
-    const { sortingMethod } = this.state;
-    const sortedTraceSummaries = sortTraceSummaries(traceSummaries, sortingMethod);
-    return (
-      <div className="browser__results">
-        {
-          sortedTraceSummaries.map(
-            traceSummary => (
-              <div
-                key={traceSummary.traceId}
-                className="browser__trace-summary-wrapper"
-              >
-                <TraceSummary
-                  traceSummary={traceSummary}
-                  skewCorrectedTrace={skewCorrectedTracesMap[traceSummary.traceId]}
-                />
-              </div>
-            ),
-          )
-        }
-      </div>
-    );
+    this.setState({ sortingMethod: selected.value });
   }
 
   render() {
-    const { isLoading } = this.props;
+    const { isLoading, traceSummaries, skewCorrectedTracesMap } = this.props;
+    const { sortingMethod } = this.state;
     return (
       <div className="browser">
         <LoadingOverlay active={isLoading} />
-        {this.renderResultsHeader()}
-        {this.renderResults()}
+        <BrowserHeader
+          numTraces={traceSummaries.length}
+          sortingMethod={sortingMethod}
+          onChange={this.handleSortingMethodChange}
+        />
+        <BrowserResults
+          traceSummaries={traceSummaries}
+          sortingMethod={sortingMethod}
+          skewCorrectedTracesMap={skewCorrectedTracesMap}
+        />
       </div>
     );
   }
