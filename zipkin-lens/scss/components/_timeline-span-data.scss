@@ -52,18 +52,19 @@
 
 .timeline-span-data__ids {
   display: flex;
-  justify-content: flex-end;
 }
 
 .timeline-span-data__id-data {
   display: flex;
-  margin: 5px 8px 0 8px;
+  margin: 5px 8px 0 3px;
+  font-size: 11px;
 }
 
 .timeline-span-data__id-data-key {
   color: $gray-5;
+  font-weight: lighter;
 }
 
 .timeline-span-data__id-data-value {
-  font-weight: bold;
+  color: $gray-4;
 }
