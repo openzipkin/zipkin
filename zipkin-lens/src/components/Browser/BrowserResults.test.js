@@ -20,7 +20,7 @@ describe('<BrowserResults />', () => {
       { traceId: '3', duration: 7, ...traceSummaryCommonProps },
     ],
     sortingMethod: sortingMethods.LONGEST,
-    skewCorrectedTracesMap: {
+    tracesMap: {
       1: { traceId: '1' },
       2: { traceId: '2' },
       3: { traceId: '3' },

@@ -13,7 +13,7 @@ describe('<Browser />', () => {
     clearTraces: jest.fn(),
     fetchTraces: () => {},
     traceSummaries: [],
-    skewCorrectedTracesMap: {},
+    tracesMap: {},
     isLoading: false,
   };
 

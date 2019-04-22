@@ -7,11 +7,11 @@ import { traceSummariesPropTypes } from '../../prop-types';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
-  skewCorrectedTracesMap: PropTypes.shape({}).isRequired,
+  tracesMap: PropTypes.shape({}).isRequired,
   sortingMethod: PropTypes.string.isRequired,
 };
 
-const BrowserResults = ({ traceSummaries, sortingMethod, skewCorrectedTracesMap }) => (
+const BrowserResults = ({ traceSummaries, sortingMethod, tracesMap }) => (
   <div className="browser-results">
     {
       sortTraceSummaries(traceSummaries, sortingMethod).map(
@@ -23,7 +23,7 @@ const BrowserResults = ({ traceSummaries, sortingMethod, skewCorrectedTracesMap 
           >
             <TraceSummary
               traceSummary={traceSummary}
-              skewCorrectedTrace={skewCorrectedTracesMap[traceSummary.traceId]}
+              skewCorrectedTrace={tracesMap[traceSummary.traceId]}
             />
           </div>
         ),

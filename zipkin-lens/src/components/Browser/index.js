@@ -9,7 +9,7 @@ import { traceSummariesPropTypes } from '../../prop-types';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
-  skewCorrectedTracesMap: PropTypes.shape({}).isRequired,
+  tracesMap: PropTypes.shape({}).isRequired,
   isLoading: PropTypes.bool.isRequired,
   clearTraces: PropTypes.func.isRequired,
 };
@@ -31,7 +31,7 @@ class Browser extends React.Component {
   }
 
   render() {
-    const { isLoading, traceSummaries, skewCorrectedTracesMap } = this.props;
+    const { isLoading, traceSummaries, tracesMap } = this.props;
     const { sortingMethod } = this.state;
     return (
       <div className="browser">
@@ -44,7 +44,7 @@ class Browser extends React.Component {
         <BrowserResults
           traceSummaries={traceSummaries}
           sortingMethod={sortingMethod}
-          skewCorrectedTracesMap={skewCorrectedTracesMap}
+          tracesMap={tracesMap}
         />
       </div>
     );
