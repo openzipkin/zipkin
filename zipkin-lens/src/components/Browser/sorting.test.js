@@ -1,61 +1,59 @@
 import { sortingMethods, sortTraceSummaries } from './sorting';
 
-const numberArrayToTraceSummaries = (numArray, key) => numArray.map(
-  n => ({ [key]: n }),
+const pairsToTraceSummaries = pairs => pairs.map(
+  pair => ({ duration: pair[0], timestamp: pair[1] }),
 );
 
 describe('sortTraceSummaries', () => {
+  const input = pairsToTraceSummaries([
+    [1, 3], // [duration, timestamp]
+    [3, 2],
+    [2, 1],
+  ]);
+
   it('LONGEST', () => {
-    const originalDurations = [1, 5, 3, 10, 7];
-    const traceSummaries = numberArrayToTraceSummaries(originalDurations, 'duration');
-    const output = sortTraceSummaries(traceSummaries, sortingMethods.LONGEST);
-    const expectedDurations = [10, 7, 5, 3, 1];
-    for (let i = 0; i < traceSummaries.length; i += 1) {
-      expect(output[i].duration).toEqual(expectedDurations[i]);
-    }
+    expect(sortTraceSummaries(input, sortingMethods.LONGEST)).toEqual(pairsToTraceSummaries([
+      [3, 2],
+      [2, 1],
+      [1, 3],
+    ]));
     // original traceSummaries should not be changed.
-    for (let i = 0; i < traceSummaries.length; i += 1) {
-      expect(traceSummaries[i].duration).toEqual(originalDurations[i]);
-    }
+    expect(input).toEqual(pairsToTraceSummaries([
+      [1, 3],
+      [3, 2],
+      [2, 1],
+    ]));
   });
 
   it('SHORTEST', () => {
-    const originalDurations = [1, 5, 3, 10, 7];
-    const traceSummaries = numberArrayToTraceSummaries(originalDurations, 'duration');
-    const output = sortTraceSummaries(traceSummaries, sortingMethods.SHORTEST);
-    const expectedDurations = [1, 3, 5, 7, 10];
-    for (let i = 0; i < traceSummaries.length; i += 1) {
-      expect(output[i].duration).toEqual(expectedDurations[i]);
-    }
+    expect(sortTraceSummaries(input, sortingMethods.SHORTEST)).toEqual(pairsToTraceSummaries([
+      [1, 3],
+      [2, 1],
+      [3, 2],
+    ]));
   });
 
   it('NEWEST', () => {
-    const originalTimestamps = [1, 5, 3, 10, 7];
-    const traceSummaries = numberArrayToTraceSummaries(originalTimestamps, 'timestamp');
-    const output = sortTraceSummaries(traceSummaries, sortingMethods.NEWEST);
-    const expectedTimestamps = [10, 7, 5, 3, 1];
-    for (let i = 0; i < traceSummaries.length; i += 1) {
-      expect(output[i].timestamp).toEqual(expectedTimestamps[i]);
-    }
+    expect(sortTraceSummaries(input, sortingMethods.NEWEST)).toEqual(pairsToTraceSummaries([
+      [1, 3],
+      [3, 2],
+      [2, 1],
+    ]));
   });
 
   it('OLDEST', () => {
-    const originalTimestamps = [1, 5, 3, 10, 7];
-    const traceSummaries = numberArrayToTraceSummaries(originalTimestamps, 'timestamp');
-    const output = sortTraceSummaries(traceSummaries, sortingMethods.OLDEST);
-    const expectedTimestamps = [1, 3, 5, 7, 10];
-    for (let i = 0; i < traceSummaries.length; i += 1) {
-      expect(output[i].timestamp).toEqual(expectedTimestamps[i]);
-    }
+    expect(sortTraceSummaries(input, sortingMethods.OLDEST)).toEqual(pairsToTraceSummaries([
+      [2, 1],
+      [3, 2],
+      [1, 3],
+    ]));
   });
 
   it('otherwise', () => {
-    const originalTimestamps = [1, 5, 3, 10, 7];
-    const traceSummaries = numberArrayToTraceSummaries(originalTimestamps, 'timestamp');
-    const output = sortTraceSummaries(traceSummaries, 'OHTERWISE');
-    const expectedTimestamps = [1, 5, 3, 10, 7];
-    for (let i = 0; i < traceSummaries.length; i += 1) {
-      expect(output[i].timestamp).toEqual(expectedTimestamps[i]);
-    }
+    expect(sortTraceSummaries(input, 'OTHERWISE')).toEqual(pairsToTraceSummaries([
+      [1, 3],
+      [3, 2],
+      [2, 1],
+    ]));
   });
 });
