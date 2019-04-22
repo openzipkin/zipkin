@@ -35,9 +35,8 @@ before_install:
   - echo "MAVEN_OPTS='-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'" > ~/.mavenrc
 
   # Override default travis to use the maven wrapper
-  # skip license on travis due to #1512
-install: ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V -Dlicense.skip=true
-script: ./mvnw clean verify -B -Dlicense.skip=true
+install: ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+script: ./mvnw clean verify -B
 
 # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
 # See https://github.com/travis-ci/travis-ci/issues/1532
