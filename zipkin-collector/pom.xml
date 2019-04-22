@@ -18,11 +18,12 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.zipkin2</groupId>
+    <groupId>org.apache.zipkin</groupId>
     <artifactId>parent</artifactId>
     <version>2.13.0-SNAPSHOT</version>
   </parent>
 
+  <groupId>org.apache.zipkin.zipkin2</groupId>
   <artifactId>zipkin-collector-parent</artifactId>
   <name>Collector</name>
   <packaging>pom</packaging>
@@ -45,6 +46,7 @@
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- For test objects and integration tests -->

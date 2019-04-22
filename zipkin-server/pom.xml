@@ -18,13 +18,11 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.zipkin2</groupId>
+    <groupId>org.apache.zipkin</groupId>
     <artifactId>parent</artifactId>
     <version>2.13.0-SNAPSHOT</version>
   </parent>
 
-  <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
-  <groupId>io.zipkin.java</groupId>
   <artifactId>zipkin-server</artifactId>
   <name>Zipkin Server</name>
 
@@ -95,23 +93,27 @@
     </dependency>
 
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-collector</artifactId>
+      <version>${project.version}</version>
     </dependency>
 
     <!-- Static content for the web UI -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-ui</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-lens</artifactId>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <!-- HTML library for injecting configurable <base> tag -->
@@ -122,7 +124,7 @@
 
     <!-- Cassandra and Cassandra 3 backends -->
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-cassandra-v1</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
@@ -162,7 +164,7 @@
 
     <!-- Elasticsearch http -->
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-elasticsearch</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
@@ -181,7 +183,7 @@
 
     <!-- MySQL backend -->
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-mysql-v1</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
@@ -199,7 +201,7 @@
 
     <!-- Kafka Collector -->
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-collector-kafka</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
@@ -207,7 +209,7 @@
 
     <!-- RabbitMQ Collector -->
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-collector-rabbitmq</artifactId>
       <version>${project.version}</version>
       <optional>true</optional>
@@ -252,8 +254,9 @@
     </dependency>
 
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin</artifactId>
+      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>

@@ -18,7 +18,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin.java</groupId>
+    <groupId>org.apache.zipkin</groupId>
     <artifactId>zipkin-autoconfigure</artifactId>
     <version>2.13.0-SNAPSHOT</version>
   </parent>
@@ -32,8 +32,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>io.zipkin.zipkin2</groupId>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-collector-kafka08</artifactId>
+      <version>${project.version}</version>
       <exclusions>
         <exclusion>
           <groupId>log4j</groupId>
@@ -68,11 +69,11 @@
           <excludes>
             <!-- excludes direct dependency instead of the group id, as otherwise we'd exclude ourselves -->
             <exclude>
-              <groupId>io.zipkin.zipkin2</groupId>
+              <groupId>${project.groupId}.zipkin2</groupId>
               <artifactId>zipkin</artifactId>
             </exclude>
             <exclude>
-              <groupId>io.zipkin.zipkin2</groupId>
+              <groupId>${project.groupId}.zipkin2</groupId>
               <artifactId>zipkin-collector</artifactId>
             </exclude>
             <!-- excludes already packaged logging libraries in the server. Can't use group ID or we
