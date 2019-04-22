@@ -17,7 +17,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>io.zipkin.zipkin2</groupId>
+  <groupId>org.apache.zipkin</groupId>
   <artifactId>parent</artifactId>
   <version>2.13.0-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -152,62 +152,6 @@
 
   <dependencyManagement>
     <dependencies>
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin</artifactId>
-        <type>test-jar</type>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-collector</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-junit</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-collector-kafka08</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-collector-scribe</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>io.zipkin.zipkin2</groupId>
-        <artifactId>zipkin-lens</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
-      <dependency>
-        <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
-        <groupId>io.zipkin.java</groupId>
-        <artifactId>zipkin-ui</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-      <dependency>
-        <!-- TODO: group ID change: https://github.com/openzipkin/zipkin/issues/2132 -->
-        <groupId>io.zipkin.java</groupId>
-        <artifactId>zipkin-server</artifactId>
-        <version>${project.version}</version>
-      </dependency>
-
       <dependency>
         <groupId>javax.annotation</groupId>
         <artifactId>javax.annotation-api</artifactId>
@@ -405,6 +349,7 @@
         <artifactId>brave</artifactId>
         <version>${brave.version}</version>
         <exclusions>
+          <!-- TODO: this exclusion will drift when brave switches to apache zipkin -->
           <exclusion>
             <groupId>io.zipkin.zipkin2</groupId>
             <artifactId>zipkin</artifactId>
