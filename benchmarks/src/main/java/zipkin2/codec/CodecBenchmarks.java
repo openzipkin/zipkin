@@ -41,7 +41,7 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin2.Span;
 
-import static zipkin2.proto3.Span.parseFrom;
+import static zipkin2.proto3.Span.ADAPTER;
 
 /**
  * The {@link SpanBytesEncoder bundled java codec} aims to be both small in size (i.e. does not
@@ -97,8 +97,8 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
-  public zipkin2.proto3.Span readClientSpan_proto3_protobuf() throws Exception {
-    return parseFrom(zipkin2Proto3);
+  public zipkin2.proto3.Span readClientSpan_proto3_wire() throws Exception {
+    return ADAPTER.decode(zipkin2Proto3);
   }
 
   @Benchmark
@@ -147,7 +147,7 @@ public class CodecBenchmarks {
 
   @Benchmark
   public zipkin2.proto3.Span readChineseSpan_proto3_protobuf() throws Exception {
-    return parseFrom(zipkin2Proto3Chinese);
+    return ADAPTER.decode(zipkin2Proto3Chinese);
   }
 
   @Benchmark
