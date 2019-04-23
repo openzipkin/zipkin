@@ -1,0 +1,26 @@
+.mini-timeline-label {
+  position: relative;
+  height: 14px;
+}
+
+.mini-timeline-label__label-wrapper {
+  position: absolute;
+}
+
+.mini-timeline-label__label {
+  color: $dark-2;
+  font-size: $font-size-xs;
+  position: absolute;
+  left: -20px;
+
+  &--first {
+    left: 2px;
+    position: absolute;
+  }
+
+  &--last {
+    left: initial;
+    right: 2px;
+    position: absolute;
+  }
+}
