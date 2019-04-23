@@ -30,7 +30,6 @@ describe('<BrowserResults />', () => {
   it('should sort trace summaries before rendering', () => {
     const wrapper = shallow(<BrowserResults {...defaultProps} />);
     const traceSummaries = wrapper.find('[data-test="trace-summary-wrapper"]');
-    console.log(traceSummaries);
     expect(traceSummaries.at(0).key()).toEqual('3');
     expect(traceSummaries.at(1).key()).toEqual('1');
     expect(traceSummaries.at(2).key()).toEqual('2');
