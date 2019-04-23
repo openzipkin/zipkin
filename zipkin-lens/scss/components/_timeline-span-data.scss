@@ -49,3 +49,22 @@
   font-size: 12px;
   margin: 1px 3px;
 }
+
+.timeline-span-data__ids {
+  display: flex;
+}
+
+.timeline-span-data__id-data {
+  display: flex;
+  margin: 5px 8px 0 3px;
+  font-size: 11px;
+}
+
+.timeline-span-data__id-data-key {
+  color: $gray-5;
+  font-weight: lighter;
+}
+
+.timeline-span-data__id-data-value {
+  color: $gray-4;
+}
