@@ -18,6 +18,5 @@ describe('<TraceSummaryUpperBar />', () => {
     const wrapper = shallow(<TraceSummaryUpperBar traceSummary={traceSummary} />);
     expect(wrapper.find('[data-test="duration"]').text()).toEqual('3μs');
     expect(wrapper.find('[data-test="spans"]').text()).toEqual('10 spans');
-    expect(wrapper.find('[data-test="timestamp"]').text()).toEqual('04/22 21:40:37:862');
   });
 });
