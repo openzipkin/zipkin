@@ -39,9 +39,10 @@ class MiniTimelineSlider extends React.Component {
     const props = {
       allowCase: false,
       defaultValue: [0, 100],
+      onBeforeChange: this.handleBeforeRangeChange,
       onAfterChange: this.handleAfterRangeChange,
     };
-    if (isDragging) {
+    if (!isDragging) {
       props.value = [
         startTs / duration * 100,
         endTs / duration * 100,
