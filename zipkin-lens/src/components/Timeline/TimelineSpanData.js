@@ -12,7 +12,24 @@ const propTypes = {
   span: detailedSpanPropTypes.isRequired,
 };
 
-const renderInfo = span => (
+const renderIdData = (key, value) => {
+  if (!value) {
+    return null;
+  }
+  return (
+    <div className="timeline-span-data__id-data">
+      <div className="timeline-span-data__id-data-key">
+        {key}
+        :&nbsp;
+      </div>
+      <div className="timeline-span-data__id-data-value">
+        {value}
+      </div>
+    </div>
+  );
+};
+
+const renderData = span => (
   <div className="timeline-span-data__content">
     <div
       className="timeline-span-data__title"
@@ -75,10 +92,14 @@ const renderInfo = span => (
         ]
       }
     />
+    <div className="timeline-span-data__ids">
+      {renderIdData('Span ID', span.spanId)}
+      {renderIdData('Parent ID', span.parentId)}
+    </div>
   </div>
 );
 
-const SpanInfo = ({ span, serviceNameColumnWidth }) => (
+const TimelineSpanData = ({ span, serviceNameColumnWidth }) => (
   <div className="timeline-span-data">
     <div
       className="timeline-span-data__left-container"
@@ -99,12 +120,12 @@ const SpanInfo = ({ span, serviceNameColumnWidth }) => (
         width: `${(1 - serviceNameColumnWidth) * 100}%`,
       }}
     >
-      {renderInfo(span)}
+      {renderData(span)}
     </div>
   </div>
 
 );
 
-SpanInfo.propTypes = propTypes;
+TimelineSpanData.propTypes = propTypes;
 
-export default SpanInfo;
+export default TimelineSpanData;
