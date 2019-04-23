@@ -35,6 +35,7 @@ const MiniTimeline = ({
         startTs={startTs}
         endTs={endTs}
         onStartAndEndTsChange={onStartAndEndTsChange}
+        numTimeMarkers={defaultNumTimeMarkers}
       />
       <MiniTimelineSlider
         duration={duration}

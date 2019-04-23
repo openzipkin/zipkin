@@ -14,6 +14,7 @@ const propTypes = {
   endTs: PropTypes.number.isRequired,
   duration: PropTypes.number.isRequired,
   onStartAndEndTsChange: PropTypes.func.isRequired,
+  numTimeMarkers: PropTypes.number.isRequired,
 };
 
 class MiniTimelineGraph extends React.Component {
@@ -76,7 +77,7 @@ class MiniTimelineGraph extends React.Component {
 
   render() {
     const {
-      spans, startTs, endTs, duration,
+      spans, startTs, endTs, duration, numTimeMarkers,
     } = this.props;
     const { isDragging, dragStartX, dragCurrentX } = this.state;
     const graphHeight = getGraphHeight(spans.length);
@@ -90,11 +91,14 @@ class MiniTimelineGraph extends React.Component {
         onMouseDown={this.handleMouseDown}
       >
         <svg version="1.1" width="100%" height={graphHeight} xmlns="http://www.w3.org/2000/svg">
-          <MiniTimelineMarkers />
+          <MiniTimelineMarkers
+            height={graphHeight}
+            numTimeMarkers={numTimeMarkers}
+          />
           {
             spans.map((span, i) => (
               <rect
-                key={span.spaId}
+                key={span.spanId}
                 width={`${span.width}%`}
                 height={graphLineHeight}
                 x={`${span.left}%`}
