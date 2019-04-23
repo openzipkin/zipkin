@@ -9,6 +9,17 @@ export const getErrorTypeColor = (errorType) => {
   }
 };
 
+export const getInfoClassColor = (infoClass) => {
+  switch (infoClass) {
+    case 'trace-error-transient':
+      return getErrorTypeColor('transient');
+    case 'trace-error-critical':
+      return getErrorTypeColor('critical');
+    default:
+      return getErrorTypeColor('none');
+  }
+};
+
 export const getServiceNameColor = (serviceName) => {
   switch (serviceName.length % 10) {
     case 0:

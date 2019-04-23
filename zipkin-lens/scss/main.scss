@@ -16,6 +16,8 @@
 
 @import 'components/app';
 @import 'components/browser';
+@import 'components/browser-header';
+@import 'components/browser-results';
 @import 'components/condition-duration';
 @import 'components/condition-lookback';
 @import 'components/condition-name';
@@ -37,4 +39,7 @@
 @import 'components/timeline-span-data';
 @import 'components/trace-page';
 @import 'components/trace-summary';
+@import 'components/trace-summary-bar';
+@import 'components/trace-summary-buttons';
+@import 'components/trace-summary-upper-bar';
 @import 'components/trace-viewer';

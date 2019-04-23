@@ -25,15 +25,15 @@ const mapStateToProps = (state, ownProps) => {
     correctedTraces.map(traceSummary),
   );
 
-  const skewCorrectedTracesMap = {};
+  const tracesMap = {};
   correctedTraces.forEach((trace, index) => {
     const [{ traceId }] = traces[index];
-    skewCorrectedTracesMap[traceId] = trace;
+    tracesMap[traceId] = trace;
   });
 
   return {
     traceSummaries: correctedSummaries,
-    skewCorrectedTracesMap,
+    tracesMap,
     isLoading: state.traces.isLoading,
   };
 };
