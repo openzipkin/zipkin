@@ -23,7 +23,7 @@ const TraceSummaryUpperBar = ({ traceSummary }) => (
           {`${traceSummary.spanCount} spans`}
         </div>
       </div>
-      <div>
+      <div data-test="timestamp">
         {moment(traceSummary.timestamp / 1000).format('MM/DD HH:mm:ss:SSS')}
       </div>
     </div>

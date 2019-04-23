@@ -1,5 +1,6 @@
 import React from 'react';
 import { shallow } from 'enzyme';
+import moment from 'moment';
 
 import TraceSummaryUpperBar from './TraceSummaryUpperBar';
 
@@ -18,5 +19,8 @@ describe('<TraceSummaryUpperBar />', () => {
     const wrapper = shallow(<TraceSummaryUpperBar traceSummary={traceSummary} />);
     expect(wrapper.find('[data-test="duration"]').text()).toEqual('3μs');
     expect(wrapper.find('[data-test="spans"]').text()).toEqual('10 spans');
+    expect(wrapper.find('[data-test="timestamp"]').text()).toEqual(
+      moment(1555936837862).format('MM/DD HH:mm:ss:SSS'),
+    );
   });
 });
