@@ -52,7 +52,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <armeria.version>0.83.0</armeria.version>
+    <armeria.version>0.84.0</armeria.version>
     <grpc.version>1.19.0</grpc.version>
     <protobuf.version>3.7.0</protobuf.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
