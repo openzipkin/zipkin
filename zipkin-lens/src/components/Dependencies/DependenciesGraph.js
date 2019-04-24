@@ -60,6 +60,14 @@ class DependenciesGraph extends React.Component {
       maxVolume = maxVolumeEdge.metrics.normal + maxVolumeEdge.metrics.danger;
     }
 
+    let nodes = graph.allNodes();
+    let connections = graph.allEdges();
+
+    if (filter) {
+      connections = connections.filter(edge => edge.source === filter || edge.target === filter);
+      nodes = nodes.filter(node => (connections.find(edge => edge.source === node.name || edge.target === node.name)))
+    }
+
     return (
       <div className="dependencies__graph">
         <VizceralExt
@@ -71,8 +79,8 @@ class DependenciesGraph extends React.Component {
             name: 'dependencies-graph',
             updated: new Date().getTime(),
             maxVolume: maxVolume * 2000,
-            nodes: graph.allNodes(),
-            connections: graph.allEdges(),
+            nodes,
+            connections
           }}
           objectHighlighted={this.handleObjectHighlighted}
           match={filter}
