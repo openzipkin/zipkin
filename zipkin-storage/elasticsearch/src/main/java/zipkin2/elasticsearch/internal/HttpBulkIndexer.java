@@ -21,6 +21,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.Request;
@@ -77,6 +78,7 @@ public final class HttpBulkIndexer {
     @Override
     public Void convert(BufferedSource b) throws IOException {
       String content = b.readUtf8();
+      if (content.contains("\"status\":429")) throw new RejectedExecutionException(content);
       if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
       return null;
     }
