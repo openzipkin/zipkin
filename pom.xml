@@ -53,11 +53,12 @@
     <main.basedir>${project.basedir}</main.basedir>
 
     <armeria.version>0.84.0</armeria.version>
-    <grpc.version>1.19.0</grpc.version>
-    <protobuf.version>3.7.0</protobuf.version>
-    <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
     <!-- This is from armeria, but be careful to avoid >= v20 apis -->
     <guava.version>27.0.1-jre</guava.version>
+
+    <!-- only used for proto interop testing -->
+    <wire.version>3.0.0-alpha01</wire.version>
+    <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
     <brave.version>5.6.3</brave.version>
     <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
@@ -359,15 +360,16 @@
           </exclusion>
         </exclusions>
       </dependency>
+
       <dependency>
         <groupId>io.zipkin.proto3</groupId>
         <artifactId>zipkin-proto3</artifactId>
         <version>0.1.0</version>
       </dependency>
       <dependency>
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
-        <version>${protobuf.version}</version>
+        <groupId>com.squareup.wire</groupId>
+        <artifactId>wire-runtime</artifactId>
+        <version>${wire.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -387,13 +389,6 @@
   </dependencies>
 
   <build>
-    <extensions>
-      <extension>
-        <groupId>kr.motd.maven</groupId>
-        <artifactId>os-maven-plugin</artifactId>
-        <version>1.6.2</version>
-      </extension>
-    </extensions>
     <pluginManagement>
       <plugins>
         <!-- mvn -N io.takari:maven:wrapper generates the ./mvnw script -->
@@ -519,11 +514,11 @@
           </executions>
         </plugin>
 
-        <!-- The below plugins compile google grpc proto stubs in the test tree -->
+        <!-- The below plugins compile protobuf stubs in the indicated source tree -->
         <plugin>
           <artifactId>maven-dependency-plugin</artifactId>
           <executions>
-            <!-- protobuf-maven-plugin cannot get proto definitions from dependencies: this will -->
+            <!-- wire-maven-plugin cannot get proto definitions from dependencies: this will -->
             <execution>
               <id>unpack-proto</id>
               <phase>generate-sources</phase>
@@ -539,16 +534,23 @@
           </executions>
         </plugin>
         <plugin>
-          <groupId>org.xolstice.maven.plugins</groupId>
-          <artifactId>protobuf-maven-plugin</artifactId>
-          <version>0.6.1</version>
-          <configuration>
-            <protoSourceRoot>${project.build.directory}/main/proto</protoSourceRoot>
-            <protoTestSourceRoot>${project.build.directory}/test/proto</protoTestSourceRoot>
-            <protocArtifact>
-              com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}
-            </protocArtifact>
-          </configuration>
+          <groupId>com.squareup.wire</groupId>
+          <artifactId>wire-maven-plugin</artifactId>
+          <version>${wire.version}</version>
+          <executions>
+            <execution>
+              <phase>generate-sources</phase>
+              <goals>
+                <goal>generate-sources</goal>
+              </goals>
+              <configuration>
+                <protoSourceDirectory>${unpack-proto.directory}</protoSourceDirectory>
+                <includes>
+                  <include>zipkin.proto3.*</include>
+                </includes>
+              </configuration>
+            </execution>
+          </executions>
         </plugin>
       </plugins>
     </pluginManagement>

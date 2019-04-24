@@ -41,12 +41,15 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin2.Span;
 
-import static zipkin2.proto3.Span.parseFrom;
-
 /**
  * The {@link SpanBytesEncoder bundled java codec} aims to be both small in size (i.e. does not
  * significantly increase the size of zipkin's jar), and efficient. It may not always be fastest,
  * but we should try to keep it competitive.
+ *
+ * <p>Note that the wire benchmarks use their structs, not ours. This will result in more efficient
+ * writes as there's no hex codec of IDs, stringifying of IPs etc. A later change could do that, but
+ * it likely still going to be more efficient than our dependency-free codec. This means in cases
+ * where extra dependencies are ok (such as our server), we could consider using wire.
  */
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
@@ -56,108 +59,133 @@ import static zipkin2.proto3.Span.parseFrom;
 @State(Scope.Thread)
 @Threads(1)
 public class CodecBenchmarks {
-  static final byte[] zipkin2Json = read("/zipkin2-client.json");
-  static final Span zipkin2 = SpanBytesDecoder.JSON_V2.decodeOne(zipkin2Json);
-  static final byte[] zipkin2Proto3 = SpanBytesEncoder.PROTO3.encode(zipkin2);
-  static final List<Span> tenSpan2s = Collections.nCopies(10, zipkin2);
-  static final byte[] tenSpan2sJson = SpanBytesEncoder.JSON_V2.encodeList(tenSpan2s);
+  static final byte[] clientSpanJsonV2 = read("/zipkin2-client.json");
+  static final Span clientSpan = SpanBytesDecoder.JSON_V2.decodeOne(clientSpanJsonV2);
+  static final byte[] clientSpanProto3 = SpanBytesEncoder.PROTO3.encode(clientSpan);
+  static final zipkin2.proto3.Span clientSpan_wire;
+  static final List<Span> tenClientSpans = Collections.nCopies(10, clientSpan);
+  static final byte[] tenClientSpansJsonV2 = SpanBytesEncoder.JSON_V2.encodeList(tenClientSpans);
   static final Kryo kryo = new Kryo();
-  static final byte[] zipkin2Serialized;
+  static final byte[] clientSpanSerialized;
 
   static {
     kryo.register(Span.class, new JavaSerializer());
     Output output = new Output(4096);
-    kryo.writeObject(output, zipkin2);
+    kryo.writeObject(output, clientSpan);
     output.flush();
-    zipkin2Serialized = output.getBuffer();
+    clientSpanSerialized = output.getBuffer();
+    try {
+      clientSpan_wire = zipkin2.proto3.Span.ADAPTER.decode(clientSpanProto3);
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
   }
 
   /** manually implemented with json so not as slow as normal java */
   @Benchmark
-  public Span readClientSpan_java() {
-    return kryo.readObject(new Input(zipkin2Serialized), Span.class);
+  public Span readClientSpan_kryo() {
+    return kryo.readObject(new Input(clientSpanSerialized), Span.class);
   }
 
   @Benchmark
-  public byte[] writeClientSpan_java() {
-    Output output = new Output(zipkin2Serialized.length);
-    kryo.writeObject(output, zipkin2);
+  public byte[] writeClientSpan_kryo() {
+    Output output = new Output(clientSpanSerialized.length);
+    kryo.writeObject(output, clientSpan);
     output.flush();
     return output.getBuffer();
   }
 
   @Benchmark
   public Span readClientSpan_json() {
-    return SpanBytesDecoder.JSON_V2.decodeOne(zipkin2Json);
+    return SpanBytesDecoder.JSON_V2.decodeOne(clientSpanJsonV2);
   }
 
   @Benchmark
   public Span readClientSpan_proto3() {
-    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Proto3);
+    return SpanBytesDecoder.PROTO3.decodeOne(clientSpanProto3);
   }
 
   @Benchmark
-  public zipkin2.proto3.Span readClientSpan_proto3_protobuf() throws Exception {
-    return parseFrom(zipkin2Proto3);
+  public zipkin2.proto3.Span readClientSpan_proto3_wire() throws Exception {
+    return zipkin2.proto3.Span.ADAPTER.decode(clientSpanProto3);
   }
 
   @Benchmark
   public List<Span> readTenClientSpans_json() {
-    return SpanBytesDecoder.JSON_V2.decodeList(tenSpan2sJson);
+    return SpanBytesDecoder.JSON_V2.decodeList(tenClientSpansJsonV2);
   }
 
   @Benchmark
   public byte[] writeClientSpan_json() {
-    return SpanBytesEncoder.JSON_V2.encode(zipkin2);
+    return SpanBytesEncoder.JSON_V2.encode(clientSpan);
   }
 
   @Benchmark
   public byte[] writeTenClientSpans_json() {
-    return SpanBytesEncoder.JSON_V2.encodeList(tenSpan2s);
+    return SpanBytesEncoder.JSON_V2.encodeList(tenClientSpans);
   }
 
   @Benchmark
-  public byte[] writeClientSpan_json_legacy() {
-    return SpanBytesEncoder.JSON_V1.encode(zipkin2);
+  public byte[] writeClientSpan_json_v1() {
+    return SpanBytesEncoder.JSON_V1.encode(clientSpan);
   }
 
   @Benchmark
-  public byte[] writeTenClientSpans_json_legacy() {
-    return SpanBytesEncoder.JSON_V1.encodeList(tenSpan2s);
+  public byte[] writeTenClientSpans_json_v1() {
+    return SpanBytesEncoder.JSON_V1.encodeList(tenClientSpans);
   }
 
   @Benchmark
   public byte[] writeClientSpan_proto3() {
-    return SpanBytesEncoder.PROTO3.encode(zipkin2);
+    return SpanBytesEncoder.PROTO3.encode(clientSpan);
   }
 
-  static final byte[] zipkin2JsonChinese = read("/zipkin2-chinese.json");
-  static final Span zipkin2Chinese = SpanBytesDecoder.JSON_V2.decodeOne(zipkin2JsonChinese);
-  static final byte[] zipkin2Proto3Chinese = SpanBytesEncoder.PROTO3.encode(zipkin2Chinese);
+  @Benchmark
+  public byte[] writeClientSpan_proto3_wire() {
+    return clientSpan_wire.encode();
+  }
+
+  static final byte[] chineseSpanJsonV2 = read("/zipkin2-chinese.json");
+  static final Span chineseSpan = SpanBytesDecoder.JSON_V2.decodeOne(chineseSpanJsonV2);
+  static final zipkin2.proto3.Span chineseSpan_wire;
+  static final byte[] chineseSpanProto3 = SpanBytesEncoder.PROTO3.encode(chineseSpan);
+
+  static {
+    try {
+      chineseSpan_wire = zipkin2.proto3.Span.ADAPTER.decode(chineseSpanProto3);
+    } catch (IOException e) {
+      throw new AssertionError(e);
+    }
+  }
 
   @Benchmark
   public Span readChineseSpan_json() {
-    return SpanBytesDecoder.JSON_V2.decodeOne(zipkin2JsonChinese);
+    return SpanBytesDecoder.JSON_V2.decodeOne(chineseSpanJsonV2);
   }
 
   @Benchmark
   public Span readChineseSpan_proto3() {
-    return SpanBytesDecoder.PROTO3.decodeOne(zipkin2Proto3Chinese);
+    return SpanBytesDecoder.PROTO3.decodeOne(chineseSpanProto3);
   }
 
   @Benchmark
-  public zipkin2.proto3.Span readChineseSpan_proto3_protobuf() throws Exception {
-    return parseFrom(zipkin2Proto3Chinese);
+  public zipkin2.proto3.Span readChineseSpan_proto3_wire() throws Exception {
+    return zipkin2.proto3.Span.ADAPTER.decode(chineseSpanProto3);
   }
 
   @Benchmark
   public byte[] writeChineseSpan_json() {
-    return SpanBytesEncoder.JSON_V2.encode(zipkin2Chinese);
+    return SpanBytesEncoder.JSON_V2.encode(chineseSpan);
   }
 
   @Benchmark
   public byte[] writeChineseSpan_proto3() {
-    return SpanBytesEncoder.PROTO3.encode(zipkin2Chinese);
+    return SpanBytesEncoder.PROTO3.encode(chineseSpan);
+  }
+
+  @Benchmark
+  public byte[] writeChineseSpan_proto3_wire() {
+    return chineseSpan_wire.encode();
   }
 
   // Convenience main entry-point

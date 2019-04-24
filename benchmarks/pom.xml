@@ -45,6 +45,11 @@
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
     </dependency>
+    <!-- for codec benchmarks -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>com.esotericsoftware.kryo</groupId>
@@ -69,19 +74,26 @@
       <artifactId>zipkin-server</artifactId>
       <version>${project.version}</version>
     </dependency>
-
+    <dependency>
+      <groupId>com.squareup.wire</groupId>
+      <artifactId>wire-runtime</artifactId>
+      <version>${wire.version}</version>
+    </dependency>
     <dependency>
       <groupId>io.zipkin.proto3</groupId>
       <artifactId>zipkin-proto3</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.protobuf</groupId>
-      <artifactId>protobuf-java</artifactId>
     </dependency>
   </dependencies>
 
   <build>
     <plugins>
+      <plugin>
+        <artifactId>maven-dependency-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>com.squareup.wire</groupId>
+        <artifactId>wire-maven-plugin</artifactId>
+      </plugin>
       <!-- disable retrolambda as we allow language level 1.8 benchmark classes -->
       <plugin>
         <groupId>net.orfjackal.retrolambda</groupId>
@@ -104,27 +116,6 @@
         <configuration>
           <skip>true</skip>
         </configuration>
-      </plugin>
-      <!-- protobuf-maven-plugin cannot get proto definitions from dependencies, so we will -->
-      <plugin>
-        <artifactId>maven-dependency-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>unpack-proto</id>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.xolstice.maven.plugins</groupId>
-        <artifactId>protobuf-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>compile-proto</id>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
       </plugin>
       <plugin>
         <artifactId>maven-shade-plugin</artifactId>
