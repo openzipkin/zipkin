@@ -141,14 +141,15 @@ public class Proto3CodecInteropTest {
 
   @Test public void span_sizeInBytes_matchesWire() {
     assertThat(SPAN.sizeInBytes(ZIPKIN_SPAN))
-      .isEqualTo(Span.ADAPTER.encodedSizeWithTag(SPAN.key, PROTO_SPAN));
+      .isEqualTo(Span.ADAPTER.encodedSizeWithTag(SPAN.fieldNumber, PROTO_SPAN));
   }
 
   @Test public void annotation_sizeInBytes_matchesWire() {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
 
     assertThat(ANNOTATION.sizeInBytes(zipkinAnnotation)).isEqualTo(
-      Annotation.ADAPTER.encodedSizeWithTag(ANNOTATION.key, PROTO_SPAN.annotations.get(0)));
+      Annotation.ADAPTER.encodedSizeWithTag(ANNOTATION.fieldNumber, PROTO_SPAN.annotations.get(0))
+    );
   }
 
   @Test public void annotation_write_matchesWire() {
@@ -178,11 +179,11 @@ public class Proto3CodecInteropTest {
 
   @Test public void endpoint_sizeInBytes_matchesWireEncodingWithTag() {
     assertThat(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint())).isEqualTo(
-        Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.key, PROTO_SPAN.local_endpoint)
+        Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.fieldNumber, PROTO_SPAN.local_endpoint)
     );
 
     assertThat(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint())).isEqualTo(
-      Endpoint.ADAPTER.encodedSizeWithTag(REMOTE_ENDPOINT.key, PROTO_SPAN.remote_endpoint)
+      Endpoint.ADAPTER.encodedSizeWithTag(REMOTE_ENDPOINT.fieldNumber, PROTO_SPAN.remote_endpoint)
     );
   }
 
