@@ -74,12 +74,12 @@ public class CodecBenchmarks {
 
   /** manually implemented with json so not as slow as normal java */
   @Benchmark
-  public Span readClientSpan_java() {
+  public Span readClientSpan_kryo() {
     return kryo.readObject(new Input(zipkin2Serialized), Span.class);
   }
 
   @Benchmark
-  public byte[] writeClientSpan_java() {
+  public byte[] writeClientSpan_kryo() {
     Output output = new Output(zipkin2Serialized.length);
     kryo.writeObject(output, zipkin2);
     output.flush();
@@ -117,12 +117,12 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
-  public byte[] writeClientSpan_json_legacy() {
+  public byte[] writeClientSpan_json_v1() {
     return SpanBytesEncoder.JSON_V1.encode(zipkin2);
   }
 
   @Benchmark
-  public byte[] writeTenClientSpans_json_legacy() {
+  public byte[] writeTenClientSpans_json_v1() {
     return SpanBytesEncoder.JSON_V1.encodeList(tenSpan2s);
   }
 
@@ -146,7 +146,7 @@ public class CodecBenchmarks {
   }
 
   @Benchmark
-  public zipkin2.proto3.Span readChineseSpan_proto3_protobuf() throws Exception {
+  public zipkin2.proto3.Span readChineseSpan_proto3_wire() throws Exception {
     return ADAPTER.decode(zipkin2Proto3Chinese);
   }
 

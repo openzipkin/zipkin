@@ -18,6 +18,7 @@ package zipkin2.internal;
 
 import com.squareup.wire.ProtoWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import okio.ByteString;
 import org.assertj.core.data.MapEntry;
@@ -30,7 +31,6 @@ import zipkin2.proto3.Endpoint;
 import zipkin2.proto3.ListOfSpans;
 import zipkin2.proto3.Span;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonMap;
 import static okio.ByteString.decodeHex;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -71,7 +71,7 @@ public class Proto3CodecInteropTest {
     .putTag("error", "此用户没有操作权限")
     .shared(true)
     .build();
-  static final List<zipkin2.Span> ZIPKIN_SPANS = asList(ZIPKIN_SPAN, ZIPKIN_SPAN);
+  static final List<zipkin2.Span> ZIPKIN_SPANS = Arrays.asList(ZIPKIN_SPAN, ZIPKIN_SPAN);
 
   static final Span PROTO_SPAN = new Span.Builder()
     .trace_id(decodeHex(ZIPKIN_SPAN.traceId()))
@@ -90,7 +90,7 @@ public class Proto3CodecInteropTest {
       .ipv4(ByteString.of(PROFILE.ipv4Bytes()))
       .port(PROFILE.portAsInt()).build()
     )
-    .annotations(asList(new Annotation.Builder()
+    .annotations(Arrays.asList(new Annotation.Builder()
       .timestamp(ZIPKIN_SPAN.annotations().get(0).timestamp())
       .value(ZIPKIN_SPAN.annotations().get(0).value())
       .build()))
@@ -98,7 +98,7 @@ public class Proto3CodecInteropTest {
     .shared(true)
     .build();
   ListOfSpans PROTO_SPANS = new ListOfSpans.Builder()
-    .spans(asList(PROTO_SPAN, PROTO_SPAN)).build();
+    .spans(Arrays.asList(PROTO_SPAN, PROTO_SPAN)).build();
 
   @Test public void encodeIsCompatible() throws IOException {
     okio.Buffer buffer = new okio.Buffer();
@@ -141,77 +141,75 @@ public class Proto3CodecInteropTest {
 
   @Test public void span_sizeInBytes_matchesWire() {
     assertThat(SPAN.sizeInBytes(ZIPKIN_SPAN))
-      .isEqualTo(Span.ADAPTER.encodedSizeWithTag(SPAN.fieldNumber, PROTO_SPAN));
+      .isEqualTo(Span.ADAPTER.encodedSizeWithTag(SPAN.key, PROTO_SPAN));
   }
 
   @Test public void annotation_sizeInBytes_matchesWire() {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
 
-    assertThat(ANNOTATION.sizeInBytes(zipkinAnnotation))
-      .isEqualTo(Annotation.ADAPTER.encodedSizeWithTag(ANNOTATION.fieldNumber,
-        PROTO_SPAN.annotations.get(0)));
+    assertThat(ANNOTATION.sizeInBytes(zipkinAnnotation)).isEqualTo(
+      Annotation.ADAPTER.encodedSizeWithTag(ANNOTATION.key, PROTO_SPAN.annotations.get(0)));
   }
 
   @Test public void annotation_write_matchesWire() {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
-    Annotation protoAnnotation = PROTO_SPAN.annotations.get(0);
+    Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
     Buffer zipkinBytes = Buffer.allocate(ANNOTATION.sizeInBytes(zipkinAnnotation));
     ANNOTATION.write(zipkinBytes, zipkinAnnotation);
 
     assertThat(zipkinBytes.toByteArray())
-      .containsExactly(new Span.Builder().annotations(asList(protoAnnotation)).build().encode());
+      .containsExactly(wireSpan.encode());
   }
 
-  @Test public void annotation_read_matchesWire() {
+  @Test public void annotation_read_matchesWireEncodingWithTag() {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
-    Annotation protoAnnotation = PROTO_SPAN.annotations.get(0);
+    Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    Buffer zipkinBytes =
-      Buffer.wrap(new Span.Builder().annotations(asList(protoAnnotation)).build().encode(), 0);
-    assertThat(zipkinBytes.readVarint32())
+    Buffer wireBytes = Buffer.wrap(wireSpan.encode(), 0);
+    assertThat(wireBytes.readVarint32())
       .isEqualTo(ANNOTATION.key);
 
     zipkin2.Span.Builder builder = zipkinSpanBuilder();
-    ANNOTATION.readLengthPrefixAndValue(zipkinBytes, builder);
+    ANNOTATION.readLengthPrefixAndValue(wireBytes, builder);
     assertThat(builder.build().annotations())
       .containsExactly(zipkinAnnotation);
   }
 
-  @Test public void endpoint_sizeInBytes_matchesWire() {
-    assertThat(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()))
-      .isEqualTo(
-        Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.fieldNumber, PROTO_SPAN.local_endpoint));
+  @Test public void endpoint_sizeInBytes_matchesWireEncodingWithTag() {
+    assertThat(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint())).isEqualTo(
+        Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.key, PROTO_SPAN.local_endpoint)
+    );
 
-    assertThat(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()))
-      .isEqualTo(Endpoint.ADAPTER.encodedSizeWithTag(REMOTE_ENDPOINT.fieldNumber,
-        PROTO_SPAN.remote_endpoint));
+    assertThat(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint())).isEqualTo(
+      Endpoint.ADAPTER.encodedSizeWithTag(REMOTE_ENDPOINT.key, PROTO_SPAN.remote_endpoint)
+    );
   }
 
   @Test public void localEndpoint_write_matchesWire() {
     Buffer zipkinBytes = Buffer.allocate(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
     LOCAL_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.localEndpoint());
-    Span span = new Span.Builder().local_endpoint(PROTO_SPAN.local_endpoint).build();
+    Span wireSpan = new Span.Builder().local_endpoint(PROTO_SPAN.local_endpoint).build();
 
     assertThat(zipkinBytes.toByteArray())
-      .containsExactly(span.encode());
+      .containsExactly(wireSpan.encode());
   }
 
   @Test public void remoteEndpoint_write_matchesWire() {
     Buffer zipkinBytes = Buffer.allocate(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
     REMOTE_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.remoteEndpoint());
-    Span span = new Span.Builder().remote_endpoint(PROTO_SPAN.remote_endpoint).build();
+    Span wireSpan = new Span.Builder().remote_endpoint(PROTO_SPAN.remote_endpoint).build();
 
     assertThat(zipkinBytes.toByteArray())
-      .containsExactly(span.encode());
+      .containsExactly(wireSpan.encode());
   }
 
   @Test public void tag_sizeInBytes_matchesWire() {
     MapEntry<String, String> entry = entry("clnt/finagle.version", "6.45.0");
-    Span span = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
+    Span wireSpan = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
 
     assertThat(new TagField(TAG_KEY).sizeInBytes(entry))
-      .isEqualTo(Span.ADAPTER.encodedSize(span));
+      .isEqualTo(Span.ADAPTER.encodedSize(wireSpan));
   }
 
   @Test public void writeTagField_matchesWire() {

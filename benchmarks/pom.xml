@@ -45,6 +45,11 @@
       <artifactId>guava</artifactId>
       <version>${guava.version}</version>
     </dependency>
+    <!-- for codec benchmarks -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>com.esotericsoftware.kryo</groupId>
