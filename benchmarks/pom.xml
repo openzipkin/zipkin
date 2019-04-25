@@ -80,8 +80,21 @@
       <version>${wire.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.apache.zipkin.proto3</groupId>
+      <groupId>io.zipkin.proto3</groupId>
       <artifactId>zipkin-proto3</artifactId>
+    </dependency>
+    <!-- TODO: This only resolves google empty. Remove this once using org.apache.zipkin.proto3 -->
+    <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>3.7.1</version>
+      <scope>test</scope>
+      <exclusions>
+        <exclusion>
+          <groupId>*</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
   </dependencies>
 
