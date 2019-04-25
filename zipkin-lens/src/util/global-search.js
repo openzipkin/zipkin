@@ -12,12 +12,12 @@ export const lookbackDurations = {
 
 export const orderedConditionKeyList = autocompleteKeys => ([
   'serviceName',
-  'remoteServiceName',
   'spanName',
   'minDuration',
   'maxDuration',
   ...autocompleteKeys,
   'tags',
+  'remoteServiceName',
 ]);
 
 export const isAutocompleteKey = (conditionKey) => {
