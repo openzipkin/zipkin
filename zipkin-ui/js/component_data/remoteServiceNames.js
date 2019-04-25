@@ -14,6 +14,10 @@ export default component(function remoteServiceNames() {
     }).done(remoteServices => {
       this.trigger('dataRemoteServiceNames', {remoteServices: remoteServices.sort()});
     }).fail(e => {
+      if (e.status && e.status === 404) { // remote service names is a new endpoint
+        this.trigger('dataRemoteServiceNames', {remoteServices: []});
+        return;
+      }
       this.trigger('uiServerError', getError('cannot load remote service names', e));
     });
   };
