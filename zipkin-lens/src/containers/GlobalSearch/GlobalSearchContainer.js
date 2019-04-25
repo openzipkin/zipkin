@@ -2,6 +2,7 @@ import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 
 import GlobalSearch from '../../components/GlobalSearch';
+import { fetchRemoteServices } from '../../actions/remote-services-action';
 import { fetchSpans } from '../../actions/spans-action';
 import { fetchServices } from '../../actions/services-action';
 import { fetchTraces } from '../../actions/traces-action';
@@ -19,6 +20,8 @@ import {
 const mapStateToProps = state => ({
   services: state.services.services,
   isLoadingServices: state.services.isLoading,
+  remoteServices: state.remoteServices.remoteServices,
+  isLoadingRemoteServices: state.remoteServices.isLoading,
   spans: state.spans.spans,
   isLoadingSpans: state.spans.isLoading,
   conditions: state.globalSearch.conditions,
@@ -32,6 +35,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   fetchServices: () => dispatch(fetchServices()),
+  fetchRemoteServices: serviceName => dispatch(fetchRemoteServices(serviceName)),
   fetchSpans: serviceName => dispatch(fetchSpans(serviceName)),
   fetchTraces: params => dispatch(fetchTraces(params)),
   fetchAutocompleteKeys: () => dispatch(fetchAutocompleteKeys()),

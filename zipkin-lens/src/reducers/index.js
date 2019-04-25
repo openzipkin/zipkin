@@ -1,5 +1,6 @@
 import { combineReducers } from 'redux';
 
+import remoteServices from './remote-services';
 import spans from './spans';
 import trace from './trace';
 import traces from './traces';
@@ -11,6 +12,7 @@ import autocompleteValues from './autocomplete-values';
 import traceViewer from './trace-viewer';
 
 const reducer = combineReducers({
+  remoteServices,
   spans,
   trace,
   traces,

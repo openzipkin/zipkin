@@ -155,7 +155,13 @@ describe('convertToApiQuery', () => {
   it('should clear serviceName all', () => {
     const parsed = convertToApiQuery(queryString.parse('?serviceName=all&endTs=1459169770000'));
 
-    should.not.exist(parsed.spanName);
+    should.not.exist(parsed.serviceName);
+  });
+
+  it('should clear remoteServiceName all', () => {
+    const parsed = convertToApiQuery(queryString.parse('?remoteServiceName=all&endTs=1'));
+
+    should.not.exist(parsed.remoteServiceName);
   });
 
   it('should not require startTs', () => {

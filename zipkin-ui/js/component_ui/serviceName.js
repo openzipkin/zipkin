@@ -42,6 +42,7 @@ export default component(function serviceName() {
     // displayed, so load the span names for the top service too.
     if (!data.lastServiceName && services && services.length > 1) {
       this.$node.trigger('uiFirstLoadSpanNames', services[0]);
+      this.$node.trigger('uiFirstLoadRemoteServiceNames', services[0]);
     }
   };
 

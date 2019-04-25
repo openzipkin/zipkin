@@ -17,11 +17,13 @@ export const orderedConditionKeyList = autocompleteKeys => ([
   'maxDuration',
   ...autocompleteKeys,
   'tags',
+  'remoteServiceName',
 ]);
 
 export const isAutocompleteKey = (conditionKey) => {
   switch (conditionKey) {
     case 'serviceName':
+    case 'remoteServiceName':
     case 'spanName':
     case 'minDuration':
     case 'maxDuration':
@@ -35,6 +37,8 @@ export const isAutocompleteKey = (conditionKey) => {
 export const defaultConditionValues = (conditionKey) => {
   switch (conditionKey) {
     case 'serviceName':
+      return undefined;
+    case 'remoteServiceName':
       return undefined;
     case 'spanName':
       return undefined;
@@ -76,6 +80,7 @@ export const buildQueryParametersWithConditions = (
   conditions.forEach((condition) => {
     switch (condition.key) {
       case 'serviceName':
+      case 'remoteServiceName':
       case 'spanName':
       case 'minDuration':
       case 'maxDuration':
@@ -110,6 +115,7 @@ export const buildApiQueryParameters = (queryParameters) => {
     const conditionValue = queryParameters[conditionKey];
     switch (conditionKey) {
       case 'serviceName':
+      case 'remoteServiceName':
       case 'spanName':
       case 'minDuration':
       case 'maxDuration':
@@ -170,6 +176,7 @@ export const extractConditionsFromQueryParameters = (queryParameters) => {
     const conditionValue = queryParameters[conditionKey];
     switch (conditionKey) {
       case 'serviceName':
+      case 'remoteServiceName':
       case 'spanName':
         conditions.push({
           key: conditionKey,

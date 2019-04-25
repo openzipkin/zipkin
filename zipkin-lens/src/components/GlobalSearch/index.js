@@ -23,6 +23,7 @@ import {
 
 const propTypes = {
   services: PropTypes.arrayOf(PropTypes.string).isRequired,
+  remoteServices: PropTypes.arrayOf(PropTypes.string).isRequired,
   spans: PropTypes.arrayOf(PropTypes.string).isRequired,
   conditions: PropTypes.arrayOf(PropTypes.shape({
     key: PropTypes.string,
@@ -40,6 +41,8 @@ const propTypes = {
   limitCondition: PropTypes.number.isRequired,
   fetchServices: PropTypes.func.isRequired,
   isLoadingServices: PropTypes.bool.isRequired,
+  fetchRemoteServices: PropTypes.func.isRequired,
+  isLoadingRemoteServices: PropTypes.bool.isRequired,
   fetchSpans: PropTypes.func.isRequired,
   isLoadingSpans: PropTypes.bool.isRequired,
   fetchTraces: PropTypes.func.isRequired,
@@ -86,6 +89,7 @@ class GlobalSearch extends React.Component {
     document.addEventListener('keydown', this.handleKeyDown);
     const {
       fetchServices,
+      fetchRemoteServices,
       fetchSpans,
       fetchAutocompleteKeys,
       location,
@@ -109,6 +113,7 @@ class GlobalSearch extends React.Component {
     fetchServices();
     const serviceNameCondition = initialConditions.conditions.find(condition => condition.key === 'serviceName');
     if (serviceNameCondition) {
+      fetchRemoteServices(serviceNameCondition.value);
       fetchSpans(serviceNameCondition.value);
     }
     fetchAutocompleteKeys();
@@ -191,6 +196,7 @@ class GlobalSearch extends React.Component {
   // Replaces the value of the "index"-th condition with "value".
   handleConditionValueChange(index, conditionValue) {
     const {
+      fetchRemoteServices,
       fetchSpans,
       conditions,
       changeConditionValue,
@@ -198,6 +204,7 @@ class GlobalSearch extends React.Component {
 
     changeConditionValue(index, conditionValue);
     if (conditions[index].key === 'serviceName') {
+      fetchRemoteServices(conditionValue);
       fetchSpans(conditionValue);
     }
   }
@@ -233,8 +240,10 @@ class GlobalSearch extends React.Component {
   renderCondition(conditionKey, index, value) {
     const {
       services,
+      remoteServices,
       spans,
       isLoadingServices,
+      isLoadingRemoteServices,
       isLoadingSpans,
       autocompleteValues,
       isLoadingAutocompleteValues,
@@ -246,12 +255,16 @@ class GlobalSearch extends React.Component {
 
     switch (conditionKey) {
       case 'serviceName':
+      case 'remoteServiceName':
       case 'spanName': {
         let options;
         let isLoadingOptions;
         if (conditionKey === 'serviceName') {
           options = services;
           isLoadingOptions = isLoadingServices;
+        } else if (conditionKey === 'remoteServiceName') {
+          options = remoteServices;
+          isLoadingOptions = isLoadingRemoteServices;
         } else {
           options = spans;
           isLoadingOptions = isLoadingSpans;
