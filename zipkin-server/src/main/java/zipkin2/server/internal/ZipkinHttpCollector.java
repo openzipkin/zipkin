@@ -40,6 +40,8 @@ import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Callback;
 import zipkin2.Span;
@@ -106,6 +108,8 @@ public class ZipkinHttpCollector {
 
   /** This synchronously decodes the message so that users can see data errors. */
   HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, byte[] serializedSpans) {
+    // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
+    if (serializedSpans.length == 0) return HttpResponse.of(HttpStatus.ACCEPTED);
     try {
       SpanBytesDecoderDetector.decoderForListMessage(serializedSpans);
     } catch (IllegalArgumentException e) {
@@ -155,20 +159,29 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
 }
 
 final class UnzippingBytesRequestConverter implements RequestConverterFunction {
+  static final Logger LOGGER = LogManager.getLogger();
   static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
 
   @Override public Object convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request,
     Class<?> expectedResultType) {
     ZipkinHttpCollector.metrics.incrementMessages();
-    HttpData content = request.content();
-    if (content.isEmpty()) throw new IllegalArgumentException("Empty POST body");
-
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
-    if (encoding != null && encoding.contains("gzip")) {
+    HttpData content = request.content();
+    if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
       content = GZIP_DECODER_FACTORY.newDecoder().decode(content);
       // The implementation of the armeria decoder is to return an empty body of failure
       if (content.isEmpty()) throw new IllegalArgumentException("Cannot gunzip spans");
     }
+
+    if (content.isEmpty()) {
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Empty POST body sent by {}->{}, {}->{}",
+          HttpHeaderNames.USER_AGENT, request.headers().get(HttpHeaderNames.USER_AGENT),
+          HttpHeaderNames.X_FORWARDED_FOR, request.headers().get(HttpHeaderNames.X_FORWARDED_FOR)
+        );
+      }
+    }
+
     byte[] result = content.array();
     ZipkinHttpCollector.metrics.incrementBytes(result.length);
     return result;
