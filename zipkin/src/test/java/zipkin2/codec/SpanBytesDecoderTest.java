@@ -40,6 +40,34 @@ public class SpanBytesDecoderTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
+  @Test public void emptyListOk_JSON_V1() {
+    assertThat(SpanBytesDecoder.JSON_V1.decodeList(new byte[0]))
+      .isEmpty(); // instead of throwing an exception
+    assertThat(SpanBytesDecoder.JSON_V1.decodeList(new byte[] {'[', ']'}))
+      .isEmpty(); // instead of throwing an exception
+  }
+
+  @Test public void emptyListOk_JSON_V2() {
+    assertThat(SpanBytesDecoder.JSON_V2.decodeList(new byte[0]))
+      .isEmpty(); // instead of throwing an exception
+    assertThat(SpanBytesDecoder.JSON_V2.decodeList(new byte[] {'[', ']'}))
+      .isEmpty(); // instead of throwing an exception
+  }
+
+  @Test public void emptyListOk_PROTO3() {
+    assertThat(SpanBytesDecoder.PROTO3.decodeList(new byte[0]))
+      .isEmpty(); // instead of throwing an exception
+  }
+
+  @Test public void emptyListOk_THRIFT() {
+    assertThat(SpanBytesDecoder.THRIFT.decodeList(new byte[0]))
+      .isEmpty(); // instead of throwing an exception
+
+    byte[] emptyListLiteral = {12 /* TYPE_STRUCT */, 0, 0, 0, 0 /* zero length */};
+    assertThat(SpanBytesDecoder.THRIFT.decodeList(emptyListLiteral))
+      .isEmpty(); // instead of throwing an exception
+  }
+
   @Test public void spanRoundTrip_JSON_V2() {
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(SpanBytesEncoder.JSON_V2.encode(span)))
       .isEqualTo(span);

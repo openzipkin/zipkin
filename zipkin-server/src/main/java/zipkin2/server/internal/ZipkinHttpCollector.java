@@ -40,6 +40,8 @@ import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Callback;
 import zipkin2.Span;
@@ -59,6 +61,7 @@ import static zipkin2.server.internal.BodyIsExceptionMessage.testForUnexpectedFo
 @RequestConverter(UnzippingBytesRequestConverter.class)
 @ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinHttpCollector {
+  static final Logger LOGGER = LogManager.getLogger();
   static volatile CollectorMetrics metrics;
   final Collector collector;
 
@@ -106,6 +109,8 @@ public class ZipkinHttpCollector {
 
   /** This synchronously decodes the message so that users can see data errors. */
   HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, byte[] serializedSpans) {
+    // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
+    if (serializedSpans.length == 0) return HttpResponse.of(HttpStatus.ACCEPTED);
     try {
       SpanBytesDecoderDetector.decoderForListMessage(serializedSpans);
     } catch (IllegalArgumentException e) {
@@ -129,6 +134,13 @@ public class ZipkinHttpCollector {
     }
     collector.accept(spans, result);
     return HttpResponse.from(result);
+  }
+
+  static void maybeLog(String prefix, ServiceRequestContext ctx, AggregatedHttpMessage request) {
+    if (!LOGGER.isDebugEnabled()) return;
+    LOGGER.debug("{} sent by clientAddress->{}, userAgent->{}",
+      prefix, ctx.clientAddress(), request.headers().get(HttpHeaderNames.USER_AGENT)
+    );
   }
 }
 
@@ -160,15 +172,19 @@ final class UnzippingBytesRequestConverter implements RequestConverterFunction {
   @Override public Object convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request,
     Class<?> expectedResultType) {
     ZipkinHttpCollector.metrics.incrementMessages();
-    HttpData content = request.content();
-    if (content.isEmpty()) throw new IllegalArgumentException("Empty POST body");
-
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
-    if (encoding != null && encoding.contains("gzip")) {
+    HttpData content = request.content();
+    if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
       content = GZIP_DECODER_FACTORY.newDecoder().decode(content);
-      // The implementation of the armeria decoder is to return an empty body of failure
-      if (content.isEmpty()) throw new IllegalArgumentException("Cannot gunzip spans");
+      // The implementation of the armeria decoder is to return an empty body on failure
+      if (content.isEmpty()) {
+        ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
+        throw new IllegalArgumentException("Cannot gunzip spans");
+      }
     }
+
+    if (content.isEmpty()) ZipkinHttpCollector.maybeLog("Empty POST body", ctx, request);
+
     byte[] result = content.array();
     ZipkinHttpCollector.metrics.incrementBytes(result.length);
     return result;
