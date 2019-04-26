@@ -633,7 +633,6 @@
             <kt>SLASHSTAR_STYLE</kt>
             <bnd>SCRIPT_STYLE</bnd>
             <ejs>XML_STYLE</ejs>
-            <svg>XML_STYLE</svg>
             <scss>DOUBLESLASH_STYLE</scss>
           </mapping>
           <excludes>
