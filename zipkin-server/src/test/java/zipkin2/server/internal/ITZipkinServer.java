@@ -38,6 +38,7 @@ import zipkin2.storage.InMemoryStorage;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.TestObjects.UTF_8;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
@@ -73,7 +74,7 @@ public class ITZipkinServer {
     Response response = get("/api/v2/traces");
     assertThat(response.isSuccessful()).isTrue();
     assertThat(response.body().string())
-      .isEqualTo("[" + SpanBytesEncoder.JSON_V2.encodeList(TRACE) + "]");
+      .isEqualTo("[" + new String(SpanBytesEncoder.JSON_V2.encodeList(TRACE), UTF_8) + "]");
   }
 
   @Test public void v2WiresUp() throws Exception {
