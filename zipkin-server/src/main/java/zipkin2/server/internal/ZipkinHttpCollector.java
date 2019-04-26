@@ -61,6 +61,7 @@ import static zipkin2.server.internal.BodyIsExceptionMessage.testForUnexpectedFo
 @RequestConverter(UnzippingBytesRequestConverter.class)
 @ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinHttpCollector {
+  static final Logger LOGGER = LogManager.getLogger();
   static volatile CollectorMetrics metrics;
   final Collector collector;
 
@@ -134,6 +135,13 @@ public class ZipkinHttpCollector {
     collector.accept(spans, result);
     return HttpResponse.from(result);
   }
+
+  static void maybeLog(String prefix, ServiceRequestContext ctx, AggregatedHttpMessage request) {
+    if (!LOGGER.isDebugEnabled()) return;
+    LOGGER.debug("{} sent by clientAddress->{}, userAgent->{}",
+      prefix, ctx.clientAddress(), request.headers().get(HttpHeaderNames.USER_AGENT)
+    );
+  }
 }
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -159,7 +167,6 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
 }
 
 final class UnzippingBytesRequestConverter implements RequestConverterFunction {
-  static final Logger LOGGER = LogManager.getLogger();
   static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
 
   @Override public Object convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request,
@@ -169,18 +176,14 @@ final class UnzippingBytesRequestConverter implements RequestConverterFunction {
     HttpData content = request.content();
     if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
       content = GZIP_DECODER_FACTORY.newDecoder().decode(content);
-      // The implementation of the armeria decoder is to return an empty body of failure
-      if (content.isEmpty()) throw new IllegalArgumentException("Cannot gunzip spans");
-    }
-
-    if (content.isEmpty()) {
-      if (LOGGER.isDebugEnabled()) {
-        LOGGER.debug("Empty POST body sent by {}->{}, {}->{}",
-          HttpHeaderNames.USER_AGENT, request.headers().get(HttpHeaderNames.USER_AGENT),
-          HttpHeaderNames.X_FORWARDED_FOR, request.headers().get(HttpHeaderNames.X_FORWARDED_FOR)
-        );
+      // The implementation of the armeria decoder is to return an empty body on failure
+      if (content.isEmpty()) {
+        ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
+        throw new IllegalArgumentException("Cannot gunzip spans");
       }
     }
+
+    if (content.isEmpty()) ZipkinHttpCollector.maybeLog("Empty POST body", ctx, request);
 
     byte[] result = content.array();
     ZipkinHttpCollector.metrics.incrementBytes(result.length);
