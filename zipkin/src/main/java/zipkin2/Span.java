@@ -727,7 +727,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   }
 
   // Custom impl to reduce GC churn and Kryo which cannot handle AutoValue subclass
-  // See https://github.com/openzipkin/zipkin/issues/1879
+  // See https://github.com/apache/incubator-zipkin/issues/1879
   final String traceId, parentId, id;
   final Kind kind;
   final String name;

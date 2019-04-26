@@ -76,7 +76,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
      * and {@code annotations_index}. This must be the same for all query servers, and has
      * historically always been 10.
      *
-     * <p>See https://github.com/openzipkin/zipkin/issues/623 for further explanation
+     * <p>See https://github.com/apache/incubator-zipkin/issues/623 for further explanation
      */
     int bucketCount = 10;
 

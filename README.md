@@ -1,4 +1,6 @@
-[![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin) [![Build Status](https://travis-ci.org/openzipkin/zipkin.svg?branch=master)](https://travis-ci.org/openzipkin/zipkin) [![Download](https://api.bintray.com/packages/openzipkin/maven/zipkin/images/download.svg) ](https://bintray.com/openzipkin/maven/zipkin/_latestVersion)
+[![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
+[![Build Status](https://img.shields.io/jenkins/s/https/builds.apache.org/job/incubator-zipkin.svg)](https://builds.apache.org/blue/organizations/jenkins/incubator-zipkin)
+[![Maven Central](https://img.shields.io/maven-central/v/org.apache.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:org.apache.zipkin%20AND%20a:zipkin-server)
 
 # zipkin
 [Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data. Zipkin’s design is based on the [Google Dapper paper](http://research.google.com/pubs/pub36356.html).
@@ -122,7 +124,7 @@ The [MySQL v1](zipkin-storage/mysql-v1) component currently is only
 tested with MySQL 5.6-7. It is designed to be easy to understand, and
 get started with. For example, it deconstructs spans into columns, so
 you can perform ad-hoc queries using SQL. However, this component has
-[known performance issues](https://github.com/openzipkin/zipkin/issues/1233): queries will eventually take seconds to return
+[known performance issues](https://github.com/apache/incubator-zipkin/issues/1233): queries will eventually take seconds to return
 if you put a lot of data into it.
 
 #### Cassandra
@@ -147,13 +149,12 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 ## Artifacts
-### Library Releases
-Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin).
-### Library Snapshots
-Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
-### Docker Images
-Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
-See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
-### Javadocs
-http://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
-as releases.
+Server artifacts are under the maven group id `org.apache.zipkin`
+Library artifacts are under the maven group id `org.apache.zipkin.zipkin2`
+### Source Releases
+Source Releases are uploaded to [Apache](https://dist.apache.org/repos/dist/release/incubator/zipkin/brave-cassandra)
+### Binary Releases
+Binary Releases are uploaded to [Apache](https://repository.apache.org/service/local/staging/deploy/maven2) and synchronized to [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.zipkin%22)
+### Binary Snapshots
+Binary Snapshots are uploaded to [Apache](https://repository.apache.org/content/repositories/snapshots/) after commits to master.
+

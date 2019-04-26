@@ -61,7 +61,7 @@ public final class Annotation implements Comparable<Annotation>, Serializable { 
   }
 
   // clutter below mainly due to difficulty working with Kryo which cannot handle AutoValue subclass
-  // See https://github.com/openzipkin/zipkin/issues/1879
+  // See https://github.com/apache/incubator-zipkin/issues/1879
   final long timestamp;
   final String value;
 

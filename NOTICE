@@ -1,0 +1,21 @@
+Apache Zipkin (incubating)
+Copyright 2019 The Apache Software Foundation
+
+This product includes software developed at
+The Apache Software Foundation (http://www.apache.org/).
+
+This product contains a modified part of Gson, distributed by Google:
+
+  * License: Apache License v2.0
+  * Homepage: https://github.com/google/gson
+
+This product contains a modified part of Guava, distributed by Google:
+
+  * License: Apache License v2.0
+  * Homepage: https://github.com/google/guava
+
+This product contains a modified part of Okio, distributed by Square:
+
+  * License: Apache License v2.0
+  * Homepage: https://github.com/square/okio
+

@@ -108,7 +108,7 @@ public final class DependencyLink implements Serializable { // for Spark and Fli
   }
 
   // clutter below mainly due to difficulty working with Kryo which cannot handle AutoValue subclass
-  // See https://github.com/openzipkin/zipkin/issues/1879
+  // See https://github.com/apache/incubator-zipkin/issues/1879
   final String parent, child;
   final long callCount, errorCount;
 

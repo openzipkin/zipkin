@@ -20,6 +20,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>21</version>
+  </parent>
+
   <groupId>org.apache.zipkin</groupId>
   <artifactId>parent</artifactId>
   <version>2.13.0-SNAPSHOT</version>
@@ -92,12 +98,10 @@
     <animal-sniffer-maven-plugin.version>1.17</animal-sniffer-maven-plugin.version>
     <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
     <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
-    <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
     <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
     <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
     <license-maven-plugin.version>3.0</license-maven-plugin.version>
     <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
-    <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
     <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M3</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
@@ -106,12 +110,12 @@
 
   <name>Zipkin (Parent)</name>
   <description>Zipkin (Parent)</description>
-  <url>https://github.com/openzipkin/zipkin</url>
+  <url>https://github.com/apache/incubator-zipkin</url>
   <inceptionYear>2015</inceptionYear>
 
   <organization>
-    <name>OpenZipkin</name>
-    <url>http://zipkin.io/</url>
+    <name>The Apache Software Foundation</name>
+    <url>http://www.apache.org/</url>
   </organization>
 
   <licenses>
@@ -123,9 +127,9 @@
   </licenses>
 
   <scm>
-    <url>https://github.com/openzipkin/zipkin</url>
-    <connection>scm:git:https://github.com/openzipkin/zipkin.git</connection>
-    <developerConnection>scm:git:https://github.com/openzipkin/zipkin.git</developerConnection>
+    <url>https://github.com/apache/incubator-zipkin</url>
+    <connection>scm:git:https://github.com/apache/incubator-zipkin.git</connection>
+    <developerConnection>scm:git:https://github.com/apache/incubator-zipkin.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
@@ -138,20 +142,35 @@
     </developer>
   </developers>
 
+  <mailingLists>
+    <mailingList>
+      <name>Zipkin Developer List</name>
+      <post>dev@zipkin.apache.org</post>
+      <subscribe>dev-subscribe@zipkin.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@zipkin.apache.org</unsubscribe>
+    </mailingList>
+    <mailingList>
+      <name>Zipkin Commits</name>
+      <post>commits@zipkin.apache.org</post>
+      <subscribe>commits-subscribe@zipkin.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@zipkin.apache.org</unsubscribe>
+    </mailingList>
+  </mailingLists>
+
   <distributionManagement>
     <repository>
-      <id>bintray</id>
-      <url>https://api.bintray.com/maven/openzipkin/maven/zipkin/;publish=1</url>
+      <id>apache.releases.https</id>
+      <url>https://repository.apache.org/service/local/staging/deploy/maven2</url>
     </repository>
     <snapshotRepository>
-      <id>jfrog-snapshots</id>
-      <url>https://oss.jfrog.org/artifactory/oss-snapshot-local</url>
+      <id>apache.snapshots.https</id>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
     </snapshotRepository>
   </distributionManagement>
 
   <issueManagement>
     <system>Github</system>
-    <url>https://github.com/openzipkin/zipkin/issues</url>
+    <url>https://github.com/apache/incubator-zipkin/issues</url>
   </issueManagement>
 
   <dependencyManagement>
@@ -416,6 +435,17 @@
         </plugin>
 
         <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin.version}</version>
+          <configuration>
+            <failOnError>false</failOnError>
+            <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
+            <!-- hush pedantic warnings: we don't put param and return on everything! -->
+            <doclint>none</doclint>
+          </configuration>
+        </plugin>
+
+        <plugin>
           <groupId>org.springframework.boot</groupId>
           <artifactId>spring-boot-maven-plugin</artifactId>
           <version>${spring-boot.version}</version>
@@ -614,12 +644,6 @@
         <version>${maven-install-plugin.version}</version>
       </plugin>
 
-      <!-- Uploads occur as a last step (which also adds checksums) -->
-      <plugin>
-        <artifactId>maven-deploy-plugin</artifactId>
-        <version>${maven-deploy-plugin.version}</version>
-      </plugin>
-
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
@@ -662,11 +686,11 @@
             <exclude>**/*.md</exclude>
             <exclude>**/src/main/resources/banner.txt</exclude>
             <exclude>**/src/main/resources/*.yml</exclude>
+            <exclude>**/spring.factories</exclude>
             <!-- Cassandra integration tests break when license headers are present -->
             <exclude>**/src/main/resources/*.cql</exclude>
-            <exclude>apache-cassandra-*/**</exclude>
-            <exclude>elasticsearch-*/**</exclude>
             <exclude>kafka_*/**</exclude>
+            <exclude>**/nohup.out</exclude>
             <exclude>src/test/resources/**</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
@@ -679,27 +703,6 @@
             <phase>compile</phase>
           </execution>
         </executions>
-      </plugin>
-
-      <plugin>
-        <artifactId>maven-release-plugin</artifactId>
-        <version>${maven-release-plugin.version}</version>
-        <configuration>
-          <useReleaseProfile>false</useReleaseProfile>
-          <releaseProfiles>release</releaseProfiles>
-          <autoVersionSubmodules>true</autoVersionSubmodules>
-          <!-- to match zipkin-scala (openzipkin/zipkin) -->
-          <tagNameFormat>@{project.version}</tagNameFormat>
-        </configuration>
-      </plugin>
-
-      <plugin>
-        <groupId>io.zipkin.centralsync-maven-plugin</groupId>
-        <artifactId>centralsync-maven-plugin</artifactId>
-        <version>0.1.0</version>
-        <configuration>
-          <packageName>zipkin</packageName>
-        </configuration>
       </plugin>
 
       <plugin>
@@ -720,6 +723,97 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+        <version>0.13</version>
+        <configuration>
+          <excludes>
+            <exclude>**/target/**</exclude>
+
+            <!-- IDE files -->
+            <exclude>**/*.iml</exclude>
+            <exclude>**/.idea/**</exclude>
+            <exclude>**/*.classpath</exclude>
+            <exclude>**/.project</exclude>
+            <exclude>**/.settings/**</exclude>
+            <exclude>**/dependency-reduced-pom.xml</exclude>
+
+            <!-- git files -->
+            <exclude>**/.gitignore</exclude>
+            <exclude>**/.gitmodules</exclude>
+            <exclude>**/.git/**</exclude>
+
+            <!-- CI files -->
+            <exclude>**/.travis.yml</exclude>
+
+            <!-- GitHub files -->
+            <exclude>**/.github/**</exclude>
+
+            <!-- document files -->
+            <exclude>**/*.md</exclude>
+
+            <!-- Cassandra integration tests break when license headers are present -->
+            <exclude>**/src/main/resources/*.cql</exclude>
+
+            <!-- spring boot config -->
+            <exclude>**/src/main/resources/banner.txt</exclude>
+            <exclude>**/src/main/resources/*.yml</exclude>
+            <exclude>**/spring.factories</exclude>
+
+            <!-- json test data and config -->
+            <exclude>**/*.json</exclude>
+
+            <!-- test assets -->
+            <exclude>**/src/test/resources/**</exclude>
+
+            <!-- UI cache -->
+            <exclude>**/node_modules/**</exclude>
+
+            <!-- UI configs -->
+            <exclude>**/.babelrc</exclude>
+            <exclude>**/.bowerrc</exclude>
+            <exclude>**/.editorconfig</exclude>
+            <exclude>**/.eslintrc</exclude>
+            <exclude>**/.eslintrc.js</exclude>
+
+            <!-- Vendored libraries -->
+            <exclude>zipkin-ui/libs/**</exclude>
+
+            <!-- Maven Wrapper generated files -->
+            <exclude>.mvn/wrapper/maven-wrapper.properties</exclude>
+
+            <!-- on-demand resources created in CI for integration tests -->
+            <exclude>kafka_*/**</exclude>
+            <exclude>**/nohup.out</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- org.apache:apache:21 sets maven-remote-resources-plugin in plugins, not pluginManagement
+           This results in execution in the parent project, and a side effect of an empty
+           DEPENDENCIES file in the assembly when packaged with the apache-release profile.
+
+           https://issues.apache.org/jira/browse/MPOM-218
+
+           This works around the problem by skipping at the parent level at the cost of having to
+           un-skip it at every deployed child.
+       -->
+      <plugin>
+        <artifactId>maven-remote-resources-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -814,51 +908,23 @@
       </build>
     </profile>
     <profile>
-      <id>release</id>
+      <id>apache-release</id>
       <build>
         <plugins>
-          <!-- disable license plugin since it should have already checked things and #1512 -->
           <plugin>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin</artifactId>
+            <artifactId>maven-assembly-plugin</artifactId>
             <executions>
               <execution>
-                <phase>none</phase>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- Creates source jar -->
-          <plugin>
-            <artifactId>maven-source-plugin</artifactId>
-            <version>${maven-source-plugin.version}</version>
-            <executions>
-              <execution>
-                <id>attach-sources</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-              </execution>
-            </executions>
-          </plugin>
-
-          <!-- Creates javadoc jar, skipping internal classes -->
-          <plugin>
-            <artifactId>maven-javadoc-plugin</artifactId>
-            <version>${maven-javadoc-plugin.version}</version>
-            <configuration>
-              <failOnError>false</failOnError>
-              <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
-              <!-- hush pedantic warnings: we don't put param and return on everything! -->
-              <doclint>none</doclint>
-            </configuration>
-            <executions>
-              <execution>
-                <id>attach-javadocs</id>
-                <goals>
-                  <goal>jar</goal>
-                </goals>
-                <phase>package</phase>
+                <id>source-release-assembly</id>
+                <configuration>
+                  <!-- make the source release zip includes the word incubating -->
+                  <finalName>apache-zipkin-incubating-${project.version}</finalName>
+                  <descriptors>
+                    <descriptor>src/main/assemblies/source-release.xml</descriptor>
+                  </descriptors>
+                  <!-- don't inherit the source-release as we are overriding it -->
+                  <descriptorRefs combine.self="override" />
+                </configuration>
               </execution>
             </executions>
           </plugin>
