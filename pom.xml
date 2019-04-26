@@ -631,6 +631,9 @@
             <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
             <java>SLASHSTAR_STYLE</java>
             <kt>SLASHSTAR_STYLE</kt>
+            <bnd>SCRIPT_STYLE</bnd>
+            <ejs>XML_STYLE</ejs>
+            <scss>DOUBLESLASH_STYLE</scss>
           </mapping>
           <excludes>
             <exclude>.travis.yml</exclude>
@@ -641,9 +644,22 @@
             <exclude>mvnw*</exclude>
             <exclude>etc/header.txt</exclude>
             <exclude>**/.idea/**</exclude>
+            <exclude>**/node_modules/**</exclude>
+            <exclude>**/.babelrc</exclude>
+            <exclude>**/.bowerrc</exclude>
+            <exclude>**/.editorconfig</exclude>
+            <exclude>**/.eslintrc</exclude>
+            <exclude>**/.eslintrc</exclude>
+            <exclude>**/.eslintrc.js</exclude>
+            <exclude>zipkin-ui/libs/**</exclude>
+            <exclude>**/testdata/**/*.json</exclude>
+            <exclude>**/test/data/**/*.json</exclude>
             <exclude>LICENSE</exclude>
+            <exclude>DISCLAIMER</exclude>
+            <exclude>DEPENDENCIES</exclude>
+            <exclude>NOTICE</exclude>
+            <exclude>Jenkinsfile</exclude>
             <exclude>**/*.md</exclude>
-            <exclude>bnd.bnd</exclude>
             <exclude>apache-cassandra-*/**</exclude>
             <exclude>elasticsearch-*/**</exclude>
             <exclude>kafka_*/**</exclude>
