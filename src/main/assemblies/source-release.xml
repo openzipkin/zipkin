@@ -44,8 +44,19 @@
         <exclude>mvnw</exclude>
         <exclude>mvnw.cmd</exclude>
 
+        <!-- PATCH: GitHub files -->
+        <exclude>.github/**</exclude>
+
         <!-- build output -->
         <exclude>%regex[(?!((?!${project.build.directory}/)[^/]+/)*src/).*${project.build.directory}.*]</exclude>
+
+        <!-- PATCH: node.js cache -->
+        <exclude>**/node_modules/**</exclude>
+
+        <!-- PATCH: integration test stuff -->
+        <exclude>**/node_modules/**</exclude>
+        <exclude>kafka_*/**</exclude>
+        <exclude>nohup.out</exclude>
 
         <!-- NOTE: Most of the following excludes should not be required
              if the standard release process is followed. This is because the
