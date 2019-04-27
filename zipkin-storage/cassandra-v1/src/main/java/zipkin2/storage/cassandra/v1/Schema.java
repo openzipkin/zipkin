@@ -36,9 +36,9 @@ final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
 
   static final String SCHEMA = "/cassandra-schema-cql3.txt";
-  static final String UPGRADE_1 = "/cassandra-schema-cql3-upgrade-1.txt";
-  static final String UPGRADE_2 = "/cassandra-schema-cql3-upgrade-2.txt";
-  static final String UPGRADE_3 = "/cassandra-schema-cql3-upgrade-3.txt";
+  static final String UPGRADE_1 = "/cassandra-schema-upgrade-1.cql";
+  static final String UPGRADE_2 = "/cassandra-schema-upgrade-2.cql";
+  static final String UPGRADE_3 = "/cassandra-schema-upgrade-3.cql";
 
   private Schema() {
   }
