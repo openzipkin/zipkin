@@ -30,7 +30,6 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
 import zipkin2.internal.DependencyLinker;
-import zipkin2.internal.DependencyLinkerTest;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
@@ -54,8 +53,8 @@ import static zipkin2.TestObjects.midnightUTC;
  * should create a connection to a real backend, even if that backend is in-process.
  *
  * <p>This is a replacement for {@code zipkin.storage.DependenciesTest}. There is some redundancy
- * as {@link DependencyLinkerTest} also defines many of these tests. The redundancy helps ensure
- * integrated storage doesn't fail due to mismapping of data, for example.
+ * as {@code zipkin2.internal.DependencyLinkerTest} also defines many of these tests. The redundancy
+ * helps ensure integrated storage doesn't fail due to mismapping of data, for example.
  */
 public abstract class ITDependencies {
   static final Endpoint KAFKA = Endpoint.newBuilder().serviceName("kafka").build();

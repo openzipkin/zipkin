@@ -32,7 +32,7 @@ import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.storage.ITSpanStore.requestBuilder;
+import static zipkin2.TestObjects.requestBuilder;
 
 public class InMemoryStorageTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().autocompleteKeys(asList("http.path")).build();

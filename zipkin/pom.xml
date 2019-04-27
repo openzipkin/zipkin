@@ -146,12 +146,6 @@
               <goal>jar</goal>
             </goals>
           </execution>
-          <execution>
-            <id>default-test-jar</id>
-            <goals>
-              <goal>test-jar</goal>
-            </goals>
-          </execution>
         </executions>
       </plugin>
       <plugin>
