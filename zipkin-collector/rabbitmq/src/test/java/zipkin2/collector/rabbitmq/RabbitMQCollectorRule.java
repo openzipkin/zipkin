@@ -72,7 +72,11 @@ class RabbitMQCollectorRule extends ExternalResource {
 
   RabbitMQCollector tryToInitializeCollector() {
     RabbitMQCollector result = computeCollectorBuilder().build();
-    result.start();
+    try {
+      result.start();
+    } catch (RuntimeException e) {
+      throw new AssumptionViolatedException(e.getMessage(), e);
+    }
 
     CheckResult check = result.check();
     if (!check.ok()) {
