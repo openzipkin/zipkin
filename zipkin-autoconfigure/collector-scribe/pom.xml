@@ -101,7 +101,7 @@
             <artifactId>maven-surefire-plugin</artifactId>
             <!-- to prevent class not found in tests -->
             <configuration>
-              <forkCount>0</forkCount>
+              <!-- we cannot use forkCount=0 due to RAT-239 -->
               <argLine>--add-modules java.xml.bind</argLine>
             </configuration>
           </plugin>
