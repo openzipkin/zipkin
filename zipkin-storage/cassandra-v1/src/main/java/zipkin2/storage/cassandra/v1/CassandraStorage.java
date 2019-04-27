@@ -43,7 +43,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>Redundant requests to store service or span names are ignored for an hour to reduce load. This
  * feature is implemented by {@link DeduplicatingVoidCallFactory}.
  *
- * <p>Schema is installed by default from "/cassandra-schema-cql3.txt"
+ * <p>Schema is installed by default from "/cassandra-schema.cql"
  */
 public class CassandraStorage extends StorageComponent { // not final for mocking
 
@@ -153,7 +153,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
 
     /**
      * Ensures that schema exists, if enabled tries to execute script
-     * io.zipkin:zipkin-cassandra-core/cassandra-schema-cql3.txt. Defaults to true.
+     * io.zipkin:zipkin-cassandra-core/cassandra-schema.cql. Defaults to true.
      */
     public Builder ensureSchema(boolean ensureSchema) {
       this.ensureSchema = ensureSchema;

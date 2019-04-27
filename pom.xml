@@ -632,7 +632,6 @@
             <java>SLASHSTAR_STYLE</java>
             <kt>SLASHSTAR_STYLE</kt>
             <bnd>SCRIPT_STYLE</bnd>
-            <cql>SLASHSTAR_STYLE</cql>
             <ejs>XML_STYLE</ejs>
             <scss>DOUBLESLASH_STYLE</scss>
           </mapping>
@@ -663,6 +662,8 @@
             <exclude>**/*.md</exclude>
             <exclude>**/src/main/resources/banner.txt</exclude>
             <exclude>**/src/main/resources/*.yml</exclude>
+            <!-- Cassandra integration tests break when license headers are present -->
+            <exclude>**/src/main/resources/*.cql</exclude>
             <exclude>apache-cassandra-*/**</exclude>
             <exclude>elasticsearch-*/**</exclude>
             <exclude>kafka_*/**</exclude>
