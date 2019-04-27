@@ -660,11 +660,14 @@
             <exclude>NOTICE</exclude>
             <exclude>Jenkinsfile</exclude>
             <exclude>**/*.md</exclude>
+            <exclude>**/src/main/resources/banner.txt</exclude>
+            <exclude>**/src/main/resources/*.yml</exclude>
+            <!-- Cassandra integration tests break when license headers are present -->
+            <exclude>**/src/main/resources/*.cql</exclude>
             <exclude>apache-cassandra-*/**</exclude>
             <exclude>elasticsearch-*/**</exclude>
             <exclude>kafka_*/**</exclude>
             <exclude>src/test/resources/**</exclude>
-            <exclude>src/main/resources/**</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
         </configuration>

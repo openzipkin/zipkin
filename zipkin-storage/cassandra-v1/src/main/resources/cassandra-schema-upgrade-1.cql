@@ -1,4 +1,3 @@
-
 // upgrade cql to add the default_time_to_live option on each table
 
 ALTER TABLE zipkin.service_span_name_index
