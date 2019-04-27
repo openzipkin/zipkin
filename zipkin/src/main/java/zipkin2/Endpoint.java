@@ -522,7 +522,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
   // End code from io.netty.util.NetUtil 4.1
 
   // clutter below mainly due to difficulty working with Kryo which cannot handle AutoValue subclass
-  // See https://github.com/openzipkin/zipkin/issues/1879
+  // See https://github.com/incubator-zipkin/issues/1879
   final String serviceName, ipv4, ipv6;
   final byte[] ipv4Bytes, ipv6Bytes;
   final int port;

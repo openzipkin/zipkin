@@ -26,9 +26,9 @@ import zipkin2.server.internal.InternalZipkinConfiguration;
 
 /**
  * @deprecated Custom servers are possible, but not supported by the community. Please use our
- * <a href="https://github.com/openzipkin/zipkin#quick-start">default server build</a> first. If you
- * find something missing, please <a href="https://gitter.im/openzipkin/zipkin">gitter</a> us about
- * it before making a custom server.
+ * <a href="https://github.com/apache/incubator-zipkin#quick-start">default server build</a> first.
+ * If you find something missing, please <a href="https://gitter.im/openzipkin/zipkin">gitter</a> us
+ * about it before making a custom server.
  *
  * <p>If you decide to make a custom server, you accept responsibility for troubleshooting your
  * build or configuration problems, even if such problems are a reaction to a change made by the

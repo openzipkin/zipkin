@@ -138,7 +138,7 @@ suggestLens | zipkin.ui.suggest-lens | When true, a button will appear on the na
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
 ## Environment Variables
-zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/scala/zipkin-query-service).
+zipkin-server is a drop-in replacement for the [scala query service](https://github.com/apache/incubator-zipkin/tree/scala/zipkin-query-service).
 
 [yaml configuration](src/main/resources/zipkin-server-shared.yml) binds the following environment variables from zipkin-scala:
 
