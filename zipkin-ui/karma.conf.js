@@ -34,7 +34,7 @@ module.exports = function(config) {
       captureConsole: true
     },
 
-    browsers: ['ChromeHeadless', 'FirefoxHeadless'],
+    browsers: ['FirefoxHeadless'],
 
     // see https://github.com/karma-runner/karma-firefox-launcher/issues/76
     customLaunchers: {
