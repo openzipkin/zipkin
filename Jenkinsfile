@@ -53,7 +53,8 @@ pipeline {
         stage('Run tests') {
             steps {
                 // use install, as opposed to verify, to ensure invoker tests use latest code
-                sh './mvnw clean install --batch-mode -nsu'
+                // skip docker tests so that we don't take 2hrs to build. Travis will run these.
+                sh './mvnw clean install --batch-mode -nsu -Ddocker.skip=true'
             }
         }
 

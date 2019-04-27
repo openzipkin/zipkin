@@ -46,19 +46,23 @@ public class ElasticsearchStorageRule extends ExternalResource {
 
   @Override
   protected void before() {
-    try {
-      LOGGER.info("Starting docker image " + image);
-      container =
+    if (!"true".equals(System.getProperty("docker.skip"))) {
+      try {
+        LOGGER.info("Starting docker image " + image);
+        container =
           new GenericContainer(image)
-              .withExposedPorts(ELASTICSEARCH_PORT)
-              .waitingFor(new HttpWaitStrategy().forPath("/"));
-      container.start();
-      if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
-        container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image)));
+            .withExposedPorts(ELASTICSEARCH_PORT)
+            .waitingFor(new HttpWaitStrategy().forPath("/"));
+        container.start();
+        if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
+          container.followOutput(new Slf4jLogConsumer(LoggerFactory.getLogger(image)));
+        }
+        LOGGER.info("Starting docker image " + image);
+      } catch (RuntimeException e) {
+        LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
       }
-      System.out.println("Starting docker image " + image);
-    } catch (RuntimeException e) {
-      LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
+    } else {
+      LOGGER.info("Skipping startup of docker " + image);
     }
 
     try {
