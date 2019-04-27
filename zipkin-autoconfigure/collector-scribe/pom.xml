@@ -98,10 +98,18 @@
       <build>
         <plugins>
           <plugin>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <configuration>
+              <!-- we cannot use rat until RAT-239 is fixed, as it fails when forkCount=0 -->
+              <skip>true</skip>
+            </configuration>
+          </plugin>
+          <plugin>
             <artifactId>maven-surefire-plugin</artifactId>
             <!-- to prevent class not found in tests -->
             <configuration>
-              <!-- we cannot use forkCount=0 due to RAT-239 -->
+              <forkCount>0</forkCount>
               <argLine>--add-modules java.xml.bind</argLine>
             </configuration>
           </plugin>
