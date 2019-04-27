@@ -47,12 +47,16 @@ class RabbitMQCollectorRule extends ExternalResource {
 
   @Override
   protected void before() {
-    try {
-      LOGGER.info("Starting docker image " + image);
-      container = new GenericContainer(image).withExposedPorts(RABBIT_PORT);
-      container.start();
-    } catch (RuntimeException e) {
-      LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
+    if (!"true".equals(System.getProperty("docker.skip"))) {
+      try {
+        LOGGER.info("Starting docker image " + image);
+        container = new GenericContainer(image).withExposedPorts(RABBIT_PORT);
+        container.start();
+      } catch (RuntimeException e) {
+        LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
+      }
+    } else {
+      LOGGER.info("Skipping startup of docker " + image);
     }
 
     try {
