@@ -17,7 +17,9 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -27,12 +29,13 @@
   </parent>
 
   <groupId>org.apache.zipkin.zipkin2</groupId>
-  <artifactId>zipkin-junit</artifactId>
-  <name>Zipkin JUnit</name>
-  <description>JUnit rule to spin-up a Zipkin server during tests</description>
+  <artifactId>zipkin-tests</artifactId>
+  <name>Zipkin Interop Tests</name>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+    <main.java.version>1.8</main.java.version>
+    <main.signature.artifact>java18</main.signature.artifact>
   </properties>
 
   <dependencies>
@@ -41,32 +44,39 @@
       <artifactId>zipkin</artifactId>
       <version>${project.version}</version>
     </dependency>
+    <!-- When codec tests run in Intellij, they refer to gson types, not shaded ones. -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-collector</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>mockwebserver</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>com.squareup.moshi</groupId>
-      <artifactId>moshi</artifactId>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
     </dependency>
 
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
     </dependency>
-
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-tests</artifactId>
-      <version>${project.version}</version>
-      <scope>test</scope>
+      <groupId>org.assertj</groupId>
+      <artifactId>assertj-core</artifactId>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>net.orfjackal.retrolambda</groupId>
+        <artifactId>retrolambda-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>none</phase>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-remote-resources-plugin</artifactId>
+        <configuration>
+          <skip>false</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 </project>

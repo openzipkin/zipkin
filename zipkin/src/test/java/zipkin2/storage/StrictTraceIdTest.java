@@ -27,7 +27,7 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.TRACE;
-import static zipkin2.storage.ITSpanStore.requestBuilder;
+import static zipkin2.TestObjects.requestBuilder;
 
 public class StrictTraceIdTest {
 
