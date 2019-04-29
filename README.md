@@ -152,7 +152,7 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 Server artifacts are under the maven group id `org.apache.zipkin`
 Library artifacts are under the maven group id `org.apache.zipkin.zipkin2`
 ### Source Releases
-Source Releases are uploaded to [Apache](https://dist.apache.org/repos/dist/release/incubator/zipkin/brave-cassandra)
+Source Releases are uploaded to [Apache](https://dist.apache.org/repos/dist/release/incubator/zipkin/zipkin)
 ### Binary Releases
 Binary Releases are uploaded to [Apache](https://repository.apache.org/service/local/staging/deploy/maven2) and synchronized to [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.zipkin%22)
 ### Binary Snapshots
