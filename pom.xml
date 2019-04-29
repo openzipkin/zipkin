@@ -169,6 +169,16 @@
     </snapshotRepository>
   </distributionManagement>
 
+  <pluginRepositories>
+    <pluginRepository>
+      <id>apache.snapshots.https</id>
+      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </pluginRepository>
+  </pluginRepositories>
+
   <issueManagement>
     <system>Github</system>
     <url>https://github.com/apache/incubator-zipkin/issues</url>
@@ -382,9 +392,9 @@
       </dependency>
 
       <dependency>
-        <groupId>io.zipkin.proto3</groupId>
+        <groupId>org.apache.zipkin.proto3</groupId>
         <artifactId>zipkin-proto3</artifactId>
-        <version>0.2.0</version>
+        <version>0.2.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>com.squareup.wire</groupId>
@@ -557,8 +567,7 @@
                 <goal>unpack-dependencies</goal>
               </goals>
               <configuration>
-                <!-- TODO: Remove protobuf-java once using org.apache.zipkin.proto3 -->
-                <includeArtifactIds>protobuf-java,zipkin-proto3</includeArtifactIds>
+                <includeArtifactIds>zipkin-proto3</includeArtifactIds>
                 <includes>**/*.proto</includes>
                 <outputDirectory>${unpack-proto.directory}</outputDirectory>
               </configuration>
@@ -578,8 +587,6 @@
               <configuration>
                 <protoSourceDirectory>${unpack-proto.directory}</protoSourceDirectory>
                 <includes>
-                  <!-- TODO: Remove google.protobuf.Empty once using org.apache.zipkin.proto3 -->
-                  <include>google.protobuf.Empty</include>
                   <include>zipkin.proto3.*</include>
                 </includes>
               </configuration>
