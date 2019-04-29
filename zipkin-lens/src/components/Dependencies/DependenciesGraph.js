@@ -65,7 +65,9 @@ class DependenciesGraph extends React.Component {
 
     if (filter) {
       connections = connections.filter(edge => edge.source === filter || edge.target === filter);
-      nodes = nodes.filter(node => (connections.find(edge => edge.source === node.name || edge.target === node.name)))
+      nodes = nodes
+        .filter(node => (connections
+          .find(edge => edge.source === node.name || edge.target === node.name)));
     }
 
     return (
@@ -80,10 +82,9 @@ class DependenciesGraph extends React.Component {
             updated: new Date().getTime(),
             maxVolume: maxVolume * 2000,
             nodes,
-            connections
+            connections,
           }}
           objectHighlighted={this.handleObjectHighlighted}
-          match={filter}
           styles={style}
         />
       </div>
