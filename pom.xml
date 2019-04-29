@@ -169,16 +169,6 @@
     </snapshotRepository>
   </distributionManagement>
 
-  <pluginRepositories>
-    <pluginRepository>
-      <id>apache.snapshots.https</id>
-      <url>https://repository.apache.org/content/repositories/snapshots/</url>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </pluginRepository>
-  </pluginRepositories>
-
   <issueManagement>
     <system>Github</system>
     <url>https://github.com/apache/incubator-zipkin/issues</url>
