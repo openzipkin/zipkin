@@ -24,7 +24,7 @@
 
   <parent>
     <groupId>@project.groupId@</groupId>
-    <artifactId>parent</artifactId>
+    <artifactId>zipkin-parent</artifactId>
     <version>@project.version@</version>
     <relativePath>../../../..</relativePath>
   </parent>
