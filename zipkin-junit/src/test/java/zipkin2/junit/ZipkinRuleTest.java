@@ -178,14 +178,11 @@ public class ZipkinRuleTest {
     gzipSink.close();
     ByteString gzippedJson = sink.readByteString();
 
-    client
-        .newCall(
-            new Request.Builder()
-                .url(zipkin.httpUrl() + "/api/v1/spans")
-                .addHeader("Content-Encoding", "gzip")
-                .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson))
-                .build())
-        .execute();
+    client.newCall(new Request.Builder()
+      .url(zipkin.httpUrl() + "/api/v1/spans")
+      .addHeader("Content-Encoding", "gzip")
+      .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson))
+      .build()).execute();
 
     assertThat(zipkin.collectorMetrics().bytes()).isEqualTo(spansInJson.length);
   }

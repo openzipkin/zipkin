@@ -19,9 +19,7 @@ package zipkin2.collector.scribe;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.concurrent.ExecutionException;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.CheckResult;
@@ -39,11 +37,9 @@ import zipkin2.v1.V1SpanConverter;
 import static com.google.common.base.Charsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.core.Is.isA;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 public class ScribeSpanConsumerTest {
-
-  @Rule public ExpectedException thrown = ExpectedException.none();
   // scope to scribe as we aren't creating the consumer with the builder.
   InMemoryCollectorMetrics scribeMetrics = new InMemoryCollectorMetrics().forTransport("scribe");
 
@@ -98,16 +94,17 @@ public class ScribeSpanConsumerTest {
     assertThat(storage.getTraces()).containsExactly(asList(v2));
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
+    assertThat(scribeMetrics.messagesDropped()).isZero();
     assertThat(scribeMetrics.bytes()).isEqualTo(bytes.length);
     assertThat(scribeMetrics.spans()).isEqualTo(1);
+    assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
   @Test
   public void entriesWithoutSpansAreSkipped() throws Exception {
-    SpanConsumer consumer =
-        (callback) -> {
-          throw new AssertionError(); // as we shouldn't get here.
-        };
+    SpanConsumer consumer = (callback) -> {
+      throw new AssertionError(); // as we shouldn't get here.
+    };
 
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
@@ -117,8 +114,11 @@ public class ScribeSpanConsumerTest {
 
     scribe.log(asList(entry)).get();
 
+    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    assertThat(scribeMetrics.messagesDropped()).isZero();
     assertThat(scribeMetrics.bytes()).isZero();
     assertThat(scribeMetrics.spans()).isZero();
+    assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
   @Test
@@ -129,10 +129,18 @@ public class ScribeSpanConsumerTest {
     entry.category = "zipkin";
     entry.message = "notbase64";
 
-    thrown.expect(ExecutionException.class); // from dereferenced future
-    thrown.expectCause(isA(IllegalArgumentException.class));
+    try {
+      scribe.log(asList(entry)).get();
+      failBecauseExceptionWasNotThrown(ExecutionException.class);
+    } catch (ExecutionException e) {
+      assertThat(e.getCause()).isInstanceOf(IllegalArgumentException.class);
+    }
 
-    scribe.log(asList(entry)).get();
+    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    assertThat(scribeMetrics.messagesDropped()).isEqualTo(1);
+    assertThat(scribeMetrics.bytes()).isZero();
+    assertThat(scribeMetrics.spans()).isZero();
+    assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
   @Test
@@ -147,10 +155,18 @@ public class ScribeSpanConsumerTest {
     entry.category = "zipkin";
     entry.message = encodedSpan;
 
-    thrown.expect(ExecutionException.class); // from dereferenced future
-    thrown.expectMessage("endpoint was null");
+    try {
+      scribe.log(asList(entry)).get();
+      failBecauseExceptionWasNotThrown(ExecutionException.class);
+    } catch (ExecutionException e) {
+      assertThat(e.getCause()).hasMessage("endpoint was null");
+    }
 
-    scribe.log(asList(entry)).get();
+    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    assertThat(scribeMetrics.messagesDropped()).isZero();
+    assertThat(scribeMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(scribeMetrics.spans()).isEqualTo(1);
+    assertThat(scribeMetrics.spansDropped()).isEqualTo(1);
   }
 
   /**
@@ -182,6 +198,10 @@ public class ScribeSpanConsumerTest {
 
     scribe.log(asList(entry)).get();
 
+    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    assertThat(scribeMetrics.messagesDropped()).isZero();
+    assertThat(scribeMetrics.bytes()).isEqualTo(bytes.length);
+    assertThat(scribeMetrics.spans()).isEqualTo(1);
     assertThat(scribeMetrics.spansDropped()).isEqualTo(1);
   }
 
@@ -197,34 +217,36 @@ public class ScribeSpanConsumerTest {
     newScribeSpanConsumer(entry.category, consumer).log(asList(entry)).get();
 
     assertThat(storage.getTraces()).containsExactly(asList(v2));
+
+    assertThat(scribeMetrics.messages()).isEqualTo(1);
+    assertThat(scribeMetrics.messagesDropped()).isZero();
+    assertThat(scribeMetrics.bytes())
+      .isEqualTo(Base64.getMimeDecoder().decode(entry.message).length);
+    assertThat(scribeMetrics.spans()).isEqualTo(1);
+    assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
   ScribeSpanConsumer newScribeSpanConsumer(String category, SpanConsumer consumer) {
     return new ScribeSpanConsumer(
-        ScribeCollector.newBuilder()
-            .category(category)
-            .metrics(scribeMetrics)
-            .storage(
-                new StorageComponent() {
-                  @Override
-                  public SpanStore spanStore() {
-                    throw new AssertionError();
-                  }
+      ScribeCollector.newBuilder()
+        .category(category)
+        .metrics(scribeMetrics)
+        .storage(new StorageComponent() {
+          @Override public SpanStore spanStore() {
+            throw new AssertionError();
+          }
 
-                  @Override
-                  public SpanConsumer spanConsumer() {
-                    return consumer;
-                  }
+          @Override public SpanConsumer spanConsumer() {
+            return consumer;
+          }
 
-                  @Override
-                  public CheckResult check() {
-                    return CheckResult.OK;
-                  }
+          @Override public CheckResult check() {
+            return CheckResult.OK;
+          }
 
-                  @Override
-                  public void close() {
-                    throw new AssertionError();
-                  }
-                }));
+          @Override public void close() {
+            throw new AssertionError();
+          }
+        }));
   }
 }
