@@ -132,6 +132,7 @@ public class ZipkinHttpCollector {
     if (!decoder.decodeList(serializedSpans, spans)) {
       throw new IllegalArgumentException("Empty " + decoder.name() + " message");
     }
+    // UnzippingBytesRequestConverter handles incrementing message and bytes
     collector.accept(spans, result);
     return HttpResponse.from(result);
   }

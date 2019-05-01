@@ -20,6 +20,7 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.SettableFuture;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -42,22 +43,23 @@ final class ScribeSpanConsumer implements Scribe {
   }
 
   @Override
-  public ListenableFuture<ResultCode> log(List<LogEntry> messages) {
+  public ListenableFuture<ResultCode> log(List<LogEntry> logEntries) {
     metrics.incrementMessages();
-    List<Span> spans;
+    List<Span> spans = new ArrayList<>();
+    int byteCount = 0;
     try {
-      spans =
-          messages
-              .stream()
-              .filter(m -> m.category.equals(category))
-              .map(m -> m.message.getBytes(StandardCharsets.ISO_8859_1))
-              .map(b -> Base64.getMimeDecoder().decode(b)) // finagle-zipkin uses mime encoding
-              .peek(b -> metrics.incrementBytes(b.length))
-              .map(SpanBytesDecoder.THRIFT::decodeOne)
-              .collect(Collectors.toList());
+      for (LogEntry logEntry : logEntries) {
+        if (!category.equals(logEntry.category)) continue;
+        byte[] bytes = logEntry.message.getBytes(StandardCharsets.ISO_8859_1);
+        bytes = Base64.getMimeDecoder().decode(bytes); // finagle-zipkin uses mime encoding
+        byteCount += bytes.length;
+        spans.add(SpanBytesDecoder.THRIFT.decodeOne(bytes));
+      }
     } catch (RuntimeException e) {
       metrics.incrementMessagesDropped();
       return Futures.immediateFailedFuture(e);
+    } finally {
+      metrics.incrementBytes(byteCount);
     }
 
     SettableFuture<ResultCode> result = SettableFuture.create();

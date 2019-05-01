@@ -16,11 +16,16 @@
  */
 package zipkin2.internal;
 
+import java.io.IOException;
+import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.UTF_8;
+import static zipkin2.internal.JsonCodec.exceptionReading;
 
 public class JsonCodecTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
@@ -46,7 +51,7 @@ public class JsonCodecTest {
       }
     }
 
-    new Foo().toString();
+    new Foo().toString(); // cause the exception
   }
 
   @Test public void doesntStackOverflowOnToBufferWriterBug_Overflow() {
@@ -72,6 +77,25 @@ public class JsonCodecTest {
       }
     }
 
-    new Foo().toString();
+    new Foo().toString(); // cause the exception
+  }
+
+  @Test public void exceptionReading_malformedJsonWraps() {
+    // grab a real exception from the gson library
+    Exception error = null;
+    byte[] bytes = "[\"='".getBytes(UTF_8);
+    try {
+      new JsonCodec.JsonReader(bytes).beginObject();
+      failBecauseExceptionWasNotThrown(IllegalStateException.class);
+    } catch (IOException | IllegalStateException e) {
+      error = e;
+    }
+
+    try {
+      exceptionReading("List<Span>", error);
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalArgumentException e) {
+      assertThat(e).hasMessage("Malformed reading List<Span> from json");
+    }
   }
 }

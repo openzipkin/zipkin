@@ -40,6 +40,7 @@ import zipkin2.codec.SpanBytesEncoder
 import zipkin2.proto3.ListOfSpans
 import zipkin2.storage.InMemoryStorage
 
+/** This tests that we accept messages constructed by other clients. */
 @SpringBootTest(classes = [ZipkinServer::class],
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = ["spring.config.name=zipkin-server", "zipkin.collector.grpc.enabled=true"])
@@ -74,12 +75,17 @@ class ITZipkinGrpcCollector {
       .build().create(SpanService::class)
   }
 
-  /** This tests that we accept messages constructed by other clients. */
-  @Test fun report_withWireGrpcLibrary() {
+  @Test fun report_trace() {
     runBlocking {
       spanService.Report(request) // Result is effectively void
     }
     assertThat<List<Span>>(storage.traces)
       .containsExactly(TestObjects.TRACE)
+  }
+
+  @Test fun report_emptyIsOk() {
+    runBlocking {
+      spanService.Report(ListOfSpans.Builder().build())
+    }
   }
 }

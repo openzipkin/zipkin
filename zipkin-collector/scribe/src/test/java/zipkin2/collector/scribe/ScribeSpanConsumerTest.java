@@ -137,10 +137,9 @@ public class ScribeSpanConsumerTest {
 
   @Test
   public void consumerExceptionBeforeCallbackSetsFutureException() throws Exception {
-    consumer =
-        (input) -> {
-          throw new NullPointerException();
-        };
+    consumer = (input) -> {
+      throw new NullPointerException("endpoint was null");
+    };
 
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
@@ -149,7 +148,7 @@ public class ScribeSpanConsumerTest {
     entry.message = encodedSpan;
 
     thrown.expect(ExecutionException.class); // from dereferenced future
-    thrown.expectMessage("Cannot store spans [abfb01327cc4d38f/cdd29fb81067d374]");
+    thrown.expectMessage("endpoint was null");
 
     scribe.log(asList(entry)).get();
   }
@@ -160,25 +159,20 @@ public class ScribeSpanConsumerTest {
    */
   @Test
   public void callbackExceptionDoesntThrow() throws Exception {
-    consumer =
-        (input) ->
-            new Call.Base<Void>() {
+    consumer = (input) -> new Call.Base<Void>() {
+      @Override protected Void doExecute() {
+        throw new AssertionError();
+      }
 
-              @Override
-              protected Void doExecute() {
-                throw new AssertionError();
-              }
+      @Override protected void doEnqueue(Callback<Void> callback) {
+        callback.onError(new NullPointerException());
+      }
 
-              @Override
-              protected void doEnqueue(Callback callback) {
-                callback.onError(new NullPointerException());
-              }
-
-              @Override
-              public Call clone() {
-                throw new AssertionError();
-              }
-            };
+      @Override
+      public Call<Void> clone() {
+        throw new AssertionError();
+      }
+    };
 
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 

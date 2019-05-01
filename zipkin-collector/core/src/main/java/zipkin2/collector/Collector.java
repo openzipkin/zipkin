@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.logging.Logger;
 import zipkin2.Callback;
 import zipkin2.Span;
@@ -29,6 +30,7 @@ import zipkin2.storage.StorageComponent;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINE;
+import static zipkin2.Call.propagateIfFatal;
 
 /**
  * This component takes action on spans received from a transport. This includes deserializing,
@@ -39,6 +41,13 @@ import static java.util.logging.Level.FINE;
  * threads.
  */
 public class Collector { // not final for mock
+  static final Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
+    @Override public void onSuccess(Void value) {
+    }
+
+    @Override public void onError(Throwable t) {
+    }
+  };
 
   /** Needed to scope this to the correct logging category */
   public static Builder newBuilder(Class<?> loggingClass) {
@@ -110,34 +119,46 @@ public class Collector { // not final for mock
     }
 
     try {
+      // adding a separate callback intentionally decouples collection from storage
       record(sampled, acceptSpansCallback(sampled));
       callback.onSuccess(null);
-    } catch (RuntimeException e) {
-      callback.onError(errorStoringSpans(sampled, e));
-      return;
+    } catch (RuntimeException | Error e) {
+      handleStorageError(spans, e, callback);
     }
   }
 
+  /**
+   * Before calling this, call {@link CollectorMetrics#incrementMessages()}, and {@link
+   * CollectorMetrics#incrementBytes(int)}. Do not call any other metrics callbacks as those are
+   * handled internal to this method.
+   *
+   * @param serialized not empty message
+   */
   public void acceptSpans(byte[] serialized, Callback<Void> callback) {
     BytesDecoder<Span> decoder;
     try {
       decoder = SpanBytesDecoderDetector.decoderForListMessage(serialized);
-    } catch (RuntimeException e) {
-      metrics.incrementBytes(serialized.length);
-      callback.onError(errorReading(e));
+    } catch (RuntimeException | Error e) {
+      handleDecodeError(e, callback);
       return;
     }
     acceptSpans(serialized, decoder, callback);
   }
 
+  /**
+   * Before calling this, call {@link CollectorMetrics#incrementMessages()}, and {@link
+   * CollectorMetrics#incrementBytes(int)}. Do not call any other metrics callbacks as those are
+   * handled internal to this method.
+   *
+   * @param serializedSpans not empty message
+   */
   public void acceptSpans(
-      byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
-    metrics.incrementBytes(serializedSpans.length);
+    byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
     List<Span> spans;
     try {
       spans = decodeList(decoder, serializedSpans);
-    } catch (RuntimeException e) {
-      callback.onError(errorReading(e));
+    } catch (RuntimeException | Error e) {
+      handleDecodeError(e, callback);
       return;
     }
     accept(spans, callback);
@@ -157,14 +178,6 @@ public class Collector { // not final for mock
     return span.traceId() + "/" + span.id();
   }
 
-  boolean shouldWarn() {
-    return logger.isLoggable(FINE);
-  }
-
-  void warn(String message, Throwable e) {
-    logger.log(FINE, message, e);
-  }
-
   List<Span> sample(List<Span> input) {
     List<Span> sampled = new ArrayList<>(input.size());
     for (int i = 0, length = input.size(); i < length; i++) {
@@ -180,58 +193,54 @@ public class Collector { // not final for mock
 
   Callback<Void> acceptSpansCallback(final List<Span> spans) {
     return new Callback<Void>() {
-      @Override
-      public void onSuccess(Void value) {}
-
-      @Override
-      public void onError(Throwable t) {
-        errorStoringSpans(spans, t);
+      @Override public void onSuccess(Void value) {
       }
 
-      @Override
-      public String toString() {
-        return appendSpanIds(spans, new StringBuilder("AcceptSpans(")).append(")").toString();
+      @Override public void onError(Throwable t) {
+        handleStorageError(spans, t, NOOP_CALLBACK);
+      }
+
+      @Override public String toString() {
+        return appendSpanIds(spans, new StringBuilder("AcceptSpans(")) + ")";
       }
     };
   }
 
-  RuntimeException errorReading(Throwable e) {
-    return errorReading("Cannot decode spans", e);
-  }
-
-  RuntimeException errorReading(String message, Throwable e) {
+  void handleDecodeError(Throwable e, Callback<Void> callback) {
     metrics.incrementMessagesDropped();
-    return doError(message, e);
+    handleError(e, "Cannot decode spans"::toString, callback);
   }
 
   /**
    * When storing spans, an exception can be raised before or after the fact. This adds context of
    * span ids to give logs more relevance.
    */
-  RuntimeException errorStoringSpans(List<Span> spans, Throwable e) {
+  void handleStorageError(List<Span> spans, Throwable e, Callback<Void> callback) {
     metrics.incrementSpansDropped(spans.size());
     // The exception could be related to a span being huge. Instead of filling logs,
     // print trace id, span id pairs
-    StringBuilder msg = appendSpanIds(spans, new StringBuilder("Cannot store spans "));
-    return doError(msg.toString(), e);
+    handleError(e, () -> appendSpanIds(spans, new StringBuilder("Cannot store spans ")), callback);
   }
 
-  RuntimeException doError(String message, Throwable e) {
+  void handleError(Throwable e, Supplier<String> defaultLogMessage, Callback<Void> callback) {
+    propagateIfFatal(e);
+    callback.onError(e);
+    if (!logger.isLoggable(FINE)) return;
+
     String error = e.getMessage() != null ? e.getMessage() : "";
-    if (e instanceof RuntimeException
-        && (error.startsWith("Malformed") || error.startsWith("Truncated"))) {
-      if (shouldWarn()) warn(error, e);
-      return (RuntimeException) e;
-    } else {
-      if (shouldWarn()) {
-        message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(), error);
-        warn(message, e);
-      }
-      return new RuntimeException(message, e);
+    // We have specific code that customizes log messages. Use this when the case.
+    if (error.startsWith("Malformed") || error.startsWith("Truncated")) {
+      logger.log(FINE, error, e);
+    } else { // otherwise, beautify the message
+      String message =
+        format("%s due to %s(%s)", defaultLogMessage.get(), e.getClass().getSimpleName(), error);
+      logger.log(FINE, message, e);
     }
   }
 
-  StringBuilder appendSpanIds(List<Span> spans, StringBuilder message) {
+  // TODO: this logic needs to be redone as service names are more important than span IDs. Also,
+  // span IDs repeat between client and server!
+  String appendSpanIds(List<Span> spans, StringBuilder message) {
     message.append("[");
     int i = 0;
     Iterator<Span> iterator = spans.iterator();
@@ -241,6 +250,6 @@ public class Collector { // not final for mock
     }
     if (iterator.hasNext()) message.append("...");
 
-    return message.append("]");
+    return message.append("]").toString();
   }
 }

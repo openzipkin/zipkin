@@ -236,7 +236,9 @@ public final class JsonCodec {
 
   static IllegalArgumentException exceptionReading(String type, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
-    if (cause.indexOf("malformed") != -1) cause = "Malformed";
+    if (cause.indexOf("Expected BEGIN_OBJECT") != -1 || cause.indexOf("malformed") != -1) {
+      cause = "Malformed";
+    }
     String message = format("%s reading %s from json", cause, type);
     throw new IllegalArgumentException(message, e);
   }

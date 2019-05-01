@@ -16,7 +16,7 @@
  */
 package zipkin2.collector.rabbitmq;
 
-import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -226,10 +226,13 @@ public final class RabbitMQCollector extends CollectorComponent {
     }
 
     @Override
-    public void handleDelivery(
-        String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+    public void handleDelivery(String tag, Envelope envelope, BasicProperties props, byte[] body) {
       metrics.incrementMessages();
-      this.collector.acceptSpans(body, NOOP);
+      metrics.incrementBytes(body.length);
+
+      if (body.length == 0) return; // lenient on empty messages
+
+      collector.acceptSpans(body, NOOP);
     }
   }
 
