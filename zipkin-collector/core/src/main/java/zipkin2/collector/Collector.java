@@ -112,17 +112,24 @@ public class Collector { // not final for mock
     }
     metrics.incrementSpans(spans.size());
 
-    List<Span> sampled = sample(spans);
-    if (sampled.isEmpty()) {
+    List<Span> sampledSpans = sample(spans);
+    if (sampledSpans.isEmpty()) {
       callback.onSuccess(null);
       return;
     }
 
+    // In order to ensure callers are not blocked, we swap callbacks when we get to the storage
+    // phase of this process. Here, we create a callback whose sole purpose is classifying later
+    // errors on this bundle of spans in the same log category. This allows people to only turn on
+    // debug logging in one place.
+    Callback<Void> logOnErrorCallback = storeSpansCallback(sampledSpans);
     try {
-      // adding a separate callback intentionally decouples collection from storage
-      record(sampled, acceptSpansCallback(sampled));
-      callback.onSuccess(null);
+      store(sampledSpans, logOnErrorCallback);
+      callback.onSuccess(null); // release the callback given to the collector
     } catch (RuntimeException | Error e) {
+      // While unexpected, invoking the storage command could raise an error synchronously. When
+      // that's the case, we wouldn't have invoked callback.onSuccess, so we need to handle the
+      // error here.
       handleStorageError(spans, e, callback);
     }
   }
@@ -170,8 +177,8 @@ public class Collector { // not final for mock
     return out;
   }
 
-  void record(List<Span> sampled, Callback<Void> callback) {
-    storage.spanConsumer().accept(sampled).enqueue(callback);
+  void store(List<Span> sampledSpans, Callback<Void> callback) {
+    storage.spanConsumer().accept(sampledSpans).enqueue(callback);
   }
 
   String idString(Span span) {
@@ -191,7 +198,7 @@ public class Collector { // not final for mock
     return sampled;
   }
 
-  Callback<Void> acceptSpansCallback(final List<Span> spans) {
+  Callback<Void> storeSpansCallback(final List<Span> spans) {
     return new Callback<Void>() {
       @Override public void onSuccess(Void value) {
       }
@@ -201,7 +208,7 @@ public class Collector { // not final for mock
       }
 
       @Override public String toString() {
-        return appendSpanIds(spans, new StringBuilder("AcceptSpans(")) + ")";
+        return appendSpanIds(spans, new StringBuilder("StoreSpans(")) + ")";
       }
     };
   }

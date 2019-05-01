@@ -151,23 +151,23 @@ public class CollectorTest {
   }
 
   @Test
-  public void acceptSpansCallback_toStringIncludesSpanIds() {
+  public void storeSpansCallback_toStringIncludesSpanIds() {
     Span span2 = CLIENT_SPAN.toBuilder().id("3").build();
     when(collector.idString(span2)).thenReturn("3");
 
-    assertThat(collector.acceptSpansCallback(asList(CLIENT_SPAN, span2)))
-      .hasToString("AcceptSpans([1, 3])");
+    assertThat(collector.storeSpansCallback(asList(CLIENT_SPAN, span2)))
+      .hasToString("StoreSpans([1, 3])");
   }
 
   @Test
-  public void acceptSpansCallback_toStringIncludesSpanIds_noMoreThan3() {
-    assertThat(unprefixIdString(collector.acceptSpansCallback(TRACE).toString()))
-      .hasToString("AcceptSpans([1, 1, 2, ...])");
+  public void storeSpansCallback_toStringIncludesSpanIds_noMoreThan3() {
+    assertThat(unprefixIdString(collector.storeSpansCallback(TRACE).toString()))
+      .hasToString("StoreSpans([1, 1, 2, ...])");
   }
 
   @Test
-  public void acceptSpansCallback_onErrorWithNullMessage() {
-    Callback<Void> callback = collector.acceptSpansCallback(TRACE);
+  public void storeSpansCallback_onErrorWithNullMessage() {
+    Callback<Void> callback = collector.storeSpansCallback(TRACE);
     callback.onError(new RuntimeException());
 
     assertThat(messages)
@@ -176,8 +176,8 @@ public class CollectorTest {
   }
 
   @Test
-  public void acceptSpansCallback_onErrorWithMessage() {
-    Callback<Void> callback = collector.acceptSpansCallback(TRACE);
+  public void storeSpansCallback_onErrorWithMessage() {
+    Callback<Void> callback = collector.storeSpansCallback(TRACE);
     callback.onError(new IllegalArgumentException("no beer"));
 
     assertThat(messages)
