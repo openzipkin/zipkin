@@ -112,12 +112,6 @@ public class ITRabbitMQCollector {
     rabbit.publish(malformed2);
     rabbit.publish(THRIFT.encodeList(spans));
 
-    rabbit.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
-    rabbit.publish(new byte[0]);
-    rabbit.publish("[\"='".getBytes()); // screwed up json
-    rabbit.publish("malformed".getBytes());
-    rabbit.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
-
     Thread.sleep(1000);
 
     assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(5);
