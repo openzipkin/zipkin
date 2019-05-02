@@ -58,6 +58,11 @@ final class ZipkinGrpcCollector {
 
     @Override protected CompletableFuture<byte[]> handleMessage(byte[] bytes) {
       metrics.incrementMessages();
+      metrics.incrementBytes(bytes.length);
+
+      if (bytes.length == 0) {
+        return CompletableFuture.completedFuture(bytes); // lenient on empty messages
+      }
       CompletableFutureCallback result = new CompletableFutureCallback();
       collector.acceptSpans(bytes, SpanBytesDecoder.PROTO3, result);
       return result;

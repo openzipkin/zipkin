@@ -42,9 +42,10 @@ import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
+import static zipkin2.TestObjects.UTF_8;
 import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 
-public class KafkaCollectorTest {
+public class ITKafkaCollector {
   @Rule public ExpectedException thrown = ExpectedException.none();
   @ClassRule public static Timeout globalTimeout = Timeout.seconds(20);
 
@@ -55,11 +56,10 @@ public class KafkaCollectorTest {
   InMemoryCollectorMetrics kafkaMetrics = metrics.forTransport("kafka");
 
   LinkedBlockingQueue<List<Span>> recvdSpans = new LinkedBlockingQueue<>();
-  SpanConsumer consumer =
-      (spans) -> {
-        recvdSpans.add(spans);
-        return Call.create(null);
-      };
+  SpanConsumer consumer = (spans) -> {
+    recvdSpans.add(spans);
+    return Call.create(null);
+  };
 
   @Test
   public void checkPasses() {
@@ -100,42 +100,22 @@ public class KafkaCollectorTest {
     }
 
     assertThat(kafkaMetrics.messages()).isEqualTo(1);
+    assertThat(kafkaMetrics.messagesDropped()).isZero();
     assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
     assertThat(kafkaMetrics.spans()).isEqualTo(1);
+    assertThat(kafkaMetrics.spansDropped()).isZero();
   }
 
   /** Ensures list encoding works: a TBinaryProtocol encoded list of spans */
   @Test
   public void messageWithMultipleSpans_thrift() throws Exception {
-    Builder builder = builder("multiple_spans_thrift");
-
-    byte[] bytes = THRIFT.encodeList(spans);
-    producer.send(new KeyedMessage<>(builder.topic, bytes));
-
-    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
-      assertThat(recvdSpans.take()).containsExactlyElementsOf(spans);
-    }
-
-    assertThat(kafkaMetrics.messages()).isEqualTo(1);
-    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
-    assertThat(kafkaMetrics.spans()).isEqualTo(spans.size());
+    messageWithMultipleSpans(builder("multiple_spans_thrift"), THRIFT);
   }
 
   /** Ensures list encoding works: a json encoded list of spans */
   @Test
   public void messageWithMultipleSpans_json() throws Exception {
-    Builder builder = builder("multiple_spans_json");
-
-    byte[] bytes = SpanBytesEncoder.JSON_V1.encodeList(spans);
-    producer.send(new KeyedMessage<>(builder.topic, bytes));
-
-    try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
-      assertThat(recvdSpans.take()).containsExactlyElementsOf(spans);
-    }
-
-    assertThat(kafkaMetrics.messages()).isEqualTo(1);
-    assertThat(kafkaMetrics.bytes()).isEqualTo(bytes.length);
-    assertThat(kafkaMetrics.spans()).isEqualTo(spans.size());
+    messageWithMultipleSpans(builder("multiple_spans_json"), SpanBytesEncoder.JSON_V1);
   }
 
   /** Ensures list encoding works: a version 2 json list of spans */
@@ -160,8 +140,10 @@ public class KafkaCollectorTest {
     }
 
     assertThat(kafkaMetrics.messages()).isEqualTo(1);
+    assertThat(kafkaMetrics.messagesDropped()).isZero();
     assertThat(kafkaMetrics.bytes()).isEqualTo(message.length);
     assertThat(kafkaMetrics.spans()).isEqualTo(spans.size());
+    assertThat(kafkaMetrics.spansDropped()).isZero();
   }
 
   /** Ensures malformed spans don't hang the collector */
@@ -169,10 +151,12 @@ public class KafkaCollectorTest {
   public void skipsMalformedData() throws Exception {
     Builder builder = builder("decoder_exception");
 
+    byte[] malformed1 = "[\"='".getBytes(UTF_8); // screwed up json
+    byte[] malformed2 = "malformed".getBytes(UTF_8);
     producer.send(new KeyedMessage<>(builder.topic, THRIFT.encodeList(spans)));
     producer.send(new KeyedMessage<>(builder.topic, new byte[0]));
-    producer.send(new KeyedMessage<>(builder.topic, "[\"='".getBytes())); // screwed up json
-    producer.send(new KeyedMessage<>(builder.topic, "malformed".getBytes()));
+    producer.send(new KeyedMessage<>(builder.topic, malformed1));
+    producer.send(new KeyedMessage<>(builder.topic, malformed2));
     producer.send(new KeyedMessage<>(builder.topic, THRIFT.encodeList(spans)));
 
     try (KafkaCollector collector = newKafkaTransport(builder, consumer)) {
@@ -181,39 +165,39 @@ public class KafkaCollectorTest {
       assertThat(recvdSpans.take()).containsExactlyElementsOf(spans);
     }
 
-    assertThat(kafkaMetrics.messagesDropped()).isEqualTo(3);
+    assertThat(kafkaMetrics.messages()).isEqualTo(5);
+    assertThat(kafkaMetrics.messagesDropped()).isEqualTo(2); // only malformed, not empty
+    assertThat(kafkaMetrics.bytes())
+      .isEqualTo(THRIFT.encodeList(spans).length * 2 + malformed1.length + malformed2.length);
+    assertThat(kafkaMetrics.spans()).isEqualTo(spans.size() * 2);
+    assertThat(kafkaMetrics.spansDropped()).isZero();
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */
   @Test
-  public void skipsOnConsumerException() throws Exception {
-    Builder builder = builder("consumer_exception");
+  public void skipsOnStorageException() throws Exception {
+    Builder builder = builder("storage_exception");
 
     AtomicInteger counter = new AtomicInteger();
-    consumer =
-        (input) ->
-            new Call.Base<Void>() {
+    consumer = (input) -> new Call.Base<Void>() {
 
-              @Override
-              protected Void doExecute() {
-                throw new AssertionError();
-              }
+      @Override protected Void doExecute() {
+        throw new AssertionError();
+      }
 
-              @Override
-              protected void doEnqueue(Callback callback) {
-                if (counter.getAndIncrement() == 1) {
-                  callback.onError(new RuntimeException("storage fell over"));
-                } else {
-                  recvdSpans.add(spans);
-                  callback.onSuccess(null);
-                }
-              }
+      @Override protected void doEnqueue(Callback<Void> callback) {
+        if (counter.getAndIncrement() == 1) {
+          callback.onError(new RuntimeException("storage fell over"));
+        } else {
+          recvdSpans.add(spans);
+          callback.onSuccess(null);
+        }
+      }
 
-              @Override
-              public Call clone() {
-                throw new AssertionError();
-              }
-            };
+      @Override public Call<Void> clone() {
+        throw new AssertionError();
+      }
+    };
 
     producer.send(new KeyedMessage<>(builder.topic, THRIFT.encodeList(spans)));
     producer.send(new KeyedMessage<>(builder.topic, THRIFT.encodeList(spans))); // tossed on error
@@ -225,7 +209,11 @@ public class KafkaCollectorTest {
       assertThat(recvdSpans.take()).containsExactlyElementsOf(spans);
     }
 
-    assertThat(kafkaMetrics.spansDropped()).isEqualTo(spans.size());
+    assertThat(kafkaMetrics.messages()).isEqualTo(3);
+    assertThat(kafkaMetrics.messagesDropped()).isZero(); // storage failure isn't a message failure
+    assertThat(kafkaMetrics.bytes()).isEqualTo(THRIFT.encodeList(spans).length * 3);
+    assertThat(kafkaMetrics.spans()).isEqualTo(spans.size() * 3);
+    assertThat(kafkaMetrics.spansDropped()).isEqualTo(spans.size()); // only one dropped
   }
 
   Builder builder(String topic) {

@@ -19,13 +19,10 @@ package zipkin2.collector.kafka;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
@@ -226,7 +223,7 @@ public final class KafkaCollector extends CollectorComponent {
     void close() {
       ExecutorService maybePool = pool;
       if (maybePool == null) return;
-      for(KafkaCollectorWorker worker: workers) {
+      for (KafkaCollectorWorker worker : workers) {
         worker.stop();
       }
       maybePool.shutdown();

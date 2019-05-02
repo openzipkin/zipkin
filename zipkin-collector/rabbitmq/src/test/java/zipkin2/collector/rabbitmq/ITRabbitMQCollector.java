@@ -16,13 +16,12 @@
  */
 package zipkin2.collector.rabbitmq;
 
+import com.rabbitmq.client.Channel;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-
-import com.rabbitmq.client.Channel;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -33,8 +32,10 @@ import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.storage.InMemoryStorage;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
+import static zipkin2.TestObjects.UTF_8;
+import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 import static zipkin2.collector.rabbitmq.RabbitMQCollector.builder;
 
 public class ITRabbitMQCollector {
@@ -71,15 +72,7 @@ public class ITRabbitMQCollector {
   /** Ensures list encoding works: a json encoded list of spans */
   @Test
   public void messageWithMultipleSpans_json() throws Exception {
-    byte[] message = SpanBytesEncoder.JSON_V1.encodeList(spans);
-    rabbit.publish(message);
-
-    Thread.sleep(1000);
-    assertThat(rabbit.storage.acceptedSpanCount()).isEqualTo(spans.size());
-
-    assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(1);
-    assertThat(rabbit.rabbitmqMetrics.bytes()).isEqualTo(message.length);
-    assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
+    messageWithMultipleSpans(SpanBytesEncoder.JSON_V1);
   }
 
   /** Ensures list encoding works: a version 2 json list of spans */
@@ -94,9 +87,7 @@ public class ITRabbitMQCollector {
     messageWithMultipleSpans(SpanBytesEncoder.PROTO3);
   }
 
-  void messageWithMultipleSpans(SpanBytesEncoder encoder)
-      throws IOException, TimeoutException, InterruptedException {
-
+  void messageWithMultipleSpans(SpanBytesEncoder encoder) throws Exception {
     byte[] message = encoder.encodeList(spans);
     rabbit.publish(message);
 
@@ -104,22 +95,31 @@ public class ITRabbitMQCollector {
     assertThat(rabbit.storage.acceptedSpanCount()).isEqualTo(spans.size());
 
     assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(1);
+    assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isZero();
     assertThat(rabbit.rabbitmqMetrics.bytes()).isEqualTo(message.length);
     assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
+    assertThat(rabbit.rabbitmqMetrics.spansDropped()).isZero();
   }
 
   /** Ensures malformed spans don't hang the collector */
   @Test
   public void skipsMalformedData() throws Exception {
-    rabbit.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
+    byte[] malformed1 = "[\"='".getBytes(UTF_8); // screwed up json
+    byte[] malformed2 = "malformed".getBytes(UTF_8);
+    rabbit.publish(THRIFT.encodeList(spans));
     rabbit.publish(new byte[0]);
-    rabbit.publish("[\"='".getBytes()); // screwed up json
-    rabbit.publish("malformed".getBytes());
-    rabbit.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
+    rabbit.publish(malformed1);
+    rabbit.publish(malformed2);
+    rabbit.publish(THRIFT.encodeList(spans));
 
     Thread.sleep(1000);
+
     assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(5);
-    assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isEqualTo(3);
+    assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isEqualTo(2); // only malformed, not empty
+    assertThat(rabbit.rabbitmqMetrics.bytes())
+      .isEqualTo(THRIFT.encodeList(spans).length * 2 + malformed1.length + malformed2.length);
+    assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size() * 2);
+    assertThat(rabbit.rabbitmqMetrics.spansDropped()).isZero();
   }
 
   /** See GitHub issue #2068 */

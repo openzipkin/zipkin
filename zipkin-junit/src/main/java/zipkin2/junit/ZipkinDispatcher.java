@@ -66,8 +66,8 @@ final class ZipkinDispatcher extends Dispatcher {
   }
 
   MockResponse acceptSpans(RecordedRequest request, SpanBytesDecoder decoder) {
-    metrics.incrementMessages();
     byte[] body = request.getBody().readByteArray();
+    metrics.incrementMessages();
     String encoding = request.getHeader("Content-Encoding");
     if (encoding != null && encoding.contains("gzip")) {
       try {
@@ -80,23 +80,21 @@ final class ZipkinDispatcher extends Dispatcher {
         return new MockResponse().setResponseCode(400).setBody("Cannot gunzip spans");
       }
     }
+    metrics.incrementBytes(body.length);
 
     final MockResponse result = new MockResponse();
-    consumer.acceptSpans(
-        body,
-        decoder,
-        new Callback<Void>() {
-          @Override
-          public void onSuccess(Void value) {
-            result.setResponseCode(202);
-          }
+    if (body.length == 0) return result.setResponseCode(202); // lenient on empty
 
-          @Override
-          public void onError(Throwable t) {
-            String message = t.getMessage();
-            result.setBody(message).setResponseCode(message.startsWith("Cannot store") ? 500 : 400);
-          }
-        });
+    consumer.acceptSpans(body, decoder, new Callback<Void>() {
+      @Override public void onSuccess(Void value) {
+        result.setResponseCode(202);
+      }
+
+      @Override public void onError(Throwable t) {
+        String message = t.getMessage();
+        result.setBody(message).setResponseCode(message.startsWith("Cannot store") ? 500 : 400);
+      }
+    });
     return result;
   }
 }

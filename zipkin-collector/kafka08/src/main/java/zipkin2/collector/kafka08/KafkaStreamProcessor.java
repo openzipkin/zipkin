@@ -53,6 +53,8 @@ final class KafkaStreamProcessor implements Runnable {
     while (messages.hasNext()) {
       byte[] bytes = messages.next().message();
       metrics.incrementMessages();
+      metrics.incrementBytes(bytes.length);
+      if (bytes.length == 0) continue; // lenient on empty messages
 
       if (bytes.length < 2) { // need two bytes to check if protobuf
         metrics.incrementMessagesDropped();
@@ -61,13 +63,14 @@ final class KafkaStreamProcessor implements Runnable {
 
       // If we received legacy single-span encoding, decode it into a singleton list
       if (!protobuf3(bytes) && bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not a list */) {
+        Span span;
         try {
-          metrics.incrementBytes(bytes.length);
-          Span span = SpanBytesDecoder.THRIFT.decodeOne(bytes);
-          collector.accept(Collections.singletonList(span), NOOP);
+          span = SpanBytesDecoder.THRIFT.decodeOne(bytes);
         } catch (RuntimeException e) {
           metrics.incrementMessagesDropped();
+          continue;
         }
+        collector.accept(Collections.singletonList(span), NOOP);
       } else {
         collector.acceptSpans(bytes, NOOP);
       }
