@@ -37,7 +37,7 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 public class ITMySQLStorage {
 
   static LazyMySQLStorage classRule() {
-    return new LazyMySQLStorage("2.12.7");
+    return new LazyMySQLStorage("2.12.8");
   }
 
   public static class ITSpanStore extends zipkin2.storage.ITSpanStore {

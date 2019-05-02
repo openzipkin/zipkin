@@ -42,7 +42,7 @@ public class ITRabbitMQCollector {
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
   @ClassRule
-  public static RabbitMQCollectorRule rabbit = new RabbitMQCollectorRule("rabbitmq:3.6-alpine");
+  public static RabbitMQCollectorRule rabbit = new RabbitMQCollectorRule("rabbitmq:3.7-alpine");
 
   @After
   public void clear() {
