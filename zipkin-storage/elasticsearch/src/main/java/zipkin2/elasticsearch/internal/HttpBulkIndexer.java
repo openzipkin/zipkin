@@ -17,10 +17,6 @@
 package zipkin2.elasticsearch.internal;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -42,34 +38,16 @@ public final class HttpBulkIndexer {
   final String tag;
   final HttpCall.Factory http;
   final String pipeline;
-  final boolean flushOnWrites;
+  final boolean waitForRefresh;
 
   // Mutated for each call to add
   final Buffer body = new Buffer();
-  final Set<String> indices;
-  final HttpCall.BodyConverter<Void> maybeFlush;
 
   public HttpBulkIndexer(String tag, ElasticsearchStorage es) {
     this.tag = tag;
     http = es.http();
     pipeline = es.pipeline();
-    flushOnWrites = es.flushOnWrites();
-    if (flushOnWrites) {
-      indices = new LinkedHashSet<>();
-      maybeFlush =
-          new HttpCall.BodyConverter<Void>() {
-            @Override
-            public Void convert(BufferedSource b) throws IOException {
-              CheckForErrors.INSTANCE.convert(b);
-              if (indices.isEmpty()) return null;
-              ElasticsearchStorage.flush(http, join(indices));
-              return null;
-            }
-          };
-    } else {
-      indices = null;
-      maybeFlush = CheckForErrors.INSTANCE;
-    }
+    waitForRefresh = es.flushOnWrites();
   }
 
   enum CheckForErrors implements HttpCall.BodyConverter<Void> {
@@ -95,7 +73,6 @@ public final class HttpBulkIndexer {
   }
 
   void writeIndexMetadata(String index, String typeName, @Nullable String id) {
-    if (flushOnWrites) indices.add(index);
     body.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeByte('"');
     // the _type parameter is needed for Elasticsearch <6.x
     body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
@@ -112,27 +89,16 @@ public final class HttpBulkIndexer {
 
   /** Creates a bulk request when there is more than one object to store */
   public HttpCall<Void> newCall() {
-    HttpUrl url =
-        pipeline != null
-            ? http.baseUrl.newBuilder("_bulk").addQueryParameter("pipeline", pipeline).build()
-            : http.baseUrl.resolve("_bulk");
+    HttpUrl.Builder urlBuilder = http.baseUrl.newBuilder("_bulk");
+    if (pipeline != null) urlBuilder.addQueryParameter("pipeline", pipeline);
+    if (waitForRefresh) urlBuilder.addQueryParameter("refresh", "wait_for");
 
-    Request request =
-        new Request.Builder()
-            .url(url)
-            .tag(tag)
-            .post(RequestBody.create(APPLICATION_JSON, body.readByteString()))
-            .build();
+    Request request = new Request.Builder()
+      .url(urlBuilder.build())
+      .tag(tag)
+      .post(RequestBody.create(APPLICATION_JSON, body.readByteString()))
+      .build();
 
-    return http.newCall(request, maybeFlush);
-  }
-
-  static String join(Collection<String> parts) {
-    Iterator<String> iterator = parts.iterator();
-    StringBuilder result = new StringBuilder(iterator.next());
-    while (iterator.hasNext()) {
-      result.append(',').append(iterator.next());
-    }
-    return result.toString();
+    return http.newCall(request, CheckForErrors.INSTANCE);
   }
 }

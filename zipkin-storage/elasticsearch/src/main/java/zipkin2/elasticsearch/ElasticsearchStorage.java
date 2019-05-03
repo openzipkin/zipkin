@@ -29,7 +29,6 @@ import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
-import okhttp3.RequestBody;
 import okio.Buffer;
 import okio.BufferedSource;
 import zipkin2.CheckResult;
@@ -146,7 +145,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public abstract Builder namesLookback(int namesLookback);
 
-    /** Visible for testing */
+    /**
+     * Internal and visible only for testing.
+     *
+     * <p>See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-refresh.html
+     */
     public abstract Builder flushOnWrites(boolean flushOnWrites);
 
     /** The index prefix to use when generating daily index names. Defaults to zipkin. */
@@ -280,7 +283,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return ensureIndexTemplates().indexTypeDelimiter();
   }
 
-  /** This is a blocking call, only used in tests. */
+  /** This is an internal blocking call, only used in tests. */
   public void clear() throws IOException {
     Set<String> toClear = new LinkedHashSet<>();
     toClear.add(indexNameFormatter().formatType(SPAN));
@@ -289,29 +292,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   void clear(String index) throws IOException {
-    Request deleteRequest =
-        new Request.Builder()
-            .url(http().baseUrl.newBuilder().addPathSegment(index).build())
-            .delete()
-            .tag("delete-index")
-            .build();
-
-    http().newCall(deleteRequest, BodyConverters.NULL).execute();
-
-    flush(http(), index);
-  }
-
-  /** This is a blocking call, only used in tests. */
-  public static void flush(HttpCall.Factory factory, String index) throws IOException {
-    Request flushRequest =
-        new Request.Builder()
-            .url(
-                factory.baseUrl.newBuilder().addPathSegment(index).addPathSegment("_flush").build())
-            .post(RequestBody.create(APPLICATION_JSON, ""))
-            .tag("flush-index")
-            .build();
-
-    factory.newCall(flushRequest, BodyConverters.NULL).execute();
+    HttpUrl.Builder url = http().baseUrl.newBuilder().addPathSegment(index);
+    //if (version() >= 6.0 ) url.addQueryParameter("refresh", "wait_for");
+    Request delete = new Request.Builder().url(url.build()).delete().tag("delete-index").build();
+    http().newCall(delete, BodyConverters.NULL).execute();
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
@@ -339,7 +323,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     @Override
     public CheckResult convert(BufferedSource b) throws IOException {
       b.request(Long.MAX_VALUE); // Buffer the entire body.
-      Buffer body = b.buffer();
+      Buffer body = b.getBuffer();
       JsonReader status = enterPath(JsonReader.of(body.clone()), "status");
       if (status == null) {
         throw new IllegalStateException("Health status couldn't be read " + body.readUtf8());
