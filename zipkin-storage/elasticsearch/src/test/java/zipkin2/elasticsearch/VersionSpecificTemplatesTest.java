@@ -16,7 +16,6 @@
  */
 package zipkin2.elasticsearch;
 
-import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.After;
@@ -33,8 +32,6 @@ public class VersionSpecificTemplatesTest {
 
   ElasticsearchStorage storage =
       ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
-
-  VersionSpecificTemplates client = new VersionSpecificTemplates(storage);
 
   @After
   public void close() {

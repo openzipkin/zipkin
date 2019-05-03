@@ -158,9 +158,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      * The date separator to use when generating daily index names. Defaults to '-'.
      *
      * <p>By default, spans with a timestamp falling on 2016/03/19 end up in the index
-     * 'zipkin:span-2016-03-19'. When the date separator is '.', the index would be
-     * 'zipkin:span-2016.03.19'. If the date separator is 0, there is no delimiter. Ex the index
-     * would be 'zipkin:span-20160319'
+     * 'zipkin-span-2016-03-19'. When the date separator is '.', the index would be
+     * 'zipkin-span-2016.03.19'. If the date separator is 0, there is no delimiter. Ex the index
+     * would be 'zipkin-span-20160319'
      */
     public final Builder dateSeparator(char dateSeparator) {
       indexNameFormatterBuilder().dateSeparator(dateSeparator);

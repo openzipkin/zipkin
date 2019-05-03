@@ -60,9 +60,9 @@ public class ElasticsearchStorageTest {
     es.takeRequest(); // get tags template
 
     assertThat(es.takeRequest().getPath())
-        .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
+        .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
     assertThat(es.takeRequest().getPath())
-        .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
+        .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
   }
 
   String healthResponse =
