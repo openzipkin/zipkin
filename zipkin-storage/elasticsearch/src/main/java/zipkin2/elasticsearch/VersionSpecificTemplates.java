@@ -181,8 +181,8 @@ final class VersionSpecificTemplates {
       + "  },\n"
       + "  \"mappings\": {\""
       + AUTOCOMPLETE
-      + "\": { \"enabled\": true,\n"
-      + " \t\"properties\": {\n"
+      + "\": {\n"
+      + "      \"properties\": {\n"
       + "        \"tagKey\": { KEYWORD },\n"
       + "        \"tagValue\": { KEYWORD }\n"
       + "  }}}\n"
@@ -247,13 +247,13 @@ final class VersionSpecificTemplates {
     } else {
       throw new IllegalStateException("Elasticsearch 2-7.x are supported, was: " + version);
     }
-    return maybeReviseFor7x(version, result);
+    return maybeReviseFor7x(SPAN, version, result);
   }
 
   private String versionSpecificDependencyLinkIndexTemplate(float version) {
     String result = dependencyIndexTemplate.replace(
       "TEMPLATE", version >= 6 ? "index_patterns" : "template");
-    return maybeReviseFor7x(version, result);
+    return maybeReviseFor7x(DEPENDENCY, version, result);
   }
 
   private String versionSpecificAutocompleteIndexTemplate(float version) {
@@ -270,11 +270,16 @@ final class VersionSpecificTemplates {
     } else {
       throw new IllegalStateException("Elasticsearch 2-7.x are supported, was: " + version);
     }
-    return maybeReviseFor7x(version, result);
+    return maybeReviseFor7x(AUTOCOMPLETE, version, result);
   }
 
-  private String maybeReviseFor7x(float version, String result) {
-    if (version >= 7) return result.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
+  private String maybeReviseFor7x(String type, float version, String result) {
+    if (version < 7) return result;
+    result = result.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
+    // No longer allowed to define type in the index template.
+    // Closest reference is here: https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_literal_include_type_name_literal_now_defaults_to_literal_false_literal
+    result = result.replace("\"" + type + "\": {", "");
+    result = result.substring(0, result.lastIndexOf('}'));
     return result;
   }
 }

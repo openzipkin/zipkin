@@ -34,23 +34,23 @@ import static java.lang.String.format;
 /**
  * <h3>Index-Prefix/type delimiter</h3>
  * When Elasticsearch dropped support for multiple type indexes, we introduced a delimited naming
- * convention to distinguish between span documents and dependency ones. Originally, this was a colon
- * prefix pattern. In version 7, Elasticsearch dropped support for colons in indexes. To keep
- * existing writes consistent, we still use colon in versions prior to ES 7, eventhough starting at
- * version 7, we change to hyphens. {@code zipkin2.elasticsearch.IndexTemplates} is responsible for
- * this decision.
+ * convention to distinguish between span, dependency and autocomplete documents. Originally, this
+ * was a colon prefix pattern. In version 7, Elasticsearch dropped support for colons in indexes. To
+ * keep existing writes consistent, we still use colon in versions prior to ES 7, eventhough
+ * starting at version 7, we change to hyphens. {@code zipkin2.elasticsearch.IndexTemplates} is
+ * responsible for this decision.
  *
  * <p><h3>Creating indexes</h3>
  * Using the default index prefix of "zipkin", when indexes are created, they look like the
  * following, based on the version.
  *
  * <ul>
- *   <li>ES up to v6: zipkin:span-2019-05-03 or zipkin:dependency-2019-05-03</li>
- *   <li>ES v7: zipkin-span-2019-05-03 or zipkin-dependency-2019-05-03</li>
+ *   <li>ES up to v6: zipkin:span-2019-05-03 zipkin:dependency-2019-05-03 zipkin:autocomplete-2019-05-03</li>
+ *   <li>ES v7: zipkin-span-2019-05-03 zipkin-dependency-2019-05-03 zipkin-autocomplete-2019-05-03</li>
  * </ul>
  *
- * <p>We can allow an index prefix of up to 233 UTF-8 encoded bytes, subject to the index naming
- * constraints. This is the normal 255 limit minus the longest suffix (ex. -dependency-2019-05-03).
+ * <p>We can allow an index prefix of up to 231 UTF-8 encoded bytes, subject to the index naming
+ * constraints. This is the normal 255 limit minus the longest suffix (ex. -autocomplete-2019-05-03).
  *
  * <p><h3>Reading indexes</h3>
  * While ES 7 cannot write new indexes with a colons, it can read them. Upon upgrade, some sites
