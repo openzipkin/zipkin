@@ -46,6 +46,7 @@ import zipkin2.storage.StorageComponent;
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
+import static zipkin2.elasticsearch.EnsureIndexTemplate.ensureIndexTemplate;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 @AutoValue
@@ -357,20 +358,24 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   @Memoized // since we don't want overlapping calls to apply the index templates
   IndexTemplates ensureIndexTemplates() {
-    String index = indexNameFormatter().index();
     try {
       IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
-      char indexTypeDelimiter = templates.indexTypeDelimiter();
-      EnsureIndexTemplate.apply(
-        http(), index + indexTypeDelimiter + SPAN + "_template", templates.span());
-      EnsureIndexTemplate.apply(
-        http(), index + indexTypeDelimiter + DEPENDENCY + "_template", templates.dependency());
-      EnsureIndexTemplate.apply(
-        http(), index + indexTypeDelimiter + AUTOCOMPLETE + "_template", templates.autocomplete());
+      HttpCall.Factory http = http();
+      ensureIndexTemplate(http, buildUrl(http, templates, SPAN), templates.span());
+      ensureIndexTemplate(http, buildUrl(http, templates, DEPENDENCY), templates.dependency());
+      ensureIndexTemplate(http, buildUrl(http, templates, AUTOCOMPLETE), templates.autocomplete());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
     }
+  }
+
+  HttpUrl buildUrl(HttpCall.Factory http, IndexTemplates templates, String type) {
+    HttpUrl.Builder builder = http.baseUrl.newBuilder("_template");
+    // ES 7.x defaults include_type_name to false https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_literal_include_type_name_literal_now_defaults_to_literal_false_literal
+    if (templates.version() >= 7) builder.addQueryParameter("include_type_name", "true");
+    String indexPrefix = indexNameFormatter().index() + templates.indexTypeDelimiter();
+    return builder.addPathSegment(indexPrefix + type + "_template").build();
   }
 
   @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
