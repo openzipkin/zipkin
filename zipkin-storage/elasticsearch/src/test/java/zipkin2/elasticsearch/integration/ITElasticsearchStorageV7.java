@@ -20,7 +20,9 @@ import java.io.IOException;
 import java.util.List;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
+import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
@@ -51,6 +53,9 @@ public class ITElasticsearchStorageV7 {
 
     @Override protected StorageComponent storage() {
       return storage;
+    }
+
+    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
     }
 
     @Before @Override public void clear() throws IOException {
