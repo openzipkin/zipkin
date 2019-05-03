@@ -91,9 +91,11 @@ final class VersionSpecificTemplates {
             + "  },\n";
     if (searchEnabled) {
       return result
-          + ("  \"mappings\": {\n"
-              + "    \"_default_\": {\n"
-              + "      DISABLE_ALL" // don't concat all fields into big string
+              + ("  \"mappings\": {\nDISABLE_ALL"
+              + "    \""
+              + SPAN
+              + "\": {\n"
+              + "      \"_source\": {\"excludes\": [\"_q\"] },\n"
               + "      \"dynamic_templates\": [\n"
               + "        {\n"
               + "          \"strings\": {\n"
@@ -105,12 +107,7 @@ final class VersionSpecificTemplates {
               + "            \"match\": \"*\"\n"
               + "          }\n"
               + "        }\n"
-              + "      ]\n"
-              + "    },\n"
-              + "    \""
-              + SPAN
-              + "\": {\n"
-              + "      \"_source\": {\"excludes\": [\"_q\"] },\n"
+              + "      ],\n"
               + "      \"properties\": {\n"
               + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
               + "        \"name\": { KEYWORD },\n"
@@ -138,8 +135,7 @@ final class VersionSpecificTemplates {
               + "}");
     }
     return result
-        + ("  \"mappings\": {\n"
-            + "    \"_default_\": { DISABLE_ALL },\n"
+        + ("  \"mappings\": {\nDISABLE_ALL"
             + "    \""
             + SPAN
             + "\": {\n"
@@ -233,7 +229,7 @@ final class VersionSpecificTemplates {
       result = spanIndexTemplate
           .replace("TEMPLATE", "template")
           .replace("STRING", "string")
-          .replace("DISABLE_ALL", "\"_all\": {\"enabled\": false}" + (searchEnabled ? ",\n" : ""))
+          .replace("DISABLE_ALL", "\"_default_\": { \"_all\": {\"enabled\": false} },\n")
           .replace(
               "KEYWORD",
               "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": \"not_analyzed\"");
@@ -241,7 +237,9 @@ final class VersionSpecificTemplates {
       result = spanIndexTemplate
           .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
           .replace("STRING", "text")
-          .replace("DISABLE_ALL", "") // _all isn't supported in 6.x anyway
+           // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
+           // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
+          .replace("DISABLE_ALL", "")
           .replace("KEYWORD", "\"type\": \"keyword\", \"norms\": false")
           .replace(
               "\"analyzer\": \"traceId_analyzer\" }",
