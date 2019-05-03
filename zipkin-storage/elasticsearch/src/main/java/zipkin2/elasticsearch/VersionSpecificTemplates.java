@@ -275,6 +275,9 @@ final class VersionSpecificTemplates {
 
   private String maybeReviseFor7x(String type, float version, String result) {
     if (version < 7) return result;
+    // Colons are no longer allowed in index names. Make sure the pattern in our index template
+    // doesn't use them either.
+    result = result.replaceAll(":" + type, "-" + type);
     result = result.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
     // No longer allowed to define type in the index template.
     // Closest reference is here: https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_literal_include_type_name_literal_now_defaults_to_literal_false_literal
