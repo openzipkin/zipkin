@@ -80,7 +80,7 @@
         </configuration>
         <dependencies>
           <dependency>
-            <groupId>io.zipkin.layout</groupId>
+            <groupId>org.apache.zipkin.layout</groupId>
             <artifactId>zipkin-layout-factory</artifactId>
             <version>${zipkin-layout-factory.version}</version>
           </dependency>
