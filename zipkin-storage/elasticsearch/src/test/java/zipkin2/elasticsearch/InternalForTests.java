@@ -27,8 +27,8 @@ import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 public class InternalForTests {
   public static void writeDependencyLinks(ElasticsearchStorage es, List<DependencyLink> links,
     long midnightUTC) {
-    String index =
-      es.indexNameFormatter().formatTypeAndTimestamp("dependency", midnightUTC);
+    String index = ((ElasticsearchSpanConsumer) es.spanConsumer())
+      .formatTypeAndTimestampForInsert("dependency", midnightUTC);
     HttpBulkIndexer indexer = new HttpBulkIndexer("indexlinks", es);
     for (DependencyLink link : links) {
       byte[] document = DependencyLinkBytesEncoder.JSON_V1.encode(link);

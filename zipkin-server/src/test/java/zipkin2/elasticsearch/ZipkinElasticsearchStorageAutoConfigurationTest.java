@@ -38,18 +38,15 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  AnnotationConfigApplicationContext context;
+  final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
   @After
   public void close() {
-    if (context != null) {
-      context.close();
-    }
+    context.close();
   }
 
   @Test
   public void doesntProvideStorageComponent_whenStorageTypeNotElasticsearch() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.refresh();
@@ -60,7 +57,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void providesStorageComponent_whenStorageTypeElasticsearchAndHostsAreUrls() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200")
@@ -73,7 +69,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void canOverridesProperty_hostsWithList() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200,http://host2:9200")
@@ -87,7 +82,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void configuresPipeline() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -101,7 +95,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void configuresMaxRequests() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -116,7 +109,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
   /** This helps ensure old setups don't break (provided they have http port 9200 open) */
   @Test
   public void coersesPort9300To9200() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:host1:9300")
@@ -129,7 +121,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void httpPrefixOptional() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:host1:9200")
@@ -142,7 +133,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void defaultsToPort9200() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:host1")
@@ -175,7 +165,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
   /** Ensures we can wire up network interceptors, such as for logging or authentication */
   @Test
   public void usesInterceptorsQualifiedWith_zipkinElasticsearchHttp() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:host1:9200")
@@ -190,7 +179,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void timeout_defaultsTo10Seconds() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:host1:9200")
@@ -206,7 +194,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void timeout_override() {
-    context = new AnnotationConfigApplicationContext();
     int timeout = 30_000;
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
@@ -224,7 +211,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void strictTraceId_defaultsToTrue() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200")
@@ -236,7 +222,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void strictTraceId_canSetToFalse() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -250,7 +235,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void dailyIndexFormat() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200")
@@ -259,12 +243,11 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
-        .isEqualTo("zipkin:span-1970-01-01");
+        .isEqualTo("zipkin*span-1970-01-01");
   }
 
   @Test
   public void dailyIndexFormat_overridingPrefix() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -274,12 +257,11 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
-        .isEqualTo("zipkin_prod:span-1970-01-01");
+        .isEqualTo("zipkin_prod*span-1970-01-01");
   }
 
   @Test
   public void dailyIndexFormat_overridingDateSeparator() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -289,12 +271,11 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
-        .isEqualTo("zipkin:span-1970.01.01");
+        .isEqualTo("zipkin*span-1970.01.01");
   }
 
   @Test
   public void dailyIndexFormat_overridingDateSeparator_empty() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -304,12 +285,11 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
-        .isEqualTo("zipkin:span-19700101");
+        .isEqualTo("zipkin*span-19700101");
   }
 
   @Test
   public void dailyIndexFormat_overridingDateSeparator_invalidToBeMultiChar() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -323,7 +303,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void namesLookbackAssignedFromQueryLookback() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -337,7 +316,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void doesntProvideBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200")
@@ -351,7 +329,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -368,7 +345,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void searchEnabled_false() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
         "zipkin.storage.type:elasticsearch",
         "zipkin.storage.search-enabled:false")
@@ -381,7 +357,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void autocompleteKeys_list() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-keys:environment")
@@ -395,7 +370,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void autocompleteTtl() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-ttl:60000")
@@ -409,7 +383,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
 
   @Test
   public void autocompleteCardinality() {
-    context = new AnnotationConfigApplicationContext();
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-cardinality:5000")

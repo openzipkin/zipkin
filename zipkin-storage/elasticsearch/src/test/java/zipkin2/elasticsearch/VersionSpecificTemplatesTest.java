@@ -16,7 +16,6 @@
  */
 package zipkin2.elasticsearch;
 
-import java.io.IOException;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import org.junit.After;
@@ -33,8 +32,6 @@ public class VersionSpecificTemplatesTest {
 
   ElasticsearchStorage storage =
       ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
-
-  VersionSpecificTemplates client = new VersionSpecificTemplates(storage);
 
   @After
   public void close() {
@@ -127,5 +124,51 @@ public class VersionSpecificTemplatesTest {
                     + "}"));
 
     assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(6.0f);
+  }
+
+  @Test public void getVersion_6_7() throws Exception {
+    es.enqueue(new MockResponse().setBody(
+      "{\n"
+        + "  \"name\" : \"PV-NhJd\",\n"
+        + "  \"cluster_name\" : \"CollectorDBCluster\",\n"
+        + "  \"cluster_uuid\" : \"UjZaM0fQRC6tkHINCg9y8w\",\n"
+        + "  \"version\" : {\n"
+        + "    \"number\" : \"6.7.0\",\n"
+        + "    \"build_flavor\" : \"oss\",\n"
+        + "    \"build_type\" : \"tar\",\n"
+        + "    \"build_hash\" : \"8453f77\",\n"
+        + "    \"build_date\" : \"2019-03-21T15:32:29.844721Z\",\n"
+        + "    \"build_snapshot\" : false,\n"
+        + "    \"lucene_version\" : \"7.7.0\",\n"
+        + "    \"minimum_wire_compatibility_version\" : \"5.6.0\",\n"
+        + "    \"minimum_index_compatibility_version\" : \"5.0.0\"\n"
+        + "  },\n"
+        + "  \"tagline\" : \"You Know, for Search\"\n"
+        + "}"));
+
+    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(6.7f);
+  }
+
+  @Test public void getVersion_7() throws Exception {
+    es.enqueue(new MockResponse().setBody(
+      "{\n"
+        + "  \"name\" : \"zipkin-elasticsearch\",\n"
+        + "  \"cluster_name\" : \"docker-cluster\",\n"
+        + "  \"cluster_uuid\" : \"wByRPgSgTryYl0TZXW4MsA\",\n"
+        + "  \"version\" : {\n"
+        + "    \"number\" : \"7.0.1\",\n"
+        + "    \"build_flavor\" : \"default\",\n"
+        + "    \"build_type\" : \"tar\",\n"
+        + "    \"build_hash\" : \"e4efcb5\",\n"
+        + "    \"build_date\" : \"2019-04-29T12:56:03.145736Z\",\n"
+        + "    \"build_snapshot\" : false,\n"
+        + "    \"lucene_version\" : \"8.0.0\",\n"
+        + "    \"minimum_wire_compatibility_version\" : \"6.7.0\",\n"
+        + "    \"minimum_index_compatibility_version\" : \"6.0.0-beta1\"\n"
+        + "  },\n"
+        + "  \"tagline\" : \"You Know, for Search\"\n"
+        + "}"));
+
+    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(7.0f);
   }
 }

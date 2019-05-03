@@ -23,9 +23,9 @@ import okhttp3.Request;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
+import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /** Returns a version-specific span and dependency index template */
@@ -91,9 +91,11 @@ final class VersionSpecificTemplates {
             + "  },\n";
     if (searchEnabled) {
       return result
-          + ("  \"mappings\": {\n"
-              + "    \"_default_\": {\n"
-              + "      DISABLE_ALL" // don't concat all fields into big string
+              + ("  \"mappings\": {\nDISABLE_ALL"
+              + "    \""
+              + SPAN
+              + "\": {\n"
+              + "      \"_source\": {\"excludes\": [\"_q\"] },\n"
               + "      \"dynamic_templates\": [\n"
               + "        {\n"
               + "          \"strings\": {\n"
@@ -105,12 +107,7 @@ final class VersionSpecificTemplates {
               + "            \"match\": \"*\"\n"
               + "          }\n"
               + "        }\n"
-              + "      ]\n"
-              + "    },\n"
-              + "    \""
-              + SPAN
-              + "\": {\n"
-              + "      \"_source\": {\"excludes\": [\"_q\"] },\n"
+              + "      ],\n"
               + "      \"properties\": {\n"
               + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
               + "        \"name\": { KEYWORD },\n"
@@ -138,8 +135,7 @@ final class VersionSpecificTemplates {
               + "}");
     }
     return result
-        + ("  \"mappings\": {\n"
-            + "    \"_default_\": { DISABLE_ALL },\n"
+        + ("  \"mappings\": {\nDISABLE_ALL"
             + "    \""
             + SPAN
             + "\": {\n"
@@ -181,12 +177,12 @@ final class VersionSpecificTemplates {
       + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
       + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
       + "    \"index.requests.cache.enable\": true,\n"
-      + "    \"index.mapper.dynamic\": true\n"
+      + "    \"index.mapper.dynamic\": false\n"
       + "  },\n"
       + "  \"mappings\": {\""
       + AUTOCOMPLETE
       + "\": { \"enabled\": true,\n"
-      + " \t\"properties\": {\n"
+      + "      \"properties\": {\n"
       + "        \"tagKey\": { KEYWORD },\n"
       + "        \"tagValue\": { KEYWORD }\n"
       + "  }}}\n"
@@ -228,47 +224,62 @@ final class VersionSpecificTemplates {
   }
 
   private String versionSpecificSpanIndexTemplate(float version) {
+    String result;
     if (version >= 2 && version < 3) {
-      return spanIndexTemplate
+      result = spanIndexTemplate
           .replace("TEMPLATE", "template")
           .replace("STRING", "string")
-          .replace("DISABLE_ALL", "\"_all\": {\"enabled\": false}" + (searchEnabled ? ",\n" : ""))
+          .replace("DISABLE_ALL", "\"_default_\": { \"_all\": {\"enabled\": false} },\n")
           .replace(
               "KEYWORD",
               "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": \"not_analyzed\"");
     } else if (version >= 5) {
-      return spanIndexTemplate
+      result = spanIndexTemplate
           .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
           .replace("STRING", "text")
-          .replace("DISABLE_ALL", "") // _all isn't supported in 6.x anyway
+           // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
+           // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
+          .replace("DISABLE_ALL", "")
           .replace("KEYWORD", "\"type\": \"keyword\", \"norms\": false")
           .replace(
               "\"analyzer\": \"traceId_analyzer\" }",
               "\"fielddata\": \"true\", \"analyzer\": \"traceId_analyzer\" }");
     } else {
-      throw new IllegalStateException(
-          "Elasticsearch 2.x, 5.x and 6.x are supported, was: " + version);
+      throw new IllegalStateException("Elasticsearch 2-7.x are supported, was: " + version);
     }
+    return maybeReviseFor7x(SPAN, version, result);
   }
 
   private String versionSpecificDependencyLinkIndexTemplate(float version) {
-    return dependencyIndexTemplate.replace(
-        "TEMPLATE", version >= 6 ? "index_patterns" : "template");
+    String result = dependencyIndexTemplate.replace(
+      "TEMPLATE", version >= 6 ? "index_patterns" : "template");
+    return maybeReviseFor7x(DEPENDENCY, version, result);
   }
+
   private String versionSpecificAutocompleteIndexTemplate(float version) {
+    String result;
     if (version >= 2 && version < 3) {
-      return autocompleteIndexTemplate
+      result =  autocompleteIndexTemplate
         .replace("TEMPLATE", "template")
         .replace("KEYWORD", "\"type\": \"string\", \"norms\": {\"enabled\": false }, \"index\": "
           + "\"not_analyzed\"");
     } else if (version >= 5) {
-      return autocompleteIndexTemplate
+      result = autocompleteIndexTemplate
         .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template")
         .replace("KEYWORD", "\"type\": \"keyword\",\"norms\": false\n");
-    }else {
-      throw new IllegalStateException(
-        "Elasticsearch 2.x, 5.x and 6.x are supported, was: " + version);
+    } else {
+      throw new IllegalStateException("Elasticsearch 2-7.x are supported, was: " + version);
     }
+    return maybeReviseFor7x(AUTOCOMPLETE, version, result);
+  }
+
+  private String maybeReviseFor7x(String type, float version, String result) {
+    if (version < 7) return result;
+    // Colons are no longer allowed in index names. Make sure the pattern in our index template
+    // doesn't use them either.
+    result = result.replaceAll(":" + type, "-" + type);
+    result = result.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
+    return result;
   }
 }
 

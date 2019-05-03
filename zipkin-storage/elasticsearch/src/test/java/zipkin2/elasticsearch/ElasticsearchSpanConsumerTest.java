@@ -335,7 +335,6 @@ public class ElasticsearchSpanConsumerTest {
         .contains(
           ""
             + "  \"mappings\": {\n"
-            + "    \"_default_\": {  },\n"
             + "    \"span\": {\n"
             + "      \"properties\": {\n"
             + "        \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
