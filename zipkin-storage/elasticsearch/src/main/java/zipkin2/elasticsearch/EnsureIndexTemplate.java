@@ -31,7 +31,10 @@ final class EnsureIndexTemplate {
    */
   static void apply(HttpCall.Factory callFactory, String name, String indexTemplate)
       throws IOException {
-    HttpUrl templateUrl = callFactory.baseUrl.newBuilder("_template").addPathSegment(name).build();
+    HttpUrl templateUrl = callFactory.baseUrl.newBuilder("_template").addPathSegment(name)
+      // ES 7.x defaults include_type_name to false https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_literal_include_type_name_literal_now_defaults_to_literal_false_literal
+      .addQueryParameter("include_type_name", "true")
+      .build();
     Request getTemplate = new Request.Builder().url(templateUrl).tag("get-template").build();
     try {
       callFactory.newCall(getTemplate, BodyConverters.NULL).execute();
