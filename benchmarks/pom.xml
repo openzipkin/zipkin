@@ -94,16 +94,6 @@
         <groupId>com.squareup.wire</groupId>
         <artifactId>wire-maven-plugin</artifactId>
       </plugin>
-      <!-- disable retrolambda as we allow language level 1.8 benchmark classes -->
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>none</phase>
-          </execution>
-        </executions>
-      </plugin>
       <!-- The benchmark test suite is not a valid dependency to others -->
       <plugin>
         <artifactId>maven-deploy-plugin</artifactId>
