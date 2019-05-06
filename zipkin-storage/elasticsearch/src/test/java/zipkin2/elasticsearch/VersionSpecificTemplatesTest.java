@@ -27,148 +27,151 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class VersionSpecificTemplatesTest {
+  static final MockResponse VERSION_RESPONSE_7 = new MockResponse().setBody(""
+    + "{\n"
+    + "  \"name\" : \"zipkin-elasticsearch\",\n"
+    + "  \"cluster_name\" : \"docker-cluster\",\n"
+    + "  \"cluster_uuid\" : \"wByRPgSgTryYl0TZXW4MsA\",\n"
+    + "  \"version\" : {\n"
+    + "    \"number\" : \"7.0.1\",\n"
+    + "    \"build_flavor\" : \"default\",\n"
+    + "    \"build_type\" : \"tar\",\n"
+    + "    \"build_hash\" : \"e4efcb5\",\n"
+    + "    \"build_date\" : \"2019-04-29T12:56:03.145736Z\",\n"
+    + "    \"build_snapshot\" : false,\n"
+    + "    \"lucene_version\" : \"8.0.0\",\n"
+    + "    \"minimum_wire_compatibility_version\" : \"6.7.0\",\n"
+    + "    \"minimum_index_compatibility_version\" : \"6.0.0-beta1\"\n"
+    + "  },\n"
+    + "  \"tagline\" : \"You Know, for Search\"\n"
+    + "}");
+  static final MockResponse VERSION_RESPONSE_6 = new MockResponse().setBody(""
+    + "{\n"
+    + "  \"name\" : \"PV-NhJd\",\n"
+    + "  \"cluster_name\" : \"CollectorDBCluster\",\n"
+    + "  \"cluster_uuid\" : \"UjZaM0fQRC6tkHINCg9y8w\",\n"
+    + "  \"version\" : {\n"
+    + "    \"number\" : \"6.7.0\",\n"
+    + "    \"build_flavor\" : \"oss\",\n"
+    + "    \"build_type\" : \"tar\",\n"
+    + "    \"build_hash\" : \"8453f77\",\n"
+    + "    \"build_date\" : \"2019-03-21T15:32:29.844721Z\",\n"
+    + "    \"build_snapshot\" : false,\n"
+    + "    \"lucene_version\" : \"7.7.0\",\n"
+    + "    \"minimum_wire_compatibility_version\" : \"5.6.0\",\n"
+    + "    \"minimum_index_compatibility_version\" : \"5.0.0\"\n"
+    + "  },\n"
+    + "  \"tagline\" : \"You Know, for Search\"\n"
+    + "}");
+  static final MockResponse VERSION_RESPONSE_5 = new MockResponse().setBody(""
+    + "{\n"
+    + "  \"name\" : \"vU0g1--\",\n"
+    + "  \"cluster_name\" : \"elasticsearch\",\n"
+    + "  \"cluster_uuid\" : \"Fnm277ITSNyzsy0UCVFN7g\",\n"
+    + "  \"version\" : {\n"
+    + "    \"number\" : \"5.0.0\",\n"
+    + "    \"build_hash\" : \"253032b\",\n"
+    + "    \"build_date\" : \"2016-10-26T04:37:51.531Z\",\n"
+    + "    \"build_snapshot\" : false,\n"
+    + "    \"lucene_version\" : \"6.2.0\"\n"
+    + "  },\n"
+    + "  \"tagline\" : \"You Know, for Search\"\n"
+    + "}");
+  static final MockResponse VERSION_RESPONSE_2 = new MockResponse().setBody(""
+    + "{\n"
+    + "  \"name\" : \"Kamal\",\n"
+    + "  \"cluster_name\" : \"elasticsearch\",\n"
+    + "  \"version\" : {\n"
+    + "    \"number\" : \"2.4.0\",\n"
+    + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
+    + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
+    + "    \"build_snapshot\" : false,\n"
+    + "    \"lucene_version\" : \"5.5.2\"\n"
+    + "  },\n"
+    + "  \"tagline\" : \"You Know, for Search\"\n"
+    + "}");
+
   @Rule public ExpectedException thrown = ExpectedException.none();
   @Rule public MockWebServer es = new MockWebServer();
 
   ElasticsearchStorage storage =
-      ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
+    ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
 
-  @After
-  public void close() {
+  @After public void close() {
     storage.close();
   }
 
   /** Unsupported, but we should test that parsing works */
-  @Test
-  public void getVersion_1() throws Exception {
-    es.enqueue(
-        new MockResponse()
-            .setBody(
-                "{\n"
-                    + "  \"status\" : 200,\n"
-                    + "  \"name\" : \"Shen Kuei\",\n"
-                    + "  \"cluster_name\" : \"elasticsearch\",\n"
-                    + "  \"version\" : {\n"
-                    + "    \"number\" : \"1.7.3\",\n"
-                    + "    \"build_hash\" : \"05d4530971ef0ea46d0f4fa6ee64dbc8df659682\",\n"
-                    + "    \"build_timestamp\" : \"2015-10-15T09:14:17Z\",\n"
-                    + "    \"build_snapshot\" : false,\n"
-                    + "    \"lucene_version\" : \"4.10.4\"\n"
-                    + "  },\n"
-                    + "  \"tagline\" : \"You Know, for Search\"\n"
-                    + "}"));
+  @Test public void version2_unsupported() throws Exception {
+    es.enqueue(VERSION_RESPONSE_2);
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(1.7f);
+    thrown.expectMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
+
+    new VersionSpecificTemplates(storage).get(storage.http());
   }
 
-  @Test
-  public void getVersion_2() throws Exception {
-    es.enqueue(
-        new MockResponse()
-            .setBody(
-                "{\n"
-                    + "  \"name\" : \"Kamal\",\n"
-                    + "  \"cluster_name\" : \"elasticsearch\",\n"
-                    + "  \"version\" : {\n"
-                    + "    \"number\" : \"2.4.0\",\n"
-                    + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
-                    + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
-                    + "    \"build_snapshot\" : false,\n"
-                    + "    \"lucene_version\" : \"5.5.2\"\n"
-                    + "  },\n"
-                    + "  \"tagline\" : \"You Know, for Search\"\n"
-                    + "}"));
+  @Test public void version5() throws Exception {
+    es.enqueue(VERSION_RESPONSE_5);
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(2.4f);
+    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+
+    assertThat(template.version()).isEqualTo(5.0f);
+    assertThat(template.autocomplete())
+      .withFailMessage("In v5.x, the index_patterns field was named template")
+      .contains("\"template\":");
+    assertThat(template.autocomplete())
+      .withFailMessage("Until v7.x, we delimited index and type with a colon")
+      .contains("\"template\": \"zipkin:autocomplete-*\"");
+    assertThat(template.autocomplete())
+      .contains("\"index.mapper.dynamic\": false");
   }
 
-  @Test
-  public void getVersion_5() throws Exception {
-    es.enqueue(
-        new MockResponse()
-            .setBody(
-                "{\n"
-                    + "  \"name\" : \"vU0g1--\",\n"
-                    + "  \"cluster_name\" : \"elasticsearch\",\n"
-                    + "  \"cluster_uuid\" : \"Fnm277ITSNyzsy0UCVFN7g\",\n"
-                    + "  \"version\" : {\n"
-                    + "    \"number\" : \"5.0.0\",\n"
-                    + "    \"build_hash\" : \"253032b\",\n"
-                    + "    \"build_date\" : \"2016-10-26T04:37:51.531Z\",\n"
-                    + "    \"build_snapshot\" : false,\n"
-                    + "    \"lucene_version\" : \"6.2.0\"\n"
-                    + "  },\n"
-                    + "  \"tagline\" : \"You Know, for Search\"\n"
-                    + "}"));
+  @Test public void version6() throws Exception {
+    es.enqueue(VERSION_RESPONSE_6);
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(5.0f);
+    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+
+    assertThat(template.version()).isEqualTo(6.7f);
+    assertThat(template.autocomplete())
+      .withFailMessage("Until v7.x, we delimited index and type with a colon")
+      .contains("\"index_patterns\": \"zipkin:autocomplete-*\"");
+    assertThat(template.autocomplete())
+      .contains("\"index.mapper.dynamic\": false");
   }
 
-  @Test
-  public void getVersion_6() throws Exception {
-    es.enqueue(
-        new MockResponse()
-            .setBody(
-                "{\n"
-                    + "  \"name\" : \"gZlGcWF\",\n"
-                    + "  \"cluster_name\" : \"elasticsearch\",\n"
-                    + "  \"cluster_uuid\" : \"QAiO5laPRquRvL8BzjDgYQ\",\n"
-                    + "  \"version\" : {\n"
-                    + "    \"number\" : \"6.0.0-alpha2\",\n"
-                    + "    \"build_hash\" : \"0424099\",\n"
-                    + "    \"build_date\" : \"2017-05-31T23:38:55.271Z\",\n"
-                    + "    \"build_snapshot\" : false,\n"
-                    + "    \"lucene_version\" : \"7.0.0\"\n"
-                    + "  },\n"
-                    + "  \"tagline\" : \"You Know, for Search\"\n"
-                    + "}"));
+  @Test public void version7() throws Exception {
+    es.enqueue(VERSION_RESPONSE_7);
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(6.0f);
+    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+
+    assertThat(template.version()).isEqualTo(7.0f);
+    assertThat(template.autocomplete())
+      .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
+      .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
+    assertThat(template.autocomplete())
+      .withFailMessage("7.x does not support the key index.mapper.dynamic")
+      .doesNotContain("\"index.mapper.dynamic\": false");
   }
 
-  @Test public void getVersion_6_7() throws Exception {
-    es.enqueue(new MockResponse().setBody(
-      "{\n"
-        + "  \"name\" : \"PV-NhJd\",\n"
-        + "  \"cluster_name\" : \"CollectorDBCluster\",\n"
-        + "  \"cluster_uuid\" : \"UjZaM0fQRC6tkHINCg9y8w\",\n"
-        + "  \"version\" : {\n"
-        + "    \"number\" : \"6.7.0\",\n"
-        + "    \"build_flavor\" : \"oss\",\n"
-        + "    \"build_type\" : \"tar\",\n"
-        + "    \"build_hash\" : \"8453f77\",\n"
-        + "    \"build_date\" : \"2019-03-21T15:32:29.844721Z\",\n"
-        + "    \"build_snapshot\" : false,\n"
-        + "    \"lucene_version\" : \"7.7.0\",\n"
-        + "    \"minimum_wire_compatibility_version\" : \"5.6.0\",\n"
-        + "    \"minimum_index_compatibility_version\" : \"5.0.0\"\n"
-        + "  },\n"
-        + "  \"tagline\" : \"You Know, for Search\"\n"
-        + "}"));
+  @Test public void searchEnabled_minimalSpanIndexing() throws Exception {
+    storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
+      .searchEnabled(false)
+      .build();
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(6.7f);
-  }
+    es.enqueue(VERSION_RESPONSE_6);
 
-  @Test public void getVersion_7() throws Exception {
-    es.enqueue(new MockResponse().setBody(
-      "{\n"
-        + "  \"name\" : \"zipkin-elasticsearch\",\n"
-        + "  \"cluster_name\" : \"docker-cluster\",\n"
-        + "  \"cluster_uuid\" : \"wByRPgSgTryYl0TZXW4MsA\",\n"
-        + "  \"version\" : {\n"
-        + "    \"number\" : \"7.0.1\",\n"
-        + "    \"build_flavor\" : \"default\",\n"
-        + "    \"build_type\" : \"tar\",\n"
-        + "    \"build_hash\" : \"e4efcb5\",\n"
-        + "    \"build_date\" : \"2019-04-29T12:56:03.145736Z\",\n"
-        + "    \"build_snapshot\" : false,\n"
-        + "    \"lucene_version\" : \"8.0.0\",\n"
-        + "    \"minimum_wire_compatibility_version\" : \"6.7.0\",\n"
-        + "    \"minimum_index_compatibility_version\" : \"6.0.0-beta1\"\n"
-        + "  },\n"
-        + "  \"tagline\" : \"You Know, for Search\"\n"
-        + "}"));
+    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
 
-    assertThat(VersionSpecificTemplates.getVersion(storage.http())).isEqualTo(7.0f);
+    assertThat(template.span())
+      .contains(""
+        + "  \"mappings\": {\n"
+        + "    \"span\": {\n"
+        + "      \"properties\": {\n"
+        + "        \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
+        + "        \"annotations\": { \"enabled\": false },\n"
+        + "        \"tags\": { \"enabled\": false }\n"
+        + "      }\n"
+        + "    }\n"
+        + "  }");
   }
 }
