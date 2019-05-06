@@ -293,7 +293,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   void clear(String index) throws IOException {
     HttpUrl.Builder url = http().baseUrl.newBuilder().addPathSegment(index);
-    //if (version() >= 6.0 ) url.addQueryParameter("refresh", "wait_for");
     Request delete = new Request.Builder().url(url.build()).delete().tag("delete-index").build();
     http().newCall(delete, BodyConverters.NULL).execute();
   }
