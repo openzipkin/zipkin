@@ -33,7 +33,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.Span;
@@ -42,7 +41,6 @@ import zipkin2.storage.InMemoryStorage;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
@@ -52,7 +50,6 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   properties = "spring.config.name=zipkin-server"
 )
 @RunWith(SpringRunner.class)
-@DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
 public class ITZipkinMetricsHealth {
 
   @Autowired InMemoryStorage storage;
@@ -177,46 +174,6 @@ public class ITZipkinMetricsHealth {
           + httpCount);
   }
 
-  @Test public void writeSpans_updatesMetrics() throws Exception {
-    List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
-    byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
-    double messagesCount =
-      registry.counter("zipkin_collector.messages", "transport", "http").count();
-    double bytesCount = registry.counter("zipkin_collector.bytes", "transport", "http").count();
-    double spansCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
-    post("/api/v2/spans", body);
-    post("/api/v2/spans", body);
-
-    String json = getAsString("/metrics");
-
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
-      .isEqualTo(messagesCount + 2.0);
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.bytes.http']"))
-      .isEqualTo(bytesCount + (body.length * 2));
-    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_bytes.http']"))
-      .isEqualTo(body.length);
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.spans.http']"))
-      .isEqualTo(spansCount + (spans.size() * 2));
-    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
-      .isEqualTo(spans.size());
-  }
-
-  @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
-    byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    Double messagesCount =
-      registry.counter("zipkin_collector.messages", "transport", "http").count();
-    Double messagesDroppedCount =
-      registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
-    post("/api/v2/spans", body);
-
-    String json = getAsString("/metrics");
-
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
-      .isEqualTo(messagesCount + 1);
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
-      .isEqualTo(messagesDroppedCount + 1);
-  }
-
   @Test public void readsHealth() throws Exception {
     String json = getAsString("/health");
     assertThat(readString(json, "$.status"))
@@ -265,10 +222,6 @@ public class ITZipkinMetricsHealth {
       .url(url(server, path))
       .post(RequestBody.create(null, body))
       .build()).execute();
-  }
-
-  static Double readDouble(String json, String jsonPath) {
-    return JsonPath.compile(jsonPath).read(json);
   }
 
   static String readString(String json, String jsonPath) {
