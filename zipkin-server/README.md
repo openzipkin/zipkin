@@ -183,14 +183,13 @@ $ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --lo
 
 ### Elasticsearch Storage
 Zipkin's [Elasticsearch storage component](../zipkin-storage/elasticsearch)
-supports versions 2-6.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
+supports versions 5-7.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
 
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
     * `ES_HOSTS`: A comma separated list of elasticsearch base urls to connect to ex. http://host:9200.
                   Defaults to "http://localhost:9200".
-    * `ES_PIPELINE`: Only valid when the destination is Elasticsearch 5+. Indicates the ingest
-                     pipeline used before spans are indexed. No default.
+    * `ES_PIPELINE`: Indicates the ingest pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
                     Elasticsearch Api. Defaults to 10000 (10 seconds)
     * `ES_MAX_REQUESTS`: Only valid when the transport is http. Sets maximum in-flight requests from

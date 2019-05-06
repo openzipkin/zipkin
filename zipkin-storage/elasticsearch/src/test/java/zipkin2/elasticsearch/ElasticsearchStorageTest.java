@@ -43,7 +43,7 @@ public class ElasticsearchStorageTest {
 
   @Test
   public void memoizesIndexTemplate() throws Exception {
-    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
+    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"6.7.0\"}}"));
     es.enqueue(new MockResponse()); // get span template
     es.enqueue(new MockResponse()); // get dependency template
     es.enqueue(new MockResponse()); // get tags template

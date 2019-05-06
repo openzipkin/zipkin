@@ -2,8 +2,8 @@
 
 This is is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [OkHttp 3](https://github.com/square/okttp) and
-[Moshi](https://github.com/square/moshi). This currently supports 2.x,
-5.x, 6.x and 7.x version families.
+[Moshi](https://github.com/square/moshi). This currently supports 5.x,
+6.x and 7.x version families.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
@@ -123,8 +123,7 @@ be written, nor analyzed.
 
 ## Customizing the ingest pipeline
 
-When using Elasticsearch 5.x, you can setup an [ingest pipeline](https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html)
-to perform custom processing.
+You can setup an [ingest pipeline](https://www.elastic.co/guide/en/elasticsearch/reference/master/pipeline.html) to perform custom processing.
 
 Here's an example, which you'd setup prior to configuring Zipkin to use
 it via `ElasticsearchStorage.Builder.pipeline`
