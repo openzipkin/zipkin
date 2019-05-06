@@ -17,7 +17,6 @@
 
 package zipkin2.server.internal
 
-import com.google.protobuf.Empty
 import com.linecorp.armeria.server.Server
 import com.squareup.wire.GrpcClient
 import com.squareup.wire.Service
@@ -38,6 +37,7 @@ import zipkin2.TestObjects
 import zipkin2.codec.SpanBytesDecoder
 import zipkin2.codec.SpanBytesEncoder
 import zipkin2.proto3.ListOfSpans
+import zipkin2.proto3.ReportResponse
 import zipkin2.storage.InMemoryStorage
 
 /** This tests that we accept messages constructed by other clients. */
@@ -58,9 +58,9 @@ class ITZipkinGrpcCollector {
     @WireRpc(
       path = "/zipkin.proto3.SpanService/Report",
       requestAdapter = "zipkin2.proto3.ListOfSpans#ADAPTER",
-      responseAdapter = "com.google.protobuf.Empty#ADAPTER"
+      responseAdapter = "zipkin2.proto3.ReportResponse#ADAPTER"
     )
-    suspend fun Report(request: ListOfSpans): Empty
+    suspend fun Report(request: ListOfSpans): ReportResponse
   }
 
   @Before fun sanityCheckCodecCompatible() {
