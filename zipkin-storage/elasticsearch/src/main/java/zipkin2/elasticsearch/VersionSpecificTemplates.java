@@ -18,7 +18,6 @@ package zipkin2.elasticsearch;
 
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import java.util.logging.Logger;
 import okhttp3.Request;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.internal.client.HttpCall;
@@ -30,7 +29,6 @@ import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /** Returns a version-specific span and dependency index template */
 final class VersionSpecificTemplates {
-  static final Logger LOG = Logger.getLogger(VersionSpecificTemplates.class.getName());
   static final String KEYWORD = "{ \"type\": \"keyword\", \"norms\": false }";
 
   final boolean searchEnabled;
@@ -60,7 +58,7 @@ final class VersionSpecificTemplates {
   String spanIndexTemplate() {
     String result =
       "{\n"
-        + "  \"TEMPLATE\": \"${__INDEX__}:span-*\",\n"
+        + "  \"index_patterns\": \"${__INDEX__}:span-*\",\n"
         + "  \"settings\": {\n"
         + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
         + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
@@ -142,7 +140,7 @@ final class VersionSpecificTemplates {
   /** Templatized due to version differences. Only fields used in search are declared */
   static final String DEPENDENCY_INDEX_TEMPLATE =
     "{\n"
-      + "  \"TEMPLATE\": \"${__INDEX__}:dependency-*\",\n"
+      + "  \"index_patterns\": \"${__INDEX__}:dependency-*\",\n"
       + "  \"settings\": {\n"
       + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
       + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
@@ -156,7 +154,7 @@ final class VersionSpecificTemplates {
   // BodyConverters KEY
   static final String AUTOCOMPLETE_INDEX_TEMPLATE =
     "{\n"
-      + "  \"TEMPLATE\": \"${__INDEX__}:autocomplete-*\",\n"
+      + "  \"index_patterns\": \"${__INDEX__}:autocomplete-*\",\n"
       + "  \"settings\": {\n"
       + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
       + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
@@ -174,11 +172,15 @@ final class VersionSpecificTemplates {
 
   IndexTemplates get(HttpCall.Factory callFactory) throws IOException {
     float version = getVersion(callFactory);
+    if (version < 5.0f || version >= 8.0f) {
+      throw new IllegalArgumentException(
+        "Elasticsearch versions 5-7.x are supported, was: " + version);
+    }
     return IndexTemplates.newBuilder()
       .version(version)
-      .span(versionSpecificSpanIndexTemplate(version))
-      .dependency(versionSpecificDependencyLinkIndexTemplate(version))
-      .autocomplete(versionSpecificAutocompleteIndexTemplate(version))
+      .span(versionSpecificIndexTemplate(SPAN, spanIndexTemplate, version))
+      .dependency(versionSpecificIndexTemplate(DEPENDENCY, dependencyIndexTemplate, version))
+      .autocomplete(versionSpecificIndexTemplate(AUTOCOMPLETE, autocompleteIndexTemplate, version))
       .build();
   }
 
@@ -194,54 +196,19 @@ final class VersionSpecificTemplates {
       JsonReader version = enterPath(JsonReader.of(content), "version", "number");
       if (version == null) throw new IllegalStateException(".version.number not in response");
       String versionString = version.nextString();
-      float result = Float.valueOf(versionString.substring(0, 3));
-      if (result < 5) {
-        LOG.warning("Please upgrade to Elasticsearch 5 or later. version=" + versionString);
-      }
-      return result;
+      return Float.valueOf(versionString.substring(0, 3));
     }
+}
 
-    @Override public String toString() {
-      return "GetVersion";
-    }
-  }
-
-  private String versionSpecificSpanIndexTemplate(float version) {
-    String result;
-    if (version >= 5) {
-      result = spanIndexTemplate.replace("TEMPLATE", version >= 6 ? "index_patterns" : "template");
-      // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
-      // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
-    } else {
-      throw new IllegalStateException("Elasticsearch 5-7.x are supported, was: " + version);
-    }
-    return maybeReviseFor7x(SPAN, version, result);
-  }
-
-  private String versionSpecificDependencyLinkIndexTemplate(float version) {
-    String result = dependencyIndexTemplate.replace(
-      "TEMPLATE", version >= 6 ? "index_patterns" : "template");
-    return maybeReviseFor7x(DEPENDENCY, version, result);
-  }
-
-  private String versionSpecificAutocompleteIndexTemplate(float version) {
-    String result;
-    if (version >= 5) {
-      result = autocompleteIndexTemplate
-        .replace("TEMPLATE", version >= 6 ? "index_patterns" : "template");
-    } else {
-      throw new IllegalStateException("Elasticsearch 5-7.x are supported, was: " + version);
-    }
-    return maybeReviseFor7x(AUTOCOMPLETE, version, result);
-  }
-
-  private String maybeReviseFor7x(String type, float version, String result) {
-    if (version < 7) return result;
+  static String versionSpecificIndexTemplate(String type, String template, float version) {
+    if (version < 6.0f) return template.replace("index_patterns", "template");
+    // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
+    // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
+    if (version < 7.0f) return template;
     // Colons are no longer allowed in index names. Make sure the pattern in our index template
     // doesn't use them either.
-    result = result.replaceAll(":" + type, "-" + type);
-    result = result.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
-    return result;
+    template = template.replaceAll(":" + type, "-" + type);
+    return template.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
   }
 }
 
