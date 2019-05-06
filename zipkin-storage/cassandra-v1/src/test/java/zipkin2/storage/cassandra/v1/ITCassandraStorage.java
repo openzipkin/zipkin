@@ -73,11 +73,11 @@ public class ITCassandraStorage {
     }
 
     @Override @Test @Ignore("All services query unsupported when combined with other qualifiers")
-    public void getTraces_remoteServiceName_withoutServiceName() {
+    public void getTraces_serviceNames() {
     }
 
     @Override @Test @Ignore("All services query unsupported when combined with other qualifiers")
-    public void getTraces_spanName_noServiceName() {
+    public void getTraces_spanName() {
     }
 
     @Override @Test @Ignore("Duration unsupported") public void getTraces_duration() {

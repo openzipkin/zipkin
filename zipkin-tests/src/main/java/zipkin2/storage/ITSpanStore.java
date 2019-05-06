@@ -202,25 +202,25 @@ public abstract class ITSpanStore {
       .containsExactly(earlyTraces);
   }
 
-  @Test public void getTraces_localServiceName() throws Exception {
+  @Test public void getTraces_serviceNames() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
       .serviceName("frontend" + 1)
-      .build()).execute()).isEmpty();
+      .build()).execute())
+      .withFailMessage("Results matched even with invalid service name")
+      .isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
       .serviceName("frontend")
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
-  }
-
-  @Test public void getTraces_remoteServiceName() throws Exception {
-    accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
       .serviceName(CLIENT_SPAN.localServiceName())
       .remoteServiceName(CLIENT_SPAN.remoteServiceName() + 1)
-      .build()).execute()).isEmpty();
+      .build()).execute())
+      .withFailMessage("Results matched even with invalid remote service name")
+      .isEmpty();
 
     assertThat(store().getTraces(requestBuilder()
       .serviceName(CLIENT_SPAN.localServiceName())
@@ -228,35 +228,36 @@ public abstract class ITSpanStore {
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_remoteServiceName_withoutServiceName() throws Exception {
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getTraces(requestBuilder()
-      .remoteServiceName(CLIENT_SPAN.remoteServiceName() + 1)
-      .build()).execute()).isEmpty();
-
-    assertThat(store().getTraces(requestBuilder()
-      .remoteServiceName(CLIENT_SPAN.remoteServiceName())
-      .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
-  }
-
-  @Test public void getTraces_remoteServiceName_128() throws Exception {
-    // add a trace with the same trace ID truncated to 64 bits, except the span name.
+  @Test public void getTraces_serviceNames_mixedTraceIdLength() throws Exception {
+    // add a trace with the same trace ID truncated to 64 bits, except different service names.
     accept(CLIENT_SPAN.toBuilder()
       .traceId(CLIENT_SPAN.traceId().substring(16))
-      .name("bar")
+      .localEndpoint(Endpoint.newBuilder().serviceName("foo").build())
+      .remoteEndpoint(Endpoint.newBuilder().serviceName("bar").build())
       .build());
 
-    getTraces_remoteServiceName();
+    getTraces_serviceNames();
   }
 
   @Test public void getTraces_spanName() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
+      .spanName(CLIENT_SPAN.name() + 1)
+      .build()).execute())
+      .withFailMessage("Results matched with an invalid span name")
+      .isEmpty();
+
+    assertThat(store().getTraces(requestBuilder()
       .serviceName(CLIENT_SPAN.localServiceName())
       .spanName(CLIENT_SPAN.name() + 1)
-      .build()).execute()).isEmpty();
+      .build()).execute())
+      .withFailMessage("Results matched with a value service name, but an invalid span name")
+      .isEmpty();
+
+    assertThat(store().getTraces(requestBuilder()
+      .spanName(CLIENT_SPAN.name())
+      .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
       .serviceName(CLIENT_SPAN.localServiceName())
@@ -264,19 +265,7 @@ public abstract class ITSpanStore {
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_spanName_noServiceName() throws Exception {
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getTraces(requestBuilder()
-      .spanName(CLIENT_SPAN.name() + 1)
-      .build()).execute()).isEmpty();
-
-    assertThat(store().getTraces(requestBuilder()
-      .spanName(CLIENT_SPAN.name())
-      .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
-  }
-
-  @Test public void getTraces_spanName_128() throws Exception {
+  @Test public void getTraces_spanName_mixedTraceIdLength() throws Exception {
     // add a trace with the same trace ID truncated to 64 bits, except the span name.
     accept(CLIENT_SPAN.toBuilder()
       .traceId(CLIENT_SPAN.traceId().substring(16))
@@ -400,30 +389,30 @@ public abstract class ITSpanStore {
       .containsExactly(span);
   }
 
-  /** Not a good span name, but better to test it than break mysteriously */
-  @Test public void spanNameIsJson() throws IOException {
+  /**
+   * This tests problematic data that can sometimes break storage:
+   *
+   * <ul>
+   *   <li>json in span name</li>
+   *   <li>tag with nested dots (can be confused as nested objects)</li>
+   * </ul>
+   */
+  @Test public void spanWithProblematicData() throws IOException {
     String json = "{\"foo\":\"bar\"}";
-    Span withJsonSpanName = CLIENT_SPAN.toBuilder().name(json).build();
-
-    accept(withJsonSpanName);
-
-    QueryRequest query = requestBuilder().serviceName("frontend").spanName(json).build();
-    assertThat(store().getTraces(query).execute())
-      .extracting(t -> t.get(0).name())
-      .containsExactly(json);
-  }
-
-  /** Dots in tag names can create problems in storage which tries to make a tree out of them */
-  @Test public void tagsWithNestedDots() throws IOException {
-    Span tagsWithNestedDots = CLIENT_SPAN.toBuilder()
+    Span spanWithProblematicData = CLIENT_SPAN.toBuilder().name(json)
       .putTag("http.path", "/api")
       .putTag("http.path.morepath", "/api/api")
       .build();
 
-    accept(tagsWithNestedDots);
+    accept(spanWithProblematicData);
 
-    assertThat(store().getTrace(tagsWithNestedDots.traceId()).execute())
-      .containsExactly(tagsWithNestedDots);
+    QueryRequest query = requestBuilder().serviceName("frontend").spanName(json).build();
+    assertThat(store().getTraces(query).execute())
+      .extracting(t -> t.get(0))
+      .containsExactly(spanWithProblematicData);
+
+    assertThat(store().getTrace(spanWithProblematicData.traceId()).execute())
+      .containsExactly(spanWithProblematicData);
   }
 
   /**
@@ -803,26 +792,16 @@ public abstract class ITSpanStore {
       .containsExactlyInAnyOrder(trace);
   }
 
-  @Test public void remoteServiceName_goesLowercase() throws IOException {
+  @Test public void names_goLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(
       requestBuilder().serviceName("frontend").remoteServiceName("BaCkEnD").build()
     ).execute()).hasSize(1);
-  }
-
-  @Test public void spanName_goesLowercase() throws IOException {
-    accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(
       requestBuilder().serviceName("frontend").spanName("GeT").build()
     ).execute()).hasSize(1);
-  }
-
-  @Test public void serviceNamesGoLowercase() throws IOException {
-    accept(CLIENT_SPAN);
-
-    assertThat(store().getSpanNames("FrOnTeNd").execute()).containsExactly("get");
 
     assertThat(store().getTraces(requestBuilder().serviceName("FrOnTeNd").build()).execute())
       .hasSize(1);
