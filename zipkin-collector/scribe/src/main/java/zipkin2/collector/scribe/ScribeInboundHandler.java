@@ -145,8 +145,10 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
   }
 
   void release() {
-    pending.release();
-    pending = null;
+    if (pending != null) {
+      pending.release();
+      pending = null;
+    }
   }
 
   /**
