@@ -133,7 +133,12 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
       writeFrameSize(msg.content().length(), returned);
 
       if (content instanceof ByteBufHolder) {
-        returned.writeBytes(((ByteBufHolder) content).content());
+        ByteBuf buf = ((ByteBufHolder) content).content();
+        try {
+          returned.writeBytes(((ByteBufHolder) content).content());
+        } finally {
+          buf.release();
+        }
       } else {
         returned.writeBytes(content.array(), content.offset(), content.length());
       }
