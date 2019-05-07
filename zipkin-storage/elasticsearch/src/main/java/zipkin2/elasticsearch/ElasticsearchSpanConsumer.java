@@ -87,9 +87,8 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
       } else {
         // guessTimestamp is made for determining the span's authoritative timestamp. When choosing
         // the index bucket, any annotation is better than using current time.
-        for (int i = 0, length = span.annotations().size(); i < length; i++) {
-          indexTimestamp = span.annotations().get(i).timestamp() / 1000;
-          break;
+        if (!span.annotations().isEmpty()) {
+          indexTimestamp = span.annotations().get(0).timestamp() / 1000;
         }
         if (indexTimestamp == 0L) indexTimestamp = System.currentTimeMillis();
       }

@@ -342,7 +342,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   @Memoized // since we don't want overlapping calls to apply the index templates
   IndexTemplates ensureIndexTemplates() {
     try {
-      IndexTemplates templates = new VersionSpecificTemplates(this).get(http());
+      IndexTemplates templates = new VersionSpecificTemplates(this).get();
       HttpCall.Factory http = http();
       ensureIndexTemplate(http, buildUrl(http, templates, SPAN), templates.span());
       ensureIndexTemplate(http, buildUrl(http, templates, DEPENDENCY), templates.dependency());
@@ -355,8 +355,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   HttpUrl buildUrl(HttpCall.Factory http, IndexTemplates templates, String type) {
     HttpUrl.Builder builder = http.baseUrl.newBuilder("_template");
-    // ES 7.x defaults include_type_name to false https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_literal_include_type_name_literal_now_defaults_to_literal_false_literal
-    if (templates.version() >= 7) builder.addQueryParameter("include_type_name", "true");
     String indexPrefix = indexNameFormatter().index() + templates.indexTypeDelimiter();
     return builder.addPathSegment(indexPrefix + type + "_template").build();
   }
