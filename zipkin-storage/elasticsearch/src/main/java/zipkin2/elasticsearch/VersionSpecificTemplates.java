@@ -22,48 +22,56 @@ import okhttp3.Request;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
-import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
-import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
-import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /** Returns a version-specific span and dependency index template */
 final class VersionSpecificTemplates {
+  /**
+   * In Zipkin search, we do exact match only (keyword). Norms is about scoring. We don't use that
+   * in our API, and disable it to reduce disk storage needed.
+   */
   static final String KEYWORD = "{ \"type\": \"keyword\", \"norms\": false }";
 
-  final boolean searchEnabled;
+  final boolean searchEnabled, strictTraceId;
   final String spanIndexTemplate;
   final String dependencyIndexTemplate;
   final String autocompleteIndexTemplate;
 
   VersionSpecificTemplates(ElasticsearchStorage es) {
     this.searchEnabled = es.searchEnabled();
+    this.strictTraceId = es.strictTraceId();
     this.spanIndexTemplate = spanIndexTemplate()
-      .replace("${__INDEX__}", es.indexNameFormatter().index())
-      .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
-      .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()))
-      .replace("${__TRACE_ID_MAPPING__}", es.strictTraceId() ? KEYWORD
+      .replace("${INDEX}", es.indexNameFormatter().index())
+      .replace("${NUMBER_OF_SHARDS}", String.valueOf(es.indexShards()))
+      .replace("${NUMBER_OF_REPLICAS}", String.valueOf(es.indexReplicas()))
+      .replace("${TRACE_ID_MAPPING}", strictTraceId ? KEYWORD
+        // Supporting mixed trace ID length is expensive due to needing a special analyzer and
+        // "fielddata" which consumes a lot of heap. Sites should only turn off strict trace ID when
+        // in a transition, and keep trace ID length transitions as short time as possible.
         : "{ \"type\": \"text\", \"fielddata\": \"true\", \"analyzer\": \"traceId_analyzer\" }");
     this.dependencyIndexTemplate = DEPENDENCY_INDEX_TEMPLATE
-      .replace("${__INDEX__}", es.indexNameFormatter().index())
-      .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
-      .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()));
+      .replace("${INDEX}", es.indexNameFormatter().index())
+      .replace("${NUMBER_OF_SHARDS}", String.valueOf(es.indexShards()))
+      .replace("${NUMBER_OF_REPLICAS}", String.valueOf(es.indexReplicas()));
     this.autocompleteIndexTemplate = AUTOCOMPLETE_INDEX_TEMPLATE
-      .replace("${__INDEX__}", es.indexNameFormatter().index())
-      .replace("${__NUMBER_OF_SHARDS__}", String.valueOf(es.indexShards()))
-      .replace("${__NUMBER_OF_REPLICAS__}", String.valueOf(es.indexReplicas()));
+      .replace("${INDEX}", es.indexNameFormatter().index())
+      .replace("${NUMBER_OF_SHARDS}", String.valueOf(es.indexShards()))
+      .replace("${NUMBER_OF_REPLICAS}", String.valueOf(es.indexReplicas()));
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */
   String spanIndexTemplate() {
-    String result =
-      "{\n"
-        + "  \"index_patterns\": \"${__INDEX__}:span-*\",\n"
-        + "  \"settings\": {\n"
-        + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
-        + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
-        + "    \"index.requests.cache.enable\": true,\n"
-        + "    \"index.mapper.dynamic\": false,\n"
+    String result = ""
+      + "{\n"
+      + "  \"index_patterns\": \"${INDEX}${INDEX_TYPE_DELIMITER}span-*\",\n"
+      + "  \"settings\": {\n"
+      + "    \"index.number_of_shards\": ${NUMBER_OF_SHARDS},\n"
+      + "    \"index.number_of_replicas\": ${NUMBER_OF_REPLICAS},\n"
+      + "    \"index.requests.cache.enable\": true,\n"
+      + "    \"index.mapper.dynamic\": false";
+
+    if (!strictTraceId) {
+      result += (",\n"
         + "    \"analysis\": {\n"
         + "      \"analyzer\": {\n"
         + "        \"traceId_analyzer\": {\n"
@@ -79,8 +87,11 @@ final class VersionSpecificTemplates {
         + "          \"preserve_original\": true\n"
         + "        }\n"
         + "      }\n"
-        + "    }\n"
-        + "  },\n";
+        + "    }\n");
+    }
+
+    result += "  },\n";
+
     if (searchEnabled) {
       return result
         + ("  \"mappings\": {\n"
@@ -90,7 +101,7 @@ final class VersionSpecificTemplates {
         + "        {\n"
         + "          \"strings\": {\n"
         + "            \"mapping\": {\n"
-        + "              \"type\": \"keyword\",\"norms\": false\n,\n"
+        + "              \"type\": \"keyword\",\"norms\": false,\n"
         + "              \"ignore_above\": 256\n"
         + "            },\n"
         + "            \"match_mapping_type\": \"string\",\n"
@@ -99,7 +110,7 @@ final class VersionSpecificTemplates {
         + "        }\n"
         + "      ],\n"
         + "      \"properties\": {\n"
-        + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
+        + "        \"traceId\": ${TRACE_ID_MAPPING},\n"
         + "        \"name\": " + KEYWORD + ",\n"
         + "        \"localEndpoint\": {\n"
         + "          \"type\": \"object\",\n"
@@ -128,7 +139,7 @@ final class VersionSpecificTemplates {
       + ("  \"mappings\": {\n"
       + "    \"span\": {\n"
       + "      \"properties\": {\n"
-      + "        \"traceId\": ${__TRACE_ID_MAPPING__},\n"
+      + "        \"traceId\": ${TRACE_ID_MAPPING},\n"
       + "        \"annotations\": { \"enabled\": false },\n"
       + "        \"tags\": { \"enabled\": false }\n"
       + "      }\n"
@@ -140,10 +151,10 @@ final class VersionSpecificTemplates {
   /** Templatized due to version differences. Only fields used in search are declared */
   static final String DEPENDENCY_INDEX_TEMPLATE =
     "{\n"
-      + "  \"index_patterns\": \"${__INDEX__}:dependency-*\",\n"
+      + "  \"index_patterns\": \"${INDEX}${INDEX_TYPE_DELIMITER}dependency-*\",\n"
       + "  \"settings\": {\n"
-      + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
-      + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
+      + "    \"index.number_of_shards\": ${NUMBER_OF_SHARDS},\n"
+      + "    \"index.number_of_replicas\": ${NUMBER_OF_REPLICAS},\n"
       + "    \"index.requests.cache.enable\": true,\n"
       + "    \"index.mapper.dynamic\": false\n"
       + "  },\n"
@@ -154,10 +165,10 @@ final class VersionSpecificTemplates {
   // BodyConverters KEY
   static final String AUTOCOMPLETE_INDEX_TEMPLATE =
     "{\n"
-      + "  \"index_patterns\": \"${__INDEX__}:autocomplete-*\",\n"
+      + "  \"index_patterns\": \"${INDEX}${INDEX_TYPE_DELIMITER}autocomplete-*\",\n"
       + "  \"settings\": {\n"
-      + "    \"index.number_of_shards\": ${__NUMBER_OF_SHARDS__},\n"
-      + "    \"index.number_of_replicas\": ${__NUMBER_OF_REPLICAS__},\n"
+      + "    \"index.number_of_shards\": ${NUMBER_OF_SHARDS},\n"
+      + "    \"index.number_of_replicas\": ${NUMBER_OF_REPLICAS},\n"
       + "    \"index.requests.cache.enable\": true,\n"
       + "    \"index.mapper.dynamic\": false\n"
       + "  },\n"
@@ -178,10 +189,23 @@ final class VersionSpecificTemplates {
     }
     return IndexTemplates.newBuilder()
       .version(version)
-      .span(versionSpecificIndexTemplate(SPAN, spanIndexTemplate, version))
-      .dependency(versionSpecificIndexTemplate(DEPENDENCY, dependencyIndexTemplate, version))
-      .autocomplete(versionSpecificIndexTemplate(AUTOCOMPLETE, autocompleteIndexTemplate, version))
+      .indexTypeDelimiter(indexTypeDelimiter(version))
+      .span(versionSpecificIndexTemplate(spanIndexTemplate, version))
+      .dependency(versionSpecificIndexTemplate(dependencyIndexTemplate, version))
+      .autocomplete(versionSpecificIndexTemplate(autocompleteIndexTemplate, version))
       .build();
+  }
+
+  /**
+   * This returns a delimiter based on what's supported by the Elasticsearch version.
+   *
+   * <p>Starting in Elasticsearch 7.x, colons are no longer allowed in index names. This logic will
+   * make sure the pattern in our index template doesn't use them either.
+   *
+   * <p>See https://github.com/openzipkin/zipkin/issues/2219
+   */
+  static char indexTypeDelimiter(float version) {
+    return version < 7.0f ? ':' : '-';
   }
 
   static float getVersion(HttpCall.Factory callFactory) throws IOException {
@@ -198,17 +222,17 @@ final class VersionSpecificTemplates {
       String versionString = version.nextString();
       return Float.valueOf(versionString.substring(0, 3));
     }
-}
+  }
 
-  static String versionSpecificIndexTemplate(String type, String template, float version) {
+  static String versionSpecificIndexTemplate(String template, float version) {
+    String indexTypeDelimiter = Character.toString(indexTypeDelimiter(version));
+    template = template.replace("${INDEX_TYPE_DELIMITER}", indexTypeDelimiter);
     if (version < 6.0f) return template.replace("index_patterns", "template");
     // 6.x _all disabled https://www.elastic.co/guide/en/elasticsearch/reference/6.7/breaking-changes-6.0.html#_the_literal__all_literal_meta_field_is_now_disabled_by_default
     // 7.x _default disallowed https://www.elastic.co/guide/en/elasticsearch/reference/current/breaking-changes-7.0.html#_the_literal__default__literal_mapping_is_no_longer_allowed
     if (version < 7.0f) return template;
-    // Colons are no longer allowed in index names. Make sure the pattern in our index template
-    // doesn't use them either.
-    template = template.replaceAll(":" + type, "-" + type);
-    return template.replaceAll(",\n +\"index\\.mapper\\.dynamic\": false", "");
+    // There is no explicit documentation of this setting being removed in 7.0f, but it was.
+    return template.replace(",\n    \"index.mapper.dynamic\": false", "");
   }
 }
 

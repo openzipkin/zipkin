@@ -26,24 +26,19 @@ abstract class IndexTemplates {
 
   abstract float version();
 
+  abstract char indexTypeDelimiter();
+
   abstract String span();
 
   abstract String dependency();
 
   abstract String autocomplete();
 
-  /**
-   * This returns a delimiter based on what's supported by the Elasticsearch version.
-   *
-   * <p>See https://github.com/openzipkin/zipkin/issues/2219
-   */
-  char indexTypeDelimiter() {
-    return version() < 7 ? ':' : '-';
-  }
-
   @AutoValue.Builder
   interface Builder {
     Builder version(float version);
+
+    Builder indexTypeDelimiter(char indexTypeDelimiter);
 
     Builder span(String span);
 

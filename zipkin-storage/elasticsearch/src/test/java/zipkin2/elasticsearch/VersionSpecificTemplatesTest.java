@@ -149,7 +149,7 @@ public class VersionSpecificTemplatesTest {
       .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
       .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
     assertThat(template.autocomplete())
-      .withFailMessage("7.x does not support the key index.mapper.dynamic")
+      //.withFailMessage("7.x does not support the key index.mapper.dynamic")
       .doesNotContain("\"index.mapper.dynamic\": false");
   }
 
@@ -173,5 +173,25 @@ public class VersionSpecificTemplatesTest {
         + "      }\n"
         + "    }\n"
         + "  }");
+  }
+
+  @Test public void strictTraceId_doesNotIncludeAnalysisSection() throws Exception {
+    es.enqueue(VERSION_RESPONSE_6);
+
+    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+
+    assertThat(template.span()).doesNotContain("analysis");
+  }
+
+  @Test public void strictTraceId_false_includesAnalysisForMixedLengthTraceId() throws Exception {
+    storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
+      .strictTraceId(false)
+      .build();
+
+    es.enqueue(VERSION_RESPONSE_6);
+
+    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+
+    assertThat(template.span()).contains("analysis");
   }
 }
