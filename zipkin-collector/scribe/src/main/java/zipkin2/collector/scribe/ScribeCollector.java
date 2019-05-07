@@ -24,8 +24,6 @@ import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
-import static com.google.common.base.Preconditions.checkState;
-
 /**
  * This collector accepts Scribe logs in a specified category. Each log entry is expected to contain
  * a single span, which is TBinaryProtocol big-endian, then base64 encoded. These spans are chained
@@ -86,8 +84,7 @@ public final class ScribeCollector extends CollectorComponent {
   final NettyScribeServer server;
 
   ScribeCollector(Builder builder) {
-    ScribeSpanConsumer scribe = new ScribeSpanConsumer(builder);
-    server = new NettyScribeServer(builder.port);
+    server = new NettyScribeServer(builder.port, new ScribeSpanConsumer(builder));
   }
 
   /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */
@@ -100,7 +97,7 @@ public final class ScribeCollector extends CollectorComponent {
   @Override
   public CheckResult check() {
     try {
-      checkState(server.isRunning(), "server not running");
+      if (!server.isRunning()) throw new IllegalStateException("server not running");
     } catch (RuntimeException e) {
       return CheckResult.failed(e);
     }

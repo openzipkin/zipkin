@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package zipkin2.collector.scribe;
 
 import com.linecorp.armeria.common.CommonPools;
@@ -12,12 +28,14 @@ import io.netty.channel.socket.SocketChannel;
 class NettyScribeServer {
 
   private final int port;
+  private final ScribeSpanConsumer scribe;
 
   volatile EventLoopGroup bossGroup;
   volatile Channel channel;
 
-  NettyScribeServer(int port) {
+  NettyScribeServer(int port, ScribeSpanConsumer scribe) {
     this.port = port;
+    this.scribe = scribe;
   }
 
   void start() {
@@ -30,21 +48,23 @@ class NettyScribeServer {
       .childHandler(new ChannelInitializer<SocketChannel>() {
         @Override
         protected void initChannel(SocketChannel ch) {
-          ch.pipeline().addLast(new ScribeInboundHandler());
+          ch.pipeline().addLast(new ScribeInboundHandler(scribe));
         }
       })
       .childOption(ChannelOption.AUTO_READ, true)
       .childOption(ChannelOption.SO_KEEPALIVE, true)
       .bind(port)
       .channel();
+    // TODO: block on started
   }
 
   void close() {
+    if (channel == null) return;
     channel.close();
     bossGroup.shutdownGracefully();
   }
 
   boolean isRunning() {
-    return channel.isActive();
+    return channel != null && channel.isActive();
   }
 }
