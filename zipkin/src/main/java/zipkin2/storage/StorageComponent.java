@@ -111,8 +111,8 @@ public abstract class StorageComponent extends Component {
      * there is overhead associated with indexing spans both by 64 and 128-bit trace IDs. When a
      * site has finished upgrading to 128-bit trace IDs, they should enable this setting.
      *
-     * <p>See https://github.com/openzipkin/b3-propagation/issues/6 for the status of known open
-     * source libraries on 128-bit trace identifiers.
+     * <p>See https://github.com/apache/incubator-zipkin-b3-propagation/issues/6 for the status of
+     * known open source libraries on 128-bit trace identifiers.
      */
     public abstract Builder strictTraceId(boolean strictTraceId);
 

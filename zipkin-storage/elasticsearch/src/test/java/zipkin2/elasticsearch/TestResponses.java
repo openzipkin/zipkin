@@ -16,8 +16,8 @@
  */
 package zipkin2.elasticsearch;
 
-public final class TestResponses {
-  public static final String SERVICE_NAMES =
+final class TestResponses {
+  static final String SERVICE_NAMES =
       "{\n"
           + "  \"took\": 4,\n"
           + "  \"timed_out\": false,\n"
@@ -61,7 +61,7 @@ public final class TestResponses {
           + "  }\n"
           + "}";
 
-  public static final String SPAN_NAMES =
+  static final String SPAN_NAMES =
       "{\n"
           + "  \"took\": 1,\n"
           + "  \"timed_out\": false,\n"
@@ -93,7 +93,7 @@ public final class TestResponses {
           + "  }\n"
           + "}";
 
-      public static final String AUTOCOMPLETE_VALUES = "{\n"
+      static final String AUTOCOMPLETE_VALUES = "{\n"
         + "  \"took\": 12,\n"
         + "  \"timed_out\": false,\n"
         + "  \"_shards\": {\n"
