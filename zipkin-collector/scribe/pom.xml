@@ -41,6 +41,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-thrift</artifactId>
+      <version>${armeria.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.facebook.swift</groupId>
       <artifactId>swift-service</artifactId>
       <version>0.23.1</version>

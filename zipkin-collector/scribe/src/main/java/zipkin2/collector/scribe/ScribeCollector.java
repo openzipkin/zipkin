@@ -16,10 +16,6 @@
  */
 package zipkin2.collector.scribe;
 
-import com.facebook.swift.codec.ThriftCodecManager;
-import com.facebook.swift.service.ThriftServer;
-import com.facebook.swift.service.ThriftServerConfig;
-import com.facebook.swift.service.ThriftServiceProcessor;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
@@ -29,7 +25,6 @@ import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Collections.emptyList;
 
 /**
  * This collector accepts Scribe logs in a specified category. Each log entry is expected to contain
@@ -88,13 +83,11 @@ public final class ScribeCollector extends CollectorComponent {
     }
   }
 
-  final ThriftServer server;
+  final NettyScribeServer server;
 
   ScribeCollector(Builder builder) {
     ScribeSpanConsumer scribe = new ScribeSpanConsumer(builder);
-    ThriftServiceProcessor processor =
-        new ThriftServiceProcessor(new ThriftCodecManager(), emptyList(), scribe);
-    server = new ThriftServer(processor, new ThriftServerConfig().setPort(builder.port));
+    server = new NettyScribeServer(builder.port);
   }
 
   /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */
