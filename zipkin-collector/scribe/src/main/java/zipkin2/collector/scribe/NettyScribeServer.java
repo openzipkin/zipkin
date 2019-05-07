@@ -4,8 +4,10 @@ import com.linecorp.armeria.common.CommonPools;
 import com.linecorp.armeria.common.util.EventLoopGroups;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
 
 class NettyScribeServer {
 
@@ -25,7 +27,12 @@ class NettyScribeServer {
     ServerBootstrap b = new ServerBootstrap();
     channel = b.group(bossGroup, workerGroup)
       .channel(EventLoopGroups.serverChannelType(bossGroup))
-      .childHandler(new ScribeInboundHandler())
+      .childHandler(new ChannelInitializer<SocketChannel>() {
+        @Override
+        protected void initChannel(SocketChannel ch) {
+          ch.pipeline().addLast(new ScribeInboundHandler());
+        }
+      })
       .childOption(ChannelOption.AUTO_READ, true)
       .childOption(ChannelOption.SO_KEEPALIVE, true)
       .bind(port)
