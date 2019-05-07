@@ -42,7 +42,6 @@
     <module>kafka</module>
     <module>rabbitmq</module>
     <module>scribe</module>
-    <module>kafka08</module>
   </modules>
 
   <dependencies>

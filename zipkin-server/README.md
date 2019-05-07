@@ -352,14 +352,6 @@ Specifying bootstrap servers as a system property, instead of an environment var
 $ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 -jar zipkin.jar
 ```
 
-#### Migration from Kafka < 0.8.1
-
-As explained [on kafka wiki](https://cwiki.apache.org/confluence/display/KAFKA/Committing+and+fetching+consumer+offsets+in+Kafka), offsets were stored in ZooKeeper. This has changed and offsets are now stored directly in Kafka. You need to update offsets in Kafka 0.10 by following the instructions.
-
-#### Kafka (Legacy) Collector
-The default collector is for Kafka 0.10.x+ brokers. You can use Kafka
-0.8 brokers via an external module. See [zipkin-autoconfigure/collector-kafka08](../zipkin-autoconfigure/collector-kafka08/).
-
 ### RabbitMQ collector
 The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set.
 

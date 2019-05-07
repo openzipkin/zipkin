@@ -37,7 +37,6 @@
   </properties>
 
   <modules>
-    <module>collector-kafka08</module>
     <module>collector-scribe</module>
   </modules>
 

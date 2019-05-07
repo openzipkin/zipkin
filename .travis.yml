@@ -11,7 +11,6 @@ cache:
   # zipkin-ui gets dependencies via NPM
   - $HOME/.npm
   - $HOME/.m2
-  - $HOME/kafka_2.11-0.8.2.2
 
 language: java
 
@@ -27,11 +26,6 @@ before_install:
 
   # Required for Elasticsearch 5 (See https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
   - sudo sysctl -w vm.max_map_count=262144
-
-  # Manually install and run zk+kafka as it isn't an available service
-  - test -d $HOME/kafka_2.11-0.8.2.2/bin || curl -sSL https://archive.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | bash -c '(cd $HOME; tar -xzf -)'
-  - nohup bash -c "cd $HOME/kafka_2.11-0.8.2.2 && bin/zookeeper-server-start.sh config/zookeeper.properties >/dev/null 2>&1 &"
-  - nohup bash -c "cd $HOME/kafka_2.11-0.8.2.2 && bin/kafka-server-start.sh config/server.properties >/dev/null 2>&1 &"
 
   # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
   - echo "MAVEN_OPTS='-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'" > ~/.mavenrc
