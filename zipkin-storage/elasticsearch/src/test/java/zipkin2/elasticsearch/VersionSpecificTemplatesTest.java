@@ -107,13 +107,13 @@ public class VersionSpecificTemplatesTest {
 
     thrown.expectMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
 
-    new VersionSpecificTemplates(storage).get(storage.http());
+    new VersionSpecificTemplates(storage).get();
   }
 
   @Test public void version5() throws Exception {
     es.enqueue(VERSION_RESPONSE_5);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
     assertThat(template.version()).isEqualTo(5.0f);
     assertThat(template.autocomplete())
@@ -129,7 +129,7 @@ public class VersionSpecificTemplatesTest {
   @Test public void version6() throws Exception {
     es.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
     assertThat(template.version()).isEqualTo(6.7f);
     assertThat(template.autocomplete())
@@ -139,28 +139,72 @@ public class VersionSpecificTemplatesTest {
       .contains("\"index.mapper.dynamic\": false");
   }
 
+  @Test public void version6_wrapsPropertiesWithType() throws Exception {
+    es.enqueue(VERSION_RESPONSE_6);
+
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+
+    assertThat(template.dependency()).contains(""
+      + "  \"mappings\": {\n"
+      + "    \"dependency\": {\n"
+      + "      \"enabled\": false\n"
+      + "    }\n"
+      + "  }");
+
+    assertThat(template.autocomplete()).contains(""
+      + "  \"mappings\": {\n"
+      + "    \"autocomplete\": {\n"
+      + "      \"enabled\": true,\n"
+      + "      \"properties\": {\n"
+      + "        \"tagKey\": { \"type\": \"keyword\", \"norms\": false },\n"
+      + "        \"tagValue\": { \"type\": \"keyword\", \"norms\": false }\n"
+      + "      }\n"
+      + "    }\n"
+      + "  }");
+  }
+
   @Test public void version7() throws Exception {
     es.enqueue(VERSION_RESPONSE_7);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
     assertThat(template.version()).isEqualTo(7.0f);
     assertThat(template.autocomplete())
       .withFailMessage("Starting at v7.x, we delimit index and type with hyphen")
       .contains("\"index_patterns\": \"zipkin-autocomplete-*\"");
     assertThat(template.autocomplete())
-      //.withFailMessage("7.x does not support the key index.mapper.dynamic")
+      .withFailMessage("7.x does not support the key index.mapper.dynamic")
       .doesNotContain("\"index.mapper.dynamic\": false");
   }
 
-  @Test public void searchEnabled_minimalSpanIndexing() throws Exception {
+  @Test public void version7_doesntWrapPropertiesWithType() throws Exception {
+    es.enqueue(VERSION_RESPONSE_7);
+
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+
+    assertThat(template.dependency()).contains(""
+      + "  \"mappings\": {\n"
+      + "    \"enabled\": false\n"
+      + "  }");
+
+    assertThat(template.autocomplete()).contains(""
+      + "  \"mappings\": {\n"
+      + "    \"enabled\": true,\n"
+      + "    \"properties\": {\n"
+      + "      \"tagKey\": { \"type\": \"keyword\", \"norms\": false },\n"
+      + "      \"tagValue\": { \"type\": \"keyword\", \"norms\": false }\n"
+      + "    }\n"
+      + "  }");
+  }
+
+  @Test public void searchEnabled_minimalSpanIndexing_6x() throws Exception {
     storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
       .searchEnabled(false)
       .build();
 
     es.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
     assertThat(template.span())
       .contains(""
@@ -175,10 +219,31 @@ public class VersionSpecificTemplatesTest {
         + "  }");
   }
 
+  @Test public void searchEnabled_minimalSpanIndexing_7x() throws Exception {
+    storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
+      .searchEnabled(false)
+      .build();
+
+    es.enqueue(VERSION_RESPONSE_7);
+
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+
+    // doesn't wrap in a type name
+    assertThat(template.span())
+      .contains(""
+        + "  \"mappings\": {\n"
+        + "    \"properties\": {\n"
+        + "      \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
+        + "      \"annotations\": { \"enabled\": false },\n"
+        + "      \"tags\": { \"enabled\": false }\n"
+        + "    }\n"
+        + "  }");
+  }
+
   @Test public void strictTraceId_doesNotIncludeAnalysisSection() throws Exception {
     es.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
     assertThat(template.span()).doesNotContain("analysis");
   }
@@ -190,7 +255,7 @@ public class VersionSpecificTemplatesTest {
 
     es.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get(storage.http());
+    IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
     assertThat(template.span()).contains("analysis");
   }

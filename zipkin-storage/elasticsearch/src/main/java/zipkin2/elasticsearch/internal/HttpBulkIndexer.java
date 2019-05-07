@@ -36,6 +36,7 @@ public final class HttpBulkIndexer {
   static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   final String tag;
+  final boolean shouldAddType;
   final HttpCall.Factory http;
   final String pipeline;
   final boolean waitForRefresh;
@@ -45,6 +46,7 @@ public final class HttpBulkIndexer {
 
   public HttpBulkIndexer(String tag, ElasticsearchStorage es) {
     this.tag = tag;
+    shouldAddType = es.version() < 7.0f;
     http = es.http();
     pipeline = es.pipeline();
     waitForRefresh = es.flushOnWrites();
@@ -74,8 +76,8 @@ public final class HttpBulkIndexer {
 
   void writeIndexMetadata(String index, String typeName, @Nullable String id) {
     body.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeByte('"');
-    // the _type parameter is needed for Elasticsearch <6.x
-    body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
+    // the _type parameter is needed for Elasticsearch < 6.x
+    if (shouldAddType) body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
     if (id != null) {
       body.writeUtf8(",\"_id\":\"").writeUtf8(jsonEscape(id).toString()).writeByte('"');
     }
