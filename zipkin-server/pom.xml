@@ -305,7 +305,9 @@
     <profile>
       <id>integration</id>
       <activation>
-        <activeByDefault>true</activeByDefault>
+        <property>
+          <name>!skipTests</name>
+        </property>
       </activation>
       <build>
         <plugins>
@@ -316,9 +318,6 @@
             <configuration>
               <cloneProjectsTo>${project.build.directory}/it</cloneProjectsTo>
               <settingsFile>src/it/settings.xml</settingsFile>
-              <profiles>
-                <profile>!release</profile>
-              </profiles>
               <localRepositoryPath>${project.build.directory}/local-repo</localRepositoryPath>
               <postBuildHookScript>verify</postBuildHookScript>
               <addTestClassPath>true</addTestClassPath>
