@@ -135,14 +135,12 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     try {
       response = scribeService.serve(requestContext, request);
     } catch (Exception e) {
-      logger.warn("Unexpected exception servicing thrift request.", e);
       exceptionCaught(ctx, e);
       return;
     }
 
     response.aggregateWithPooledObjects(ctx.executor(), ctx.alloc()).handle((msg, t) -> {
       if (t != null) {
-        logger.warn("Unexpected exception reading thrift response.", t);
         exceptionCaught(ctx, t);
         return null;
       }
