@@ -22,6 +22,7 @@ import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.util.SafeCloseable;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.ServiceRequestContextBuilder;
 import com.linecorp.armeria.server.thrift.THttpService;
@@ -34,6 +35,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.EventLoop;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -127,12 +129,18 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     HttpRequest request = HttpRequest.of(
       THRIFT_HEADERS.toMutable(),
       new ByteBufHttpData(payload, true));
-    ServiceRequestContext requestContext = ServiceRequestContextBuilder.of(request)
+    ServiceRequestContextBuilder requestContextBuilder = ServiceRequestContextBuilder.of(request)
       .service(scribeService)
-      .build();
+      .alloc(ctx.alloc());
+
+    if (ctx.executor() instanceof EventLoop) {
+      requestContextBuilder.eventLoop((EventLoop) ctx.executor());
+    }
+
+    ServiceRequestContext requestContext = requestContextBuilder.build();
 
     final HttpResponse response;
-    try {
+    try (SafeCloseable unused = requestContext.push()){
       response = scribeService.serve(requestContext, request);
     } catch (Exception e) {
       exceptionCaught(ctx, e);
