@@ -44,19 +44,23 @@ class NettyScribeServer {
     EventLoopGroup workerGroup = CommonPools.workerGroup();
 
     ServerBootstrap b = new ServerBootstrap();
-    channel = b.group(bossGroup, workerGroup)
-      .channel(EventLoopGroups.serverChannelType(bossGroup))
-      .childHandler(new ChannelInitializer<SocketChannel>() {
-        @Override
-        protected void initChannel(SocketChannel ch) {
-          ch.pipeline().addLast(new ScribeInboundHandler(scribe));
-        }
-      })
-      // Uses same value as the previously used swift library for consistency.
-      .childOption(ChannelOption.SO_BACKLOG, 1024)
-      .bind(port)
-      .syncUninterruptibly()
-      .channel();
+    try {
+      channel = b.group(bossGroup, workerGroup)
+        .channel(EventLoopGroups.serverChannelType(bossGroup))
+        .childHandler(new ChannelInitializer<SocketChannel>() {
+          @Override
+          protected void initChannel(SocketChannel ch) {
+            ch.pipeline().addLast(new ScribeInboundHandler(scribe));
+          }
+        })
+        // Uses same value as the previously used swift library for consistency.
+        .childOption(ChannelOption.SO_BACKLOG, 1024)
+        .bind(port)
+        .syncUninterruptibly()
+        .channel();
+    } catch (Throwable t) {
+      throw new RuntimeException("Could not start scribe server.", t);
+    }
   }
 
   void close() {

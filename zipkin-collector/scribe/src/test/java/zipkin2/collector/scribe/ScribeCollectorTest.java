@@ -16,7 +16,7 @@
  */
 package zipkin2.collector.scribe;
 
-import java.net.BindException;
+import java.io.UncheckedIOException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -45,7 +45,8 @@ public class ScribeCollectorTest {
 
   @Test
   public void start_failsWhenCantBindPort() {
-    thrown.expect(BindException.class);
+    thrown.expect(RuntimeException.class);
+    thrown.expectMessage("Could not start scribe server.");
 
     ScribeCollector.Builder builder = ScribeCollector.newBuilder().storage(storage).port(12345);
 
