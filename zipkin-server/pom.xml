@@ -387,7 +387,7 @@
             <configuration>
               <sourceDirs>
                 <sourceDir>${project.basedir}/src/test/kotlin</sourceDir>
-                <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                <!-- TODO: this is java, but... https://github.com/square/wire/issues/953 -->
                 <sourceDir>${proto.generatedSourceDirectory}</sourceDir>
               </sourceDirs>
             </configuration>
