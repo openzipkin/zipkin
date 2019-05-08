@@ -199,3 +199,28 @@
    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
    See the License for the specific language governing permissions and
    limitations under the License.
+
+This product contains a modified part of Gson, distributed by Google:
+
+  * License: Apache License v2.0
+  * Homepage: https://github.com/google/gson
+
+This product contains a modified part of Guava, distributed by Google:
+
+  * License: Apache License v2.0
+  * Homepage: https://github.com/google/guava
+
+This product contains a modified part of Okio, distributed by Square:
+
+  * License: Apache License v2.0
+  * Homepage: https://github.com/square/okio
+
+This product contains a modified part of Chosen, distributed by Harvest:
+
+  * License: MIT
+  * Homepage: https://github.com/harvesthq/chosen
+
+This product contains a modified part of Dager-D3, distributed by Dagre:
+
+  * License: MIT
+  * Homepage: https://github.com/dagrejs/dagre-d3
