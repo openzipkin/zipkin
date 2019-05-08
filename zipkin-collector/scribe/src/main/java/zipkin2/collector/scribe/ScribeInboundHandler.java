@@ -146,8 +146,8 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
       }
 
       HttpData content = msg.content();
-      final ByteBuf returned = ctx.alloc().buffer(msg.content().length() + 4);
-      returned.writeInt(msg.content().length());
+      final ByteBuf returned = ctx.alloc().buffer(content.length() + 4);
+      returned.writeInt(content.length());
 
       if (content instanceof ByteBufHolder) {
         ByteBuf buf = ((ByteBufHolder) content).content();
