@@ -18,6 +18,7 @@ package zipkin2.storage;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -27,6 +28,7 @@ import zipkin2.TestObjects;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 public class QueryRequestTest {
   @Rule public ExpectedException thrown = ExpectedException.none();
@@ -73,6 +75,26 @@ public class QueryRequestTest {
 
     assertThat(queryBuilder.annotationQuery(query).build().annotationQuery())
       .isEmpty();
+  }
+
+  @Test public void annotationQueryTrimsSpaces() {
+    // spaces in http.path mixed with 'and'
+    assertThat(queryBuilder.parseAnnotationQuery("fo and o and bar and http.path = /a ").annotationQuery)
+      .containsOnly(entry("fo", ""), entry("o", ""), entry("bar", ""), entry("http.path", "/a"));
+    // http.path in the beginning, more spaces
+    assertThat(queryBuilder.parseAnnotationQuery(" http.path = /a   and fo and o   and bar").annotationQuery)
+      .containsOnly(entry("fo", ""), entry("o", ""), entry("bar", ""), entry("http.path", "/a"));
+    // @adriancole said this would be hard to parse, annotation containing spaces
+    assertThat(queryBuilder.parseAnnotationQuery("L O L").annotationQuery)
+      .containsOnly(entry("L O L", ""));
+    // annotation with spaces combined with tag
+    assertThat(queryBuilder.parseAnnotationQuery("L O L and http.path = /a").annotationQuery)
+      .containsOnly(entry("L O L", ""), entry("http.path", "/a"));
+    assertThat(queryBuilder.parseAnnotationQuery("bar =123 and L O L and http.path = /a and A B C").annotationQuery)
+      .containsOnly(entry("L O L", ""), entry("http.path", "/a"), entry("bar", "123"), entry("A B C", ""));
+    // border case, L O L as a tag and annotation, seems that the annotation takes precedence
+    assertThat(queryBuilder.parseAnnotationQuery("L O L=123 and L O L and http.path = /a").annotationQuery)
+      .containsOnly(entry("L O L", ""), entry("http.path", "/a"));
   }
 
   @Test public void endTsMustBePositive() {

@@ -196,10 +196,10 @@ public final class QueryRequest {
       for (String ann : annotationQuery.split(" and ", 100)) {
         int idx = ann.indexOf('=');
         if (idx == -1) {
-          map.put(ann, "");
+          map.put(ann.trim(), "");
         } else {
           String[] keyValue = ann.split("=", 2);
-          map.put(ann.substring(0, idx), keyValue.length < 2 ? "" : ann.substring(idx + 1));
+          map.put(ann.substring(0, idx).trim(), keyValue.length < 2 ? "" : ann.substring(idx + 1).trim());
         }
       }
       return annotationQuery(map);
