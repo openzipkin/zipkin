@@ -21,7 +21,6 @@ import com.linecorp.armeria.common.util.EventLoopGroups;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import java.net.InetSocketAddress;
@@ -52,8 +51,6 @@ class NettyScribeServer {
           ch.pipeline().addLast(new ScribeInboundHandler(scribe));
         }
       })
-      .childOption(ChannelOption.AUTO_READ, true)
-      .childOption(ChannelOption.SO_KEEPALIVE, true)
       .bind(port)
       .syncUninterruptibly()
       .channel();
