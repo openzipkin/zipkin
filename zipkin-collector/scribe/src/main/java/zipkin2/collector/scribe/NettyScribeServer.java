@@ -54,8 +54,8 @@ class NettyScribeServer {
       .childOption(ChannelOption.AUTO_READ, true)
       .childOption(ChannelOption.SO_KEEPALIVE, true)
       .bind(port)
+      .syncUninterruptibly()
       .channel();
-    // TODO: block on started
   }
 
   void close() {

@@ -16,6 +16,7 @@
  */
 package zipkin2.collector.scribe;
 
+import java.net.BindException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -44,8 +45,8 @@ public class ScribeCollectorTest {
 
   @Test
   public void start_failsWhenCantBindPort() {
-    thrown.expect(RuntimeException.class);
-    thrown.expectMessage("Failed to bind to: 0.0.0.0/0.0.0.0:12345");
+    thrown.expect(BindException.class);
+    thrown.expectMessage("Address already in use: bind");
 
     ScribeCollector.Builder builder = ScribeCollector.newBuilder().storage(storage).port(12345);
 

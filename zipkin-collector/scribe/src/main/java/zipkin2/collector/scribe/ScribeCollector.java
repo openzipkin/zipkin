@@ -96,10 +96,8 @@ public final class ScribeCollector extends CollectorComponent {
 
   @Override
   public CheckResult check() {
-    try {
-      if (!server.isRunning()) throw new IllegalStateException("server not running");
-    } catch (RuntimeException e) {
-      return CheckResult.failed(e);
+    if (!server.isRunning()) {
+      return CheckResult.failed(new IllegalStateException("server not running"));
     }
     return CheckResult.OK;
   }
