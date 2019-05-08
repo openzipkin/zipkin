@@ -1,7 +1,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
-import MiniTimelineMarkers from './MiniTimelineMarkers';
+import MiniTimelineTimeMarkers from './MiniTimelineTimeMarkers';
 import { getGraphHeight, getGraphLineHeight } from './util';
 import { getServiceNameColor } from '../../util/color';
 import { detailedSpansPropTypes } from '../../prop-types';
@@ -91,7 +91,7 @@ class MiniTimelineGraph extends React.Component {
         onMouseDown={this.handleMouseDown}
       >
         <svg version="1.1" width="100%" height={graphHeight} xmlns="http://www.w3.org/2000/svg">
-          <MiniTimelineMarkers
+          <MiniTimelineTimeMarkers
             height={graphHeight}
             numTimeMarkers={numTimeMarkers}
           />
