@@ -24,6 +24,7 @@ import zipkin2.CheckResult;
 import zipkin2.storage.InMemoryStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.contains;
 
 public class ScribeCollectorTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
@@ -46,7 +47,7 @@ public class ScribeCollectorTest {
   @Test
   public void start_failsWhenCantBindPort() {
     thrown.expect(BindException.class);
-    thrown.expectMessage("Address already in use: bind");
+    thrown.expectMessage(contains("Address already in use"));
 
     ScribeCollector.Builder builder = ScribeCollector.newBuilder().storage(storage).port(12345);
 
