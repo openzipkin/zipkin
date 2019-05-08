@@ -120,6 +120,7 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
     ByteBuf payload = ctx.alloc().buffer(nextFrameSize);
     pending.readBytes(payload, nextFrameSize);
+    pending.discardSomeReadBytes();
 
     state = ReadState.HEADER;
 
