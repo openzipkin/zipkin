@@ -16,7 +16,6 @@
  */
 package zipkin2.collector.scribe;
 
-import java.io.UncheckedIOException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
