@@ -651,7 +651,11 @@
             <exclude>**/.eslintrc</exclude>
             <exclude>**/.eslintrc</exclude>
             <exclude>**/.eslintrc.js</exclude>
-            <exclude>zipkin-ui/libs/**</exclude>
+
+            <!-- remove when deleting zipkin-ui #2569 -->
+            <exclude>**/chosen.*</exclude>
+	    <exclude>**/dagre-d3.*</exclude>
+
             <exclude>**/testdata/**/*.json</exclude>
             <exclude>**/test/data/**/*.json</exclude>
             <exclude>LICENSE</exclude>
@@ -755,8 +759,9 @@
             <exclude>**/.eslintrc</exclude>
             <exclude>**/.eslintrc.js</exclude>
 
-            <!-- Vendored libraries -->
-            <exclude>zipkin-ui/libs/**</exclude>
+            <!-- remove when deleting zipkin-ui #2569 -->
+            <exclude>**/chosen.*</exclude>
+            <exclude>**/dagre-d3.*</exclude>
 
             <!-- Maven Wrapper generated files -->
             <exclude>.mvn/wrapper/maven-wrapper.properties</exclude>
