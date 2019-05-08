@@ -654,7 +654,7 @@
 
             <!-- remove when deleting zipkin-ui #2569 -->
             <exclude>**/chosen.*</exclude>
-	    <exclude>**/dagre-d3.*</exclude>
+	          <exclude>**/dagre-d3.*</exclude>
 
             <exclude>**/testdata/**/*.json</exclude>
             <exclude>**/test/data/**/*.json</exclude>
