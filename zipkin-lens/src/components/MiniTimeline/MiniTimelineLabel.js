@@ -26,8 +26,12 @@ const MiniTimelineLabel = ({ numTimeMarkers, duration }) => {
         key={portion}
         className="mini-timeline-label__label-wrapper"
         style={{ left: `${portion * 100}%` }}
+        data-test="label-wrapper"
       >
-        <span className={`mini-timeline-label__label mini-timeline-label__label${modifier}`}>
+        <span
+          className={`mini-timeline-label__label mini-timeline-label__label${modifier}`}
+          data-test="label"
+        >
           {label}
         </span>
       </div>,
