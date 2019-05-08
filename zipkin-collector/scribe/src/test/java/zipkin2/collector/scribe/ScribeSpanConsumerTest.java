@@ -36,9 +36,9 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.TestObjects.UTF_8;
 
 public class ScribeSpanConsumerTest {
   // scope to scribe as we aren't creating the consumer with the builder.
