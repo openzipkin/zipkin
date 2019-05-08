@@ -185,6 +185,10 @@ final class UnzippingBytesRequestConverter implements RequestConverterFunction {
     }
 
     if (content.isEmpty()) ZipkinHttpCollector.maybeLog("Empty POST body", ctx, request);
+    if (content.length() == 2 && "[]".equals(content.toStringAscii())) {
+      ZipkinHttpCollector.maybeLog("Empty JSON list POST body", ctx, request);
+      content = HttpData.EMPTY_DATA;
+    }
 
     byte[] result = content.array();
     ZipkinHttpCollector.metrics.incrementBytes(result.length);

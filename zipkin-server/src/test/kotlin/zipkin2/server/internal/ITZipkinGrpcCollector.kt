@@ -33,7 +33,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
 import zipkin.server.ZipkinServer
 import zipkin2.Span
-import zipkin2.TestObjects
+import zipkin2.TestObjects.TRACE
 import zipkin2.codec.SpanBytesDecoder
 import zipkin2.codec.SpanBytesEncoder
 import zipkin2.proto3.ListOfSpans
@@ -41,17 +41,20 @@ import zipkin2.proto3.ReportResponse
 import zipkin2.storage.InMemoryStorage
 
 /** This tests that we accept messages constructed by other clients. */
-@SpringBootTest(classes = [ZipkinServer::class],
+@SpringBootTest(
+  classes = [ZipkinServer::class],
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = ["spring.config.name=zipkin-server", "zipkin.collector.grpc.enabled=true"])
+  properties = ["spring.config.name=zipkin-server", "zipkin.collector.grpc.enabled=true"]
+)
 @RunWith(SpringRunner::class)
 // Written in Kotlin as Square Wire's grpc client is Kotlin.
 // Also, the first author of this test wanted an excuse to write Kotlin.
 class ITZipkinGrpcCollector {
-  @Autowired lateinit var storage: InMemoryStorage
   @Autowired lateinit var server: Server
+  @Autowired lateinit var storage: InMemoryStorage
+  @Before fun clearStorage() = storage.clear()
 
-  var request = ListOfSpans.ADAPTER.decode(SpanBytesEncoder.PROTO3.encodeList(TestObjects.TRACE))
+  val request: ListOfSpans = ListOfSpans.ADAPTER.decode(SpanBytesEncoder.PROTO3.encodeList(TRACE))
   lateinit var spanService: SpanService
 
   interface SpanService : Service {
@@ -65,7 +68,7 @@ class ITZipkinGrpcCollector {
 
   @Before fun sanityCheckCodecCompatible() {
     assertThat(SpanBytesDecoder.PROTO3.decodeList(request.encode()))
-      .containsExactlyElementsOf(TestObjects.TRACE)
+      .containsExactlyElementsOf(TRACE)
   }
 
   @Before fun createClient() {
@@ -80,7 +83,7 @@ class ITZipkinGrpcCollector {
       spanService.Report(request) // Result is effectively void
     }
     assertThat<List<Span>>(storage.traces)
-      .containsExactly(TestObjects.TRACE)
+      .containsExactly(TRACE)
   }
 
   @Test fun report_emptyIsOk() {
