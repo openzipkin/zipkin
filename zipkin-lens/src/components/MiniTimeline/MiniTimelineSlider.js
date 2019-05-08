@@ -39,6 +39,7 @@ class MiniTimelineSlider extends React.Component {
     const props = {
       allowCase: false,
       defaultValue: [0, 100],
+      step: 0.01,
       onBeforeChange: this.handleBeforeRangeChange,
       onAfterChange: this.handleAfterRangeChange,
     };
@@ -48,7 +49,6 @@ class MiniTimelineSlider extends React.Component {
         endTs / duration * 100,
       ];
     }
-
     return (
       <div className="mini-timeline-slider">
         <Range {...props} />
