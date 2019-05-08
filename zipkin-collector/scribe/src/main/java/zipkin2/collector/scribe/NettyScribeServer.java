@@ -24,6 +24,7 @@ import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import java.net.InetSocketAddress;
 
 class NettyScribeServer {
 
@@ -66,5 +67,10 @@ class NettyScribeServer {
 
   boolean isRunning() {
     return channel != null && channel.isActive();
+  }
+
+  int port() {
+    if (channel == null) return 0;
+    return ((InetSocketAddress) channel.localAddress()).getPort();
   }
 }

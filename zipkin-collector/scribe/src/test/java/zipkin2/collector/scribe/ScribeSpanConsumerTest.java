@@ -244,26 +244,29 @@ public class ScribeSpanConsumerTest {
   }
 
   ScribeSpanConsumer newScribeSpanConsumer(String category, SpanConsumer consumer) {
+    ScribeCollector.Builder builder = ScribeCollector.newBuilder()
+      .category(category)
+      .metrics(scribeMetrics)
+      .storage(new StorageComponent() {
+        @Override public SpanStore spanStore() {
+          throw new AssertionError();
+        }
+
+        @Override public SpanConsumer spanConsumer() {
+          return consumer;
+        }
+
+        @Override public CheckResult check() {
+          return CheckResult.OK;
+        }
+
+        @Override public void close() {
+          throw new AssertionError();
+        }
+      });
     return new ScribeSpanConsumer(
-      ScribeCollector.newBuilder()
-        .category(category)
-        .metrics(scribeMetrics)
-        .storage(new StorageComponent() {
-          @Override public SpanStore spanStore() {
-            throw new AssertionError();
-          }
-
-          @Override public SpanConsumer spanConsumer() {
-            return consumer;
-          }
-
-          @Override public CheckResult check() {
-            return CheckResult.OK;
-          }
-
-          @Override public void close() {
-            throw new AssertionError();
-          }
-        }));
+      builder.delegate.build(),
+      builder.metrics,
+      builder.category);
   }
 }

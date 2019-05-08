@@ -123,7 +123,9 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
     state = ReadState.HEADER;
 
-    HttpRequest request = HttpRequest.of(THRIFT_HEADERS, new ByteBufHttpData(payload, true));
+    HttpRequest request = HttpRequest.of(
+      THRIFT_HEADERS.toMutable(),
+      new ByteBufHttpData(payload, true));
     ServiceRequestContext requestContext = ServiceRequestContextBuilder.of(request)
       .service(scribeService)
       .build();

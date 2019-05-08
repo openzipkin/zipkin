@@ -84,7 +84,8 @@ public final class ScribeCollector extends CollectorComponent {
   final NettyScribeServer server;
 
   ScribeCollector(Builder builder) {
-    server = new NettyScribeServer(builder.port, new ScribeSpanConsumer(builder));
+    server = new NettyScribeServer(builder.port, new ScribeSpanConsumer(
+      builder.delegate.build(), builder.metrics, builder.category));
   }
 
   /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */

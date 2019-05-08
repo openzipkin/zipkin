@@ -31,15 +31,15 @@ import zipkin2.collector.scribe.generated.ResultCode;
 import zipkin2.collector.scribe.generated.Scribe;
 import zipkin2.internal.Nullable;
 
-final class ScribeSpanConsumer implements Scribe.AsyncIface {
+class ScribeSpanConsumer implements Scribe.AsyncIface {
   final Collector collector;
   final CollectorMetrics metrics;
   final String category;
 
-  ScribeSpanConsumer(ScribeCollector.Builder builder) {
-    this.collector = builder.delegate.build();
-    this.metrics = builder.metrics;
-    this.category = builder.category;
+  ScribeSpanConsumer(Collector collector, CollectorMetrics metrics, String category) {
+    this.collector = collector;
+    this.metrics = metrics;
+    this.category = category;
   }
 
   @Override
