@@ -18,7 +18,6 @@ package zipkin2.storage;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
