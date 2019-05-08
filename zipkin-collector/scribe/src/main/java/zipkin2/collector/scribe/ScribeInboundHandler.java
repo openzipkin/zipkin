@@ -108,7 +108,7 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     if (pending.readableBytes() < 4) {
       return;
     }
-    nextFrameSize = readFrameSize(pending);
+    nextFrameSize = pending.readInt();
     state = ReadState.PAYLOAD;
     maybeReadPayload(ctx);
   }
@@ -150,8 +150,7 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
       HttpData content = msg.content();
       final ByteBuf returned = ctx.alloc().buffer(msg.content().length() + 4);
-
-      writeFrameSize(msg.content().length(), returned);
+      returned.writeInt(msg.content().length());
 
       if (content instanceof ByteBufHolder) {
         ByteBuf buf = ((ByteBufHolder) content).content();
@@ -184,19 +183,5 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     if (ch.isActive()) {
       ch.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
     }
-  }
-
-  static int readFrameSize(ByteBuf buf) {
-    return (buf.readByte() & 255) << 24
-      | (buf.readByte() & 255) << 16
-      | (buf.readByte() & 255) << 8
-      | buf.readByte() & 255;
-  }
-
-  static void writeFrameSize(int frameSize, ByteBuf buf) {
-    buf.writeByte((byte)(255 & frameSize >> 24));
-    buf.writeByte((byte)(255 & frameSize >> 16));
-    buf.writeByte((byte)(255 & frameSize >> 8));
-    buf.writeByte((byte)(255 & frameSize));
   }
 }
