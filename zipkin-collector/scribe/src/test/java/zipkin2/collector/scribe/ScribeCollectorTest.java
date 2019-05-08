@@ -47,7 +47,6 @@ public class ScribeCollectorTest {
   @Test
   public void start_failsWhenCantBindPort() {
     thrown.expect(BindException.class);
-    thrown.expectMessage(contains("Address already in use"));
 
     ScribeCollector.Builder builder = ScribeCollector.newBuilder().storage(storage).port(12345);
 
