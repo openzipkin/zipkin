@@ -31,7 +31,6 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
 import zipkin2.TestObjects;
-import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
@@ -40,7 +39,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.elasticsearch.ElasticsearchSpanConsumer.prefixWithTimestampMillisAndQuery;
 
 public class ElasticsearchSpanConsumerTest {
   static final Endpoint WEB_ENDPOINT = Endpoint.newBuilder().serviceName("web").build();
@@ -87,100 +85,7 @@ public class ElasticsearchSpanConsumerTest {
     accept(span);
 
     assertThat(es.takeRequest().getBody().readUtf8())
-      .contains("\n{\"timestamp_millis\":" + Long.toString(TODAY) + ",\"traceId\":");
-  }
-
-  @Test
-  public void prefixWithTimestampMillisAndQuery_skipsWhenNoData() throws Exception {
-    Span span =
-      Span.newBuilder()
-        .traceId("20")
-        .id("22")
-        .name("")
-        .parentId("21")
-        .timestamp(0L)
-        .localEndpoint(WEB_ENDPOINT)
-        .kind(Kind.CLIENT)
-        .build();
-
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
-
-    assertThat(new String(result, "UTF-8")).startsWith("{\"traceId\":\"");
-  }
-
-  @Test
-  public void prefixWithTimestampMillisAndQuery_addsTimestampMillis() throws Exception {
-    Span span =
-      Span.newBuilder()
-        .traceId("20")
-        .id("22")
-        .name("")
-        .parentId("21")
-        .timestamp(1L)
-        .localEndpoint(WEB_ENDPOINT)
-        .kind(Kind.CLIENT)
-        .build();
-
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
-
-    assertThat(new String(result, "UTF-8")).startsWith("{\"timestamp_millis\":1,\"traceId\":");
-  }
-
-  @Test
-  public void prefixWithTimestampMillisAndQuery_addsAnnotationQuery() throws Exception {
-    Span span =
-      Span.newBuilder()
-        .traceId("20")
-        .id("22")
-        .name("")
-        .parentId("21")
-        .localEndpoint(WEB_ENDPOINT)
-        .addAnnotation(1L, "\"foo")
-        .build();
-
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
-
-    assertThat(new String(result, "UTF-8")).startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
-  }
-
-  @Test
-  public void prefixWithTimestampMillisAndQuery_addsAnnotationQueryTags() throws Exception {
-    Span span =
-      Span.newBuilder()
-        .traceId("20")
-        .id("22")
-        .name("")
-        .parentId("21")
-        .localEndpoint(WEB_ENDPOINT)
-        .putTag("\"foo", "\"bar")
-        .build();
-
-    byte[] result = prefixWithTimestampMillisAndQuery(span, span.timestampAsLong());
-
-    assertThat(new String(result, "UTF-8"))
-      .startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
-  }
-
-  @Test
-  public void prefixWithTimestampMillisAndQuery_readable() {
-    Span span =
-      Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
-
-    assertThat(
-      SpanBytesDecoder.JSON_V2.decodeOne(
-        prefixWithTimestampMillisAndQuery(span, span.timestamp())))
-      .isEqualTo(span); // ignores timestamp_millis field
-  }
-
-  @Test
-  public void doesntWriteDocumentId() throws Exception {
-    es.enqueue(new MockResponse());
-
-    accept(Span.newBuilder().traceId("1").id("1").name("foo").build());
-
-    RecordedRequest request = es.takeRequest();
-    assertThat(request.getBody().readByteString().utf8())
-      .doesNotContain("\"_type\":\"span\",\"_id\"");
+      .contains("\n{\"timestamp_millis\":" + TODAY + ",\"traceId\":");
   }
 
   @Test

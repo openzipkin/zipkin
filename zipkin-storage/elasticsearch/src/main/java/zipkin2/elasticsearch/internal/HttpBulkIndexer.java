@@ -16,6 +16,7 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.util.concurrent.RejectedExecutionException;
 import okhttp3.HttpUrl;
@@ -26,13 +27,11 @@ import okio.Buffer;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
-import zipkin2.internal.Nullable;
-
-import static zipkin2.internal.JsonEscaper.jsonEscape;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class HttpBulkIndexer {
+  public static final int INDEX_CHARS_LIMIT = 256;
   static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   final String tag;
@@ -69,24 +68,29 @@ public final class HttpBulkIndexer {
     }
   }
 
-  public void add(String index, String typeName, byte[] document, @Nullable String id) {
-    writeIndexMetadata(index, typeName, id);
-    writeDocument(document);
-  }
-
-  void writeIndexMetadata(String index, String typeName, @Nullable String id) {
-    body.writeUtf8("{\"index\":{\"_index\":\"").writeUtf8(index).writeByte('"');
-    // the _type parameter is needed for Elasticsearch < 6.x
-    if (shouldAddType) body.writeUtf8(",\"_type\":\"").writeUtf8(typeName).writeByte('"');
-    if (id != null) {
-      body.writeUtf8(",\"_id\":\"").writeUtf8(jsonEscape(id).toString()).writeByte('"');
-    }
-    body.writeUtf8("}}\n");
-  }
-
-  void writeDocument(byte[] document) {
-    body.write(document);
+  public <T> void add(String index, String typeName, T input, BulkIndexSupport<T> indexSupport) {
+    writeIndexMetadata(index, typeName, input, indexSupport);
     body.writeByte('\n');
+    indexSupport.writeDocument(input, com.squareup.moshi.JsonWriter.of(body));
+    body.writeByte('\n');
+  }
+
+  <T> void writeIndexMetadata(String index, String typeName, T input,
+    BulkIndexSupport<T> indexSupport) {
+    JsonWriter jsonWriter = JsonWriter.of(body);
+    try {
+      jsonWriter.beginObject();
+      jsonWriter.name("index");
+      jsonWriter.beginObject();
+      jsonWriter.name("_index").value(index);
+      // the _type parameter is needed for Elasticsearch < 6.x
+      if (shouldAddType) jsonWriter.name("_type").value(typeName);
+      indexSupport.writeIdField(input, jsonWriter);
+      jsonWriter.endObject();
+      jsonWriter.endObject();
+    } catch (IOException e) {
+      throw new AssertionError(e); // No I/O writing to a Buffer.
+    }
   }
 
   /** Creates a bulk request when there is more than one object to store */

@@ -16,11 +16,12 @@
  */
 package zipkin2.elasticsearch;
 
+import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import zipkin2.DependencyLink;
-import zipkin2.codec.DependencyLinkBytesEncoder;
+import zipkin2.elasticsearch.internal.BulkIndexSupport;
 import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 
 /** Package accessor for integration tests */
@@ -31,9 +32,7 @@ public class InternalForTests {
       .formatTypeAndTimestampForInsert("dependency", midnightUTC);
     HttpBulkIndexer indexer = new HttpBulkIndexer("indexlinks", es);
     for (DependencyLink link : links) {
-      byte[] document = DependencyLinkBytesEncoder.JSON_V1.encode(link);
-      indexer.add(index, "dependency", document,
-        link.parent() + "|" + link.child()); // Unique constraint
+      indexer.add(index, "dependency", link, DEPENDENCY_LINK_BULK_INDEX_SUPPORT);
     }
     try {
       indexer.newCall().execute();
@@ -41,4 +40,28 @@ public class InternalForTests {
       throw new UncheckedIOException(e);
     }
   }
+
+  static final BulkIndexSupport<DependencyLink> DEPENDENCY_LINK_BULK_INDEX_SUPPORT =
+    new BulkIndexSupport<DependencyLink>() {
+      @Override public void writeDocument(DependencyLink link, JsonWriter writer) {
+        try {
+          writer.beginObject();
+          writer.name("parent").value(link.parent());
+          writer.name("child").value(link.child());
+          writer.name("callCount").value(link.callCount());
+          if (link.errorCount() > 0) writer.name("errorCount").value(link.errorCount());
+          writer.endObject();
+        } catch (IOException e) {
+          throw new AssertionError(e); // No I/O writing to a Buffer.
+        }
+      }
+
+      @Override public void writeIdField(DependencyLink link, JsonWriter writer) {
+        try {
+          writer.name("_id").value(link.parent() + "|" + link.child());
+        } catch (IOException e) {
+          throw new AssertionError(e); // No I/O writing to a Buffer.
+        }
+      }
+    };
 }
