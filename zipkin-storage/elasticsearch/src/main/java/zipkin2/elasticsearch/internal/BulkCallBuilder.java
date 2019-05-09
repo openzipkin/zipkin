@@ -24,13 +24,14 @@ import okhttp3.MediaType;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okio.Buffer;
+import okio.BufferedSink;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
-public final class HttpBulkIndexer {
+public final class BulkCallBuilder {
   public static final int INDEX_CHARS_LIMIT = 256;
   static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
@@ -40,12 +41,12 @@ public final class HttpBulkIndexer {
   final String pipeline;
   final boolean waitForRefresh;
 
-  // Mutated for each call to add
-  final Buffer body = new Buffer();
+  // Mutated for each call to index
+  final Buffer buffer = new Buffer();
 
-  public HttpBulkIndexer(String tag, ElasticsearchStorage es) {
+  public BulkCallBuilder(ElasticsearchStorage es, float esVersion, String tag) {
     this.tag = tag;
-    shouldAddType = es.version() < 7.0f;
+    shouldAddType = esVersion < 7.0f;
     http = es.http();
     pipeline = es.pipeline();
     waitForRefresh = es.flushOnWrites();
@@ -54,31 +55,29 @@ public final class HttpBulkIndexer {
   enum CheckForErrors implements HttpCall.BodyConverter<Void> {
     INSTANCE;
 
-    @Override
-    public Void convert(BufferedSource b) throws IOException {
+    @Override public Void convert(BufferedSource b) throws IOException {
       String content = b.readUtf8();
       if (content.contains("\"status\":429")) throw new RejectedExecutionException(content);
       if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
       return null;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "CheckForErrors";
     }
   }
 
-  public <T> void add(String index, String typeName, T input, BulkIndexDocumentWriter<T> indexSupport) {
+  public <T> void index(String index, String typeName, T input, BulkIndexWriter<T> writer) {
     Buffer document = new Buffer();
-    String id = indexSupport.writeDocument(input, document);
-    writeIndexMetadata(index, typeName, id);
-    body.writeByte('\n');
-    body.write(document, document.size());
-    body.writeByte('\n');
+    String id = writer.writeDocument(input, document);
+    writeIndexMetadata(buffer, index, typeName, id);
+    buffer.writeByte('\n');
+    buffer.write(document, document.size());
+    buffer.writeByte('\n');
   }
 
-  <T> void writeIndexMetadata(String index, String typeName, String id) {
-    JsonWriter jsonWriter = JsonWriter.of(body);
+  void writeIndexMetadata(Buffer indexBuffer, String index, String typeName, String id) {
+    JsonWriter jsonWriter = JsonWriter.of(indexBuffer);
     try {
       jsonWriter.beginObject();
       jsonWriter.name("index");
@@ -95,17 +94,41 @@ public final class HttpBulkIndexer {
   }
 
   /** Creates a bulk request when there is more than one object to store */
-  public HttpCall<Void> newCall() {
+  public HttpCall<Void> build() {
     HttpUrl.Builder urlBuilder = http.baseUrl.newBuilder("_bulk");
     if (pipeline != null) urlBuilder.addQueryParameter("pipeline", pipeline);
     if (waitForRefresh) urlBuilder.addQueryParameter("refresh", "wait_for");
 
-    Request request = new Request.Builder()
-      .url(urlBuilder.build())
-      .tag(tag)
-      .post(RequestBody.create(APPLICATION_JSON, body.readByteString()))
-      .build();
+    RequestBody body = new BufferRequestBody(buffer);
 
+    Request request = new Request.Builder().url(urlBuilder.build()).tag(tag).post(body).build();
     return http.newCall(request, CheckForErrors.INSTANCE);
+  }
+
+  /** This avoids allocating a large byte array (by using a poolable buffer instead). */
+  static final class BufferRequestBody extends RequestBody {
+    final long contentLength;
+    final Buffer buffer;
+
+    BufferRequestBody(Buffer buffer) {
+      this.contentLength = buffer.size();
+      this.buffer = buffer;
+    }
+
+    @Override public MediaType contentType() {
+      return APPLICATION_JSON;
+    }
+
+    @Override public long contentLength() {
+      return contentLength;
+    }
+
+    @Override public boolean isOneShot() {
+      return true;
+    }
+
+    @Override public void writeTo(BufferedSink sink) throws IOException {
+      sink.write(buffer, contentLength);
+    }
   }
 }

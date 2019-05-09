@@ -27,17 +27,17 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 
-public class BulkIndexDocumentWriterTest {
+public class BulkIndexWriterTest {
   Buffer buffer = new Buffer();
 
   @Test public void span_addsDocumentId() {
-    String id = BulkIndexDocumentWriter.SPAN.writeDocument(CLIENT_SPAN, buffer);
+    String id = BulkIndexWriter.SPAN.writeDocument(CLIENT_SPAN, buffer);
     assertThat(id)
       .isEqualTo(CLIENT_SPAN.traceId() + "-" + buffer.readByteString().md5().hex());
   }
 
   @Test public void spanSearchDisabled_addsDocumentId() {
-    String id = BulkIndexDocumentWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
+    String id = BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
     assertThat(id)
       .isEqualTo(CLIENT_SPAN.traceId() + "-" + buffer.readByteString().md5().hex());
   }
@@ -52,7 +52,7 @@ public class BulkIndexDocumentWriterTest {
       .kind(Kind.CLIENT)
       .build();
 
-    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
+    BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"traceId\":\"");
   }
@@ -69,7 +69,7 @@ public class BulkIndexDocumentWriterTest {
         .kind(Kind.CLIENT)
         .build();
 
-    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
+    BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"timestamp_millis\":1,\"traceId\":");
   }
@@ -84,7 +84,7 @@ public class BulkIndexDocumentWriterTest {
       .addAnnotation(1L, "\"foo")
       .build();
 
-    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
+    BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
   }
@@ -98,7 +98,7 @@ public class BulkIndexDocumentWriterTest {
       .putTag("\"foo", "\"bar")
       .build();
 
-    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
+    BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
   }
@@ -107,14 +107,14 @@ public class BulkIndexDocumentWriterTest {
     Span span =
       Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
 
-    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
+    BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(buffer.readByteArray()))
       .isEqualTo(span); // ignores timestamp_millis field
   }
 
   @Test public void spanSearchDisabled_doesntAddQueryFields() {
-    BulkIndexDocumentWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
+    BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"traceId\":\"");
   }

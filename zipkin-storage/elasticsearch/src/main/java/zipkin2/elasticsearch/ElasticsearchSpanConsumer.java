@@ -23,15 +23,15 @@ import java.util.Map;
 import java.util.Set;
 import zipkin2.Call;
 import zipkin2.Span;
-import zipkin2.elasticsearch.internal.BulkIndexDocumentWriter;
-import zipkin2.elasticsearch.internal.HttpBulkIndexer;
+import zipkin2.elasticsearch.internal.BulkCallBuilder;
+import zipkin2.elasticsearch.internal.BulkIndexWriter;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.SpanConsumer;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.internal.HttpBulkIndexer.INDEX_CHARS_LIMIT;
+import static zipkin2.elasticsearch.internal.BulkCallBuilder.INDEX_CHARS_LIMIT;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
 
@@ -86,20 +86,21 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
 
   /** Mutable type used for each call to store spans */
   static final class BulkSpanIndexer {
-    final HttpBulkIndexer indexer;
+    final BulkCallBuilder bulkCallBuilder;
     final ElasticsearchSpanConsumer consumer;
     final List<AutocompleteContext> pendingAutocompleteContexts = new ArrayList<>();
-    final BulkIndexDocumentWriter<Span> spanIndexSupport;
+    final BulkIndexWriter<Span> spanWriter;
 
     BulkSpanIndexer(ElasticsearchSpanConsumer consumer) {
-      this.indexer = new HttpBulkIndexer("index-span", consumer.es);
+      this.bulkCallBuilder = new BulkCallBuilder(consumer.es, consumer.es.version(), "index-span");
       this.consumer = consumer;
-      this.spanIndexSupport = consumer.searchEnabled ? BulkIndexDocumentWriter.SPAN : BulkIndexDocumentWriter.SPAN_SEARCH_DISABLED;
+      this.spanWriter = consumer.searchEnabled ? BulkIndexWriter.SPAN
+        : BulkIndexWriter.SPAN_SEARCH_DISABLED;
     }
 
     void add(long indexTimestamp, Span span) {
       String index = consumer.formatTypeAndTimestampForInsert(SPAN, indexTimestamp);
-      indexer.add(index, SPAN, span, spanIndexSupport);
+      bulkCallBuilder.index(index, SPAN, span, spanWriter);
     }
 
     void addAutocompleteValues(long indexTimestamp, Span span) {
@@ -116,12 +117,12 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         if (!consumer.delayLimiter.shouldInvoke(context)) continue;
         pendingAutocompleteContexts.add(context);
 
-        indexer.add(idx, AUTOCOMPLETE, tag, BulkIndexDocumentWriter.AUTOCOMPLETE);
+        bulkCallBuilder.index(idx, AUTOCOMPLETE, tag, BulkIndexWriter.AUTOCOMPLETE);
       }
     }
 
     Call<Void> newCall() {
-      Call<Void> storeCall = indexer.newCall();
+      Call<Void> storeCall = bulkCallBuilder.build();
       if (pendingAutocompleteContexts.isEmpty()) return storeCall;
       return storeCall.handleError((error, callback) -> {
         for (AutocompleteContext context : pendingAutocompleteContexts) {

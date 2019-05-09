@@ -215,7 +215,7 @@ public class ElasticsearchSpanConsumerTest {
 
     // index timestamp is the server timestamp, not current time!
     assertThat(es.takeRequest().getBody().readByteString().utf8())
-      .contains("{\"index\":{\"_index\":\"zipkin:span-1971-01-01\",\"_type\":\"span\"}}");
+      .startsWith("{\"index\":{\"_index\":\"zipkin:span-1971-01-01\",\"_type\":\"span\"");
   }
 
   /** Much simpler template which doesn't write the timestamp_millis field */

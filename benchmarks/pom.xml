@@ -70,8 +70,13 @@
     </dependency>
 
     <dependency>
-      <groupId>org.apache.zipkin</groupId>
+      <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-server</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-storage-elasticsearch</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

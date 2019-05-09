@@ -28,29 +28,29 @@ import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static zipkin2.elasticsearch.internal.HttpBulkIndexer.INDEX_CHARS_LIMIT;
+import static zipkin2.elasticsearch.internal.BulkCallBuilder.INDEX_CHARS_LIMIT;
 
-public abstract class BulkIndexDocumentWriter<T> {
+public abstract class BulkIndexWriter<T> {
 
   /**
    * Write a complete json document according to index strategy and returns the ID field.
    */
   public abstract String writeDocument(T input, BufferedSink writer);
 
-  public static final BulkIndexDocumentWriter<Span> SPAN = new BulkIndexDocumentWriter<Span>() {
+  public static final BulkIndexWriter<Span> SPAN = new BulkIndexWriter<Span>() {
     @Override public String writeDocument(Span input, BufferedSink sink) {
       return write(input, true, sink);
     }
   };
-  public static final BulkIndexDocumentWriter<Span>
-    SPAN_SEARCH_DISABLED = new BulkIndexDocumentWriter<Span>() {
+  public static final BulkIndexWriter<Span>
+    SPAN_SEARCH_DISABLED = new BulkIndexWriter<Span>() {
     @Override public String writeDocument(Span input, BufferedSink sink) {
       return write(input, false, sink);
     }
   };
 
-  public static final BulkIndexDocumentWriter<Map.Entry<String, String>> AUTOCOMPLETE =
-    new BulkIndexDocumentWriter<Map.Entry<String, String>>() {
+  public static final BulkIndexWriter<Map.Entry<String, String>> AUTOCOMPLETE =
+    new BulkIndexWriter<Map.Entry<String, String>>() {
       @Override public String writeDocument(Map.Entry<String, String> input, BufferedSink sink) {
         writeAutocompleteEntry(input.getKey(), input.getValue(), JsonWriter.of(sink));
         // Id is used to dedupe server side as necessary. Arbitrarily same format as _q value.
@@ -61,13 +61,13 @@ public abstract class BulkIndexDocumentWriter<T> {
   static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
   /**
-   * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
+   * In order to allow systems like Kibana to search by timestamp, we index a field "timestamp_millis"
    * when storing. The cheapest way to do this without changing the codec is prefixing it to the
    * json. For example. {"traceId":"... becomes {"timestamp_millis":12345,"traceId":"...
    *
    * <p>Tags are stored as a dictionary. Since some tag names will include inconsistent number of
    * dots (ex "error" and perhaps "error.message"), we cannot index them naturally with
-   * elasticsearch. Instead, we add an index-only (non-source) field of {@code _q} which includes
+   * elasticsearch. Instead, we index an index-only (non-source) field of {@code _q} which includes
    * valid search queries. For example, the tag {@code error -> 500} results in {@code
    * "_q":["error", "error=500"]}. This matches the input query syntax, and can be checked manually
    * with curl.
