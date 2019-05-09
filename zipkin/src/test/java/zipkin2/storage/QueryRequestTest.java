@@ -96,6 +96,16 @@ public class QueryRequestTest {
       .containsOnly(entry("L O L", ""), entry("http.path", "/a"));
   }
 
+  @Test public void annotationQueryParameterSpecificity() {
+    // when a parameter is specified both as a tag and annotation, the tag wins because it's considered to be more
+    // specific
+    assertThat(queryBuilder.parseAnnotationQuery("a=123 and a").annotationQuery).containsOnly(entry("a", "123"));
+    assertThat(queryBuilder.parseAnnotationQuery("a=123 and a").annotationQuery).containsOnly(entry("a", "123"));
+    // also last tag wins
+    assertThat(queryBuilder.parseAnnotationQuery("a=123 and a=456").annotationQuery).containsOnly(entry("a", "456"));
+    assertThat(queryBuilder.parseAnnotationQuery("a and a=123 and a=456").annotationQuery).containsOnly(entry("a", "456"));
+  }
+
   @Test public void endTsMustBePositive() {
     thrown.expect(IllegalArgumentException.class);
     thrown.expectMessage("endTs <= 0");

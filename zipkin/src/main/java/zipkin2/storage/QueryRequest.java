@@ -186,7 +186,8 @@ public final class QueryRequest {
     }
 
     /**
-     * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
+     * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error". Parameter keys and values are
+     * trimmed.
      *
      * @see QueryRequest#annotationQueryString()
      */
@@ -196,9 +197,12 @@ public final class QueryRequest {
       for (String ann : annotationQuery.split(" and ", 100)) {
         int idx = ann.indexOf('=');
         if (idx == -1) {
-          map.put(ann.trim(), "");
+          // put the annotation only if there is no key present already, prevents overriding more specific tags
+          map.putIfAbsent(ann.trim(), "");
         } else {
+          // tag
           String[] keyValue = ann.split("=", 2);
+          // tags are put regardless, i.e. last tag wins
           map.put(ann.substring(0, idx).trim(), keyValue.length < 2 ? "" : ann.substring(idx + 1).trim());
         }
       }
