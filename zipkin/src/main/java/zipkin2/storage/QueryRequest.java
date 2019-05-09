@@ -198,7 +198,8 @@ public final class QueryRequest {
         int idx = ann.indexOf('=');
         if (idx == -1) {
           // put the annotation only if there is no key present already, prevents overriding more specific tags
-          map.putIfAbsent(ann.trim(), "");
+          ann = ann.trim();
+          if (!map.containsKey(ann)) map.put(ann, "");
         } else {
           // tag
           String[] keyValue = ann.split("=", 2);
