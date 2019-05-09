@@ -27,6 +27,7 @@ import okio.Buffer;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.internal.Nullable;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
@@ -69,14 +70,15 @@ public final class HttpBulkIndexer {
   }
 
   public <T> void add(String index, String typeName, T input, BulkIndexSupport<T> indexSupport) {
-    writeIndexMetadata(index, typeName, input, indexSupport);
+    Buffer document = new Buffer();
+    String id = indexSupport.writeDocument(input, com.squareup.moshi.JsonWriter.of(document));
+    writeIndexMetadata(index, typeName, input, id);
     body.writeByte('\n');
-    indexSupport.writeDocument(input, com.squareup.moshi.JsonWriter.of(body));
+    body.write(document, document.size());
     body.writeByte('\n');
   }
 
-  <T> void writeIndexMetadata(String index, String typeName, T input,
-    BulkIndexSupport<T> indexSupport) {
+  <T> void writeIndexMetadata(String index, String typeName, T input, @Nullable String id) {
     JsonWriter jsonWriter = JsonWriter.of(body);
     try {
       jsonWriter.beginObject();
@@ -85,7 +87,7 @@ public final class HttpBulkIndexer {
       jsonWriter.name("_index").value(index);
       // the _type parameter is needed for Elasticsearch < 6.x
       if (shouldAddType) jsonWriter.name("_type").value(typeName);
-      indexSupport.writeIdField(input, jsonWriter);
+      if (id != null) jsonWriter.name("_id").value(id);
       jsonWriter.endObject();
       jsonWriter.endObject();
     } catch (IOException e) {

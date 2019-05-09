@@ -43,7 +43,7 @@ public class InternalForTests {
 
   static final BulkIndexSupport<DependencyLink> DEPENDENCY_LINK_BULK_INDEX_SUPPORT =
     new BulkIndexSupport<DependencyLink>() {
-      @Override public void writeDocument(DependencyLink link, JsonWriter writer) {
+      @Override public String writeDocument(DependencyLink link, JsonWriter writer) {
         try {
           writer.beginObject();
           writer.name("parent").value(link.parent());
@@ -54,14 +54,7 @@ public class InternalForTests {
         } catch (IOException e) {
           throw new AssertionError(e); // No I/O writing to a Buffer.
         }
-      }
-
-      @Override public void writeIdField(DependencyLink link, JsonWriter writer) {
-        try {
-          writer.name("_id").value(link.parent() + "|" + link.child());
-        } catch (IOException e) {
-          throw new AssertionError(e); // No I/O writing to a Buffer.
-        }
+        return link.parent() + "|" + link.child();
       }
     };
 }

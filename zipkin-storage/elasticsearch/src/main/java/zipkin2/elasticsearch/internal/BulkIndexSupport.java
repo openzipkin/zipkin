@@ -20,57 +20,39 @@ import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
-import okio.Buffer;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
 
 import static zipkin2.elasticsearch.internal.HttpBulkIndexer.INDEX_CHARS_LIMIT;
 
 public abstract class BulkIndexSupport<T> {
 
-  /** Write a complete json document according to index strategy */
-  public abstract void writeDocument(T input, JsonWriter writer);
-
-  /** Call {@code writer.name("_id").value(id)} unless you want Elasticsearch to pick one */
-  public abstract void writeIdField(T input, JsonWriter writer);
+  /**
+   * Write a complete json document according to index strategy and returns the ID field.
+   */
+  public abstract @Nullable String writeDocument(T input, JsonWriter writer);
 
   public static final BulkIndexSupport<Span> SPAN = new BulkIndexSupport<Span>() {
-    @Override public void writeDocument(Span input, JsonWriter writer) {
+    @Override public String writeDocument(Span input, JsonWriter writer) {
       write(input, true, writer);
-    }
-
-    @Override public void writeIdField(Span input, JsonWriter writer) {
-      // Allow ES to choose an ID
+      return null; // Allow ES to choose an ID
     }
   };
   public static final BulkIndexSupport<Span> SPAN_SEARCH_DISABLED = new BulkIndexSupport<Span>() {
-    @Override public void writeDocument(Span input, JsonWriter writer) {
+    @Override public String writeDocument(Span input, JsonWriter writer) {
       write(input, false, writer);
-    }
-
-    @Override public void writeIdField(Span input, JsonWriter writer) {
-      // Allow ES to choose an ID
+      return null; // Allow ES to choose an ID
     }
   };
 
   public static final BulkIndexSupport<Map.Entry<String, String>> AUTOCOMPLETE =
     new BulkIndexSupport<Map.Entry<String, String>>() {
-      @Override public void writeDocument(Map.Entry<String, String> input, JsonWriter writer) {
+      @Override public String writeDocument(Map.Entry<String, String> input, JsonWriter writer) {
         writeAutocompleteEntry(input.getKey(), input.getValue(), writer);
-      }
-
-      @Override public void writeIdField(Map.Entry<String, String> input, JsonWriter writer) {
-        Buffer id = new Buffer();
         // Id is used to dedupe server side as necessary. Arbitrarily same format as _q value.
-        id.writeUtf8(input.getKey()).writeByte('=').writeUtf8(input.getValue());
-        try {
-          // This uses text from users directly, so may imply json escaping. As such we have to
-          // allocate a string in order to use Moshi's json escaping functionality.
-          writer.name("_id").value(id.readUtf8());
-        } catch (IOException e) {
-          throw new AssertionError(e); // No I/O writing to a Buffer.
-        }
+        return input.getKey() + "=" + input.getValue();
       }
     };
 
