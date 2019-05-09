@@ -16,39 +16,39 @@
  */
 package zipkin2.collector.scribe;
 
-import com.google.common.util.concurrent.Futures;
-import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.SettableFuture;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.stream.Collectors;
+import org.apache.thrift.async.AsyncMethodCallback;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
+import zipkin2.collector.scribe.generated.LogEntry;
+import zipkin2.collector.scribe.generated.ResultCode;
+import zipkin2.collector.scribe.generated.Scribe;
 import zipkin2.internal.Nullable;
 
-final class ScribeSpanConsumer implements Scribe {
+class ScribeSpanConsumer implements Scribe.AsyncIface {
   final Collector collector;
   final CollectorMetrics metrics;
   final String category;
 
-  ScribeSpanConsumer(ScribeCollector.Builder builder) {
-    this.collector = builder.delegate.build();
-    this.metrics = builder.metrics;
-    this.category = builder.category;
+  ScribeSpanConsumer(Collector collector, CollectorMetrics metrics, String category) {
+    this.collector = collector;
+    this.metrics = metrics;
+    this.category = category;
   }
 
   @Override
-  public ListenableFuture<ResultCode> log(List<LogEntry> logEntries) {
+  public void Log(List<LogEntry> messages, AsyncMethodCallback<ResultCode> resultHandler) {
     metrics.incrementMessages();
     List<Span> spans = new ArrayList<>();
     int byteCount = 0;
     try {
-      for (LogEntry logEntry : logEntries) {
+      for (LogEntry logEntry : messages) {
         if (!category.equals(logEntry.category)) continue;
         byte[] bytes = logEntry.message.getBytes(StandardCharsets.ISO_8859_1);
         bytes = Base64.getMimeDecoder().decode(bytes); // finagle-zipkin uses mime encoding
@@ -57,25 +57,25 @@ final class ScribeSpanConsumer implements Scribe {
       }
     } catch (RuntimeException e) {
       metrics.incrementMessagesDropped();
-      return Futures.immediateFailedFuture(e);
+      resultHandler.onError(e);
+      return;
     } finally {
       metrics.incrementBytes(byteCount);
     }
 
-    SettableFuture<ResultCode> result = SettableFuture.create();
     collector.accept(
-        spans,
-        new Callback<Void>() {
-          @Override
-          public void onSuccess(@Nullable Void value) {
-            result.set(ResultCode.OK);
-          }
+      spans,
+      new Callback<Void>() {
+        @Override
+        public void onSuccess(@Nullable Void value) {
+          resultHandler.onComplete(ResultCode.OK);
+        }
 
-          @Override
-          public void onError(Throwable t) {
-            result.setException(t);
-          }
-        });
-    return result;
+        @Override
+        public void onError(Throwable t) {
+          Exception error = t instanceof Exception ? (Exception) t : new RuntimeException(t);
+          resultHandler.onError(error);
+        }
+      });
   }
 }

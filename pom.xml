@@ -672,6 +672,7 @@
             <exclude>kafka_*/**</exclude>
             <exclude>**/nohup.out</exclude>
             <exclude>src/test/resources/**</exclude>
+            <exclude>**/generated/**</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
         </configuration>
@@ -731,6 +732,9 @@
 
             <!-- GitHub files -->
             <exclude>**/.github/**</exclude>
+
+            <!-- Generated files -->
+            <exclude>**/generated/**</exclude>
 
             <!-- document files -->
             <exclude>**/*.md</exclude>

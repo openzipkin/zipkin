@@ -16,7 +16,6 @@
  */
 package zipkin2.collector.scribe;
 
-import org.jboss.netty.channel.ChannelException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -45,8 +44,8 @@ public class ScribeCollectorTest {
 
   @Test
   public void start_failsWhenCantBindPort() {
-    thrown.expect(ChannelException.class);
-    thrown.expectMessage("Failed to bind to: 0.0.0.0/0.0.0.0:12345");
+    thrown.expect(RuntimeException.class);
+    thrown.expectMessage("Could not start scribe server.");
 
     ScribeCollector.Builder builder = ScribeCollector.newBuilder().storage(storage).port(12345);
 

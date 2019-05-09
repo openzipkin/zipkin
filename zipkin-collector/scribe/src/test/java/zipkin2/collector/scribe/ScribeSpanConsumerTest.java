@@ -18,7 +18,7 @@ package zipkin2.collector.scribe;
 
 import java.util.Arrays;
 import java.util.Base64;
-import java.util.concurrent.ExecutionException;
+import org.apache.thrift.async.AsyncMethodCallback;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -27,6 +27,8 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.InMemoryCollectorMetrics;
+import zipkin2.collector.scribe.generated.LogEntry;
+import zipkin2.collector.scribe.generated.ResultCode;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
@@ -34,10 +36,9 @@ import zipkin2.storage.StorageComponent;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 public class ScribeSpanConsumerTest {
   // scope to scribe as we aren't creating the consumer with the builder.
@@ -45,6 +46,20 @@ public class ScribeSpanConsumerTest {
 
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   SpanConsumer consumer = storage.spanConsumer();
+
+  static class CaptureAsyncMethodCallback implements AsyncMethodCallback<ResultCode> {
+
+    ResultCode resultCode;
+    Exception error;
+
+    @Override public void onComplete(ResultCode resultCode) {
+      this.resultCode = resultCode;
+    }
+
+    @Override public void onError(Exception error) {
+      this.error = error;
+    }
+  }
 
   static String reallyLongAnnotation;
 
@@ -85,11 +100,11 @@ public class ScribeSpanConsumerTest {
   public void entriesWithSpansAreConsumed() throws Exception {
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
-    Scribe.LogEntry entry = new Scribe.LogEntry();
+    LogEntry entry = new LogEntry();
     entry.category = "zipkin";
     entry.message = encodedSpan;
 
-    assertThat(scribe.log(asList(entry)).get()).isEqualTo(Scribe.ResultCode.OK);
+    expectSuccess(scribe, entry);
 
     assertThat(storage.getTraces()).containsExactly(asList(v2));
 
@@ -108,11 +123,11 @@ public class ScribeSpanConsumerTest {
 
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
-    Scribe.LogEntry entry = new Scribe.LogEntry();
+    LogEntry entry = new LogEntry();
     entry.category = "notzipkin";
     entry.message = "hello world";
 
-    scribe.log(asList(entry)).get();
+    expectSuccess(scribe, entry);
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();
@@ -121,20 +136,23 @@ public class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
+  private void expectSuccess(ScribeSpanConsumer scribe, LogEntry entry) {
+    CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
+    scribe.Log(asList(entry), callback);
+    assertThat(callback.resultCode).isEqualTo(ResultCode.OK);
+  }
+
   @Test
   public void malformedDataIsDropped() throws Exception {
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
-    Scribe.LogEntry entry = new Scribe.LogEntry();
+    LogEntry entry = new LogEntry();
     entry.category = "zipkin";
     entry.message = "notbase64";
 
-    try {
-      scribe.log(asList(entry)).get();
-      failBecauseExceptionWasNotThrown(ExecutionException.class);
-    } catch (ExecutionException e) {
-      assertThat(e.getCause()).isInstanceOf(IllegalArgumentException.class);
-    }
+    CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
+    scribe.Log(asList(entry), callback);
+    assertThat(callback.error).isInstanceOf(IllegalArgumentException.class);
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isEqualTo(1);
@@ -151,16 +169,13 @@ public class ScribeSpanConsumerTest {
 
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
-    Scribe.LogEntry entry = new Scribe.LogEntry();
+    LogEntry entry = new LogEntry();
     entry.category = "zipkin";
     entry.message = encodedSpan;
 
-    try {
-      scribe.log(asList(entry)).get();
-      failBecauseExceptionWasNotThrown(ExecutionException.class);
-    } catch (ExecutionException e) {
-      assertThat(e.getCause()).hasMessage("endpoint was null");
-    }
+    CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
+    scribe.Log(asList(entry), callback);
+    assertThat(callback.error).hasMessage("endpoint was null");
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();
@@ -192,11 +207,11 @@ public class ScribeSpanConsumerTest {
 
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
-    Scribe.LogEntry entry = new Scribe.LogEntry();
+    LogEntry entry = new LogEntry();
     entry.category = "zipkin";
     entry.message = encodedSpan;
 
-    scribe.log(asList(entry)).get();
+    expectSuccess(scribe, entry);
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();
@@ -208,13 +223,15 @@ public class ScribeSpanConsumerTest {
   /** Finagle's zipkin tracer breaks on a column width with a trailing newline */
   @Test
   public void decodesSpanGeneratedByFinagle() throws Exception {
-    Scribe.LogEntry entry = new Scribe.LogEntry();
+    LogEntry entry = new LogEntry();
     entry.category = "zipkin";
     entry.message =
         "CgABq/sBMnzE048LAAMAAAAOZ2V0VHJhY2VzQnlJZHMKAATN0p+4EGfTdAoABav7ATJ8xNOPDwAGDAAAAAQKAAEABR/wq+2DeAsAAgAAAAJzcgwAAwgAAX8AAAEGAAIkwwsAAwAAAAx6aXBraW4tcXVlcnkAAAoAAQAFH/Cr7zj4CwACAAAIAGFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFh\n"
             + "YWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhDAADCAABfwAAAQYAAiTDCwADAAAADHppcGtpbi1xdWVyeQAACgABAAUf8KwLPyILAAIAAABOR2MoOSwwLlBTU2NhdmVuZ2UsMjAxNS0wOS0xNyAxMjozNzowMiArMDAwMCwzMDQubWlsbGlzZWNvbmRzKzc2Mi5taWNyb3NlY29uZHMpDAADCAABfwAAAQYAAiTDCwADAAAADHppcGtpbi1xdWVyeQAIAAQABKZ6AAoAAQAFH/CsDLfACwACAAAAAnNzDAADCAABfwAAAQYAAiTDCwADAAAADHppcGtpbi1xdWVyeQAADwAIDAAAAAULAAEAAAATc3J2L2ZpbmFnbGUudmVyc2lvbgsAAgAAAAY2LjI4LjAIAAMAAAAGDAAECAABfwAAAQYAAgAACwADAAAADHppcGtpbi1xdWVyeQAACwABAAAAD3Nydi9tdXgvZW5hYmxlZAsAAgAAAAEBCAADAAAAAAwABAgAAX8AAAEGAAIAAAsAAwAAAAx6aXBraW4tcXVlcnkAAAsAAQAAAAJzYQsAAgAAAAEBCAADAAAAAAwABAgAAX8AAAEGAAIkwwsAAwAAAAx6aXBraW4tcXVlcnkAAAsAAQAAAAJjYQsAAgAAAAEBCAADAAAAAAwABAgAAX8AAAEGAAL5YAsAAwAAAAx6aXBraW4tcXVlcnkAAAsAAQAAAAZudW1JZHMLAAIAAAAEAAAAAQgAAwAAAAMMAAQIAAF/AAABBgACJMMLAAMAAAAMemlwa2luLXF1ZXJ5AAACAAkAAA==\n";
 
-    newScribeSpanConsumer(entry.category, consumer).log(asList(entry)).get();
+    ScribeSpanConsumer scribe = newScribeSpanConsumer(entry.category, consumer);
+
+    expectSuccess(scribe, entry);
 
     assertThat(storage.getTraces()).containsExactly(asList(v2));
 
@@ -227,26 +244,29 @@ public class ScribeSpanConsumerTest {
   }
 
   ScribeSpanConsumer newScribeSpanConsumer(String category, SpanConsumer consumer) {
+    ScribeCollector.Builder builder = ScribeCollector.newBuilder()
+      .category(category)
+      .metrics(scribeMetrics)
+      .storage(new StorageComponent() {
+        @Override public SpanStore spanStore() {
+          throw new AssertionError();
+        }
+
+        @Override public SpanConsumer spanConsumer() {
+          return consumer;
+        }
+
+        @Override public CheckResult check() {
+          return CheckResult.OK;
+        }
+
+        @Override public void close() {
+          throw new AssertionError();
+        }
+      });
     return new ScribeSpanConsumer(
-      ScribeCollector.newBuilder()
-        .category(category)
-        .metrics(scribeMetrics)
-        .storage(new StorageComponent() {
-          @Override public SpanStore spanStore() {
-            throw new AssertionError();
-          }
-
-          @Override public SpanConsumer spanConsumer() {
-            return consumer;
-          }
-
-          @Override public CheckResult check() {
-            return CheckResult.OK;
-          }
-
-          @Override public void close() {
-            throw new AssertionError();
-          }
-        }));
+      builder.delegate.build(),
+      builder.metrics,
+      builder.category);
   }
 }

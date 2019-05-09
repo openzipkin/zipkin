@@ -31,6 +31,9 @@
 
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
+
+    <!-- error-prone doesn't like generated code -->
+    <errorprone.args>-XepDisableWarningsInGeneratedCode</errorprone.args>
   </properties>
 
   <dependencies>
@@ -41,55 +44,23 @@
     </dependency>
 
     <dependency>
-      <groupId>com.facebook.swift</groupId>
-      <artifactId>swift-service</artifactId>
-      <version>0.23.1</version>
-      <exclusions>
-        <!-- airlift:configuration includes bval-jsr303, which can easily conflict -->
-        <exclusion>
-          <groupId>io.airlift</groupId>
-          <artifactId>configuration</artifactId>
-        </exclusion>
-        <exclusion>
-          <!-- interferes with netty-tcnative-boringssl-static versions -->
-          <groupId>com.facebook.nifty</groupId>
-          <artifactId>nifty-ssl</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.facebook.nifty</groupId>
-          <artifactId>nifty-client</artifactId>
-        </exclusion>
-        <exclusion>
-          <!-- huge and unused -->
-          <groupId>org.weakref</groupId>
-          <artifactId>jmxutils</artifactId>
-        </exclusion>
-        <!-- trying to reduce size -->
-        <exclusion>
-          <groupId>io.airlift</groupId>
-          <artifactId>stats</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.code.findbugs</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>javax.inject</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.inject.extensions</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.google.inject</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.httpcomponents</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-thrift</artifactId>
+      <version>${armeria.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-testing</artifactId>
+      <version>${armeria.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
+      <version>${mockito.version}</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
 </project>
