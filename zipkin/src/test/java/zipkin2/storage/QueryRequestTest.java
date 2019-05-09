@@ -91,9 +91,6 @@ public class QueryRequestTest {
       .containsOnly(entry("L O L", ""), entry("http.path", "/a"));
     assertThat(queryBuilder.parseAnnotationQuery("bar =123 and L O L and http.path = /a and A B C").annotationQuery)
       .containsOnly(entry("L O L", ""), entry("http.path", "/a"), entry("bar", "123"), entry("A B C", ""));
-    // border case, L O L as a tag and annotation, seems that the annotation takes precedence
-    assertThat(queryBuilder.parseAnnotationQuery("L O L=123 and L O L and http.path = /a").annotationQuery)
-      .containsOnly(entry("L O L", ""), entry("http.path", "/a"));
   }
 
   @Test public void annotationQueryParameterSpecificity() {
