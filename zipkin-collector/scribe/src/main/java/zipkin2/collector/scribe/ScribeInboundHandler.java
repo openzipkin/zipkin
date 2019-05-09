@@ -37,6 +37,8 @@ import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.EventLoop;
+import java.util.HashMap;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +68,10 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
   CompositeByteBuf pending;
   ReadState state;
   int nextFrameSize;
+
+  Map<Integer, ByteBuf> pendingResponses = new HashMap<>();
+  int nextResponseIndex = 0;
+  int previouslySentResponseIndex = -1;
 
   @Override
   public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -148,6 +154,8 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
       return;
     }
 
+    int responseIndex = nextResponseIndex++;
+
     response.aggregateWithPooledObjects(ctx.executor(), ctx.alloc()).handle((msg, t) -> {
       if (t != null) {
         exceptionCaught(ctx, t);
@@ -169,10 +177,29 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
         returned.writeBytes(content.array(), content.offset(), content.length());
       }
 
-      ctx.writeAndFlush(returned);
+      if (responseIndex == previouslySentResponseIndex + 1) {
+        ctx.writeAndFlush(returned);
+        previouslySentResponseIndex++;
+
+        flushResponses(ctx);
+      } else {
+        pendingResponses.put(responseIndex, returned);
+      }
 
       return null;
     });
+  }
+
+  void flushResponses(ChannelHandlerContext ctx) {
+    while (!pendingResponses.isEmpty()) {
+      ByteBuf response = pendingResponses.remove(previouslySentResponseIndex + 1);
+      if (response == null) {
+        return;
+      }
+
+      ctx.writeAndFlush(response);
+      previouslySentResponseIndex++;
+    }
   }
 
   void release() {
@@ -180,6 +207,9 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
       pending.release();
       pending = null;
     }
+
+    pendingResponses.values().forEach(ByteBuf::release);
+    pendingResponses.clear();
   }
 
   /**
