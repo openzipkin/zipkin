@@ -55,9 +55,6 @@ public class ITElasticsearchStorageV6 {
       return storage;
     }
 
-    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
-    }
-
     @Before @Override public void clear() throws IOException {
       storage.clear();
     }

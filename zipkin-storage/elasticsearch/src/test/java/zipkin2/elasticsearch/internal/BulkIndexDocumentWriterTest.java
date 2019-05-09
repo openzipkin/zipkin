@@ -16,7 +16,6 @@
  */
 package zipkin2.elasticsearch.internal;
 
-import com.squareup.moshi.JsonWriter;
 import okio.Buffer;
 import org.junit.Test;
 import zipkin2.Span;
@@ -28,16 +27,19 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 
-public class BulkIndexSupportTest {
+public class BulkIndexDocumentWriterTest {
   Buffer buffer = new Buffer();
 
-  @Test public void span_doesntAddDocumentId() {
-    BulkIndexSupport.SPAN.writeDocument(CLIENT_SPAN, JsonWriter.of(buffer));
-    buffer.writeByte('\n');
-    BulkIndexSupport.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, JsonWriter.of(buffer));
-    buffer.writeByte('\n');
+  @Test public void span_addsDocumentId() {
+    String id = BulkIndexDocumentWriter.SPAN.writeDocument(CLIENT_SPAN, buffer);
+    assertThat(id)
+      .isEqualTo(CLIENT_SPAN.traceId() + "-" + buffer.readByteString().md5().hex());
+  }
 
-    assertThat(buffer.readUtf8()).doesNotContain("\"_id\"");
+  @Test public void spanSearchDisabled_addsDocumentId() {
+    String id = BulkIndexDocumentWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
+    assertThat(id)
+      .isEqualTo(CLIENT_SPAN.traceId() + "-" + buffer.readByteString().md5().hex());
   }
 
   @Test public void spanSearchFields_skipsWhenNoData() {
@@ -50,7 +52,7 @@ public class BulkIndexSupportTest {
       .kind(Kind.CLIENT)
       .build();
 
-    BulkIndexSupport.SPAN.writeDocument(span, JsonWriter.of(buffer));
+    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"traceId\":\"");
   }
@@ -67,7 +69,7 @@ public class BulkIndexSupportTest {
         .kind(Kind.CLIENT)
         .build();
 
-    BulkIndexSupport.SPAN.writeDocument(span, JsonWriter.of(buffer));
+    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"timestamp_millis\":1,\"traceId\":");
   }
@@ -82,7 +84,7 @@ public class BulkIndexSupportTest {
       .addAnnotation(1L, "\"foo")
       .build();
 
-    BulkIndexSupport.SPAN.writeDocument(span, JsonWriter.of(buffer));
+    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
   }
@@ -96,7 +98,7 @@ public class BulkIndexSupportTest {
       .putTag("\"foo", "\"bar")
       .build();
 
-    BulkIndexSupport.SPAN.writeDocument(span, JsonWriter.of(buffer));
+    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
   }
@@ -105,14 +107,14 @@ public class BulkIndexSupportTest {
     Span span =
       Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
 
-    BulkIndexSupport.SPAN.writeDocument(span, JsonWriter.of(buffer));
+    BulkIndexDocumentWriter.SPAN.writeDocument(span, buffer);
 
     assertThat(SpanBytesDecoder.JSON_V2.decodeOne(buffer.readByteArray()))
       .isEqualTo(span); // ignores timestamp_millis field
   }
 
   @Test public void spanSearchDisabled_doesntAddQueryFields() {
-    BulkIndexSupport.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, JsonWriter.of(buffer));
+    BulkIndexDocumentWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
 
     assertThat(buffer.readUtf8()).startsWith("{\"traceId\":\"");
   }

@@ -20,8 +20,9 @@ import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
+import okio.BufferedSink;
 import zipkin2.DependencyLink;
-import zipkin2.elasticsearch.internal.BulkIndexSupport;
+import zipkin2.elasticsearch.internal.BulkIndexDocumentWriter;
 import zipkin2.elasticsearch.internal.HttpBulkIndexer;
 
 /** Package accessor for integration tests */
@@ -41,9 +42,10 @@ public class InternalForTests {
     }
   }
 
-  static final BulkIndexSupport<DependencyLink> DEPENDENCY_LINK_BULK_INDEX_SUPPORT =
-    new BulkIndexSupport<DependencyLink>() {
-      @Override public String writeDocument(DependencyLink link, JsonWriter writer) {
+  static final BulkIndexDocumentWriter<DependencyLink> DEPENDENCY_LINK_BULK_INDEX_SUPPORT =
+    new BulkIndexDocumentWriter<DependencyLink>() {
+      @Override public String writeDocument(DependencyLink link, BufferedSink sink) {
+        JsonWriter writer = JsonWriter.of(sink);
         try {
           writer.beginObject();
           writer.name("parent").value(link.parent());

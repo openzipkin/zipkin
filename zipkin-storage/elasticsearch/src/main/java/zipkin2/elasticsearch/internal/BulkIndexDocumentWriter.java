@@ -20,37 +20,39 @@ import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Map;
+import okio.Buffer;
+import okio.BufferedSink;
+import okio.HashingSink;
+import okio.Okio;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin2.internal.Nullable;
 
 import static zipkin2.elasticsearch.internal.HttpBulkIndexer.INDEX_CHARS_LIMIT;
 
-public abstract class BulkIndexSupport<T> {
+public abstract class BulkIndexDocumentWriter<T> {
 
   /**
    * Write a complete json document according to index strategy and returns the ID field.
    */
-  public abstract @Nullable String writeDocument(T input, JsonWriter writer);
+  public abstract String writeDocument(T input, BufferedSink writer);
 
-  public static final BulkIndexSupport<Span> SPAN = new BulkIndexSupport<Span>() {
-    @Override public String writeDocument(Span input, JsonWriter writer) {
-      write(input, true, writer);
-      return null; // Allow ES to choose an ID
+  public static final BulkIndexDocumentWriter<Span> SPAN = new BulkIndexDocumentWriter<Span>() {
+    @Override public String writeDocument(Span input, BufferedSink sink) {
+      return write(input, true, sink);
     }
   };
-  public static final BulkIndexSupport<Span> SPAN_SEARCH_DISABLED = new BulkIndexSupport<Span>() {
-    @Override public String writeDocument(Span input, JsonWriter writer) {
-      write(input, false, writer);
-      return null; // Allow ES to choose an ID
+  public static final BulkIndexDocumentWriter<Span>
+    SPAN_SEARCH_DISABLED = new BulkIndexDocumentWriter<Span>() {
+    @Override public String writeDocument(Span input, BufferedSink sink) {
+      return write(input, false, sink);
     }
   };
 
-  public static final BulkIndexSupport<Map.Entry<String, String>> AUTOCOMPLETE =
-    new BulkIndexSupport<Map.Entry<String, String>>() {
-      @Override public String writeDocument(Map.Entry<String, String> input, JsonWriter writer) {
-        writeAutocompleteEntry(input.getKey(), input.getValue(), writer);
+  public static final BulkIndexDocumentWriter<Map.Entry<String, String>> AUTOCOMPLETE =
+    new BulkIndexDocumentWriter<Map.Entry<String, String>>() {
+      @Override public String writeDocument(Map.Entry<String, String> input, BufferedSink sink) {
+        writeAutocompleteEntry(input.getKey(), input.getValue(), JsonWriter.of(sink));
         // Id is used to dedupe server side as necessary. Arbitrarily same format as _q value.
         return input.getKey() + "=" + input.getValue();
       }
@@ -74,7 +76,9 @@ public abstract class BulkIndexSupport<T> {
    *
    * @param searchEnabled encodes timestamp_millis and _q when non-empty
    */
-  static void write(Span span, boolean searchEnabled, JsonWriter writer) {
+  static String write(Span span, boolean searchEnabled, BufferedSink sink) {
+    HashingSink hashingSink = HashingSink.md5(sink);
+    JsonWriter writer = JsonWriter.of(Okio.buffer(hashingSink));
     try {
       writer.beginObject();
       if (searchEnabled) addSearchFields(span, writer);
@@ -111,9 +115,14 @@ public abstract class BulkIndexSupport<T> {
       if (Boolean.TRUE.equals(span.debug())) writer.name("debug").value(true);
       if (Boolean.TRUE.equals(span.shared())) writer.name("shared").value(true);
       writer.endObject();
+      writer.flush();
+      hashingSink.flush();
     } catch (IOException e) {
       throw new AssertionError(e); // No I/O writing to a Buffer.
     }
+    return new Buffer()
+      .writeUtf8(span.traceId()).writeByte('-').writeUtf8(hashingSink.hash().hex())
+      .readUtf8();
   }
 
   static void writeAutocompleteEntry(String key, String value, JsonWriter writer) {
