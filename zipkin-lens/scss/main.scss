@@ -16,6 +16,7 @@
 //
 
 @import '../node_modules/rc-calendar/assets/index.css';
+@import '../node_modules/rc-slider/assets/index.css';
 @import '../node_modules/rc-time-picker/assets/index.css';
 @import '../node_modules/react-table/react-table.css';
 
@@ -26,6 +27,7 @@
 @import 'base/form';
 
 @import 'custom/rc-calendar';
+@import 'custom/rc-slider';
 @import 'custom/rc-time-picker';
 @import 'custom/react-modal';
 @import 'custom/react-select';
@@ -47,6 +49,8 @@
 @import 'components/global-search';
 @import 'components/loading-overlay';
 @import 'components/mini-timeline';
+@import 'components/mini-timeline-graph';
+@import 'components/mini-timeline-label';
 @import 'components/search-condition';
 @import 'components/service-name-badge';
 @import 'components/sidebar';
