@@ -29,9 +29,8 @@ import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.scribe.generated.LogEntry;
 import zipkin2.collector.scribe.generated.ResultCode;
 import zipkin2.collector.scribe.generated.Scribe;
-import zipkin2.internal.Nullable;
 
-class ScribeSpanConsumer implements Scribe.AsyncIface {
+final class ScribeSpanConsumer implements Scribe.AsyncIface {
   final Collector collector;
   final CollectorMetrics metrics;
   final String category;
@@ -63,19 +62,15 @@ class ScribeSpanConsumer implements Scribe.AsyncIface {
       metrics.incrementBytes(byteCount);
     }
 
-    collector.accept(
-      spans,
-      new Callback<Void>() {
-        @Override
-        public void onSuccess(@Nullable Void value) {
-          resultHandler.onComplete(ResultCode.OK);
-        }
+    collector.accept(spans, new Callback<Void>() {
+      @Override public void onSuccess(Void value) {
+        resultHandler.onComplete(ResultCode.OK);
+      }
 
-        @Override
-        public void onError(Throwable t) {
-          Exception error = t instanceof Exception ? (Exception) t : new RuntimeException(t);
-          resultHandler.onError(error);
-        }
-      });
+      @Override public void onError(Throwable t) {
+        Exception error = t instanceof Exception ? (Exception) t : new RuntimeException(t);
+        resultHandler.onError(error);
+      }
+    });
   }
 }

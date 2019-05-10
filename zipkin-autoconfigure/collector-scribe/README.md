@@ -2,9 +2,8 @@
 
 This module provides support for running the legacy Scribe collector as
 a component of Zipkin server. To activate this collector, reference the
-module jar when running the Zipkin server and configure one or more
-bootstrap brokers via the `SCRIBE_ENABLED=true` environment variable or
-the property `zipkin.collector.scribe.enabled=true`.
+module jar when running the Zipkin server set the `SCRIBE_ENABLED=true`
+environment variable or property `zipkin.collector.scribe.enabled=true`.
 
 ## Quick start
 

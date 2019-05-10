@@ -42,7 +42,9 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
+import static zipkin2.Call.propagateIfFatal;
+
+final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
   static final Logger logger = LoggerFactory.getLogger(ScribeInboundHandler.class);
 
@@ -73,18 +75,13 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
   int nextResponseIndex = 0;
   int previouslySentResponseIndex = -1;
 
-  @Override
-  public void channelActive(ChannelHandlerContext ctx) throws Exception {
+  @Override public void channelActive(ChannelHandlerContext ctx) {
     pending = ctx.alloc().compositeBuffer();
     state = ReadState.HEADER;
   }
 
-  @Override
-  public void channelRead(final ChannelHandlerContext ctx, Object msg) {
-    if (pending == null) {
-      // Already closed (probably due to an exception).
-      return;
-    }
+  @Override public void channelRead(final ChannelHandlerContext ctx, Object msg) {
+    if (pending == null) return; // Already closed (probably due to an exception).
 
     assert msg instanceof ByteBuf;
     ByteBuf buf = (ByteBuf) msg;
@@ -100,13 +97,11 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     }
   }
 
-  @Override
-  public void channelInactive(ChannelHandlerContext ctx) {
+  @Override public void channelInactive(ChannelHandlerContext ctx) {
     release();
   }
 
-  @Override
-  public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
+  @Override public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
     Exceptions.logIfUnexpected(logger, ctx.channel(), cause);
 
     release();
@@ -114,18 +109,15 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
   }
 
   void maybeReadHeader(ChannelHandlerContext ctx) {
-    if (pending.readableBytes() < 4) {
-      return;
-    }
+    if (pending.readableBytes() < 4) return;
+
     nextFrameSize = pending.readInt();
     state = ReadState.PAYLOAD;
     maybeReadPayload(ctx);
   }
 
   void maybeReadPayload(ChannelHandlerContext ctx) {
-    if (pending.readableBytes() < nextFrameSize) {
-      return;
-    }
+    if (pending.readableBytes() < nextFrameSize) return;
 
     ByteBuf payload = ctx.alloc().buffer(nextFrameSize);
     pending.readBytes(payload, nextFrameSize);
@@ -133,9 +125,8 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
     state = ReadState.HEADER;
 
-    HttpRequest request = HttpRequest.of(
-      THRIFT_HEADERS.toMutable(),
-      new ByteBufHttpData(payload, true));
+    HttpRequest request =
+      HttpRequest.of(THRIFT_HEADERS.toMutable(), new ByteBufHttpData(payload, true));
     ServiceRequestContextBuilder requestContextBuilder = ServiceRequestContextBuilder.of(request)
       .service(scribeService)
       .alloc(ctx.alloc());
@@ -147,10 +138,11 @@ class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
     ServiceRequestContext requestContext = requestContextBuilder.build();
 
     final HttpResponse response;
-    try (SafeCloseable unused = requestContext.push()){
+    try (SafeCloseable unused = requestContext.push()) {
       response = scribeService.serve(requestContext, request);
-    } catch (Exception e) {
-      exceptionCaught(ctx, e);
+    } catch (Throwable t) {
+      propagateIfFatal(t);
+      exceptionCaught(ctx, t);
       return;
     }
 

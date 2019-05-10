@@ -17,7 +17,9 @@
     limitations under the License.
 
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
@@ -38,15 +40,6 @@
       <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-collector-scribe</artifactId>
       <version>${project.version}</version>
-      <exclusions>
-        <!-- com.facebook.swift:swift-service brings an old version which
-             leads to javax.validation.ValidationException. Exclude it!
-        -->
-        <exclusion>
-          <groupId>javax.validation</groupId>
-          <artifactId>validation-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
 
@@ -61,22 +54,20 @@
             <name>zipkin</name>
           </layoutFactory>
           <classifier>module</classifier>
-          <!-- exclude dependencies already packaged in zipkin-server -->
-          <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
-          <excludeGroupIds>
-            org.springframework.boot,org.springframework,org.slf4j,commons-logging,com.google.code.gson,com.google.guava
-          </excludeGroupIds>
-          <!-- excludes direct dependency instead of the group id, as otherwise we'd exclude ourselves -->
-          <excludes>
-            <exclude>
+          <includes>
+            <dependency>
               <groupId>${project.groupId}.zipkin2</groupId>
-              <artifactId>zipkin</artifactId>
-            </exclude>
-            <exclude>
-              <groupId>${project.groupId}.zipkin2</groupId>
-              <artifactId>zipkin-collector</artifactId>
-            </exclude>
-          </excludes>
+              <artifactId>zipkin-collector-scribe</artifactId>
+            </dependency>
+            <include>
+              <groupId>com.linecorp.armeria</groupId>
+              <artifactId>armeria-thrift</artifactId>
+            </include>
+            <include>
+              <groupId>org.apache.thrift</groupId>
+              <artifactId>libthrift</artifactId>
+            </include>
+          </includes>
         </configuration>
         <dependencies>
           <dependency>
@@ -88,33 +79,4 @@
       </plugin>
     </plugins>
   </build>
-
-  <profiles>
-    <profile>
-      <id>jigsaw</id>
-      <activation>
-        <jdk>[1.9,)</jdk>
-      </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.apache.rat</groupId>
-            <artifactId>apache-rat-plugin</artifactId>
-            <configuration>
-              <!-- we cannot use rat until RAT-239 is fixed, as it fails when forkCount=0 -->
-              <skip>true</skip>
-            </configuration>
-          </plugin>
-          <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <!-- to prevent class not found in tests -->
-            <configuration>
-              <forkCount>0</forkCount>
-              <argLine>--add-modules java.xml.bind</argLine>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
-    </profile>
-  </profiles>
 </project>
