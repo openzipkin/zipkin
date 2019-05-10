@@ -17,7 +17,7 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 
-import Browser from './index';
+import Browser from './Browser';
 import BrowserHeader from './BrowserHeader';
 import { sortingMethods } from './sorting';
 

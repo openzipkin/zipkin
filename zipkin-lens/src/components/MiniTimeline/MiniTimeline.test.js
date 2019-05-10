@@ -17,7 +17,7 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 
-import MiniTimeline from './index';
+import MiniTimeline from './MiniTimeline';
 
 describe('<MiniTimeline />', () => {
   const commonProps = {

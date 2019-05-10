@@ -19,7 +19,7 @@ import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { shallow } from 'enzyme';
 
-import App from './index';
+import App from './App';
 import Layout from './Layout';
 
 describe('<App />', () => {

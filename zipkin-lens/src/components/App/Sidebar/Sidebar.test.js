@@ -18,7 +18,7 @@ import React from 'react';
 import { shallow } from 'enzyme';
 import Cookies from 'js-cookie';
 
-import Sidebar from './index';
+import Sidebar from './Sidebar';
 
 describe('<Sidebar />', () => {
   it('should have proper classes', () => {
