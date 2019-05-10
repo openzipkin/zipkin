@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package zipkin2.codec;
 
 import com.google.protobuf.CodedInputStream;
@@ -10,10 +26,9 @@ import java.util.logging.Logger;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static java.util.logging.Level.FINE;
-
 public class ProtobufSpanDecoder {
   static final Logger LOG = Logger.getLogger(ProtobufSpanDecoder.class.getName());
+  static final boolean DEBUG = false;
 
   // map<string,string> in proto is a special field with key, value
   static final int MAP_KEY_KEY = (1 << 3) | WireFormat.WIRETYPE_LENGTH_DELIMITED;
@@ -66,8 +81,7 @@ public class ProtobufSpanDecoder {
           break;
         }
         case 18: {
-          java.lang.String s = input.readStringRequireUtf8();
-          value = s;
+          value = input.readStringRequireUtf8();
           break;
         }
         default: {
@@ -93,8 +107,7 @@ public class ProtobufSpanDecoder {
           done = true;
           break;
         case 10: {
-          java.lang.String s = input.readStringRequireUtf8();
-          endpoint.serviceName(s);
+          endpoint.serviceName(input.readStringRequireUtf8());
           break;
         }
         case 18:
@@ -145,8 +158,7 @@ public class ProtobufSpanDecoder {
           break;
         }
         case 42: {
-          java.lang.String name = input.readStringRequireUtf8();
-          span.name(name);
+          span.name(input.readStringRequireUtf8());
           break;
         }
         case 49: {
@@ -254,13 +266,13 @@ public class ProtobufSpanDecoder {
     return spans;
   }
 
-  static final byte[] HEX_DIGITS =
+  static final char[] HEX_DIGITS =
     {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
   private static String readHexString(CodedInputStream input) throws IOException {
     int size = input.readRawVarint32();
 
-    byte[] result = new byte[size * 2];
+    char[] result = new char[size * 2];
 
     for (int i = 0; i < result.length; i += 2) {
       byte b = input.readRawByte();
@@ -268,14 +280,12 @@ public class ProtobufSpanDecoder {
       result[i + 1] = HEX_DIGITS[b & 0xf];
     }
 
-    return new String(result, 0);
+    return new String(result);
   }
 
-
-
   static void logAndSkip(CodedInputStream input, int tag) throws IOException {
-    int nextWireType = WireFormat.getTagWireType(tag);
-    if (LOG.isLoggable(FINE)) {
+    if (DEBUG) { // avoiding volatile reads as we don't log on skip in our normal codec
+      int nextWireType = WireFormat.getTagWireType(tag);
       int nextFieldNumber = WireFormat.getTagFieldNumber(tag);
       LOG.fine(String.format("Skipping field: byte=%s, fieldNumber=%s, wireType=%s",
         input.getTotalBytesRead(), nextFieldNumber, nextWireType));

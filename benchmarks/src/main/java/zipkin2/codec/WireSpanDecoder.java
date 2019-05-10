@@ -1,3 +1,19 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package zipkin2.codec;
 
 import com.google.protobuf.WireFormat;
@@ -10,18 +26,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import okio.Buffer;
-import okio.ByteString;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static java.util.logging.Level.FINE;
-
 public class WireSpanDecoder {
   static final Logger LOG = Logger.getLogger(WireSpanDecoder.class.getName());
-
-  // map<string,string> in proto is a special field with key, value
-  static final int MAP_KEY_KEY = (1 << 3) | WireFormat.WIRETYPE_LENGTH_DELIMITED;
-  static final int MAP_VALUE_KEY = (2 << 3) | WireFormat.WIRETYPE_LENGTH_DELIMITED;
+  static final boolean DEBUG = false;
 
   static boolean decodeTag(ProtoReader input, Span.Builder span) throws IOException {
     // now, we are in the tag fields
@@ -70,8 +80,7 @@ public class WireSpanDecoder {
           break;
         }
         case 2: {
-          String s = input.readString();
-          value = s;
+          value = input.readString();
           break;
         }
         default: {
@@ -216,7 +225,13 @@ public class WireSpanDecoder {
   }
 
   public static List<Span> decodeList(ByteBuffer spans) {
-    return decodeList(new ProtoReader(new Buffer().write(ByteString.of(spans))));
+    Buffer buffer = new Buffer();
+    try {
+      buffer.write(spans);
+    } catch (IOException e) {
+      throw new AssertionError(e); // no I/O
+    }
+    return decodeList(new ProtoReader(buffer));
   }
 
   public static List<Span> decodeList(ProtoReader input) {
@@ -269,8 +284,8 @@ public class WireSpanDecoder {
   }
 
   static void logAndSkip(ProtoReader input, int tag) throws IOException {
-    int nextWireType = WireFormat.getTagWireType(tag);
-    if (LOG.isLoggable(FINE)) {
+    if (DEBUG) { // avoiding volatile reads as we don't log on skip in our normal codec
+      int nextWireType = WireFormat.getTagWireType(tag);
       int nextFieldNumber = WireFormat.getTagFieldNumber(tag);
       LOG.fine(String.format("Skipping field: byte=%s, fieldNumber=%s, wireType=%s",
         0, nextFieldNumber, nextWireType));
