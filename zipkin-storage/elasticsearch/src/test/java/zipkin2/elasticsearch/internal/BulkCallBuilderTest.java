@@ -23,9 +23,9 @@ import okio.ByteString;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import zipkin2.elasticsearch.internal.HttpBulkIndexer.CheckForErrors;
+import zipkin2.elasticsearch.internal.BulkCallBuilder.CheckForErrors;
 
-public class HttpBulkIndexerTest {
+public class BulkCallBuilderTest {
   @Rule public ExpectedException expectedException = ExpectedException.none();
 
   @Test
