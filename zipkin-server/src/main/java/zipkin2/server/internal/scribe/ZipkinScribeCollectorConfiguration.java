@@ -14,10 +14,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package zipkin2.autoconfigure.collector.scribe;
+package zipkin2.server.internal.scribe;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
@@ -31,16 +31,22 @@ import zipkin2.storage.StorageComponent;
  * asynchronously.
  */
 @Configuration
-@EnableConfigurationProperties(ZipkinScribeCollectorProperties.class)
 @ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", havingValue = "true")
-class ZipkinScribeCollectorAutoConfiguration {
+public class ZipkinScribeCollectorConfiguration {
   /** The init method will block until the scribe port is listening, or crash on port conflict */
   @Bean(initMethod = "start")
   ScribeCollector scribe(
-      ZipkinScribeCollectorProperties scribe,
-      CollectorSampler sampler,
-      CollectorMetrics metrics,
-      StorageComponent storage) {
-    return scribe.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+    @Value("${zipkin.collector.scribe.category:zipkin}") String category,
+    @Value("${zipkin.collector.scribe.port:9410}") int port,
+    CollectorSampler sampler,
+    CollectorMetrics metrics,
+    StorageComponent storage) {
+    return ScribeCollector.newBuilder()
+      .category(category)
+      .port(port)
+      .sampler(sampler)
+      .metrics(metrics)
+      .storage(storage)
+      .build();
   }
 }

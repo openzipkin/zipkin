@@ -243,6 +243,20 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Scribe Collector -->
+    <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-collector-scribe</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+    <!-- for Generated annotations on Scribe types -->
+    <dependency>
+      <groupId>javax.annotation</groupId>
+      <artifactId>javax.annotation-api</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
     <!--Prometheus metrics-->
     <dependency>
       <groupId>io.micrometer</groupId>

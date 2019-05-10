@@ -37,6 +37,10 @@ zipkin:
       virtual-host: ${RABBIT_VIRTUAL_HOST:/}
       useSsl: ${RABBIT_USE_SSL:false}
       uri: ${RABBIT_URI:}
+    scribe:
+      enabled: ${SCRIBE_ENABLED:false}
+      category: ${SCRIBE_CATEGORY:zipkin}
+      port: ${COLLECTOR_PORT:9410}
   query:
     enabled: ${QUERY_ENABLED:true}
     # 1 day in millis

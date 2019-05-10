@@ -293,8 +293,14 @@ Property | Environment Variable | Description
 `zipkin.collector.http.enabled` | `HTTP_COLLECTOR_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
 
 ### Scribe (Legacy) Collector
-A collector supporting Scribe is available as an external module. See
-[zipkin-autoconfigure/collector-scribe](../zipkin-autoconfigure/collector-scribe/).
+A collector supporting Scribe is enabled when `SCRIBE_ENABLED=true`. New
+sites are discouraged from using this collector as Scribe is an archived
+technology.
+
+Environment Variable | Property | Description
+--- | --- | ---
+`COLLECTOR_PORT` | `zipkin.collector.scribe.port` | The port to listen for thrift RPC scribe requests. Defaults to 9410
+`SCRIBE_CATEGORY` | `zipkin.collector.scribe.category` | Category zipkin spans will be consumed from. Defaults to `zipkin`
 
 ### Kafka Collector
 The Kafka collector is enabled when `KAFKA_BOOTSTRAP_SERVERS` is set to
