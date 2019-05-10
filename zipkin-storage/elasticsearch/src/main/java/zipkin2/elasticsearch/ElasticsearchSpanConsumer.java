@@ -94,8 +94,8 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     BulkSpanIndexer(ElasticsearchSpanConsumer consumer) {
       this.bulkCallBuilder = new BulkCallBuilder(consumer.es, consumer.es.version(), "index-span");
       this.consumer = consumer;
-      this.spanWriter = consumer.searchEnabled ? BulkIndexWriter.SPAN
-        : BulkIndexWriter.SPAN_SEARCH_DISABLED;
+      this.spanWriter =
+        consumer.searchEnabled ? BulkIndexWriter.SPAN : BulkIndexWriter.SPAN_SEARCH_DISABLED;
     }
 
     void add(long indexTimestamp, Span span) {

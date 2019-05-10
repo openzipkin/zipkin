@@ -61,13 +61,13 @@ public abstract class BulkIndexWriter<T> {
   static final Endpoint EMPTY_ENDPOINT = Endpoint.newBuilder().build();
 
   /**
-   * In order to allow systems like Kibana to search by timestamp, we index a field "timestamp_millis"
+   * In order to allow systems like Kibana to search by timestamp, we add a field "timestamp_millis"
    * when storing. The cheapest way to do this without changing the codec is prefixing it to the
    * json. For example. {"traceId":"... becomes {"timestamp_millis":12345,"traceId":"...
    *
    * <p>Tags are stored as a dictionary. Since some tag names will include inconsistent number of
    * dots (ex "error" and perhaps "error.message"), we cannot index them naturally with
-   * elasticsearch. Instead, we index an index-only (non-source) field of {@code _q} which includes
+   * elasticsearch. Instead, we add an index-only (non-source) field of {@code _q} which includes
    * valid search queries. For example, the tag {@code error -> 500} results in {@code
    * "_q":["error", "error=500"]}. This matches the input query syntax, and can be checked manually
    * with curl.
