@@ -17,7 +17,7 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 
-import { Dependencies } from './index';
+import { Dependencies } from './Dependencies';
 
 describe('<Dependencies>', () => {
   it('should not fetch dependencies when location.search is empty', () => {

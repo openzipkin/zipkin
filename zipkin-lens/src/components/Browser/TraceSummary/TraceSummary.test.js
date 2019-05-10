@@ -17,7 +17,7 @@
 import React from 'react';
 import { shallow } from 'enzyme';
 
-import TraceSummary from './index';
+import TraceSummary from './TraceSummary';
 
 jest.mock('../../../zipkin', () => ({
   ...(jest.requireActual('../../../zipkin')),
