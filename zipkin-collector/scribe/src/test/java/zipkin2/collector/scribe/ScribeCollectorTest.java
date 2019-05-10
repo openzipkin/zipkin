@@ -28,10 +28,9 @@ public class ScribeCollectorTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  @Test
-  public void check_failsWhenNotStarted() {
+  @Test public void check_failsWhenNotStarted() {
     try (ScribeCollector scribe =
-        ScribeCollector.newBuilder().storage(storage).port(12345).build()) {
+           ScribeCollector.newBuilder().storage(storage).port(12345).build()) {
 
       CheckResult result = scribe.check();
       assertThat(result.ok()).isFalse();
@@ -42,15 +41,15 @@ public class ScribeCollectorTest {
     }
   }
 
-  @Test
-  public void start_failsWhenCantBindPort() {
+  @Test public void start_failsWhenCantBindPort() {
     thrown.expect(RuntimeException.class);
     thrown.expectMessage("Could not start scribe server.");
 
     ScribeCollector.Builder builder = ScribeCollector.newBuilder().storage(storage).port(12345);
 
     try (ScribeCollector first = builder.build().start()) {
-      try (ScribeCollector samePort = builder.build().start()) {}
+      try (ScribeCollector samePort = builder.build().start()) {
+      }
     }
   }
 }

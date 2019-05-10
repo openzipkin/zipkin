@@ -38,22 +38,17 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  AnnotationConfigApplicationContext context;
+  AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After
-  public void close() {
-    if (context != null) {
-      context.close();
-    }
+  @After public void close() {
+    context.close();
   }
 
-  @Test
-  public void doesntProvidesCollectorComponent_byDefault() {
-    context = new AnnotationConfigApplicationContext();
+  @Test public void doesntProvidesCollectorComponent_byDefault() {
     context.register(
-        PropertyPlaceholderAutoConfiguration.class,
-        ZipkinScribeCollectorAutoConfiguration.class,
-        InMemoryConfiguration.class);
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinScribeCollectorAutoConfiguration.class,
+      InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
@@ -61,30 +56,26 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
   }
 
   /** Note: this will flake if you happen to be running a server on port 9410! */
-  @Test
-  public void providesCollectorComponent_whenEnabled() {
-    context = new AnnotationConfigApplicationContext();
+  @Test public void providesCollectorComponent_whenEnabled() {
     TestPropertyValues.of("zipkin.collector.scribe.enabled:true").applyTo(context);
     context.register(
-        PropertyPlaceholderAutoConfiguration.class,
-        ZipkinScribeCollectorAutoConfiguration.class,
-        InMemoryConfiguration.class);
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinScribeCollectorAutoConfiguration.class,
+      InMemoryConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(ScribeCollector.class)).isNotNull();
   }
 
-  @Test
-  public void canOverrideProperty_port() {
-    context = new AnnotationConfigApplicationContext();
+  @Test public void canOverrideProperty_port() {
     TestPropertyValues.of(
-        "zipkin.collector.scribe.enabled:true",
-        "zipkin.collector.scribe.port:9999")
-    .applyTo(context);
+      "zipkin.collector.scribe.enabled:true",
+      "zipkin.collector.scribe.port:9999")
+      .applyTo(context);
     context.register(
-        PropertyPlaceholderAutoConfiguration.class,
-        ZipkinScribeCollectorAutoConfiguration.class,
-        InMemoryConfiguration.class);
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinScribeCollectorAutoConfiguration.class,
+      InMemoryConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(ZipkinScribeCollectorProperties.class).getPort()).isEqualTo(9999);
@@ -92,18 +83,15 @@ public class ZipkinScribeCollectorAutoConfigurationTest {
 
   @Configuration
   static class InMemoryConfiguration {
-    @Bean
-    CollectorSampler sampler() {
+    @Bean CollectorSampler sampler() {
       return CollectorSampler.ALWAYS_SAMPLE;
     }
 
-    @Bean
-    CollectorMetrics metrics() {
+    @Bean CollectorMetrics metrics() {
       return CollectorMetrics.NOOP_METRICS;
     }
 
-    @Bean
-    StorageComponent storage() {
+    @Bean StorageComponent storage() {
       return InMemoryStorage.newBuilder().build();
     }
   }

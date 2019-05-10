@@ -21,15 +21,16 @@ import com.linecorp.armeria.common.util.EventLoopGroups;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import java.net.InetSocketAddress;
 
-class NettyScribeServer {
+import static zipkin2.Call.propagateIfFatal;
 
-  private final int port;
-  private final ScribeSpanConsumer scribe;
+final class NettyScribeServer {
+
+  final int port;
+  final ScribeSpanConsumer scribe;
 
   volatile EventLoopGroup bossGroup;
   volatile Channel channel;
@@ -48,17 +49,15 @@ class NettyScribeServer {
       channel = b.group(bossGroup, workerGroup)
         .channel(EventLoopGroups.serverChannelType(bossGroup))
         .childHandler(new ChannelInitializer<SocketChannel>() {
-          @Override
-          protected void initChannel(SocketChannel ch) {
+          @Override protected void initChannel(SocketChannel ch) {
             ch.pipeline().addLast(new ScribeInboundHandler(scribe));
           }
         })
-        // Uses same value as the previously used swift library for consistency.
-        .childOption(ChannelOption.SO_BACKLOG, 1024)
         .bind(port)
         .syncUninterruptibly()
         .channel();
     } catch (Throwable t) {
+      propagateIfFatal(t);
       throw new RuntimeException("Could not start scribe server.", t);
     }
   }

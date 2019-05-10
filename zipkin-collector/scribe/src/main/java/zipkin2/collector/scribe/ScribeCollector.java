@@ -42,22 +42,19 @@ public final class ScribeCollector extends CollectorComponent {
     String category = "zipkin";
     int port = 9410;
 
-    @Override
-    public Builder storage(StorageComponent storage) {
+    @Override public Builder storage(StorageComponent storage) {
       delegate.storage(storage);
       return this;
     }
 
-    @Override
-    public Builder metrics(CollectorMetrics metrics) {
+    @Override public Builder metrics(CollectorMetrics metrics) {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("scribe");
       delegate.metrics(this.metrics);
       return this;
     }
 
-    @Override
-    public Builder sampler(CollectorSampler sampler) {
+    @Override public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
       return this;
     }
@@ -75,8 +72,7 @@ public final class ScribeCollector extends CollectorComponent {
       return this;
     }
 
-    @Override
-    public ScribeCollector build() {
+    @Override public ScribeCollector build() {
       return new ScribeCollector(this);
     }
   }
@@ -89,22 +85,19 @@ public final class ScribeCollector extends CollectorComponent {
   }
 
   /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */
-  @Override
-  public ScribeCollector start() {
+  @Override public ScribeCollector start() {
     server.start();
     return this;
   }
 
-  @Override
-  public CheckResult check() {
+  @Override public CheckResult check() {
     if (!server.isRunning()) {
       return CheckResult.failed(new IllegalStateException("server not running"));
     }
     return CheckResult.OK;
   }
 
-  @Override
-  public void close() {
+  @Override public void close() {
     server.close();
   }
 }

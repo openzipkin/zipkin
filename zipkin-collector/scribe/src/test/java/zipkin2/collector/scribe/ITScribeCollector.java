@@ -53,8 +53,7 @@ public class ITScribeCollector {
 
   private static NettyScribeServer server;
 
-  @BeforeClass
-  public static void startServer() {
+  @BeforeClass public static void startServer() {
     collector = mock(Collector.class);
     doAnswer(invocation -> {
       Callback<Void> callback = invocation.getArgument(1);
@@ -68,13 +67,11 @@ public class ITScribeCollector {
     server.start();
   }
 
-  @AfterClass
-  public static void stopServer() {
+  @AfterClass public static void stopServer() {
     server.close();
   }
 
-  @Test
-  public void normal() throws Exception {
+  @Test public void normal() throws Exception {
     // Java version of this sample code
     // https://github.com/facebookarchive/scribe/wiki/Logging-Messages
     TTransport transport = new TFramedTransport(new TSocket("localhost", server.port()));
