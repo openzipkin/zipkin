@@ -54,11 +54,8 @@ class ZipkinKafkaCollectorPropertiesOverrideTest(
     ): Array<Any?> = arrayOf(propertySuffix, value, builderExtractor)
   }
 
-  var context = AnnotationConfigApplicationContext()
-
-  @After fun close() {
-    context.close()
-  }
+  val context = AnnotationConfigApplicationContext()
+  @After fun closeContext() = context.close()
 
   @Test fun propertyTransferredToCollectorBuilder() {
     TestPropertyValues.of("zipkin.collector.kafka.$property:$value").applyTo(context)

@@ -243,6 +243,14 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Scribe Collector -->
+    <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-collector-scribe</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
     <!--Prometheus metrics-->
     <dependency>
       <groupId>io.micrometer</groupId>

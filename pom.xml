@@ -40,7 +40,6 @@
     <module>benchmarks</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
-    <module>zipkin-autoconfigure</module>
     <module>zipkin-server</module>
   </modules>
 
@@ -106,7 +105,6 @@
     <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M3</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
-    <zipkin-layout-factory.version>0.0.5</zipkin-layout-factory.version>
   </properties>
 
   <name>Zipkin (Parent)</name>

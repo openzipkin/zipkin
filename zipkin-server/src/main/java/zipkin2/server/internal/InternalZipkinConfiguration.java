@@ -26,6 +26,7 @@ import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
 import zipkin2.server.internal.prometheus.ZipkinPrometheusMetricsConfiguration;
 import zipkin2.server.internal.rabbitmq.ZipkinRabbitMQCollectorConfiguration;
+import zipkin2.server.internal.scribe.ZipkinScribeCollectorConfiguration;
 import zipkin2.server.internal.ui.ZipkinUiConfiguration;
 
 @Configuration
@@ -36,6 +37,7 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
   ZipkinCassandra3StorageConfiguration.class,
   ZipkinElasticsearchStorageAutoConfiguration.class,
   ZipkinMySQLStorageConfiguration.class,
+  ZipkinScribeCollectorConfiguration.class,
   TracingConfiguration.class,
   ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class,
