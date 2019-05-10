@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import okio.ByteString;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -23,7 +22,6 @@ import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.Runner;
-import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin2.Span;
@@ -31,7 +29,7 @@ import zipkin2.Span;
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
 @Fork(3)
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Threads(1)
@@ -71,8 +69,18 @@ public class ProtoCodecBenchmarks {
   }
 
   @Benchmark
-  public List<zipkin2.proto3.Span> bytes_wireDecoder() throws IOException {
-    return zipkin2.proto3.Span.ADAPTER.asRepeated().decode(encodedBytes);
+  public List<Span> bytes_copy_protobufDecoder() {
+    return ProtobufSpanDecoder.decodeList(ByteBufUtil.getBytes(encodedBuf));
+  }
+
+  @Benchmark
+  public List<Span> bytes_wireDecoder() throws IOException {
+    return WireSpanDecoder.decodeList(encodedBytes);
+  }
+
+  @Benchmark
+  public List<Span> bytes_copy_wireDecoder() throws IOException {
+    return WireSpanDecoder.decodeList(ByteBufUtil.getBytes(encodedBuf));
   }
 
 
@@ -87,14 +95,16 @@ public class ProtoCodecBenchmarks {
   }
 
   @Benchmark
-  public List<zipkin2.proto3.Span> bytebuffer_wireDecoder() throws IOException {
-    return zipkin2.proto3.Span.ADAPTER.asRepeated().decode(ByteString.of(encodedBuf.nioBuffer()));
+  public List<Span> bytebuffer_wireDecoder() {
+    return WireSpanDecoder.decodeList(encodedBuf.nioBuffer());
   }
 
   // Convenience main entry-point
-  public static void main(String[] args) throws RunnerException {
+  public static void main(String[] args) throws Exception {
     Options opt = new OptionsBuilder()
-      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName())
+      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName() + ".*bytes_")
+      .addProfiler("gc")
+      .param("num", "10000")
       .build();
 
     new Runner(opt).run();

@@ -1,41 +1,45 @@
 package zipkin2.codec;
 
-import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.WireFormat;
+import com.squareup.wire.ProtoAdapter;
+import com.squareup.wire.ProtoReader;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import okio.Buffer;
+import okio.ByteString;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
 import static java.util.logging.Level.FINE;
 
-public class ProtobufSpanDecoder {
-  static final Logger LOG = Logger.getLogger(ProtobufSpanDecoder.class.getName());
+public class WireSpanDecoder {
+  static final Logger LOG = Logger.getLogger(WireSpanDecoder.class.getName());
 
   // map<string,string> in proto is a special field with key, value
   static final int MAP_KEY_KEY = (1 << 3) | WireFormat.WIRETYPE_LENGTH_DELIMITED;
   static final int MAP_VALUE_KEY = (2 << 3) | WireFormat.WIRETYPE_LENGTH_DELIMITED;
 
-  static boolean decodeTag(CodedInputStream input, Span.Builder span) throws IOException {
+  static boolean decodeTag(ProtoReader input, Span.Builder span) throws IOException {
     // now, we are in the tag fields
     String key = null, value = ""; // empty tags allowed
 
     boolean done = false;
     while (!done) {
-      int tag = input.readTag();
+      int tag = input.nextTag();
       switch (tag) {
-        case 0:
+        case -1:
           done = true;
           break;
-        case MAP_KEY_KEY: {
-          key = input.readStringRequireUtf8();
+        case 1: {
+          key = input.readString();
           break;
         }
-        case MAP_VALUE_KEY: {
-          value = input.readStringRequireUtf8();
+        case 2: {
+          value = input.readString();
           break;
         }
         default: {
@@ -50,23 +54,23 @@ public class ProtobufSpanDecoder {
     return true;
   }
 
-  static boolean decodeAnnotation(CodedInputStream input, Span.Builder span) throws IOException {
+  static boolean decodeAnnotation(ProtoReader input, Span.Builder span) throws IOException {
     long timestamp = 0L;
     String value = null;
 
     boolean done = false;
     while (!done) {
-      int tag = input.readTag();
+      int tag = input.nextTag();
       switch (tag) {
-        case 0:
+        case -1:
           done = true;
           break;
-        case 9: {
+        case 1: {
           timestamp = input.readFixed64();
           break;
         }
-        case 18: {
-          java.lang.String s = input.readStringRequireUtf8();
+        case 2: {
+          String s = input.readString();
           value = s;
           break;
         }
@@ -82,28 +86,28 @@ public class ProtobufSpanDecoder {
     return true;
   }
 
-  private static Endpoint decodeEndpoint(CodedInputStream input) throws IOException {
+  private static Endpoint decodeEndpoint(ProtoReader input) throws IOException {
     Endpoint.Builder endpoint = Endpoint.newBuilder();
 
     boolean done = false;
     while (!done) {
-      int tag = input.readTag();
+      int tag = input.nextTag();
       switch (tag) {
-        case 0:
+        case -1:
           done = true;
           break;
-        case 10: {
-          java.lang.String s = input.readStringRequireUtf8();
+        case 1: {
+          String s = input.readString();
           endpoint.serviceName(s);
           break;
         }
-        case 18:
-        case 26: {
-          endpoint.parseIp(input.readByteArray());
+        case 2:
+        case 3: {
+          endpoint.parseIp(input.readBytes().toByteArray());
           break;
         }
-        case 32: {
-          endpoint.port(input.readInt32());
+        case 4: {
+          endpoint.port(input.readVarint32());
           break;
         }
         default: {
@@ -115,94 +119,86 @@ public class ProtobufSpanDecoder {
     return endpoint.build();
   }
 
-  public static Span decodeOne(CodedInputStream input) throws IOException {
+  public static Span decodeOne(ProtoReader input) throws IOException {
     Span.Builder span = Span.newBuilder();
 
     boolean done = false;
     while (!done) {
-      int tag = input.readTag();
+      int tag = input.nextTag();
       switch (tag) {
-        case 0:
+        case -1:
           done = true;
           break;
-        case 10: {
+        case 1: {
           span.traceId(readHexString(input));
           break;
         }
-        case 18: {
+        case 2: {
           span.parentId(readHexString(input));
           break;
         }
-        case 26: {
+        case 3: {
           span.id(readHexString(input));
           break;
         }
-        case 32: {
-          int kind = input.readEnum();
+        case 4: {
+          int kind = input.readVarint32();
           if (kind == 0) break;
           if (kind > Span.Kind.values().length) break;
           span.kind(Span.Kind.values()[kind - 1]);
           break;
         }
-        case 42: {
-          java.lang.String name = input.readStringRequireUtf8();
+        case 5: {
+          String name = input.readString();
           span.name(name);
           break;
         }
-        case 49: {
+        case 6: {
           span.timestamp(input.readFixed64());
           break;
         }
-        case 56: {
-          span.duration(input.readUInt64());
+        case 7: {
+          span.duration(input.readVarint64());
           break;
         }
-        case 66: {
-          int length = input.readRawVarint32();
-          int oldLimit = input.pushLimit(length);
+        case 8: {
+          long token = input.beginMessage();
 
           span.localEndpoint(decodeEndpoint(input));
 
-          input.checkLastTagWas(0);
-          input.popLimit(oldLimit);
+          input.endMessage(token);
           break;
         }
-        case 74: {
-          int length = input.readRawVarint32();
-          int oldLimit = input.pushLimit(length);
+        case 9: {
+          long token = input.beginMessage();
 
           span.remoteEndpoint(decodeEndpoint(input));
 
-          input.checkLastTagWas(0);
-          input.popLimit(oldLimit);
+          input.endMessage(token);
           break;
         }
-        case 82: {
-          int length = input.readRawVarint32();
-          int oldLimit = input.pushLimit(length);
+        case 10: {
+          long token = input.beginMessage();
 
           decodeAnnotation(input, span);
 
-          input.checkLastTagWas(0);
-          input.popLimit(oldLimit);
+          input.endMessage(token);
           break;
         }
-        case 90: {
-          int length = input.readRawVarint32();
-          int oldLimit = input.pushLimit(length);
+        case 11: {
+          long token = input.beginMessage();
 
           decodeTag(input, span);
 
-          input.checkLastTagWas(0);
-          input.popLimit(oldLimit);
+          input.endMessage(token);
           break;
         }
-        case 96: {
-          span.debug(input.readBool());
+        case 12: {
+          span.debug(ProtoAdapter.BOOL.decode(input));
           break;
         }
-        case 104: {
-          span.shared(input.readBool());
+        case 13: {
+          span.shared(ProtoAdapter.BOOL.decode(input));
           break;
         }
         default: {
@@ -216,31 +212,39 @@ public class ProtobufSpanDecoder {
   }
 
   public static List<Span> decodeList(byte[] spans) {
-    return decodeList(CodedInputStream.newInstance(spans));
+    return decodeList(new ProtoReader(new Buffer().write(spans)));
   }
 
   public static List<Span> decodeList(ByteBuffer spans) {
-    return decodeList(CodedInputStream.newInstance(spans));
+    return decodeList(new ProtoReader(new Buffer().write(ByteString.of(spans))));
   }
 
-  public static List<Span> decodeList(CodedInputStream input) {
+  public static List<Span> decodeList(ProtoReader input) {
     ArrayList<Span> spans = new ArrayList<>();
+
+    final long token;
+    try {
+      token = input.beginMessage();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
 
     try {
       boolean done = false;
       while (!done) {
-        int tag = input.readTag();
+        int tag = input.nextTag();
         switch (tag) {
-          case 0:
+          case -1:
             done = true;
             break;
-          case 10:
-            int length = input.readRawVarint32();
-            int oldLimit = input.pushLimit(length);
+          case 1: {
+            long subToken = input.beginMessage();
+
             spans.add(decodeOne(input));
-            input.checkLastTagWas(0);
-            input.popLimit(oldLimit);
+
+            input.endMessage(subToken);
             break;
+          }
           default: {
             logAndSkip(input, tag);
             break;
@@ -251,35 +255,26 @@ public class ProtobufSpanDecoder {
       throw new RuntimeException(e);
     }
 
+    try {
+      input.endMessage(token);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+
     return spans;
   }
 
-  static final byte[] HEX_DIGITS =
-    {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
-
-  private static String readHexString(CodedInputStream input) throws IOException {
-    int size = input.readRawVarint32();
-
-    byte[] result = new byte[size * 2];
-
-    for (int i = 0; i < result.length; i += 2) {
-      byte b = input.readRawByte();
-      result[i] = HEX_DIGITS[(b >> 4) & 0xf];
-      result[i + 1] = HEX_DIGITS[b & 0xf];
-    }
-
-    return new String(result, 0);
+  private static String readHexString(ProtoReader input) throws IOException {
+    return input.readBytes().hex();
   }
 
-
-
-  static void logAndSkip(CodedInputStream input, int tag) throws IOException {
+  static void logAndSkip(ProtoReader input, int tag) throws IOException {
     int nextWireType = WireFormat.getTagWireType(tag);
     if (LOG.isLoggable(FINE)) {
       int nextFieldNumber = WireFormat.getTagFieldNumber(tag);
       LOG.fine(String.format("Skipping field: byte=%s, fieldNumber=%s, wireType=%s",
-        input.getTotalBytesRead(), nextFieldNumber, nextWireType));
+        0, nextFieldNumber, nextWireType));
     }
-    input.skipField(tag);
+    input.skip();
   }
 }
