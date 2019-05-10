@@ -574,4 +574,8 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       return h$;
     }
   }
+
+  @Override public String toString() {
+    return "InMemoryStorage{traceCount=" + traceIdToTraceIdTimeStamps.size() + "}";
+  }
 }
