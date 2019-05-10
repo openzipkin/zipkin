@@ -161,7 +161,7 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
       if (content instanceof ByteBufHolder) {
         ByteBuf buf = ((ByteBufHolder) content).content();
         try {
-          returned.writeBytes(((ByteBufHolder) content).content());
+          returned.writeBytes(buf);
         } finally {
           buf.release();
         }
