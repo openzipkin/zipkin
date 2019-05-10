@@ -253,7 +253,7 @@
     <dependency>
       <groupId>com.netflix.concurrency-limits</groupId>
       <artifactId>concurrency-limits-core</artifactId>
-      <version>${netflix.concurrency.limits.version}</version>
+      <version>0.2.2</version>
     </dependency>
     <dependency>
       <groupId>io.micrometer</groupId>
@@ -388,7 +388,6 @@
         <version>${kotlin.version}</version>
         <configuration>
           <jvmTarget>${main.java.version}</jvmTarget>
-          <experimentalCoroutines>enable</experimentalCoroutines>
         </configuration>
         <executions>
           <execution>

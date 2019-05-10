@@ -29,7 +29,7 @@ class BasicAuthInterceptorTest {
   @Rule @JvmField val thrown: ExpectedException = ExpectedException.none()
 
   var client: OkHttpClient = OkHttpClient.Builder()
-    .addNetworkInterceptor(BasicAuthInterceptor(ZipkinElasticsearchStorageProperties()))
+    .addNetworkInterceptor(BasicAuthInterceptor(ZipkinElasticsearchStorageProperties(false, 0)))
     .build()
 
   @Test fun intercept_whenESReturns403AndJsonBody_throwsWithResponseBodyMessage() {

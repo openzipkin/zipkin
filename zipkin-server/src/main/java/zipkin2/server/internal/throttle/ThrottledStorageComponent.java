@@ -17,29 +17,36 @@
 package zipkin2.server.internal.throttle;
 
 import com.netflix.concurrency.limits.Limit;
+import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.limit.Gradient2Limit;
 import com.netflix.concurrency.limits.limiter.AbstractLimiter;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.io.IOException;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import zipkin2.Call;
+import zipkin2.Span;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 
 /**
- * Delegating implementation that limits requests to the {@link #spanConsumer()} of another
- * {@link StorageComponent}.  The theory here is that this class can be used to:
+ * Delegating implementation that limits requests to the {@link #spanConsumer()} of another {@link
+ * StorageComponent}.  The theory here is that this class can be used to:
  * <ul>
- * <li>Prevent spamming the storage engine with excessive, spike requests when they come in; thus preserving it's life.</li>
- * <li>Optionally act as a buffer so that a fixed number requests can be queued for execution when the throttle allows
- *     for it.  This optional queue must be bounded in order to avoid running out of memory from infinitely queueing.</li>
+ * <li>Prevent spamming the storage engine with excessive, spike requests when they come in; thus
+ * preserving it's life.</li>
+ * <li>Optionally act as a buffer so that a fixed number requests can be queued for execution when
+ * the throttle allows for it.  This optional queue must be bounded in order to avoid running out of
+ * memory from infinitely queueing.</li>
  * </ul>
  *
  * @see ThrottledSpanConsumer
@@ -49,57 +56,76 @@ public final class ThrottledStorageComponent extends StorageComponent {
   final AbstractLimiter<Void> limiter;
   final ThreadPoolExecutor executor;
 
-  public ThrottledStorageComponent(StorageComponent delegate,
-                                   MeterRegistry registry,
-                                   int minConcurrency,
-                                   int maxConcurrency,
-                                   int maxQueueSize) {
+  public ThrottledStorageComponent(StorageComponent delegate, MeterRegistry registry,
+    int minConcurrency,
+    int maxConcurrency,
+    int maxQueueSize) {
     this.delegate = Objects.requireNonNull(delegate);
 
     Limit limit = Gradient2Limit.newBuilder()
-        .minLimit(minConcurrency)
-        .initialLimit(minConcurrency) // Limiter will trend towards min until otherwise necessary so may as well start there
-        .maxConcurrency(maxConcurrency)
-        .queueSize(0)
-        .build();
+      .minLimit(minConcurrency)
+      .initialLimit(
+        minConcurrency) // Limiter will trend towards min until otherwise necessary so may as well start there
+      .maxConcurrency(maxConcurrency)
+      .queueSize(0)
+      .build();
     this.limiter = new Builder().limit(limit).build();
 
+    // TODO: explain these parameters
     this.executor = new ThreadPoolExecutor(limit.getLimit(),
-                                           limit.getLimit(),
-                                           0,
-                                           TimeUnit.DAYS,
-                                           createQueue(maxQueueSize),
-                                           new ThottledThreadFactory(),
-                                           new ThreadPoolExecutor.AbortPolicy());
+      limit.getLimit(),
+      0,
+      TimeUnit.DAYS,
+      createQueue(maxQueueSize),
+      new ThottledThreadFactory(),
+      new ThreadPoolExecutor.AbortPolicy());
+
     limit.notifyOnChange(new ThreadPoolExecutorResizer(executor));
 
-    if (registry != null) {
-      ActuateThrottleMetrics metrics = new ActuateThrottleMetrics(registry);
-      metrics.bind(executor);
-      metrics.bind(limiter);
-    }
+    ActuateThrottleMetrics metrics = new ActuateThrottleMetrics(registry);
+    metrics.bind(executor);
+    metrics.bind(limiter);
   }
 
-  @Override
-  public SpanStore spanStore() {
+  @Override public SpanStore spanStore() {
     return delegate.spanStore();
   }
 
-  @Override
-  public SpanConsumer spanConsumer() {
+  @Override public SpanConsumer spanConsumer() {
     return new ThrottledSpanConsumer(delegate.spanConsumer(), limiter, executor);
   }
 
-  @Override
-  public void close() throws IOException {
+  @Override public void close() throws IOException {
     executor.shutdownNow();
     delegate.close();
   }
 
-  private static BlockingQueue<Runnable> createQueue(int maxSize) {
-    if (maxSize < 0) {
-      throw new IllegalArgumentException("Invalid max queue size; must be >= 0 but was: " + maxSize);
+  @Override public String toString() {
+    return "Throttled" + delegate;
+  }
+
+  final class ThrottledSpanConsumer implements SpanConsumer {
+    final SpanConsumer delegate;
+    final Limiter<Void> limiter;
+    final ExecutorService executor;
+
+    ThrottledSpanConsumer(SpanConsumer delegate, Limiter<Void> limiter, ExecutorService executor) {
+      this.delegate = delegate;
+      this.limiter = limiter;
+      this.executor = executor;
     }
+
+    @Override public Call<Void> accept(List<Span> spans) {
+      return new ThrottledCall<>(executor, limiter, () -> delegate.accept(spans));
+    }
+
+    @Override public String toString() {
+      return "Throttled" + delegate;
+    }
+  }
+
+  static BlockingQueue<Runnable> createQueue(int maxSize) {
+    if (maxSize < 0) throw new IllegalArgumentException("maxSize < 0");
 
     if (maxSize == 0) {
       // 0 means we should be bounded but we can't create a queue with that size so use 1 instead.
@@ -110,11 +136,10 @@ public final class ThrottledStorageComponent extends StorageComponent {
   }
 
   static final class ThottledThreadFactory implements ThreadFactory {
-    @Override
-    public Thread newThread(Runnable r) {
+    @Override public Thread newThread(Runnable r) {
       Thread thread = new Thread(r);
       thread.setDaemon(true);
-      thread.setName("throttle-pool-" + thread.getId());
+      thread.setName("zipkin-throttle-pool-" + thread.getId());
       return thread;
     }
   }
@@ -122,20 +147,20 @@ public final class ThrottledStorageComponent extends StorageComponent {
   static final class ThreadPoolExecutorResizer implements Consumer<Integer> {
     final ThreadPoolExecutor executor;
 
-    public ThreadPoolExecutorResizer(ThreadPoolExecutor executor) {
+    ThreadPoolExecutorResizer(ThreadPoolExecutor executor) {
       this.executor = executor;
     }
 
     /**
-     * This is {@code synchronized} to ensure that we don't let the core/max pool sizes get out of sync; even
-     * for an instant.  The two need to be tightly coupled together to ensure that when our queue fills up we don't spin
-     * up extra Threads beyond our calculated limit.
+     * This is {@code synchronized} to ensure that we don't let the core/max pool sizes get out of
+     * sync; even for an instant.  The two need to be tightly coupled together to ensure that when
+     * our queue fills up we don't spin up extra Threads beyond our calculated limit.
      *
-     * <p>There is also an unfortunate aspect where the {@code max} has to always be greater than {@code core} or an
-     * exception will be thrown.  So they have to be adjust appropriately relative to the direction the size is going.
+     * <p>There is also an unfortunate aspect where the {@code max} has to always be greater than
+     * {@code core} or an exception will be thrown.  So they have to be adjust appropriately
+     * relative to the direction the size is going.
      */
-    @Override
-    public synchronized void accept(Integer newValue) {
+    @Override public synchronized void accept(Integer newValue) {
       int previousValue = executor.getCorePoolSize();
 
       int newValueInt = newValue;
@@ -151,28 +176,27 @@ public final class ThrottledStorageComponent extends StorageComponent {
   }
 
   static final class Builder extends AbstractLimiter.Builder<Builder> {
-    public NonLimitingLimiter build() {
+    NonLimitingLimiter build() {
       return new NonLimitingLimiter(this);
     }
 
-    @Override
-    protected Builder self() {
+    @Override protected Builder self() {
       return this;
     }
   }
 
   /**
    * Unlike a normal Limiter, this will actually not prevent the creation of a {@link Listener} in
-   * {@link #acquire(java.lang.Void)}.  The point of this is to ensure that we can always derive an appropriate
-   * {@link Limit#getLimit() Limit} while the {@link #executor} handles actually limiting running requests.
+   * {@link #acquire(java.lang.Void)}.  The point of this is to ensure that we can always derive an
+   * appropriate {@link Limit#getLimit() Limit} while the {@link #executor} handles actually
+   * limiting running requests.
    */
   static final class NonLimitingLimiter extends AbstractLimiter<Void> {
-    public NonLimitingLimiter(AbstractLimiter.Builder<?> builder) {
+    NonLimitingLimiter(AbstractLimiter.Builder<?> builder) {
       super(builder);
     }
 
-    @Override
-    public Optional<Listener> acquire(Void context) {
+    @Override public Optional<Listener> acquire(Void context) {
       return Optional.of(createListener());
     }
   }

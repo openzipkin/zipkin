@@ -30,13 +30,13 @@ import zipkin2.Callback;
 import zipkin2.storage.InMemoryStorage;
 
 /**
- * {@link Call} implementation that is backed by an {@link ExecutorService}. The ExecutorService serves two
- * purposes:
+ * {@link Call} implementation that is backed by an {@link ExecutorService}. The ExecutorService
+ * serves two purposes:
  * <ol>
  * <li>Limits the number of requests that can run in parallel.</li>
- * <li>Depending on configuration, can queue up requests to make sure we don't aggressively drop requests that would
- *     otherwise succeed if given a moment. Bounded queues are safest for this as unbounded ones can lead to heap
- *     exhaustion and {@link OutOfMemoryError OOM errors}.</li>
+ * <li>Depending on configuration, can queue up requests to make sure we don't aggressively drop
+ * requests that would otherwise succeed if given a moment. Bounded queues are safest for this as
+ * unbounded ones can lead to heap exhaustion and {@link OutOfMemoryError OOM errors}.</li>
  * </ol>
  *
  * @see ThrottledStorageComponent
@@ -46,34 +46,39 @@ final class ThrottledCall<V> extends Call<V> {
   final Limiter<Void> limiter;
   final Listener limitListener;
   /**
-   * Delegate call needs to be supplied later to avoid having it take action when it is created (like
-   * {@link InMemoryStorage} and thus avoid being throttled.
+   * supplier call needs to be supplied later to avoid having it take action when it is created
+   * (like {@link InMemoryStorage} and thus avoid being throttled.
    */
-  final Supplier<Call<V>> delegate;
-  Call<V> call;
+  final Supplier<? extends Call<V>> supplier;
+  volatile Call<V> delegate;
   volatile boolean canceled;
 
-  public ThrottledCall(ExecutorService executor, Limiter<Void> limiter, Supplier<Call<V>> delegate) {
+  public ThrottledCall(ExecutorService executor, Limiter<Void> limiter,
+    Supplier<? extends Call<V>> supplier) {
     this.executor = executor;
     this.limiter = limiter;
     this.limitListener = limiter.acquire(null).orElseThrow(RejectedExecutionException::new);
-    this.delegate = delegate;
+    this.supplier = supplier;
   }
 
-  private ThrottledCall(ThrottledCall other) {
-    this(other.executor, other.limiter, other.call == null ? other.delegate : () -> other.call.clone());
+  // TODO: refactor this when in-memory no longer executes storage ops during assembly time
+  ThrottledCall(ThrottledCall<V> other) {
+    this(other.executor, other.limiter,
+      other.delegate == null ? other.supplier : () -> other.delegate.clone());
   }
 
-  @Override
-  public V execute() throws IOException {
+  // TODO: we cannot currently extend Call.Base as tests execute the call multiple times,
+  // which is invalid as calls are one-shot. It isn't worth refactoring until we refactor out
+  // the need for assembly time throttling (fix to in-memory storage)
+  @Override public V execute() throws IOException {
     try {
-      call = delegate.get();
+      delegate = supplier.get();
 
       // Make sure we throttle
       Future<V> future = executor.submit(() -> {
-        String oldName = setCurrentThreadName(call.toString());
+        String oldName = setCurrentThreadName(delegate.toString());
         try {
-          return call.execute();
+          return delegate.execute();
         } finally {
           setCurrentThreadName(oldName);
         }
@@ -101,7 +106,8 @@ final class ThrottledCall<V> extends Call<V> {
     } catch (InterruptedException e) {
       limitListener.onIgnore();
       throw new RuntimeException("Interrupted while blocking on a throttled call", e);
-    } catch (Exception e) {
+    } catch (RuntimeException | Error e) {
+      propagateIfFatal(e);
       // Ignoring in all cases here because storage itself isn't saying we need to throttle.  Though, we may still be
       // write bound, but a drop in concurrency won't necessarily help.
       limitListener.onIgnore();
@@ -109,11 +115,11 @@ final class ThrottledCall<V> extends Call<V> {
     }
   }
 
-  @Override
-  public void enqueue(Callback<V> callback) {
+  @Override public void enqueue(Callback<V> callback) {
     try {
       executor.execute(new QueuedCall(callback));
-    } catch (Exception e) {
+    } catch (RuntimeException | Error e) {
+      propagateIfFatal(e);
       // Ignoring in all cases here because storage itself isn't saying we need to throttle.  Though, we may still be
       // write bound, but a drop in concurrency won't necessarily help.
       limitListener.onIgnore();
@@ -121,62 +127,51 @@ final class ThrottledCall<V> extends Call<V> {
     }
   }
 
-  @Override
-  public void cancel() {
+  @Override public void cancel() {
     canceled = true;
-    if (call != null) {
-      call.cancel();
-    }
+    if (delegate != null) delegate.cancel();
   }
 
-  @Override
-  public boolean isCanceled() {
-    return canceled || (call != null && call.isCanceled());
+  @Override public boolean isCanceled() {
+    return canceled || (delegate != null && delegate.isCanceled());
   }
 
-  @Override
-  public Call<V> clone() {
+  @Override public Call<V> clone() {
     return new ThrottledCall<>(this);
   }
 
-  /**
-   * @param name New name for the current Thread
-   * @return Previous name of the current Thread
-   */
+  @Override public String toString() {
+    return "Throttled" + supplier;
+  }
+
   static String setCurrentThreadName(String name) {
     Thread thread = Thread.currentThread();
     String originalName = thread.getName();
-    try {
-      thread.setName(name);
-      return originalName;
-    } catch (SecurityException e) {
-      return originalName;
-    }
+    thread.setName(name);
+    return originalName;
   }
 
   final class QueuedCall implements Runnable {
     final Callback<V> callback;
 
-    public QueuedCall(Callback<V> callback) {
+    QueuedCall(Callback<V> callback) {
       this.callback = callback;
     }
 
-    @Override
-    public void run() {
+    @Override public void run() {
       try {
-        if (canceled) {
-          return;
-        }
+        if (isCanceled()) return;
 
-        call = ThrottledCall.this.delegate.get();
+        delegate = ThrottledCall.this.supplier.get();
 
-        String oldName = setCurrentThreadName(call.toString());
+        String oldName = setCurrentThreadName(delegate.toString());
         try {
           enqueueAndWait();
         } finally {
           setCurrentThreadName(oldName);
         }
-      } catch (Exception e) {
+      } catch (RuntimeException | Error e) {
+        propagateIfFatal(e);
         limitListener.onIgnore();
         callback.onError(e);
       }
@@ -184,7 +179,7 @@ final class ThrottledCall<V> extends Call<V> {
 
     void enqueueAndWait() {
       ThrottledCallback<V> throttleCallback = new ThrottledCallback<>(callback, limitListener);
-      call.enqueue(throttleCallback);
+      delegate.enqueue(throttleCallback);
 
       // Need to wait here since the callback call will run asynchronously also.
       // This ensures we don't exceed our throttle/queue limits.
@@ -193,37 +188,35 @@ final class ThrottledCall<V> extends Call<V> {
   }
 
   static final class ThrottledCallback<V> implements Callback<V> {
-    final Callback<V> delegate;
+    final Callback<V> supplier;
     final Listener limitListener;
-    final CountDownLatch latch;
+    final CountDownLatch latch = new CountDownLatch(1);
 
-    public ThrottledCallback(Callback<V> delegate, Listener limitListener) {
-      this.delegate = delegate;
+    ThrottledCallback(Callback<V> supplier, Listener limitListener) {
+      this.supplier = supplier;
       this.limitListener = limitListener;
-      this.latch = new CountDownLatch(1);
     }
 
-    public void await() {
+    void await() {
       try {
         latch.await();
       } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
         limitListener.onIgnore();
         throw new RuntimeException("Interrupted while blocking on a throttled call", e);
       }
     }
 
-    @Override
-    public void onSuccess(V value) {
+    @Override public void onSuccess(V value) {
       try {
         limitListener.onSuccess();
-        delegate.onSuccess(value);
+        supplier.onSuccess(value);
       } finally {
         latch.countDown();
       }
     }
 
-    @Override
-    public void onError(Throwable t) {
+    @Override public void onError(Throwable t) {
       try {
         if (t instanceof RejectedExecutionException) {
           limitListener.onDropped();
@@ -231,7 +224,7 @@ final class ThrottledCall<V> extends Call<V> {
           limitListener.onIgnore();
         }
 
-        delegate.onError(t);
+        supplier.onError(t);
       } finally {
         latch.countDown();
       }

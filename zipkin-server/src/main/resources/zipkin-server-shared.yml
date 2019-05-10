@@ -55,9 +55,9 @@ zipkin:
     type: ${STORAGE_TYPE:mem}
     throttle:
       enabled: ${STORAGE_THROTTLE_ENABLED:false}
-      minConcurrency: ${STORAGE_THROTTLE_MIN_CONCURRENCY:10}
-      maxConcurrency: ${STORAGE_THROTTLE_MAX_CONCURRENCY:200}
-      maxQueueSize: ${STORAGE_THROTTLE_MAX_QUEUE_SIZE:1000}
+      min-concurrency: ${STORAGE_THROTTLE_MIN_CONCURRENCY:10}
+      max-concurrency: ${STORAGE_THROTTLE_MAX_CONCURRENCY:200}
+      max-queue-size: ${STORAGE_THROTTLE_MAX_QUEUE_SIZE:1000}
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
       # A safe estimate is 1K of memory per span (each span with 2 annotations + 1 binary annotation), plus

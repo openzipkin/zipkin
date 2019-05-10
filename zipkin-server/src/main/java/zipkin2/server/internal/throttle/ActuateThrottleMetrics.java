@@ -16,45 +16,34 @@
  */
 package zipkin2.server.internal.throttle;
 
-import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.limiter.AbstractLimiter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ThreadPoolExecutor;
+import zipkin2.server.internal.ActuateCollectorMetrics;
 
+/** Follows the same naming convention as {@link ActuateCollectorMetrics} */
 final class ActuateThrottleMetrics {
-  private final MeterRegistry registryInstance;
+  final MeterRegistry registryInstance;
 
-  public ActuateThrottleMetrics(MeterRegistry registryInstance) {
+  ActuateThrottleMetrics(MeterRegistry registryInstance) {
     this.registryInstance = registryInstance;
   }
 
-  public void bind(ExecutorService executor) {
-    if(!(executor instanceof ThreadPoolExecutor)){
-      return;
-    }
-
-    ThreadPoolExecutor pool = (ThreadPoolExecutor) executor;
+  void bind(ThreadPoolExecutor pool) {
     Gauge.builder("zipkin_storage.throttle.concurrency", pool::getCorePoolSize)
-            .description("number of threads running storage requests")
-            .register(registryInstance);
+      .description("number of threads running storage requests")
+      .register(registryInstance);
     Gauge.builder("zipkin_storage.throttle.queue_size", pool.getQueue()::size)
-            .description("number of items queued waiting for access to storage")
-            .register(registryInstance);
+      .description("number of items queued waiting for access to storage")
+      .register(registryInstance);
   }
 
-  public void bind(Limiter<Void> limiter) {
-    if(!(limiter instanceof AbstractLimiter)){
-      return;
-    }
-
-    AbstractLimiter abstractLimiter = (AbstractLimiter) limiter;
-
+  void bind(AbstractLimiter limiter) {
     // This value should parallel (zipkin_storage.throttle.queue_size + zipkin_storage.throttle.concurrency)
     // It is tracked to make sure it doesn't perpetually increase.  If it does then we're not resolving LimitListeners.
-    Gauge.builder("zipkin_storage.throttle.in_flight_requests", abstractLimiter::getInflight)
-            .description("number of requests the limiter thinks are active")
-            .register(registryInstance);
+    Gauge.builder("zipkin_storage.throttle.in_flight_requests", limiter::getInflight)
+      .description("number of requests the limiter thinks are active")
+      .register(registryInstance);
   }
 }

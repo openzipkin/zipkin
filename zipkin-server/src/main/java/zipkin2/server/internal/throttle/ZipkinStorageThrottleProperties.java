@@ -25,13 +25,13 @@ public final class ZipkinStorageThrottleProperties {
   /** Minimum number of storage requests to allow through at a given time. */
   private int minConcurrency;
   /**
-   * Maximum number of storage requests to allow through at a given time. Should be tuned to (bulk_index_pool_size / num_servers_in_cluster).
-   * e.g. 200 (default pool size in Elasticsearch) / 2 (number of load balanced zipkin-server instances) = 100.
+   * Maximum number of storage requests to allow through at a given time. Should be tuned to
+   * (bulk_index_pool_size / num_servers_in_cluster). e.g. 200 (default pool size in Elasticsearch)
+   * / 2 (number of load balanced zipkin-server instances) = 100.
    */
   private int maxConcurrency;
   /**
-   * Maximum number of storage requests to buffer while waiting for open Thread.
-   * 0 = no buffering.
+   * Maximum number of storage requests to buffer while waiting for open Thread. 0 = no buffering.
    */
   private int maxQueueSize;
 
