@@ -54,17 +54,14 @@ public class ProtoCodecBenchmarks {
   static final byte[] clientSpanJsonV2 = read("/zipkin2-client.json");
   static final Span clientSpan = SpanBytesDecoder.JSON_V2.decodeOne(clientSpanJsonV2);
 
-  @Param({"1", "10", "100", "1000", "10000"})
-  public int num;
+  // Assume a message is 1000 spans (which is a high number for as this is per-node-second)
+  static final List<Span> spans = Collections.nCopies(1000, clientSpan);
+  static final byte[] encodedBytes = SpanBytesEncoder.PROTO3.encodeList(spans);
 
-  private byte[] encodedBytes;
   private ByteBuf encodedBuf;
 
   @Setup
   public void setup() {
-    List<Span> spans = Collections.nCopies(num, clientSpan);
-    encodedBytes = SpanBytesEncoder.PROTO3.encodeList(spans);
-
     encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(encodedBytes.length);
     encodedBuf.writeBytes(encodedBytes);
   }
@@ -109,7 +106,6 @@ public class ProtoCodecBenchmarks {
     Options opt = new OptionsBuilder()
       .include(".*" + ProtoCodecBenchmarks.class.getSimpleName() + ".*bytebuffer_")
       .addProfiler("gc")
-      .param("num", "10000")
       .build();
 
     new Runner(opt).run();
