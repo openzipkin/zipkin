@@ -24,10 +24,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.storage.InMemoryStorage;
 
 /**
  * {@link Call} implementation that is backed by an {@link ExecutorService}. The ExecutorService
@@ -41,39 +39,21 @@ import zipkin2.storage.InMemoryStorage;
  *
  * @see ThrottledStorageComponent
  */
-final class ThrottledCall<V> extends Call<V> {
+final class ThrottledCall<V> extends Call.Base<V> {
   final ExecutorService executor;
   final Limiter<Void> limiter;
-  final Listener limitListener;
-  /**
-   * supplier call needs to be supplied later to avoid having it take action when it is created
-   * (like {@link InMemoryStorage} and thus avoid being throttled.
-   */
-  final Supplier<? extends Call<V>> supplier;
-  volatile Call<V> delegate;
-  volatile boolean canceled;
+  final Call<V> delegate;
 
-  public ThrottledCall(ExecutorService executor, Limiter<Void> limiter,
-    Supplier<? extends Call<V>> supplier) {
+  ThrottledCall(ExecutorService executor, Limiter<Void> limiter, Call<V> delegate) {
     this.executor = executor;
     this.limiter = limiter;
-    this.limitListener = limiter.acquire(null).orElseThrow(RejectedExecutionException::new);
-    this.supplier = supplier;
+    this.delegate = delegate;
   }
 
-  // TODO: refactor this when in-memory no longer executes storage ops during assembly time
-  ThrottledCall(ThrottledCall<V> other) {
-    this(other.executor, other.limiter,
-      other.delegate == null ? other.supplier : () -> other.delegate.clone());
-  }
+  @Override protected V doExecute() throws IOException {
+    Listener limitListener = limiter.acquire(null).orElseThrow(RejectedExecutionException::new);
 
-  // TODO: we cannot currently extend Call.Base as tests execute the call multiple times,
-  // which is invalid as calls are one-shot. It isn't worth refactoring until we refactor out
-  // the need for assembly time throttling (fix to in-memory storage)
-  @Override public V execute() throws IOException {
     try {
-      delegate = supplier.get();
-
       // Make sure we throttle
       Future<V> future = executor.submit(() -> {
         String oldName = setCurrentThreadName(delegate.toString());
@@ -115,9 +95,11 @@ final class ThrottledCall<V> extends Call<V> {
     }
   }
 
-  @Override public void enqueue(Callback<V> callback) {
+  @Override protected void doEnqueue(Callback<V> callback) {
+    Listener limitListener = limiter.acquire(null).orElseThrow(RejectedExecutionException::new);
+
     try {
-      executor.execute(new QueuedCall(callback));
+      executor.execute(new QueuedCall(callback, limitListener));
     } catch (RuntimeException | Error e) {
       propagateIfFatal(e);
       // Ignoring in all cases here because storage itself isn't saying we need to throttle.  Though, we may still be
@@ -127,21 +109,12 @@ final class ThrottledCall<V> extends Call<V> {
     }
   }
 
-  @Override public void cancel() {
-    canceled = true;
-    if (delegate != null) delegate.cancel();
-  }
-
-  @Override public boolean isCanceled() {
-    return canceled || (delegate != null && delegate.isCanceled());
-  }
-
   @Override public Call<V> clone() {
-    return new ThrottledCall<>(this);
+    return new ThrottledCall<>(executor, limiter, delegate.clone());
   }
 
   @Override public String toString() {
-    return "Throttled" + supplier;
+    return "Throttled" + delegate;
   }
 
   static String setCurrentThreadName(String name) {
@@ -153,16 +126,16 @@ final class ThrottledCall<V> extends Call<V> {
 
   final class QueuedCall implements Runnable {
     final Callback<V> callback;
+    final Listener limitListener;
 
-    QueuedCall(Callback<V> callback) {
+    QueuedCall(Callback<V> callback, Listener limitListener) {
       this.callback = callback;
+      this.limitListener = limitListener;
     }
 
     @Override public void run() {
       try {
         if (isCanceled()) return;
-
-        delegate = ThrottledCall.this.supplier.get();
 
         String oldName = setCurrentThreadName(delegate.toString());
         try {

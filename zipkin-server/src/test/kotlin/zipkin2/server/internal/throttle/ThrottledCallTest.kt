@@ -21,6 +21,7 @@ import com.netflix.concurrency.limits.Limiter.Listener
 import com.netflix.concurrency.limits.limit.SettableLimit
 import com.netflix.concurrency.limits.limiter.SimpleLimiter
 import org.assertj.core.api.Assertions.assertThat
+import org.junit.After
 import org.junit.Test
 import org.mockito.ArgumentMatchers.any
 import org.mockito.Mockito
@@ -41,39 +42,34 @@ import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.Semaphore
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
-import java.util.function.Supplier
 
-// TODO: this class re-uses Call objects which is bad as they are one-shot. This needs to be
-//  refactored in order to be realistic (calls throw if re-invoked, as clone() is the correct way)
 class ThrottledCallTest {
-  var limit = SettableLimit.startingAt(0)
-  var limiter = SimpleLimiter.newBuilder().limit(limit).build<Void>()
+  val limit = SettableLimit.startingAt(0)
+  val limiter = SimpleLimiter.newBuilder().limit(limit).build<Void>()
+
+  val numThreads = 1
+  val executor = Executors.newSingleThreadExecutor();
+  @After fun shutdownExecutor() = executor.shutdown()
 
   inline fun <reified T : Any> mock() = Mockito.mock(T::class.java)
 
-  @Test fun callCreation_isDeferred() {
-    val created = booleanArrayOf(false)
+  @Test fun niceToString() {
+    val delegate: Call<Void> = mock()
+    `when`(delegate.toString()).thenReturn("StoreSpansCall{}")
 
-    val throttle = createThrottle(Supplier {
-      created[0] = true
-      Call.create<Void>(null)
-    })
-
-    assertThat(created).contains(false)
-    throttle.execute()
-    assertThat(created).contains(true)
+    assertThat(ThrottledCall(executor, limiter, delegate))
+      .hasToString("ThrottledStoreSpansCall{}")
   }
 
   @Test fun execute_isThrottled() {
-    val numThreads = 1
     val queueSize = 1
     val totalTasks = numThreads + queueSize
+    limit.limit = totalTasks
 
     val startLock = Semaphore(numThreads)
     val waitLock = Semaphore(totalTasks)
     val failLock = Semaphore(1)
-    val throttle =
-      createThrottle(numThreads, queueSize, Supplier { LockedCall(startLock, waitLock) })
+    val throttled = throttle(LockedCall(startLock, waitLock))
 
     // Step 1: drain appropriate locks
     startLock.drainPermits()
@@ -83,7 +79,7 @@ class ThrottledCallTest {
     // Step 2: saturate threads and fill queue
     val backgroundPool = Executors.newCachedThreadPool()
     for (i in 0 until totalTasks) {
-      backgroundPool.submit(Callable { throttle.execute() })
+      backgroundPool.submit(Callable { throttled.clone().execute() })
     }
 
     try {
@@ -93,7 +89,7 @@ class ThrottledCallTest {
       // Step 4: submit something beyond our limits
       val future = backgroundPool.submit(Callable {
         try {
-          throttle.execute()
+          throttled.execute()
         } catch (e: IOException) {
           throw RuntimeException(e)
         } finally {
@@ -125,7 +121,7 @@ class ThrottledCallTest {
     val call = FakeCall()
     call.overCapacity = true
 
-    val throttle = ThrottledCall(createPool(1, 1), mockLimiter(listener), Supplier { call })
+    val throttle = ThrottledCall(executor, mockLimiter(listener), call)
     try {
       throttle.execute()
       assertThat(true).isFalse() // should raise a RejectedExecutionException
@@ -137,8 +133,7 @@ class ThrottledCallTest {
   @Test fun execute_ignoresLimit_whenPoolFull() {
     val listener: Listener = mock()
 
-    val throttle =
-      ThrottledCall(mockExhaustedPool(), mockLimiter(listener), Supplier { FakeCall() })
+    val throttle = ThrottledCall(mockExhaustedPool(), mockLimiter(listener), FakeCall())
     try {
       throttle.execute()
       assertThat(true).isFalse() // should raise a RejectedExecutionException
@@ -148,14 +143,13 @@ class ThrottledCallTest {
   }
 
   @Test fun enqueue_isThrottled() {
-    val numThreads = 1
     val queueSize = 1
     val totalTasks = numThreads + queueSize
+    limit.limit = totalTasks
 
     val startLock = Semaphore(numThreads)
     val waitLock = Semaphore(totalTasks)
-    val throttle =
-      createThrottle(numThreads, queueSize, Supplier { LockedCall(startLock, waitLock) })
+    val throttle = throttle(LockedCall(startLock, waitLock))
 
     // Step 1: drain appropriate locks
     startLock.drainPermits()
@@ -164,7 +158,7 @@ class ThrottledCallTest {
     // Step 2: saturate threads and fill queue
     val callback: Callback<Void> = mock()
     for (i in 0 until totalTasks) {
-      throttle.enqueue(callback)
+      throttle.clone().enqueue(callback)
     }
 
     // Step 3: make sure the threads actually started
@@ -172,7 +166,7 @@ class ThrottledCallTest {
 
     try {
       // Step 4: submit something beyond our limits and make sure it fails
-      throttle.enqueue(callback)
+      throttle.clone().enqueue(callback)
 
       assertThat(true).isFalse() // should raise a RejectedExecutionException
     } catch (e: RejectedExecutionException) {
@@ -187,7 +181,7 @@ class ThrottledCallTest {
     val call = FakeCall()
     call.overCapacity = true
 
-    val throttle = ThrottledCall(createPool(1, 1), mockLimiter(listener), Supplier { call })
+    val throttle = ThrottledCall(executor, mockLimiter(listener), call)
     val latch = CountDownLatch(1)
     throttle.enqueue(object : Callback<Void> {
       override fun onSuccess(value: Void) {
@@ -207,7 +201,7 @@ class ThrottledCallTest {
     val listener: Listener = mock()
 
     val throttle =
-      ThrottledCall(mockExhaustedPool(), mockLimiter(listener), Supplier { FakeCall() })
+      ThrottledCall(mockExhaustedPool(), mockLimiter(listener), FakeCall())
     try {
       throttle.enqueue(null)
       assertThat(true).isFalse() // should raise a RejectedExecutionException
@@ -216,18 +210,7 @@ class ThrottledCallTest {
     }
   }
 
-  private fun createThrottle(delegate: Supplier<Call<Void>>): ThrottledCall<Void> {
-    return createThrottle(1, 1, delegate)
-  }
-
-  private fun createThrottle(
-    poolSize: Int,
-    queueSize: Int,
-    delegate: Supplier<Call<Void>>
-  ): ThrottledCall<Void> {
-    limit.setLimit(limit.getLimit() + 1)
-    return ThrottledCall(createPool(poolSize, queueSize), limiter, delegate)
-  }
+  private fun throttle(delegate: Call<Void>) = ThrottledCall(executor, limiter, delegate)
 
   private class LockedCall(val startLock: Semaphore, val waitLock: Semaphore) : Call.Base<Void>() {
     override fun doExecute(): Void? {
@@ -250,11 +233,6 @@ class ThrottledCallTest {
     }
 
     override fun clone() = LockedCall(startLock, waitLock);
-  }
-
-  private fun createPool(poolSize: Int, queueSize: Int): ExecutorService {
-    return ThreadPoolExecutor(poolSize, poolSize, 0, TimeUnit.DAYS,
-      LinkedBlockingQueue(queueSize))
   }
 
   private fun mockExhaustedPool(): ExecutorService {

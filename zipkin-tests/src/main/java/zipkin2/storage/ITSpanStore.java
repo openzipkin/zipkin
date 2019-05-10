@@ -23,17 +23,21 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import org.junit.Before;
 import org.junit.Test;
+import zipkin2.Call;
+import zipkin2.Callback;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.internal.Trace;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.BACKEND;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.DAY;
@@ -104,6 +108,58 @@ public abstract class ITSpanStore {
     accept(Span.newBuilder().traceId("1").id("1").build());
 
     allShouldWorkWhenEmpty();
+  }
+
+  @Test public void consumer_properlyImplementsCallContract_execute() throws IOException {
+    Call<Void> call = storage().spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
+
+    // Ensure the implementation didn't accidentally do I/O at assembly time.
+    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
+    call.execute();
+
+    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute())
+      .containsExactly(LOTS_OF_SPANS[0]);
+
+    try {
+      call.execute();
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalStateException e) {
+    }
+
+    // no problem to clone a call
+    call.clone().execute();
+  }
+
+  @Test public void consumer_properlyImplementsCallContract_submit() throws Exception {
+    Call<Void> call = storage().spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
+    // Ensure the implementation didn't accidentally do I/O at assembly time.
+    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
+
+    CountDownLatch latch = new CountDownLatch(1);
+    Callback<Void> callback = new Callback<Void>() {
+      @Override public void onSuccess(Void value) {
+        latch.countDown();
+      }
+
+      @Override public void onError(Throwable t) {
+        latch.countDown();
+      }
+    };
+
+    call.enqueue(callback);
+    latch.await();
+
+    assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute())
+      .containsExactly(LOTS_OF_SPANS[0]);
+
+    try {
+      call.enqueue(callback);
+      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
+    } catch (IllegalStateException e) {
+    }
+
+    // no problem to clone a call
+    call.clone().execute();
   }
 
   /**
