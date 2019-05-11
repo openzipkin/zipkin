@@ -190,7 +190,13 @@ final class Proto3Fields {
 
     @Override String readValue(Buffer buffer, int length) {
       length *= 2;
-      char[] result = new char[length];
+
+      // All our hex fields are at most 32 characters.
+      if (length > 32) {
+        throw new IllegalArgumentException("hex field greater than 32 chars long: " + length);
+      }
+
+      char[] result = Platform.get().idBuffer();
 
       for (int i = 0; i < length; i += 2) {
         byte b = buffer.readByte();
@@ -198,7 +204,7 @@ final class Proto3Fields {
         result[i + 1] = HEX_DIGITS[b & 0xf];
       }
 
-      return new String(result);
+      return new String(result, 0, length);
     }
   }
 

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.internal.Platform;
 
 public class ProtobufSpanDecoder {
   static final Logger LOG = Logger.getLogger(ProtobufSpanDecoder.class.getName());
@@ -271,16 +272,22 @@ public class ProtobufSpanDecoder {
 
   private static String readHexString(CodedInputStream input) throws IOException {
     int size = input.readRawVarint32();
+    int length = size * 2;
 
-    char[] result = new char[size * 2];
+    // All our hex fields are at most 32 characters.
+    if (length > 32) {
+      throw new AssertionError("hex field greater than 32 chars long: " + length);
+    }
 
-    for (int i = 0; i < result.length; i += 2) {
+    char[] result = Platform.get().idBuffer();
+
+    for (int i = 0; i < length; i += 2) {
       byte b = input.readRawByte();
       result[i] = HEX_DIGITS[(b >> 4) & 0xf];
       result[i + 1] = HEX_DIGITS[b & 0xf];
     }
 
-    return new String(result);
+    return new String(result, 0, length);
   }
 
   static void logAndSkip(CodedInputStream input, int tag) throws IOException {
