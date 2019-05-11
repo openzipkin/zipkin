@@ -205,7 +205,7 @@ final class Proto3Fields {
 
       // All our hex fields are at most 32 characters.
       if (length > 32) {
-        throw new AssertionError("hex field greater than 32 chars long: " + length);
+        throw new IllegalArgumentException("hex field greater than 32 chars long: " + length);
       }
 
       char[] result = getThirtyTwoChars();
