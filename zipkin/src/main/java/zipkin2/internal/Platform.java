@@ -27,7 +27,23 @@ import org.jvnet.animal_sniffer.IgnoreJRERequirement;
 public abstract class Platform {
   private static final Platform PLATFORM = findPlatform();
 
+  private static final ThreadLocal<char[]> ID_BUFFER = new ThreadLocal<>();
+
   Platform() {
+  }
+
+  /**
+   * Returns a {@link ThreadLocal} reused {@code char[]} for use when decoding bytes into a hex
+   * string. The buffer should be immediately copied into a {@link String} after decoding within the
+   * same method.
+   */
+  public char[] idBuffer() {
+    char[] idBuffer = ID_BUFFER.get();
+    if (idBuffer == null) {
+      idBuffer = new char[32];
+      ID_BUFFER.set(idBuffer);
+    }
+    return idBuffer;
   }
 
   public RuntimeException uncheckedIOException(IOException e) {

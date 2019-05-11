@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.internal.Platform;
 
 public class ProtobufSpanDecoder {
   static final Logger LOG = Logger.getLogger(ProtobufSpanDecoder.class.getName());
@@ -269,13 +270,6 @@ public class ProtobufSpanDecoder {
   static final char[] HEX_DIGITS =
     {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-  // Reuse the buffer for decoding into hex since it's immediately copied into a String.
-  static final ThreadLocal<char[]> THIRTY_TWO_CHARS = new ThreadLocal<char[]>() {
-    @Override protected char[] initialValue() {
-      return new char[32];
-    }
-  };
-
   private static String readHexString(CodedInputStream input) throws IOException {
     int size = input.readRawVarint32();
     int length = size * 2;
@@ -285,7 +279,7 @@ public class ProtobufSpanDecoder {
       throw new AssertionError("hex field greater than 32 chars long: " + length);
     }
 
-    char[] result = THIRTY_TWO_CHARS.get();
+    char[] result = Platform.get().idBuffer();
 
     for (int i = 0; i < length; i += 2) {
       byte b = input.readRawByte();

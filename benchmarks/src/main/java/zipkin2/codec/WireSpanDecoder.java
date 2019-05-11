@@ -29,6 +29,7 @@ import okio.Buffer;
 import okio.ByteString;
 import zipkin2.Endpoint;
 import zipkin2.Span;
+import zipkin2.internal.Platform;
 
 public class WireSpanDecoder {
   static final Logger LOG = Logger.getLogger(WireSpanDecoder.class.getName());
@@ -300,7 +301,7 @@ public class WireSpanDecoder {
       throw new AssertionError("hex field greater than 32 chars long: " + length);
     }
 
-    char[] result = THIRTY_TWO_CHARS.get();
+    char[] result = Platform.get().idBuffer();
 
     for (int i = 0; i < bytes.size(); i ++) {
       byte b = bytes.getByte(i);
