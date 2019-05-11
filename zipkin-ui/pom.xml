@@ -26,14 +26,13 @@
     <version>2.13.1-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.apache.zipkin</groupId>
   <artifactId>zipkin-ui</artifactId>
   <name>Zipkin UI</name>
   <description>Repackages Zipkin UI jar until its source moves to this repository</description>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <frontend-maven-plugin.version>1.7.5</frontend-maven-plugin.version>
+    <frontend-maven-plugin.version>1.7.6</frontend-maven-plugin.version>
   </properties>
 
   <dependencies>

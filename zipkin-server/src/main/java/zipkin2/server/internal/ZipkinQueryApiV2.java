@@ -19,9 +19,10 @@ package zipkin2.server.internal;
 import com.linecorp.armeria.common.AggregatedHttpMessage;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.common.ResponseHeadersBuilder;
 import com.linecorp.armeria.server.annotation.Default;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.Param;
@@ -141,9 +142,9 @@ public class ZipkinQueryApiV2 {
   }
 
   static AggregatedHttpMessage jsonResponse(byte[] body) {
-    return AggregatedHttpMessage.of(HttpHeaders.of(200)
+    return AggregatedHttpMessage.of(ResponseHeaders.builder(200)
       .contentType(MediaType.JSON)
-      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length), HttpData.of(body));
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build(), HttpData.of(body));
   }
 
   static final Buffer.Writer<String> QUOTED_STRING_WRITER = new Buffer.Writer<String>() {
@@ -177,7 +178,7 @@ public class ZipkinQueryApiV2 {
   AggregatedHttpMessage maybeCacheNames(boolean shouldCacheControl, List<String> values) {
     Collections.sort(values);
     byte[] body = JsonCodec.writeList(QUOTED_STRING_WRITER, values);
-    HttpHeaders headers = HttpHeaders.of(200)
+    ResponseHeadersBuilder headers = ResponseHeaders.builder(200)
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
     if (shouldCacheControl) {
@@ -186,7 +187,7 @@ public class ZipkinQueryApiV2 {
         CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate().getHeaderValue()
       );
     }
-    return AggregatedHttpMessage.of(headers, HttpData.of(body));
+    return AggregatedHttpMessage.of(headers.build(), HttpData.of(body));
   }
 
   // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library

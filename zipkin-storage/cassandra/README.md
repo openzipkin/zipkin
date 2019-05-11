@@ -1,8 +1,8 @@
 # storage-cassandra
 
-This CQL-based Cassandra 3.9+ storage component, built upon the [Zipkin v2 api and model](http://zipkin.io/zipkin-api/#/default/post_spans).
+This is a CQL-based Cassandra 3.9+ storage component, built upon the [Zipkin v2 api and model](https://zipkin.apache.org/zipkin-api/#/default/post_spans).
 
-`CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies)).
+`CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/apache/incubator-zipkin-dependencies)).
 
 The implementation uses the [Datastax Java Driver 3.1.x](https://github.com/datastax/java-driver).
 

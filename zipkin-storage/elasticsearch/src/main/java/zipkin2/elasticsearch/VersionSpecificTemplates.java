@@ -206,7 +206,7 @@ final class VersionSpecificTemplates {
    * <p>Starting in Elasticsearch 7.x, colons are no longer allowed in index names. This logic will
    * make sure the pattern in our index template doesn't use them either.
    *
-   * <p>See https://github.com/openzipkin/zipkin/issues/2219
+   * <p>See https://github.com/apache/incubator-zipkin/issues/2219
    */
   static char indexTypeDelimiter(float version) {
     return version < 7.0f ? ':' : '-';
