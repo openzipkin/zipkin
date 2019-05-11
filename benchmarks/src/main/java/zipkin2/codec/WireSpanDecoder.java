@@ -284,13 +284,6 @@ public class WireSpanDecoder {
   static final char[] HEX_DIGITS =
     {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-  // Reuse the buffer for decoding into hex since it's immediately copied into a String.
-  static final ThreadLocal<char[]> THIRTY_TWO_CHARS = new ThreadLocal<char[]>() {
-    @Override protected char[] initialValue() {
-      return new char[32];
-    }
-  };
-
   // https://github.com/square/wire/issues/958
   private static String readHexString(ProtoReader input) throws IOException {
     ByteString bytes = input.readBytes();
