@@ -18,10 +18,10 @@ package zipkin2.collector.scribe;
 
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import com.linecorp.armeria.server.ServiceRequestContext;
@@ -49,12 +49,12 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
   static final Logger logger = LoggerFactory.getLogger(ScribeInboundHandler.class);
 
   // Headers mostly copied from https://github.com/apache/thrift/blob/master/lib/javame/src/org/apache/thrift/transport/THttpClient.java#L130
-  static final HttpHeaders THRIFT_HEADERS = HttpHeaders.of(
+  static final RequestHeaders THRIFT_HEADERS = RequestHeaders.builder(
     HttpMethod.POST, "/internal/zipkin-thriftrpc")
     .set(HttpHeaderNames.CONTENT_TYPE, "application/x-thrift")
     .set(HttpHeaderNames.ACCEPT, "application/x-thrift")
     .set(HttpHeaderNames.USER_AGENT, "Zipkin/ScribeInboundHandler")
-    .asImmutable();
+    .build();
 
   final THttpService scribeService;
 
@@ -125,8 +125,7 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
     state = ReadState.HEADER;
 
-    HttpRequest request =
-      HttpRequest.of(THRIFT_HEADERS.toMutable(), new ByteBufHttpData(payload, true));
+    HttpRequest request = HttpRequest.of(THRIFT_HEADERS, new ByteBufHttpData(payload, true));
     ServiceRequestContextBuilder requestContextBuilder = ServiceRequestContextBuilder.of(request)
       .service(scribeService)
       .alloc(ctx.alloc());

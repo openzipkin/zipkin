@@ -68,7 +68,7 @@ public class DependencyLinkerTest {
   /**
    * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.
    *
-   * <p>See https://github.com/openzipkin/zipkin/pull/1745
+   * <p>See https://github.com/apache/incubator-zipkin/pull/1745
    */
   @Test
   public void linksSpans_serverMissingParentId() {

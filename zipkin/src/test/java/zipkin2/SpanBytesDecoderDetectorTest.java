@@ -163,7 +163,7 @@ public class SpanBytesDecoderDetectorTest {
   /**
    * We encoded incorrectly for years, so we have to read this data eventhough it is wrong.
    *
-   * <p>See openzipkin/zipkin-reporter-java#133
+   * <p>See apache/incubator-zipkin-reporter-java#133
    */
   @Test
   public void decoderForListMessage_thrift_incorrectFirstByte() {

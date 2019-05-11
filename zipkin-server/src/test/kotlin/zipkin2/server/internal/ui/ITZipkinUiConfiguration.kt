@@ -18,8 +18,8 @@ package zipkin2.server.internal.ui
 
 import com.linecorp.armeria.client.HttpClient
 import com.linecorp.armeria.common.HttpHeaderNames
-import com.linecorp.armeria.common.HttpHeaders
 import com.linecorp.armeria.common.HttpMethod
+import com.linecorp.armeria.common.RequestHeaders
 import com.linecorp.armeria.server.Server
 import okhttp3.Headers
 import okio.Okio
@@ -116,9 +116,10 @@ class ITZipkinUiConfiguration {
 
   private fun getContentEncodingFromRequestThatAcceptsGzip(path: String): String? {
     // We typically use OkHttp in our tests, but that automatically unzips..
-    val response = HttpClient.of(Http.url(server, ""))
-      .execute(HttpHeaders.of(HttpMethod.GET, path).set(HttpHeaderNames.ACCEPT_ENCODING, "gzip"))
-      .aggregate().join()
+    val request = RequestHeaders.builder(HttpMethod.GET, path)
+      .set(HttpHeaderNames.ACCEPT_ENCODING, "gzip")
+      .build()
+    val response = HttpClient.of(Http.url(server, "")).execute(request).aggregate().join()
     return response.headers().get(HttpHeaderNames.CONTENT_ENCODING)
   }
 }
