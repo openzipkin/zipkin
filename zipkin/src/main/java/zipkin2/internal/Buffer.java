@@ -337,7 +337,7 @@ public abstract class Buffer {
 
   public abstract int pos();
 
-  public abstract byte[] toByteArray();
+  public abstract byte[] toByteArrayUnsafe();
 
   public interface Writer<T> {
     int sizeInBytes(T value);

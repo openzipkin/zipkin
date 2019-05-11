@@ -159,7 +159,7 @@ public class Proto3CodecInteropTest {
     Buffer zipkinBytes = Buffer.allocate(ANNOTATION.sizeInBytes(zipkinAnnotation));
     ANNOTATION.write(zipkinBytes, zipkinAnnotation);
 
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes.toByteArrayUnsafe())
       .containsExactly(wireSpan.encode());
   }
 
@@ -192,7 +192,7 @@ public class Proto3CodecInteropTest {
     LOCAL_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.localEndpoint());
     Span wireSpan = new Span.Builder().local_endpoint(PROTO_SPAN.local_endpoint).build();
 
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes.toByteArrayUnsafe())
       .containsExactly(wireSpan.encode());
   }
 
@@ -201,7 +201,7 @@ public class Proto3CodecInteropTest {
     REMOTE_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.remoteEndpoint());
     Span wireSpan = new Span.Builder().remote_endpoint(PROTO_SPAN.remote_endpoint).build();
 
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes.toByteArrayUnsafe())
       .containsExactly(wireSpan.encode());
   }
 
@@ -220,7 +220,7 @@ public class Proto3CodecInteropTest {
     field.write(zipkinBytes, entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes.toByteArrayUnsafe())
       .containsExactly(oneField.encode());
   }
 
@@ -231,7 +231,7 @@ public class Proto3CodecInteropTest {
     field.write(zipkinBytes, entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes.toByteArrayUnsafe())
       .containsExactly(oneField.encode());
   }
 

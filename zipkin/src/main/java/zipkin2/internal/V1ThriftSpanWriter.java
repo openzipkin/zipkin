@@ -172,13 +172,13 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
 
     Buffer result = Buffer.allocate(ThriftCodec.listSizeInBytes(this, spans));
     ThriftCodec.writeList(this, spans, result);
-    return result.toByteArray();
+    return result.toByteArrayUnsafe();
   }
 
   public byte[] write(Span onlySpan) {
     Buffer result = Buffer.allocate(sizeInBytes(onlySpan));
     write(onlySpan, result);
-    return result.toByteArray();
+    return result.toByteArrayUnsafe();
   }
 
   public int writeList(List<Span> spans, byte[] out, int pos) {
@@ -195,7 +195,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     if (localEndpoint == null) return null;
     Buffer buffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(localEndpoint));
     ThriftEndpointCodec.write(localEndpoint, buffer);
-    return buffer.toByteArray();
+    return buffer.toByteArrayUnsafe();
   }
 
   static class ThriftAnnotationWriter {

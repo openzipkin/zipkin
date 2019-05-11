@@ -95,7 +95,7 @@ final class ByteArrayBuffer extends Buffer {
     return pos;
   }
 
-  @Override public byte[] toByteArray() {
+  @Override public byte[] toByteArrayUnsafe() {
     // assert pos == buf.length;
     return buf;
   }
