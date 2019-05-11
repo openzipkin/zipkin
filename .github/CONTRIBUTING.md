@@ -14,7 +14,7 @@ the terms of the [APLv2](LICENSE).
 All files are released with the Apache 2.0 license.
 
 If you are adding a new file it should have a header like below. This
-can be automatically added by running `./mvnw com.mycila:license-maven-plugin:format`.
+can be automatically added by running `mvn com.mycila:license-maven-plugin:format`.
 
 ```
 /*
