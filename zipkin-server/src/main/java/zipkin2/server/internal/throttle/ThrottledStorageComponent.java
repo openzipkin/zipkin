@@ -101,7 +101,7 @@ public final class ThrottledStorageComponent extends StorageComponent {
   }
 
   @Override public String toString() {
-    return "Throttled" + delegate;
+    return "Throttled(" + delegate + ")";
   }
 
   static final class ThrottledSpanConsumer implements SpanConsumer {
@@ -120,7 +120,7 @@ public final class ThrottledStorageComponent extends StorageComponent {
     }
 
     @Override public String toString() {
-      return "Throttled" + delegate;
+      return "Throttled(" + delegate + ")";
     }
   }
 

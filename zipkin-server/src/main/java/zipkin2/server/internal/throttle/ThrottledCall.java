@@ -99,7 +99,7 @@ final class ThrottledCall<V> extends Call.Base<V> {
     Listener limitListener = limiter.acquire(null).orElseThrow(RejectedExecutionException::new);
 
     try {
-      executor.execute(new QueuedCall(callback, limitListener));
+      executor.execute(new QueuedCall<>(delegate, callback, limitListener));
     } catch (RuntimeException | Error e) {
       propagateIfFatal(e);
       // Ignoring in all cases here because storage itself isn't saying we need to throttle.  Though, we may still be
@@ -114,7 +114,7 @@ final class ThrottledCall<V> extends Call.Base<V> {
   }
 
   @Override public String toString() {
-    return "Throttled" + delegate;
+    return "Throttled(" + delegate + ")";
   }
 
   static String setCurrentThreadName(String name) {
@@ -124,18 +124,20 @@ final class ThrottledCall<V> extends Call.Base<V> {
     return originalName;
   }
 
-  final class QueuedCall implements Runnable {
+  static final class QueuedCall<V> implements Runnable {
+    final Call<V> delegate;
     final Callback<V> callback;
     final Listener limitListener;
 
-    QueuedCall(Callback<V> callback, Listener limitListener) {
+    QueuedCall(Call<V> delegate, Callback<V> callback, Listener limitListener) {
+      this.delegate = delegate;
       this.callback = callback;
       this.limitListener = limitListener;
     }
 
     @Override public void run() {
       try {
-        if (isCanceled()) return;
+        if (delegate.isCanceled()) return;
 
         String oldName = setCurrentThreadName(delegate.toString());
         try {
@@ -158,15 +160,19 @@ final class ThrottledCall<V> extends Call.Base<V> {
       // This ensures we don't exceed our throttle/queue limits.
       throttleCallback.await();
     }
+
+    @Override public String toString() {
+      return "QueuedCall{delegate=" + delegate + ", callback=" + callback + "}";
+    }
   }
 
   static final class ThrottledCallback<V> implements Callback<V> {
-    final Callback<V> supplier;
+    final Callback<V> delegate;
     final Listener limitListener;
     final CountDownLatch latch = new CountDownLatch(1);
 
-    ThrottledCallback(Callback<V> supplier, Listener limitListener) {
-      this.supplier = supplier;
+    ThrottledCallback(Callback<V> delegate, Listener limitListener) {
+      this.delegate = delegate;
       this.limitListener = limitListener;
     }
 
@@ -183,7 +189,7 @@ final class ThrottledCall<V> extends Call.Base<V> {
     @Override public void onSuccess(V value) {
       try {
         limitListener.onSuccess();
-        supplier.onSuccess(value);
+        delegate.onSuccess(value);
       } finally {
         latch.countDown();
       }
@@ -197,10 +203,14 @@ final class ThrottledCall<V> extends Call.Base<V> {
           limitListener.onIgnore();
         }
 
-        supplier.onError(t);
+        delegate.onError(t);
       } finally {
         latch.countDown();
       }
+    }
+
+    @Override public String toString() {
+      return "Throttled(" + delegate + ")";
     }
   }
 }

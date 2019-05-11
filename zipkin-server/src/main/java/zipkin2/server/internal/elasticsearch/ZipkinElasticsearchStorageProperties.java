@@ -66,7 +66,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   ZipkinElasticsearchStorageProperties(
     @Value("${zipkin.storage.throttle.enabled:false}") boolean throttleEnabled,
-    @Value("${zipkin.storage.throttle.maxConcurrency:200}") int throttleMaxConcurrency) {
+    @Value("${zipkin.storage.throttle.max-concurrency:200}") int throttleMaxConcurrency) {
     if (throttleEnabled) {
       this.throttleMaxConcurrency = throttleMaxConcurrency;
     }

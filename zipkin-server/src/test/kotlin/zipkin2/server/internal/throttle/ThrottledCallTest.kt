@@ -58,7 +58,7 @@ class ThrottledCallTest {
     `when`(delegate.toString()).thenReturn("StoreSpansCall{}")
 
     assertThat(ThrottledCall(executor, limiter, delegate))
-      .hasToString("ThrottledStoreSpansCall{}")
+      .hasToString("Throttled(StoreSpansCall{})")
   }
 
   @Test fun execute_isThrottled() {
