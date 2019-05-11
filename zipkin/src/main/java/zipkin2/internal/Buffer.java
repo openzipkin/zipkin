@@ -135,12 +135,6 @@ public abstract class Buffer {
     data[pos + 1] = (byte) HEX_DIGITS[b & 0xf];
   }
 
-  static void checkNotTruncated(int pos, int lastIndex) {
-    if (pos > lastIndex) {
-      throw new IllegalArgumentException("Truncated reading position " + pos);
-    }
-  }
-
   public abstract void writeByte(int v);
 
   public abstract void write(byte[] v);

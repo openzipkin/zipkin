@@ -103,7 +103,7 @@ public class ProtoCodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws Exception {
     Options opt = new OptionsBuilder()
-      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName() + ".*bytes_zipkin")
+      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName() + ".*bytes.*")
       .addProfiler("gc")
       .build();
 

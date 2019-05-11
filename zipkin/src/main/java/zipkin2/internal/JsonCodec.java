@@ -182,15 +182,6 @@ public final class JsonCodec {
         }
       }
 
-      final byte[] bytesWritten;
-      if (lengthWritten == bytes.length) {
-        bytesWritten = bytes;
-      } else {
-        bytesWritten = new byte[lengthWritten];
-        System.arraycopy(bytes, 0, bytesWritten, 0, lengthWritten);
-      }
-
-      String written = new String(bytesWritten, UTF_8);
       // Don't use value directly in the message, as its toString might be implemented using this
       // method. If that's the case, we'd stack overflow. Instead, emit what we've written so far.
       String message =
@@ -200,7 +191,7 @@ public final class JsonCodec {
           value.getClass().getSimpleName(),
           lengthWritten,
           bytes.length,
-          written);
+          new String(bytes, 0, lengthWritten, UTF_8));
       throw Platform.get().assertionError(message, e);
     }
     return b.toByteArrayUnsafe();

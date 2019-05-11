@@ -56,8 +56,15 @@ public class EndpointTest {
     assertExpectedIpv4(endpoint);
   }
 
-  @Test
-  public void ip_string_ipv4() {
+  @Test public void ip_bytes_ipv4() throws Exception {
+    Endpoint.Builder newBuilder = Endpoint.newBuilder();
+    assertThat(newBuilder.parseIp(Inet4Address.getByName("43.0.192.2").getAddress())).isTrue();
+    Endpoint endpoint = newBuilder.build();
+
+    assertExpectedIpv4(endpoint);
+  }
+
+  @Test public void ip_string_ipv4() {
     Endpoint.Builder newBuilder = Endpoint.newBuilder();
     assertThat(newBuilder.parseIp("43.0.192.2")).isTrue();
     Endpoint endpoint = newBuilder.build();
@@ -82,6 +89,23 @@ public class EndpointTest {
   @Test public void ip_ipv6_addr() throws Exception {
     String ipv6 = "2001:db8::c001";
     Endpoint endpoint = Endpoint.newBuilder().ip(Inet6Address.getByName(ipv6)).build();
+
+    assertThat(endpoint.ipv4())
+      .isNull();
+    assertThat(endpoint.ipv4Bytes())
+      .isNull();
+    assertThat(endpoint.ipv6())
+      .isEqualTo(ipv6);
+    assertThat(endpoint.ipv6Bytes())
+      .containsExactly(Inet6Address.getByName(ipv6).getAddress());
+  }
+
+  @Test public void parseIp_ipv6_bytes() throws Exception {
+    String ipv6 = "2001:db8::c001";
+
+    Endpoint.Builder newBuilder = Endpoint.newBuilder();
+    assertThat(newBuilder.parseIp(Inet6Address.getByName(ipv6))).isTrue();
+    Endpoint endpoint = newBuilder.build();
 
     assertThat(endpoint.ipv4())
       .isNull();
