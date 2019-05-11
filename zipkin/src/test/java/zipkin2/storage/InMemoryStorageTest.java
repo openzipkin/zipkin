@@ -83,9 +83,9 @@ public class InMemoryStorageTest {
   }
 
   /** Ensures we don't overload a partition due to key equality being conflated with order */
-  @Test public void differentiatesOnTraceIdWhenTimestampEqual() {
-    storage.accept(asList(CLIENT_SPAN));
-    storage.accept(asList(CLIENT_SPAN.toBuilder().traceId("333").build()));
+  @Test public void differentiatesOnTraceIdWhenTimestampEqual() throws IOException {
+    storage.accept(asList(CLIENT_SPAN)).execute();
+    storage.accept(asList(CLIENT_SPAN.toBuilder().traceId("333").build())).execute();
 
     assertThat(storage).extracting("spansByTraceIdTimeStamp.delegate")
       .allSatisfy(map -> assertThat((Map) map).hasSize(2));
@@ -100,8 +100,8 @@ public class InMemoryStorageTest {
       .timestamp(TODAY * 1000)
       .build();
 
-    storage.accept(asList(span));
-    storage.accept(asList(span));
+    storage.accept(asList(span)).execute();
+    storage.accept(asList(span)).execute();
 
     assertThat(storage.getDependencies(TODAY + 1000L, TODAY).execute()).containsOnly(
       DependencyLink.newBuilder().parent("kafka").child("app").callCount(1L).build()
@@ -119,7 +119,7 @@ public class InMemoryStorageTest {
       .timestamp(TODAY * 1000)
       .build();
 
-    storage.accept(asList(span1, span2));
+    storage.accept(asList(span1, span2)).execute();
 
     assertThat(storage.getSpanNames("app").execute()).containsOnly(
       "root"
@@ -153,7 +153,7 @@ public class InMemoryStorageTest {
       .putTag("http.path", "/users")
       .timestamp(TODAY * 1000)
       .build();
-    storage.accept(asList(span1, span2, span3, span4));
+    storage.accept(asList(span1, span2, span3, span4)).execute();
 
     assertThat(storage.getKeys().execute()).containsOnlyOnce("http.path");
     assertThat(storage.getValues("http.path").execute()).containsOnlyOnce("/users");

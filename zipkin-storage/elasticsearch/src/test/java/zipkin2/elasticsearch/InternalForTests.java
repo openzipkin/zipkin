@@ -22,8 +22,8 @@ import java.io.UncheckedIOException;
 import java.util.List;
 import okio.BufferedSink;
 import zipkin2.DependencyLink;
-import zipkin2.elasticsearch.internal.BulkIndexWriter;
 import zipkin2.elasticsearch.internal.BulkCallBuilder;
+import zipkin2.elasticsearch.internal.BulkIndexWriter;
 
 /** Package accessor for integration tests */
 public class InternalForTests {
@@ -32,9 +32,8 @@ public class InternalForTests {
     String index = ((ElasticsearchSpanConsumer) es.spanConsumer())
       .formatTypeAndTimestampForInsert("dependency", midnightUTC);
     BulkCallBuilder indexer = new BulkCallBuilder(es, es.version(), "indexlinks");
-    for (DependencyLink link : links) {
-      indexer.index(index, "dependency", link, DEPENDENCY_LINK_BULK_INDEX_SUPPORT);
-    }
+    for (DependencyLink link : links)
+      indexer.index(index, "dependency", link, DEPENDENCY_LINK_WRITER);
     try {
       indexer.build().execute();
     } catch (IOException e) {
@@ -42,7 +41,7 @@ public class InternalForTests {
     }
   }
 
-  static final BulkIndexWriter<DependencyLink> DEPENDENCY_LINK_BULK_INDEX_SUPPORT =
+  static final BulkIndexWriter<DependencyLink> DEPENDENCY_LINK_WRITER =
     new BulkIndexWriter<DependencyLink>() {
       @Override public String writeDocument(DependencyLink link, BufferedSink sink) {
         JsonWriter writer = JsonWriter.of(sink);

@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import zipkin2.Call;
+import zipkin2.Callback;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -189,8 +190,11 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     autocompleteTags.clear();
   }
 
-  @Override
-  public synchronized Call<Void> accept(List<Span> spans) {
+  @Override public Call<Void> accept(List<Span> spans) {
+    return new StoreSpansCall(spans);
+  }
+
+  synchronized void doAccept(List<Span> spans) {
     int delta = spans.size();
     int spansToRecover = (spansByTraceIdTimeStamp.size() + delta) - maxSpanCount;
     evictToRecoverSpans(spansToRecover);
@@ -221,7 +225,36 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
         }
       }
     }
-    return Call.create(null /* Void == null */);
+  }
+
+  final class StoreSpansCall extends Call.Base<Void> {
+    final List<Span> spans;
+
+    StoreSpansCall(List<Span> spans) {
+      this.spans = spans;
+    }
+
+    @Override protected Void doExecute() {
+      doAccept(spans);
+      return null;
+    }
+
+    @Override protected void doEnqueue(Callback<Void> callback) {
+      try {
+        callback.onSuccess(doExecute());
+      } catch (RuntimeException | Error e) {
+        Call.propagateIfFatal(e);
+        callback.onError(e);
+      }
+    }
+
+    @Override public Call<Void> clone() {
+      return new StoreSpansCall(spans);
+    }
+
+    @Override public String toString() {
+      return "StoreSpansCall{" + spans + "}";
+    }
   }
 
   /** Returns the count of spans evicted. */

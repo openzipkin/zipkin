@@ -101,10 +101,10 @@ public final class ThrottledStorageComponent extends StorageComponent {
   }
 
   @Override public String toString() {
-    return "Throttled" + delegate;
+    return "Throttled(" + delegate + ")";
   }
 
-  final class ThrottledSpanConsumer implements SpanConsumer {
+  static final class ThrottledSpanConsumer implements SpanConsumer {
     final SpanConsumer delegate;
     final Limiter<Void> limiter;
     final ExecutorService executor;
@@ -116,11 +116,11 @@ public final class ThrottledStorageComponent extends StorageComponent {
     }
 
     @Override public Call<Void> accept(List<Span> spans) {
-      return new ThrottledCall<>(executor, limiter, () -> delegate.accept(spans));
+      return new ThrottledCall<>(executor, limiter, delegate.accept(spans));
     }
 
     @Override public String toString() {
-      return "Throttled" + delegate;
+      return "Throttled(" + delegate + ")";
     }
   }
 
