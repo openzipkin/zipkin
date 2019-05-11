@@ -165,11 +165,16 @@ final class Proto3Fields {
       {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
     // Reuse the buffer for decoding into hex since it's immediately copied into a String.
-    static final ThreadLocal<char[]> THIRTY_TWO_CHARS = new ThreadLocal<char[]>() {
-      @Override protected char[] initialValue() {
-        return new char[32];
+    static final ThreadLocal<char[]> THIRTY_TWO_CHARS = new ThreadLocal<>();
+
+    static char[] getThirtyTwoChars() {
+      char[] charBuffer = THIRTY_TWO_CHARS.get();
+      if (charBuffer == null) {
+        charBuffer = new char[32];
+        THIRTY_TWO_CHARS.set(charBuffer);
       }
-    };
+      return charBuffer;
+    }
 
     HexField(int key) {
       super(key);
@@ -203,7 +208,7 @@ final class Proto3Fields {
         throw new AssertionError("hex field greater than 32 chars long: " + length);
       }
 
-      char[] result = THIRTY_TWO_CHARS.get();
+      char[] result = getThirtyTwoChars();
 
       for (int i = 0; i < length; i += 2) {
         byte b = buffer.readByte();

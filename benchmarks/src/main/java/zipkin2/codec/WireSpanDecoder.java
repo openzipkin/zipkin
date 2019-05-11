@@ -290,6 +290,7 @@ public class WireSpanDecoder {
     }
   };
 
+  // https://github.com/square/wire/issues/958
   private static String readHexString(ProtoReader input) throws IOException {
     ByteString bytes = input.readBytes();
     int length = bytes.size() * 2;
