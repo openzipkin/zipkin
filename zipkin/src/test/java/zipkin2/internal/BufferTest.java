@@ -51,7 +51,7 @@ public class BufferTest {
 
       Buffer buffer = Buffer.allocate(3);
       buffer.writeUtf8(test);
-      assertThat(buffer.toByteArray())
+      assertThat(buffer.toByteArrayUnsafe())
         .containsExactly('a', '?', 'c');
     }
   }
@@ -66,7 +66,7 @@ public class BufferTest {
 
     Buffer buffer = Buffer.allocate(5);
     buffer.writeUtf8(test);
-    assertThat(new String(buffer.toByteArray(), UTF_8))
+    assertThat(new String(buffer.toByteArrayUnsafe(), UTF_8))
       .isEqualTo("\uD83C\uDC00?");
   }
 
@@ -80,7 +80,7 @@ public class BufferTest {
 
     Buffer buffer = Buffer.allocate(6);
     buffer.writeUtf8(test);
-    assertThat(new String(buffer.toByteArray(), UTF_8))
+    assertThat(new String(buffer.toByteArrayUnsafe(), UTF_8))
       .isEqualTo("\uD83C\uDC00?c");
   }
 
@@ -97,7 +97,7 @@ public class BufferTest {
 
       Buffer bufferUtf8 = Buffer.allocate(encodedSize);
       bufferUtf8.writeUtf8(string);
-      assertThat(new String(bufferUtf8.toByteArray(), UTF_8))
+      assertThat(new String(bufferUtf8.toByteArrayUnsafe(), UTF_8))
         .isEqualTo(string);
     }
   }
@@ -110,12 +110,12 @@ public class BufferTest {
 
     Buffer bufferAscii = Buffer.allocate(encodedSize);
     bufferAscii.writeAscii(ascii);
-    assertThat(new String(bufferAscii.toByteArray(), "US-ASCII"))
+    assertThat(new String(bufferAscii.toByteArrayUnsafe(), "US-ASCII"))
       .isEqualTo(ascii);
 
     Buffer bufferUtf8 = Buffer.allocate(encodedSize);
     bufferUtf8.writeUtf8(ascii);
-    assertThat(new String(bufferUtf8.toByteArray(), "US-ASCII"))
+    assertThat(new String(bufferUtf8.toByteArrayUnsafe(), "US-ASCII"))
       .isEqualTo(ascii);
   }
 
@@ -127,7 +127,7 @@ public class BufferTest {
 
     Buffer buffer = Buffer.allocate(emojiBytes.length);
     buffer.writeUtf8(emoji);
-    assertThat(buffer.toByteArray())
+    assertThat(buffer.toByteArrayUnsafe())
       .isEqualTo(emojiBytes);
   }
 
@@ -145,7 +145,7 @@ public class BufferTest {
   static String writeAscii(long v) {
     Buffer buffer = Buffer.allocate(Buffer.asciiSizeInBytes(v));
     buffer.writeAscii(v);
-    return new String(buffer.toByteArray(), UTF_8);
+    return new String(buffer.toByteArrayUnsafe(), UTF_8);
   }
 
   // Test creating Buffer for a long string
@@ -157,7 +157,7 @@ public class BufferTest {
     String string = stringBuffer.toString();
     Buffer buffer = Buffer.allocate(string.length());
     buffer.writeAscii(string);
-    assertThat(new String(buffer.toByteArray(), "US-ASCII")).isEqualTo(string);
+    assertThat(new String(buffer.toByteArrayUnsafe(), "US-ASCII")).isEqualTo(string);
   }
 
   @Test public void unsignedVarintSize_32_largest() {
@@ -181,7 +181,7 @@ public class BufferTest {
       byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
       byteBuffer.putLong(number);
 
-      assertThat(buffer.toByteArray())
+      assertThat(buffer.toByteArrayUnsafe())
         .containsExactly(byteBuffer.array());
     }
   }
@@ -193,7 +193,7 @@ public class BufferTest {
     Buffer buffer = Buffer.allocate(Buffer.varintSizeInBytes(number));
     buffer.writeVarint(number);
 
-    assertThat(buffer.toByteArray())
+    assertThat(buffer.toByteArrayUnsafe())
       .containsExactly(0b1010_1100, 0b0000_0010);
   }
 
@@ -204,7 +204,7 @@ public class BufferTest {
     Buffer buffer = Buffer.allocate(Buffer.varintSizeInBytes(number));
     buffer.writeVarint(number);
 
-    assertThat(buffer.toByteArray())
+    assertThat(buffer.toByteArrayUnsafe())
       .containsExactly(0b1010_1100, 0b0000_0010);
   }
 
@@ -213,21 +213,21 @@ public class BufferTest {
     Buffer buffer = Buffer.allocate(Buffer.varintSizeInBytes(80));
     buffer.writeVarint(80);
 
-    assertThat(buffer.toByteArray())
+    assertThat(buffer.toByteArrayUnsafe())
       .containsExactly(0b0101_0000);
 
     // largest value to not require more than 2 bytes (14 bits set)
     buffer = Buffer.allocate(Buffer.varintSizeInBytes(16383));
     buffer.writeVarint(16383);
 
-    assertThat(buffer.toByteArray())
+    assertThat(buffer.toByteArrayUnsafe())
       .containsExactly(0b1111_1111, 0b0111_1111);
 
     // worst case is a byte longer than fixed 16
     buffer = Buffer.allocate(Buffer.varintSizeInBytes(65535));
     buffer.writeVarint(65535);
 
-    assertThat(buffer.toByteArray())
+    assertThat(buffer.toByteArrayUnsafe())
       .containsExactly(0b1111_1111, 0b1111_1111, 0b0000_0011);
 
     // most bits
@@ -235,7 +235,7 @@ public class BufferTest {
     buffer.writeVarint(0xFFFFFFFF);
 
     // we have a total of 32 bits encoded
-    assertThat(buffer.toByteArray())
+    assertThat(buffer.toByteArrayUnsafe())
       .containsExactly(0b1111_1111, 0b1111_1111, 0b1111_1111, 0b1111_1111, 0b0000_1111);
   }
 

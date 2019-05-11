@@ -55,14 +55,14 @@ final class Proto3SpanWriter implements Buffer.Writer<Span> {
     for (int i = 0; i < lengthOfSpans; i++) {
       writeSpan(spans.get(i), sizeOfValues[i], result);
     }
-    return result.toByteArray();
+    return result.toByteArrayUnsafe();
   }
 
   byte[] write(Span onlySpan) {
     int sizeOfValue = SPAN.sizeOfValue(onlySpan);
     Buffer result = Buffer.allocate(sizeOfLengthDelimitedField(sizeOfValue));
     writeSpan(onlySpan, sizeOfValue, result);
-    return result.toByteArray();
+    return result.toByteArrayUnsafe();
   }
 
   // prevents resizing twice

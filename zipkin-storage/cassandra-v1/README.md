@@ -1,11 +1,10 @@
 # storage-cassandra
 
-This CQL-based Cassandra 2.2+ storage component includes a `GuavaSpanStore` and `GuavaSpanConsumer`.
-`GuavaSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies-spark](https://github.com/openzipkin/zipkin-dependencies-spark)).
+This is a CQL-based Cassandra 2.2+ storage component, built upon the [Zipkin v1 thrift model](https://github.com/apache/incubator-zipkin-api/tree/master/thrift).
 
-The implementation uses the [Datastax Java Driver 3.x](https://github.com/datastax/java-driver).
-Duration queries are not supported in this implementation. If you need to
-search by duration, please use [zipkin-storage-cassandra](../cassandra)
+`CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/apache/incubator-zipkin-dependencies)).
+
+The implementation uses the [Datastax Java Driver 3.1.x](https://github.com/datastax/java-driver).
 
 `zipkin2.storage.cassandra.v1.CassandraStorage.Builder` includes defaults that will
 operate against a local Cassandra installation.

@@ -29,12 +29,12 @@ import static org.junit.Assume.assumeTrue;
 public class LazyMySQLStorage implements TestRule {
   static final Logger LOGGER = LoggerFactory.getLogger(LazyMySQLStorage.class);
 
-  final String version;
+  final String image;
 
   ZipkinMySQLContainer container;
 
-  LazyMySQLStorage(String version) {
-    this.version = version;
+  LazyMySQLStorage(String image) {
+    this.image = image;
   }
 
   MySQLStorage storage;
@@ -44,7 +44,7 @@ public class LazyMySQLStorage implements TestRule {
 
     if (!"true".equals(System.getProperty("docker.skip"))) {
       try {
-        container = new ZipkinMySQLContainer(version);
+        container = new ZipkinMySQLContainer(image);
         container.start();
         LOGGER.info("Starting docker image " + container.getDockerImageName());
       } catch (Exception e) {

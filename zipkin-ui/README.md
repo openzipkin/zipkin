@@ -19,7 +19,7 @@ The suggested logic for serving the assets of Zipkin-UI is as follows:
     serve that file. If it doesn't exist, then return 404.
  1. Otherwise, serve `index.html`.
 
-For an example implementation using Finatra, see [zipkin-query](https://github.com/openzipkin/zipkin/blob/5dec252e4c562b21bac5ac2f9d0b437d90988f79/zipkin-query/src/main/scala/com/twitter/zipkin/query/ZipkinQueryController.scala).
+For an example implementation using Finatra, see [zipkin-query](https://github.com/apache/incubator-zipkin/blob/5dec252e4c562b21bac5ac2f9d0b437d90988f79/zipkin-query/src/main/scala/com/twitter/zipkin/query/ZipkinQueryController.scala).
 
 Note that in cases where a non-existent resource is requested, this logic returns the contents of `index.html`. When
 loaded as a web-page, the client application will handle the problem of telling the user about this. When not,
@@ -51,7 +51,7 @@ server and webapp to work together:
 
 ```bash
 # In one terminal, build the server and also make its dependencies (run from the root of the zipkin repo)
-$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+$ mvn -DskipTests --also-make -pl zipkin-server clean install
 # Run it!
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
@@ -100,7 +100,7 @@ If this feature is activated, you'll see on the trace detail page an additional 
 
 ## How do I make errors visible in yellow or red?
 The UI interprets an "error" tag as a failed span, coloring it red. It interprets an annotation containing the substring
-"error" as a transient failure. To ensure the UI displays errors, please use the [error key](https://zipkin.io/public/thrift/v1/zipkinCore.html#Const_ERROR) appropriately.
+"error" as a transient failure. To ensure the UI displays errors, please use the [error key](https://zipkin.apache.org/public/thrift/v1/zipkinCore.html#Const_ERROR) appropriately.
 
 ## How do I adjust the error rates in the dependency graph
 

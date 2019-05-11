@@ -3,16 +3,16 @@
 [![Maven Central](https://img.shields.io/maven-central/v/org.apache.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:org.apache.zipkin%20AND%20a:zipkin-server)
 
 # zipkin
-[Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data. Zipkin’s design is based on the [Google Dapper paper](http://research.google.com/pubs/pub36356.html).
+[Zipkin](https://zipkin.apache.org) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data. Zipkin’s design is based on the [Google Dapper paper](http://research.google.com/pubs/pub36356.html).
 
 This project includes a dependency-free library and a [spring-boot](http://projects.spring.io/spring-boot/) server. Storage options include in-memory, JDBC (mysql), Cassandra, and Elasticsearch.
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=org.apache.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
 
 ```bash
-curl -sSL https://zipkin.io/quickstart.sh | bash -s
+curl -sSL https://zipkin.apache.org/quickstart.sh | bash -s
 java -jar zipkin.jar
 ```
 
@@ -23,7 +23,7 @@ docker run -d -p 9411:9411 openzipkin/zipkin
 
 Once the server is running, you can view traces with the Zipkin UI at `http://your_host:9411/zipkin/`.
 
-If your applications aren't sending traces, yet, configure them with [Zipkin instrumentation](https://zipkin.io/pages/tracers_instrumentation) or try one of our [examples](https://github.com/openzipkin?utf8=%E2%9C%93&q=example).
+If your applications aren't sending traces, yet, configure them with [Zipkin instrumentation](https://zipkin.apache.org/pages/tracers_instrumentation) or try one of our [examples](https://github.com/openzipkin?utf8=%E2%9C%93&q=example).
 
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
@@ -86,13 +86,13 @@ the v2 Zipkin model in cqlsh. It is designed for scale. For example, it
 uses a combination of SASI and manually implemented indexes to make
 querying larger data more performant.
 
-Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+Note: This store requires a [spark job](https://github.com/apache/incubator-zipkin-dependencies) to aggregate dependency links.
 
 ### Elasticsearch
 The [Elasticsearch](zipkin-storage/elasticsearch) component is tested against Elasticsearch 2-6.x.
 It stores spans as json and has been designed for larger scale.
 
-Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+Note: This store requires a [spark job](https://github.com/apache/incubator-zipkin-dependencies) to aggregate dependency links.
 
 ### Disabling search
 The following API endpoints provide search features, and are enabled by
@@ -132,7 +132,7 @@ The [Cassandra v1](zipkin-storage/cassandra-v1) component is tested
 against Cassandra 2.2+. It stores spans as opaque thrifts which means
 you can't read them in cqlsh. However, it is designed for scale. For
 example, it has manually implemented indexes to make querying larger
-data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate
+data more performant. This store requires a [spark job](https://github.com/apache/incubator-zipkin-dependencies) to aggregate
 dependency links.
 
 ## Running the server from source
@@ -143,7 +143,7 @@ To run the server from the currently checked out source, enter the
 following. JDK 8 is required.
 ```bash
 # Build the server and also make its dependencies
-$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+$ mvn -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```

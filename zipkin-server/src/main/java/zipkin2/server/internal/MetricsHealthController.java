@@ -22,9 +22,9 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.ProducesJson;
 import io.micrometer.core.instrument.Counter;
@@ -96,9 +96,9 @@ public class MetricsHealthController {
     healthJson.put("zipkin", health.getDetails().get("zipkin"));
     byte[] body = mapper.writer().writeValueAsBytes(healthJson);
 
-    HttpHeaders headers = HttpHeaders.of(statusMapper.mapStatus(health.getStatus()))
+    ResponseHeaders headers = ResponseHeaders.builder(statusMapper.mapStatus(health.getStatus()))
       .contentType(MediaType.JSON)
-      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build();
     return HttpResponse.of(headers, HttpData.of(body));
   }
 }

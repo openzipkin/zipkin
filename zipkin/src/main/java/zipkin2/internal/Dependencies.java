@@ -33,7 +33,7 @@ import static zipkin2.internal.ThriftField.TYPE_STRING;
  * Internal as only cassandra serializes the start and end timestamps along with link data, and
  * those serialized timestamps are never read.
  *
- * @deprecated See https://github.com/openzipkin/zipkin/issues/1008
+ * @deprecated See https://github.com/apache/incubator-zipkin/issues/1008
  */
 public final class Dependencies {
   static final ThriftField START_TS = new ThriftField(TYPE_I64, 1);
@@ -78,7 +78,7 @@ public final class Dependencies {
   public ByteBuffer toThrift() {
     Buffer buffer = Buffer.allocate(sizeInBytes());
     write(buffer);
-    return ByteBuffer.wrap(buffer.toByteArray());
+    return ByteBuffer.wrap(buffer.toByteArrayUnsafe());
   }
 
   int sizeInBytes() {

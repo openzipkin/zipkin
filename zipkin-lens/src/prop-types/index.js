@@ -37,7 +37,7 @@ export const spanAnnotationsPropTypes = PropTypes.arrayOf(
 );
 
 // TODO: Verify which fields we should enforce here, as some are optional per
-// https://github.com/openzipkin/zipkin-api/blob/master/zipkin2-api.yaml
+// https://github.com/apache/incubator-zipkin-api/blob/master/zipkin2-api.yaml
 export const detailedSpanPropTypes = PropTypes.shape({
   spanId: PropTypes.string.isRequired,
   spanName: PropTypes.string.isRequired,

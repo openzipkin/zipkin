@@ -18,10 +18,10 @@ package zipkin2.server.internal.ui
 
 import com.linecorp.armeria.common.AggregatedHttpMessage
 import com.linecorp.armeria.common.HttpHeaderNames
-import com.linecorp.armeria.common.HttpHeaders
 import com.linecorp.armeria.common.HttpMethod
 import com.linecorp.armeria.common.HttpRequest
 import com.linecorp.armeria.common.MediaType
+import com.linecorp.armeria.common.RequestHeaders
 import com.linecorp.armeria.server.ServiceRequestContext
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder
 import io.netty.handler.codec.http.cookie.Cookie
@@ -29,7 +29,6 @@ import io.netty.handler.codec.http.cookie.DefaultCookie
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
-import org.springframework.beans.factory.BeanCreationException
 import org.springframework.beans.factory.NoSuchBeanDefinitionException
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration
 import org.springframework.boot.test.util.TestPropertyValues
@@ -165,12 +164,12 @@ class ZipkinUiConfigurationTest {
   }
 
   private fun serveIndex(vararg cookies: Cookie): AggregatedHttpMessage {
-    val headers = HttpHeaders.of(HttpMethod.GET, "/")
+    val headers = RequestHeaders.builder(HttpMethod.GET, "/")
     val encodedCookies = ClientCookieEncoder.LAX.encode(*cookies)
     if (encodedCookies != null) {
       headers.set(HttpHeaderNames.COOKIE, encodedCookies)
     }
-    val req = HttpRequest.of(headers)
+    val req = HttpRequest.of(headers.build())
     return context.getBean(ZipkinUiConfiguration::class.java).indexSwitchingService()
       .serve(ServiceRequestContext.of(req), req).aggregate()
       .get()

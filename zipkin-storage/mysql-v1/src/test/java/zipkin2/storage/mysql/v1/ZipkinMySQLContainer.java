@@ -29,8 +29,8 @@ final class ZipkinMySQLContainer extends GenericContainer<ZipkinMySQLContainer> 
 
   MariaDbDataSource dataSource;
 
-  ZipkinMySQLContainer(String version) {
-    super("openzipkin/zipkin-mysql:" + version);
+  ZipkinMySQLContainer(String image) {
+    super(image);
     withExposedPorts(3306);
   }
 

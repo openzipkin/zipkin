@@ -58,7 +58,7 @@
 
     <dependency>
       <groupId>com.linecorp.armeria</groupId>
-      <artifactId>armeria-testing</artifactId>
+      <artifactId>armeria-testing-junit4</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>

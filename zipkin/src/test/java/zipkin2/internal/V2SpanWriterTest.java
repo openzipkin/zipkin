@@ -43,14 +43,14 @@ public class V2SpanWriterTest {
   @Test public void writes128BitTraceId() throws UnsupportedEncodingException {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
       .startsWith("{\"traceId\":\"" + CLIENT_SPAN.traceId() + "\"");
   }
 
   @Test public void writesAnnotationWithoutEndpoint() throws IOException {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
       .contains("{\"timestamp\":" + (TODAY + 100) * 1000L + ",\"value\":\"foo\"}");
   }
 
@@ -63,7 +63,7 @@ public class V2SpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
       .doesNotContain("name");
   }
 
@@ -74,14 +74,14 @@ public class V2SpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
       .contains("\"localEndpoint\":{\"ipv4\":\"127.0.0.1\"}");
   }
 
   @Test public void tagsAreAMap() throws IOException {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
       .contains("\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}");
   }
 }

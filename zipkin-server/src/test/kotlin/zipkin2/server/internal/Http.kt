@@ -50,10 +50,10 @@ object Http {
     body: ByteArray,
     headers: Headers = Headers.of()
   ): Response {
-    val body =
+    val requestBody =
       RequestBody.create(if (contentType != null) MediaType.parse(contentType) else null, body)
     val result = client.newCall(
-      Request.Builder().url(url(server, path)).headers(headers).post(body).build()).execute()
+      Request.Builder().url(url(server, path)).headers(headers).post(requestBody).build()).execute()
     return result;
   }
 

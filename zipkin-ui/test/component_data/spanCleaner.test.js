@@ -378,7 +378,7 @@ describe('mergeV2ById', () => {
   /*
    * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.
    *
-   * See https://github.com/openzipkin/zipkin/pull/1745
+   * See https://github.com/apache/incubator-zipkin/pull/1745
    */
   it('should backfill missing parent id on shared span', () => {
     const spans = mergeV2ById([
