@@ -26,6 +26,9 @@ import static zipkin2.internal.JsonCodec.UTF_8;
  * prior to writing, overrunning a buffer is a programming error.
  */
 public final class UnsafeBuffer {
+  public static final char[] HEX_DIGITS = {
+    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
+  };
 
   public static UnsafeBuffer wrap(byte[] bytes, int pos) {
     return new UnsafeBuffer(bytes, pos);
@@ -34,10 +37,6 @@ public final class UnsafeBuffer {
   public static UnsafeBuffer allocate(int sizeInBytes) {
     return new UnsafeBuffer(sizeInBytes);
   }
-
-  static final char[] HEX_DIGITS = {
-    '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
-  };
 
   private final byte[] buf;
   int pos; // visible for testing

@@ -26,6 +26,8 @@ import java.nio.ByteBuffer;
 import java.util.Locale;
 import zipkin2.internal.Nullable;
 
+import static zipkin2.internal.UnsafeBuffer.HEX_DIGITS;
+
 /** The network context of a node in the service graph. */
 //@Immutable
 public final class Endpoint implements Serializable { // for Spark and Flink jobs
@@ -436,9 +438,6 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     }
     return new String(buf, 0, pos);
   }
-
-  static final char[] HEX_DIGITS =
-    {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
   // Begin code from com.google.common.net.InetAddresses 23
   static final int IPV6_PART_COUNT = 8;

@@ -54,7 +54,7 @@ import zipkin2.Span;
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
 @Fork(3)
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Threads(1)
@@ -192,6 +192,7 @@ public class CodecBenchmarks {
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
       .include(".*" + CodecBenchmarks.class.getSimpleName())
+      .addProfiler("gc")
       .build();
 
     new Runner(opt).run();
