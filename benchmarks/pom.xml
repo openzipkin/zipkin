@@ -70,6 +70,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.google.protobuf</groupId>
+      <artifactId>protobuf-java</artifactId>
+      <version>3.7.1</version>
+    </dependency>
+
+    <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-server</artifactId>
       <version>${project.version}</version>
@@ -144,6 +150,8 @@
             <configuration combine.self="override">
               <!-- instead of javac-with-errorprone -->
               <compilerId>javac</compilerId>
+              <source>1.8</source>
+              <target>1.8</target>
               <!-- scrub errorprone compiler args -->
               <compilerArgs />
             </configuration>
