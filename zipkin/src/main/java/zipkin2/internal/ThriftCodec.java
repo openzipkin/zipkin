@@ -199,6 +199,7 @@ public final class ThriftCodec {
   }
 
   static String readUtf8(ByteBuffer bytes) {
+    // TODO: optimize out the array copy here
     return new String(readByteArray(bytes), UTF_8);
   }
 
