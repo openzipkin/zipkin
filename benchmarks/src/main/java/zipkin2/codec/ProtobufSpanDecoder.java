@@ -269,18 +269,31 @@ public class ProtobufSpanDecoder {
   static final char[] HEX_DIGITS =
     {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
+  // Reuse the buffer for decoding into hex since it's immediately copied into a String.
+  static final ThreadLocal<char[]> THIRTY_TWO_CHARS = new ThreadLocal<char[]>() {
+    @Override protected char[] initialValue() {
+      return new char[32];
+    }
+  };
+
   private static String readHexString(CodedInputStream input) throws IOException {
     int size = input.readRawVarint32();
+    int length = size * 2;
 
-    char[] result = new char[size * 2];
+    // All our hex fields are at most 32 characters.
+    if (length > 32) {
+      throw new AssertionError("hex field greater than 32 chars long: " + length);
+    }
 
-    for (int i = 0; i < result.length; i += 2) {
+    char[] result = THIRTY_TWO_CHARS.get();
+
+    for (int i = 0; i < length; i += 2) {
       byte b = input.readRawByte();
       result[i] = HEX_DIGITS[(b >> 4) & 0xf];
       result[i + 1] = HEX_DIGITS[b & 0xf];
     }
 
-    return new String(result);
+    return new String(result, 0, length);
   }
 
   static void logAndSkip(CodedInputStream input, int tag) throws IOException {

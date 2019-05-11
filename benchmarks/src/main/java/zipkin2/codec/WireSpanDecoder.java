@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import okio.Buffer;
+import okio.ByteString;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
@@ -279,8 +280,34 @@ public class WireSpanDecoder {
     return spans;
   }
 
+  static final char[] HEX_DIGITS =
+    {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+  // Reuse the buffer for decoding into hex since it's immediately copied into a String.
+  static final ThreadLocal<char[]> THIRTY_TWO_CHARS = new ThreadLocal<char[]>() {
+    @Override protected char[] initialValue() {
+      return new char[32];
+    }
+  };
+
   private static String readHexString(ProtoReader input) throws IOException {
-    return input.readBytes().hex();
+    ByteString bytes = input.readBytes();
+    int length = bytes.size() * 2;
+
+    // All our hex fields are at most 32 characters.
+    if (length > 32) {
+      throw new AssertionError("hex field greater than 32 chars long: " + length);
+    }
+
+    char[] result = THIRTY_TWO_CHARS.get();
+
+    for (int i = 0; i < bytes.size(); i ++) {
+      byte b = bytes.getByte(i);
+      result[2 * i] = HEX_DIGITS[(b >> 4) & 0xf];
+      result[2 * i + 1] = HEX_DIGITS[b & 0xf];
+    }
+
+    return new String(result, 0, length);
   }
 
   static void logAndSkip(ProtoReader input, int tag) throws IOException {

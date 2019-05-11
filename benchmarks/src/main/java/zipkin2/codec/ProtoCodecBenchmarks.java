@@ -30,7 +30,6 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -104,7 +103,7 @@ public class ProtoCodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws Exception {
     Options opt = new OptionsBuilder()
-      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName() + ".*bytebuffer_")
+      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName() + ".*bytes_zipkin.*")
       .addProfiler("gc")
       .build();
 
