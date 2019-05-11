@@ -51,7 +51,7 @@ server and webapp to work together:
 
 ```bash
 # In one terminal, build the server and also make its dependencies (run from the root of the zipkin repo)
-$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+$ mvn -DskipTests --also-make -pl zipkin-server clean install
 # Run it!
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
