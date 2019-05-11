@@ -59,7 +59,7 @@ public class BufferBenchmarks {
   @Benchmark public byte[] writeUtf8_chinese() {
     Buffer bufferUtf8 = Buffer.allocate(CHINESE_UTF8_SIZE);
     bufferUtf8.writeUtf8(CHINESE_UTF8);
-    return bufferUtf8.toByteArray();
+    return bufferUtf8.toByteArrayUnsafe();
   }
 
   @Benchmark public ByteBuffer writeUtf8_chinese_jdk() {

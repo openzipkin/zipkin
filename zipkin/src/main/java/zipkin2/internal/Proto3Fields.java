@@ -216,7 +216,9 @@ final class Proto3Fields {
     }
 
     @Override String readValue(Buffer buffer, int length) {
-      return new String(buffer.readByteArray(length), UTF_8);
+      String result = new String(buffer.toByteArrayUnsafe(), buffer.pos(), length, UTF_8);
+      buffer.skip(length);
+      return result;
     }
   }
 

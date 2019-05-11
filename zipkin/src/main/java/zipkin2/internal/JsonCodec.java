@@ -173,7 +173,7 @@ public final class JsonCodec {
     try {
       writer.write(value, b);
     } catch (RuntimeException e) {
-      byte[] bytes = b.toByteArray();
+      byte[] bytes = b.toByteArrayUnsafe();
       int lengthWritten = bytes.length;
       for (int i = 0; i < bytes.length; i++) {
         if (bytes[i] == 0) {
@@ -203,14 +203,14 @@ public final class JsonCodec {
           written);
       throw Platform.get().assertionError(message, e);
     }
-    return b.toByteArray();
+    return b.toByteArrayUnsafe();
   }
 
   public static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
     if (value.isEmpty()) return new byte[] {'[', ']'};
     Buffer result = Buffer.allocate(sizeInBytes(writer, value));
     writeList(writer, value, result);
-    return result.toByteArray();
+    return result.toByteArrayUnsafe();
   }
 
   public static <T> int writeList(Buffer.Writer<T> writer, List<T> value, byte[] out, int pos) {

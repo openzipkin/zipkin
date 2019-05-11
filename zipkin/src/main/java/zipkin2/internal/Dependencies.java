@@ -78,7 +78,7 @@ public final class Dependencies {
   public ByteBuffer toThrift() {
     Buffer buffer = Buffer.allocate(sizeInBytes());
     write(buffer);
-    return ByteBuffer.wrap(buffer.toByteArray());
+    return ByteBuffer.wrap(buffer.toByteArrayUnsafe());
   }
 
   int sizeInBytes() {

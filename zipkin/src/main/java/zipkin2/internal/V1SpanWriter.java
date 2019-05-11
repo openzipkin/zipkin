@@ -195,7 +195,7 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
     if (localEndpoint == null) return null;
     Buffer buffer = Buffer.allocate(endpointSizeInBytes(localEndpoint, true));
     V2SpanWriter.writeEndpoint(localEndpoint, buffer, true);
-    return buffer.toByteArray();
+    return buffer.toByteArrayUnsafe();
   }
 
   static int binaryAnnotationSizeInBytes(String key, String value, int endpointSize) {

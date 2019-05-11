@@ -59,9 +59,9 @@ public class Proto3SpanWriterTest {
   }
 
   @Test public void writeList_offset_startsWithSpanKeyAndLengthPrefix() {
-    writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN), buf.toByteArray(), 0);
+    writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN), buf.toByteArrayUnsafe(), 0);
 
-    assertThat(buf.toByteArray())
+    assertThat(buf.toByteArrayUnsafe())
       .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));
   }
 }
