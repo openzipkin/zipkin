@@ -1,5 +1,5 @@
 [![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
-[![Build Status](https://img.shields.io/jenkins/s/https/builds.apache.org/job/incubator-zipkin.svg)](https://builds.apache.org/blue/organizations/jenkins/incubator-zipkin)
+[![Build Status](https://builds.apache.org/view/Z/view/Zipkin/job/GH-incubator-zipkin/job/incubator-zipkin/job/master/badge/icon)](https://builds.apache.org/view/Z/view/Zipkin/job/GH-incubator-zipkin/job/incubator-zipkin/job/master/)
 [![Maven Central](https://img.shields.io/maven-central/v/org.apache.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:org.apache.zipkin%20AND%20a:zipkin-server)
 
 # zipkin
