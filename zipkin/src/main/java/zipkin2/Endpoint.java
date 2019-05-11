@@ -369,12 +369,12 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
   static final ThreadLocal<char[]> IP_BUFFER = new ThreadLocal<>();
 
   static char[] ipBuffer() {
-    char[] idBuffer = IP_BUFFER.get();
-    if (idBuffer == null) {
-      idBuffer = new char[39]; // maximum length of encoded ipv6
-      IP_BUFFER.set(idBuffer);
+    char[] ipBuffer = IP_BUFFER.get();
+    if (ipBuffer == null) {
+      ipBuffer = new char[39]; // maximum length of encoded ipv6
+      IP_BUFFER.set(ipBuffer);
     }
-    return idBuffer;
+    return ipBuffer;
   }
 
   static String writeIpV6(byte[] ipv6) {
