@@ -22,7 +22,7 @@ import zipkin2.v1.V2SpanConverter;
 
 /** This type isn't thread-safe: it re-uses state to avoid re-allocations in conversion loops. */
 // @Immutable
-public final class V1JsonSpanWriter implements Buffer.Writer<Span> {
+public final class V1JsonSpanWriter implements UnsafeBuffer.Writer<Span> {
   final V2SpanConverter converter = V2SpanConverter.create();
   final V1SpanWriter v1SpanWriter = new V1SpanWriter();
 
@@ -33,7 +33,7 @@ public final class V1JsonSpanWriter implements Buffer.Writer<Span> {
   }
 
   @Override
-  public void write(Span value, Buffer b) {
+  public void write(Span value, UnsafeBuffer b) {
     V1Span v1Span = converter.convert(value);
     v1SpanWriter.write(v1Span, b);
   }

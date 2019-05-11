@@ -19,12 +19,12 @@ package zipkin2.internal;
 import java.nio.ByteBuffer;
 import zipkin2.Endpoint;
 
-import static zipkin2.internal.Buffer.utf8SizeInBytes;
 import static zipkin2.internal.ThriftCodec.skip;
 import static zipkin2.internal.ThriftField.TYPE_I16;
 import static zipkin2.internal.ThriftField.TYPE_I32;
 import static zipkin2.internal.ThriftField.TYPE_STOP;
 import static zipkin2.internal.ThriftField.TYPE_STRING;
+import static zipkin2.internal.UnsafeBuffer.utf8SizeInBytes;
 
 final class ThriftEndpointCodec {
   static final byte[] INT_ZERO = {0, 0, 0, 0};
@@ -75,7 +75,7 @@ final class ThriftEndpointCodec {
     return sizeInBytes;
   }
 
-  static void write(Endpoint value, Buffer buffer) {
+  static void write(Endpoint value, UnsafeBuffer buffer) {
     IPV4.write(buffer);
     buffer.write(value.ipv4Bytes() != null ? value.ipv4Bytes() : INT_ZERO);
 

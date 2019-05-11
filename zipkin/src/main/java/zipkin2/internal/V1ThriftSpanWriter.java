@@ -24,7 +24,7 @@ import zipkin2.v1.V1BinaryAnnotation;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
-import static zipkin2.internal.Buffer.utf8SizeInBytes;
+import static zipkin2.internal.UnsafeBuffer.utf8SizeInBytes;
 import static zipkin2.internal.ThriftField.TYPE_BOOL;
 import static zipkin2.internal.ThriftField.TYPE_I32;
 import static zipkin2.internal.ThriftField.TYPE_I64;
@@ -35,7 +35,7 @@ import static zipkin2.internal.ThriftField.TYPE_STRUCT;
 
 /** This type isn't thread-safe: it re-uses state to avoid re-allocations in conversion loops. */
 // @Immutable
-public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
+public final class V1ThriftSpanWriter implements UnsafeBuffer.Writer<Span> {
 
   static final ThriftField TRACE_ID = new ThriftField(TYPE_I64, 1);
   static final ThriftField TRACE_ID_HIGH = new ThriftField(TYPE_I64, 12);
@@ -95,7 +95,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
   }
 
   @Override
-  public void write(Span value, Buffer buffer) {
+  public void write(Span value, UnsafeBuffer buffer) {
     V1Span v1Span = converter.convert(value);
     byte[] endpointBytes = legacyEndpointBytes(value.localEndpoint());
 
@@ -142,7 +142,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     buffer.writeByte(TYPE_STOP);
   }
 
-  static void writeAnnotations(Buffer buffer, V1Span v1Span, byte[] endpointBytes) {
+  static void writeAnnotations(UnsafeBuffer buffer, V1Span v1Span, byte[] endpointBytes) {
     int annotationCount = v1Span.annotations().size();
     ThriftCodec.writeListBegin(buffer, annotationCount);
     for (int i = 0; i < annotationCount; i++) {
@@ -151,7 +151,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     }
   }
 
-  static void writeBinaryAnnotations(Buffer buffer, V1Span v1Span, byte[] endpointBytes) {
+  static void writeBinaryAnnotations(UnsafeBuffer buffer, V1Span v1Span, byte[] endpointBytes) {
     int binaryAnnotationCount = v1Span.binaryAnnotations().size();
     ThriftCodec.writeListBegin(buffer, binaryAnnotationCount);
     for (int i = 0; i < binaryAnnotationCount; i++) {
@@ -170,22 +170,22 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return EMPTY_ARRAY;
 
-    Buffer result = Buffer.allocate(ThriftCodec.listSizeInBytes(this, spans));
+    UnsafeBuffer result = UnsafeBuffer.allocate(ThriftCodec.listSizeInBytes(this, spans));
     ThriftCodec.writeList(this, spans, result);
-    return result.toByteArrayUnsafe();
+    return result.unwrap();
   }
 
   public byte[] write(Span onlySpan) {
-    Buffer result = Buffer.allocate(sizeInBytes(onlySpan));
+    UnsafeBuffer result = UnsafeBuffer.allocate(sizeInBytes(onlySpan));
     write(onlySpan, result);
-    return result.toByteArrayUnsafe();
+    return result.unwrap();
   }
 
   public int writeList(List<Span> spans, byte[] out, int pos) {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return 0;
 
-    Buffer result = Buffer.wrap(out, pos);
+    UnsafeBuffer result = UnsafeBuffer.wrap(out, pos);
     ThriftCodec.writeList(this, spans, result);
 
     return result.pos() - pos;
@@ -193,9 +193,9 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
 
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
-    Buffer buffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(localEndpoint));
+    UnsafeBuffer buffer = UnsafeBuffer.allocate(ThriftEndpointCodec.sizeInBytes(localEndpoint));
     ThriftEndpointCodec.write(localEndpoint, buffer);
-    return buffer.toByteArrayUnsafe();
+    return buffer.unwrap();
   }
 
   static class ThriftAnnotationWriter {
@@ -213,7 +213,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
       return sizeInBytes;
     }
 
-    static void write(long timestamp, String value, byte[] endpointBytes, Buffer buffer) {
+    static void write(long timestamp, String value, byte[] endpointBytes, UnsafeBuffer buffer) {
       TIMESTAMP.write(buffer);
       ThriftCodec.writeLong(buffer, timestamp);
 
@@ -245,7 +245,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
       return sizeInBytes;
     }
 
-    static void write(String key, String stringValue, byte[] endpointBytes, Buffer buffer) {
+    static void write(String key, String stringValue, byte[] endpointBytes, UnsafeBuffer buffer) {
       KEY.write(buffer);
       ThriftCodec.writeLengthPrefixed(buffer, key);
 

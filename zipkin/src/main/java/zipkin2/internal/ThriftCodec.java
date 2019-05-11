@@ -27,7 +27,6 @@ import zipkin2.Span;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
-import static zipkin2.internal.Buffer.utf8SizeInBytes;
 import static zipkin2.internal.ThriftField.TYPE_BOOL;
 import static zipkin2.internal.ThriftField.TYPE_BYTE;
 import static zipkin2.internal.ThriftField.TYPE_DOUBLE;
@@ -40,6 +39,7 @@ import static zipkin2.internal.ThriftField.TYPE_SET;
 import static zipkin2.internal.ThriftField.TYPE_STOP;
 import static zipkin2.internal.ThriftField.TYPE_STRING;
 import static zipkin2.internal.ThriftField.TYPE_STRUCT;
+import static zipkin2.internal.UnsafeBuffer.utf8SizeInBytes;
 
 // @Immutable
 public final class ThriftCodec {
@@ -58,7 +58,7 @@ public final class ThriftCodec {
   }
 
   /** Encoding overhead is thrift type plus 32-bit length prefix */
-  static <T> int listSizeInBytes(Buffer.Writer<T> writer, List<T> values) {
+  static <T> int listSizeInBytes(UnsafeBuffer.Writer<T> writer, List<T> values) {
     int sizeInBytes = 5;
     for (int i = 0, length = values.size(); i < length; i++) {
       sizeInBytes += writer.sizeInBytes(values.get(i));
@@ -116,7 +116,7 @@ public final class ThriftCodec {
     return guardLength(bytes);
   }
 
-  static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer buffer) {
+  static <T> void writeList(UnsafeBuffer.Writer<T> writer, List<T> value, UnsafeBuffer buffer) {
     int length = value.size();
     writeListBegin(buffer, length);
     for (int i = 0; i < length; i++) {
@@ -212,25 +212,25 @@ public final class ThriftCodec {
     return length;
   }
 
-  static void writeListBegin(Buffer buffer, int size) {
+  static void writeListBegin(UnsafeBuffer buffer, int size) {
     buffer.writeByte(TYPE_STRUCT);
     writeInt(buffer, size);
   }
 
-  static void writeLengthPrefixed(Buffer buffer, String utf8) {
+  static void writeLengthPrefixed(UnsafeBuffer buffer, String utf8) {
     int ignoredLength = utf8SizeInBytes(utf8);
     writeInt(buffer, utf8SizeInBytes(utf8));
     buffer.writeUtf8(utf8);
   }
 
-  static void writeInt(Buffer buf, int v) {
+  static void writeInt(UnsafeBuffer buf, int v) {
     buf.writeByte((byte) ((v >>> 24L) & 0xff));
     buf.writeByte((byte) ((v >>> 16L) & 0xff));
     buf.writeByte((byte) ((v >>> 8L) & 0xff));
     buf.writeByte((byte) (v & 0xff));
   }
 
-  static void writeLong(Buffer buf, long v) {
+  static void writeLong(UnsafeBuffer buf, long v) {
     buf.writeByte((byte) ((v >>> 56L) & 0xff));
     buf.writeByte((byte) ((v >>> 48L) & 0xff));
     buf.writeByte((byte) ((v >>> 40L) & 0xff));

@@ -156,10 +156,10 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    Buffer zipkinBytes = Buffer.allocate(ANNOTATION.sizeInBytes(zipkinAnnotation));
+    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(ANNOTATION.sizeInBytes(zipkinAnnotation));
     ANNOTATION.write(zipkinBytes, zipkinAnnotation);
 
-    assertThat(zipkinBytes.toByteArrayUnsafe())
+    assertThat(zipkinBytes.unwrap())
       .containsExactly(wireSpan.encode());
   }
 
@@ -167,7 +167,7 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    Buffer wireBytes = Buffer.wrap(wireSpan.encode(), 0);
+    UnsafeBuffer wireBytes = UnsafeBuffer.wrap(wireSpan.encode(), 0);
     assertThat(wireBytes.readVarint32())
       .isEqualTo(ANNOTATION.key);
 
@@ -188,20 +188,20 @@ public class Proto3CodecInteropTest {
   }
 
   @Test public void localEndpoint_write_matchesWire() {
-    Buffer zipkinBytes = Buffer.allocate(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
+    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
     LOCAL_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.localEndpoint());
     Span wireSpan = new Span.Builder().local_endpoint(PROTO_SPAN.local_endpoint).build();
 
-    assertThat(zipkinBytes.toByteArrayUnsafe())
+    assertThat(zipkinBytes.unwrap())
       .containsExactly(wireSpan.encode());
   }
 
   @Test public void remoteEndpoint_write_matchesWire() {
-    Buffer zipkinBytes = Buffer.allocate(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
+    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
     REMOTE_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.remoteEndpoint());
     Span wireSpan = new Span.Builder().remote_endpoint(PROTO_SPAN.remote_endpoint).build();
 
-    assertThat(zipkinBytes.toByteArrayUnsafe())
+    assertThat(zipkinBytes.unwrap())
       .containsExactly(wireSpan.encode());
   }
 
@@ -216,22 +216,22 @@ public class Proto3CodecInteropTest {
   @Test public void writeTagField_matchesWire() {
     MapEntry<String, String> entry = entry("clnt/finagle.version", "6.45.0");
     TagField field = new TagField(TAG_KEY);
-    Buffer zipkinBytes = Buffer.allocate(field.sizeInBytes(entry));
+    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(field.sizeInBytes(entry));
     field.write(zipkinBytes, entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.toByteArrayUnsafe())
+    assertThat(zipkinBytes.unwrap())
       .containsExactly(oneField.encode());
   }
 
   @Test public void writeTagField_matchesWire_emptyValue() {
     MapEntry<String, String> entry = entry("error", "");
     TagField field = new TagField(TAG_KEY);
-    Buffer zipkinBytes = Buffer.allocate(field.sizeInBytes(entry));
+    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(field.sizeInBytes(entry));
     field.write(zipkinBytes, entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.toByteArrayUnsafe())
+    assertThat(zipkinBytes.unwrap())
       .containsExactly(oneField.encode());
   }
 

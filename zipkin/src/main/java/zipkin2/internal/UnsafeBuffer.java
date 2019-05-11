@@ -16,20 +16,134 @@
  */
 package zipkin2.internal;
 
-public abstract class Buffer {
+import static zipkin2.internal.JsonCodec.UTF_8;
 
-  public static Buffer wrap(byte[] bytes, int pos) {
-    return new ByteArrayBuffer(bytes, pos);
+/**
+ * <p>Read operations do bounds checks, as typically more errors occur reading than writing.
+ *
+ * <p>Writes are unsafe as they do no bounds checks. This means you should take care to allocate or
+ * wrap an array at least as big as you need prior to writing. As it is possible to calculate size
+ * prior to writing, overrunning a buffer is a programming error.
+ */
+public final class UnsafeBuffer {
+
+  public static UnsafeBuffer wrap(byte[] bytes, int pos) {
+    return new UnsafeBuffer(bytes, pos);
   }
 
-  public static Buffer allocate(int sizeInBytes) {
-    return new ByteArrayBuffer(sizeInBytes);
+  public static UnsafeBuffer allocate(int sizeInBytes) {
+    return new UnsafeBuffer(sizeInBytes);
   }
 
-  static final byte[] DIGITS = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9'};
   static final char[] HEX_DIGITS = {
     '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'
   };
+
+  private final byte[] buf;
+  int pos; // visible for testing
+
+  UnsafeBuffer(int size) {
+    buf = new byte[size];
+  }
+
+  UnsafeBuffer(byte[] buf, int pos) {
+    this.buf = buf;
+    this.pos = pos;
+  }
+
+  public void writeByte(int v) {
+    buf[pos++] = (byte) (v & 0xff);
+  }
+
+  public void write(byte[] v) {
+    System.arraycopy(v, 0, buf, pos, v.length);
+    pos += v.length;
+  }
+
+  void writeBackwards(long v) {
+    int lastPos = pos + asciiSizeInBytes(v); // We write backwards from right to left.
+    pos = lastPos;
+    while (v != 0) {
+      int digit = (int) (v % 10);
+      buf[--lastPos] = (byte) HEX_DIGITS[digit];
+      v /= 10;
+    }
+  }
+
+  /** Inspired by {@code okio.Buffer.writeLong} */
+  public void writeLongHex(long v) {
+    int pos = this.pos;
+    writeHexByte(buf, pos + 0, (byte) ((v >>> 56L) & 0xff));
+    writeHexByte(buf, pos + 2, (byte) ((v >>> 48L) & 0xff));
+    writeHexByte(buf, pos + 4, (byte) ((v >>> 40L) & 0xff));
+    writeHexByte(buf, pos + 6, (byte) ((v >>> 32L) & 0xff));
+    writeHexByte(buf, pos + 8, (byte) ((v >>> 24L) & 0xff));
+    writeHexByte(buf, pos + 10, (byte) ((v >>> 16L) & 0xff));
+    writeHexByte(buf, pos + 12, (byte) ((v >>> 8L) & 0xff));
+    writeHexByte(buf, pos + 14, (byte) (v & 0xff));
+    this.pos = pos + 16;
+  }
+
+  // reset for reading
+  public void reset() {
+    pos = 0;
+  }
+
+  byte[] readBytes(int length) {
+    require(length);
+    byte[] result = new byte[length];
+    System.arraycopy(buf, pos, result, 0, length);
+    pos += length;
+    return result;
+  }
+
+  String readUtf8(int length) {
+    require(length);
+    String result = new String(buf, pos, length, UTF_8);
+    pos += length;
+    return result;
+  }
+
+  String readBytesAsHex(int length) {
+    // All our hex fields are at most 32 characters.
+    if (length > 32) {
+      throw new IllegalArgumentException("hex field greater than 32 chars long: " + length);
+    }
+
+    require(length);
+    char[] result = Platform.get().idBuffer();
+
+    int hexLength = length * 2;
+    for (int i = 0; i < hexLength; i += 2) {
+      byte b = buf[pos++];
+      result[i + 0] = HEX_DIGITS[(b >> 4) & 0xf];
+      result[i + 1] = HEX_DIGITS[b & 0xf];
+    }
+    return new String(result, 0, hexLength);
+  }
+
+  int remaining() {
+    return buf.length - pos;
+  }
+
+  boolean skip(int maxCount) {
+    int nextPos = pos + maxCount;
+    if (nextPos > buf.length) {
+      pos = buf.length;
+      return false;
+    }
+    pos = nextPos;
+    return true;
+  }
+
+  public int pos() {
+    return pos;
+  }
+
+  public byte[] unwrap() {
+    // assert pos == buf.length;
+    return buf;
+  }
 
   /**
    * This returns the bytes needed to transcode a UTF-16 Java String to UTF-8 bytes.
@@ -135,13 +249,9 @@ public abstract class Buffer {
     data[pos + 1] = (byte) HEX_DIGITS[b & 0xf];
   }
 
-  public abstract void writeByte(int v);
-
-  public abstract void write(byte[] v);
-
   public void writeAscii(String v) {
-    for (int i = 0, len = v.length(); i < len; i++) {
-      writeByte(v.charAt(i));
+    for (int i = 0, length = v.length(); i < length; i++) {
+      writeByte(v.charAt(i) & 0xff);
     }
   }
 
@@ -199,6 +309,7 @@ public abstract class Buffer {
   // Adapted from okio.Buffer.writeDecimalLong
   public void writeAscii(long v) {
     if (v == 0) {
+      require(1);
       writeByte('0');
       return;
     }
@@ -215,8 +326,6 @@ public abstract class Buffer {
 
     writeBackwards(v);
   }
-
-  abstract void writeBackwards(long v);
 
   // com.squareup.wire.ProtoWriter.writeVarint v2.3.0
   void writeVarint(int v) {
@@ -236,8 +345,6 @@ public abstract class Buffer {
     writeByte((byte) v);
   }
 
-  public abstract void writeLongHex(long v);
-
   void writeLongLe(long v) {
     writeByte((byte) (v & 0xff));
     writeByte((byte) ((v >> 8) & 0xff));
@@ -249,33 +356,27 @@ public abstract class Buffer {
     writeByte((byte) ((v >> 56) & 0xff));
   }
 
-  // reset for reading
-  public abstract void reset();
-
   long readLongLe() {
-    ensureLength(this, 8);
-    return (readByteUnsafe() & 0xffL)
-      | (readByteUnsafe() & 0xffL) << 8
-      | (readByteUnsafe() & 0xffL) << 16
-      | (readByteUnsafe() & 0xffL) << 24
-      | (readByteUnsafe() & 0xffL) << 32
-      | (readByteUnsafe() & 0xffL) << 40
-      | (readByteUnsafe() & 0xffL) << 48
-      | (readByteUnsafe() & 0xffL) << 56;
+    require(8);
+    int pos = this.pos;
+    this.pos = pos + 8;
+    return (buf[pos] & 0xffL)
+      | (buf[pos + 1] & 0xffL) << 8
+      | (buf[pos + 2] & 0xffL) << 16
+      | (buf[pos + 3] & 0xffL) << 24
+      | (buf[pos + 4] & 0xffL) << 32
+      | (buf[pos + 5] & 0xffL) << 40
+      | (buf[pos + 6] & 0xffL) << 48
+      | (buf[pos + 7] & 0xffL) << 56;
   }
 
   final byte readByte() {
-    ensureLength(this, 1);
-    return readByteUnsafe();
+    require(1);
+    return buf[pos++];
   }
 
-  /** This needs to be checked externally to not overrun the underlying array */
-  abstract byte readByteUnsafe();
-
-  abstract byte[] readByteArray(int byteCount);
-
   /**
-   * @return the value read. Use {@link Buffer#varintSizeInBytes(long)} to tell how many bytes.
+   * @return the value read. Use {@link #varintSizeInBytes(long)} to tell how many bytes.
    * @throws IllegalArgumentException if more than 64 bits were encoded
    */
   // included in the main api as this is used commonly, for example reading proto tags
@@ -303,7 +404,7 @@ public abstract class Buffer {
 
     b = readByte();
     if ((b & 0xf0) != 0) {
-      throw new IllegalArgumentException("Greater than 32-bit varint at position " + (pos() - 1));
+      throw new IllegalArgumentException("Greater than 32-bit varint at position " + (pos - 1));
     }
     return result | b << 28;
   }
@@ -318,31 +419,23 @@ public abstract class Buffer {
     for (int i = 1; b < 0 && i < 10; i++) {
       b = readByte();
       if (i == 9 && (b & 0xf0) != 0) {
-        throw new IllegalArgumentException("Greater than 64-bit varint at position " + (pos() - 1));
+        throw new IllegalArgumentException("Greater than 64-bit varint at position " + (pos - 1));
       }
       result |= (long) (b & 0x7f) << (i * 7);
     }
     return result;
   }
 
-  abstract int remaining();
-
-  abstract boolean skip(int maxCount);
-
-  public abstract int pos();
-
-  public abstract byte[] toByteArrayUnsafe();
-
   public interface Writer<T> {
     int sizeInBytes(T value);
 
-    void write(T value, Buffer buffer);
+    void write(T value, UnsafeBuffer buffer);
   }
 
-  static void ensureLength(Buffer buffer, int length) {
-    if (length > buffer.remaining()) {
+  void require(int byteCount) {
+    if (pos + byteCount > buf.length) {
       throw new IllegalArgumentException(
-        "Truncated: length " + length + " > bytes remaining " + buffer.remaining());
+        "Truncated: length " + byteCount + " > bytes remaining " + remaining());
     }
   }
 }

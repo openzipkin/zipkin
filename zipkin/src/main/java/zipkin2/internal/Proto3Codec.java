@@ -46,7 +46,7 @@ public final class Proto3Codec {
 
   public static boolean read(byte[] bytes, Collection<Span> out) {
     if (bytes.length == 0) return false;
-    Buffer buffer = Buffer.wrap(bytes, 0);
+    UnsafeBuffer buffer = UnsafeBuffer.wrap(bytes, 0);
     try {
       Span span = SPAN.read(buffer);
       if (span == null) return false;
@@ -58,13 +58,13 @@ public final class Proto3Codec {
   }
 
   public static @Nullable Span readOne(byte[] bytes) {
-    return SPAN.read(Buffer.wrap(bytes, 0));
+    return SPAN.read(UnsafeBuffer.wrap(bytes, 0));
   }
 
   public static boolean readList(byte[] bytes, Collection<Span> out) {
     int length = bytes.length;
     if (length == 0) return false;
-    Buffer buffer = Buffer.wrap(bytes, 0);
+    UnsafeBuffer buffer = UnsafeBuffer.wrap(bytes, 0);
     try {
       while (buffer.pos() < length) {
         Span span = SPAN.read(buffer);

@@ -38,16 +38,16 @@ import static zipkin2.internal.ThriftField.TYPE_STRUCT;
 public class V1ThriftSpanWriterTest {
   Span span = Span.newBuilder().traceId("1").id("2").build();
   Endpoint endpoint = Endpoint.newBuilder().serviceName("frontend").ip("1.2.3.4").build();
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
+  UnsafeBuffer buf = UnsafeBuffer.allocate(2048); // bigger than needed to test sizeOf
 
   V1ThriftSpanWriter writer = new V1ThriftSpanWriter();
   byte[] endpointBytes;
 
   @Before
   public void init() {
-    Buffer endpointBuffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
+    UnsafeBuffer endpointBuffer = UnsafeBuffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
     ThriftEndpointCodec.write(endpoint, endpointBuffer);
-    endpointBytes = endpointBuffer.toByteArrayUnsafe();
+    endpointBytes = endpointBuffer.unwrap();
   }
 
 
@@ -55,9 +55,9 @@ public class V1ThriftSpanWriterTest {
   public void endpoint_highPort() {
     int highPort = 63840;
     Endpoint endpoint = Endpoint.newBuilder().ip("127.0.0.1").port(63840).build();
-    Buffer endpointBuffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
+    UnsafeBuffer endpointBuffer = UnsafeBuffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
     ThriftEndpointCodec.write(endpoint, endpointBuffer);
-    byte[] buff = endpointBuffer.toByteArrayUnsafe();
+    byte[] buff = endpointBuffer.unwrap();
 
     assertThat(buff)
       .containsSequence(TYPE_I32, 0, 1, 127, 0, 0, 1) // ipv4
@@ -103,9 +103,9 @@ public class V1ThriftSpanWriterTest {
 
   @Test
   public void writeList_offset_startsWithListPrefix() {
-    writer.writeList(asList(span, span), buf.toByteArrayUnsafe(), 1);
+    writer.writeList(asList(span, span), buf.unwrap(), 1);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .startsWith( // member type of the list and an integer with the count
             0, TYPE_STRUCT, 0, 0, 0, 2);
   }
@@ -114,10 +114,10 @@ public class V1ThriftSpanWriterTest {
   public void doesntWriteAnnotationsWhenMissingTimestamp() {
     writer.write(span.toBuilder().kind(CLIENT).build(), buf);
 
-    Buffer buf2 = Buffer.allocate(2048);
+    UnsafeBuffer buf2 = UnsafeBuffer.allocate(2048);
     writer.write(span, buf2);
 
-    assertThat(buf.toByteArrayUnsafe()).containsExactly(buf.toByteArrayUnsafe());
+    assertThat(buf.unwrap()).containsExactly(buf.unwrap());
   }
 
   @Test
@@ -144,7 +144,7 @@ public class V1ThriftSpanWriterTest {
     span = span.toBuilder().kind(kind).timestamp(5).duration(10).build();
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 2) // two annotations
         .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
         .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, begin.charAt(0), begin.charAt(1))
@@ -176,7 +176,7 @@ public class V1ThriftSpanWriterTest {
     span = span.toBuilder().kind(kind).timestamp(5).build();
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 1) // one annotation
         .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
         .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, begin.charAt(0), begin.charAt(1));
@@ -205,7 +205,7 @@ public class V1ThriftSpanWriterTest {
   void writesAddressBinaryAnnotation(Span.Kind kind, String addr) {
     writer.write(span.toBuilder().kind(kind).remoteEndpoint(endpoint).build(), buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
         .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 2, addr.charAt(0), addr.charAt(1)) // key
         .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 1, 1) // value
@@ -217,7 +217,7 @@ public class V1ThriftSpanWriterTest {
   public void annotationsHaveEndpoints() {
     writer.write(span.toBuilder().localEndpoint(endpoint).addAnnotation(5, "foo").build(), buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 1) // one annotation
         .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
         .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 3, 'f', 'o', 'o') // value
@@ -228,7 +228,7 @@ public class V1ThriftSpanWriterTest {
   public void writesTimestampAndDuration() {
     writer.write(span.toBuilder().timestamp(5).duration(10).build(), buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_I64, 0, 10, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
         .containsSequence(TYPE_I64, 0, 11, 0, 0, 0, 0, 0, 0, 0, 10); // duration
   }
@@ -237,10 +237,10 @@ public class V1ThriftSpanWriterTest {
   public void skipsTimestampAndDuration_shared() {
     writer.write(span.toBuilder().kind(SERVER).timestamp(5).duration(10).shared(true).build(), buf);
 
-    Buffer buf2 = Buffer.allocate(2048);
+    UnsafeBuffer buf2 = UnsafeBuffer.allocate(2048);
     writer.write(span.toBuilder().kind(SERVER).build(), buf2);
 
-    assertThat(buf.toByteArrayUnsafe()).containsExactly(buf.toByteArrayUnsafe());
+    assertThat(buf.unwrap()).containsExactly(buf.unwrap());
   }
 
   @Test
@@ -249,7 +249,7 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(
             ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // name (empty is 32 zero bits)
   }
@@ -258,7 +258,7 @@ public class V1ThriftSpanWriterTest {
   public void writesTraceAndSpanIds() {
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .startsWith(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1) // trace ID
         .containsSequence(TYPE_I64, 0, 4, 0, 0, 0, 0, 0, 0, 0, 2); // ID
   }
@@ -269,7 +269,7 @@ public class V1ThriftSpanWriterTest {
         Span.newBuilder().traceId("00000000000000010000000000000002").parentId("3").id("4").build(),
         buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .startsWith(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2) // trace ID
         .containsSequence(TYPE_I64, 0, 12, 0, 0, 0, 0, 0, 0, 0, 1) // trace ID high
         .containsSequence(TYPE_I64, 0, 5, 0, 0, 0, 0, 0, 0, 0, 3); // parent ID
@@ -282,7 +282,7 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 0) // empty annotations
         .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 0); // empty binary annotations
   }
@@ -293,7 +293,7 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
         .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 2, 'l', 'c') // key
         .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 0) // empty value
@@ -311,7 +311,7 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(
             ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // serviceName (empty is 32 zero bits)
   }
@@ -323,14 +323,14 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArrayUnsafe()).containsSequence(ThriftField.TYPE_BOOL, 0);
+    assertThat(buf.unwrap()).containsSequence(ThriftField.TYPE_BOOL, 0);
   }
 
   @Test
   public void tagsAreBinaryAnnotations() {
     writer.write(span.toBuilder().putTag("foo", "bar").build(), buf);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
         .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
         .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 3, 'f', 'o', 'o') // key
         .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 3, 'b', 'a', 'r') // value

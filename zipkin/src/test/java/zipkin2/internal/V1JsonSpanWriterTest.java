@@ -27,7 +27,7 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 
 public class V1JsonSpanWriterTest {
   V1JsonSpanWriter writer = new V1JsonSpanWriter();
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
+  UnsafeBuffer buf = UnsafeBuffer.allocate(2048); // bigger than needed to test sizeOf
 
   @Test
   public void sizeInBytes() {
@@ -65,7 +65,7 @@ public class V1JsonSpanWriterTest {
   }
 
   void writesCoreAnnotations(String begin, String end) throws UnsupportedEncodingException {
-    String json = new String(buf.toByteArrayUnsafe(), "UTF-8");
+    String json = new String(buf.unwrap(), "UTF-8");
 
     assertThat(json)
         .contains("{\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"value\":\"" + begin + "\"");
@@ -107,7 +107,7 @@ public class V1JsonSpanWriterTest {
   }
 
   void writesCoreSendAnnotations(String begin) throws UnsupportedEncodingException {
-    String json = new String(buf.toByteArrayUnsafe(), "UTF-8");
+    String json = new String(buf.unwrap(), "UTF-8");
 
     assertThat(json)
         .contains("{\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"value\":\"" + begin + "\"");
@@ -142,7 +142,7 @@ public class V1JsonSpanWriterTest {
   }
 
   void writesAddressBinaryAnnotation(String address) throws UnsupportedEncodingException {
-    String json = new String(buf.toByteArrayUnsafe(), "UTF-8");
+    String json = new String(buf.unwrap(), "UTF-8");
 
     assertThat(json).contains("{\"key\":\"" + address + "\",\"value\":true,\"endpoint\":");
   }
@@ -151,7 +151,7 @@ public class V1JsonSpanWriterTest {
   public void writes128BitTraceId() throws UnsupportedEncodingException {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
+    assertThat(new String(buf.unwrap(), "UTF-8"))
         .startsWith("{\"traceId\":\"" + CLIENT_SPAN.traceId() + "\"");
   }
 
@@ -159,7 +159,7 @@ public class V1JsonSpanWriterTest {
   public void annotationsHaveEndpoints() throws IOException {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
+    assertThat(new String(buf.unwrap(), "UTF-8"))
         .contains(
             "\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}");
   }
@@ -168,7 +168,7 @@ public class V1JsonSpanWriterTest {
   public void writesTimestampAndDuration() throws IOException {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
+    assertThat(new String(buf.unwrap(), "UTF-8"))
         .contains(
             "\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"duration\":" + CLIENT_SPAN.duration());
   }
@@ -177,7 +177,7 @@ public class V1JsonSpanWriterTest {
   public void skipsTimestampAndDuration_shared() throws IOException {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).shared(true).build(), buf);
 
-    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
+    assertThat(new String(buf.unwrap(), "UTF-8"))
         .doesNotContain(
             "\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"duration\":" + CLIENT_SPAN.duration());
   }
@@ -193,7 +193,7 @@ public class V1JsonSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8")).contains("\"name\":\"\"");
+    assertThat(new String(buf.unwrap(), "UTF-8")).contains("\"name\":\"\"");
   }
 
   @Test
@@ -206,7 +206,7 @@ public class V1JsonSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
+    assertThat(new String(buf.unwrap(), "UTF-8"))
         .contains("\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}");
   }
 
@@ -214,7 +214,7 @@ public class V1JsonSpanWriterTest {
   public void tagsAreBinaryAnnotations() throws IOException {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArrayUnsafe(), "UTF-8"))
+    assertThat(new String(buf.unwrap(), "UTF-8"))
         .contains(
             "\"binaryAnnotations\":["
                 + "{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},"

@@ -41,7 +41,7 @@ final class ThriftField {
     this.id = id;
   }
 
-  void write(Buffer buffer) {
+  void write(UnsafeBuffer buffer) {
     buffer.writeByte(type);
     // Write ID as a short!
     buffer.writeByte((id >>> 8L) & 0xff);
