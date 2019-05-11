@@ -16,8 +16,11 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import com.google.auto.value.AutoValue;
 import com.squareup.moshi.JsonWriter;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -42,7 +45,7 @@ public final class BulkCallBuilder {
   final boolean waitForRefresh;
 
   // Mutated for each call to index
-  final Buffer buffer = new Buffer();
+  final List<IndexEntry<?>> entries = new ArrayList<>();
 
   public BulkCallBuilder(ElasticsearchStorage es, float esVersion, String tag) {
     this.tag = tag;
@@ -50,6 +53,85 @@ public final class BulkCallBuilder {
     http = es.http();
     pipeline = es.pipeline();
     waitForRefresh = es.flushOnWrites();
+  }
+
+  static <T> IndexEntry<T> newIndexEntry(String index, String typeName, T input,
+    BulkIndexWriter<T> writer) {
+    return new AutoValue_BulkCallBuilder_IndexEntry<>(index, typeName, input, writer);
+  }
+
+  @AutoValue static abstract class IndexEntry<T> {
+    abstract String index();
+
+    abstract String typeName();
+
+    abstract T input();
+
+    abstract BulkIndexWriter<T> writer();
+  }
+
+  public <T> void index(String index, String typeName, T input, BulkIndexWriter<T> writer) {
+    entries.add(newIndexEntry(index, typeName, input, writer));
+  }
+
+  /** Creates a bulk request when there is more than one object to store */
+  public HttpCall<Void> build() {
+    HttpUrl.Builder urlBuilder = http.baseUrl.newBuilder("_bulk");
+    if (pipeline != null) urlBuilder.addQueryParameter("pipeline", pipeline);
+    if (waitForRefresh) urlBuilder.addQueryParameter("refresh", "wait_for");
+
+    RequestBody body = new BulkRequestBody(entries, shouldAddType);
+
+    Request request = new Request.Builder().url(urlBuilder.build()).tag(tag).post(body).build();
+    return http.newCall(request, CheckForErrors.INSTANCE);
+  }
+
+  /** This avoids allocating a large byte array (by using a poolable buffer instead). */
+  static final class BulkRequestBody extends RequestBody {
+    final List<IndexEntry<?>> entries;
+    final boolean shouldAddType;
+
+    BulkRequestBody(List<IndexEntry<?>> entries, boolean shouldAddType) {
+      this.entries = entries;
+      this.shouldAddType = shouldAddType;
+    }
+
+    @Override public MediaType contentType() {
+      return APPLICATION_JSON;
+    }
+
+    @Override public void writeTo(BufferedSink sink) throws IOException {
+      for (int i = 0, length = entries.size(); i < length; i++) {
+        write(sink, entries.get(i), shouldAddType);
+      }
+    }
+  }
+
+  static void write(BufferedSink sink, IndexEntry entry, boolean shouldAddType) throws IOException {
+    Buffer document = new Buffer();
+    String id = entry.writer().writeDocument(entry.input(), document);
+    writeIndexMetadata(sink, entry, id, shouldAddType);
+    sink.writeByte('\n');
+    sink.write(document, document.size());
+    sink.writeByte('\n');
+  }
+
+  static void writeIndexMetadata(BufferedSink sink, IndexEntry entry, String id,
+    boolean shouldAddType) {
+    JsonWriter jsonWriter = JsonWriter.of(sink);
+    try {
+      jsonWriter.beginObject();
+      jsonWriter.name("index");
+      jsonWriter.beginObject();
+      jsonWriter.name("_index").value(entry.index());
+      // the _type parameter is needed for Elasticsearch < 6.x
+      if (shouldAddType) jsonWriter.name("_type").value(entry.typeName());
+      jsonWriter.name("_id").value(id);
+      jsonWriter.endObject();
+      jsonWriter.endObject();
+    } catch (IOException e) {
+      throw new AssertionError(e); // No I/O writing to a Buffer.
+    }
   }
 
   enum CheckForErrors implements HttpCall.BodyConverter<Void> {
@@ -64,71 +146,6 @@ public final class BulkCallBuilder {
 
     @Override public String toString() {
       return "CheckForErrors";
-    }
-  }
-
-  public <T> void index(String index, String typeName, T input, BulkIndexWriter<T> writer) {
-    Buffer document = new Buffer();
-    String id = writer.writeDocument(input, document);
-    writeIndexMetadata(buffer, index, typeName, id);
-    buffer.writeByte('\n');
-    buffer.write(document, document.size());
-    buffer.writeByte('\n');
-  }
-
-  void writeIndexMetadata(Buffer indexBuffer, String index, String typeName, String id) {
-    JsonWriter jsonWriter = JsonWriter.of(indexBuffer);
-    try {
-      jsonWriter.beginObject();
-      jsonWriter.name("index");
-      jsonWriter.beginObject();
-      jsonWriter.name("_index").value(index);
-      // the _type parameter is needed for Elasticsearch < 6.x
-      if (shouldAddType) jsonWriter.name("_type").value(typeName);
-      jsonWriter.name("_id").value(id);
-      jsonWriter.endObject();
-      jsonWriter.endObject();
-    } catch (IOException e) {
-      throw new AssertionError(e); // No I/O writing to a Buffer.
-    }
-  }
-
-  /** Creates a bulk request when there is more than one object to store */
-  public HttpCall<Void> build() {
-    HttpUrl.Builder urlBuilder = http.baseUrl.newBuilder("_bulk");
-    if (pipeline != null) urlBuilder.addQueryParameter("pipeline", pipeline);
-    if (waitForRefresh) urlBuilder.addQueryParameter("refresh", "wait_for");
-
-    RequestBody body = new BufferRequestBody(buffer);
-
-    Request request = new Request.Builder().url(urlBuilder.build()).tag(tag).post(body).build();
-    return http.newCall(request, CheckForErrors.INSTANCE);
-  }
-
-  /** This avoids allocating a large byte array (by using a poolable buffer instead). */
-  static final class BufferRequestBody extends RequestBody {
-    final long contentLength;
-    final Buffer buffer;
-
-    BufferRequestBody(Buffer buffer) {
-      this.contentLength = buffer.size();
-      this.buffer = buffer;
-    }
-
-    @Override public MediaType contentType() {
-      return APPLICATION_JSON;
-    }
-
-    @Override public long contentLength() {
-      return contentLength;
-    }
-
-    @Override public boolean isOneShot() {
-      return true;
-    }
-
-    @Override public void writeTo(BufferedSink sink) throws IOException {
-      sink.write(buffer, contentLength);
     }
   }
 }

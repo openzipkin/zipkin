@@ -38,6 +38,7 @@ import zipkin2.Span;
 import zipkin2.codec.CodecBenchmarks;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.internal.BulkCallBuilder.IndexEntry;
 
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
@@ -50,18 +51,24 @@ public class BulkRequestBenchmarks {
   static final Span CLIENT_SPAN = SpanBytesDecoder.JSON_V2.decodeOne(read("/zipkin2-client.json"));
 
   final ElasticsearchStorage es = ElasticsearchStorage.newBuilder().build();
-  final BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
-
   final long indexTimestamp = CLIENT_SPAN.timestampAsLong() / 1000L;
   final String spanIndex =
     es.indexNameFormatter().formatTypeAndTimestampForInsert("span", '-', indexTimestamp);
+  final IndexEntry<Span> entry =
+    BulkCallBuilder.newIndexEntry(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
+
+  @Benchmark public void writeRequest_singleSpan() throws IOException {
+    BulkCallBuilder.write(Okio.buffer(Okio.blackhole()), entry, true);
+  }
 
   @Benchmark public void buildAndWriteRequest_singleSpan() throws IOException {
+    BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     builder.build().call.request().body().writeTo(Okio.buffer(Okio.blackhole()));
   }
 
   @Benchmark public void buildAndWriteRequest_tenSpans() throws IOException {
+    BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     for (int i = 0; i < 10; i++) {
       builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     }

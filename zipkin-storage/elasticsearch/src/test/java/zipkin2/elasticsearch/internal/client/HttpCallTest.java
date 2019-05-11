@@ -93,6 +93,25 @@ public class HttpCallTest {
   }
 
   @Test
+  public void cloned() throws Exception {
+    mws.enqueue(new MockResponse());
+
+    Call<?> call = http.newCall(request, b -> null);
+    call.execute();
+
+    try {
+      call.execute();
+      failBecauseExceptionWasNotThrown(IllegalStateException.class);
+    } catch (IllegalStateException expected) {
+      assertThat(expected).isInstanceOf(IllegalStateException.class);
+    }
+
+    mws.enqueue(new MockResponse());
+
+    call.clone().execute();
+  }
+
+  @Test
   public void executionException_httpFailure() throws Exception {
     mws.enqueue(new MockResponse().setResponseCode(500));
 
