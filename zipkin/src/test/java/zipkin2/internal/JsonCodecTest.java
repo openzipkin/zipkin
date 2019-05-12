@@ -17,7 +17,6 @@
 package zipkin2.internal;
 
 import java.io.IOException;
-import org.assertj.core.api.Assertions;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -34,12 +33,12 @@ public class JsonCodecTest {
     thrown.expect(AssertionError.class);
     thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a");
 
-    class FooWriter implements Buffer.Writer {
+    class FooWriter implements UnsafeBuffer.Writer {
       @Override public int sizeInBytes(Object value) {
         return 2;
       }
 
-      @Override public void write(Object value, Buffer buffer) {
+      @Override public void write(Object value, UnsafeBuffer buffer) {
         buffer.writeByte('a');
         throw new RuntimeException("buggy");
       }
@@ -59,12 +58,12 @@ public class JsonCodecTest {
     thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 2/2 bytes: ab");
 
     // pretend there was a bug calculating size, ex it calculated incorrectly as to small
-    class FooWriter implements Buffer.Writer {
+    class FooWriter implements UnsafeBuffer.Writer {
       @Override public int sizeInBytes(Object value) {
         return 2;
       }
 
-      @Override public void write(Object value, Buffer buffer) {
+      @Override public void write(Object value, UnsafeBuffer buffer) {
         buffer.writeByte('a');
         buffer.writeByte('b');
         buffer.writeByte('c'); // wrote larger than size!

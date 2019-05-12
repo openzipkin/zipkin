@@ -18,12 +18,12 @@ package zipkin2.codec;
 
 import java.util.List;
 import zipkin2.DependencyLink;
-import zipkin2.internal.Buffer;
 import zipkin2.internal.JsonCodec;
+import zipkin2.internal.UnsafeBuffer;
 
-import static zipkin2.internal.Buffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
+import static zipkin2.internal.UnsafeBuffer.asciiSizeInBytes;
 
 public enum DependencyLinkBytesEncoder implements BytesEncoder<DependencyLink> {
   JSON_V1 {
@@ -44,7 +44,7 @@ public enum DependencyLinkBytesEncoder implements BytesEncoder<DependencyLink> {
     }
   };
 
-  static final Buffer.Writer<DependencyLink> WRITER = new Buffer.Writer<DependencyLink>() {
+  static final UnsafeBuffer.Writer<DependencyLink> WRITER = new UnsafeBuffer.Writer<DependencyLink>() {
     @Override public int sizeInBytes(DependencyLink value) {
       int sizeInBytes = 37; // {"parent":"","child":"","callCount":}
       sizeInBytes += jsonEscapedSizeInBytes(value.parent());
@@ -57,7 +57,7 @@ public enum DependencyLinkBytesEncoder implements BytesEncoder<DependencyLink> {
       return sizeInBytes;
     }
 
-    @Override public void write(DependencyLink value, Buffer b) {
+    @Override public void write(DependencyLink value, UnsafeBuffer b) {
       b.writeAscii("{\"parent\":\"");
       b.writeUtf8(jsonEscape(value.parent()));
       b.writeAscii("\",\"child\":\"");

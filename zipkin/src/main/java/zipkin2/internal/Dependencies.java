@@ -22,12 +22,12 @@ import java.util.Collections;
 import java.util.List;
 import zipkin2.DependencyLink;
 
-import static zipkin2.internal.Buffer.utf8SizeInBytes;
 import static zipkin2.internal.ThriftCodec.skip;
 import static zipkin2.internal.ThriftField.TYPE_I64;
 import static zipkin2.internal.ThriftField.TYPE_LIST;
 import static zipkin2.internal.ThriftField.TYPE_STOP;
 import static zipkin2.internal.ThriftField.TYPE_STRING;
+import static zipkin2.internal.UnsafeBuffer.utf8SizeInBytes;
 
 /**
  * Internal as only cassandra serializes the start and end timestamps along with link data, and
@@ -76,9 +76,9 @@ public final class Dependencies {
 
   /** Writes the current instance in TBinaryProtocol */
   public ByteBuffer toThrift() {
-    Buffer buffer = Buffer.allocate(sizeInBytes());
+    UnsafeBuffer buffer = UnsafeBuffer.allocate(sizeInBytes());
     write(buffer);
-    return ByteBuffer.wrap(buffer.toByteArrayUnsafe());
+    return ByteBuffer.wrap(buffer.unwrap());
   }
 
   int sizeInBytes() {
@@ -90,7 +90,7 @@ public final class Dependencies {
     return sizeInBytes;
   }
 
-  void write(Buffer buffer) {
+  void write(UnsafeBuffer buffer) {
     START_TS.write(buffer);
     ThriftCodec.writeLong(buffer, startTs);
 
@@ -138,7 +138,7 @@ public final class Dependencies {
     return h;
   }
 
-  static final class DependencyLinkAdapter implements Buffer.Writer<DependencyLink> {
+  static final class DependencyLinkAdapter implements UnsafeBuffer.Writer<DependencyLink> {
 
     static final ThriftField PARENT = new ThriftField(TYPE_STRING, 1);
     static final ThriftField CHILD = new ThriftField(TYPE_STRING, 2);
@@ -181,7 +181,7 @@ public final class Dependencies {
     }
 
     @Override
-    public void write(DependencyLink value, Buffer buffer) {
+    public void write(DependencyLink value, UnsafeBuffer buffer) {
       PARENT.write(buffer);
       ThriftCodec.writeLengthPrefixed(buffer, value.parent());
 

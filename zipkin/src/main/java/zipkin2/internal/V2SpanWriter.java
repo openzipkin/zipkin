@@ -22,12 +22,12 @@ import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static zipkin2.internal.Buffer.asciiSizeInBytes;
+import static zipkin2.internal.UnsafeBuffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 
 // @Immutable
-public final class V2SpanWriter implements Buffer.Writer<Span> {
+public final class V2SpanWriter implements UnsafeBuffer.Writer<Span> {
   @Override
   public int sizeInBytes(Span value) {
     int sizeInBytes = 13; // {"traceId":""
@@ -89,7 +89,7 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
   }
 
   @Override
-  public void write(Span value, Buffer b) {
+  public void write(Span value, UnsafeBuffer b) {
     b.writeAscii("{\"traceId\":\"");
     b.writeAscii(value.traceId());
     b.writeByte('"');
@@ -192,7 +192,7 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return ++sizeInBytes; // }
   }
 
-  static void writeEndpoint(Endpoint value, Buffer b, boolean writeEmptyServiceName) {
+  static void writeEndpoint(Endpoint value, UnsafeBuffer b, boolean writeEmptyServiceName) {
     b.writeByte('{');
     boolean wroteField = false;
     String serviceName = value.serviceName();
@@ -237,7 +237,7 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return sizeInBytes;
   }
 
-  static void writeAnnotation(long timestamp, String value, @Nullable byte[] endpoint, Buffer b) {
+  static void writeAnnotation(long timestamp, String value, @Nullable byte[] endpoint, UnsafeBuffer b) {
     b.writeAscii("{\"timestamp\":");
     b.writeAscii(timestamp);
     b.writeAscii(",\"value\":\"");

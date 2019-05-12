@@ -23,7 +23,7 @@ import static zipkin2.internal.Proto3Fields.sizeOfLengthDelimitedField;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 //@Immutable
-final class Proto3SpanWriter implements Buffer.Writer<Span> {
+final class Proto3SpanWriter implements UnsafeBuffer.Writer<Span> {
 
   static final byte[] EMPTY_ARRAY = new byte[0];
 
@@ -31,7 +31,7 @@ final class Proto3SpanWriter implements Buffer.Writer<Span> {
     return SPAN.sizeInBytes(span);
   }
 
-  @Override public void write(Span value, Buffer b) {
+  @Override public void write(Span value, UnsafeBuffer b) {
     SPAN.write(b, value);
   }
 
@@ -51,22 +51,22 @@ final class Proto3SpanWriter implements Buffer.Writer<Span> {
       int sizeOfValue = sizeOfValues[i] = SPAN.sizeOfValue(spans.get(i));
       sizeInBytes += sizeOfLengthDelimitedField(sizeOfValue);
     }
-    Buffer result = Buffer.allocate(sizeInBytes);
+    UnsafeBuffer result = UnsafeBuffer.allocate(sizeInBytes);
     for (int i = 0; i < lengthOfSpans; i++) {
       writeSpan(spans.get(i), sizeOfValues[i], result);
     }
-    return result.toByteArrayUnsafe();
+    return result.unwrap();
   }
 
   byte[] write(Span onlySpan) {
     int sizeOfValue = SPAN.sizeOfValue(onlySpan);
-    Buffer result = Buffer.allocate(sizeOfLengthDelimitedField(sizeOfValue));
+    UnsafeBuffer result = UnsafeBuffer.allocate(sizeOfLengthDelimitedField(sizeOfValue));
     writeSpan(onlySpan, sizeOfValue, result);
-    return result.toByteArrayUnsafe();
+    return result.unwrap();
   }
 
   // prevents resizing twice
-  void writeSpan(Span span, int sizeOfSpan, Buffer result) {
+  void writeSpan(Span span, int sizeOfSpan, UnsafeBuffer result) {
     result.writeByte(SPAN.key);
     result.writeVarint(sizeOfSpan); // length prefix
     SPAN.writeValue(result, span);
@@ -76,7 +76,7 @@ final class Proto3SpanWriter implements Buffer.Writer<Span> {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return 0;
 
-    Buffer result = Buffer.wrap(out, pos);
+    UnsafeBuffer result = UnsafeBuffer.wrap(out, pos);
     for (int i = 0; i < lengthOfSpans; i++) {
       SPAN.write(result, spans.get(i));
     }

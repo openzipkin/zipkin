@@ -157,7 +157,7 @@ public final class JsonCodec {
     }
   }
 
-  static <T> int sizeInBytes(Buffer.Writer<T> writer, List<T> value) {
+  static <T> int sizeInBytes(UnsafeBuffer.Writer<T> writer, List<T> value) {
     int length = value.size();
     int sizeInBytes = 2; // []
     if (length > 1) sizeInBytes += length - 1; // comma to join elements
@@ -168,12 +168,12 @@ public final class JsonCodec {
   }
 
   /** Inability to encode is a programming bug. */
-  public static <T> byte[] write(Buffer.Writer<T> writer, T value) {
-    Buffer b = Buffer.allocate(writer.sizeInBytes(value));
+  public static <T> byte[] write(UnsafeBuffer.Writer<T> writer, T value) {
+    UnsafeBuffer b = UnsafeBuffer.allocate(writer.sizeInBytes(value));
     try {
       writer.write(value, b);
     } catch (RuntimeException e) {
-      byte[] bytes = b.toByteArrayUnsafe();
+      byte[] bytes = b.unwrap();
       int lengthWritten = bytes.length;
       for (int i = 0; i < bytes.length; i++) {
         if (bytes[i] == 0) {
@@ -194,29 +194,29 @@ public final class JsonCodec {
           new String(bytes, 0, lengthWritten, UTF_8));
       throw Platform.get().assertionError(message, e);
     }
-    return b.toByteArrayUnsafe();
+    return b.unwrap();
   }
 
-  public static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
+  public static <T> byte[] writeList(UnsafeBuffer.Writer<T> writer, List<T> value) {
     if (value.isEmpty()) return new byte[] {'[', ']'};
-    Buffer result = Buffer.allocate(sizeInBytes(writer, value));
+    UnsafeBuffer result = UnsafeBuffer.allocate(sizeInBytes(writer, value));
     writeList(writer, value, result);
-    return result.toByteArrayUnsafe();
+    return result.unwrap();
   }
 
-  public static <T> int writeList(Buffer.Writer<T> writer, List<T> value, byte[] out, int pos) {
+  public static <T> int writeList(UnsafeBuffer.Writer<T> writer, List<T> value, byte[] out, int pos) {
     if (value.isEmpty()) {
       out[pos++] = '[';
       out[pos++] = ']';
       return 2;
     }
     int initialPos = pos;
-    Buffer result = Buffer.wrap(out, pos);
+    UnsafeBuffer result = UnsafeBuffer.wrap(out, pos);
     writeList(writer, value, result);
     return result.pos() - initialPos;
   }
 
-  public static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {
+  public static <T> void writeList(UnsafeBuffer.Writer<T> writer, List<T> value, UnsafeBuffer b) {
     b.writeByte('[');
     for (int i = 0, length = value.size(); i < length; ) {
       writer.write(value.get(i++), b);

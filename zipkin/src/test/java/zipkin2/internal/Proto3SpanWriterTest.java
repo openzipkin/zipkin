@@ -24,7 +24,7 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 public class Proto3SpanWriterTest {
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
+  UnsafeBuffer buf = UnsafeBuffer.allocate(2048); // bigger than needed to test sizeOf
 
   Proto3SpanWriter writer = new Proto3SpanWriter();
 
@@ -59,9 +59,9 @@ public class Proto3SpanWriterTest {
   }
 
   @Test public void writeList_offset_startsWithSpanKeyAndLengthPrefix() {
-    writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN), buf.toByteArrayUnsafe(), 0);
+    writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN), buf.unwrap(), 0);
 
-    assertThat(buf.toByteArrayUnsafe())
+    assertThat(buf.unwrap())
       .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));
   }
 }

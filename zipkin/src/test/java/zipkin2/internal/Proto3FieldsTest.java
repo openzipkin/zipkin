@@ -35,7 +35,7 @@ import static zipkin2.internal.Proto3Fields.WIRETYPE_LENGTH_DELIMITED;
 import static zipkin2.internal.Proto3Fields.WIRETYPE_VARINT;
 
 public class Proto3FieldsTest {
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
+  UnsafeBuffer buf = UnsafeBuffer.allocate(2048); // bigger than needed to test sizeOf
 
   /** Shows we can reliably look at a byte zero to tell if we are decoding proto3 repeated fields. */
   @Test public void field_key_fieldOneLengthDelimited() {
@@ -185,7 +185,7 @@ public class Proto3FieldsTest {
 
   @Test public void field_readLengthPrefixAndValue_LENGTH_DELIMITED_truncated() {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
-    buf = Buffer.allocate(10);
+    buf = UnsafeBuffer.allocate(10);
     buf.writeVarint(100); // much larger than the buffer size
     buf.reset();
 

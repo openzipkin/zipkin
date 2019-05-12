@@ -41,7 +41,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Threads(1)
-public class BufferBenchmarks {
+public class UnsafeBufferBenchmarks {
   static final Charset UTF_8 = Charset.forName("UTF-8");
   // Order id = d07c4daa-0fa9-4c03-90b1-e06c4edae250 doesn't exist
   static final String CHINESE_UTF8 = "订单d07c4daa-0fa9-4c03-90b1-e06c4edae250不存在";
@@ -50,16 +50,16 @@ public class BufferBenchmarks {
   static final int TEST_INT = 1024;
   /* epoch micros timestamp */
   static final long TEST_LONG = 1472470996199000L;
-  Buffer buffer = Buffer.allocate(8);
+  UnsafeBuffer buffer = UnsafeBuffer.allocate(8);
 
   @Benchmark public int utf8SizeInBytes_chinese() {
-    return Buffer.utf8SizeInBytes(CHINESE_UTF8);
+    return UnsafeBuffer.utf8SizeInBytes(CHINESE_UTF8);
   }
 
   @Benchmark public byte[] writeUtf8_chinese() {
-    Buffer bufferUtf8 = Buffer.allocate(CHINESE_UTF8_SIZE);
+    UnsafeBuffer bufferUtf8 = UnsafeBuffer.allocate(CHINESE_UTF8_SIZE);
     bufferUtf8.writeUtf8(CHINESE_UTF8);
-    return bufferUtf8.toByteArrayUnsafe();
+    return bufferUtf8.unwrap();
   }
 
   @Benchmark public ByteBuffer writeUtf8_chinese_jdk() {
@@ -67,11 +67,11 @@ public class BufferBenchmarks {
   }
 
   @Benchmark public int varIntSizeInBytes_32() {
-    return Buffer.varintSizeInBytes(TEST_INT);
+    return UnsafeBuffer.varintSizeInBytes(TEST_INT);
   }
 
   @Benchmark public int varIntSizeInBytes_64() {
-    return Buffer.varintSizeInBytes(TEST_LONG);
+    return UnsafeBuffer.varintSizeInBytes(TEST_LONG);
   }
 
   @Benchmark public int writeVarint_32() {
@@ -95,7 +95,7 @@ public class BufferBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-      .include(".*" + BufferBenchmarks.class.getSimpleName() + ".*")
+      .include(".*" + UnsafeBufferBenchmarks.class.getSimpleName() + ".*")
       .build();
 
     new Runner(opt).run();

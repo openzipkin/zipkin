@@ -99,6 +99,6 @@ public final class JsonEscaper {
       }
     }
     if (ascii) return v.length() + escapingOverhead;
-    return Buffer.utf8SizeInBytes(v) + escapingOverhead;
+    return UnsafeBuffer.utf8SizeInBytes(v) + escapingOverhead;
   }
 }
