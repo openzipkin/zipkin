@@ -16,6 +16,10 @@
  */
 package zipkin2;
 
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
+import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -46,6 +50,7 @@ public class SpanBenchmarks {
     Endpoint.newBuilder().serviceName("frontend").ip("127.0.0.1").build();
   static final Endpoint BACKEND =
     Endpoint.newBuilder().serviceName("backend").ip("192.168.99.101").port(9000).build();
+  static final Span clientSpan = buildClientSpan(Span.newBuilder());
 
   final Span.Builder sharedBuilder;
 
@@ -111,6 +116,31 @@ public class SpanBenchmarks {
   @Benchmark
   public Span buildClientSpan_clone() {
     return sharedBuilder.clone().build();
+  }
+
+  static final Kryo kryo = new Kryo();
+  static final byte[] clientSpanSerialized;
+
+  static {
+    kryo.register(Span.class, new JavaSerializer());
+    Output output = new Output(4096);
+    kryo.writeObject(output, clientSpan);
+    output.flush();
+    clientSpanSerialized = output.getBuffer();
+  }
+
+  /** manually implemented with json so not as slow as normal java */
+  @Benchmark
+  public Span serialize_kryo() {
+    return kryo.readObject(new Input(clientSpanSerialized), Span.class);
+  }
+
+  @Benchmark
+  public byte[] deserialize_kryo() {
+    Output output = new Output(clientSpanSerialized.length);
+    kryo.writeObject(output, clientSpan);
+    output.flush();
+    return output.getBuffer();
   }
 
   // Convenience main entry-point

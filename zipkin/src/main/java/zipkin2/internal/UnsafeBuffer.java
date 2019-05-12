@@ -98,9 +98,23 @@ public final class UnsafeBuffer {
 
   String readUtf8(int length) {
     require(length);
-    String result = new String(buf, pos, length, UTF_8);
+    String result = maybeDecodeShortAsciiString(buf, pos, length);
+    if (result == null) result = new String(buf, pos, length, UTF_8);
     pos += length;
     return result;
+  }
+
+  // Speculatively assume all 7-bit ASCII characters.. common in normal tags and names
+  @Nullable static String maybeDecodeShortAsciiString(byte[] buf, int offset, int length) {
+    if (length == 0) return ""; // ex error tag with no value
+    if (length > Platform.SHORT_STRING_LENGTH) return null;
+    char[] buffer = Platform.shortStringBuffer();
+    for (int i = 0; i < length; i++) {
+      byte b = buf[offset + i];
+      if ((b & 0x80) != 0) return null; // Not 7-bit ASCII character
+      buffer[i] = (char) b;
+    }
+    return new String(buffer, 0, length);
   }
 
   String readBytesAsHex(int length) {
@@ -110,7 +124,7 @@ public final class UnsafeBuffer {
     }
 
     require(length);
-    char[] result = Platform.get().idBuffer();
+    char[] result = Platform.shortStringBuffer();
 
     int hexLength = length * 2;
     for (int i = 0; i < hexLength; i += 2) {

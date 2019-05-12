@@ -124,13 +124,9 @@ final class Proto3Fields {
      * is returned when the length prefix is zero.
      */
     final T readLengthPrefixAndValue(UnsafeBuffer b) {
-      int length = readLengthPrefix(b);
+      int length = b.readVarint32();
       if (length == 0) return null;
       return readValue(b, length);
-    }
-
-    final int readLengthPrefix(UnsafeBuffer b) {
-      return b.readVarint32();
     }
 
     abstract int sizeOfValue(T value);

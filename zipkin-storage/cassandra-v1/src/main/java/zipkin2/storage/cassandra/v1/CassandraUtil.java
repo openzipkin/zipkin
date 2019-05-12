@@ -37,22 +37,18 @@ import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.Platform;
+import zipkin2.internal.UnsafeBuffer;
 import zipkin2.storage.QueryRequest;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 final class CassandraUtil {
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static final List<String> CORE_ANNOTATIONS =
       ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
-
-  /**
-   * Zipkin's {@link QueryRequest#annotationQuery()} are equals match. Not all tags are lookup keys.
-   * For example, sql query isn't something that is likely to be looked up by value and indexing
-   * that could add a potentially kilobyte partition key on {@link Tables#ANNOTATIONS_INDEX}
-   */
-  static final int LONGEST_VALUE_TO_INDEX = 256;
 
   private static final ThreadLocal<CharsetEncoder> UTF8_ENCODER =
       new ThreadLocal<CharsetEncoder>() {
@@ -73,6 +69,11 @@ final class CassandraUtil {
   /**
    * Returns keys that concatenate the serviceName associated with an annotation or tag.
    *
+   * <p>Values over {@link Platform#SHORT_STRING_LENGTH} are not considered. Zipkin's {@link
+   * QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
+   * example, {@code sql.query} isn't something that is likely to be looked up by value and indexing
+   * that could add a potentially kilobyte partition key on {@link Tables#ANNOTATIONS_INDEX}
+   *
    * @see QueryRequest#annotationQuery()
    */
   static Set<String> annotationKeys(Span span) {
@@ -80,15 +81,17 @@ final class CassandraUtil {
     String localServiceName = span.localServiceName();
     if (localServiceName == null) return Collections.emptySet();
     for (Annotation a : span.annotations()) {
+      if (a.value().length() > SHORT_STRING_LENGTH) continue;
+
       // don't index core annotations as they aren't queryable
       if (CORE_ANNOTATIONS.contains(a.value())) continue;
       annotationKeys.add(localServiceName + ":" + a.value());
     }
     for (Map.Entry<String, String> e : span.tags().entrySet()) {
-      if (e.getValue().length() <= LONGEST_VALUE_TO_INDEX) {
-        annotationKeys.add(localServiceName + ":" + e.getKey());
-        annotationKeys.add(localServiceName + ":" + e.getKey() + ":" + e.getValue());
-      }
+      if (e.getValue().length() > SHORT_STRING_LENGTH) continue;
+
+      annotationKeys.add(localServiceName + ":" + e.getKey());
+      annotationKeys.add(localServiceName + ":" + e.getKey() + ":" + e.getValue());
     }
     return annotationKeys;
   }

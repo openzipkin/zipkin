@@ -416,7 +416,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
      */
     public Builder traceId(long high, long low) {
       if (high == 0L && low == 0L) throw new IllegalArgumentException("empty trace ID");
-      char[] data = Platform.get().idBuffer();
+      char[] data = Platform.shortStringBuffer();
       int pos = 0;
       if (high != 0L) {
         writeHexLong(data, pos, high);
@@ -660,7 +660,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   }
 
   static String padLeft(String id, int desiredLength) {
-    char[] data = Platform.get().idBuffer();
+    char[] data = Platform.shortStringBuffer();
     int i = 0, length = id.length(), offset = desiredLength - length;
     for (; i < offset; i++) data[i] = '0';
     for (int j = 0; j < length; j++) data[i++] = id.charAt(j);
@@ -668,7 +668,7 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   }
 
   static String toLowerHex(long v) {
-    char[] data = Platform.get().idBuffer();
+    char[] data = Platform.shortStringBuffer();
     writeHexLong(data, 0, v);
     return new String(data, 0, 16);
   }

@@ -25,6 +25,7 @@ import java.net.InetAddress;
 import java.nio.ByteBuffer;
 import java.util.Locale;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.Platform;
 
 import static zipkin2.internal.UnsafeBuffer.HEX_DIGITS;
 
@@ -198,7 +199,7 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     }
 
     static String writeIpV4(byte[] ipBytes) {
-      char[] buf = ipBuffer();
+      char[] buf = Platform.shortStringBuffer();
       int pos = 0;
       pos = writeBackwards(ipBytes[0] & 0xff, pos, buf);
       buf[pos++] = '.';
@@ -368,20 +369,9 @@ public final class Endpoint implements Serializable { // for Spark and Flink job
     return (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F');
   }
 
-  static final ThreadLocal<char[]> IP_BUFFER = new ThreadLocal<>();
-
-  static char[] ipBuffer() {
-    char[] ipBuffer = IP_BUFFER.get();
-    if (ipBuffer == null) {
-      ipBuffer = new char[39]; // maximum length of encoded ipv6
-      IP_BUFFER.set(ipBuffer);
-    }
-    return ipBuffer;
-  }
-
   static String writeIpV6(byte[] ipv6) {
     int pos = 0;
-    char[] buf = ipBuffer();
+    char[] buf = Platform.shortStringBuffer();
 
     // Compress the longest string of zeros
     int zeroCompressionIndex = -1;

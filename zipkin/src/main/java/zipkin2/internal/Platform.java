@@ -27,23 +27,25 @@ import org.jvnet.animal_sniffer.IgnoreJRERequirement;
 public abstract class Platform {
   private static final Platform PLATFORM = findPlatform();
 
-  private static final ThreadLocal<char[]> ID_BUFFER = new ThreadLocal<>();
-
   Platform() {
   }
 
+  static final ThreadLocal<char[]> SHORT_STRING_BUFFER = new ThreadLocal<>();
+  /** Maximum character length constraint of most names, IP literals and IDs. */
+  public static final int SHORT_STRING_LENGTH = 256;
+
   /**
-   * Returns a {@link ThreadLocal} reused {@code char[]} for use when decoding bytes into a hex
-   * string. The buffer should be immediately copied into a {@link String} after decoding within the
-   * same method.
+   * Returns a {@link ThreadLocal} reused {@code char[]} for use when decoding bytes into hex, IP
+   * literals, or {@link #SHORT_STRING_LENGTH short strings}. The buffer must never be leaked
+   * outside the method. Most will {@link String#String(char[], int, int) copy it into a string}.
    */
-  public char[] idBuffer() {
-    char[] idBuffer = ID_BUFFER.get();
-    if (idBuffer == null) {
-      idBuffer = new char[32];
-      ID_BUFFER.set(idBuffer);
+  public static char[] shortStringBuffer() {
+    char[] shortStringBuffer = SHORT_STRING_BUFFER.get();
+    if (shortStringBuffer == null) {
+      shortStringBuffer = new char[SHORT_STRING_LENGTH];
+      SHORT_STRING_BUFFER.set(shortStringBuffer);
     }
-    return idBuffer;
+    return shortStringBuffer;
   }
 
   public RuntimeException uncheckedIOException(IOException e) {

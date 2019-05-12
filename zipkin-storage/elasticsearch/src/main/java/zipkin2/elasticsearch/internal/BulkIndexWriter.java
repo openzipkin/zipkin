@@ -28,7 +28,7 @@ import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static zipkin2.elasticsearch.internal.BulkCallBuilder.INDEX_CHARS_LIMIT;
+import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 public abstract class BulkIndexWriter<T> {
 
@@ -163,12 +163,12 @@ public abstract class BulkIndexWriter<T> {
       writer.name("_q");
       writer.beginArray();
       for (Annotation a : span.annotations()) {
-        if (a.value().length() > INDEX_CHARS_LIMIT) continue;
+        if (a.value().length() > SHORT_STRING_LENGTH) continue;
         writer.value(a.value());
       }
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
         int length = tag.getKey().length() + tag.getValue().length() + 1;
-        if (length > INDEX_CHARS_LIMIT) continue;
+        if (length > SHORT_STRING_LENGTH) continue;
         writer.value(tag.getKey()); // search is possible by key alone
         writer.value(tag.getKey() + "=" + tag.getValue());
       }
