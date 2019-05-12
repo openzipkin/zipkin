@@ -139,7 +139,7 @@ final class Proto3ZipkinFields {
     }
 
     @Override boolean readLengthPrefixAndValue(UnsafeBuffer b, Span.Builder builder) {
-      int length = guardLength(b);
+      int length = b.readVarint32();
       if (length == 0) return false;
       int endPos = b.pos() + length;
 
@@ -187,7 +187,7 @@ final class Proto3ZipkinFields {
     }
 
     @Override boolean readLengthPrefixAndValue(UnsafeBuffer b, Span.Builder builder) {
-      int length = guardLength(b);
+      int length = b.readVarint32();
       if (length == 0) return false;
       int endPos = b.pos() + length;
 
@@ -315,6 +315,7 @@ final class Proto3ZipkinFields {
     }
 
     @Override Span readValue(UnsafeBuffer buffer, int length) {
+      buffer.require(length); // more convenient to check up-front vs partially read
       int endPos = buffer.pos() + length;
 
       // now, we are in the span fields

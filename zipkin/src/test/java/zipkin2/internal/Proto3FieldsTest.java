@@ -179,7 +179,7 @@ public class Proto3FieldsTest {
     buf.reset();
     buf.skip(1); // skip the key
 
-    assertThat(field.guardLength(buf))
+    assertThat(buf.readVarint32())
       .isEqualTo(10);
   }
 

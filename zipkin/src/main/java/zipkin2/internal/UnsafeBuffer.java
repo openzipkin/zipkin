@@ -105,7 +105,7 @@ public final class UnsafeBuffer {
   }
 
   // Speculatively assume all 7-bit ASCII characters.. common in normal tags and names
-  static String maybeDecodeShortAsciiString(byte[] buf, int offset, int length) {
+  @Nullable static String maybeDecodeShortAsciiString(byte[] buf, int offset, int length) {
     if (length == 0) return ""; // ex error tag with no value
     if (length > Platform.SHORT_STRING_LENGTH) return null;
     char[] buffer = Platform.shortStringBuffer();
@@ -124,7 +124,7 @@ public final class UnsafeBuffer {
     }
 
     require(length);
-    char[] result = Platform.get().shortStringBuffer();
+    char[] result = Platform.shortStringBuffer();
 
     int hexLength = length * 2;
     for (int i = 0; i < hexLength; i += 2) {
