@@ -32,10 +32,11 @@ import java.util.logging.Logger;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.Platform;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINEST;
-import static zipkin2.Endpoint.HEX_DIGITS;
+import static zipkin2.internal.UnsafeBuffer.HEX_DIGITS;
 
 /**
  * A span is a single-host view of an operation. A trace is a series of spans (often RPC calls)
@@ -415,14 +416,14 @@ public final class Span implements Serializable { // for Spark and Flink jobs
      */
     public Builder traceId(long high, long low) {
       if (high == 0L && low == 0L) throw new IllegalArgumentException("empty trace ID");
-      char[] result = new char[high != 0L ? 32 : 16];
+      char[] data = Platform.get().idBuffer();
       int pos = 0;
       if (high != 0L) {
-        writeHexLong(result, pos, high);
+        writeHexLong(data, pos, high);
         pos += 16;
       }
-      writeHexLong(result, pos, low);
-      this.traceId = new String(result);
+      writeHexLong(data, pos, low);
+      this.traceId = new String(data, 0, high != 0L ? 32 : 16);
       return this;
     }
 
@@ -659,18 +660,17 @@ public final class Span implements Serializable { // for Spark and Flink jobs
   }
 
   static String padLeft(String id, int desiredLength) {
-    StringBuilder builder = new StringBuilder(desiredLength);
-    int offset = desiredLength - id.length();
-
-    for (int i = 0; i < offset; i++) builder.append('0');
-    builder.append(id);
-    return builder.toString();
+    char[] data = Platform.get().idBuffer();
+    int i = 0, length = id.length(), offset = desiredLength - length;
+    for (; i < offset; i++) data[i] = '0';
+    for (int j = 0; j < length; j++) data[i++] = id.charAt(j);
+    return new String(data, 0, desiredLength);
   }
 
   static String toLowerHex(long v) {
-    char[] data = new char[16];
+    char[] data = Platform.get().idBuffer();
     writeHexLong(data, 0, v);
-    return new String(data);
+    return new String(data, 0, 16);
   }
 
   /** Inspired by {@code okio.Buffer.writeLong} */

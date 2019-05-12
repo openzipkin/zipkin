@@ -32,13 +32,15 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
+
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
 @Fork(3)
-@BenchmarkMode(Mode.Throughput)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
-@Threads(1)
+@Threads(2)
 public class SpanBenchmarks {
   static final Endpoint FRONTEND =
     Endpoint.newBuilder().serviceName("frontend").ip("127.0.0.1").build();
@@ -51,12 +53,18 @@ public class SpanBenchmarks {
     sharedBuilder = buildClientSpan().toBuilder();
   }
 
-  static final String traceIdHex = "86154a4ba6e91385";
-  static final String spanIdHex = "4d1e00c0db9010db";
+  static final String traceIdHex = "86154a4ba6e91385", spanIdHex = "4d1e00c0db9010db";
+  static final long traceId = lowerHexToUnsignedLong(traceIdHex);
+  static final long spanId = lowerHexToUnsignedLong(spanIdHex);
 
   @Benchmark
   public Span buildClientSpan() {
     return buildClientSpan(Span.newBuilder());
+  }
+
+  @Benchmark
+  public Span buildClientSpan_longs() {
+    return buildClientSpan_longs(Span.newBuilder());
   }
 
   static Span buildClientSpan(Span.Builder builder) {
@@ -64,6 +72,24 @@ public class SpanBenchmarks {
       .traceId(traceIdHex)
       .parentId(traceIdHex)
       .id(spanIdHex)
+      .name("get")
+      .kind(Span.Kind.CLIENT)
+      .localEndpoint(FRONTEND)
+      .remoteEndpoint(BACKEND)
+      .timestamp(1472470996199000L)
+      .duration(207000L)
+      .addAnnotation(1472470996238000L, "ws")
+      .addAnnotation(1472470996403000L, "wr")
+      .putTag("http.path", "/api")
+      .putTag("clnt/finagle.version", "6.45.0")
+      .build();
+  }
+
+  static Span buildClientSpan_longs(Span.Builder builder) {
+    return builder
+      .traceId(0L, traceId)
+      .parentId(traceId)
+      .id(spanId)
       .name("get")
       .kind(Span.Kind.CLIENT)
       .localEndpoint(FRONTEND)
@@ -91,6 +117,7 @@ public class SpanBenchmarks {
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
       .include(".*" + SpanBenchmarks.class.getSimpleName() + ".*")
+      .addProfiler("gc")
       .build();
 
     new Runner(opt).run();
