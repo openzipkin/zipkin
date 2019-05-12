@@ -35,7 +35,6 @@ import zipkin2.elasticsearch.internal.client.HttpCall;
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class BulkCallBuilder {
-  public static final int INDEX_CHARS_LIMIT = 256;
   static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   final String tag;

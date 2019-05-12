@@ -17,6 +17,7 @@
 package zipkin2.codec;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Rule;
@@ -40,6 +41,22 @@ public class SpanBytesDecoderTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
+  @Test public void niceErrorOnTruncatedSpans_PROTO3() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Truncated: length 66 > bytes remaining 8 reading List<Span> from proto3");
+
+    byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(TRACE);
+    SpanBytesDecoder.PROTO3.decodeList(Arrays.copyOfRange(encoded, 0, 10));
+  }
+
+  @Test public void niceErrorOnTruncatedSpan_PROTO3() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Truncated: length 179 > bytes remaining 7 reading Span from proto3");
+
+    byte[] encoded = SpanBytesEncoder.PROTO3.encode(SPAN);
+    SpanBytesDecoder.PROTO3.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
+  }
+
   @Test public void emptyListOk_JSON_V1() {
     assertThat(SpanBytesDecoder.JSON_V1.decodeList(new byte[0]))
       .isEmpty(); // instead of throwing an exception
@@ -56,15 +73,6 @@ public class SpanBytesDecoderTest {
 
   @Test public void emptyListOk_PROTO3() {
     assertThat(SpanBytesDecoder.PROTO3.decodeList(new byte[0]))
-      .isEmpty(); // instead of throwing an exception
-  }
-
-  @Test public void emptyListOk_THRIFT() {
-    assertThat(SpanBytesDecoder.THRIFT.decodeList(new byte[0]))
-      .isEmpty(); // instead of throwing an exception
-
-    byte[] emptyListLiteral = {12 /* TYPE_STRUCT */, 0, 0, 0, 0 /* zero length */};
-    assertThat(SpanBytesDecoder.THRIFT.decodeList(emptyListLiteral))
       .isEmpty(); // instead of throwing an exception
   }
 
@@ -164,7 +172,7 @@ public class SpanBytesDecoderTest {
 
   @Test public void niceErrorOnMalformed_inputSpans_PROTO3() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Malformed reading List<Span> from proto3");
+    thrown.expectMessage("Truncated: length 101 > bytes remaining 3 reading List<Span> from proto3");
 
     SpanBytesDecoder.PROTO3.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }

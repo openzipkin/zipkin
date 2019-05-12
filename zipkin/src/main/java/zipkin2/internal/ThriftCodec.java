@@ -127,8 +127,9 @@ public final class ThriftCodec {
   static IllegalArgumentException exceptionReading(String type, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
     if (e instanceof EOFException) cause = "EOF";
-    if (e instanceof IllegalStateException || e instanceof BufferUnderflowException)
+    if (e instanceof IllegalStateException || e instanceof BufferUnderflowException) {
       cause = "Malformed";
+    }
     String message = String.format("%s reading %s from TBinary", cause, type);
     throw new IllegalArgumentException(message, e);
   }
@@ -187,29 +188,59 @@ public final class ThriftCodec {
   static void skip(ByteBuffer bytes, int count) {
     // avoid java.lang.NoSuchMethodError: java.nio.ByteBuffer.position(I)Ljava/nio/ByteBuffer;
     // bytes.position(bytes.position() + count);
-    for (int i = 0; i< count && bytes.hasRemaining(); i++) {
+    for (int i = 0; i < count && bytes.hasRemaining(); i++) {
       bytes.get();
     }
   }
 
   static byte[] readByteArray(ByteBuffer bytes) {
-    byte[] result = new byte[guardLength(bytes)];
-    bytes.get(result);
-    return result;
+    return readByteArray(bytes, guardLength(bytes));
+  }
+
+  static final String ONE = Character.toString((char) 1);
+
+  static byte[] readByteArray(ByteBuffer bytes, int length) {
+    byte[] copy = new byte[length];
+    if (!bytes.hasArray()) {
+      bytes.get(copy);
+      return copy;
+    }
+
+    byte[] original = bytes.array();
+    int offset = bytes.arrayOffset() + bytes.position();
+    System.arraycopy(original, offset, copy, 0, length);
+    bytes.position(bytes.position() + length);
+    return copy;
   }
 
   static String readUtf8(ByteBuffer bytes) {
-    // TODO: optimize out the array copy here
-    return new String(readByteArray(bytes), UTF_8);
+    int length = guardLength(bytes);
+    if (length == 0) return ""; // ex empty name
+    if (length == 1) {
+      byte single = bytes.get();
+      if (single == 1) return ONE; // special case for address annotations
+      return Character.toString((char) single);
+    }
+
+    if (!bytes.hasArray()) return new String(readByteArray(bytes, length), UTF_8);
+
+    int offset = bytes.arrayOffset() + bytes.position();
+    String result = UnsafeBuffer.wrap(bytes.array(), offset).readUtf8(length);
+    bytes.position(bytes.position() + length);
+    return result;
   }
 
   static int guardLength(ByteBuffer buffer) {
     int length = buffer.getInt();
+    guardLength(buffer, length);
+    return length;
+  }
+
+  static void guardLength(ByteBuffer buffer, int length) {
     if (length > buffer.remaining()) {
       throw new IllegalArgumentException(
-          "Truncated: length " + length + " > bytes remaining " + buffer.remaining());
+        "Truncated: length " + length + " > bytes remaining " + buffer.remaining());
     }
-    return length;
   }
 
   static void writeListBegin(UnsafeBuffer buffer, int size) {

@@ -26,6 +26,7 @@ import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
+import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 /** Returns a version-specific span and dependency index template */
 final class VersionSpecificTemplates {
@@ -109,7 +110,8 @@ final class VersionSpecificTemplates {
         + "      {\n"
         + "        \"strings\": {\n"
         + "          \"mapping\": {\n"
-        + "            \"type\": \"keyword\",\"norms\": false, \"ignore_above\": 256\n"
+        + "            \"type\": \"keyword\",\"norms\": false,"
+        + " \"ignore_above\": " + SHORT_STRING_LENGTH + "\n"
         + "          },\n"
         + "          \"match_mapping_type\": \"string\",\n"
         + "          \"match\": \"*\"\n"

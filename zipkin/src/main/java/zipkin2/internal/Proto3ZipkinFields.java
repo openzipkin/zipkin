@@ -139,7 +139,7 @@ final class Proto3ZipkinFields {
     }
 
     @Override boolean readLengthPrefixAndValue(UnsafeBuffer b, Span.Builder builder) {
-      int length = readLengthPrefix(b);
+      int length = guardLength(b);
       if (length == 0) return false;
       int endPos = b.pos() + length;
 
@@ -187,7 +187,7 @@ final class Proto3ZipkinFields {
     }
 
     @Override boolean readLengthPrefixAndValue(UnsafeBuffer b, Span.Builder builder) {
-      int length = readLengthPrefix(b);
+      int length = guardLength(b);
       if (length == 0) return false;
       int endPos = b.pos() + length;
 

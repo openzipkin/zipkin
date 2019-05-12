@@ -31,7 +31,7 @@ import zipkin2.storage.SpanConsumer;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.internal.BulkCallBuilder.INDEX_CHARS_LIMIT;
+import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
 
@@ -107,7 +107,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
       String idx = consumer.formatTypeAndTimestampForInsert(AUTOCOMPLETE, indexTimestamp);
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
         int length = tag.getKey().length() + tag.getValue().length() + 1;
-        if (length > INDEX_CHARS_LIMIT) continue;
+        if (length > SHORT_STRING_LENGTH) continue;
 
         // If the autocomplete whitelist doesn't contain the key, skip storing its value
         if (!consumer.autocompleteKeys.contains(tag.getKey())) continue;

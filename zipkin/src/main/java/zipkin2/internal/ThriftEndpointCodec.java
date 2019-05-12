@@ -19,6 +19,7 @@ package zipkin2.internal;
 import java.nio.ByteBuffer;
 import zipkin2.Endpoint;
 
+import static zipkin2.internal.ThriftCodec.guardLength;
 import static zipkin2.internal.ThriftCodec.skip;
 import static zipkin2.internal.ThriftField.TYPE_I16;
 import static zipkin2.internal.ThriftField.TYPE_I32;
@@ -41,6 +42,7 @@ final class ThriftEndpointCodec {
       if (thriftField.type == TYPE_STOP) break;
 
       if (thriftField.isEqualTo(IPV4)) {
+        guardLength(bytes, 4);
         int ipv4 = bytes.getInt();
         if (ipv4 != 0) {
           result.parseIp( // allocation is ok here as Endpoint.ipv4Bytes would anyway
@@ -52,6 +54,7 @@ final class ThriftEndpointCodec {
             });
         }
       } else if (thriftField.isEqualTo(PORT)) {
+        guardLength(bytes, 2);
         result.port(bytes.getShort() & 0xFFFF);
       } else if (thriftField.isEqualTo(SERVICE_NAME)) {
         result.serviceName(ThriftCodec.readUtf8(bytes));

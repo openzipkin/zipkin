@@ -17,6 +17,7 @@
 package zipkin2.codec;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Ignore;
@@ -25,7 +26,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin2.TestObjects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
@@ -41,6 +41,31 @@ public class V1SpanBytesDecoderTest {
   Span span = SPAN;
 
   @Rule public ExpectedException thrown = ExpectedException.none();
+
+  @Test public void niceErrorOnTruncatedSpans_THRIFT() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Truncated: length 8 > bytes remaining 2 reading List<Span> from TBinary");
+
+    byte[] encoded = SpanBytesEncoder.THRIFT.encodeList(TRACE);
+    SpanBytesDecoder.THRIFT.decodeList(Arrays.copyOfRange(encoded, 0, 10));
+  }
+
+  @Test public void niceErrorOnTruncatedSpan_THRIFT() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Truncated: length 8 > bytes remaining 7 reading Span from TBinary");
+
+    byte[] encoded = SpanBytesEncoder.THRIFT.encode(SPAN);
+    SpanBytesDecoder.THRIFT.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
+  }
+
+  @Test public void emptyListOk_THRIFT() {
+    assertThat(SpanBytesDecoder.THRIFT.decodeList(new byte[0]))
+      .isEmpty(); // instead of throwing an exception
+
+    byte[] emptyListLiteral = {12 /* TYPE_STRUCT */, 0, 0, 0, 0 /* zero length */};
+    assertThat(SpanBytesDecoder.THRIFT.decodeList(emptyListLiteral))
+      .isEmpty(); // instead of throwing an exception
+  }
 
   @Test
   public void spanRoundTrip_JSON_V1() {

@@ -52,13 +52,17 @@ public final class Proto3Codec {
       if (span == null) return false;
       out.add(span);
       return true;
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       throw exceptionReading("Span", e);
     }
   }
 
   public static @Nullable Span readOne(byte[] bytes) {
-    return SPAN.read(UnsafeBuffer.wrap(bytes, 0));
+    try {
+      return SPAN.read(UnsafeBuffer.wrap(bytes, 0));
+    } catch (RuntimeException e) {
+      throw exceptionReading("Span", e);
+    }
   }
 
   public static boolean readList(byte[] bytes, Collection<Span> out) {
@@ -71,7 +75,7 @@ public final class Proto3Codec {
         if (span == null) return false;
         out.add(span);
       }
-    } catch (Exception e) {
+    } catch (RuntimeException e) {
       throw exceptionReading("List<Span>", e);
     }
     return true;

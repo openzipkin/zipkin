@@ -294,7 +294,7 @@ public class WireSpanDecoder {
       throw new AssertionError("hex field greater than 32 chars long: " + length);
     }
 
-    char[] result = Platform.get().idBuffer();
+    char[] result = Platform.shortStringBuffer();
 
     for (int i = 0; i < bytes.size(); i ++) {
       byte b = bytes.getByte(i);

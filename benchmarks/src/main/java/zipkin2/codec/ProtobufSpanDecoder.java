@@ -279,7 +279,7 @@ public class ProtobufSpanDecoder {
       throw new AssertionError("hex field greater than 32 chars long: " + length);
     }
 
-    char[] result = Platform.get().idBuffer();
+    char[] result = Platform.shortStringBuffer();
 
     for (int i = 0; i < length; i += 2) {
       byte b = input.readRawByte();
