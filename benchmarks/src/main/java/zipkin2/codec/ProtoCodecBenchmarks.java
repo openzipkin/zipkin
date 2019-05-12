@@ -87,7 +87,7 @@ public class ProtoCodecBenchmarks {
 
   @Benchmark
   public List<Span> bytebuffer_zipkinDecoder() {
-    return SpanBytesDecoder.PROTO3.decodeList(ByteBufUtil.getBytes(encodedBuf));
+    return SpanBytesDecoder.PROTO3.decodeList(encodedBuf.nioBuffer());
   }
 
   @Benchmark
@@ -103,7 +103,7 @@ public class ProtoCodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws Exception {
     Options opt = new OptionsBuilder()
-      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName() + ".*bytes.*")
+      .include(".*" + ProtoCodecBenchmarks.class.getSimpleName())
       .addProfiler("gc")
       .build();
 

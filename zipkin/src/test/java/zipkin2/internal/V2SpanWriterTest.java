@@ -16,8 +16,6 @@
  */
 package zipkin2.internal;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -27,10 +25,12 @@ import zipkin2.Span;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.TestObjects.UTF_8;
 
 public class V2SpanWriterTest {
   V2SpanWriter writer = new V2SpanWriter();
-  UnsafeBuffer buf = UnsafeBuffer.allocate(2048); // bigger than needed to test sizeOf
+  byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
+  WriteBuffer buf = WriteBuffer.wrap(bytes, 0);
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -40,21 +40,21 @@ public class V2SpanWriterTest {
       .isEqualTo(buf.pos());
   }
 
-  @Test public void writes128BitTraceId() throws UnsupportedEncodingException {
+  @Test public void writes128BitTraceId() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.unwrap(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .startsWith("{\"traceId\":\"" + CLIENT_SPAN.traceId() + "\"");
   }
 
-  @Test public void writesAnnotationWithoutEndpoint() throws IOException {
+  @Test public void writesAnnotationWithoutEndpoint() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.unwrap(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .contains("{\"timestamp\":" + (TODAY + 100) * 1000L + ",\"value\":\"foo\"}");
   }
 
-  @Test public void omitsEmptySpanName() throws IOException {
+  @Test public void omitsEmptySpanName() {
     Span span = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
@@ -63,25 +63,25 @@ public class V2SpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.unwrap(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .doesNotContain("name");
   }
 
-  @Test public void omitsEmptyServiceName() throws IOException {
+  @Test public void omitsEmptyServiceName() {
     Span span = CLIENT_SPAN.toBuilder()
       .localEndpoint(Endpoint.newBuilder().ip("127.0.0.1").build())
       .build();
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.unwrap(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .contains("\"localEndpoint\":{\"ipv4\":\"127.0.0.1\"}");
   }
 
-  @Test public void tagsAreAMap() throws IOException {
+  @Test public void tagsAreAMap() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.unwrap(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .contains("\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}");
   }
 }

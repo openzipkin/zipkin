@@ -44,7 +44,7 @@ public class V1SpanBytesDecoderTest {
 
   @Test public void niceErrorOnTruncatedSpans_THRIFT() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 8 > bytes remaining 2 reading List<Span> from TBinary");
+    thrown.expectMessage("Truncated: length 8 > bytes available 2 reading List<Span> from TBinary");
 
     byte[] encoded = SpanBytesEncoder.THRIFT.encodeList(TRACE);
     SpanBytesDecoder.THRIFT.decodeList(Arrays.copyOfRange(encoded, 0, 10));
@@ -52,7 +52,7 @@ public class V1SpanBytesDecoderTest {
 
   @Test public void niceErrorOnTruncatedSpan_THRIFT() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 8 > bytes remaining 7 reading Span from TBinary");
+    thrown.expectMessage("Truncated: length 8 > bytes available 7 reading Span from TBinary");
 
     byte[] encoded = SpanBytesEncoder.THRIFT.encode(SPAN);
     SpanBytesDecoder.THRIFT.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
@@ -161,8 +161,7 @@ public class V1SpanBytesDecoderTest {
   @Test
   public void niceErrorOnMalformed_inputSpans_THRIFT() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage(
-        "Truncated: length 1701604463 > bytes remaining 0 reading List<Span> from TBinary");
+    thrown.expectMessage("Truncated: length 1 > bytes available 0 reading List<Span> from TBinary");
 
     SpanBytesDecoder.THRIFT.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }

@@ -156,10 +156,10 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(ANNOTATION.sizeInBytes(zipkinAnnotation));
-    ANNOTATION.write(zipkinBytes, zipkinAnnotation);
+    byte[] zipkinBytes = new byte[ANNOTATION.sizeInBytes(zipkinAnnotation)];
+    ANNOTATION.write(WriteBuffer.wrap(zipkinBytes, 0), zipkinAnnotation);
 
-    assertThat(zipkinBytes.unwrap())
+    assertThat(zipkinBytes)
       .containsExactly(wireSpan.encode());
   }
 
@@ -167,7 +167,7 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    UnsafeBuffer wireBytes = UnsafeBuffer.wrap(wireSpan.encode(), 0);
+    ReadBuffer wireBytes = ReadBuffer.wrap(wireSpan.encode(), 0);
     assertThat(wireBytes.readVarint32())
       .isEqualTo(ANNOTATION.key);
 
@@ -179,7 +179,7 @@ public class Proto3CodecInteropTest {
 
   @Test public void endpoint_sizeInBytes_matchesWireEncodingWithTag() {
     assertThat(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint())).isEqualTo(
-        Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.fieldNumber, PROTO_SPAN.local_endpoint)
+      Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.fieldNumber, PROTO_SPAN.local_endpoint)
     );
 
     assertThat(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint())).isEqualTo(
@@ -188,20 +188,20 @@ public class Proto3CodecInteropTest {
   }
 
   @Test public void localEndpoint_write_matchesWire() {
-    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
-    LOCAL_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.localEndpoint());
+    byte[] zipkinBytes = new byte[LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint())];
+    LOCAL_ENDPOINT.write(WriteBuffer.wrap(zipkinBytes, 0), ZIPKIN_SPAN.localEndpoint());
     Span wireSpan = new Span.Builder().local_endpoint(PROTO_SPAN.local_endpoint).build();
 
-    assertThat(zipkinBytes.unwrap())
+    assertThat(zipkinBytes)
       .containsExactly(wireSpan.encode());
   }
 
   @Test public void remoteEndpoint_write_matchesWire() {
-    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
-    REMOTE_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.remoteEndpoint());
+    byte[] zipkinBytes = new byte[REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint())];
+    REMOTE_ENDPOINT.write(WriteBuffer.wrap(zipkinBytes, 0), ZIPKIN_SPAN.remoteEndpoint());
     Span wireSpan = new Span.Builder().remote_endpoint(PROTO_SPAN.remote_endpoint).build();
 
-    assertThat(zipkinBytes.unwrap())
+    assertThat(zipkinBytes)
       .containsExactly(wireSpan.encode());
   }
 
@@ -216,22 +216,22 @@ public class Proto3CodecInteropTest {
   @Test public void writeTagField_matchesWire() {
     MapEntry<String, String> entry = entry("clnt/finagle.version", "6.45.0");
     TagField field = new TagField(TAG_KEY);
-    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(field.sizeInBytes(entry));
-    field.write(zipkinBytes, entry);
+    byte[] zipkinBytes = new byte[field.sizeInBytes(entry)];
+    field.write(WriteBuffer.wrap(zipkinBytes, 0), entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.unwrap())
+    assertThat(zipkinBytes)
       .containsExactly(oneField.encode());
   }
 
   @Test public void writeTagField_matchesWire_emptyValue() {
     MapEntry<String, String> entry = entry("error", "");
     TagField field = new TagField(TAG_KEY);
-    UnsafeBuffer zipkinBytes = UnsafeBuffer.allocate(field.sizeInBytes(entry));
-    field.write(zipkinBytes, entry);
+    byte[] zipkinBytes = new byte[field.sizeInBytes(entry)];
+    field.write(WriteBuffer.wrap(zipkinBytes, 0), entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.unwrap())
+    assertThat(zipkinBytes)
       .containsExactly(oneField.encode());
   }
 

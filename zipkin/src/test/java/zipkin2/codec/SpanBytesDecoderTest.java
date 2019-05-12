@@ -43,7 +43,7 @@ public class SpanBytesDecoderTest {
 
   @Test public void niceErrorOnTruncatedSpans_PROTO3() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 66 > bytes remaining 8 reading List<Span> from proto3");
+    thrown.expectMessage("Truncated: length 66 > bytes available 8 reading List<Span> from proto3");
 
     byte[] encoded = SpanBytesEncoder.PROTO3.encodeList(TRACE);
     SpanBytesDecoder.PROTO3.decodeList(Arrays.copyOfRange(encoded, 0, 10));
@@ -51,7 +51,7 @@ public class SpanBytesDecoderTest {
 
   @Test public void niceErrorOnTruncatedSpan_PROTO3() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 179 > bytes remaining 7 reading Span from proto3");
+    thrown.expectMessage("Truncated: length 179 > bytes available 7 reading Span from proto3");
 
     byte[] encoded = SpanBytesEncoder.PROTO3.encode(SPAN);
     SpanBytesDecoder.PROTO3.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
@@ -172,7 +172,7 @@ public class SpanBytesDecoderTest {
 
   @Test public void niceErrorOnMalformed_inputSpans_PROTO3() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage("Truncated: length 101 > bytes remaining 3 reading List<Span> from proto3");
+    thrown.expectMessage("Truncated: length 101 > bytes available 3 reading List<Span> from proto3");
 
     SpanBytesDecoder.PROTO3.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }

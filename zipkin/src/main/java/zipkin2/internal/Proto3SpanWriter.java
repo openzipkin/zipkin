@@ -23,7 +23,7 @@ import static zipkin2.internal.Proto3Fields.sizeOfLengthDelimitedField;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 //@Immutable
-final class Proto3SpanWriter implements UnsafeBuffer.Writer<Span> {
+final class Proto3SpanWriter implements WriteBuffer.Writer<Span> {
 
   static final byte[] EMPTY_ARRAY = new byte[0];
 
@@ -31,7 +31,7 @@ final class Proto3SpanWriter implements UnsafeBuffer.Writer<Span> {
     return SPAN.sizeInBytes(span);
   }
 
-  @Override public void write(Span value, UnsafeBuffer b) {
+  @Override public void write(Span value, WriteBuffer b) {
     SPAN.write(b, value);
   }
 
@@ -51,22 +51,23 @@ final class Proto3SpanWriter implements UnsafeBuffer.Writer<Span> {
       int sizeOfValue = sizeOfValues[i] = SPAN.sizeOfValue(spans.get(i));
       sizeInBytes += sizeOfLengthDelimitedField(sizeOfValue);
     }
-    UnsafeBuffer result = UnsafeBuffer.allocate(sizeInBytes);
+    byte[] result = new byte[sizeInBytes];
+    WriteBuffer writeBuffer = WriteBuffer.wrap(result, 0);
     for (int i = 0; i < lengthOfSpans; i++) {
-      writeSpan(spans.get(i), sizeOfValues[i], result);
+      writeSpan(spans.get(i), sizeOfValues[i], writeBuffer);
     }
-    return result.unwrap();
+    return result;
   }
 
   byte[] write(Span onlySpan) {
     int sizeOfValue = SPAN.sizeOfValue(onlySpan);
-    UnsafeBuffer result = UnsafeBuffer.allocate(sizeOfLengthDelimitedField(sizeOfValue));
-    writeSpan(onlySpan, sizeOfValue, result);
-    return result.unwrap();
+    byte[] result = new byte[sizeOfLengthDelimitedField(sizeOfValue)];
+    writeSpan(onlySpan, sizeOfValue, WriteBuffer.wrap(result, 0));
+    return result;
   }
 
   // prevents resizing twice
-  void writeSpan(Span span, int sizeOfSpan, UnsafeBuffer result) {
+  void writeSpan(Span span, int sizeOfSpan, WriteBuffer result) {
     result.writeByte(SPAN.key);
     result.writeVarint(sizeOfSpan); // length prefix
     SPAN.writeValue(result, span);
@@ -76,7 +77,7 @@ final class Proto3SpanWriter implements UnsafeBuffer.Writer<Span> {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return 0;
 
-    UnsafeBuffer result = UnsafeBuffer.wrap(out, pos);
+    WriteBuffer result = WriteBuffer.wrap(out, pos);
     for (int i = 0; i < lengthOfSpans; i++) {
       SPAN.write(result, spans.get(i));
     }

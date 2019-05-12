@@ -24,8 +24,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public final class DependenciesTest {
-  @Test
-  public void dependenciesRoundTrip() {
+  @Test public void dependenciesRoundTrip() {
     DependencyLink ab = DependencyLink.newBuilder().parent("a").child("b").callCount(2L).build();
     DependencyLink cd = DependencyLink.newBuilder().parent("c").child("d").errorCount(2L).build();
 
@@ -33,7 +32,5 @@ public final class DependenciesTest {
 
     ByteBuffer bytes = dependencies.toThrift();
     assertThat(Dependencies.fromThrift(bytes)).isEqualTo(dependencies);
-
-    assertThat(bytes.remaining()).isZero();
   }
 }

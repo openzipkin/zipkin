@@ -33,12 +33,12 @@ public class JsonCodecTest {
     thrown.expect(AssertionError.class);
     thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 1/2 bytes: a");
 
-    class FooWriter implements UnsafeBuffer.Writer {
+    class FooWriter implements WriteBuffer.Writer {
       @Override public int sizeInBytes(Object value) {
         return 2;
       }
 
-      @Override public void write(Object value, UnsafeBuffer buffer) {
+      @Override public void write(Object value, WriteBuffer buffer) {
         buffer.writeByte('a');
         throw new RuntimeException("buggy");
       }
@@ -58,12 +58,12 @@ public class JsonCodecTest {
     thrown.expectMessage("Bug found using FooWriter to write Foo as json. Wrote 2/2 bytes: ab");
 
     // pretend there was a bug calculating size, ex it calculated incorrectly as to small
-    class FooWriter implements UnsafeBuffer.Writer {
+    class FooWriter implements WriteBuffer.Writer {
       @Override public int sizeInBytes(Object value) {
         return 2;
       }
 
-      @Override public void write(Object value, UnsafeBuffer buffer) {
+      @Override public void write(Object value, WriteBuffer buffer) {
         buffer.writeByte('a');
         buffer.writeByte('b');
         buffer.writeByte('c'); // wrote larger than size!
@@ -84,7 +84,7 @@ public class JsonCodecTest {
     Exception error = null;
     byte[] bytes = "[\"='".getBytes(UTF_8);
     try {
-      new JsonCodec.JsonReader(bytes).beginObject();
+      new JsonCodec.JsonReader(ReadBuffer.wrap(bytes, 0)).beginObject();
       failBecauseExceptionWasNotThrown(IllegalStateException.class);
     } catch (IOException | IllegalStateException e) {
       error = e;

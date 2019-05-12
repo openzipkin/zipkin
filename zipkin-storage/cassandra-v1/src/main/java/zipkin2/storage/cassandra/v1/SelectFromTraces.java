@@ -35,6 +35,7 @@ import zipkin2.Span;
 import zipkin2.internal.FilterTraces;
 import zipkin2.internal.HexCodec;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.ReadBuffer;
 import zipkin2.internal.V1ThriftSpanReader;
 import zipkin2.storage.GroupByTraceId;
 import zipkin2.storage.QueryRequest;
@@ -59,11 +60,11 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
       this.accumulateSpans = new DecodeAndConvertSpans();
 
       this.preparedStatement =
-          session.prepare(
-              QueryBuilder.select("trace_id", "span")
-                  .from("traces")
-                  .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
-                  .limit(QueryBuilder.bindMarker("limit_")));
+        session.prepare(
+          QueryBuilder.select("trace_id", "span")
+            .from("traces")
+            .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
+            .limit(QueryBuilder.bindMarker("limit_")));
       this.maxTraceCols = maxTraceCols;
       this.strictTraceId = strictTraceId;
       this.groupByTraceId = GroupByTraceId.create(strictTraceId);
@@ -72,8 +73,8 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
     Call<List<Span>> newCall(String hexTraceId) {
       long traceId = HexCodec.lowerHexToUnsignedLong(hexTraceId);
       Call<List<Span>> result =
-          new SelectFromTraces(this, Collections.singleton(traceId), maxTraceCols)
-              .flatMap(accumulateSpans);
+        new SelectFromTraces(this, Collections.singleton(traceId), maxTraceCols)
+          .flatMap(accumulateSpans);
       return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
     }
 
@@ -95,7 +96,7 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
   @Override
   protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(
-        factory.preparedStatement.bind().setSet("trace_id", trace_id).setInt("limit_", limit_));
+      factory.preparedStatement.bind().setSet("trace_id", trace_id).setInt("limit_", limit_));
   }
 
   @Override public ResultSet map(ResultSet input) {
@@ -139,9 +140,9 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
         traceIds = input;
       }
       Call<List<List<Span>>> result =
-          new SelectFromTraces(factory, traceIds, factory.maxTraceCols)
-              .flatMap(factory.accumulateSpans)
-              .map(factory.groupByTraceId);
+        new SelectFromTraces(factory, traceIds, factory.maxTraceCols)
+          .flatMap(factory.accumulateSpans)
+          .map(factory.groupByTraceId);
       return filter != null ? result.map(filter) : result;
     }
 
@@ -163,7 +164,7 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
       return (row, result) -> {
         V1ThriftSpanReader reader = V1ThriftSpanReader.create();
         V1SpanConverter converter = V1SpanConverter.create();
-        V1Span read = reader.read(row.getBytes("span"));
+        V1Span read = reader.read(ReadBuffer.wrapUnsafe(row.getBytes("span")));
         converter.convert(read, result);
       };
     }

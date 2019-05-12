@@ -36,7 +36,7 @@ import zipkin2.internal.Platform;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINEST;
-import static zipkin2.internal.UnsafeBuffer.HEX_DIGITS;
+import static zipkin2.internal.HexCodec.HEX_DIGITS;
 
 /**
  * A span is a single-host view of an operation. A trace is a series of spans (often RPC calls)
