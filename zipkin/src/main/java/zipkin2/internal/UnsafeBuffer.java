@@ -99,7 +99,7 @@ public final class UnsafeBuffer {
   String readUtf8(int length) {
     require(length);
     String result = maybeDecodeShortAsciiString(buf, pos, length);
-    if (result == null) new String(buf, pos, length, UTF_8);
+    if (result == null) result = new String(buf, pos, length, UTF_8);
     pos += length;
     return result;
   }
