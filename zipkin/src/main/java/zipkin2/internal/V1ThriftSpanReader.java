@@ -19,7 +19,6 @@ package zipkin2.internal;
 import zipkin2.Endpoint;
 import zipkin2.v1.V1Span;
 
-import static zipkin2.internal.ReadBuffer.ONE;
 import static zipkin2.internal.ThriftCodec.readListLength;
 import static zipkin2.internal.ThriftCodec.skip;
 import static zipkin2.internal.ThriftField.TYPE_I32;
@@ -39,6 +38,8 @@ import static zipkin2.internal.V1ThriftSpanWriter.TRACE_ID;
 import static zipkin2.internal.V1ThriftSpanWriter.TRACE_ID_HIGH;
 
 public final class V1ThriftSpanReader {
+  static final String ONE = Character.toString((char) 1);
+
   public static V1ThriftSpanReader create() {
     return new V1ThriftSpanReader();
   }

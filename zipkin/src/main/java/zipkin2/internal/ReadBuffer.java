@@ -25,8 +25,6 @@ import static zipkin2.internal.JsonCodec.UTF_8;
 
 /** Read operations do bounds checks, as typically more errors occur reading than writing. */
 public abstract class ReadBuffer extends InputStream {
-  static final String ONE = Character.toString((char) 1);
-
   /** Do not use the buffer passed here after, as it may be manipulated directly. */
   public static ReadBuffer wrapUnsafe(ByteBuffer buffer) {
     if (buffer.hasArray()) {
@@ -268,12 +266,6 @@ public abstract class ReadBuffer extends InputStream {
 
   final String readUtf8(int length) {
     if (length == 0) return ""; // ex error tag with no value
-    if (length == 1) {
-      byte single = readByte();
-      if (single == 1) return ONE; // special case for address annotations
-      return Character.toString((char) single);
-    }
-
     if (length > Platform.SHORT_STRING_LENGTH) return doReadUtf8(length);
 
     // Speculatively assume all 7-bit ASCII characters.. common in normal tags and names
