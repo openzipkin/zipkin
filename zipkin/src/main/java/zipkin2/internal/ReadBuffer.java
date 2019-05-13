@@ -104,10 +104,10 @@ public abstract class ReadBuffer extends InputStream {
       return buf.position();
     }
 
-    @Override public int read(byte[] b, int off, int len) {
-      int toRead = checkReadArguments(b, off, len);
+    @Override public int read(byte[] dst, int offset, int length) {
+      int toRead = checkReadArguments(dst, offset, length);
       if (toRead == 0) return 0;
-      buf.get(b, 0, toRead);
+      buf.get(dst, offset, toRead);
       return toRead;
     }
 
@@ -151,10 +151,10 @@ public abstract class ReadBuffer extends InputStream {
       return result;
     }
 
-    @Override public int read(byte[] b, int off, int len) {
-      int toRead = checkReadArguments(b, off, len);
+    @Override public int read(byte[] dst, int offset, int length) {
+      int toRead = checkReadArguments(dst, offset, length);
       if (toRead == 0) return 0;
-      System.arraycopy(buf, pos, b, 0, toRead);
+      System.arraycopy(buf, pos, dst, 0, toRead);
       pos += toRead;
       return toRead;
     }
@@ -233,7 +233,7 @@ public abstract class ReadBuffer extends InputStream {
     }
   }
 
-  @Override public abstract int read(byte[] b, int off, int len);
+  @Override public abstract int read(byte[] dst, int offset, int length);
 
   @Override public abstract long skip(long n);
 
@@ -369,9 +369,11 @@ public abstract class ReadBuffer extends InputStream {
     }
   }
 
-  int checkReadArguments(byte[] b, int off, int len) {
-    if (b == null) throw new NullPointerException();
-    if (off < 0 || len < 0 || len > b.length - off) throw new IndexOutOfBoundsException();
-    return Math.min(available(), len);
+  int checkReadArguments(byte[] dst, int offset, int length) {
+    if (dst == null) throw new NullPointerException();
+    if (offset < 0 || length < 0 || length > dst.length - offset) {
+      throw new IndexOutOfBoundsException();
+    }
+    return Math.min(available(), length);
   }
 }
