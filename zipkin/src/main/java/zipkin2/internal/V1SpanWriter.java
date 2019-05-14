@@ -191,7 +191,7 @@ public final class V1SpanWriter implements WriteBuffer.Writer<V1Span> {
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
     byte[] result = new byte[endpointSizeInBytes(localEndpoint, true)];
-    V2SpanWriter.writeEndpoint(localEndpoint, WriteBuffer.wrap(result, 0), true);
+    V2SpanWriter.writeEndpoint(localEndpoint, WriteBuffer.wrap(result), true);
     return result;
   }
 

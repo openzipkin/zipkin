@@ -167,13 +167,13 @@ public final class V1ThriftSpanWriter implements WriteBuffer.Writer<Span> {
     if (lengthOfSpans == 0) return EMPTY_ARRAY;
 
     byte[] result = new byte[ThriftCodec.listSizeInBytes(this, spans)];
-    ThriftCodec.writeList(this, spans, WriteBuffer.wrap(result, 0));
+    ThriftCodec.writeList(this, spans, WriteBuffer.wrap(result));
     return result;
   }
 
   public byte[] write(Span onlySpan) {
     byte[] result = new byte[sizeInBytes(onlySpan)];
-    write(onlySpan, WriteBuffer.wrap(result, 0));
+    write(onlySpan, WriteBuffer.wrap(result));
     return result;
   }
 
@@ -190,7 +190,7 @@ public final class V1ThriftSpanWriter implements WriteBuffer.Writer<Span> {
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
     byte[] result = new byte[ThriftEndpointCodec.sizeInBytes(localEndpoint)];
-    ThriftEndpointCodec.write(localEndpoint, WriteBuffer.wrap(result, 0));
+    ThriftEndpointCodec.write(localEndpoint, WriteBuffer.wrap(result));
     return result;
   }
 

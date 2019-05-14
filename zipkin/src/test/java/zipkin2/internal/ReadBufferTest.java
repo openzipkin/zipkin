@@ -16,12 +16,22 @@
  */
 package zipkin2.internal;
 
+import java.nio.ByteBuffer;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static zipkin2.TestObjects.UTF_8;
 
 public class ReadBufferTest {
+  @Test public void byteBuffer_limited() {
+    ByteBuffer buf = ByteBuffer.wrap("glove".getBytes(UTF_8));
+    buf.get();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buf.slice());
+    assertThat(readBuffer.readUtf8(readBuffer.available()))
+      .isEqualTo("love");
+  }
+
   @Test public void readVarint32() {
     assertReadVarint32(0);
     assertReadVarint32(0b0011_1111_1111_1111);
@@ -30,18 +40,18 @@ public class ReadBufferTest {
 
   static void assertReadVarint32(int value) {
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(value)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(value);
+    WriteBuffer.wrap(bytes).writeVarint(value);
 
-    assertThat(ReadBuffer.wrap(bytes, 0).readVarint32())
+    assertThat(ReadBuffer.wrap(bytes).readVarint32())
       .isEqualTo(value);
   }
 
   @Test public void readVarint32_malformedTooBig() {
     byte[] bytes = new byte[8];
-    WriteBuffer.wrap(bytes, 0).writeLongLe(0xffffffffffffL);
+    WriteBuffer.wrap(bytes).writeLongLe(0xffffffffffffL);
 
     try {
-      ReadBuffer.wrap(bytes, 0).readVarint32();
+      ReadBuffer.wrap(bytes).readVarint32();
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
       assertThat(e)
@@ -57,20 +67,20 @@ public class ReadBufferTest {
 
   static void assertReadVarint64(long value) {
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(value)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(value);
+    WriteBuffer.wrap(bytes).writeVarint(value);
 
-    assertThat(ReadBuffer.wrap(bytes, 0).readVarint64())
+    assertThat(ReadBuffer.wrap(bytes).readVarint64())
       .isEqualTo(value);
   }
 
   @Test public void readVarint64_malformedTooBig() {
     byte[] bytes = new byte[16];
-    WriteBuffer buffer = WriteBuffer.wrap(bytes, 0);
+    WriteBuffer buffer = WriteBuffer.wrap(bytes);
     buffer.writeLongLe(0xffffffffffffffffL);
     buffer.writeLongLe(0xffffffffffffffffL);
 
     try {
-      ReadBuffer.wrap(bytes, 0).readVarint64();
+      ReadBuffer.wrap(bytes).readVarint64();
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
       assertThat(e)

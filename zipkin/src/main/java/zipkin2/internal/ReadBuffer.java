@@ -16,26 +16,32 @@
  */
 package zipkin2.internal;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import static zipkin2.internal.HexCodec.HEX_DIGITS;
 import static zipkin2.internal.JsonCodec.UTF_8;
 
 /** Read operations do bounds checks, as typically more errors occur reading than writing. */
 public abstract class ReadBuffer extends InputStream {
+
   /** Do not use the buffer passed here after, as it may be manipulated directly. */
   public static ReadBuffer wrapUnsafe(ByteBuffer buffer) {
     if (buffer.hasArray()) {
-      int pos = buffer.position();
-      return wrap(buffer.array(), buffer.arrayOffset() + pos);
+      int offset = buffer.arrayOffset() + buffer.position();
+      int limit = offset + buffer.remaining();
+      return wrap(buffer.array(), offset, limit);
     }
     return new ReadBuffer.Buff(buffer);
   }
 
-  public static ReadBuffer wrap(byte[] bytes, int pos) {
-    return new ReadBuffer.Array(bytes, pos);
+  public static ReadBuffer wrap(byte[] bytes) {
+    return wrap(bytes, 0, bytes.length);
+  }
+
+  public static ReadBuffer wrap(byte[] bytes, int pos, int limit) {
+    return new ReadBuffer.Array(bytes, pos, limit);
   }
 
   static final class Buff extends ReadBuffer {
@@ -83,13 +89,18 @@ public abstract class ReadBuffer extends InputStream {
       return buf.getInt();
     }
 
-    @Override long readLong() {
+    @Override long readLong() {// TODO: test me with flipped order
       require(8);
-      return buf.getLong();
+      return getLong(ByteOrder.BIG_ENDIAN);
     }
 
     @Override long readLongLe() {
       require(8);
+      return getLong(ByteOrder.LITTLE_ENDIAN);
+    }
+
+    long getLong(ByteOrder wanted) {
+      if (buf.order() == wanted) return buf.getLong();
       return (readByteUnsafe() & 0xffL)
         | (readByteUnsafe() & 0xffL) << 8
         | (readByteUnsafe() & 0xffL) << 16
@@ -112,78 +123,71 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public long skip(long maxCount) {
-      return skip(buf, maxCount);
+      int skipped = Math.max(available(), (int) maxCount);
+      buf.position(buf.position() + skipped);
+      return skipped;
     }
 
     @Override public int available() {
       return buf.remaining();
     }
-
-    static long skip(ByteBuffer buf, long maxCount) {
-      // avoid java.lang.NoSuchMethodError: java.nio.ByteBuffer.position(I)Ljava/nio/ByteBuffer;
-      // bytes.position(bytes.position() + count);
-      long i = 0;
-      for (; i < maxCount && buf.hasRemaining(); i++) {
-        buf.get();
-      }
-      return i;
-    }
   }
 
   static final class Array extends ReadBuffer {
     final byte[] buf;
-    int pos; // visible for testing
+    int offset, length;
 
-    Array(byte[] buf, int pos) {
+    Array(byte[] buf, int offset, int length) {
       this.buf = buf;
-      this.pos = pos;
+      this.offset = offset;
+      this.length = length;
     }
 
     @Override final byte readByteUnsafe() {
-      return buf[pos++];
+      return buf[offset++];
     }
 
     @Override final byte[] readBytes(int length) {
       require(length);
       byte[] result = new byte[length];
-      System.arraycopy(buf, pos, result, 0, length);
-      pos += length;
+      System.arraycopy(buf, offset, result, 0, length);
+      offset += length;
       return result;
     }
 
     @Override public int read(byte[] dst, int offset, int length) {
       int toRead = checkReadArguments(dst, offset, length);
       if (toRead == 0) return 0;
-      System.arraycopy(buf, pos, dst, 0, toRead);
-      pos += toRead;
+      System.arraycopy(buf, this.offset, dst, 0, toRead);
+      this.offset += toRead;
       return toRead;
     }
 
     @Override boolean tryReadAscii(char[] destination, int length) {
       for (int i = 0; i < length; i++) {
-        byte b = buf[pos + i];
+        byte b = buf[offset + i];
         if ((b & 0x80) != 0) return false;  // Not 7-bit ASCII character
         destination[i] = (char) b;
       }
-      pos += length;
+      offset += length;
       return true;
     }
 
     @Override final String doReadUtf8(int length) {
-      String result = new String(buf, pos, length, UTF_8);
-      pos += length;
+      String result = new String(buf, offset, length, UTF_8);
+      offset += length;
       return result;
     }
 
     @Override short readShort() {
       require(2);
-      return (short) ((buf[pos++] & 0xff) << 8 | (buf[pos++] & 0xff));
+      return (short) ((buf[offset++] & 0xff) << 8 | (buf[offset++] & 0xff));
     }
 
     @Override int readInt() {
       require(4);
-      int pos = this.pos;
-      this.pos = pos + 4;
+      int pos = this.offset;
+      this.offset = pos + 4;
       return (buf[pos] & 0xff) << 24
         | (buf[pos + 1] & 0xff) << 16
         | (buf[pos + 2] & 0xff) << 8
@@ -192,8 +196,8 @@ public abstract class ReadBuffer extends InputStream {
 
     @Override long readLong() {
       require(8);
-      int pos = this.pos;
-      this.pos = pos + 8;
+      int pos = this.offset;
+      this.offset = pos + 8;
       return (buf[pos] & 0xffL) << 56
         | (buf[pos + 1] & 0xffL) << 48
         | (buf[pos + 2] & 0xffL) << 40
@@ -206,8 +210,8 @@ public abstract class ReadBuffer extends InputStream {
 
     @Override long readLongLe() {
       require(8);
-      int pos = this.pos;
-      this.pos = pos + 8;
+      int pos = this.offset;
+      this.offset = pos + 8;
       return (buf[pos] & 0xffL)
         | (buf[pos + 1] & 0xffL) << 8
         | (buf[pos + 2] & 0xffL) << 16
@@ -219,17 +223,17 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public int pos() {
-      return pos;
+      return offset;
     }
 
     @Override public long skip(long maxCount) {
-      long toSkip = Math.min(available(), maxCount);
-      pos += toSkip;
+      int toSkip = Math.min(available(), (int) maxCount);
+      offset += toSkip;
       return toSkip;
     }
 
     @Override public int available() {
-      return buf.length - pos;
+      return length - offset;
     }
   }
 
@@ -266,6 +270,7 @@ public abstract class ReadBuffer extends InputStream {
 
   final String readUtf8(int length) {
     if (length == 0) return ""; // ex error tag with no value
+    require(length);
     if (length > Platform.SHORT_STRING_LENGTH) return doReadUtf8(length);
 
     // Speculatively assume all 7-bit ASCII characters.. common in normal tags and names
@@ -290,7 +295,7 @@ public abstract class ReadBuffer extends InputStream {
 
   abstract long readLongLe();
 
-  @Override public final int read() throws IOException {
+  @Override public final int read() {
     return available() > 0 ? readByteUnsafe() : -1;
   }
 

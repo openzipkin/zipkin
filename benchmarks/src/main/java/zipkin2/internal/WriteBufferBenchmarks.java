@@ -51,7 +51,7 @@ public class WriteBufferBenchmarks {
   /* epoch micros timestamp */
   static final long TEST_LONG = 1472470996199000L;
   byte[] bytes = new byte[8];
-  WriteBuffer buffer = WriteBuffer.wrap(bytes, 0);
+  WriteBuffer buffer = WriteBuffer.wrap(bytes);
 
   @Benchmark public int utf8SizeInBytes_chinese() {
     return WriteBuffer.utf8SizeInBytes(CHINESE_UTF8);

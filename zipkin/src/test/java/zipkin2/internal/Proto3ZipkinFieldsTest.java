@@ -36,7 +36,7 @@ import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 public class Proto3ZipkinFieldsTest {
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
-  WriteBuffer buf = WriteBuffer.wrap(bytes, 0);
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   /** A map entry is an embedded messages: one for field the key and one for the value */
   @Test public void tag_sizeInBytes() {
@@ -164,11 +164,11 @@ public class Proto3ZipkinFieldsTest {
     assertRoundTrip(spanBuilder().kind(Span.Kind.CONSUMER).build());
 
     bytes[23] = (byte) (Span.Kind.values().length + 1); // undefined kind
-    assertThat(SPAN.read(ReadBuffer.wrap(bytes, 0)))
+    assertThat(SPAN.read(ReadBuffer.wrap(bytes)))
       .isEqualTo(spanBuilder().build()); // skips undefined kind instead of dying
 
     bytes[23] = 0; // serialized zero
-    assertThat(SPAN.read(ReadBuffer.wrap(bytes, 0)))
+    assertThat(SPAN.read(ReadBuffer.wrap(bytes)))
       .isEqualTo(spanBuilder().build());
   }
 
@@ -195,7 +195,7 @@ public class Proto3ZipkinFieldsTest {
   void assertRoundTrip(Span span) {
     SPAN.write(buf, span);
 
-    assertThat(SPAN.read(ReadBuffer.wrap(bytes, 0)))
+    assertThat(SPAN.read(ReadBuffer.wrap(bytes)))
       .isEqualTo(span);
   }
 }

@@ -48,7 +48,7 @@ public class WriteBufferTest {
         .isEqualTo(3);
 
       byte[] bytes = new byte[3];
-      WriteBuffer.wrap(bytes, 0).writeUtf8(test);
+      WriteBuffer.wrap(bytes).writeUtf8(test);
       assertThat(bytes)
         .containsExactly('a', '?', 'c');
     }
@@ -63,7 +63,7 @@ public class WriteBufferTest {
       .isEqualTo(5);
 
     byte[] bytes = new byte[5];
-    WriteBuffer.wrap(bytes, 0).writeUtf8(test);
+    WriteBuffer.wrap(bytes).writeUtf8(test);
     assertThat(new String(bytes, UTF_8))
       .isEqualTo("\uD83C\uDC00?");
   }
@@ -77,7 +77,7 @@ public class WriteBufferTest {
       .isEqualTo(6);
 
     byte[] bytes = new byte[6];
-    WriteBuffer.wrap(bytes, 0).writeUtf8(test);
+    WriteBuffer.wrap(bytes).writeUtf8(test);
     assertThat(new String(bytes, UTF_8))
       .isEqualTo("\uD83C\uDC00?c");
   }
@@ -94,7 +94,7 @@ public class WriteBufferTest {
         .isEqualTo(string.getBytes(UTF_8).length);
 
       byte[] bytes = new byte[encodedSize];
-      WriteBuffer.wrap(bytes, 0).writeUtf8(string);
+      WriteBuffer.wrap(bytes).writeUtf8(string);
       assertThat(new String(bytes, UTF_8))
         .isEqualTo(string);
     }
@@ -107,11 +107,11 @@ public class WriteBufferTest {
       .isEqualTo(ascii.length());
 
     byte[] bytes = new byte[encodedSize];
-    WriteBuffer.wrap(bytes, 0).writeAscii(ascii);
+    WriteBuffer.wrap(bytes).writeAscii(ascii);
     assertThat(new String(bytes, UTF_8))
       .isEqualTo(ascii);
 
-    WriteBuffer.wrap(bytes, 0).writeUtf8(ascii);
+    WriteBuffer.wrap(bytes).writeUtf8(ascii);
     assertThat(new String(bytes, UTF_8))
       .isEqualTo(ascii);
   }
@@ -123,7 +123,7 @@ public class WriteBufferTest {
       .isEqualTo(emojiBytes.length);
 
     byte[] bytes = new byte[emojiBytes.length];
-    WriteBuffer.wrap(bytes, 0).writeUtf8(emoji);
+    WriteBuffer.wrap(bytes).writeUtf8(emoji);
     assertThat(bytes)
       .isEqualTo(emojiBytes);
   }
@@ -141,7 +141,7 @@ public class WriteBufferTest {
 
   static String writeAscii(long v) {
     byte[] bytes = new byte[WriteBuffer.asciiSizeInBytes(v)];
-    WriteBuffer.wrap(bytes, 0).writeAscii(v);
+    WriteBuffer.wrap(bytes).writeAscii(v);
     return new String(bytes, UTF_8);
   }
 
@@ -153,7 +153,7 @@ public class WriteBufferTest {
     }
     String string = builder.toString();
     byte[] bytes = new byte[string.length()];
-    WriteBuffer.wrap(bytes, 0).writeAscii(string);
+    WriteBuffer.wrap(bytes).writeAscii(string);
     assertThat(new String(bytes, UTF_8)).isEqualTo(string);
   }
 
@@ -172,7 +172,7 @@ public class WriteBufferTest {
   @Test public void writeLongLe_matchesByteBuffer() {
     for (long number : Arrays.asList(Long.MIN_VALUE, 0L, Long.MAX_VALUE)) {
       byte[] bytes = new byte[8];
-      WriteBuffer.wrap(bytes, 0).writeLongLe(number);
+      WriteBuffer.wrap(bytes).writeLongLe(number);
 
       ByteBuffer byteBuffer = ByteBuffer.allocate(8);
       byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -188,7 +188,7 @@ public class WriteBufferTest {
     int number = 300;
 
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(number)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(number);
+    WriteBuffer.wrap(bytes).writeVarint(number);
 
     assertThat(bytes)
       .containsExactly(0b1010_1100, 0b0000_0010);
@@ -199,7 +199,7 @@ public class WriteBufferTest {
     long number = 300;
 
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(number)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(number);
+    WriteBuffer.wrap(bytes).writeVarint(number);
 
     assertThat(bytes)
       .containsExactly(0b1010_1100, 0b0000_0010);
@@ -208,28 +208,28 @@ public class WriteBufferTest {
   @Test public void writeVarint_ports() {
     // normal case
     byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(80)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(80);
+    WriteBuffer.wrap(bytes).writeVarint(80);
 
     assertThat(bytes)
       .containsExactly(0b0101_0000);
 
     // largest value to not require more than 2 bytes (14 bits set)
     bytes = new byte[WriteBuffer.varintSizeInBytes(16383)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(16383);
+    WriteBuffer.wrap(bytes).writeVarint(16383);
 
     assertThat(bytes)
       .containsExactly(0b1111_1111, 0b0111_1111);
 
     // worst case is a byte longer than fixed 16
     bytes = new byte[WriteBuffer.varintSizeInBytes(65535)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(65535);
+    WriteBuffer.wrap(bytes).writeVarint(65535);
 
     assertThat(bytes)
       .containsExactly(0b1111_1111, 0b1111_1111, 0b0000_0011);
 
     // most bits
     bytes = new byte[WriteBuffer.varintSizeInBytes(0xFFFFFFFF)];
-    WriteBuffer.wrap(bytes, 0).writeVarint(0xFFFFFFFF);
+    WriteBuffer.wrap(bytes).writeVarint(0xFFFFFFFF);
 
     // we have a total of 32 bits encoded
     assertThat(bytes)

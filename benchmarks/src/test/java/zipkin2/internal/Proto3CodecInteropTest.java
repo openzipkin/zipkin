@@ -167,7 +167,7 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    ReadBuffer wireBytes = ReadBuffer.wrap(wireSpan.encode(), 0);
+    ReadBuffer wireBytes = ReadBuffer.wrap(wireSpan.encode());
     assertThat(wireBytes.readVarint32())
       .isEqualTo(ANNOTATION.key);
 

@@ -30,12 +30,16 @@ public final class WriteBuffer {
     void write(T value, WriteBuffer buffer);
   }
 
+  public static WriteBuffer wrap(byte[] bytes) {
+    return wrap(bytes, 0);
+  }
+
   public static WriteBuffer wrap(byte[] bytes, int pos) {
     return new WriteBuffer(bytes, pos);
   }
 
   final byte[] buf;
-  int pos; // visible for testing
+  int pos;
 
   WriteBuffer(byte[] buf, int pos) {
     this.buf = buf;
@@ -198,6 +202,8 @@ public final class WriteBuffer {
    *
    * <p>Later, ASCII run and malformed surrogate logic borrowed from okio.Utf8
    */
+  // TODO: benchmark vs https://github.com/protocolbuffers/protobuf/blob/master/java/core/src/main/java/com/google/protobuf/Utf8.java#L240
+  // there seem to be less branches for for strings without surrogates
   public static int utf8SizeInBytes(CharSequence string) {
     int sizeInBytes = 0;
     for (int i = 0, len = string.length(); i < len; i++) {
@@ -276,6 +282,8 @@ public final class WriteBuffer {
   }
 
   /** Like {@link #varintSizeInBytes(int)}, except for uint64. */
+  // TODO: benchmark vs https://github.com/protocolbuffers/protobuf/blob/master/java/core/src/main/java/com/google/protobuf/CodedOutputStream.java#L770
+  // Since trace IDs are random, I guess they cover the entire spectrum of varint sizes and probably would especially benefit from this.
   public static int varintSizeInBytes(long v) {
     if ((v & (0xffffffffffffffffL << 7)) == 0) return 1;
     if ((v & (0xffffffffffffffffL << 14)) == 0) return 2;

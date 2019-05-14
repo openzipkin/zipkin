@@ -30,7 +30,7 @@ import static zipkin2.TestObjects.UTF_8;
 public class V2SpanWriterTest {
   V2SpanWriter writer = new V2SpanWriter();
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
-  WriteBuffer buf = WriteBuffer.wrap(bytes, 0);
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 

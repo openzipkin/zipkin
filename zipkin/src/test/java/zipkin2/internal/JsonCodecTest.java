@@ -84,7 +84,7 @@ public class JsonCodecTest {
     Exception error = null;
     byte[] bytes = "[\"='".getBytes(UTF_8);
     try {
-      new JsonCodec.JsonReader(ReadBuffer.wrap(bytes, 0)).beginObject();
+      new JsonCodec.JsonReader(ReadBuffer.wrap(bytes)).beginObject();
       failBecauseExceptionWasNotThrown(IllegalStateException.class);
     } catch (IOException | IllegalStateException e) {
       error = e;

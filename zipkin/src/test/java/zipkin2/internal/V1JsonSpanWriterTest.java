@@ -27,7 +27,7 @@ import static zipkin2.internal.JsonCodec.UTF_8;
 public class V1JsonSpanWriterTest {
   V1JsonSpanWriter writer = new V1JsonSpanWriter();
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
-  WriteBuffer buf = WriteBuffer.wrap(bytes, 0);
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   @Test
   public void sizeInBytes() {

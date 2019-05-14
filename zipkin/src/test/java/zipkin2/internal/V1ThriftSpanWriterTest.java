@@ -38,7 +38,7 @@ public class V1ThriftSpanWriterTest {
   Span span = Span.newBuilder().traceId("1").id("2").build();
   Endpoint endpoint = Endpoint.newBuilder().serviceName("frontend").ip("1.2.3.4").build();
   byte[] bytes = new byte[2048]; // bigger than needed to test sizeOf
-  WriteBuffer buf = WriteBuffer.wrap(bytes, 0);
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   V1ThriftSpanWriter writer = new V1ThriftSpanWriter();
   byte[] endpointBytes = new byte[ThriftEndpointCodec.sizeInBytes(endpoint)];
@@ -58,7 +58,7 @@ public class V1ThriftSpanWriterTest {
       .containsSequence(TYPE_I32, 0, 1, 127, 0, 0, 1) // ipv4
       .containsSequence(TYPE_I16, 0, 2, (highPort >> 8) & 0xFF, highPort & 0xFF); // port
 
-    assertThat(ThriftEndpointCodec.read(ReadBuffer.wrap(buff, 0)).portAsInt())
+    assertThat(ThriftEndpointCodec.read(ReadBuffer.wrap(buff)).portAsInt())
       .isEqualTo(highPort);
   }
 
@@ -110,7 +110,7 @@ public class V1ThriftSpanWriterTest {
     writer.write(span.toBuilder().kind(CLIENT).build(), buf);
 
     byte[] bytes2 = new byte[2048];
-    writer.write(span, WriteBuffer.wrap(bytes2, 0));
+    writer.write(span, WriteBuffer.wrap(bytes2));
 
     assertThat(bytes).containsExactly(bytes2);
   }

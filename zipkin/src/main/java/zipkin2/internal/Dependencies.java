@@ -78,7 +78,7 @@ public final class Dependencies {
   /** Writes the current instance in TBinaryProtocol */
   public ByteBuffer toThrift() {
     byte[] result = new byte[sizeInBytes()];
-    write(WriteBuffer.wrap(result, 0));
+    write(WriteBuffer.wrap(result));
     return ByteBuffer.wrap(result);
   }
 

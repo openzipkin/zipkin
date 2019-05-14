@@ -52,7 +52,7 @@ final class Proto3SpanWriter implements WriteBuffer.Writer<Span> {
       sizeInBytes += sizeOfLengthDelimitedField(sizeOfValue);
     }
     byte[] result = new byte[sizeInBytes];
-    WriteBuffer writeBuffer = WriteBuffer.wrap(result, 0);
+    WriteBuffer writeBuffer = WriteBuffer.wrap(result);
     for (int i = 0; i < lengthOfSpans; i++) {
       writeSpan(spans.get(i), sizeOfValues[i], writeBuffer);
     }
@@ -62,7 +62,7 @@ final class Proto3SpanWriter implements WriteBuffer.Writer<Span> {
   byte[] write(Span onlySpan) {
     int sizeOfValue = SPAN.sizeOfValue(onlySpan);
     byte[] result = new byte[sizeOfLengthDelimitedField(sizeOfValue)];
-    writeSpan(onlySpan, sizeOfValue, WriteBuffer.wrap(result, 0));
+    writeSpan(onlySpan, sizeOfValue, WriteBuffer.wrap(result));
     return result;
   }
 

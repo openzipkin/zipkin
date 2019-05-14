@@ -42,14 +42,14 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public boolean decode(byte[] span, Collection<Span> out) { // ex DependencyLinker
-      Span result = decodeOne(ReadBuffer.wrap(span, 0));
+      Span result = decodeOne(ReadBuffer.wrap(span));
       if (result == null) return false;
       out.add(result);
       return true;
     }
 
     @Override public boolean decodeList(byte[] spans, Collection<Span> out) { // ex getTrace
-      return new V1JsonSpanReader().readList(ReadBuffer.wrap(spans, 0), out);
+      return new V1JsonSpanReader().readList(ReadBuffer.wrap(spans), out);
     }
 
     @Override public boolean decodeList(ByteBuffer spans, Collection<Span> out) {
@@ -57,7 +57,7 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override @Nullable public Span decodeOne(byte[] span) {
-      return decodeOne(ReadBuffer.wrap(span, 0));
+      return decodeOne(ReadBuffer.wrap(span));
     }
 
     @Override @Nullable public Span decodeOne(ByteBuffer span) {
@@ -86,11 +86,11 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public boolean decode(byte[] span, Collection<Span> out) { // ex DependencyLinker
-      return ThriftCodec.read(ReadBuffer.wrap(span, 0), out);
+      return ThriftCodec.read(ReadBuffer.wrap(span), out);
     }
 
     @Override public boolean decodeList(byte[] spans, Collection<Span> out) { // ex getTrace
-      return ThriftCodec.readList(ReadBuffer.wrap(spans, 0), out);
+      return ThriftCodec.readList(ReadBuffer.wrap(spans), out);
     }
 
     @Override public boolean decodeList(ByteBuffer spans, Collection<Span> out) {
@@ -98,7 +98,7 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override @Nullable public Span decodeOne(byte[] span) {
-      return ThriftCodec.readOne(ReadBuffer.wrap(span, 0));
+      return ThriftCodec.readOne(ReadBuffer.wrap(span));
     }
 
     @Override @Nullable public Span decodeOne(ByteBuffer span) {
@@ -120,11 +120,11 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public boolean decode(byte[] span, Collection<Span> out) { // ex DependencyLinker
-      return JsonCodec.read(new V2SpanReader(), ReadBuffer.wrap(span, 0), out);
+      return JsonCodec.read(new V2SpanReader(), ReadBuffer.wrap(span), out);
     }
 
     @Override public boolean decodeList(byte[] spans, Collection<Span> out) { // ex getTrace
-      return JsonCodec.readList(new V2SpanReader(), ReadBuffer.wrap(spans, 0), out);
+      return JsonCodec.readList(new V2SpanReader(), ReadBuffer.wrap(spans), out);
     }
 
     @Override public boolean decodeList(ByteBuffer spans, Collection<Span> out) {
@@ -132,7 +132,7 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override @Nullable public Span decodeOne(byte[] span) {
-      return JsonCodec.readOne(new V2SpanReader(), ReadBuffer.wrap(span, 0));
+      return JsonCodec.readOne(new V2SpanReader(), ReadBuffer.wrap(span));
     }
 
     @Override @Nullable public Span decodeOne(ByteBuffer span) {
@@ -153,11 +153,11 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public boolean decode(byte[] span, Collection<Span> out) { // ex DependencyLinker
-      return Proto3Codec.read(ReadBuffer.wrap(span, 0), out);
+      return Proto3Codec.read(ReadBuffer.wrap(span), out);
     }
 
     @Override public boolean decodeList(byte[] spans, Collection<Span> out) { // ex getTrace
-      return Proto3Codec.readList(ReadBuffer.wrap(spans, 0), out);
+      return Proto3Codec.readList(ReadBuffer.wrap(spans), out);
     }
 
     @Override public boolean decodeList(ByteBuffer spans, Collection<Span> out) {
@@ -165,7 +165,7 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override @Nullable public Span decodeOne(byte[] span) {
-      return Proto3Codec.readOne(ReadBuffer.wrap(span, 0));
+      return Proto3Codec.readOne(ReadBuffer.wrap(span));
     }
 
     @Override @Nullable public Span decodeOne(ByteBuffer span) {

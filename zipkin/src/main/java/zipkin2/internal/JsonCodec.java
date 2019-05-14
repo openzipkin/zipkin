@@ -168,7 +168,7 @@ public final class JsonCodec {
   /** Inability to encode is a programming bug. */
   public static <T> byte[] write(WriteBuffer.Writer<T> writer, T value) {
     byte[] result = new byte[writer.sizeInBytes(value)];
-    WriteBuffer b = WriteBuffer.wrap(result, 0);
+    WriteBuffer b = WriteBuffer.wrap(result);
     try {
       writer.write(value, b);
     } catch (RuntimeException e) {
@@ -198,7 +198,7 @@ public final class JsonCodec {
   public static <T> byte[] writeList(WriteBuffer.Writer<T> writer, List<T> value) {
     if (value.isEmpty()) return new byte[] {'[', ']'};
     byte[] result = new byte[sizeInBytes(writer, value)];
-    writeList(writer, value, WriteBuffer.wrap(result, 0));
+    writeList(writer, value, WriteBuffer.wrap(result));
     return result;
   }
 

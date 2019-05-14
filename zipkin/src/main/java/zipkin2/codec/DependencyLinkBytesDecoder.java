@@ -35,15 +35,15 @@ public enum DependencyLinkBytesDecoder implements BytesDecoder<DependencyLink> {
     }
 
     @Override public boolean decode(byte[] link, Collection<DependencyLink> out) {
-      return JsonCodec.read(READER, ReadBuffer.wrap(link, 0), out);
+      return JsonCodec.read(READER, ReadBuffer.wrap(link), out);
     }
 
     @Override @Nullable public DependencyLink decodeOne(byte[] link) {
-      return JsonCodec.readOne(READER, ReadBuffer.wrap(link, 0));
+      return JsonCodec.readOne(READER, ReadBuffer.wrap(link));
     }
 
     @Override public boolean decodeList(byte[] links, Collection<DependencyLink> out) {
-      return JsonCodec.readList(READER, ReadBuffer.wrap(links, 0), out);
+      return JsonCodec.readList(READER, ReadBuffer.wrap(links), out);
     }
 
     @Override public List<DependencyLink> decodeList(byte[] links) {
