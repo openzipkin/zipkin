@@ -143,6 +143,26 @@ public class SpanBenchmarks {
     return output.getBuffer();
   }
 
+  @Benchmark
+  public String padLeft_1Char() {
+    return Span.padLeft("1", 16);
+  }
+
+  @Benchmark
+  public String padLeft_15Chars() {
+    return Span.padLeft("123456789012345", 16);
+  }
+
+  @Benchmark
+  public String padLeft_17Chars() {
+    return Span.padLeft("12345678901234567", 32);
+  }
+
+  @Benchmark
+  public String padLeft_31Chars() {
+    return Span.padLeft("1234567890123456789012345678901", 32);
+  }
+
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()

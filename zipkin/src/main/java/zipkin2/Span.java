@@ -659,11 +659,21 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     }
   }
 
+  static final String THIRTY_TWO_ZEROS;
+  static {
+    char[] zeros = new char[32];
+    Arrays.fill(zeros, '0');
+    THIRTY_TWO_ZEROS = new String(zeros);
+  }
+
   static String padLeft(String id, int desiredLength) {
+    int length = id.length();
+    int numZeros = desiredLength - length;
+
     char[] data = Platform.shortStringBuffer();
-    int i = 0, length = id.length(), offset = desiredLength - length;
-    for (; i < offset; i++) data[i] = '0';
-    for (int j = 0; j < length; j++) data[i++] = id.charAt(j);
+    THIRTY_TWO_ZEROS.getChars(0, numZeros, data, 0);
+    id.getChars(0, length, data, numZeros);
+
     return new String(data, 0, desiredLength);
   }
 
