@@ -33,7 +33,9 @@ public abstract class ReadBuffer extends InputStream {
       int limit = offset + buffer.remaining();
       return wrap(buffer.array(), offset, limit);
     }
-    return new ReadBuffer.Buff(buffer);
+    return buffer.order() == ByteOrder.BIG_ENDIAN
+      ? new BigEndianByteBuffer(buffer)
+      : new LittleEndianByteBuffer(buffer);
   }
 
   public static ReadBuffer wrap(byte[] bytes) {
@@ -44,7 +46,57 @@ public abstract class ReadBuffer extends InputStream {
     return new ReadBuffer.Array(bytes, pos, limit);
   }
 
-  static final class Buff extends ReadBuffer {
+  static final class BigEndianByteBuffer extends Buff {
+    BigEndianByteBuffer(ByteBuffer buf) {
+      super(buf);
+    }
+
+    @Override short readShort() {
+      require(2);
+      return buf.getShort();
+    }
+
+    @Override int readInt() {
+      require(4);
+      return buf.getInt();
+    }
+
+    @Override long readLong() {
+      require(8);
+      return buf.getLong();
+    }
+
+    @Override long readLongLe() {
+      return Long.reverseBytes(readLong());
+    }
+  }
+
+  static final class LittleEndianByteBuffer extends Buff {
+    LittleEndianByteBuffer(ByteBuffer buf) {
+      super(buf);
+    }
+
+    @Override short readShort() {
+      require(2);
+      return Short.reverseBytes(buf.getShort());
+    }
+
+    @Override int readInt() {
+      require(4);
+      return Integer.reverseBytes(buf.getInt());
+    }
+
+    @Override long readLong() {
+      return Long.reverseBytes(readLongLe());
+    }
+
+    @Override long readLongLe() {
+      require(8);
+      return buf.getLong();
+    }
+  }
+
+  static abstract class Buff extends ReadBuffer {
     final ByteBuffer buf; // visible for testing
 
     Buff(ByteBuffer buf) {
@@ -77,38 +129,6 @@ public abstract class ReadBuffer extends InputStream {
 
     @Override final String doReadUtf8(int length) {
       return new String(readBytes(length), UTF_8);
-    }
-
-    @Override short readShort() {
-      require(2);
-      return buf.getShort();
-    }
-
-    @Override int readInt() {
-      require(4);
-      return buf.getInt();
-    }
-
-    @Override long readLong() {// TODO: test me with flipped order
-      require(8);
-      return getLong(ByteOrder.BIG_ENDIAN);
-    }
-
-    @Override long readLongLe() {
-      require(8);
-      return getLong(ByteOrder.LITTLE_ENDIAN);
-    }
-
-    long getLong(ByteOrder wanted) {
-      if (buf.order() == wanted) return buf.getLong();
-      return (readByteUnsafe() & 0xffL)
-        | (readByteUnsafe() & 0xffL) << 8
-        | (readByteUnsafe() & 0xffL) << 16
-        | (readByteUnsafe() & 0xffL) << 24
-        | (readByteUnsafe() & 0xffL) << 32
-        | (readByteUnsafe() & 0xffL) << 40
-        | (readByteUnsafe() & 0xffL) << 48
-        | (readByteUnsafe() & 0xffL) << 56;
     }
 
     @Override public int pos() {

@@ -17,6 +17,7 @@
 package zipkin2.internal;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -44,6 +45,154 @@ public class ReadBufferTest {
 
     assertThat(ReadBuffer.wrap(bytes).readVarint32())
       .isEqualTo(value);
+  }
+
+  @Test public void readShort_bytes() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02};
+
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes);
+
+    assertThat(readBuffer.readShort()).isEqualTo((short) 0x0102);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readShort_byteBuff() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02};
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readShort()).isEqualTo((short) 0x0102);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readShort_byteBuff_littleEndian() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02};
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readShort()).isEqualTo((short) 0x0102);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readInt_bytes() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04};
+
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes);
+
+    assertThat(readBuffer.readInt()).isEqualTo(0x01020304);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readInt_byteBuff() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04};
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readInt()).isEqualTo(0x01020304);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readInt_byteBuff_littleEndian() {
+    byte[] bytes = {(byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04};
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readInt()).isEqualTo(0x01020304);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readLong_bytes() {
+    byte[] bytes = {
+      (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04,
+      (byte) 0x05, (byte) 0x06, (byte) 0x07, (byte) 0x08,
+    };
+
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes);
+
+    assertThat(readBuffer.readLong())
+      .isEqualTo(0x0102030405060708L);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readLong_byteBuff() {
+    byte[] bytes = {
+      (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04,
+      (byte) 0x05, (byte) 0x06, (byte) 0x07, (byte) 0x08,
+    };
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readLong())
+      .isEqualTo(0x0102030405060708L);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readLong_byteBuff_littleEndian() {
+    byte[] bytes = {
+      (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04,
+      (byte) 0x05, (byte) 0x06, (byte) 0x07, (byte) 0x08,
+    };
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readLong())
+      .isEqualTo(0x0102030405060708L);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readLongLe_bytes() {
+    byte[] bytes = {
+      (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04,
+      (byte) 0x05, (byte) 0x06, (byte) 0x07, (byte) 0x08,
+    };
+
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes);
+
+    assertThat(readBuffer.readLongLe())
+      .isEqualTo(0x0807060504030201L);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readLongLe_byteBuff() {
+    byte[] bytes = {
+      (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04,
+      (byte) 0x05, (byte) 0x06, (byte) 0x07, (byte) 0x08,
+    };
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readLongLe())
+      .isEqualTo(0x0807060504030201L);
+    assertThat(readBuffer.available()).isZero();
+  }
+
+  @Test public void readLongLe_byteBuff_littleEndian() {
+    byte[] bytes = {
+      (byte) 0x01, (byte) 0x02, (byte) 0x03, (byte) 0x04,
+      (byte) 0x05, (byte) 0x06, (byte) 0x07, (byte) 0x08,
+    };
+
+    ByteBuffer buffer = ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).asReadOnlyBuffer();
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buffer);
+    assertThat(readBuffer).isInstanceOf(ReadBuffer.Buff.class);
+
+    assertThat(readBuffer.readLongLe())
+      .isEqualTo(0x0807060504030201L);
+    assertThat(readBuffer.available()).isZero();
   }
 
   @Test public void readVarint32_malformedTooBig() {
