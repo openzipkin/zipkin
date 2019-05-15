@@ -16,12 +16,15 @@
  */
 package zipkin2.server.internal;
 
-import com.linecorp.armeria.common.grpc.protocol.AbstractUnaryGrpcService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import zipkin2.Callback;
+import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
@@ -31,7 +34,6 @@ import zipkin2.storage.StorageComponent;
 /** Collector for receiving spans on a gRPC endpoint. */
 @ConditionalOnProperty(name = "zipkin.collector.grpc.enabled") // disabled by default
 final class ZipkinGrpcCollector {
-  static final byte[] EMPTY = new byte[0];
 
   @Bean ArmeriaServerConfigurator grpcCollectorConfigurator(StorageComponent storage,
     CollectorSampler sampler, CollectorMetrics metrics) {
@@ -46,7 +48,7 @@ final class ZipkinGrpcCollector {
       sb.service("/zipkin.proto3.SpanService/Report", new SpanService(collector, grpcMetrics));
   }
 
-  static final class SpanService extends AbstractUnaryGrpcService {
+  static final class SpanService extends AbstractUnsafeUnaryGrpcService {
 
     final Collector collector;
     final CollectorMetrics metrics;
@@ -56,24 +58,30 @@ final class ZipkinGrpcCollector {
       this.metrics = metrics;
     }
 
-    @Override protected CompletableFuture<byte[]> handleMessage(byte[] bytes) {
+    @Override protected CompletableFuture<ByteBuf> handleMessage(ByteBuf bytes) {
       metrics.incrementMessages();
-      metrics.incrementBytes(bytes.length);
+      metrics.incrementBytes(bytes.readableBytes());
 
-      if (bytes.length == 0) {
+      if (!bytes.isReadable()) {
         return CompletableFuture.completedFuture(bytes); // lenient on empty messages
       }
-      CompletableFutureCallback result = new CompletableFutureCallback();
-      collector.acceptSpans(bytes, SpanBytesDecoder.PROTO3, result);
-      return result;
+
+      try {
+        CompletableFutureCallback result = new CompletableFutureCallback();
+        List<Span> spans = SpanBytesDecoder.PROTO3.decodeList(bytes.nioBuffer());
+        collector.accept(spans, result);
+        return result;
+      } finally {
+        bytes.release();
+      }
     }
   }
 
-  static final class CompletableFutureCallback extends CompletableFuture<byte[]>
+  static final class CompletableFutureCallback extends CompletableFuture<ByteBuf>
     implements Callback<Void> {
 
     @Override public void onSuccess(Void value) {
-      complete(EMPTY);
+      complete(Unpooled.EMPTY_BUFFER);
     }
 
     @Override public void onError(Throwable t) {
