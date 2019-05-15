@@ -21,18 +21,17 @@ import zipkin2.v1.V1Annotation;
 import zipkin2.v1.V1BinaryAnnotation;
 import zipkin2.v1.V1Span;
 
-import static zipkin2.internal.UnsafeBuffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 import static zipkin2.internal.V2SpanWriter.endpointSizeInBytes;
 import static zipkin2.internal.V2SpanWriter.writeAnnotation;
+import static zipkin2.internal.WriteBuffer.asciiSizeInBytes;
 
 /** This type is only used to backport the v1 read api as it returns v1 json. */
 // @Immutable
-public final class V1SpanWriter implements UnsafeBuffer.Writer<V1Span> {
+public final class V1SpanWriter implements WriteBuffer.Writer<V1Span> {
 
-  @Override
-  public int sizeInBytes(V1Span value) {
+  @Override public int sizeInBytes(V1Span value) {
     int sizeInBytes = 29; // {"traceId":"xxxxxxxxxxxxxxxx"
     if (value.traceIdHigh() != 0L) sizeInBytes += 16;
     if (value.parentId() != 0L) {
@@ -103,8 +102,7 @@ public final class V1SpanWriter implements UnsafeBuffer.Writer<V1Span> {
     return ++sizeInBytes; // }
   }
 
-  @Override
-  public void write(V1Span value, UnsafeBuffer b) {
+  @Override public void write(V1Span value, WriteBuffer b) {
     b.writeAscii("{\"traceId\":\"");
     if (value.traceIdHigh() != 0L) b.writeLongHex(value.traceIdHigh());
     b.writeLongHex(value.traceId());
@@ -186,16 +184,15 @@ public final class V1SpanWriter implements UnsafeBuffer.Writer<V1Span> {
     b.writeByte('}');
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "Span";
   }
 
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(endpointSizeInBytes(localEndpoint, true));
-    V2SpanWriter.writeEndpoint(localEndpoint, buffer, true);
-    return buffer.unwrap();
+    byte[] result = new byte[endpointSizeInBytes(localEndpoint, true)];
+    V2SpanWriter.writeEndpoint(localEndpoint, WriteBuffer.wrap(result), true);
+    return result;
   }
 
   static int binaryAnnotationSizeInBytes(String key, String value, int endpointSize) {
@@ -209,7 +206,8 @@ public final class V1SpanWriter implements UnsafeBuffer.Writer<V1Span> {
     return sizeInBytes;
   }
 
-  static void writeBinaryAnnotation(String key, String value, @Nullable byte[] endpoint, UnsafeBuffer b) {
+  static void writeBinaryAnnotation(String key, String value, @Nullable byte[] endpoint,
+    WriteBuffer b) {
     b.writeAscii("{\"key\":\"");
     b.writeUtf8(jsonEscape(key));
     b.writeAscii("\",\"value\":\"");

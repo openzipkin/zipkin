@@ -38,7 +38,6 @@ import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
-import zipkin2.internal.UnsafeBuffer;
 import zipkin2.storage.QueryRequest;
 
 import static com.google.common.base.Preconditions.checkArgument;

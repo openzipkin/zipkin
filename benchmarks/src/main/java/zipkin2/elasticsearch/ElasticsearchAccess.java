@@ -14,23 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package zipkin2.internal;
+package zipkin2.elasticsearch;
 
-import java.nio.ByteBuffer;
-import org.junit.Test;
-import zipkin2.DependencyLink;
+import com.squareup.moshi.JsonAdapter;
+import zipkin2.Span;
 
-import static java.util.Arrays.asList;
-import static org.assertj.core.api.Assertions.assertThat;
-
-public final class DependenciesTest {
-  @Test public void dependenciesRoundTrip() {
-    DependencyLink ab = DependencyLink.newBuilder().parent("a").child("b").callCount(2L).build();
-    DependencyLink cd = DependencyLink.newBuilder().parent("c").child("d").errorCount(2L).build();
-
-    Dependencies dependencies = Dependencies.create(1L, 2L, asList(ab, cd));
-
-    ByteBuffer bytes = dependencies.toThrift();
-    assertThat(Dependencies.fromThrift(bytes)).isEqualTo(dependencies);
+public class ElasticsearchAccess {
+  public static JsonAdapter<Span> jsonSpanAdapter() {
+    return JsonAdapters.SPAN_ADAPTER;
   }
 }

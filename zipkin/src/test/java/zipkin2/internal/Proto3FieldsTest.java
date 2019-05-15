@@ -35,7 +35,8 @@ import static zipkin2.internal.Proto3Fields.WIRETYPE_LENGTH_DELIMITED;
 import static zipkin2.internal.Proto3Fields.WIRETYPE_VARINT;
 
 public class Proto3FieldsTest {
-  UnsafeBuffer buf = UnsafeBuffer.allocate(2048); // bigger than needed to test sizeOf
+  byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   /** Shows we can reliably look at a byte zero to tell if we are decoding proto3 repeated fields. */
   @Test public void field_key_fieldOneLengthDelimited() {
@@ -141,24 +142,24 @@ public class Proto3FieldsTest {
     VarintField field = new VarintField(128 << 3 | WIRETYPE_VARINT);
     field.write(buf, 0xffffffffffffffffL);
 
-    buf.skip(1); // skip the key
-    skipValue(WIRETYPE_VARINT);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    skipValue(readBuffer, WIRETYPE_VARINT);
   }
 
   @Test public void field_skipValue_LENGTH_DELIMITED() {
     Utf8Field field = new Utf8Field(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, "订单维护服务");
 
-    buf.skip(1); // skip the key
-    skipValue(WIRETYPE_LENGTH_DELIMITED);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    skipValue(readBuffer, WIRETYPE_LENGTH_DELIMITED);
   }
 
   @Test public void field_skipValue_FIXED64() {
     Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 
-    buf.skip(1); // skip the key
-    skipValue(WIRETYPE_FIXED64);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    skipValue(readBuffer, WIRETYPE_FIXED64);
   }
 
   @Test public void field_skipValue_FIXED32() {
@@ -169,31 +170,29 @@ public class Proto3FieldsTest {
     buf.writeByte(0xff);
     buf.writeByte(0xff);
 
-    buf.skip(1); // skip the key
-    skipValue(WIRETYPE_FIXED32);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    skipValue(readBuffer, WIRETYPE_FIXED32);
   }
 
   @Test public void field_readLengthPrefix_LENGTH_DELIMITED() {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, new byte[10]);
-    buf.reset();
-    buf.skip(1); // skip the key
 
-    assertThat(buf.readVarint32())
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    assertThat(readBuffer.readVarint32())
       .isEqualTo(10);
   }
 
   @Test public void field_readLengthPrefixAndValue_LENGTH_DELIMITED_truncated() {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
-    buf = UnsafeBuffer.allocate(10);
-    buf.writeVarint(100); // much larger than the buffer size
-    buf.reset();
+    bytes = new byte[10];
+    WriteBuffer.wrap(bytes).writeVarint(100); // much larger than the buffer size
 
     try {
-      field.readLengthPrefixAndValue(buf);
+      field.readLengthPrefixAndValue(ReadBuffer.wrap(bytes));
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
     } catch (IllegalArgumentException e) {
-      assertThat(e).hasMessage("Truncated: length 100 > bytes remaining 9");
+      assertThat(e).hasMessage("Truncated: length 100 > bytes available 9");
     }
   }
 
@@ -201,14 +200,13 @@ public class Proto3FieldsTest {
     Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 
-    buf.reset();
-    buf.skip(1); // skip the key
-    assertThat(field.readValue(buf))
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    assertThat(field.readValue(readBuffer))
       .isEqualTo(0xffffffffffffffffL);
   }
 
-  void skipValue(int wireType) {
-    assertThat(Field.skipValue(buf, wireType))
+  void skipValue(ReadBuffer buffer, int wireType) {
+    assertThat(Field.skipValue(buffer, wireType))
       .isTrue();
   }
 }

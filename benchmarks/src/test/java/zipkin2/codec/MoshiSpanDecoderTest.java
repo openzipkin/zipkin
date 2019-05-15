@@ -14,23 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package zipkin2.internal;
+package zipkin2.codec;
 
-import java.nio.ByteBuffer;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import org.junit.Test;
-import zipkin2.DependencyLink;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.TRACE;
 
-public final class DependenciesTest {
-  @Test public void dependenciesRoundTrip() {
-    DependencyLink ab = DependencyLink.newBuilder().parent("a").child("b").callCount(2L).build();
-    DependencyLink cd = DependencyLink.newBuilder().parent("c").child("d").errorCount(2L).build();
+public class MoshiSpanDecoderTest {
+  byte[] encoded = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
 
-    Dependencies dependencies = Dependencies.create(1L, 2L, asList(ab, cd));
+  @Test public void decodeList_bytes() {
+    assertThat(new MoshiSpanDecoder().decodeList(encoded))
+      .isEqualTo(TRACE);
+  }
 
-    ByteBuffer bytes = dependencies.toThrift();
-    assertThat(Dependencies.fromThrift(bytes)).isEqualTo(dependencies);
+  @Test public void decodeList_byteBuffer() {
+    ByteBuf encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(encoded.length);
+    encodedBuf.writeBytes(encoded);
+    assertThat(new MoshiSpanDecoder().decodeList(encoded))
+      .isEqualTo(TRACE);
   }
 }

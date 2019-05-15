@@ -27,7 +27,7 @@ import java.util.Locale;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 
-import static zipkin2.internal.UnsafeBuffer.HEX_DIGITS;
+import static zipkin2.internal.HexCodec.HEX_DIGITS;
 
 /** The network context of a node in the service graph. */
 //@Immutable

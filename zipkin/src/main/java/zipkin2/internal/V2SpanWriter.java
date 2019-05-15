@@ -22,14 +22,13 @@ import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static zipkin2.internal.UnsafeBuffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
+import static zipkin2.internal.WriteBuffer.asciiSizeInBytes;
 
 // @Immutable
-public final class V2SpanWriter implements UnsafeBuffer.Writer<Span> {
-  @Override
-  public int sizeInBytes(Span value) {
+public final class V2SpanWriter implements WriteBuffer.Writer<Span> {
+  @Override public int sizeInBytes(Span value) {
     int sizeInBytes = 13; // {"traceId":""
     sizeInBytes += value.traceId().length();
     if (value.parentId() != null) {
@@ -88,8 +87,7 @@ public final class V2SpanWriter implements UnsafeBuffer.Writer<Span> {
     return ++sizeInBytes; // }
   }
 
-  @Override
-  public void write(Span value, UnsafeBuffer b) {
+  @Override public void write(Span value, WriteBuffer b) {
     b.writeAscii("{\"traceId\":\"");
     b.writeAscii(value.traceId());
     b.writeByte('"');
@@ -160,8 +158,7 @@ public final class V2SpanWriter implements UnsafeBuffer.Writer<Span> {
     b.writeByte('}');
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "Span";
   }
 
@@ -192,7 +189,7 @@ public final class V2SpanWriter implements UnsafeBuffer.Writer<Span> {
     return ++sizeInBytes; // }
   }
 
-  static void writeEndpoint(Endpoint value, UnsafeBuffer b, boolean writeEmptyServiceName) {
+  static void writeEndpoint(Endpoint value, WriteBuffer b, boolean writeEmptyServiceName) {
     b.writeByte('{');
     boolean wroteField = false;
     String serviceName = value.serviceName();
@@ -237,7 +234,8 @@ public final class V2SpanWriter implements UnsafeBuffer.Writer<Span> {
     return sizeInBytes;
   }
 
-  static void writeAnnotation(long timestamp, String value, @Nullable byte[] endpoint, UnsafeBuffer b) {
+  static void writeAnnotation(long timestamp, String value, @Nullable byte[] endpoint,
+    WriteBuffer b) {
     b.writeAscii("{\"timestamp\":");
     b.writeAscii(timestamp);
     b.writeAscii(",\"value\":\"");

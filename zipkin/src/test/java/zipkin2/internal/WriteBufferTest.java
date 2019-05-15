@@ -16,17 +16,15 @@
  */
 package zipkin2.internal;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.UTF_8;
 
-public class UnsafeBufferTest {
+public class WriteBufferTest {
   // Adapted from http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it
   @Test public void utf8SizeInBytes() {
     for (int codepoint = 0; codepoint <= 0x10FFFF; codepoint++) {
@@ -34,7 +32,7 @@ public class UnsafeBufferTest {
       if (Character.isDefined(codepoint)) {
         String test = new String(Character.toChars(codepoint));
         int expected = test.getBytes(UTF_8).length;
-        int actual = UnsafeBuffer.utf8SizeInBytes(test);
+        int actual = WriteBuffer.utf8SizeInBytes(test);
         if (actual != expected) {
           throw new AssertionError(actual + " length != " + expected + " for " + codepoint);
         }
@@ -46,12 +44,12 @@ public class UnsafeBufferTest {
   @Test public void utf8_malformed() {
     for (int codepoint : Arrays.asList(0xD800, 0xDFFF, 0xD83D)) {
       String test = new String(new int[] {'a', codepoint, 'c'}, 0, 3);
-      assertThat(UnsafeBuffer.utf8SizeInBytes(test))
+      assertThat(WriteBuffer.utf8SizeInBytes(test))
         .isEqualTo(3);
 
-      UnsafeBuffer buffer = UnsafeBuffer.allocate(3);
-      buffer.writeUtf8(test);
-      assertThat(buffer.unwrap())
+      byte[] bytes = new byte[3];
+      WriteBuffer.wrap(bytes).writeUtf8(test);
+      assertThat(bytes)
         .containsExactly('a', '?', 'c');
     }
   }
@@ -61,12 +59,12 @@ public class UnsafeBufferTest {
     char[] array = "\uD83C\uDC00\uD83C\uDC01".toCharArray();
     array[array.length - 1] = 'c';
     String test = new String(array, 0, array.length - 1);
-    assertThat(UnsafeBuffer.utf8SizeInBytes(test))
+    assertThat(WriteBuffer.utf8SizeInBytes(test))
       .isEqualTo(5);
 
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(5);
-    buffer.writeUtf8(test);
-    assertThat(new String(buffer.unwrap(), UTF_8))
+    byte[] bytes = new byte[5];
+    WriteBuffer.wrap(bytes).writeUtf8(test);
+    assertThat(new String(bytes, UTF_8))
       .isEqualTo("\uD83C\uDC00?");
   }
 
@@ -75,12 +73,12 @@ public class UnsafeBufferTest {
     char[] array = "\uD83C\uDC00\uD83C\uDC01".toCharArray();
     array[array.length - 1] = 'c';
     String test = new String(array);
-    assertThat(UnsafeBuffer.utf8SizeInBytes(test))
+    assertThat(WriteBuffer.utf8SizeInBytes(test))
       .isEqualTo(6);
 
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(6);
-    buffer.writeUtf8(test);
-    assertThat(new String(buffer.unwrap(), UTF_8))
+    byte[] bytes = new byte[6];
+    WriteBuffer.wrap(bytes).writeUtf8(test);
+    assertThat(new String(bytes, UTF_8))
       .isEqualTo("\uD83C\uDC00?c");
   }
 
@@ -91,43 +89,42 @@ public class UnsafeBufferTest {
       "ю́ cyrillic small letter yu with acute",
       "∃y ∀x ¬(x ≺ y)"
     )) {
-      int encodedSize = UnsafeBuffer.utf8SizeInBytes(string);
+      int encodedSize = WriteBuffer.utf8SizeInBytes(string);
       assertThat(encodedSize)
         .isEqualTo(string.getBytes(UTF_8).length);
 
-      UnsafeBuffer bufferUtf8 = UnsafeBuffer.allocate(encodedSize);
-      bufferUtf8.writeUtf8(string);
-      assertThat(new String(bufferUtf8.unwrap(), UTF_8))
+      byte[] bytes = new byte[encodedSize];
+      WriteBuffer.wrap(bytes).writeUtf8(string);
+      assertThat(new String(bytes, UTF_8))
         .isEqualTo(string);
     }
   }
 
-  @Test public void utf8_matchesAscii() throws Exception {
+  @Test public void utf8_matchesAscii() {
     String ascii = "86154a4ba6e913854d1e00c0db9010db";
-    int encodedSize = UnsafeBuffer.utf8SizeInBytes(ascii);
+    int encodedSize = WriteBuffer.utf8SizeInBytes(ascii);
     assertThat(encodedSize)
       .isEqualTo(ascii.length());
 
-    UnsafeBuffer bufferAscii = UnsafeBuffer.allocate(encodedSize);
-    bufferAscii.writeAscii(ascii);
-    assertThat(new String(bufferAscii.unwrap(), "US-ASCII"))
+    byte[] bytes = new byte[encodedSize];
+    WriteBuffer.wrap(bytes).writeAscii(ascii);
+    assertThat(new String(bytes, UTF_8))
       .isEqualTo(ascii);
 
-    UnsafeBuffer bufferUtf8 = UnsafeBuffer.allocate(encodedSize);
-    bufferUtf8.writeUtf8(ascii);
-    assertThat(new String(bufferUtf8.unwrap(), "US-ASCII"))
+    WriteBuffer.wrap(bytes).writeUtf8(ascii);
+    assertThat(new String(bytes, UTF_8))
       .isEqualTo(ascii);
   }
 
   @Test public void emoji() {
     byte[] emojiBytes = {(byte) 0xF0, (byte) 0x9F, (byte) 0x98, (byte) 0x81};
     String emoji = new String(emojiBytes, UTF_8);
-    assertThat(UnsafeBuffer.utf8SizeInBytes(emoji))
+    assertThat(WriteBuffer.utf8SizeInBytes(emoji))
       .isEqualTo(emojiBytes.length);
 
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(emojiBytes.length);
-    buffer.writeUtf8(emoji);
-    assertThat(buffer.unwrap())
+    byte[] bytes = new byte[emojiBytes.length];
+    WriteBuffer.wrap(bytes).writeUtf8(emoji);
+    assertThat(bytes)
       .isEqualTo(emojiBytes);
   }
 
@@ -143,45 +140,45 @@ public class UnsafeBufferTest {
   }
 
   static String writeAscii(long v) {
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(UnsafeBuffer.asciiSizeInBytes(v));
-    buffer.writeAscii(v);
-    return new String(buffer.unwrap(), UTF_8);
+    byte[] bytes = new byte[WriteBuffer.asciiSizeInBytes(v)];
+    WriteBuffer.wrap(bytes).writeAscii(v);
+    return new String(bytes, UTF_8);
   }
 
   // Test creating Buffer for a long string
-  @Test public void writeString() throws UnsupportedEncodingException {
-    StringBuffer stringBuffer = new StringBuffer();
+  @Test public void writeString() {
+    StringBuilder builder = new StringBuilder();
     for (int i = 0; i < 100000; i++) {
-      stringBuffer.append("a");
+      builder.append("a");
     }
-    String string = stringBuffer.toString();
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(string.length());
-    buffer.writeAscii(string);
-    assertThat(new String(buffer.unwrap(), "US-ASCII")).isEqualTo(string);
+    String string = builder.toString();
+    byte[] bytes = new byte[string.length()];
+    WriteBuffer.wrap(bytes).writeAscii(string);
+    assertThat(new String(bytes, UTF_8)).isEqualTo(string);
   }
 
   @Test public void unsignedVarintSize_32_largest() {
     // largest to encode is a negative number
-    assertThat(UnsafeBuffer.varintSizeInBytes(Integer.MIN_VALUE))
+    assertThat(WriteBuffer.varintSizeInBytes(Integer.MIN_VALUE))
       .isEqualTo(5);
   }
 
   @Test public void unsignedVarintSize_64_largest() {
     // largest to encode is a negative number
-    assertThat(UnsafeBuffer.varintSizeInBytes(Long.MIN_VALUE))
+    assertThat(WriteBuffer.varintSizeInBytes(Long.MIN_VALUE))
       .isEqualTo(10);
   }
 
   @Test public void writeLongLe_matchesByteBuffer() {
     for (long number : Arrays.asList(Long.MIN_VALUE, 0L, Long.MAX_VALUE)) {
-      UnsafeBuffer buffer = UnsafeBuffer.allocate(8);
-      buffer.writeLongLe(number);
+      byte[] bytes = new byte[8];
+      WriteBuffer.wrap(bytes).writeLongLe(number);
 
       ByteBuffer byteBuffer = ByteBuffer.allocate(8);
       byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
       byteBuffer.putLong(number);
 
-      assertThat(buffer.unwrap())
+      assertThat(bytes)
         .containsExactly(byteBuffer.array());
     }
   }
@@ -190,10 +187,10 @@ public class UnsafeBufferTest {
   @Test public void writeVarint_32() {
     int number = 300;
 
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(number));
-    buffer.writeVarint(number);
+    byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(number)];
+    WriteBuffer.wrap(bytes).writeVarint(number);
 
-    assertThat(buffer.unwrap())
+    assertThat(bytes)
       .containsExactly(0b1010_1100, 0b0000_0010);
   }
 
@@ -201,100 +198,41 @@ public class UnsafeBufferTest {
   @Test public void writeVarint_64() {
     long number = 300;
 
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(number));
-    buffer.writeVarint(number);
+    byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(number)];
+    WriteBuffer.wrap(bytes).writeVarint(number);
 
-    assertThat(buffer.unwrap())
+    assertThat(bytes)
       .containsExactly(0b1010_1100, 0b0000_0010);
   }
 
   @Test public void writeVarint_ports() {
     // normal case
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(80));
-    buffer.writeVarint(80);
+    byte[] bytes = new byte[WriteBuffer.varintSizeInBytes(80)];
+    WriteBuffer.wrap(bytes).writeVarint(80);
 
-    assertThat(buffer.unwrap())
+    assertThat(bytes)
       .containsExactly(0b0101_0000);
 
     // largest value to not require more than 2 bytes (14 bits set)
-    buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(16383));
-    buffer.writeVarint(16383);
+    bytes = new byte[WriteBuffer.varintSizeInBytes(16383)];
+    WriteBuffer.wrap(bytes).writeVarint(16383);
 
-    assertThat(buffer.unwrap())
+    assertThat(bytes)
       .containsExactly(0b1111_1111, 0b0111_1111);
 
     // worst case is a byte longer than fixed 16
-    buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(65535));
-    buffer.writeVarint(65535);
+    bytes = new byte[WriteBuffer.varintSizeInBytes(65535)];
+    WriteBuffer.wrap(bytes).writeVarint(65535);
 
-    assertThat(buffer.unwrap())
+    assertThat(bytes)
       .containsExactly(0b1111_1111, 0b1111_1111, 0b0000_0011);
 
     // most bits
-    buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(0xFFFFFFFF));
-    buffer.writeVarint(0xFFFFFFFF);
+    bytes = new byte[WriteBuffer.varintSizeInBytes(0xFFFFFFFF)];
+    WriteBuffer.wrap(bytes).writeVarint(0xFFFFFFFF);
 
     // we have a total of 32 bits encoded
-    assertThat(buffer.unwrap())
+    assertThat(bytes)
       .containsExactly(0b1111_1111, 0b1111_1111, 0b1111_1111, 0b1111_1111, 0b0000_1111);
-  }
-
-  @Test public void readVarint32() {
-    assertReadVarint32(0);
-    assertReadVarint32(0b0011_1111_1111_1111);
-    assertReadVarint32(0xFFFFFFFF);
-  }
-
-  static void assertReadVarint32(int value) {
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(value));
-    buffer.writeVarint(value);
-    buffer.reset();
-
-    assertThat(buffer.readVarint32())
-      .isEqualTo(value);
-  }
-
-  @Test public void readVarint32_malformedTooBig() {
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(8);
-    buffer.writeLongLe(0xffffffffffffL);
-    buffer.reset();
-
-    try {
-      buffer.readVarint32();
-      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-    } catch (IllegalArgumentException e) {
-      assertThat(e)
-        .hasMessage("Greater than 32-bit varint at position 4");
-    }
-  }
-
-  @Test public void readVarint64() {
-    assertReadVarint64(0L);
-    assertReadVarint64(0b0011_1111_1111_1111L);
-    assertReadVarint64(0xffffffffffffffffL);
-  }
-
-  static void assertReadVarint64(long value) {
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(UnsafeBuffer.varintSizeInBytes(value));
-    buffer.writeVarint(value);
-    buffer.reset();
-
-    assertThat(buffer.readVarint64())
-      .isEqualTo(value);
-  }
-
-  @Test public void readVarint64_malformedTooBig() {
-    UnsafeBuffer buffer = UnsafeBuffer.allocate(16);
-    buffer.writeLongLe(0xffffffffffffffffL);
-    buffer.writeLongLe(0xffffffffffffffffL);
-    buffer.reset();
-
-    try {
-      buffer.readVarint64();
-      failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
-    } catch (IllegalArgumentException e) {
-      assertThat(e)
-        .hasMessage("Greater than 64-bit varint at position 9");
-    }
   }
 }

@@ -40,7 +40,7 @@ import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.JsonCodec;
-import zipkin2.internal.UnsafeBuffer;
+import zipkin2.internal.WriteBuffer;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
@@ -147,12 +147,12 @@ public class ZipkinQueryApiV2 {
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build(), HttpData.of(body));
   }
 
-  static final UnsafeBuffer.Writer<String> QUOTED_STRING_WRITER = new UnsafeBuffer.Writer<String>() {
+  static final WriteBuffer.Writer<String> QUOTED_STRING_WRITER = new WriteBuffer.Writer<String>() {
     @Override public int sizeInBytes(String value) {
-      return UnsafeBuffer.utf8SizeInBytes(value) + 2; // quotes
+      return WriteBuffer.utf8SizeInBytes(value) + 2; // quotes
     }
 
-    @Override public void write(String value, UnsafeBuffer buffer) {
+    @Override public void write(String value, WriteBuffer buffer) {
       buffer.writeByte('"');
       buffer.writeUtf8(value);
       buffer.writeByte('"');

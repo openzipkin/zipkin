@@ -69,14 +69,14 @@ final class Proto3ZipkinFields {
       return result;
     }
 
-    @Override void writeValue(UnsafeBuffer b, Endpoint value) {
+    @Override void writeValue(WriteBuffer b, Endpoint value) {
       SERVICE_NAME.write(b, value.serviceName());
       IPV4.write(b, value.ipv4Bytes());
       IPV6.write(b, value.ipv6Bytes());
       PORT.write(b, value.portAsInt());
     }
 
-    @Override Endpoint readValue(UnsafeBuffer buffer, int length) {
+    @Override Endpoint readValue(ReadBuffer buffer, int length) {
       int endPos = buffer.pos() + length;
 
       // now, we are in the endpoint fields
@@ -111,11 +111,11 @@ final class Proto3ZipkinFields {
       super(key);
     }
 
-    @Override final T readValue(UnsafeBuffer b, int length) {
+    @Override final T readValue(ReadBuffer b, int length) {
       throw new UnsupportedOperationException();
     }
 
-    abstract boolean readLengthPrefixAndValue(UnsafeBuffer b, Span.Builder builder);
+    abstract boolean readLengthPrefixAndValue(ReadBuffer b, Span.Builder builder);
   }
 
   static class AnnotationField extends SpanBuilderField<Annotation> {
@@ -133,12 +133,12 @@ final class Proto3ZipkinFields {
       return TIMESTAMP.sizeInBytes(value.timestamp()) + VALUE.sizeInBytes(value.value());
     }
 
-    @Override void writeValue(UnsafeBuffer b, Annotation value) {
+    @Override void writeValue(WriteBuffer b, Annotation value) {
       TIMESTAMP.write(b, value.timestamp());
       VALUE.write(b, value.value());
     }
 
-    @Override boolean readLengthPrefixAndValue(UnsafeBuffer b, Span.Builder builder) {
+    @Override boolean readLengthPrefixAndValue(ReadBuffer b, Span.Builder builder) {
       int length = b.readVarint32();
       if (length == 0) return false;
       int endPos = b.pos() + length;
@@ -181,12 +181,12 @@ final class Proto3ZipkinFields {
       return KEY.sizeInBytes(value.getKey()) + VALUE.sizeInBytes(value.getValue());
     }
 
-    @Override void writeValue(UnsafeBuffer b, Map.Entry<String, String> value) {
+    @Override void writeValue(WriteBuffer b, Map.Entry<String, String> value) {
       KEY.write(b, value.getKey());
       VALUE.write(b, value.getValue());
     }
 
-    @Override boolean readLengthPrefixAndValue(UnsafeBuffer b, Span.Builder builder) {
+    @Override boolean readLengthPrefixAndValue(ReadBuffer b, Span.Builder builder) {
       int length = b.readVarint32();
       if (length == 0) return false;
       int endPos = b.pos() + length;
@@ -276,7 +276,7 @@ final class Proto3ZipkinFields {
       return sizeOfSpan;
     }
 
-    @Override void writeValue(UnsafeBuffer b, Span value) {
+    @Override void writeValue(WriteBuffer b, Span value) {
       TRACE_ID.write(b, value.traceId());
       PARENT_ID.write(b, value.parentId());
       ID.write(b, value.id());
@@ -309,12 +309,12 @@ final class Proto3ZipkinFields {
       return kind != null ? kind.ordinal() + 1 : 0;
     }
 
-    public Span read(UnsafeBuffer buffer) {
+    public Span read(ReadBuffer buffer) {
       buffer.readVarint32(); // toss the key
       return readLengthPrefixAndValue(buffer);
     }
 
-    @Override Span readValue(UnsafeBuffer buffer, int length) {
+    @Override Span readValue(ReadBuffer buffer, int length) {
       buffer.require(length); // more convenient to check up-front vs partially read
       int endPos = buffer.pos() + length;
 
@@ -373,7 +373,7 @@ final class Proto3ZipkinFields {
     }
   }
 
-  static void logAndSkip(UnsafeBuffer buffer, int nextKey) {
+  static void logAndSkip(ReadBuffer buffer, int nextKey) {
     int nextWireType = wireType(nextKey, buffer.pos());
     if (LOG.isLoggable(FINE)) {
       int nextFieldNumber = fieldNumber(nextKey, buffer.pos());

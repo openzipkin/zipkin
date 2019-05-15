@@ -32,10 +32,10 @@ public final class V1JsonSpanReader implements JsonReaderAdapter<V1Span> {
 
   V1Span.Builder builder;
 
-  public boolean readList(byte[] bytes, Collection<Span> out) {
-    if (bytes.length == 0) return false;
+  public boolean readList(ReadBuffer buffer, Collection<Span> out) {
+    if (buffer.available() == 0) return false;
     V1SpanConverter converter = V1SpanConverter.create();
-    JsonReader reader = new JsonReader(bytes);
+    JsonReader reader = new JsonReader(buffer);
     try {
       reader.beginArray();
       if (!reader.hasNext()) return false;
@@ -50,8 +50,7 @@ public final class V1JsonSpanReader implements JsonReaderAdapter<V1Span> {
     }
   }
 
-  @Override
-  public V1Span fromJson(JsonReader reader) throws IOException {
+  @Override public V1Span fromJson(JsonReader reader) throws IOException {
     if (builder == null) {
       builder = V1Span.newBuilder();
     } else {
@@ -123,8 +122,7 @@ public final class V1JsonSpanReader implements JsonReaderAdapter<V1Span> {
     builder.addAnnotation(timestamp, value, endpoint);
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "Span";
   }
 
