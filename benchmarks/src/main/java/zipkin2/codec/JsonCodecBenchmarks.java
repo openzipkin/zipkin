@@ -68,12 +68,20 @@ public class JsonCodecBenchmarks {
     encodedBuf.release();
   }
 
+  @Benchmark public List<Span> bytes_jacksonDecoder() {
+    return JacksonSpanDecoder.decodeList(encodedBytes);
+  }
+
   @Benchmark public List<Span> bytes_moshiDecoder() {
     return MOSHI.decodeList(encodedBytes);
   }
 
   @Benchmark public List<Span> bytes_zipkinDecoder() {
     return SpanBytesDecoder.JSON_V2.decodeList(encodedBytes);
+  }
+
+  @Benchmark public List<Span> bytebuffer_jacksonDecoder() {
+    return JacksonSpanDecoder.decodeList(encodedBuf.nioBuffer());
   }
 
   @Benchmark public List<Span> bytebuffer_moshiDecoder() {
@@ -87,7 +95,7 @@ public class JsonCodecBenchmarks {
   // Convenience main entry-point
   public static void main(String[] args) throws Exception {
     Options opt = new OptionsBuilder()
-      .include(".*" + JsonCodecBenchmarks.class.getSimpleName())
+      .include(".*" + JsonCodecBenchmarks.class.getSimpleName() + ".*")
       .addProfiler("gc")
       .build();
 
