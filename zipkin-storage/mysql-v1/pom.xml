@@ -74,19 +74,6 @@
       <artifactId>mysql</artifactId>
       <scope>test</scope>
     </dependency>
-    <!-- https://github.com/testcontainers/testcontainers-java/issues/1342 -->
-    <dependency>
-      <groupId>commons-lang</groupId>
-      <artifactId>commons-lang</artifactId>
-      <version>2.6</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>commons-io</groupId>
-      <artifactId>commons-io</artifactId>
-      <version>2.5</version>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
 
   <build>

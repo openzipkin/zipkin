@@ -128,7 +128,7 @@
       <!-- HTML library for injecting configurable <base> tag -->
       <groupId>org.jsoup</groupId>
       <artifactId>jsoup</artifactId>
-      <version>1.11.3</version>
+      <version>1.12.1</version>
     </dependency>
 
     <!-- to test the experimental grpc endpoint with the square/wire library -->
@@ -261,7 +261,7 @@
     <dependency>
       <groupId>com.netflix.concurrency-limits</groupId>
       <artifactId>concurrency-limits-core</artifactId>
-      <version>0.2.2</version>
+      <version>0.3.0</version>
     </dependency>
     <dependency>
       <groupId>io.micrometer</groupId>

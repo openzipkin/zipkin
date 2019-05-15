@@ -28,7 +28,7 @@ If your applications aren't sending traces, yet, configure them with [Zipkin ins
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
 ## Core Library
-The [core library](zipkin2/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
+The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
 
 This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
 
@@ -74,7 +74,7 @@ storage.close();
 ```
 
 ### In-Memory
-The [InMemoryStorage](zipkin2/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It
+The [InMemoryStorage](zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It
 is neither persistent, nor viable for realistic work loads. Its purpose
 is for testing, for example starting a server on your laptop without any
 database needed.
@@ -152,7 +152,7 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 Server artifacts are under the maven group id `org.apache.zipkin`
 Library artifacts are under the maven group id `org.apache.zipkin.zipkin2`
 ### Source Releases
-Source Releases are uploaded to [Apache](https://dist.apache.org/repos/dist/release/incubator/zipkin/zipkin)
+Source Releases are uploaded to [Apache](https://www.apache.org/dyn/closer.lua/incubator/zipkin/zipkin)
 ### Binary Releases
 Binary Releases are uploaded to [Apache](https://repository.apache.org/service/local/staging/deploy/maven2) and synchronized to [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Cg%3A%22org.apache.zipkin%22)
 ### Binary Snapshots
