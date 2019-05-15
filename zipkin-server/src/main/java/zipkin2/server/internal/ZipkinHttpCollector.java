@@ -139,7 +139,7 @@ public class ZipkinHttpCollector {
         } else {
           // Currently this will happen for gzip spans. Need to fix armeria's gzip decoder to allow
           // returning pooled buffers on request.
-          nioBuffer = ByteBuffer.wrap(content.array());
+          nioBuffer = ByteBuffer.wrap(content.array(), content.offset(), content.length());
         }
 
         try {
