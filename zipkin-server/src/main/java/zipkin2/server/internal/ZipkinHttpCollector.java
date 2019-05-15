@@ -25,18 +25,20 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.Consumes;
 import com.linecorp.armeria.server.annotation.ConsumesJson;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.ExceptionHandlerFunction;
 import com.linecorp.armeria.server.annotation.Post;
-import com.linecorp.armeria.server.annotation.RequestConverter;
-import com.linecorp.armeria.server.annotation.RequestConverterFunction;
+import io.netty.buffer.ByteBufHolder;
+import io.netty.util.ReferenceCountUtil;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -58,7 +60,6 @@ import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
 import static zipkin2.server.internal.BodyIsExceptionMessage.testForUnexpectedFormat;
 
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
-@RequestConverter(UnzippingBytesRequestConverter.class)
 @ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinHttpCollector {
   static final Logger LOGGER = LogManager.getLogger();
@@ -74,66 +75,101 @@ public class ZipkinHttpCollector {
   }
 
   @Post("/api/v2/spans")
-  public HttpResponse uploadSpans(byte[] serializedSpans) {
-    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, serializedSpans);
+  public HttpResponse uploadSpans(ServiceRequestContext ctx, HttpRequest req) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
   }
 
   @Post("/api/v2/spans")
   @ConsumesJson
-  public HttpResponse uploadSpansJson(byte[] serializedSpans) {
-    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, serializedSpans);
+  public HttpResponse uploadSpansJson(ServiceRequestContext ctx, HttpRequest req) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V2, ctx, req);
   }
 
   @Post("/api/v2/spans")
   @ConsumesProtobuf
-  public HttpResponse uploadSpansProtobuf(byte[] serializedSpans) {
-    return validateAndStoreSpans(SpanBytesDecoder.PROTO3, serializedSpans);
+  public HttpResponse uploadSpansProtobuf(ServiceRequestContext ctx, HttpRequest req) {
+    return validateAndStoreSpans(SpanBytesDecoder.PROTO3, ctx, req);
   }
 
   @Post("/api/v1/spans")
-  public HttpResponse uploadSpansV1(byte[] serializedSpans) {
-    return validateAndStoreSpans(SpanBytesDecoder.JSON_V1, serializedSpans);
+  public HttpResponse uploadSpansV1(ServiceRequestContext ctx, HttpRequest req) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V1, ctx, req);
   }
 
   @Post("/api/v1/spans")
   @ConsumesJson
-  public HttpResponse uploadSpansV1Json(byte[] serializedSpans) {
-    return validateAndStoreSpans(SpanBytesDecoder.JSON_V1, serializedSpans);
+  public HttpResponse uploadSpansV1Json(ServiceRequestContext ctx, HttpRequest req) {
+    return validateAndStoreSpans(SpanBytesDecoder.JSON_V1, ctx, req);
   }
 
   @Post("/api/v1/spans")
   @ConsumesThrift
-  public HttpResponse uploadSpansV1Thrift(byte[] serializedSpans) {
-    return validateAndStoreSpans(SpanBytesDecoder.THRIFT, serializedSpans);
+  public HttpResponse uploadSpansV1Thrift(ServiceRequestContext ctx, HttpRequest req) {
+    return validateAndStoreSpans(SpanBytesDecoder.THRIFT, ctx, req);
   }
 
   /** This synchronously decodes the message so that users can see data errors. */
-  HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, byte[] serializedSpans) {
-    // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
-    if (serializedSpans.length == 0) return HttpResponse.of(HttpStatus.ACCEPTED);
-    try {
-      SpanBytesDecoderDetector.decoderForListMessage(serializedSpans);
-    } catch (IllegalArgumentException e) {
-      metrics.incrementMessagesDropped();
-      return HttpResponse.of(
-        BAD_REQUEST, MediaType.PLAIN_TEXT_UTF_8, "Expected a " + decoder + " encoded list\n");
-    }
-
-    SpanBytesDecoder unexpectedDecoder = testForUnexpectedFormat(decoder, serializedSpans);
-    if (unexpectedDecoder != null) {
-      metrics.incrementMessagesDropped();
-      return HttpResponse.of(
-        BAD_REQUEST, MediaType.PLAIN_TEXT_UTF_8,
-        "Expected a " + decoder + " encoded list, but received: " + unexpectedDecoder + "\n");
-    }
-
+  HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx, HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
-    List<Span> spans = new ArrayList<>();
-    if (!decoder.decodeList(serializedSpans, spans)) {
-      throw new IllegalArgumentException("Empty " + decoder.name() + " message");
-    }
-    // UnzippingBytesRequestConverter handles incrementing message and bytes
-    collector.accept(spans, result);
+
+    req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handle((msg, t) -> {
+      if (t != null) {
+        result.onError(t);
+        return null;
+      }
+
+      try {
+        final HttpData content;
+        try {
+          content = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
+        } catch (IllegalArgumentException e) {
+          result.onError(e);
+          return null;
+        }
+
+        // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
+        if (content.isEmpty()) {
+          result.onSuccess(null);
+          return null;
+        }
+
+        final ByteBuffer nioBuffer;
+        if (content instanceof ByteBufHolder) {
+          nioBuffer = ((ByteBufHolder) content).content().nioBuffer();
+        } else {
+          // Currently this will happen for gzip spans. Need to fix armeria's gzip decoder to allow
+          // returning pooled buffers on request.
+          nioBuffer = ByteBuffer.wrap(content.array(), content.offset(), content.length());
+        }
+
+        try {
+          SpanBytesDecoderDetector.decoderForListMessage(nioBuffer);
+        } catch (IllegalArgumentException e) {
+          result.onError(new IllegalArgumentException("Expected a " + decoder + " encoded list\n"));
+          return null;
+        }
+
+        SpanBytesDecoder unexpectedDecoder = testForUnexpectedFormat(decoder, nioBuffer);
+        if (unexpectedDecoder != null) {
+          result.onError(new IllegalArgumentException(
+            "Expected a " + decoder + " encoded list, but received: " + unexpectedDecoder + "\n"));
+          return null;
+        }
+
+        List<Span> spans = new ArrayList<>();
+        if (!decoder.decodeList(nioBuffer, spans)) {
+          result.onError(new IllegalArgumentException("Empty " + decoder.name() + " message"));
+          return null;
+        }
+        // UnzippingBytesRequestConverter handles incrementing message and bytes
+        collector.accept(spans, result);
+      } finally {
+        ReferenceCountUtil.release(msg.content());
+      }
+
+      return null;
+    });
+
     return HttpResponse.from(result);
   }
 
@@ -158,8 +194,10 @@ public class ZipkinHttpCollector {
 final class CompletableCallback extends CompletableFuture<HttpResponse>
   implements Callback<Void> {
 
+  static final ResponseHeaders ACCEPTED_RESPONSE = ResponseHeaders.of(HttpStatus.ACCEPTED);
+
   @Override public void onSuccess(Void value) {
-    complete(HttpResponse.of(HttpStatus.ACCEPTED));
+    complete(HttpResponse.of(ACCEPTED_RESPONSE));
   }
 
   @Override public void onError(Throwable t) {
@@ -167,11 +205,10 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
   }
 }
 
-final class UnzippingBytesRequestConverter implements RequestConverterFunction {
+final class UnzippingBytesRequestConverter {
   static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
 
-  @Override public Object convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request,
-    Class<?> expectedResultType) {
+  static HttpData convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request) {
     ZipkinHttpCollector.metrics.incrementMessages();
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();
@@ -187,12 +224,12 @@ final class UnzippingBytesRequestConverter implements RequestConverterFunction {
     if (content.isEmpty()) ZipkinHttpCollector.maybeLog("Empty POST body", ctx, request);
     if (content.length() == 2 && "[]".equals(content.toStringAscii())) {
       ZipkinHttpCollector.maybeLog("Empty JSON list POST body", ctx, request);
+      ReferenceCountUtil.release(content);
       content = HttpData.EMPTY_DATA;
     }
 
-    byte[] result = content.array();
-    ZipkinHttpCollector.metrics.incrementBytes(result.length);
-    return result;
+    ZipkinHttpCollector.metrics.incrementBytes(content.length());
+    return content;
   }
 }
 
@@ -212,7 +249,7 @@ final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
    * Some formats clash on partial data. For example, a v1 and v2 span is identical if only the span
    * name is sent. This looks for unexpected data format.
    */
-  static SpanBytesDecoder testForUnexpectedFormat(BytesDecoder<Span> decoder, byte[] body) {
+  static SpanBytesDecoder testForUnexpectedFormat(BytesDecoder<Span> decoder, ByteBuffer body) {
     if (decoder == SpanBytesDecoder.JSON_V2) {
       if (contains(body, BINARY_ANNOTATION_FIELD_SUFFIX)) {
         return SpanBytesDecoder.JSON_V1;
@@ -231,11 +268,11 @@ final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
   static final byte[] ENDPOINT_FIELD_SUFFIX = {'E', 'n', 'd', 'p', 'o', 'i', 'n', 't', '"'};
   static final byte[] TAGS_FIELD = {'"', 't', 'a', 'g', 's', '"'};
 
-  static boolean contains(byte[] bytes, byte[] subsequence) {
+  static boolean contains(ByteBuffer bytes, byte[] subsequence) {
     bytes:
-    for (int i = 0; i < bytes.length - subsequence.length + 1; i++) {
+    for (int i = 0; i < bytes.remaining() - subsequence.length + 1; i++) {
       for (int j = 0; j < subsequence.length; j++) {
-        if (bytes[i + j] != subsequence[j]) {
+        if (bytes.get(bytes.position() + i + j) != subsequence[j]) {
           continue bytes;
         }
       }
