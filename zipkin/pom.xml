@@ -118,7 +118,7 @@
               <goal>shade</goal>
             </goals>
             <configuration>
-              <shadeTestJar>false</shadeTestJar>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
               <minimizeJar>true</minimizeJar>
               <filters>
                 <filter>
