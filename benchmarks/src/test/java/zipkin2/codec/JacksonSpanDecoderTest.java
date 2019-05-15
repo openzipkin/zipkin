@@ -21,13 +21,15 @@ import io.netty.buffer.PooledByteBufAllocator;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TRACE;
 
-public class MoshiSpanDecoderTest {
+public class JacksonSpanDecoderTest {
   byte[] encoded = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
+  byte[] encodedSpan = SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN);
 
   @Test public void decodeList_bytes() {
-    assertThat(new MoshiSpanDecoder().decodeList(encoded))
+    assertThat(JacksonSpanDecoder.decodeList(encoded))
       .isEqualTo(TRACE);
   }
 
@@ -35,8 +37,24 @@ public class MoshiSpanDecoderTest {
     ByteBuf encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(encoded.length);
     encodedBuf.writeBytes(encoded);
     try {
-      assertThat(new MoshiSpanDecoder().decodeList(encodedBuf.nioBuffer()))
+      assertThat(JacksonSpanDecoder.decodeList(encodedBuf.nioBuffer()))
         .isEqualTo(TRACE);
+    } finally {
+      encodedBuf.release();
+    }
+  }
+
+  @Test public void decodeOne() {
+    assertThat(JacksonSpanDecoder.decodeOne(encodedSpan))
+      .isEqualTo(CLIENT_SPAN);
+  }
+
+  @Test public void decodeOne_byteBuffer() {
+    ByteBuf encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(encodedSpan.length);
+    encodedBuf.writeBytes(encodedSpan);
+    try {
+      assertThat(JacksonSpanDecoder.decodeOne(encodedBuf.nioBuffer()))
+        .isEqualTo(CLIENT_SPAN);
     } finally {
       encodedBuf.release();
     }
