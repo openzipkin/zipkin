@@ -119,17 +119,17 @@ public class ZipkinHttpCollector {
       }
 
       try {
-        // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
-        if (msg.content().isEmpty()) {
-          result.onSuccess(null);
-          return null;
-        }
-
         final HttpData content;
         try {
           content = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
         } catch (IllegalArgumentException e) {
           result.onError(e);
+          return null;
+        }
+
+        // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
+        if (content.isEmpty()) {
+          result.onSuccess(null);
           return null;
         }
 
@@ -145,14 +145,12 @@ public class ZipkinHttpCollector {
         try {
           SpanBytesDecoderDetector.decoderForListMessage(nioBuffer);
         } catch (IllegalArgumentException e) {
-          metrics.incrementMessagesDropped();
           result.onError(new IllegalArgumentException("Expected a " + decoder + " encoded list\n"));
           return null;
         }
 
         SpanBytesDecoder unexpectedDecoder = testForUnexpectedFormat(decoder, nioBuffer);
         if (unexpectedDecoder != null) {
-          metrics.incrementMessagesDropped();
           result.onError(new IllegalArgumentException(
             "Expected a " + decoder + " encoded list, but received: " + unexpectedDecoder + "\n"));
           return null;
