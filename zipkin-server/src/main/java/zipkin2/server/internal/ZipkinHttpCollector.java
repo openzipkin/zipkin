@@ -32,6 +32,7 @@ import com.linecorp.armeria.server.annotation.ConsumesJson;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.ExceptionHandlerFunction;
 import com.linecorp.armeria.server.annotation.Post;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.util.ReferenceCountUtil;
 import java.lang.annotation.ElementType;
@@ -213,7 +214,7 @@ final class UnzippingBytesRequestConverter {
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();
     if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
-      content = GZIP_DECODER_FACTORY.newDecoder().decode(content);
+      content = GZIP_DECODER_FACTORY.newDecoder(ByteBufAllocator.DEFAULT).decode(content);
       // The implementation of the armeria decoder is to return an empty body on failure
       if (content.isEmpty()) {
         ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
