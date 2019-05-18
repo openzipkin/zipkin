@@ -108,12 +108,13 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- Static content for the web UI -->
+    <!-- Static content for the Classic UI -->
     <dependency>
-      <groupId>${project.groupId}</groupId>
+      <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-ui</artifactId>
-      <version>${project.version}</version>
+      <version>2.12.10</version>
     </dependency>
+    <!-- Static content for the Lens UI -->
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-lens</artifactId>
