@@ -213,7 +213,7 @@ final class UnzippingBytesRequestConverter {
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();
     if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
-      content = GZIP_DECODER_FACTORY.newDecoder().decode(content);
+      content = GZIP_DECODER_FACTORY.newDecoder(ctx.alloc()).decode(content);
       // The implementation of the armeria decoder is to return an empty body on failure
       if (content.isEmpty()) {
         ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
