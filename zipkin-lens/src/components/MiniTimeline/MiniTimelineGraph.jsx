@@ -23,6 +23,7 @@ import { getServiceNameColor } from '../../util/color';
 import { detailedSpansPropTypes } from '../../prop-types';
 
 const leftMouseButton = 0;
+const dragThreshold = 0.01;
 
 const propTypes = {
   spans: detailedSpansPropTypes.isRequired,
@@ -45,6 +46,7 @@ class MiniTimelineGraph extends React.Component {
     this.handleMouseDown = this.handleMouseDown.bind(this);
     this.handleMouseMove = this.handleMouseMove.bind(this);
     this.handleMouseUp = this.handleMouseUp.bind(this);
+    this.handleUnfocusedAreaClick = this.handleUnfocusedAreaClick.bind(this);
   }
 
   getPositionX(clientX) {
@@ -75,26 +77,41 @@ class MiniTimelineGraph extends React.Component {
     const { dragStartX } = this.state;
     this.setState({ isDragging: false });
 
-    let startTs;
-    let endTs;
     const currentX = this.getPositionX(event.clientX);
-    if (currentX > dragStartX) {
-      startTs = Math.max(dragStartX * duration, 0);
-      endTs = Math.min(currentX * duration, duration);
-    } else {
-      startTs = Math.max(currentX * duration, 0);
-      endTs = Math.min(dragStartX * duration, duration);
+    // If the operation is drag, change the time range to dragged range.
+    if (Math.abs(dragStartX - currentX) > dragThreshold) {
+      let startTs;
+      let endTs;
+
+      if (currentX > dragStartX) {
+        startTs = Math.max(dragStartX * duration, 0);
+        endTs = Math.min(currentX * duration, duration);
+      } else {
+        startTs = Math.max(currentX * duration, 0);
+        endTs = Math.min(dragStartX * duration, duration);
+      }
+      onStartAndEndTsChange(startTs, endTs);
     }
-    onStartAndEndTsChange(startTs, endTs);
 
     window.removeEventListener('mousemove', this.handleMouseMove);
     window.removeEventListener('mouseup', this.handleMouseUp);
   }
 
+  handleUnfocusedAreaClick(event) {
+    const { duration, onStartAndEndTsChange } = this.props;
+    onStartAndEndTsChange(0, duration);
+    event.stopPropagation();
+  }
+
   render() {
     const {
-      spans, startTs, endTs, duration, numTimeMarkers,
+      spans,
+      startTs,
+      endTs,
+      duration,
+      numTimeMarkers,
     } = this.props;
+
     const { isDragging, dragStartX, dragCurrentX } = this.state;
     const graphHeight = getGraphHeight(spans.length);
     const graphLineHeight = getGraphLineHeight(spans.length);
@@ -159,6 +176,8 @@ class MiniTimelineGraph extends React.Component {
                   x="0"
                   y="0"
                   fill="rgba(50, 50, 50, 0.2)"
+                  cursor="pointer"
+                  onClick={this.handleUnfocusedAreaClick}
                 />
               )
               : null
@@ -172,6 +191,8 @@ class MiniTimelineGraph extends React.Component {
                   x={`${endTs / duration * 100}%`}
                   y="0"
                   fill="rgba(50, 50, 50, 0.2)"
+                  cursor="pointer"
+                  onClick={this.handleUnfocusedAreaClick}
                 />
               )
               : null
