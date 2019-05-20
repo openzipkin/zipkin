@@ -214,13 +214,3 @@ This product contains a modified part of Okio, distributed by Square:
 
   * License: Apache License v2.0
   * Homepage: https://github.com/square/okio
-
-This product contains a modified part of Chosen, distributed by Harvest:
-
-  * License: MIT
-  * Homepage: https://github.com/harvesthq/chosen
-
-This product contains a modified part of Dager-D3, distributed by Dagre:
-
-  * License: MIT
-  * Homepage: https://github.com/dagrejs/dagre-d3
