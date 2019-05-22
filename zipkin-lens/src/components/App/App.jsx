@@ -55,7 +55,7 @@ class App extends React.Component {
             <Route
               exact
               path="/zipkin/traceViewer"
-              render={TraceViewerContainer}
+              component={TraceViewerContainer}
             />
           </Layout>
         </BrowserRouter>
