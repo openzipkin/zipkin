@@ -93,3 +93,18 @@ export const detailedTraceSummaryPropTypes = PropTypes.shape({
   duration: PropTypes.number.isRequired,
   durationStr: PropTypes.string.isRequired,
 });
+
+export const globalSearchConditionsPropTypes = PropTypes.arrayOf(PropTypes.shape({
+  key: PropTypes.string,
+  value: PropTypes.oneOfType([
+    PropTypes.string,
+    PropTypes.number,
+    PropTypes.shape({}),
+  ]),
+}));
+
+export const globalSearchLookbackConditionPropTypes = PropTypes.shape({
+  value: PropTypes.string,
+  endTs: PropTypes.number,
+  startTs: PropTypes.number,
+});
