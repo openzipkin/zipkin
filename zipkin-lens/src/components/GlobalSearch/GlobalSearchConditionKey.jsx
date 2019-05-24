@@ -18,6 +18,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import ReactSelect from 'react-select';
 
+import { buildReactSelectStyle } from './util';
+
 const propTypes = {
   conditionKey: PropTypes.string.isRequired,
   conditionKeyOptions: PropTypes.arrayOf(
@@ -42,32 +44,14 @@ class GlobalSearchConditionKey extends React.Component {
     }));
   }
 
-  selectStyle() {
+  buildReactSelectStyle() {
     const { conditionKey, conditionKeyOptions, isFocused } = this.props;
 
-    let maxLength = 0;
-    conditionKeyOptions.forEach((conditionKeyOption) => {
-      const { length } = conditionKeyOption.conditionKey;
-      if (maxLength < length) {
-        maxLength = length;
-      }
-    });
-    return {
-      control: provided => ({
-        ...provided,
-        width: isFocused
-          ? `${8 * maxLength + 16}px`
-          : `${(8 * conditionKey.length) + 16}px`,
-      }),
-      indicatorsContainer: () => ({
-        display: 'none',
-      }),
-      menuPortal: base => ({
-        ...base,
-        zIndex: 9999,
-        width: `${8 * maxLength + 16}px`,
-      }),
-    };
+    return buildReactSelectStyle(
+      conditionKey,
+      conditionKeyOptions.map(opt => opt.conditionKey),
+      isFocused,
+    );
   }
 
   render() {
@@ -88,7 +72,7 @@ class GlobalSearchConditionKey extends React.Component {
           onFocus={onFocus}
           onBlur={onBlur}
           onChange={(selected) => { onChange(selected.value); }}
-          styles={this.selectStyle()}
+          styles={this.buildReactSelectStyle()}
           menuPortalTarget={document.body}
           defaultMenuIsOpen
           backspaceRemovesValue={false}
