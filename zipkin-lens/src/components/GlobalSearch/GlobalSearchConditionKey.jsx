@@ -87,7 +87,7 @@ class GlobalSearchConditionKey extends React.Component {
           options={this.conditionKeyOptions()}
           onFocus={onFocus}
           onBlur={onBlur}
-          onChange={onChange}
+          onChange={(selected) => { onChange(selected.value); }}
           styles={this.selectStyle()}
           menuPortalTarget={document.body}
           defaultMenuIsOpen
