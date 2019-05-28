@@ -241,12 +241,12 @@ final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
   public HttpResponse handleException(RequestContext ctx, HttpRequest req, Throwable cause) {
     ZipkinHttpCollector.metrics.incrementMessagesDropped();
 
-    LOGGER.warn("Unexpected error handling request.", cause);
-
     String message = cause.getMessage() != null ? cause.getMessage() : "";
     if (cause instanceof IllegalArgumentException) {
       return HttpResponse.of(BAD_REQUEST, MediaType.ANY_TEXT_TYPE, message);
     } else {
+      LOGGER.warn("Unexpected error handling request.", cause);
+
       return HttpResponse.of(INTERNAL_SERVER_ERROR, MediaType.ANY_TEXT_TYPE, message);
     }
   }
