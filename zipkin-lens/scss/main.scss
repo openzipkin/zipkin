@@ -15,10 +15,15 @@
 // limitations under the License.
 //
 
-@import '../node_modules/rc-calendar/assets/index.css';
-@import '../node_modules/rc-slider/assets/index.css';
-@import '../node_modules/rc-time-picker/assets/index.css';
-@import '../node_modules/react-table/react-table.css';
+@import '~rc-calendar/assets/index.css';
+@import '~rc-slider/assets/index.css';
+@import '~rc-time-picker/assets/index.css';
+@import '~react-table/react-table.css';
+
+$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
+@import '~@fortawesome/fontawesome-free/scss/brands.scss';
+@import '~@fortawesome/fontawesome-free/scss/solid.scss';
 
 @import 'variables';
 @import 'variables-dark';
