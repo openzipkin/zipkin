@@ -28,12 +28,18 @@ const propTypes = {
   lookbackCondition: globalSearchLookbackConditionPropTypes.isRequired,
   limitCondition: PropTypes.number.isRequired,
   fetchTraces: PropTypes.func.isRequired,
+  fetchServices: PropTypes.func.isRequired,
 };
 
 class GlobalSearch extends React.Component {
   constructor(props) {
     super(props);
     this.handleFindButtonClick = this.handleFindButtonClick.bind(this);
+  }
+
+  componentDidMount() {
+    const { fetchServices } = this.props;
+    fetchServices();
   }
 
   handleFindButtonClick(event) {

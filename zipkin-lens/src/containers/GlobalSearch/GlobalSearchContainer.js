@@ -15,6 +15,7 @@ import { connect } from 'react-redux';
 
 import GlobalSearch from '../../components/GlobalSearch/GlobalSearch';
 import { fetchTraces } from '../../actions/traces-action';
+import { fetchServices } from '../../actions/services-action';
 
 const mapStateToProps = state => ({
   conditions: state.globalSearch.conditions,
@@ -24,6 +25,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   fetchTraces: params => dispatch(fetchTraces(params)),
+  fetchServices: () => dispatch(fetchServices()),
 });
 
 const GlobalSearchContainer = connect(
