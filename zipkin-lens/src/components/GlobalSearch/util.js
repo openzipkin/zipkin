@@ -29,9 +29,6 @@ export const buildReactSelectStyle = (value, options, isFocused) => {
         ? `${8 * maxLength + 16}px`
         : `${(8 * value.length) + 16}px`,
     }),
-    indicatorsContainer: () => ({
-      display: 'none',
-    }),
     menuPortal: base => ({
       ...base,
       zIndex: 9999,
