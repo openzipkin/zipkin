@@ -59,7 +59,7 @@ class GlobalSearchConditionList extends React.Component {
               </div>
             )
             : conditions.map((condition, conditionIndex) => (
-              <GlobalSearchConditionContainer conditionIndex={conditionIndex} />
+              <GlobalSearchConditionContainer conditionIndex={conditionIndex} key={condition._id} />
             ))
         }
         <div className="global-search-condition-list__add-button-wrapper">
