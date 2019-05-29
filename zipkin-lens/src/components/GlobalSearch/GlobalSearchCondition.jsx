@@ -192,7 +192,7 @@ class GlobalSearchCondition extends React.Component {
             isFocused={isKeyFocused}
             onFocus={this.handleKeyFocus}
             onBlur={this.handleKeyBlur}
-            onChange={this.handkeKeyChange}
+            onChange={this.handleKeyChange}
           />
         </div>
         <div className="global-search-condition__value-wrapper">
