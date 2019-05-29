@@ -62,6 +62,7 @@ class GlobalSearchNameCondition extends React.Component {
           onChange={(selected) => { onChange(selected.value); }}
           menuPortalTarget={document.body}
           blurInputOnSelect
+          classNamePrefix="global-search-name-condition-select"
         />
       </div>
     );
