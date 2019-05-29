@@ -18,6 +18,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { withRouter } from 'react-router';
 
+import GlobalSearchConditionListContainer from '../../containers/GlobalSearch/GlobalSearchConditionListContainer';
 import { buildTracesQueryParameters, buildTracesApiQueryParameters } from './api';
 import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
 
@@ -66,6 +67,9 @@ class GlobalSearch extends React.Component {
   render() {
     return (
       <div className="global-search">
+        <div className="global-search__condition-list-wrapper">
+          <GlobalSearchConditionListContainer />
+        </div>
         <div className="global-search__find-button-wrapper">
           <button
             type="button"
