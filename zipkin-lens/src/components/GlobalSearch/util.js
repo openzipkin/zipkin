@@ -38,3 +38,34 @@ export const buildReactSelectStyle = (value, options, isFocused) => {
     }),
   };
 };
+
+const buildOrderedConditionKeyOptions = autocompleteKeys => ([
+  'serviceName',
+  'spanName',
+  'minDuration',
+  'maxDuration',
+  ...autocompleteKeys,
+  'tags',
+  'remoteServiceName',
+]);
+
+export const buildConditionKeyOptions = (currentConditionKey, conditions, autocompleteKeys) => {
+  const existingConditions = {};
+
+  conditions.forEach((condition) => {
+    if (condition.key === 'tags') {
+      return;
+    }
+    existingConditions[condition.key] = true;
+  });
+
+  return buildOrderedConditionKeyOptions(autocompleteKeys).map((conditionKeyOption) => {
+    if (conditionKeyOption === currentConditionKey) {
+      return { conditionKeyOption, isDisabled: false };
+    }
+    if (existingConditions[conditionKeyOption]) {
+      return { conditionKeyOption, isDisabled: true };
+    }
+    return { conditionKeyOption, isDisabled: false };
+  });
+};
