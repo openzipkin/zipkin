@@ -16,11 +16,9 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 
 import { buildTracesQueryParameters, buildTracesApiQueryParameters } from './api';
-import { fetchTraces as fetchTracesActionCreator } from '../../actions/traces-action';
 import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
 
 const propTypes = {
@@ -84,13 +82,4 @@ class GlobalSearch extends React.Component {
 
 GlobalSearch.propTypes = propTypes;
 
-export default withRouter(connect(
-  state => ({
-    conditions: state.globalSearch.conditions,
-    lookbackCondition: state.globalSearch.lookbackCondition,
-    limitCondition: state.globalSearch.limitCondition,
-  }),
-  dispatch => ({
-    fetchTraces: params => dispatch(fetchTracesActionCreator(params)),
-  }),
-)(GlobalSearch));
+export default withRouter(GlobalSearch);
