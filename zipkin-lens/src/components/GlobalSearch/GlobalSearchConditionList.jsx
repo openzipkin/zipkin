@@ -24,7 +24,7 @@ import { globalSearchConditionsPropTypes } from '../../prop-types';
 const propTypes = {
   conditions: globalSearchConditionsPropTypes.isRequired,
   addCondition: PropTypes.func.isRequired,
-  autocompleteKeys: PropTypes.string.isRequired,
+  autocompleteKeys: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 class GlobalSearchConditionList extends React.Component {
