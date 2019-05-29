@@ -15,37 +15,44 @@
 // limitations under the License.
 //
 
-.global-search {
+.global-search-condition-list {
   display: flex;
+  flex-wrap: wrap;
   width: 100%;
-  height: 50px;
-}
-
-.global-search__condition-list-wrapper {
-  display: flex;
-  width: 100%;
-  margin-right: 10px;
-}
-
-.global-search__find-button-wrapper {
-  display: flex;
+  padding-left: 10px;
+  padding-right: 10px;
+  border: 1px solid $gray-8;
+  border-radius: 3px;
   align-items: center;
 }
 
-.global-search__find-button {
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 4px;
+.global-search-condition-list__empty-message {
+  font-size: 14px;
+  cursor: default;
+}
+
+.global-search-condition-list__add-button-wrapper {
+  margin-left: 10px;
+}
+
+.global-search-condition-list__add-button {
+  width: 30px;
+  height: 30px;
   color: $white;
-  background-color: $pink-1;
+  background-color: $blue-2;
+  border: none;
+  border-radius: 3px;
   cursor: pointer;
 
   &:hover {
-    background-color: $red-1;
+    background-color: $blue-4;
+    position: relative;
+    right: 1px;
+    bottom: 1px;
+    box-shadow: 1px 1px rgba(0,0,0,0.4);
   }
 }
 
-.global-search__find-button-icon {
-  font-size: 20px;
+.global-search-condition-list__add-button-icon {
+  font-size: 17px;
 }
