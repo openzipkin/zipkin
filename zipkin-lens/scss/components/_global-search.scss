@@ -15,95 +15,34 @@
 .global-search {
   display: flex;
   width: 100%;
+  height: 50px;
 }
 
-.global-search__conditions {
+.global-search__condition-list-wrapper {
   display: flex;
-  flex-wrap: wrap;
   width: 100%;
-  margin-right: 15px;
-  padding: 9px;
-  color: $dark-5;
-  background: $gray-11;
-  border: 1px solid $gray-8;
-  border-radius: 3px;
-  align-items: center;
+  margin-right: 10px;
 }
 
-.global-search__placeholder {
-  padding-left: 8px;
-  padding-right: 4px;
-}
-
-.global-search__search-condition-wrapper {
-  padding-top: 1px;
-  padding-bottom: 1px;
-  padding-left: 4px;
-  padding-right: 4px;
-}
-
-.global-search__add-condition-button {
-  cursor: pointer;
-  height: 28px;
-  width: 28px;
-  background: #8999ef;
+.global-search__find-button-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border-radius: 3px;
-  color: #ffffff;
-  margin-right: 2px;
-}
-
-.global-search__add-condition-button-icon {
-  font-size: 18px;
-}
-
-.global-search__condition-limit-wrapper {
-  cursor: pointer;
-  font-size: 13px;
-  width: 76px;
-  height: 50px;
-  border-right: solid 1px $gray-8;
-  border-top-left-radius: 3px;
-  border-bottom-left-radius: 3px;
-  overflow: hidden;
-  flex-shrink: 0;
-  border: 1px solid $gray-7;
-  box-sizing: border-box;
-  background: linear-gradient(to bottom, $gray-10, $gray-9);
-
-}
-
-.global-search__condition-lookback-wrapper {
-  border-top-right-radius: 3px;
-  border-bottom-right-radius: 3px;
-  overflow: hidden;
-  flex-shrink: 0;
-  height: 50px;
-  border: 1px solid $gray-7;
-  box-sizing: border-box;
-  background: linear-gradient(to bottom, $gray-10, $gray-9);
-}
-
-.global-search__dropdown-menu-wrapper {
-  margin-left: 10px;
 }
 
 .global-search__find-button {
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #ffffff;
-  background: #9989ef;
-  border-radius: 3px;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 4px;
+  color: $white;
+  background-color: $pink-1;
   cursor: pointer;
+
+  &:hover {
+    background-color: $red-1;
+  }
 }
 
 .global-search__find-button-icon {
-  font-size: 18px;
-  width: 36px;
-  text-align: center;
+  font-size: 20px;
 }
