@@ -65,6 +65,11 @@ class GlobalSearchCondition extends React.Component {
     return conditions[conditionIndex].key;
   }
 
+  getConditionValue() {
+    const { conditions, conditionIndex } = this.props;
+    return conditions[conditionIndex].value;
+  }
+
   handleKeyFocus() {
     this.setState({ isKeyFocused: true });
   }
@@ -131,8 +136,10 @@ class GlobalSearchCondition extends React.Component {
     } = this.props;
 
     const conditionKey = this.getConditionKey();
+    const conditionValue = this.getConditionValue();
 
     const commonProps = {
+      value: conditionValue,
       onChange: this.handleValueChange,
     };
 
