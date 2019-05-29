@@ -73,7 +73,7 @@ class GlobalSearchCondition extends React.Component {
     this.setState({ isKeyFocused: false });
   }
 
-  handleKeyChange() {
+  handleKeyChange(value) {
     const {
       conditionIndex,
       autocompleteKeys,
@@ -81,12 +81,10 @@ class GlobalSearchCondition extends React.Component {
       fetchAutocompleteValues,
     } = this.props;
 
-    const conditionKey = this.getConditionKey();
+    changeConditionKey(conditionIndex, value);
 
-    changeConditionKey(conditionIndex, conditionKey);
-
-    if (autocompleteKeys.includes(conditionKey)) {
-      fetchAutocompleteValues(conditionKey);
+    if (autocompleteKeys.includes(value)) {
+      fetchAutocompleteValues(value);
     }
   }
 
