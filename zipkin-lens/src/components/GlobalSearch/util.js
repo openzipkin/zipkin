@@ -21,10 +21,11 @@ export const buildReactSelectStyle = (value, options, isFocused) => {
       maxLength = opt.length;
     }
   });
+
   return {
     control: provided => ({
       ...provided,
-      width: isFocused
+      width: isFocused || !Array.isArray(value)
         ? `${8 * maxLength + 16}px`
         : `${(8 * value.length) + 16}px`,
     }),
@@ -61,12 +62,12 @@ export const buildConditionKeyOptions = (currentConditionKey, conditions, autoco
 
   return buildOrderedConditionKeyOptions(autocompleteKeys).map((conditionKeyOption) => {
     if (conditionKeyOption === currentConditionKey) {
-      return { conditionKeyOption, isDisabled: false };
+      return { conditionKey: conditionKeyOption, isDisabled: false };
     }
     if (existingConditions[conditionKeyOption]) {
-      return { conditionKeyOption, isDisabled: true };
+      return { conditionKey: conditionKeyOption, isDisabled: true };
     }
-    return { conditionKeyOption, isDisabled: false };
+    return { conditionKey: conditionKeyOption, isDisabled: false };
   });
 };
 
