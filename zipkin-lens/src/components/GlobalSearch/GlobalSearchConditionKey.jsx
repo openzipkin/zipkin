@@ -76,6 +76,7 @@ class GlobalSearchConditionKey extends React.Component {
           menuPortalTarget={document.body}
           defaultMenuIsOpen
           backspaceRemovesValue={false}
+          classNamePrefix="global-search-condition-key-select"
         />
       </div>
     );
