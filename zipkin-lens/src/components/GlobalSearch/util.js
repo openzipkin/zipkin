@@ -69,3 +69,39 @@ export const buildConditionKeyOptions = (currentConditionKey, conditions, autoco
     return { conditionKeyOption, isDisabled: false };
   });
 };
+
+export const retrieveNextConditionKey = (conditions, autocompleteKeys) => {
+  const conditionKeyOptions = buildOrderedConditionKeyOptions(autocompleteKeys);
+
+  const existingConditions = {};
+  conditions.forEach((condition) => {
+    existingConditions[condition.key] = true;
+  });
+
+  for (let i = 0; i < conditionKeyOptions.length; i += 1) {
+    const conditionKey = conditionKeyOptions[i];
+    if (!existingConditions[conditionKey]) {
+      return conditionKey;
+    }
+  }
+  return 'tags';
+};
+
+export const retrieveDefaultConditionValue = (conditionKey) => {
+  switch (conditionKey) {
+    case 'serviceName':
+      return undefined;
+    case 'remoteServiceName':
+      return undefined;
+    case 'spanName':
+      return undefined;
+    case 'minDuration':
+      return 10;
+    case 'maxDuration':
+      return 100;
+    case 'tags':
+      return '';
+    default: // autocompleteKeys
+      return undefined;
+  }
+};
