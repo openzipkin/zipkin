@@ -98,7 +98,9 @@ class GlobalMenuJsonSelector extends React.Component {
           type="button"
           className="global-menu-json-selector__button"
           onClick={this.handleClick}
-        />
+        >
+          Choose JSON file...
+        </button>
       </div>
     );
   }
