@@ -16,6 +16,7 @@ import React from 'react';
 import { withRouter } from 'react-router';
 
 import Sidebar from './Sidebar';
+import GlobalMenu from '../GlobalMenu';
 import GlobalSearchContainer from '../../containers/GlobalSearch/GlobalSearchContainer';
 
 const propTypes = {
@@ -26,8 +27,13 @@ const propTypes = {
 const Layout = ({ location, children }) => (
   <div className="app__layout">
     <Sidebar location={location} />
-    <div className="app__global-search-wrapper">
-      <GlobalSearchContainer />
+    <div className="app__header">
+      <div className="app__global-search-wrapper">
+        <GlobalSearchContainer />
+      </div>
+      <div className="app__global-menu-wrapper">
+        <GlobalMenu />
+      </div>
     </div>
     <div className="app__content">
       {children}
