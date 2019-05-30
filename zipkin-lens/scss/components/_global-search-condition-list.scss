@@ -19,8 +19,7 @@
   display: flex;
   flex-wrap: wrap;
   width: 100%;
-  padding-left: 10px;
-  padding-right: 10px;
+  padding: 2px 5px;
   border: 1px solid $gray-8;
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
@@ -32,8 +31,12 @@
   cursor: default;
 }
 
+.global-search-condition-list__condition-wrapper {
+  margin: 2px;
+}
+
 .global-search-condition-list__add-button-wrapper {
-  margin-left: 10px;
+  margin: 2px;
 }
 
 .global-search-condition-list__add-button {
