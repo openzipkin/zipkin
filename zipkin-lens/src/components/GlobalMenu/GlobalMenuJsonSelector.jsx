@@ -31,6 +31,7 @@ const propTypes = {
 class GlobalMenuJsonSelector extends React.Component {
   constructor(props) {
     super(props);
+    this.inputElement = undefined;
     this.handleFileChange = this.handleFileChange.bind(this);
     this.handleClick = this.handleClick.bind(this);
   }
@@ -38,6 +39,13 @@ class GlobalMenuJsonSelector extends React.Component {
   goToTraceViewerPage() {
     const { history } = this.props;
     history.push({ pathname: '/zipkin/traceViewer' });
+  }
+
+  handleClick(event) {
+    if (this.inputElement) {
+      this.inputElement.click();
+    }
+    event.stopPropagation();
   }
 
   handleFileChange(event) {
