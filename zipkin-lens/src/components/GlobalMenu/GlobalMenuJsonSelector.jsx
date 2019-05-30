@@ -17,8 +17,10 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 import { withRouter } from 'react-router';
+import { connect } from 'react-redux';
 
 import { ensureV2TraceData } from '../../util/trace';
+import { loadTrace as loadTraceActionCreator, loadTraceFailure as loadTraceFailureActionCreator } from '../../actions/trace-viewer-action';
 
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
@@ -96,4 +98,10 @@ class GlobalMenuJsonSelector extends React.Component {
 
 GlobalMenuJsonSelector.propTypes = propTypes;
 
-export default withRouter(GlobalMenuJsonSelector);
+export default connect(
+  null,
+  dispatch => ({
+    loadTrace: trace => dispatch(loadTraceActionCreator(trace)),
+    loadTraceFailure: errorMessage => dispatch(loadTraceFailureActionCreator(errorMessage)),
+  }),
+)(withRouter(GlobalMenuJsonSelector));
