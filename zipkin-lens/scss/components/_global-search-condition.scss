@@ -21,7 +21,7 @@
   overflow: hidden;
   height: 30px;
   color: $white;
-  border-radius: 5px;
+  border-radius: 3px;
   margin-left: 2px;
   margin-right: 2px;
 
@@ -29,6 +29,7 @@
     position: relative;
     right: 1px;
     bottom: 1px;
+    box-shadow: 1px 1px rgba(0,0,0,0.4);
   }
 }
 
