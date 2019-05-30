@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export const ensureV2 = (trace) => {
+export const ensureV2TraceData = (trace) => {
   if (!Array.isArray(trace) || trace.length === 0) {
     throw new Error('input is not a list');
   }
