@@ -19,7 +19,7 @@
   display: block;
 }
 
-.app__global-search-wrapper {
+.app__header {
   position: fixed;
   top: 0;
   left: 0;
@@ -31,6 +31,15 @@
   align-items: center;
   z-index: 1000;
   border-bottom: 1px solid $gray-9;
+}
+
+.app__global-search-wrapper {
+  width: 100%;
+  margin-right: 5px;
+}
+
+.app__global-menu-wrapper {
+  margin-left: 5px;
 }
 
 .app__content {
