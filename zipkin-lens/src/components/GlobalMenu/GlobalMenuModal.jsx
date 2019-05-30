@@ -30,8 +30,10 @@ const GlobalMenuModal = ({ isOpened, onClose }) => (
   <div className="global-menu-modal">
     <ReactModal
       className="global-menu-modal__modal"
+      overlayClassName="global-menu-modal__overlay"
       isOpen={isOpened}
       onRequestClose={onClose}
+      parentSelector={() => document.querySelector('.global-menu-modal')}
     >
       <div className="global-menu-modal__trace-id-wrapper">
         <GlobalMenuTraceId />
