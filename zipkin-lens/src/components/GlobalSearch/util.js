@@ -14,6 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import _ from 'lodash';
+
 export const buildReactSelectStyle = (value, options, isFocused) => {
   let maxLength = 0;
   options.forEach((opt) => {
@@ -25,7 +27,7 @@ export const buildReactSelectStyle = (value, options, isFocused) => {
   return {
     control: provided => ({
       ...provided,
-      width: isFocused || !Array.isArray(value)
+      width: isFocused || !_.isString(value)
         ? `${8 * maxLength + 16}px`
         : `${(8 * value.length) + 16}px`,
     }),
