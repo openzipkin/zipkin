@@ -17,8 +17,11 @@
 /* eslint-disable import/no-extraneous-dependencies */
 const webpack = require('webpack');
 const path = require('path');
+
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const TerserJSPlugin = require('terser-webpack-plugin');
+const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
 
 module.exports = {
   target: 'web',
@@ -28,6 +31,9 @@ module.exports = {
     path: path.join(__dirname, '/target/classes/zipkin-lens/'),
     filename: 'app-[hash].min.js',
     publicPath: '/zipkin/',
+  },
+  optimization: {
+    minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
   },
   module: {
     rules: [
@@ -40,24 +46,12 @@ module.exports = {
       },
       {
         test: /\.scss$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: [
-            {
-              loader: 'css-loader',
-              options: {
-                url: false,
-                sourceMap: true,
-              },
-            },
-            {
-              loader: 'sass-loader',
-              options: {
-                sourceMap: true,
-              },
-            },
-          ],
-        }),
+        use: [
+          { loader: MiniCssExtractPlugin.loader },
+          { loader: 'css-loader', options: { sourceMap: true } },
+          { loader: 'resolve-url-loader' },
+          { loader: 'sass-loader', options: {sourceMap: true } },
+        ],
       },
       {
         test: /\.html$/,
@@ -65,6 +59,14 @@ module.exports = {
         options: {
           minimize: true,
         },
+      },
+      {
+        test: /webfonts\/.*\.(svg|woff|woff2|ttf|eot)$/,
+        loader: "file-loader",
+        options: {
+          outputPath: 'webfonts',
+          name: '[name]-[hash].[ext]'
+        }
       },
       {
         test: /\.(jpg|png)$/,
@@ -90,10 +92,14 @@ module.exports = {
     extensions: ['.js', '.jsx'],
   },
   plugins: [
-    new ExtractTextPlugin('style-[hash].min.css', { allChunks: true }),
     new HtmlWebpackPlugin({
       template: path.join(__dirname, './static/index.html'),
       favicon: path.join(__dirname, './static/favicon.ico'),
+    }),
+    new MiniCssExtractPlugin({
+      filename: '[name].[hash].css',
+      chunkFilename: '[id].[hash].css',
+      fallback: 'style-loader',
     }),
     new webpack.DefinePlugin({
       'process.env': {

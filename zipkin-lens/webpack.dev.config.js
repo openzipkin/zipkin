@@ -40,12 +40,20 @@ module.exports = {
         use: [
           { loader: 'style-loader' },
           { loader: 'css-loader' },
-          { loader: 'sass-loader' },
+          { loader: 'resolve-url-loader' },
+          {
+            loader: 'sass-loader',
+            options: { sourceMap: true },
+          },
         ],
       },
       {
         test: /\.html$/,
         loader: 'html-loader',
+      },
+      {
+        test: /webfonts\/.*\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*$|$)/,
+        loader: 'file-loader'
       },
       {
         test: /\.(jpg|png)$/,
