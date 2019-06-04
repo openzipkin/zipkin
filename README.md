@@ -136,7 +136,8 @@ you can perform ad-hoc queries using SQL. However, this component has
 if you put a lot of data into it.
 
 This store does not require a [job to aggregate](https://github.com/apache/incubator-zipkin-dependencies) dependency links.
-However, running the job will improve performance.
+However, running the job will improve performance of dependencies
+queries.
 
 #### Cassandra
 The [Cassandra v1](zipkin-storage/cassandra-v1) component uses Cassandra
