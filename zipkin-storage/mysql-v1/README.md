@@ -1,9 +1,9 @@
 # storage-mysql-v1
-
 This MySQL (Legacy) storage component includes a blocking `SpanStore` and span consumer function.
 `SpanStore.getDependencies()` aggregates dependency links on-demand.
 
-The implementation uses JOOQ to generate MySQL SQL commands. It is only tested on MySQL 5.6-5.7.
+The implementation uses JOOQ to generate MySQL SQL commands. MySQL 5.6+
+features are used, but tests run against MariaDB 10.3.
 
 See the [schema DDL](src/main/resources/mysql.sql).
 

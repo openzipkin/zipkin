@@ -2,8 +2,8 @@
 
 This is is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [OkHttp 3](https://github.com/square/okttp) and
-[Moshi](https://github.com/square/moshi). This currently supports 5.x,
-6.x and 7.x version families.
+[Moshi](https://github.com/square/moshi). This uses Elasticsearch 5+
+features, but is tested against Elasticsearch 6-7.x.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA

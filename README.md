@@ -80,17 +80,23 @@ is for testing, for example starting a server on your laptop without any
 database needed.
 
 ### Cassandra
-The [Cassandra](zipkin-storage/cassandra) component is tested against
-Cassandra 3.11.3+. It stores spans using UDTs, such that they appear like
-the v2 Zipkin model in cqlsh. It is designed for scale. For example, it
-uses a combination of SASI and manually implemented indexes to make
-querying larger data more performant.
+The [Cassandra](zipkin-storage/cassandra) component uses Cassandra
+3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.
 
-Note: This store requires a [spark job](https://github.com/apache/incubator-zipkin-dependencies) to aggregate dependency links.
+This is the second generation of our Cassandra schema. It stores spans
+using UDTs, such that they appear like Zipkin v2 json in cqlsh. It is
+designed for scale, and uses a combination of SASI and manually
+implemented indexes to make querying larger data more performant.
+
+Note: This store requires a [job to aggregate](https://github.com/apache/incubator-zipkin-dependencies) dependency links.
 
 ### Elasticsearch
-The [Elasticsearch](zipkin-storage/elasticsearch) component is tested against Elasticsearch 2-6.x.
-It stores spans as json and has been designed for larger scale.
+The [Elasticsearch](zipkin-storage/elasticsearch) component uses
+Elasticsearch 5+ features, but is tested against Elasticsearch 6-7.x.
+
+It stores spans as Zipkin v2 json so that integration with other tools is
+straightforward. To help with scale, this uses a combination of custom
+and manually implemented indexing.
 
 Note: This store requires a [spark job](https://github.com/apache/incubator-zipkin-dependencies) to aggregate dependency links.
 
@@ -120,20 +126,29 @@ data layouts based on Zipkin's V1 Thrift model, as opposed to the
 simpler v2 data model currently used.
 
 #### MySQL
-The [MySQL v1](zipkin-storage/mysql-v1) component currently is only
-tested with MySQL 5.6-7. It is designed to be easy to understand, and
-get started with. For example, it deconstructs spans into columns, so
+The [MySQL v1](zipkin-storage/mysql-v1) component uses MySQL 5.6+
+features, but is tested against MariaDB 10.3.
+
+The schema was designed to be easy to understand and get started with;
+it was not designed for performance. Ex spans fields are columns, so
 you can perform ad-hoc queries using SQL. However, this component has
 [known performance issues](https://github.com/apache/incubator-zipkin/issues/1233): queries will eventually take seconds to return
 if you put a lot of data into it.
 
+This store does not require a [job to aggregate](https://github.com/apache/incubator-zipkin-dependencies) dependency links.
+However, running the job will improve performance.
+
 #### Cassandra
-The [Cassandra v1](zipkin-storage/cassandra-v1) component is tested
-against Cassandra 2.2+. It stores spans as opaque thrifts which means
-you can't read them in cqlsh. However, it is designed for scale. For
-example, it has manually implemented indexes to make querying larger
-data more performant. This store requires a [spark job](https://github.com/apache/incubator-zipkin-dependencies) to aggregate
-dependency links.
+The [Cassandra v1](zipkin-storage/cassandra-v1) component uses Cassandra
+2.2+ features, but is tested against the latest patch of Cassandra 3.11.
+
+The CQL was written in 2015, based on the original Cassandra schema from
+Twitter, and since been extended. Spans are stored as opaque thrifts,
+which means you cannot query fields in cqlsh. The schema was designed
+for scale, including manually implemented indexes to make querying
+larger data more performant.
+
+Note: This store requires a [job to aggregate](https://github.com/apache/incubator-zipkin-dependencies) dependency links.
 
 ## Running the server from source
 The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to queries
