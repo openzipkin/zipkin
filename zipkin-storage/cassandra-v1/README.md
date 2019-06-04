@@ -1,10 +1,11 @@
 # storage-cassandra
 
-This is a CQL-based Cassandra 2.2+ storage component, built upon the [Zipkin v1 thrift model](https://github.com/apache/incubator-zipkin-api/tree/master/thrift).
+This is a CQL-based Cassandra storage component, built upon the [Zipkin v1 thrift model](https://github.com/apache/incubator-zipkin-api/tree/master/thrift).
+This uses Cassandra 2.2+ features, but is tested against the latest patch of Cassandra 3.11.
 
 `CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/apache/incubator-zipkin-dependencies)).
 
-The implementation uses the [Datastax Java Driver 3.1.x](https://github.com/datastax/java-driver).
+The implementation uses the [Datastax Java Driver 3.x](https://github.com/datastax/java-driver).
 
 `zipkin2.storage.cassandra.v1.CassandraStorage.Builder` includes defaults that will
 operate against a local Cassandra installation.
@@ -19,7 +20,7 @@ See [Logging Query Latencies](http://docs.datastax.com/en/developer/java-driver/
 This module conditionally runs integration tests against a local Cassandra instance.
 
 Tests are configured to automatically access Cassandra started with its defaults.
-To ensure tests execute, download a Cassandra 2.2-3.4 distribution, extract it, and run `bin/cassandra`.
+To ensure tests execute, download a Cassandra 2.2+ distribution, extract it, and run `bin/cassandra`.
 
 If you run tests via Maven or otherwise when Cassandra is not running,
 you'll notice tests are silently skipped.
