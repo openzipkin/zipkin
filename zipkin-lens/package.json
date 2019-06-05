@@ -23,7 +23,7 @@
     }
   },
   "keywords": [],
-  "author": "https://gitter.im/apache/incubator-zipkin",
+  "author": "https://gitter.im/openzipkin/zipkin",
   "license": "Apache-2.0",
   "devDependencies": {
     "@fortawesome/fontawesome-free": "^5.4.1",
