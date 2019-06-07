@@ -33,11 +33,22 @@ const unitOptions = [
   'μs', 'ms', 's',
 ];
 
+export const getInitialUnit = (value) => {
+  if (value % (1000 * 1000) === 0) {
+    return 's'
+  }
+  if (value % (1000) === 0) {
+    return 'ms'
+  }
+  return 'μs'
+};
+
 class ConditionDuration extends React.Component {
   constructor(props) {
     super(props);
+
     this.state = {
-      unit: 'μs',
+      unit: getInitialUnit(props.value),
       isValueFocused: false,
       isUnitFocused: false,
       isUnitMenuOpened: false,
