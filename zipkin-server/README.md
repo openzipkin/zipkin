@@ -7,10 +7,10 @@ and the server listens on port 9411.
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=org.apache.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
 
 ```bash
-$ curl -sSL https://zipkin.apache.org/quickstart.sh | bash -s
+$ curl -sSL https://zipkin.io/quickstart.sh | bash -s
 $ java -jar zipkin.jar
 ```
 
@@ -21,16 +21,16 @@ Once you've started, browse to http://your_host:9411 to find traces!
 The following endpoints are defined under the base url http://your_host:9411
 * / - [UI](../zipkin-ui)
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
-* /api/v2 - [Api](https://zipkin.apache.org/zipkin-api/#/)
+* /api/v2 - [Api](https://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
 * /metrics - Includes collector metrics broken down by transport type
 
 There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
 
-The [legacy /api/v1 Api](https://zipkin.apache.org/zipkin-api/#/) is still supported. Backends are decoupled from the
+The [legacy /api/v1 Api](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
 HTTP api via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
-`https://zipkin.apache.org/zipkin-api/zipkin-api.yaml` into the explore box of the Swagger UI to view the old definition
+`https://zipkin.io/zipkin-api/zipkin-api.yaml` into the explore box of the Swagger UI to view the old definition
 
 ### CORS (Cross-origin Resource Sharing)
 
@@ -138,7 +138,7 @@ suggestLens | zipkin.ui.suggest-lens | When true, a button will appear on the na
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
 ## Environment Variables
-zipkin-server is a drop-in replacement for the [scala query service](https://github.com/apache/incubator-zipkin/tree/scala/zipkin-query-service).
+zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/scala/zipkin-query-service).
 
 [yaml configuration](src/main/resources/zipkin-server-shared.yml) binds the following environment variables from zipkin-scala:
 
@@ -278,7 +278,7 @@ $ STORAGE_TYPE=cassandra java -jar zipkin.jar
 ```
 
 #### Service and Span names query
-The [Zipkin Api](https://zipkin.apache.org/zipkin-api/#/default/get_services) does not include
+The [Zipkin Api](https://zipkin.io/zipkin-api/#/default/get_services) does not include
 a parameter for how far back to look for service or span names. In order
 to prevent excessive load, service and span name queries are limited by
 `QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
@@ -454,7 +454,7 @@ See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
 To build and run the server from the currently checked out source, enter the following.
 ```bash
 # Build the server and also make its dependencies
-$ mvn -DskipTests --also-make -pl zipkin-server clean install
+$ ./mvnw -Dlicense.skip=true -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```

@@ -33,8 +33,8 @@ before_install:
   # Disable testcontainers checks
   - echo checks.disable=true > ~/.testcontainers.properties
 
-  # Override default travis to use the maven wrapper
-install: ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+# Override default travis to use the maven wrapper; skip license on travis due to #1512
+install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V
 script: ./mvnw clean verify -B
 
 # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
