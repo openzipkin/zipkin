@@ -23,8 +23,7 @@ import zipkin2.Component;
 // This is an application listener to ensure the graph is fully constructed before doing health
 public final class RegisterZipkinHealthIndicators implements ApplicationListener {
 
-  @Override
-  public void onApplicationEvent(ApplicationEvent event) {
+  @Override public void onApplicationEvent(ApplicationEvent event) {
     if (!(event instanceof ApplicationReadyEvent)) return;
     ConfigurableListableBeanFactory beanFactory =
         ((ApplicationReadyEvent) event).getApplicationContext().getBeanFactory();

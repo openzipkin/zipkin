@@ -14,7 +14,7 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.encoding.GzipStreamDecoderFactory;
-import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
@@ -136,7 +136,7 @@ public class ZipkinHttpCollector {
         } else {
           // Currently this will happen for gzip spans. Need to fix armeria's gzip decoder to allow
           // returning pooled buffers on request.
-          nioBuffer = ByteBuffer.wrap(content.array(), content.offset(), content.length());
+          nioBuffer = ByteBuffer.wrap(content.array(), 0, content.length());
         }
 
         try {
@@ -170,7 +170,7 @@ public class ZipkinHttpCollector {
     return HttpResponse.from(result);
   }
 
-  static void maybeLog(String prefix, ServiceRequestContext ctx, AggregatedHttpMessage request) {
+  static void maybeLog(String prefix, ServiceRequestContext ctx, AggregatedHttpRequest request) {
     if (!LOGGER.isDebugEnabled()) return;
     LOGGER.debug("{} sent by clientAddress->{}, userAgent->{}",
       prefix, ctx.clientAddress(), request.headers().get(HttpHeaderNames.USER_AGENT)
@@ -205,7 +205,7 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
 final class UnzippingBytesRequestConverter {
   static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
 
-  static HttpData convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request) {
+  static HttpData convertRequest(ServiceRequestContext ctx, AggregatedHttpRequest request) {
     ZipkinHttpCollector.metrics.incrementMessages();
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();

@@ -31,6 +31,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
+import org.springframework.boot.actuate.health.HealthIndicatorRegistry;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -44,13 +45,13 @@ import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-import zipkin2.server.internal.throttle.ZipkinStorageThrottleProperties;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.server.internal.brave.TracingStorageComponent;
+import zipkin2.server.internal.throttle.ThrottledStorageComponent;
+import zipkin2.server.internal.throttle.ZipkinStorageThrottleProperties;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
-import zipkin2.server.internal.throttle.ThrottledStorageComponent;
 
 @Configuration
 @ImportAutoConfiguration(ArmeriaSpringActuatorAutoConfiguration.class)
@@ -86,8 +87,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     return new ZipkinHealthIndicator(healthAggregator);
   }
 
-  @Override
-  public void addViewControllers(ViewControllerRegistry registry) {
+  @Override public void addViewControllers(ViewControllerRegistry registry) {
     registry.addRedirectViewController("/info", "/actuator/info");
   }
 

@@ -20,7 +20,7 @@ import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.Response;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
-import com.linecorp.armeria.server.PathMapping;
+import com.linecorp.armeria.server.Route;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.SimpleDecoratingService;
@@ -73,7 +73,8 @@ public class ZipkinPrometheusMetricsConfiguration {
   @Order(1)
   ArmeriaServerConfigurator notFoundMetricCollector() {
     // Use glob instead of catch-all to avoid adding it to the trie router.
-    return sb -> sb.service(PathMapping.ofGlob("/**"), (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
+    return sb -> sb.service(Route.builder().glob("/**").build(),
+      (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
   }
 
   static final class MetricCollectingService<I extends Request, O extends Response>
