@@ -22,7 +22,7 @@ Here are some examples:
 * http://elasticsearch-1:9200,http://elasticsearch-2:9200
 
 ## Format
-Spans are stored in version 2 format, which is the same as the [v2 POST endpoint](https://zipkin.apache.org/zipkin-api/#/default/post_spans)
+Spans are stored in version 2 format, which is the same as the [v2 POST endpoint](https://zipkin.io/zipkin-api/#/default/post_spans)
 with one difference described below. We add a "timestamp_millis" field
 to aid in integration with other tools.
 

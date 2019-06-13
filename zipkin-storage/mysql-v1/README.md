@@ -16,7 +16,7 @@ This module conditionally runs integration tests against a local MySQL instance.
 You minimally need to export the variable `MYSQL_USER` to run tests.
 Ex.
 ```
-$ MYSQL_USER=root mvn clean install -pl :zipkin-storage-mysql-v1
+$ MYSQL_USER=root ./mvnw clean install -pl :zipkin-storage-mysql-v1
 ```
 
 If you run tests via Maven or otherwise without specifying `MYSQL_USER`,
@@ -90,5 +90,5 @@ $ mysql -uroot -Dzipkin < zipkin-storage/mysql-v1/src/main/resources/mysql.sql
 
 ```bash
 $ rm -rf rm -rf zipkin-storage/mysql-v1/src/main/java/zipkin2/storage/mysql/v1/internal/generated/
-$ mvn -pl :zipkin-storage-mysql-v1 clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
+$ ./mvnw -pl :zipkin-storage-mysql-v1 clean org.jooq:jooq-codegen-maven:generate com.mycila:license-maven-plugin:format
 ```

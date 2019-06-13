@@ -1,32 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Licensed to the Apache Software Foundation (ASF) under one or more
-    contributor license agreements.  See the NOTICE file distributed with
-    this work for additional information regarding copyright ownership.
-    The ASF licenses this file to You under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with
-    the License.  You may obtain a copy of the License at
+    Copyright 2015-2019 The OpenZipkin Authors
 
-        http://www.apache.org/licenses/LICENSE-2.0
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>21</version>
-  </parent>
-
-  <groupId>org.apache.zipkin</groupId>
+  <groupId>io.zipkin</groupId>
   <artifactId>zipkin-parent</artifactId>
   <version>2.14.1-SNAPSHOT</version>
   <packaging>pom</packaging>
@@ -67,7 +58,7 @@
 
     <brave.version>5.6.3</brave.version>
     <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
-    <okhttp.version>3.14.1</okhttp.version>
+    <okhttp.version>3.14.2</okhttp.version>
     <okio.version>1.17.4</okio.version>
     <jooq.version>3.11.11</jooq.version>
     <micrometer.version>1.1.4</micrometer.version>
@@ -90,13 +81,15 @@
     <mockito.version>2.23.4</mockito.version>
     <assertj.version>3.12.2</assertj.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <testcontainers.version>1.11.2</testcontainers.version>
+    <testcontainers.version>1.11.3</testcontainers.version>
 
     <auto-value.version>1.6.5</auto-value.version>
     <animal-sniffer-maven-plugin.version>1.17</animal-sniffer-maven-plugin.version>
     <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+    <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
     <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
-    <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+    <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+    <maven-source-plugin.version>3.1.0</maven-source-plugin.version>
     <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
     <license-maven-plugin.version>3.0</license-maven-plugin.version>
     <maven-jar-plugin.version>3.1.2</maven-jar-plugin.version>
@@ -107,12 +100,12 @@
 
   <name>Zipkin (Parent)</name>
   <description>Zipkin (Parent)</description>
-  <url>https://github.com/apache/incubator-zipkin</url>
+  <url>https://github.com/openzipkin/zipkin</url>
   <inceptionYear>2015</inceptionYear>
 
   <organization>
-    <name>The Apache Software Foundation</name>
-    <url>http://www.apache.org/</url>
+    <name>OpenZipkin</name>
+    <url>http://zipkin.io/</url>
   </organization>
 
   <licenses>
@@ -124,9 +117,9 @@
   </licenses>
 
   <scm>
-    <url>https://github.com/apache/incubator-zipkin</url>
-    <connection>scm:git:https://github.com/apache/incubator-zipkin.git</connection>
-    <developerConnection>scm:git:https://github.com/apache/incubator-zipkin.git</developerConnection>
+    <url>https://github.com/openzipkin/zipkin</url>
+    <connection>scm:git:https://github.com/openzipkin/zipkin.git</connection>
+    <developerConnection>scm:git:https://github.com/openzipkin/zipkin.git</developerConnection>
     <tag>HEAD</tag>
   </scm>
 
@@ -139,35 +132,20 @@
     </developer>
   </developers>
 
-  <mailingLists>
-    <mailingList>
-      <name>Zipkin Developer List</name>
-      <post>dev@zipkin.apache.org</post>
-      <subscribe>dev-subscribe@zipkin.apache.org</subscribe>
-      <unsubscribe>dev-unsubscribe@zipkin.apache.org</unsubscribe>
-    </mailingList>
-    <mailingList>
-      <name>Zipkin Commits</name>
-      <post>commits@zipkin.apache.org</post>
-      <subscribe>commits-subscribe@zipkin.apache.org</subscribe>
-      <unsubscribe>commits-unsubscribe@zipkin.apache.org</unsubscribe>
-    </mailingList>
-  </mailingLists>
-
   <distributionManagement>
     <repository>
-      <id>apache.releases.https</id>
-      <url>https://repository.apache.org/service/local/staging/deploy/maven2</url>
+      <id>bintray</id>
+      <url>https://api.bintray.com/maven/openzipkin/maven/zipkin/;publish=1</url>
     </repository>
     <snapshotRepository>
-      <id>apache.snapshots.https</id>
-      <url>https://repository.apache.org/content/repositories/snapshots/</url>
+      <id>jfrog-snapshots</id>
+      <url>https://oss.jfrog.org/artifactory/oss-snapshot-local</url>
     </snapshotRepository>
   </distributionManagement>
 
   <issueManagement>
     <system>Github</system>
-    <url>https://github.com/apache/incubator-zipkin/issues</url>
+    <url>https://github.com/openzipkin/zipkin/issues</url>
   </issueManagement>
 
   <dependencyManagement>
@@ -369,7 +347,6 @@
         <artifactId>brave</artifactId>
         <version>${brave.version}</version>
         <exclusions>
-          <!-- TODO: this exclusion will drift when brave switches to apache zipkin -->
           <exclusion>
             <groupId>io.zipkin.zipkin2</groupId>
             <artifactId>zipkin</artifactId>
@@ -378,7 +355,7 @@
       </dependency>
 
       <dependency>
-        <groupId>org.apache.zipkin.proto3</groupId>
+        <groupId>io.zipkin.proto3</groupId>
         <artifactId>zipkin-proto3</artifactId>
         <version>0.2.1</version>
       </dependency>
@@ -600,6 +577,12 @@
         <version>${maven-install-plugin.version}</version>
       </plugin>
 
+      <!-- Uploads occur as a last step (which also adds checksums) -->
+      <plugin>
+        <artifactId>maven-deploy-plugin</artifactId>
+        <version>${maven-deploy-plugin.version}</version>
+      </plugin>
+
       <plugin>
         <groupId>com.mycila</groupId>
         <artifactId>license-maven-plugin</artifactId>
@@ -611,6 +594,7 @@
             <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
             <java>SLASHSTAR_STYLE</java>
             <kt>SLASHSTAR_STYLE</kt>
+            <jsx>SLASHSTAR_STYLE</jsx>
             <bnd>SCRIPT_STYLE</bnd>
             <ejs>XML_STYLE</ejs>
             <scss>DOUBLESLASH_STYLE</scss>
@@ -633,11 +617,7 @@
             <exclude>**/.eslintrc.js</exclude>
             <exclude>**/testdata/**/*.json</exclude>
             <exclude>**/test/data/**/*.json</exclude>
-            <exclude>LICENSE</exclude>
-            <exclude>DISCLAIMER</exclude>
-            <exclude>DEPENDENCIES</exclude>
-            <exclude>NOTICE</exclude>
-            <exclude>Jenkinsfile</exclude>
+            <exclude>LICENSE</exclude>>
             <exclude>**/*.md</exclude>
             <exclude>**/src/main/resources/banner.txt</exclude>
             <exclude>**/src/main/resources/*.yml</exclude>
@@ -651,6 +631,13 @@
           </excludes>
           <strictCheck>true</strictCheck>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin-git</artifactId>
+            <version>${license-maven-plugin.version}</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <goals>
@@ -659,6 +646,27 @@
             <phase>compile</phase>
           </execution>
         </executions>
+      </plugin>
+
+      <plugin>
+        <artifactId>maven-release-plugin</artifactId>
+        <version>${maven-release-plugin.version}</version>
+        <configuration>
+          <useReleaseProfile>false</useReleaseProfile>
+          <releaseProfiles>release</releaseProfiles>
+          <autoVersionSubmodules>true</autoVersionSubmodules>
+          <!-- to match zipkin-scala (openzipkin/zipkin) -->
+          <tagNameFormat>@{project.version}</tagNameFormat>
+        </configuration>
+      </plugin>
+
+      <plugin>
+        <groupId>io.zipkin.centralsync-maven-plugin</groupId>
+        <artifactId>centralsync-maven-plugin</artifactId>
+        <version>0.1.1</version>
+        <configuration>
+          <packageName>zipkin</packageName>
+        </configuration>
       </plugin>
 
       <plugin>
@@ -679,96 +687,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>0.13</version>
-        <configuration>
-          <excludes>
-            <exclude>**/target/**</exclude>
-
-            <!-- IDE files -->
-            <exclude>**/*.iml</exclude>
-            <exclude>**/.idea/**</exclude>
-            <exclude>**/*.classpath</exclude>
-            <exclude>**/.project</exclude>
-            <exclude>**/.settings/**</exclude>
-            <exclude>**/dependency-reduced-pom.xml</exclude>
-
-            <!-- git files -->
-            <exclude>**/.gitignore</exclude>
-            <exclude>**/.gitmodules</exclude>
-            <exclude>**/.git/**</exclude>
-
-            <!-- CI files -->
-            <exclude>**/.travis.yml</exclude>
-
-            <!-- GitHub files -->
-            <exclude>**/.github/**</exclude>
-
-            <!-- Generated files -->
-            <exclude>**/generated/**</exclude>
-
-            <!-- document files -->
-            <exclude>**/*.md</exclude>
-
-            <!-- Cassandra integration tests break when license headers are present -->
-            <exclude>**/src/main/resources/*.cql</exclude>
-
-            <!-- spring boot config -->
-            <exclude>**/src/main/resources/banner.txt</exclude>
-            <exclude>**/src/main/resources/*.yml</exclude>
-            <exclude>**/spring.factories</exclude>
-
-            <!-- json test data and config -->
-            <exclude>**/*.json</exclude>
-
-            <!-- test assets -->
-            <exclude>**/src/test/resources/**</exclude>
-
-            <!-- UI cache -->
-            <exclude>**/node_modules/**</exclude>
-
-            <!-- UI configs -->
-            <exclude>**/.babelrc</exclude>
-            <exclude>**/.bowerrc</exclude>
-            <exclude>**/.editorconfig</exclude>
-            <exclude>**/.eslintrc</exclude>
-            <exclude>**/.eslintrc.js</exclude>
-            <!-- Maven Wrapper generated files -->
-            <exclude>.mvn/wrapper/maven-wrapper.properties</exclude>
-
-            <!-- on-demand resources created in CI for integration tests -->
-            <exclude>kafka_*/**</exclude>
-            <exclude>**/nohup.out</exclude>
-          </excludes>
-        </configuration>
-        <executions>
-          <execution>
-            <phase>verify</phase>
-            <goals>
-              <goal>check</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-
-      <!-- org.apache:apache:21 sets maven-remote-resources-plugin in plugins, not pluginManagement
-           This results in execution in the parent project, and a side effect of an empty
-           DEPENDENCIES file in the assembly when packaged with the apache-release profile.
-
-           https://issues.apache.org/jira/browse/MPOM-218
-
-           This works around the problem by skipping at the parent level at the cost of having to
-           un-skip it at every deployed child.
-       -->
-      <plugin>
-        <artifactId>maven-remote-resources-plugin</artifactId>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
       </plugin>
     </plugins>
   </build>
@@ -863,23 +781,51 @@
       </build>
     </profile>
     <profile>
-      <id>apache-release</id>
+      <id>release</id>
       <build>
         <plugins>
+          <!-- disable license plugin since it should have already checked things and #1512 -->
           <plugin>
-            <artifactId>maven-assembly-plugin</artifactId>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin</artifactId>
             <executions>
               <execution>
-                <id>source-release-assembly</id>
-                <configuration>
-                  <!-- make the source release zip includes the word incubating -->
-                  <finalName>apache-zipkin-incubating-${project.version}</finalName>
-                  <descriptors>
-                    <descriptor>src/main/assemblies/source-release.xml</descriptor>
-                  </descriptors>
-                  <!-- don't inherit the source-release as we are overriding it -->
-                  <descriptorRefs combine.self="override" />
-                </configuration>
+                <phase>none</phase>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Creates source jar -->
+          <plugin>
+            <artifactId>maven-source-plugin</artifactId>
+            <version>${maven-source-plugin.version}</version>
+            <executions>
+              <execution>
+                <id>attach-sources</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+
+          <!-- Creates javadoc jar, skipping internal classes -->
+          <plugin>
+            <artifactId>maven-javadoc-plugin</artifactId>
+            <version>${maven-javadoc-plugin.version}</version>
+            <configuration>
+              <failOnError>false</failOnError>
+              <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
+              <!-- hush pedantic warnings: we don't put param and return on everything! -->
+              <doclint>none</doclint>
+            </configuration>
+            <executions>
+              <execution>
+                <id>attach-javadocs</id>
+                <goals>
+                  <goal>jar</goal>
+                </goals>
+                <phase>package</phase>
               </execution>
             </executions>
           </plugin>

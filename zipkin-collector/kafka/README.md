@@ -15,7 +15,7 @@ includes defaults that will operate against a Kafka topic name `zipkin`.
 
 ## Encoding spans into Kafka messages
 The message's binary data includes a list of spans. Supported encodings
-are the same as the http [POST /spans](https://zipkin.apache.org/zipkin-api/#/paths/%252Fspans) body.
+are the same as the http [POST /spans](https://zipkin.io/zipkin-api/#/paths/%252Fspans) body.
 
 ### Json
 The message's binary data is a list of spans in json. The first character must be '[' (decimal 91).

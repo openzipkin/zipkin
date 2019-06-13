@@ -1,9 +1,9 @@
 # storage-cassandra
 
-This is a CQL-based Cassandra storage component, built upon the [Zipkin v1 thrift model](https://github.com/apache/incubator-zipkin-api/tree/master/thrift).
+This is a CQL-based Cassandra storage component, built upon the [Zipkin v1 thrift model](https://github.com/openzipkin/zipkin-api/tree/master/thrift).
 This uses Cassandra 2.2+ features, but is tested against the latest patch of Cassandra 3.11.
 
-`CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/apache/incubator-zipkin-dependencies)).
+`CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies)).
 
 The implementation uses the [Datastax Java Driver 3.x](https://github.com/datastax/java-driver).
 
