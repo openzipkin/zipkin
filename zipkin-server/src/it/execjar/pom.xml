@@ -65,6 +65,7 @@
     <plugins>
       <plugin>
         <artifactId>maven-compiler-plugin</artifactId>
+        <version>@maven-compiler-plugin.version@</version>
         <configuration>
           <source>1.8</source>
           <target>1.8</target>
@@ -73,6 +74,7 @@
 
       <plugin>
         <artifactId>maven-surefire-plugin</artifactId>
+        <version>@maven-failsafe-plugin.version@</version>
         <configuration>
           <failIfNoTests>true</failIfNoTests>
         </configuration>
