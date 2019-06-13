@@ -162,7 +162,7 @@ final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
           buf.release();
         }
       } else {
-        returned.writeBytes(content.array(), content.offset(), content.length());
+        returned.writeBytes(content.array(), 0, content.length());
       }
 
       if (responseIndex == previouslySentResponseIndex + 1) {
