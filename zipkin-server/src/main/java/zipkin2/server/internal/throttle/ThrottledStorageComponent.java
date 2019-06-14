@@ -30,6 +30,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import zipkin2.Call;
+import zipkin2.CheckResult;
 import zipkin2.Span;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
@@ -95,6 +96,14 @@ public final class ThrottledStorageComponent extends StorageComponent {
   @Override public void close() throws IOException {
     executor.shutdownNow();
     delegate.close();
+  }
+
+  @Override public CheckResult check() {
+    return delegate.check();
+  }
+
+  @Override public String name() {
+    return "Throttled(" + delegate.name() + ")";
   }
 
   @Override public String toString() {

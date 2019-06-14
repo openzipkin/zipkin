@@ -38,6 +38,11 @@ public abstract class Component implements Closeable {
     return CheckResult.OK;
   }
 
+  public String name() {
+    String name = this.getClass().getSimpleName();
+    return name.replace("AutoValue_", "");
+  }
+
   /**
    * Closes any network resources created implicitly by the component.
    *

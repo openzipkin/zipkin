@@ -16,7 +16,9 @@ package zipkin2.server.internal.throttle
 import com.linecorp.armeria.common.metric.NoopMeterRegistry
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.Test
+import org.mockito.Mockito.*
 import zipkin2.storage.InMemoryStorage
+import zipkin2.storage.StorageComponent
 
 class ThrottledStorageComponentTest {
   val delegate = InMemoryStorage.newBuilder().build()
@@ -44,5 +46,16 @@ class ThrottledStorageComponentTest {
   @Test fun niceToString() {
     assertThat(ThrottledStorageComponent(delegate, registry, 1, 2, 1))
       .hasToString("Throttled(InMemoryStorage{traceCount=0})");
+  }
+
+  @Test fun delegatesCheck() {
+    val mock = mock(StorageComponent::class.java)
+    ThrottledStorageComponent(mock, registry, 1, 2, 1).check()
+    verify(mock, times(1)).check()
+  }
+
+  @Test fun wrapsName() {
+    assertThat(ThrottledStorageComponent(delegate, registry, 1, 2, 1).name())
+      .isEqualTo("Throttled(InMemoryStorage)")
   }
 }

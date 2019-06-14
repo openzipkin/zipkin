@@ -27,8 +27,7 @@ final class ZipkinHealthIndicator extends CompositeHealthIndicator {
   }
 
   void addComponent(Component component) {
-    String healthName = component.getClass().getSimpleName();
-    healthName = healthName.replace("AutoValue_", "");
+    String healthName = component.name();
     addHealthIndicator(healthName, new ComponentHealthIndicator(component));
   }
 
