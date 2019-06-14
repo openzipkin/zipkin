@@ -64,6 +64,7 @@
   },
   "dependencies": {
     "@material-ui/core": "^4.1.1",
+    "@material-ui/styles": "^4.1.1",
     "babel-polyfill": "^6.26.0",
     "chart.js": "^2.7.2",
     "js-cookie": "^2.2.0",
