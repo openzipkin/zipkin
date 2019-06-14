@@ -14,7 +14,7 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.encoding.GzipStreamDecoderFactory;
-import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
@@ -115,15 +115,15 @@ public class ZipkinHttpCollector {
         return null;
       }
 
+      final HttpData content;
       try {
-        final HttpData content;
-        try {
-          content = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
-        } catch (IllegalArgumentException e) {
-          result.onError(e);
-          return null;
-        }
+        content = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
+      } catch (IllegalArgumentException e) {
+        result.onError(e);
+        return null;
+      }
 
+      try {
         // logging already handled upstream in UnzippingBytesRequestConverter where request context exists
         if (content.isEmpty()) {
           result.onSuccess(null);
@@ -134,9 +134,7 @@ public class ZipkinHttpCollector {
         if (content instanceof ByteBufHolder) {
           nioBuffer = ((ByteBufHolder) content).content().nioBuffer();
         } else {
-          // Currently this will happen for gzip spans. Need to fix armeria's gzip decoder to allow
-          // returning pooled buffers on request.
-          nioBuffer = ByteBuffer.wrap(content.array(), content.offset(), content.length());
+          nioBuffer = ByteBuffer.wrap(content.array());
         }
 
         try {
@@ -161,7 +159,7 @@ public class ZipkinHttpCollector {
         // UnzippingBytesRequestConverter handles incrementing message and bytes
         collector.accept(spans, result);
       } finally {
-        ReferenceCountUtil.release(msg.content());
+        ReferenceCountUtil.release(content);
       }
 
       return null;
@@ -170,7 +168,7 @@ public class ZipkinHttpCollector {
     return HttpResponse.from(result);
   }
 
-  static void maybeLog(String prefix, ServiceRequestContext ctx, AggregatedHttpMessage request) {
+  static void maybeLog(String prefix, ServiceRequestContext ctx, AggregatedHttpRequest request) {
     if (!LOGGER.isDebugEnabled()) return;
     LOGGER.debug("{} sent by clientAddress->{}, userAgent->{}",
       prefix, ctx.clientAddress(), request.headers().get(HttpHeaderNames.USER_AGENT)
@@ -205,7 +203,7 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
 final class UnzippingBytesRequestConverter {
   static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
 
-  static HttpData convertRequest(ServiceRequestContext ctx, AggregatedHttpMessage request) {
+  static HttpData convertRequest(ServiceRequestContext ctx, AggregatedHttpRequest request) {
     ZipkinHttpCollector.metrics.incrementMessages();
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();
@@ -214,6 +212,7 @@ final class UnzippingBytesRequestConverter {
       // The implementation of the armeria decoder is to return an empty body on failure
       if (content.isEmpty()) {
         ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);
+        ReferenceCountUtil.release(content);
         throw new IllegalArgumentException("Cannot gunzip spans");
       }
     }

@@ -48,7 +48,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <armeria.version>0.86.0</armeria.version>
+    <armeria.version>0.87.0</armeria.version>
     <!-- This is from armeria, but be careful to avoid >= v20 apis -->
     <guava.version>27.1-jre</guava.version>
 

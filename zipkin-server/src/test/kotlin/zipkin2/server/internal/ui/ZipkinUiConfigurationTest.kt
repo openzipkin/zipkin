@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal.ui
 
-import com.linecorp.armeria.common.AggregatedHttpMessage
+import com.linecorp.armeria.common.AggregatedHttpResponse
 import com.linecorp.armeria.common.HttpHeaderNames
 import com.linecorp.armeria.common.HttpMethod
 import com.linecorp.armeria.common.HttpRequest
@@ -160,7 +160,7 @@ class ZipkinUiConfigurationTest {
       .contains("<base href=\"/\">")
   }
 
-  private fun serveIndex(vararg cookies: Cookie): AggregatedHttpMessage {
+  private fun serveIndex(vararg cookies: Cookie): AggregatedHttpResponse {
     val headers = RequestHeaders.builder(HttpMethod.GET, "/")
     val encodedCookies = ClientCookieEncoder.LAX.encode(*cookies)
     if (encodedCookies != null) {

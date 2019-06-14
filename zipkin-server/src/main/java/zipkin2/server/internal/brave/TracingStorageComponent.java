@@ -73,13 +73,11 @@ public final class TracingStorageComponent extends StorageComponent {
       return new TracedCall<>(tracer, delegate.getTrace(traceId), "get-trace");
     }
 
-    @Override
-    public Call<List<String>> getServiceNames() {
+    @Override @Deprecated public Call<List<String>> getServiceNames() {
       return new TracedCall<>(tracer, delegate.getServiceNames(), "get-service-names");
     }
 
-    @Override
-    public Call<List<String>> getSpanNames(String serviceName) {
+    @Override @Deprecated public Call<List<String>> getSpanNames(String serviceName) {
       return new TracedCall<>(tracer, delegate.getSpanNames(serviceName), "get-span-names");
     }
 

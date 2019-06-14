@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal;
 
-import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpStatus;
@@ -70,7 +70,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/dependencies")
-  public AggregatedHttpMessage getDependencies(
+  public AggregatedHttpResponse getDependencies(
     @Param("endTs") long endTs,
     @Param("lookback") Optional<Long> lookback) throws IOException {
     Call<List<DependencyLink>> call =
@@ -79,20 +79,20 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/services")
-  public AggregatedHttpMessage getServiceNames() throws IOException {
+  public AggregatedHttpResponse getServiceNames() throws IOException {
     List<String> serviceNames = storage.serviceAndSpanNames().getServiceNames().execute();
     serviceCount = serviceNames.size();
     return maybeCacheNames(serviceCount > 3, serviceNames);
   }
 
   @Get("/api/v2/spans")
-  public AggregatedHttpMessage getSpanNames(@Param("serviceName") String serviceName) throws IOException {
+  public AggregatedHttpResponse getSpanNames(@Param("serviceName") String serviceName) throws IOException {
     List<String> spanNames = storage.serviceAndSpanNames().getSpanNames(serviceName).execute();
     return maybeCacheNames(serviceCount > 3, spanNames);
   }
 
   @Get("/api/v2/remoteServices")
-  public AggregatedHttpMessage getRemoteServiceNames(@Param("serviceName") String serviceName)
+  public AggregatedHttpResponse getRemoteServiceNames(@Param("serviceName") String serviceName)
     throws IOException {
     List<String> remoteServiceNames =
       storage.serviceAndSpanNames().getRemoteServiceNames(serviceName).execute();
@@ -100,7 +100,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/traces")
-  public AggregatedHttpMessage getTraces(
+  public AggregatedHttpResponse getTraces(
     @Param("serviceName") Optional<String> serviceName,
     @Param("remoteServiceName") Optional<String> remoteServiceName,
     @Param("spanName") Optional<String> spanName,
@@ -129,19 +129,19 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/trace/{traceIdHex}")
-  public AggregatedHttpMessage getTrace(@Param("traceIdHex") String traceIdHex) throws IOException {
+  public AggregatedHttpResponse getTrace(@Param("traceIdHex") String traceIdHex) throws IOException {
     List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
     if (trace == null) {
-      return AggregatedHttpMessage.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
+      return AggregatedHttpResponse.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
         traceIdHex + " not found");
     }
     return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));
   }
 
-  static AggregatedHttpMessage jsonResponse(byte[] body) {
-    return AggregatedHttpMessage.of(ResponseHeaders.builder(200)
+  static AggregatedHttpResponse jsonResponse(byte[] body) {
+    return AggregatedHttpResponse.of(ResponseHeaders.builder(200)
       .contentType(MediaType.JSON)
-      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build(), HttpData.of(body));
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build(), HttpData.wrap(body));
   }
 
   static final WriteBuffer.Writer<String> QUOTED_STRING_WRITER = new WriteBuffer.Writer<String>() {
@@ -157,12 +157,12 @@ public class ZipkinQueryApiV2 {
   };
 
   @Get("/api/v2/autocompleteKeys")
-  public AggregatedHttpMessage getAutocompleteKeys() {
+  public AggregatedHttpResponse getAutocompleteKeys() {
     return maybeCacheNames(true, autocompleteKeys);
   }
 
   @Get("/api/v2/autocompleteValues")
-  public AggregatedHttpMessage getAutocompleteValues(@Param("key") String key) throws IOException {
+  public AggregatedHttpResponse getAutocompleteValues(@Param("key") String key) throws IOException {
     List<String> values = storage.autocompleteTags().getValues(key).execute();
     return maybeCacheNames(values.size() > 3, values);
   }
@@ -172,7 +172,7 @@ public class ZipkinQueryApiV2 {
    * empty results, users have more questions. We assume caching becomes a concern when zipkin is in
    * active use, and active use usually implies more than 3 services.
    */
-  AggregatedHttpMessage maybeCacheNames(boolean shouldCacheControl, List<String> values) {
+  AggregatedHttpResponse maybeCacheNames(boolean shouldCacheControl, List<String> values) {
     Collections.sort(values);
     byte[] body = JsonCodec.writeList(QUOTED_STRING_WRITER, values);
     ResponseHeadersBuilder headers = ResponseHeaders.builder(200)
@@ -184,7 +184,7 @@ public class ZipkinQueryApiV2 {
         CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate().getHeaderValue()
       );
     }
-    return AggregatedHttpMessage.of(headers.build(), HttpData.of(body));
+    return AggregatedHttpResponse.of(headers.build(), HttpData.wrap(body));
   }
 
   // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library

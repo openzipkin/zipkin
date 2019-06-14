@@ -21,11 +21,11 @@ import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ServerCacheControl;
+import com.linecorp.armeria.common.ServerCacheControlBuilder;
 import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
-import com.linecorp.armeria.server.ServerCacheControl;
-import com.linecorp.armeria.server.ServerCacheControlBuilder;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.encoding.HttpEncodingService;
@@ -126,8 +126,8 @@ public class ZipkinUiConfiguration {
       legacyIndex = HttpFileBuilder.ofResource("zipkin-ui/index.html");
       lensIndex = HttpFileBuilder.ofResource("zipkin-lens/index.html");
     } else {
-      legacyIndex = HttpFileBuilder.of(HttpData.of(processedIndexHtml().getBytes(UTF_8)));
-      lensIndex = HttpFileBuilder.of(HttpData.of(processedLensIndexHtml().getBytes(UTF_8)));
+      legacyIndex = HttpFileBuilder.of(HttpData.wrap(processedIndexHtml().getBytes(UTF_8)));
+      lensIndex = HttpFileBuilder.of(HttpData.wrap(processedLensIndexHtml().getBytes(UTF_8)));
     }
 
     ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
@@ -153,7 +153,7 @@ public class ZipkinUiConfiguration {
 
     byte[] config = new ObjectMapper().writeValueAsBytes(ui);
     return sb -> {
-      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.of(config))
+      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.wrap(config))
         .cacheControl(new ServerCacheControlBuilder().maxAgeSeconds(600).build())
         .contentType(MediaType.JSON_UTF_8)
         .build()

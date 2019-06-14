@@ -40,8 +40,7 @@ final class ZipkinHealthIndicator extends CompositeHealthIndicator {
     }
 
     /** synchronized to prevent overlapping requests to a storage backend */
-    @Override
-    public synchronized Health health() {
+    @Override public synchronized Health health() {
       CheckResult result = component.check();
       return result.ok() ? Health.up().build() : Health.down((Exception) result.error()).build();
     }

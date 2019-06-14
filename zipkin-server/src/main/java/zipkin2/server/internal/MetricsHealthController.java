@@ -96,6 +96,6 @@ public class MetricsHealthController {
     ResponseHeaders headers = ResponseHeaders.builder(statusMapper.mapStatus(health.getStatus()))
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build();
-    return HttpResponse.of(headers, HttpData.of(body));
+    return HttpResponse.of(headers, HttpData.wrap(body));
   }
 }
