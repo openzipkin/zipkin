@@ -75,7 +75,7 @@
     "rc-calendar": "^9.7.10",
     "rc-slider": "^8.6.9",
     "rc-time-picker": "^3.4.0",
-    "react": "^16.4.1",
+    "react": "^16.8.6",
     "react-chartjs-2": "^2.7.4",
     "react-dom": "^16.4.1",
     "react-modal": "^3.8.1",
