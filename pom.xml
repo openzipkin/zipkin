@@ -49,6 +49,8 @@
     <main.basedir>${project.basedir}</main.basedir>
 
     <armeria.version>0.87.0</armeria.version>
+    <!-- This is from armeria, but be careful to avoid >= v20 apis -->
+    <guava.version>27.1-jre</guava.version>
 
     <!-- only used for proto interop testing -->
     <wire.version>3.0.0-alpha01</wire.version>
@@ -70,9 +72,6 @@
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>3.3.1</HikariCP.version>
     <log4j.version>2.11.2</log4j.version>
-    <!-- Be careful to set this as a provided dep, so that it doesn't interfere with dependencies
-         from other projects. For example, cassandra and spring boot set guava versions -->
-    <guava.version>19.0</guava.version>
 
     <junit.version>4.12</junit.version>
     <powermock.version>2.0.2</powermock.version>
