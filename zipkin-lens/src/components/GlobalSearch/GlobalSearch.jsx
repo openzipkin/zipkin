@@ -15,12 +15,23 @@
  * limitations under the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { withRouter } from 'react-router';
+import { makeStyles } from '@material-ui/styles';
+import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
 
 import GlobalSearchConditionListContainer from '../../containers/GlobalSearch/GlobalSearchConditionListContainer';
 import { buildTracesQueryParameters, buildTracesApiQueryParameters } from './api';
 import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
+
+const useStyles = makeStyles({
+  findButton: {
+    minWidth: '40px',
+    height: '100%',
+    fontSize: '1.2rem',
+  },
+});
 
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
@@ -31,25 +42,17 @@ const propTypes = {
   fetchServices: PropTypes.func.isRequired,
 };
 
-class GlobalSearch extends React.Component {
-  constructor(props) {
-    super(props);
-    this.handleFindButtonClick = this.handleFindButtonClick.bind(this);
-  }
+const GlobalSearch = ({
+  history,
+  conditions,
+  lookbackCondition,
+  limitCondition,
+  fetchTraces,
+  fetchServices,
+}) => {
+  const classes = useStyles();
 
-  componentDidMount() {
-    const { fetchServices } = this.props;
-    fetchServices();
-  }
-
-  handleFindButtonClick(event) {
-    const {
-      history,
-      conditions,
-      lookbackCondition,
-      limitCondition,
-    } = this.props;
-
+  const handleFindButtonClick = () => {
     const queryParameters = buildTracesQueryParameters(
       conditions,
       lookbackCondition,
@@ -57,38 +60,46 @@ class GlobalSearch extends React.Component {
     );
     const location = { pathname: '/zipkin', search: queryParameters };
     history.push(location);
-    this.fetchTraces(buildTracesApiQueryParameters(
+
+    fetchTraces(buildTracesApiQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
     ));
-    event.stopPropagation();
-  }
+  };
 
-  fetchTraces(queryParameters) {
-    const { fetchTraces } = this.props;
-    fetchTraces(queryParameters);
-  }
+  useEffect(() => {
+    fetchServices();
+  }, []);
 
-  render() {
-    return (
-      <div className="global-search">
-        <div className="global-search__condition-list-wrapper">
-          <GlobalSearchConditionListContainer />
-        </div>
-        <div className="global-search__find-button-wrapper">
-          <button
-            type="button"
-            className="global-search__find-button"
-            onClick={this.handleFindButtonClick}
-          >
-            <span className="fas fa-search global-search__find-button-icon" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-}
+  return (
+    <Box
+      display="flex"
+      width="100%"
+      minHeight="40px"
+      maxHeight="200px"
+    >
+      <Box display="flex" width="100%">
+        <GlobalSearchConditionListContainer />
+      </Box>
+      <Box
+        display="flex"
+        alignItems="center"
+        minHeight="100%"
+        maxheight="200px"
+      >
+        <Button
+          color="secondary"
+          variant="contained"
+          onClick={handleFindButtonClick}
+          className={classes.findButton}
+        >
+          <Box component="span" className="fas fa-search" />
+        </Button>
+      </Box>
+    </Box>
+  );
+};
 
 GlobalSearch.propTypes = propTypes;
 
