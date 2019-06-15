@@ -27,7 +27,8 @@ import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes
 
 const useStyles = makeStyles({
   findButton: {
-    minWidth: '40px',
+    minWidth: '2.8rem',
+    width: '2.8rem',
     height: '100%',
     fontSize: '1.2rem',
   },
@@ -76,8 +77,8 @@ const GlobalSearch = ({
     <Box
       display="flex"
       width="100%"
-      minHeight="40px"
-      maxHeight="200px"
+      minHeight="3.8rem"
+      maxHeight="10rem"
     >
       <Box display="flex" width="100%">
         <GlobalSearchConditionListContainer />
@@ -86,7 +87,7 @@ const GlobalSearch = ({
         display="flex"
         alignItems="center"
         minHeight="100%"
-        maxheight="200px"
+        maxheight="10rem"
       >
         <Button
           color="secondary"
