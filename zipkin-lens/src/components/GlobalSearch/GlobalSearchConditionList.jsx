@@ -16,10 +16,28 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { makeStyles } from '@material-ui/styles';
+import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
+import Paper from '@material-ui/core/Paper';
 
 import { retrieveNextConditionKey, retrieveDefaultConditionValue } from './util';
 import GlobalSearchConditionContainer from '../../containers/GlobalSearch/GlobalSearchConditionContainer';
 import { globalSearchConditionsPropTypes } from '../../prop-types';
+
+const useStyles = makeStyles({
+  root: {
+    width: '100%',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  addButton: {
+    minWidth: '2.4rem',
+    width: '2.4rem',
+    height: '2.4rem',
+    fontSize: '1.1rem',
+  },
+});
 
 const propTypes = {
   conditions: globalSearchConditionsPropTypes.isRequired,
@@ -27,59 +45,57 @@ const propTypes = {
   autocompleteKeys: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
-class GlobalSearchConditionList extends React.Component {
-  constructor(props) {
-    super(props);
+const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys }) => {
+  const classes = useStyles();
 
-    this.handleAddButtonClick = this.handleAddButtonClick.bind(this);
-  }
-
-  handleAddButtonClick(event) {
-    const { addCondition, conditions, autocompleteKeys } = this.props;
+  const handleAddButtonClick = () => {
     const nextConditionKey = retrieveNextConditionKey(conditions, autocompleteKeys);
-
     addCondition({
       key: nextConditionKey,
       value: retrieveDefaultConditionValue(nextConditionKey),
     });
+  };
 
-    event.stopPropagation();
-  }
-
-  render() {
-    const { conditions } = this.props;
-
-    return (
-      <div className="global-search-condition-list">
+  return (
+    <Paper className={classes.root}>
+      <Box
+        display="flex"
+        flexWrap="wrap"
+        alignItems="center"
+        width="100%"
+        px={0.75}
+        py={0.5}
+      >
         {
           conditions.length === 0
             ? (
-              <div className="global-search-condition-list__empty-message">
-                Please select the criteria for your trace lookup.
-              </div>
+              <Box>
+                Please select the criteria for your trace lookup
+              </Box>
             )
             : conditions.map((condition, conditionIndex) => (
-              <div className="global-search-condition-list__condition-wrapper">
+              <Box m={0.25}>
                 <GlobalSearchConditionContainer
                   conditionIndex={conditionIndex}
                   key={condition._id}
                 />
-              </div>
+              </Box>
             ))
         }
-        <div className="global-search-condition-list__add-button-wrapper">
-          <button
-            type="button"
-            className="global-search-condition-list__add-button"
-            onClick={this.handleAddButtonClick}
+        <Box m={0.25}>
+          <Button
+            color="primary"
+            variant="contained"
+            onClick={handleAddButtonClick}
+            className={classes.addButton}
           >
-            <span className="fas fa-plus global-search-condition-list__add-button-icon" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-}
+            <Box component="span" className="fas fa-plus" />
+          </Button>
+        </Box>
+      </Box>
+    </Paper>
+  );
+};
 
 GlobalSearchConditionList.propTypes = propTypes;
 
