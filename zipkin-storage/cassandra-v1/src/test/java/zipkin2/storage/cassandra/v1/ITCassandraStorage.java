@@ -48,7 +48,7 @@ import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks
 public class ITCassandraStorage {
 
   static CassandraStorageRule classRule() {
-    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.13.0", "test_cassandra3");
+    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.14.2", "test_cassandra3");
   }
 
   public static class ITSpanStore extends zipkin2.storage.ITSpanStore {

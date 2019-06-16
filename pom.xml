@@ -49,14 +49,14 @@
     <main.basedir>${project.basedir}</main.basedir>
 
     <armeria.version>0.87.0</armeria.version>
-    <!-- This is from armeria, but be careful to avoid >= v20 apis -->
+    <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
     <guava.version>27.1-jre</guava.version>
 
     <!-- only used for proto interop testing -->
     <wire.version>3.0.0-alpha01</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
-    <brave.version>5.6.3</brave.version>
+    <brave.version>5.6.5</brave.version>
     <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
     <okhttp.version>3.14.2</okhttp.version>
     <okio.version>1.17.4</okio.version>

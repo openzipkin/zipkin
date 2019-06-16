@@ -283,7 +283,7 @@
     <dependency>
       <groupId>io.zipkin.brave.cassandra</groupId>
       <artifactId>brave-instrumentation-cassandra-driver</artifactId>
-      <version>0.10.2</version>
+      <version>0.10.3</version>
       <optional>true</optional>
     </dependency>
 

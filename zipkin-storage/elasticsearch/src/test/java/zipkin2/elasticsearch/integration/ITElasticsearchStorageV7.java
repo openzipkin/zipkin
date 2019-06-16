@@ -32,7 +32,7 @@ import static zipkin2.elasticsearch.integration.ElasticsearchStorageRule.index;
 public class ITElasticsearchStorageV7 {
 
   static ElasticsearchStorageRule classRule() {
-    return new ElasticsearchStorageRule("openzipkin/zipkin-elasticsearch7:2.13.0",
+    return new ElasticsearchStorageRule("openzipkin/zipkin-elasticsearch7:2.14.2",
       "test_elasticsearch3");
   }
 
