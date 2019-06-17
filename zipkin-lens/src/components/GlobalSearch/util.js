@@ -14,56 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import { theme } from '../../colors';
-
-export const buildReactSelectStyle = (value, options, isFocused, baseSize, baseColor) => {
-  const backgroundColor = theme.palette.primary[baseColor];
-  let darkBackgroundColor;
-  switch (baseColor) {
-    case 'main':
-      darkBackgroundColor = theme.palette.primary.dark;
-      break;
-    case 'light':
-      darkBackgroundColor = theme.palette.primary.main;
-      break;
-    default:
-      // Do nothing
-  }
-
-  return {
-    control: base => ({
-      ...base,
-      width: isFocused
-        ? `${baseSize * 1.5}rem`
-        : `${baseSize}rem`,
-      border: 0,
-      borderRadius: 0,
-      backgroundColor: isFocused ? darkBackgroundColor : backgroundColor,
-      '&:hover': {
-        backgroundColor: darkBackgroundColor,
-      },
-      cursor: 'pointer',
-    }),
-    menuPortal: base => ({
-      ...base,
-      zIndex: 10000,
-      width: `${baseSize * 1.5}rem`,
-    }),
-    singleValue: base => ({
-      ...base,
-      color: theme.palette.primary.contrastText,
-    }),
-    indicatorsContainer: base => ({
-      ...base,
-      display: 'none',
-    }),
-    input: base => ({
-      ...base,
-      color: theme.palette.primary.contrastText,
-    }),
-  };
-};
-
 const buildOrderedConditionKeyOptions = autocompleteKeys => ([
   'serviceName',
   'spanName',

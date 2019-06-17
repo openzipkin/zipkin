@@ -18,12 +18,12 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
 import ReactSelect from 'react-select';
-import Box from '@material-ui/core/Box';
 
-import { buildReactSelectStyle, buildConditionKeyOptions } from './util';
+import { buildConditionKeyOptions } from './util';
 import { globalSearchConditionsPropTypes } from '../../prop-types';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import * as autocompleteValuesActionCreators from '../../actions/autocomplete-values-action';
+import { theme } from '../../colors';
 
 const propTypes = {
   autocompleteKeys: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -66,83 +66,59 @@ const GlobalSearchConditionKey = ({
     isDisabled: opt.isDisabled,
   }));
 
-  const styles = buildReactSelectStyle(
-    conditionKey,
-    options,
-    isFocused,
-    12,
-    'main',
-  );
+  const styles = {
+    control: base => ({
+      ...base,
+      width: isFocused
+        ? '15rem'
+        : '12rem',
+      height: '2.4rem',
+      minHeight: '2.4rem',
+      border: 0,
+      borderTopLeftRadius: '0.2rem',
+      borderTopRightRadius: 0,
+      borderBottomLeftRadius: '0.2rem',
+      borderBottomRightRadius: 0,
+      backgroundColor: isFocused ? theme.palette.primary.dark : theme.palette.primary.main,
+      '&:hover': {
+        backgroundColor: theme.palette.primary.dark,
+      },
+      cursor: 'pointer',
+    }),
+    menuPortal: base => ({
+      ...base,
+      zIndex: 10000,
+      width: '15rem',
+    }),
+    singleValue: base => ({
+      ...base,
+      color: theme.palette.primary.contrastText,
+    }),
+    indicatorsContainer: base => ({
+      ...base,
+      display: 'none',
+    }),
+    input: base => ({
+      ...base,
+      color: theme.palette.primary.contrastText,
+    }),
+  };
 
   return (
-    <Box>
-      <ReactSelect
-        autoFocus
-        isSearchable={false}
-        value={{ value: conditionKey, label: conditionKey }}
-        options={options}
-        onFocus={onFocus}
-        onBlur={onBlur}
-        onChange={handleKeyChange}
-        styles={styles}
-        menuPortalTarget={document.body}
-        defaultMenuIsOpen
-        backspaceRemovesValue
-      />
-    </Box>
+    <ReactSelect
+      autoFocus
+      isSearchable={false}
+      value={{ value: conditionKey, label: conditionKey }}
+      options={options}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onChange={handleKeyChange}
+      styles={styles}
+      defaultMenuIsOpen
+      backspaceRemovesValue
+    />
   );
 };
-
-/*
-class GlobalSearchConditionKey extends React.Component {
-  conditionKeyOptions() {
-    const { conditionKeyOptions } = this.props;
-    return conditionKeyOptions.map(conditionKeyOption => ({
-      value: conditionKeyOption.conditionKey,
-      label: conditionKeyOption.conditionKey,
-      isDisabled: conditionKeyOption.isDisabled,
-    }));
-  }
-
-  buildReactSelectStyle() {
-    const { conditionKey, conditionKeyOptions, isFocused } = this.props;
-
-    return buildReactSelectStyle(
-      conditionKey,
-      conditionKeyOptions.map(opt => opt.conditionKey),
-      isFocused,
-    );
-  }
-
-  render() {
-    const {
-      conditionKey,
-      onFocus,
-      onBlur,
-      onChange,
-    } = this.props;
-
-    return (
-      <div className="global-search-condition-key">
-        <ReactSelect
-          autoFocus
-          isSearchable={false}
-          value={{ value: conditionKey, label: conditionKey }}
-          options={this.conditionKeyOptions()}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          onChange={(selected) => { onChange(selected.value); }}
-          styles={this.buildReactSelectStyle()}
-          menuPortalTarget={document.body}
-          defaultMenuIsOpen
-          backspaceRemovesValue={false}
-          classNamePrefix="global-search-condition-key-select"
-        />
-      </div>
-    );
-  }
-}
-*/
 
 GlobalSearchConditionKey.propTypes = propTypes;
 

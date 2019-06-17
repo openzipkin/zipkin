@@ -18,7 +18,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import ReactSelect from 'react-select';
 
-import { buildReactSelectStyle } from './util';
+import { theme } from '../../colors';
 
 const propTypes = {
   value: PropTypes.string,
@@ -34,40 +34,63 @@ const defaultProps = {
   value: undefined,
 };
 
-class GlobalSearchNameCondition extends React.Component {
-  buildReactSelectStyle() {
-    const { value, options, isFocused } = this.props;
-    return buildReactSelectStyle(value, options, isFocused, 15, 'light');
-  }
+const GlobalSearchNameCondition = ({
+  value,
+  options,
+  isFocused,
+  onFocus,
+  onBlur,
+  onChange,
+  setFocusableElement,
+}) => {
+  const styles = {
+    control: base => ({
+      ...base,
+      width: isFocused
+        ? '18rem'
+        : '15rem',
+      height: '2.4rem',
+      minHeight: '2.4rem',
+      border: 0,
+      borderRadius: 0,
+      backgroundColor: isFocused ? theme.palette.primary.main : theme.palette.primary.light,
+      '&:hover': {
+        backgroundColor: theme.palette.primary.main,
+      },
+      cursor: 'pointer',
+    }),
+    menuPortal: base => ({
+      ...base,
+      zIndex: 10000,
+      width: '18rem',
+    }),
+    singleValue: base => ({
+      ...base,
+      color: theme.palette.primary.contrastText,
+    }),
+    indicatorsContainer: base => ({
+      ...base,
+      display: 'none',
+    }),
+    input: base => ({
+      ...base,
+      color: theme.palette.primary.contrastText,
+    }),
+  };
 
-  render() {
-    const {
-      value,
-      options,
-      onFocus,
-      onBlur,
-      onChange,
-      setFocusableElement,
-    } = this.props;
-
-    return (
-      <div className="global-search-name-condition">
-        <ReactSelect
-          ref={setFocusableElement}
-          value={{ value, label: value }}
-          options={options.map(opt => ({ value: opt, label: opt }))}
-          styles={this.buildReactSelectStyle()}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          onChange={(selected) => { onChange(selected.value); }}
-          menuPortalTarget={document.body}
-          blurInputOnSelect
-          classNamePrefix="global-search-name-condition-select"
-        />
-      </div>
-    );
-  }
-}
+  return (
+    <ReactSelect
+      ref={setFocusableElement}
+      value={{ value, label: value }}
+      options={options.map(opt => ({ value: opt, label: opt }))}
+      styles={styles}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      onChange={(selected) => { onChange(selected.value); }}
+      blurInputOnSelect
+    />
+  );
+};
 
 GlobalSearchNameCondition.propTypes = propTypes;
 GlobalSearchNameCondition.defaultProps = defaultProps;

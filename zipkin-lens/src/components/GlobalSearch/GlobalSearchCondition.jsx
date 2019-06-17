@@ -28,8 +28,11 @@ const useStyles = makeStyles(theme => ({
   root: {
     display: 'flex',
     alignItems: 'center',
-    overflow: 'hidden',
     height: '2.4rem',
+    // I want to set `overflow:hidden` here, but I cannot do that because ReactSelect
+    // opens menu as a child component.
+    // ReactSelect supports menu component using Portal too, but I don't want to use
+    // it because there is a bug of display when `control` component is moved for layout.
   },
   deleteButton: {
     minWidth: '2.4rem',
@@ -37,7 +40,10 @@ const useStyles = makeStyles(theme => ({
     height: '100%',
     fontSize: '1.2rem',
     boxShadow: 'none',
-    borderRadius: 0,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: '0.2rem',
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: '0.2rem',
     color: theme.palette.primary.contrastText,
     backgroundColor: theme.palette.primary.light,
     '&:hover': {
@@ -70,9 +76,7 @@ const GlobalSearchCondition = ({
   };
 
   return (
-    <Paper
-      className={classes.root}
-    >
+    <Paper className={classes.root}>
       <GlobalSearchConditionKey
         conditionIndex={conditionIndex}
         isFocused={isKeyFocused}
@@ -96,182 +100,6 @@ const GlobalSearchCondition = ({
   );
 };
 
-/*
-class GlobalSearchCondition extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      isKeyFocused: false,
-      isValueFocused: false,
-    };
-
-    this.handleKeyFocus = this.handleKeyFocus.bind(this);
-    this.handleKeyBlur = this.handleKeyBlur.bind(this);
-    this.handleKeyChange = this.handleKeyChange.bind(this);
-    this.handleValueFocus = this.handleValueFocus.bind(this);
-    this.handleValueBlur = this.handleValueBlur.bind(this);
-    this.handleValueChange = this.handleValueChange.bind(this);
-    this.handleDeleteButtonClick = this.handleDeleteButtonClick.bind(this);
-  }
-
-  getConditionKey() {
-    const { conditions, conditionIndex } = this.props;
-    return conditions[conditionIndex].key;
-  }
-
-  getConditionValue() {
-    const { conditions, conditionIndex } = this.props;
-    return conditions[conditionIndex].value;
-  }
-
-  handleKeyFocus() {
-    this.setState({ isKeyFocused: true });
-  }
-
-  handleKeyBlur() {
-    this.setState({ isKeyFocused: false });
-  }
-
-  handleKeyChange(value) {
-    const {
-      conditionIndex,
-      autocompleteKeys,
-      changeConditionKey,
-      fetchAutocompleteValues,
-    } = this.props;
-
-    changeConditionKey(conditionIndex, value);
-
-    if (autocompleteKeys.includes(value)) {
-      fetchAutocompleteValues(value);
-    }
-  }
-
-  handleValueFocus() {
-    this.setState({ isValueFocused: true });
-  }
-
-  handleValueBlur() {
-    this.setState({ isValueFocused: false });
-  }
-
-  handleValueChange(value) {
-    const {
-      conditionIndex,
-      fetchRemoteServices,
-      fetchSpans,
-      changeConditionValue,
-    } = this.props;
-
-    changeConditionValue(conditionIndex, value);
-
-    if (this.getConditionKey() === 'serviceName') {
-      fetchRemoteServices(value);
-      fetchSpans(value);
-    }
-  }
-
-  handleDeleteButtonClick() {
-    const { deleteCondition, conditionIndex } = this.props;
-    deleteCondition(conditionIndex);
-  }
-
-  isFocused() {
-    const { isKeyFocused, isValueFocused } = this.state;
-    return isKeyFocused || isValueFocused;
-  }
-
-  renderConditionValue() {
-    const {
-      services,
-      remoteServices,
-      spans,
-      autocompleteValues,
-    } = this.props;
-
-    const conditionKey = this.getConditionKey();
-    const conditionValue = this.getConditionValue();
-
-    const commonProps = {
-      value: conditionValue,
-      onChange: this.handleValueChange,
-    };
-
-    switch (conditionKey) {
-      case 'serviceName':
-      case 'remoteServiceName':
-      case 'spanName': {
-        let options;
-        if (conditionKey === 'serviceName') {
-          options = services;
-        } else if (conditionKey === 'remoteServiceName') {
-          options = remoteServices;
-        } else if (conditionKey === 'spanName') {
-          options = spans;
-        }
-        return (
-          <GlobalSearchNameCondition
-            {...commonProps}
-            options={options}
-            onFocus={this.handleValueFocus}
-            onBlur={this.handleValueBlur}
-            setFocusableElement={this.setFocusableElement}
-            isFocused={this.isFocused()}
-          />
-        );
-      }
-      default: // autocompleteTags
-        return (
-          <GlobalSearchNameCondition
-            {...commonProps}
-            options={autocompleteValues}
-            onFocus={this.handleValueFocus}
-            onBlur={this.handleValueBlur}
-            setFocusableElement={this.setFocusableElement}
-            isFocused={this.isFocused()}
-          />
-        );
-    }
-  }
-
-  render() {
-    const { conditions, autocompleteKeys } = this.props;
-    const { isKeyFocused } = this.state;
-
-    const conditionKey = this.getConditionKey();
-
-    return (
-      <div className="global-search-condition">
-        <div className="global-search-condition__key-wrapper">
-          <GlobalSearchConditionKey
-            conditionKey={conditionKey}
-            conditionKeyOptions={
-              buildConditionKeyOptions(conditionKey, conditions, autocompleteKeys)
-            }
-            isFocused={isKeyFocused}
-            onFocus={this.handleKeyFocus}
-            onBlur={this.handleKeyBlur}
-            onChange={this.handleKeyChange}
-          />
-        </div>
-        <div className="global-search-condition__value-wrapper">
-          {this.renderConditionValue()}
-        </div>
-        <div className="global-search-condition__delete-button-wrapper">
-          <button
-            type="button"
-            onClick={this.handleDeleteButtonClick}
-            className="global-search-condition__delete-button"
-          >
-            <span className="fas fa-times global-search-condition__delete-button-icon" />
-          </button>
-        </div>
-      </div>
-    );
-  }
-}
-*/
 GlobalSearchCondition.propTypes = propTypes;
 
 export default GlobalSearchCondition;
