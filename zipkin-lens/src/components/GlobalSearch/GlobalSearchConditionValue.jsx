@@ -18,6 +18,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
 
+import DurationCondition from './conditions/DurationCondition';
 import NameCondition from './conditions/NameCondition';
 import { globalSearchConditionsPropTypes } from '../../prop-types';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
@@ -89,6 +90,16 @@ const GlobalSearchConditionValue = ({
         />
       );
     }
+    case 'minDuration':
+    case 'maxDuration':
+      return (
+        <DurationCondition
+          {...commonProps}
+          isFocused={isFocused}
+          onFocus={onFocus}
+          onBlur={onBlur}
+        />
+      );
     default: // autocompleteTags
       return (
         <NameCondition
