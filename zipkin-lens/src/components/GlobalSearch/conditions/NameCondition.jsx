@@ -18,7 +18,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import ReactSelect from 'react-select';
 
-import { theme } from '../../colors';
+import { theme } from '../../../colors';
 
 const propTypes = {
   value: PropTypes.string,
@@ -34,7 +34,7 @@ const defaultProps = {
   value: undefined,
 };
 
-const GlobalSearchNameCondition = ({
+const NameCondition = ({
   value,
   options,
   isFocused,
@@ -92,7 +92,7 @@ const GlobalSearchNameCondition = ({
   );
 };
 
-GlobalSearchNameCondition.propTypes = propTypes;
-GlobalSearchNameCondition.defaultProps = defaultProps;
+NameCondition.propTypes = propTypes;
+NameCondition.defaultProps = defaultProps;
 
-export default GlobalSearchNameCondition;
+export default NameCondition;

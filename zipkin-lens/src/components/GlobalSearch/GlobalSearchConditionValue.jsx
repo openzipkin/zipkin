@@ -18,7 +18,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { connect } from 'react-redux';
 
-import GlobalSearchNameCondition from './GlobalSearchNameCondition';
+import NameCondition from './conditions/NameCondition';
 import { globalSearchConditionsPropTypes } from '../../prop-types';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import * as spansActionCreators from '../../actions/spans-action';
@@ -80,7 +80,7 @@ const GlobalSearchConditionValue = ({
         default: break;
       }
       return (
-        <GlobalSearchNameCondition
+        <NameCondition
           {...commonProps}
           options={opts}
           isFocused={isFocused}
@@ -91,7 +91,7 @@ const GlobalSearchConditionValue = ({
     }
     default: // autocompleteTags
       return (
-        <GlobalSearchNameCondition
+        <NameCondition
           {...commonProps}
           options={autocompleteValues}
           isFocused={isFocused}
