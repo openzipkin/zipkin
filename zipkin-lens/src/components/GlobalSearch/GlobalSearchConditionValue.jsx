@@ -20,6 +20,7 @@ import { connect } from 'react-redux';
 
 import DurationCondition from './conditions/DurationCondition';
 import NameCondition from './conditions/NameCondition';
+import TagCondition from './conditions/TagCondition';
 import { globalSearchConditionsPropTypes } from '../../prop-types';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import * as spansActionCreators from '../../actions/spans-action';
@@ -98,6 +99,15 @@ const GlobalSearchConditionValue = ({
           isFocused={isFocused}
           onFocus={onFocus}
           onBlur={onBlur}
+        />
+      );
+    case 'tags':
+      return (
+        <TagCondition
+          {...commonProps}
+          onFocus={onFocus}
+          onBlur={onBlur}
+          isFocused={isFocused}
         />
       );
     default: // autocompleteTags
