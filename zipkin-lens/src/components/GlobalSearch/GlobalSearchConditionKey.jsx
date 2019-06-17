@@ -16,24 +16,84 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { connect } from 'react-redux';
 import ReactSelect from 'react-select';
+import Box from '@material-ui/core/Box';
 
-import { buildReactSelectStyle } from './util';
+import { buildReactSelectStyle, buildConditionKeyOptions } from './util';
+import { globalSearchConditionsPropTypes } from '../../prop-types';
+import * as globalSearchActionCreators from '../../actions/global-search-action';
+import * as autocompleteValuesActionCreators from '../../actions/autocomplete-values-action';
 
 const propTypes = {
-  conditionKey: PropTypes.string.isRequired,
-  conditionKeyOptions: PropTypes.arrayOf(
-    PropTypes.shape({
-      conditionKey: PropTypes.string.isRequired,
-      isDisabled: PropTypes.bool.isRequired,
-    }),
-  ).isRequired,
+  autocompleteKeys: PropTypes.arrayOf(PropTypes.string).isRequired,
+  conditionIndex: PropTypes.number.isRequired,
+  conditions: globalSearchConditionsPropTypes.isRequired,
   isFocused: PropTypes.bool.isRequired,
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
+  fetchAutocompleteValues: PropTypes.func.isRequired,
 };
 
+const GlobalSearchConditionKey = ({
+  autocompleteKeys,
+  conditionIndex,
+  conditions,
+  isFocused,
+  onFocus,
+  onBlur,
+  onChange,
+  fetchAutocompleteValues,
+}) => {
+  const { key: conditionKey } = conditions[conditionIndex];
+
+  const handleKeyChange = (selected) => {
+    const key = selected.value;
+    onChange(conditionIndex, key);
+    if (autocompleteKeys.includes(key)) {
+      fetchAutocompleteValues(key);
+    }
+  };
+
+  const options = buildConditionKeyOptions(
+    conditionKey,
+    conditions,
+    autocompleteKeys,
+  ).map(opt => ({
+    value: opt.conditionKey,
+    label: opt.conditionKey,
+    isDisabled: opt.isDisabled,
+  }));
+
+  const styles = buildReactSelectStyle(
+    conditionKey,
+    options,
+    isFocused,
+    12,
+    'main',
+  );
+
+  return (
+    <Box>
+      <ReactSelect
+        autoFocus
+        isSearchable={false}
+        value={{ value: conditionKey, label: conditionKey }}
+        options={options}
+        onFocus={onFocus}
+        onBlur={onBlur}
+        onChange={handleKeyChange}
+        styles={styles}
+        menuPortalTarget={document.body}
+        defaultMenuIsOpen
+        backspaceRemovesValue
+      />
+    </Box>
+  );
+};
+
+/*
 class GlobalSearchConditionKey extends React.Component {
   conditionKeyOptions() {
     const { conditionKeyOptions } = this.props;
@@ -82,7 +142,26 @@ class GlobalSearchConditionKey extends React.Component {
     );
   }
 }
+*/
 
 GlobalSearchConditionKey.propTypes = propTypes;
 
-export default GlobalSearchConditionKey;
+const mapStateToProps = state => ({
+  autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
+  conditions: state.globalSearch.conditions,
+});
+
+const mapDispatchToProps = (dispatch) => {
+  const { changeConditionKey } = globalSearchActionCreators;
+  const { fetchAutocompleteValues } = autocompleteValuesActionCreators;
+
+  return {
+    onChange: (idx, key) => dispatch(changeConditionKey(idx, key)),
+    fetchAutocompleteValues: key => dispatch(fetchAutocompleteValues(key)),
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(GlobalSearchConditionKey);

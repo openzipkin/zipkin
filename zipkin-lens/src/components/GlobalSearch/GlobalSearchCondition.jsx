@@ -15,33 +15,88 @@
  * limitations under the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState } from 'react';
+import { makeStyles } from '@material-ui/styles';
+import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
+import Paper from '@material-ui/core/Paper';
 
 import GlobalSearchConditionKey from './GlobalSearchConditionKey';
-import GlobalSearchNameCondition from './GlobalSearchNameCondition';
-import { buildConditionKeyOptions } from './util';
-import { globalSearchConditionsPropTypes } from '../../prop-types';
+import GlobalSearchConditionValue from './GlobalSearchConditionValue';
+
+const useStyles = makeStyles(theme => ({
+  root: {
+    display: 'flex',
+    alignItems: 'center',
+    overflow: 'hidden',
+    height: '2.4rem',
+  },
+  deleteButton: {
+    minWidth: '2.4rem',
+    width: '2.4rem',
+    height: '100%',
+    fontSize: '1.2rem',
+    boxShadow: 'none',
+    borderRadius: 0,
+    color: theme.palette.primary.contrastText,
+    backgroundColor: theme.palette.primary.light,
+    '&:hover': {
+      backgroundColor: theme.palette.primary.main,
+    },
+  },
+}));
 
 const propTypes = {
   conditionIndex: PropTypes.number.isRequired,
-
-  services: PropTypes.arrayOf(PropTypes.string).isRequired,
-  remoteServices: PropTypes.arrayOf(PropTypes.string).isRequired,
-  spans: PropTypes.arrayOf(PropTypes.string).isRequired,
-  autocompleteKeys: PropTypes.arrayOf(PropTypes.string).isRequired,
-  autocompleteValues: PropTypes.arrayOf(PropTypes.string).isRequired,
-
-  conditions: globalSearchConditionsPropTypes.isRequired,
-  changeConditionKey: PropTypes.func.isRequired,
-  changeConditionValue: PropTypes.func.isRequired,
   deleteCondition: PropTypes.func.isRequired,
-
-  fetchSpans: PropTypes.func.isRequired,
-  fetchRemoteServices: PropTypes.func.isRequired,
-  fetchAutocompleteKeys: PropTypes.func.isRequired,
-  fetchAutocompleteValues: PropTypes.func.isRequired,
 };
 
+const GlobalSearchCondition = ({
+  conditionIndex,
+  deleteCondition,
+}) => {
+  const classes = useStyles();
+
+  const [isKeyFocused, setIsKeyFocused] = useState(false);
+  const [isValueFocused, setIsValueFocused] = useState(false);
+
+  const handleKeyFocus = () => setIsKeyFocused(true);
+  const handleKeyBlur = () => setIsKeyFocused(false);
+  const handleValueFocus = () => setIsValueFocused(true);
+  const handleValueBlur = () => setIsValueFocused(false);
+
+  const handleDeleteButtonClick = () => {
+    deleteCondition(conditionIndex);
+  };
+
+  return (
+    <Paper
+      className={classes.root}
+    >
+      <GlobalSearchConditionKey
+        conditionIndex={conditionIndex}
+        isFocused={isKeyFocused}
+        onFocus={handleKeyFocus}
+        onBlur={handleKeyBlur}
+      />
+      <GlobalSearchConditionValue
+        conditionIndex={conditionIndex}
+        isFocused={isValueFocused}
+        onFocus={handleValueFocus}
+        onBlur={handleValueBlur}
+      />
+      <Button
+        variant="contained"
+        onClick={handleDeleteButtonClick}
+        className={classes.deleteButton}
+      >
+        <Box component="span" className="fas fa-times" />
+      </Button>
+    </Paper>
+  );
+};
+
+/*
 class GlobalSearchCondition extends React.Component {
   constructor(props) {
     super(props);
@@ -216,7 +271,7 @@ class GlobalSearchCondition extends React.Component {
     );
   }
 }
-
+*/
 GlobalSearchCondition.propTypes = propTypes;
 
 export default GlobalSearchCondition;

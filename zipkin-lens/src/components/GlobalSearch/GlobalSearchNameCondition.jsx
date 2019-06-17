@@ -37,7 +37,7 @@ const defaultProps = {
 class GlobalSearchNameCondition extends React.Component {
   buildReactSelectStyle() {
     const { value, options, isFocused } = this.props;
-    return buildReactSelectStyle(value, options, isFocused);
+    return buildReactSelectStyle(value, options, isFocused, 15, 'light');
   }
 
   render() {

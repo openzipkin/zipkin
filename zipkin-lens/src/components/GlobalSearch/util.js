@@ -14,27 +14,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import _ from 'lodash';
+import { theme } from '../../colors';
 
-export const buildReactSelectStyle = (value, options, isFocused) => {
-  let maxLength = 0;
-  options.forEach((opt) => {
-    if (maxLength < opt.length) {
-      maxLength = opt.length;
-    }
-  });
+export const buildReactSelectStyle = (value, options, isFocused, baseSize, baseColor) => {
+  const backgroundColor = theme.palette.primary[baseColor];
+  let darkBackgroundColor;
+  switch (baseColor) {
+    case 'main':
+      darkBackgroundColor = theme.palette.primary.dark;
+      break;
+    case 'light':
+      darkBackgroundColor = theme.palette.primary.main;
+      break;
+    default:
+      // Do nothing
+  }
 
   return {
-    control: provided => ({
-      ...provided,
-      width: isFocused || !_.isString(value)
-        ? `${8 * maxLength + 16}px`
-        : `${(8 * value.length) + 16}px`,
+    control: base => ({
+      ...base,
+      width: isFocused
+        ? `${baseSize * 1.5}rem`
+        : `${baseSize}rem`,
+      border: 0,
+      borderRadius: 0,
+      backgroundColor: isFocused ? darkBackgroundColor : backgroundColor,
+      '&:hover': {
+        backgroundColor: darkBackgroundColor,
+      },
+      cursor: 'pointer',
     }),
     menuPortal: base => ({
       ...base,
-      zIndex: 9999,
-      width: `${8 * maxLength + 16}px`,
+      zIndex: 10000,
+      width: '14rem',
+    }),
+    singleValue: base => ({
+      ...base,
+      color: theme.palette.primary.contrastText,
+    }),
+    indicatorsContainer: base => ({
+      ...base,
+      display: 'none',
     }),
   };
 };
