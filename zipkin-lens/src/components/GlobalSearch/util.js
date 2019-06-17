@@ -47,7 +47,7 @@ export const buildReactSelectStyle = (value, options, isFocused, baseSize, baseC
     menuPortal: base => ({
       ...base,
       zIndex: 10000,
-      width: '14rem',
+      width: `${baseSize * 1.5}rem`,
     }),
     singleValue: base => ({
       ...base,
@@ -56,6 +56,10 @@ export const buildReactSelectStyle = (value, options, isFocused, baseSize, baseC
     indicatorsContainer: base => ({
       ...base,
       display: 'none',
+    }),
+    input: base => ({
+      ...base,
+      color: theme.palette.primary.contrastText,
     }),
   };
 };
