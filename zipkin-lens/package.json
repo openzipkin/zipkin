@@ -63,13 +63,15 @@
     "webpack-dev-server": "^3.1.14"
   },
   "dependencies": {
+    "@date-io/moment": "^1.3.7",
     "@material-ui/core": "^4.1.1",
+    "@material-ui/pickers": "^3.1.1",
     "@material-ui/styles": "^4.1.1",
     "babel-polyfill": "^6.26.0",
     "chart.js": "^2.7.2",
     "js-cookie": "^2.2.0",
     "lodash": "^4.17.11",
-    "moment": "^2.22.2",
+    "moment": "^2.24.0",
     "prop-types": "^15.6.2",
     "query-string": "^6.1.0",
     "rc-calendar": "^9.7.10",
