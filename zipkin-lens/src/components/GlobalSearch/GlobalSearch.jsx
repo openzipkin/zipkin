@@ -16,15 +16,18 @@
  */
 import PropTypes from 'prop-types';
 import React, { useEffect } from 'react';
+import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 
-import GlobalSearchConditionListContainer from '../../containers/GlobalSearch/GlobalSearchConditionListContainer';
+import GlobalSearchConditionList from './GlobalSearchConditionList';
 import LookbackCondition from './conditions/LookbackCondition';
 import { buildTracesQueryParameters, buildTracesApiQueryParameters } from './api';
 import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
+import * as tracesActionCreators from '../../actions/traces-action';
+import * as servicesActionCreators from '../../actions/services-action';
 
 const useStyles = makeStyles({
   findButton: {
@@ -86,7 +89,7 @@ const GlobalSearch = ({
       borderRadius="0.5rem"
     >
       <Box display="flex" width="100%">
-        <GlobalSearchConditionListContainer />
+        <GlobalSearchConditionList />
       </Box>
       <LookbackCondition />
       <Box
@@ -110,4 +113,23 @@ const GlobalSearch = ({
 
 GlobalSearch.propTypes = propTypes;
 
-export default withRouter(GlobalSearch);
+const mapStateToProps = state => ({
+  conditions: state.globalSearch.conditions,
+  lookbackCondition: state.globalSearch.lookbackCondition,
+  limitCondition: state.globalSearch.limitCondition,
+});
+
+const mapDispatchToProps = (dispatch) => {
+  const { fetchTraces } = tracesActionCreators;
+  const { fetchServices } = servicesActionCreators;
+
+  return {
+    fetchTraces: params => dispatch(fetchTraces(params)),
+    fetchServices: () => dispatch(fetchServices()),
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(withRouter(GlobalSearch));

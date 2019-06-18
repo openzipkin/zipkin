@@ -16,6 +16,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useState } from 'react';
+import { connect } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -23,6 +24,7 @@ import Paper from '@material-ui/core/Paper';
 
 import GlobalSearchConditionKey from './GlobalSearchConditionKey';
 import GlobalSearchConditionValue from './GlobalSearchConditionValue';
+import * as globalSearchActionCreators from '../../actions/global-search-action';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -102,4 +104,15 @@ const GlobalSearchCondition = ({
 
 GlobalSearchCondition.propTypes = propTypes;
 
-export default GlobalSearchCondition;
+const mapDispatchToProps = (dispatch) => {
+  const { deleteCondition } = globalSearchActionCreators;
+
+  return {
+    deleteCondition: index => dispatch(deleteCondition(index)),
+  };
+};
+
+export default connect(
+  null,
+  mapDispatchToProps,
+)(GlobalSearchCondition);

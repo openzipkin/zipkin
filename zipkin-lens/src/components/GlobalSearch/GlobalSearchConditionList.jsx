@@ -16,13 +16,15 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { connect } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 
 import { retrieveNextConditionKey, retrieveDefaultConditionValue } from './util';
-import GlobalSearchConditionContainer from '../../containers/GlobalSearch/GlobalSearchConditionContainer';
+import GlobalSearchCondition from './GlobalSearchCondition';
 import { globalSearchConditionsPropTypes } from '../../prop-types';
+import * as globalSearchActionCreators from '../../actions/global-search-action';
 
 const useStyles = makeStyles({
   root: {
@@ -80,7 +82,7 @@ const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys 
             )
             : conditions.map((condition, conditionIndex) => (
               <Box m={0.25}>
-                <GlobalSearchConditionContainer
+                <GlobalSearchCondition
                   conditionIndex={conditionIndex}
                   key={condition._id}
                 />
@@ -104,4 +106,20 @@ const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys 
 
 GlobalSearchConditionList.propTypes = propTypes;
 
-export default GlobalSearchConditionList;
+const mapStateToProps = state => ({
+  conditions: state.globalSearch.conditions,
+  autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
+});
+
+const mapDispatchToProps = (dispatch) => {
+  const { addCondition } = globalSearchActionCreators;
+
+  return {
+    addCondition: condition => dispatch(addCondition(condition)),
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+)(GlobalSearchConditionList);
