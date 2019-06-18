@@ -23,6 +23,7 @@ import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 
 import GlobalSearchConditionList from './GlobalSearchConditionList';
+import LimitCondition from './conditions/LimitCondition';
 import LookbackCondition from './conditions/LookbackCondition';
 import { buildTracesQueryParameters, buildTracesApiQueryParameters } from './api';
 import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
@@ -91,6 +92,7 @@ const GlobalSearch = ({
       <Box display="flex" width="100%">
         <GlobalSearchConditionList />
       </Box>
+      <LimitCondition />
       <LookbackCondition />
       <Box
         display="flex"
