@@ -19,7 +19,6 @@ import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import Paper from '@material-ui/core/Paper';
 
 import { retrieveNextConditionKey, retrieveDefaultConditionValue } from './util';
 import GlobalSearchConditionContainer from '../../containers/GlobalSearch/GlobalSearchConditionContainer';
@@ -57,7 +56,13 @@ const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys 
   };
 
   return (
-    <Paper className={classes.root}>
+    <Box
+      width="100%"
+      display="flex"
+      alignItems="center"
+      bgcolor="background.paper"
+      borderRadius="0.5rem 0 0 0.5rem"
+    >
       <Box
         display="flex"
         flexWrap="wrap"
@@ -93,7 +98,7 @@ const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys 
           </Button>
         </Box>
       </Box>
-    </Paper>
+    </Box>
   );
 };
 

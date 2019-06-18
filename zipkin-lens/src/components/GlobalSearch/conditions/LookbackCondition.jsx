@@ -52,6 +52,8 @@ const useStyles = makeStyles(theme => ({
   lookbackButton: {
     height: '100%',
     whiteSpace: 'nowrap',
+    borderRadius: 0,
+    boxShadow: 'none',
   },
   timePicker: {
     display: 'block',
