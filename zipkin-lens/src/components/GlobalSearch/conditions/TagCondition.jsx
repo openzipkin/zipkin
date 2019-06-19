@@ -62,7 +62,7 @@ const TagCondition = ({
 
   return (
     <InputBase
-      ref={valueRef}
+      inputRef={valueRef}
       value={value}
       className={classes.valueInput}
       onChange={handleValueChange}
