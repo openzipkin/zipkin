@@ -160,6 +160,8 @@ const DurationCondition = ({
         inputRef={valueRef}
         value={displayedValue}
         className={classes.valueInput}
+        onFocus={onFocus}
+        onBlur={onBlur}
         onChange={handleValueChange}
         onKeyDown={handleKeyDown}
         style={{
@@ -169,8 +171,6 @@ const DurationCondition = ({
       <ReactSelect
         isSearchable={false}
         options={unitOptions.map(opt => ({ value: opt, label: opt }))}
-        onFocus={onFocus}
-        onBlur={onBlur}
         onChange={handleUnitChange}
         styles={styles}
         value={{ value: unit, label: unit }}

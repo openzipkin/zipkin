@@ -62,15 +62,15 @@ export const retrieveNextConditionKey = (conditions, autocompleteKeys) => {
 export const retrieveDefaultConditionValue = (conditionKey) => {
   switch (conditionKey) {
     case 'serviceName':
-      return undefined;
+      return '';
     case 'remoteServiceName':
-      return undefined;
+      return '';
     case 'spanName':
       return undefined;
     case 'minDuration':
-      return 10;
+      return 0;
     case 'maxDuration':
-      return 100;
+      return 0;
     case 'tags':
       return '';
     default: // autocompleteKeys

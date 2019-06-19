@@ -21,6 +21,7 @@ import Paper from '@material-ui/core/Paper';
 
 import GlobalSearchConditionKey from './GlobalSearchConditionKey';
 import GlobalSearchConditionValue from './GlobalSearchConditionValue';
+import { globalSearchConditionsPropTypes } from '../../prop-types';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 
 const useStyles = makeStyles(theme => ({
@@ -55,9 +56,11 @@ const propTypes = {
   conditionIndex: PropTypes.number.isRequired,
   deleteCondition: PropTypes.func.isRequired,
   addCondition: PropTypes.func.isRequired,
+  conditions: globalSearchConditionsPropTypes.isRequired,
 };
 
 const GlobalSearchCondition = ({
+  conditions,
   conditionIndex,
   deleteCondition,
   addCondition,
@@ -67,10 +70,38 @@ const GlobalSearchCondition = ({
   const [isKeyFocused, setIsKeyFocused] = useState(false);
   const [isValueFocused, setIsValueFocused] = useState(false);
 
+  // These ref are necessary, because in callback function raw props value will be old value.
+  // Please see: https://reactjs.org/docs/hooks-faq.html#why-am-i-seeing-stale-props-or-state-inside-my-function
+  const conditionsRef = useRef(conditions);
+  conditionsRef.current = conditions;
+
+  const isKeyFocusedRef = useRef(isKeyFocused);
+  const isValueFocusedRef = useRef(isValueFocused);
+  isKeyFocusedRef.current = isKeyFocused;
+  isValueFocusedRef.current = isValueFocused;
+
+  const deleteWhenValueIsEmpty = () => {
+    setTimeout(() => {
+      if (
+        !isKeyFocusedRef.current
+        && !isValueFocusedRef.current
+        && !conditionsRef.current[conditionIndex].value
+      ) {
+        deleteCondition(conditionIndex);
+      }
+    }, 0);
+  };
+
   const handleKeyFocus = () => setIsKeyFocused(true);
-  const handleKeyBlur = () => setIsKeyFocused(false);
+  const handleKeyBlur = () => {
+    setIsKeyFocused(false);
+    deleteWhenValueIsEmpty();
+  };
   const handleValueFocus = () => setIsValueFocused(true);
-  const handleValueBlur = () => setIsValueFocused(false);
+  const handleValueBlur = () => {
+    setIsValueFocused(false);
+    deleteWhenValueIsEmpty();
+  };
 
   const handleDeleteButtonClick = () => deleteCondition(conditionIndex);
 
@@ -112,15 +143,18 @@ const GlobalSearchCondition = ({
 
 GlobalSearchCondition.propTypes = propTypes;
 
+const mapStateToProps = state => ({
+  conditions: state.globalSearch.conditions,
+});
+
 const mapDispatchToProps = (dispatch) => {
   const { deleteCondition } = globalSearchActionCreators;
-
   return {
     deleteCondition: index => dispatch(deleteCondition(index)),
   };
 };
 
 export default connect(
-  null,
+  mapStateToProps,
   mapDispatchToProps,
 )(GlobalSearchCondition);

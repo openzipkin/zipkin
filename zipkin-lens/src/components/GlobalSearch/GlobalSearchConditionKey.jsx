@@ -16,7 +16,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import ReactSelect from 'react-select';
 
-import { buildConditionKeyOptions } from './util';
+import { buildConditionKeyOptions, retrieveDefaultConditionValue } from './util';
 import { globalSearchConditionsPropTypes } from '../../prop-types';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import * as autocompleteValuesActionCreators from '../../actions/autocomplete-values-action';
@@ -31,6 +31,7 @@ const propTypes = {
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
+  clearConditionValue: PropTypes.func.isRequired,
   fetchAutocompleteValues: PropTypes.func.isRequired,
 };
 
@@ -43,6 +44,7 @@ const GlobalSearchConditionKey = ({
   onFocus,
   onBlur,
   onChange,
+  clearConditionValue,
   fetchAutocompleteValues,
 }) => {
   const { key: conditionKey } = conditions[conditionIndex];
@@ -50,6 +52,7 @@ const GlobalSearchConditionKey = ({
   const handleKeyChange = (selected) => {
     const key = selected.value;
     onChange(conditionIndex, key);
+    clearConditionValue(conditionIndex, key);
     if (autocompleteKeys.includes(key)) {
       fetchAutocompleteValues(key);
     }
@@ -128,11 +131,15 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = (dispatch) => {
-  const { changeConditionKey } = globalSearchActionCreators;
+  const { changeConditionKey, changeConditionValue } = globalSearchActionCreators;
   const { fetchAutocompleteValues } = autocompleteValuesActionCreators;
 
   return {
     onChange: (idx, key) => dispatch(changeConditionKey(idx, key)),
+    clearConditionValue: (idx, key) => dispatch(changeConditionValue(
+      idx,
+      retrieveDefaultConditionValue(key),
+    )),
     fetchAutocompleteValues: key => dispatch(fetchAutocompleteValues(key)),
   };
 };
