@@ -24,7 +24,7 @@ const propTypes = {
   onBlur: PropTypes.func.isRequired,
   onChange: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
-  setFocusableElement: PropTypes.func.isRequired,
+  valueRef: PropTypes.shape({}).isRequired,
 };
 
 const defaultProps = {
@@ -38,7 +38,7 @@ const NameCondition = ({
   onFocus,
   onBlur,
   onChange,
-  setFocusableElement,
+  valueRef,
 }) => {
   const styles = {
     control: base => ({
@@ -77,7 +77,7 @@ const NameCondition = ({
 
   return (
     <ReactSelect
-      ref={setFocusableElement}
+      ref={valueRef}
       value={{ value, label: value }}
       options={options.map(opt => ({ value: opt, label: opt }))}
       styles={styles}
@@ -85,6 +85,7 @@ const NameCondition = ({
       onBlur={onBlur}
       onChange={(selected) => { onChange(selected.value); }}
       blurInputOnSelect
+      openMenuOnFocus
     />
   );
 };

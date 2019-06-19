@@ -39,6 +39,7 @@ const propTypes = {
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
+  valueRef: PropTypes.shape({}).isRequired,
 };
 
 const initialUnit = (value) => {
@@ -57,6 +58,7 @@ const DurationCondition = ({
   onFocus,
   onBlur,
   isFocused,
+  valueRef,
 }) => {
   const classes = useStyles();
 
@@ -146,6 +148,7 @@ const DurationCondition = ({
   return (
     <Box display="flex" alignItems="center">
       <InputBase
+        inputRef={valueRef}
         value={displayedValue}
         className={classes.valueInput}
         onChange={handleValueChange}

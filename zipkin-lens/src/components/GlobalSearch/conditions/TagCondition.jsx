@@ -34,6 +34,7 @@ const propTypes = {
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
+  valueRef: PropTypes.shape({}).isRequired,
 };
 
 const TagCondition = ({
@@ -42,6 +43,7 @@ const TagCondition = ({
   onFocus,
   onBlur,
   isFocused,
+  valueRef,
 }) => {
   const classes = useStyles();
 
@@ -51,6 +53,7 @@ const TagCondition = ({
 
   return (
     <InputBase
+      ref={valueRef}
       value={value}
       className={classes.valueInput}
       onChange={handleValueChange}

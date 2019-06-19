@@ -23,6 +23,7 @@ import * as autocompleteValuesActionCreators from '../../actions/autocomplete-va
 import { theme } from '../../colors';
 
 const propTypes = {
+  focusValue: PropTypes.func.isRequired,
   autocompleteKeys: PropTypes.arrayOf(PropTypes.string).isRequired,
   conditionIndex: PropTypes.number.isRequired,
   conditions: globalSearchConditionsPropTypes.isRequired,
@@ -34,6 +35,7 @@ const propTypes = {
 };
 
 const GlobalSearchConditionKey = ({
+  focusValue,
   autocompleteKeys,
   conditionIndex,
   conditions,
@@ -51,6 +53,7 @@ const GlobalSearchConditionKey = ({
     if (autocompleteKeys.includes(key)) {
       fetchAutocompleteValues(key);
     }
+    focusValue();
   };
 
   const options = buildConditionKeyOptions(

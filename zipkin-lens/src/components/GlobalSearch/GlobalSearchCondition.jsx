@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { connect } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -74,6 +74,14 @@ const GlobalSearchCondition = ({
     deleteCondition(conditionIndex);
   };
 
+  const valueRef = useRef(null);
+  const focusValue = () => {
+    // Delay is needed to avoid calling focus
+    // until the value element is mounted.
+    // If don't delay, focus cannot be executed.
+    setTimeout(() => valueRef.current.focus(), 0);
+  };
+
   return (
     <Paper className={classes.root}>
       <GlobalSearchConditionKey
@@ -81,12 +89,14 @@ const GlobalSearchCondition = ({
         isFocused={isKeyFocused}
         onFocus={handleKeyFocus}
         onBlur={handleKeyBlur}
+        focusValue={focusValue}
       />
       <GlobalSearchConditionValue
         conditionIndex={conditionIndex}
         isFocused={isValueFocused}
         onFocus={handleValueFocus}
         onBlur={handleValueBlur}
+        valueRef={valueRef}
       />
       <Button
         variant="contained"
