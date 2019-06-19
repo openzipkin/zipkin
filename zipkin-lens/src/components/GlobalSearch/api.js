@@ -11,8 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { buildQueryParameters } from '../../util/api';
-
 export const lookbackDurations = {
   '1h': 3600000,
   '2h': 7200000,
@@ -58,7 +56,7 @@ export const buildTracesQueryParameters = (
     conditionMap.startTs = lookbackCondition.startTs;
   }
 
-  return buildQueryParameters(conditionMap);
+  return conditionMap;
 };
 
 export const buildTracesApiQueryParameters = (
@@ -97,5 +95,77 @@ export const buildTracesApiQueryParameters = (
     conditionMap.lookback = lookbackDurations[lookbackCondition.value];
   }
 
-  return buildQueryParameters(conditionMap);
+  return conditionMap;
+};
+
+export const extractConditionsFromQueryParameters = (queryParameters) => {
+  const conditions = [];
+  const lookbackCondition = {};
+  let limitCondition = 0;
+
+  Object.keys(queryParameters).forEach((conditionKey) => {
+    const conditionValue = queryParameters[conditionKey];
+    switch (conditionKey) {
+      case 'serviceName':
+      case 'remoteServiceName':
+      case 'spanName':
+        conditions.push({
+          key: conditionKey,
+          value: conditionValue,
+        });
+        break;
+      case 'minDuration':
+      case 'maxDuration':
+        conditions.push({
+          key: conditionKey,
+          value: parseInt(conditionValue, 10),
+        });
+        break;
+      case 'tags':
+        conditionValue.split(' and ').forEach((tags) => {
+          conditions.push({
+            key: 'tags',
+            value: tags,
+          });
+        });
+        break;
+      case 'autocompleteTags':
+        conditionValue.split(' and ').forEach((autocompleteTag) => {
+          const splitted = autocompleteTag.split('=');
+          conditions.push({
+            key: splitted[0],
+            value: splitted[1],
+          });
+        });
+        break;
+      case 'limit':
+        limitCondition = parseInt(conditionValue, 10);
+        break;
+      case 'lookback':
+        switch (conditionValue) {
+          case '1h':
+          case '2h':
+          case '6h':
+          case '12h':
+          case '1d':
+          case '2d':
+          case '7d': {
+            lookbackCondition.value = conditionValue;
+            lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
+            break;
+          }
+          case 'custom':
+            lookbackCondition.value = conditionValue;
+            lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
+            lookbackCondition.startTs = parseInt(queryParameters.startTs, 10);
+            break;
+          default:
+            break;
+        }
+        break;
+      default:
+        break;
+    }
+  });
+  return { conditions, lookbackCondition, limitCondition };
 };

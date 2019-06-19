@@ -24,9 +24,9 @@ import Button from '@material-ui/core/Button';
 import GlobalSearchConditionList from './GlobalSearchConditionList';
 import LimitCondition from './conditions/LimitCondition';
 import LookbackCondition from './conditions/LookbackCondition';
-import { buildTracesQueryParameters, buildTracesApiQueryParameters } from './api';
-import { extractConditionsFromQueryParameters } from './util';
+import { buildTracesQueryParameters, buildTracesApiQueryParameters, extractConditionsFromQueryParameters } from './api';
 import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
+import { buildQueryParameters } from '../../util/api';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import * as tracesActionCreators from '../../actions/traces-action';
 import * as servicesActionCreators from '../../actions/services-action';
@@ -79,11 +79,11 @@ const GlobalSearch = ({
   const classes = useStyles();
 
   const handleFindButtonClick = () => {
-    const queryParameters = buildTracesQueryParameters(
+    const queryParameters = buildQueryParameters(buildTracesQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
-    );
+    ));
     const loc = { pathname: '/zipkin', search: queryParameters };
     history.push(loc);
     fetchTraces(buildTracesApiQueryParameters(
