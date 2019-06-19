@@ -78,7 +78,7 @@ const GlobalSearch = ({
 }) => {
   const classes = useStyles();
 
-  const handleFindButtonClick = () => {
+  const findTraces = () => {
     const queryParameters = buildQueryParameters(buildTracesQueryParameters(
       conditions,
       lookbackCondition,
@@ -93,7 +93,16 @@ const GlobalSearch = ({
     ));
   };
 
+  const handleFindButtonClick = findTraces;
+
+  const handleKeyDown = (event) => {
+    if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
+      findTraces();
+    }
+  };
+
   useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
     const queryParams = queryString.parse(location.search);
     const {
       conditions: conditionsFromUrl,
@@ -123,6 +132,8 @@ const GlobalSearch = ({
       limitConditionFromUrl,
     ));
   }, []);
+
+  useEffect(() => () => document.removeEventListener('keydown', handleKeyDown));
 
   return (
     <Box

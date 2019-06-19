@@ -46,13 +46,15 @@ const propTypes = {
 const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys }) => {
   const classes = useStyles();
 
-  const handleAddButtonClick = () => {
+  const addNewCondition = () => {
     const nextConditionKey = retrieveNextConditionKey(conditions, autocompleteKeys);
     addCondition({
       key: nextConditionKey,
       value: retrieveDefaultConditionValue(nextConditionKey),
     });
   };
+
+  const handleAddButtonClick = addNewCondition;
 
   return (
     <Box
@@ -82,6 +84,7 @@ const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys 
                 <GlobalSearchCondition
                   conditionIndex={conditionIndex}
                   key={condition._id}
+                  addCondition={addNewCondition}
                 />
               </Box>
             ))

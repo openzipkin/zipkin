@@ -54,11 +54,13 @@ const useStyles = makeStyles(theme => ({
 const propTypes = {
   conditionIndex: PropTypes.number.isRequired,
   deleteCondition: PropTypes.func.isRequired,
+  addCondition: PropTypes.func.isRequired,
 };
 
 const GlobalSearchCondition = ({
   conditionIndex,
   deleteCondition,
+  addCondition,
 }) => {
   const classes = useStyles();
 
@@ -70,9 +72,7 @@ const GlobalSearchCondition = ({
   const handleValueFocus = () => setIsValueFocused(true);
   const handleValueBlur = () => setIsValueFocused(false);
 
-  const handleDeleteButtonClick = () => {
-    deleteCondition(conditionIndex);
-  };
+  const handleDeleteButtonClick = () => deleteCondition(conditionIndex);
 
   const valueRef = useRef(null);
   const focusValue = () => {
@@ -97,6 +97,7 @@ const GlobalSearchCondition = ({
         onFocus={handleValueFocus}
         onBlur={handleValueBlur}
         valueRef={valueRef}
+        addCondition={addCondition}
       />
       <Button
         variant="contained"

@@ -26,6 +26,8 @@ import * as remoteServicesActionCreators from '../../actions/remote-services-act
 const propTypes = {
   conditionIndex: PropTypes.number.isRequired,
   valueRef: PropTypes.shape({}).isRequired,
+  addCondition: PropTypes.func.isRequired,
+  deleteCondition: PropTypes.func.isRequired,
   services: PropTypes.arrayOf(PropTypes.string).isRequired,
   remoteServices: PropTypes.arrayOf(PropTypes.string).isRequired,
   spans: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -42,6 +44,8 @@ const propTypes = {
 const GlobalSearchConditionValue = ({
   conditionIndex,
   valueRef,
+  addCondition,
+  deleteCondition,
   services,
   remoteServices,
   spans,
@@ -68,6 +72,8 @@ const GlobalSearchConditionValue = ({
     value: conditionValue,
     onChange: handleValueChange,
     valueRef,
+    addCondition,
+    deleteCondition,
   };
 
   switch (conditionKey) {

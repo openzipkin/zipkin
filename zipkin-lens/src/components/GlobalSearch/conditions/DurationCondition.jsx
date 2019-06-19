@@ -40,6 +40,7 @@ const propTypes = {
   onBlur: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
   valueRef: PropTypes.shape({}).isRequired,
+  addCondition: PropTypes.func.isRequired,
 };
 
 const initialUnit = (value) => {
@@ -59,6 +60,7 @@ const DurationCondition = ({
   onBlur,
   isFocused,
   valueRef,
+  addCondition,
 }) => {
   const classes = useStyles();
 
@@ -107,6 +109,13 @@ const DurationCondition = ({
     }
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      valueRef.current.blur();
+      addCondition();
+    }
+  };
+
   const displayedValue = (() => {
     switch (unit) {
       case 'μs': return value;
@@ -152,6 +161,7 @@ const DurationCondition = ({
         value={displayedValue}
         className={classes.valueInput}
         onChange={handleValueChange}
+        onKeyDown={handleKeyDown}
         style={{
           backgroundColor: isFocused ? theme.palette.primary.main : theme.palette.primary.light,
         }}

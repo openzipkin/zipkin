@@ -25,6 +25,7 @@ const propTypes = {
   onChange: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
   valueRef: PropTypes.shape({}).isRequired,
+  addCondition: PropTypes.func.isRequired,
 };
 
 const defaultProps = {
@@ -39,6 +40,7 @@ const NameCondition = ({
   onBlur,
   onChange,
   valueRef,
+  addCondition,
 }) => {
   const styles = {
     control: base => ({
@@ -75,6 +77,11 @@ const NameCondition = ({
     }),
   };
 
+  const handleChange = (selected) => {
+    onChange(selected.value);
+    addCondition();
+  };
+
   return (
     <ReactSelect
       ref={valueRef}
@@ -83,7 +90,7 @@ const NameCondition = ({
       styles={styles}
       onFocus={onFocus}
       onBlur={onBlur}
-      onChange={(selected) => { onChange(selected.value); }}
+      onChange={handleChange}
       blurInputOnSelect
       openMenuOnFocus
     />

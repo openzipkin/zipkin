@@ -35,6 +35,7 @@ const propTypes = {
   onBlur: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
   valueRef: PropTypes.shape({}).isRequired,
+  addCondition: PropTypes.func.isRequired,
 };
 
 const TagCondition = ({
@@ -44,11 +45,19 @@ const TagCondition = ({
   onBlur,
   isFocused,
   valueRef,
+  addCondition,
 }) => {
   const classes = useStyles();
 
   const handleValueChange = (event) => {
     onChange(event.target.value);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === 'Enter') {
+      valueRef.current.blur();
+      addCondition();
+    }
   };
 
   return (
@@ -59,6 +68,7 @@ const TagCondition = ({
       onChange={handleValueChange}
       onFocus={onFocus}
       onBlur={onBlur}
+      onKeyDown={handleKeyDown}
       style={{
         backgroundColor: isFocused ? theme.palette.primary.main : theme.palette.primary.light,
       }}
