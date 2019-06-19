@@ -28,6 +28,9 @@ const useStyles = makeStyles(theme => ({
     '&:hover': {
       backgroundColor: theme.palette.secondary.dark,
     },
+    '&:focus-within': {
+      backgroundColor: theme.palette.secondary.dark,
+    },
   },
 }));
 
