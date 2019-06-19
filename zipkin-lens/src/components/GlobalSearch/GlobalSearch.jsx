@@ -40,7 +40,7 @@ const useStyles = makeStyles({
     width: '2.8rem',
     height: '100%',
     fontSize: '1.2rem',
-    borderRadius: '0 0.5rem 0.5rem 0',
+    borderRadius: '0 0.2rem 0.2rem 0',
     boxShadow: 'none',
   },
 });
@@ -130,8 +130,8 @@ const GlobalSearch = ({
       width="100%"
       minHeight="3.8rem"
       maxHeight="10rem"
-      boxShadow={1}
-      borderRadius="0.5rem"
+      boxShadow={3}
+      borderRadius="0.2rem"
     >
       <Box display="flex" width="100%">
         <GlobalSearchConditionList />

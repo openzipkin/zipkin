@@ -60,7 +60,7 @@ const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys 
       display="flex"
       alignItems="center"
       bgcolor="background.paper"
-      borderRadius="0.5rem 0 0 0.5rem"
+      borderRadius="0.2rem 0 0 0.2rem"
     >
       <Box
         display="flex"
