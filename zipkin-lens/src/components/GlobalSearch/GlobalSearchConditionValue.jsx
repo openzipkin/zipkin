@@ -27,7 +27,6 @@ const propTypes = {
   conditionIndex: PropTypes.number.isRequired,
   valueRef: PropTypes.shape({}).isRequired,
   addCondition: PropTypes.func.isRequired,
-  deleteCondition: PropTypes.func.isRequired,
   services: PropTypes.arrayOf(PropTypes.string).isRequired,
   remoteServices: PropTypes.arrayOf(PropTypes.string).isRequired,
   spans: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -45,7 +44,6 @@ const GlobalSearchConditionValue = ({
   conditionIndex,
   valueRef,
   addCondition,
-  deleteCondition,
   services,
   remoteServices,
   spans,
@@ -73,7 +71,9 @@ const GlobalSearchConditionValue = ({
     onChange: handleValueChange,
     valueRef,
     addCondition,
-    deleteCondition,
+    isFocused,
+    onFocus,
+    onBlur,
   };
 
   switch (conditionKey) {
@@ -87,45 +87,15 @@ const GlobalSearchConditionValue = ({
         case 'spanName': opts = spans; break;
         default: break;
       }
-      return (
-        <NameCondition
-          {...commonProps}
-          options={opts}
-          isFocused={isFocused}
-          onFocus={onFocus}
-          onBlur={onBlur}
-        />
-      );
+      return (<NameCondition {...commonProps} options={opts} />);
     }
     case 'minDuration':
     case 'maxDuration':
-      return (
-        <DurationCondition
-          {...commonProps}
-          isFocused={isFocused}
-          onFocus={onFocus}
-          onBlur={onBlur}
-        />
-      );
+      return (<DurationCondition {...commonProps} />);
     case 'tags':
-      return (
-        <TagCondition
-          {...commonProps}
-          onFocus={onFocus}
-          onBlur={onBlur}
-          isFocused={isFocused}
-        />
-      );
+      return (<TagCondition {...commonProps} />);
     default: // autocompleteTags
-      return (
-        <NameCondition
-          {...commonProps}
-          options={autocompleteValues}
-          isFocused={isFocused}
-          onFocus={onFocus}
-          onBlur={onBlur}
-        />
-      );
+      return (<NameCondition {...commonProps} options={autocompleteValues} />);
   }
 };
 
