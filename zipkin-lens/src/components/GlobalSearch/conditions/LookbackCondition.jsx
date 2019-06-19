@@ -111,8 +111,8 @@ const LookbackCondition = ({
     setIsOpen(false);
     onChange({
       value: 'custom',
-      startTs: customRange.startTime.unix(),
-      endTs: customRange.endTime.unix(),
+      startTs: customRange.startTime.valueOf(),
+      endTs: customRange.endTime.valueOf(),
     });
   };
 
