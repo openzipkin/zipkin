@@ -22,6 +22,7 @@ import ListItem from '@material-ui/core/ListItem';
 import grey from '@material-ui/core/colors/grey';
 
 import { theme } from '../../colors';
+import Logo from '../../img/zipkin-sm-logo.svg';
 
 const useStyles = makeStyles({
   paper: {
@@ -34,6 +35,12 @@ const useStyles = makeStyles({
     color: theme.palette.grey[400],
     '&:hover': {
       color: theme.palette.common.white,
+    },
+  },
+  logo: {
+    width: '2.2rem',
+    '& *': {
+      fill: theme.palette.common.white,
     },
   },
 });
@@ -57,6 +64,9 @@ const Sidebar = ({
         paper: classes.paper,
       }}
     >
+      <Box display="flex" justifyContent="center" width="100%">
+        <Logo className={classes.logo} />
+      </Box>
       <List>
         <ListItem
           button
