@@ -32,7 +32,7 @@ const useStyles = makeStyles({
   button: {
     marginTop: '8px', // for align with TraceID input.
     marginRight: '0.4rem',
-    height: '1.8rem',
+    height: '2rem',
     width: '1.4rem',
     minWidth: '1.4rem',
   },

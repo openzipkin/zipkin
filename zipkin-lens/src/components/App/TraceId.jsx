@@ -19,8 +19,8 @@ import TextField from '@material-ui/core/TextField';
 
 const useStyles = makeStyles({
   input: {
-    fontSize: '0.8rem',
-    height: '1.4rem',
+    fontSize: '1rem',
+    height: '1.6rem',
     padding: '0.2rem 0.2rem',
   },
 });
