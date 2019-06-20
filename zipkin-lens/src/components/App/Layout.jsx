@@ -20,6 +20,8 @@ import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
+import Paper from '@material-ui/core/Paper';
+import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Sidebar from './Sidebar';
 import GlobalSearch from '../GlobalSearch';
@@ -41,6 +43,12 @@ const useStyles = makeStyles({
     width: '1.4rem',
     minWidth: '1.4rem',
   },
+  contentPaper: {
+    flex: '0 1 100%',
+    marginTop: '1rem',
+    marginBottom: '1rem',
+    overflow: 'auto',
+  },
 });
 
 const propTypes = {
@@ -52,6 +60,7 @@ const Layout = ({ children }) => {
 
   return (
     <Box display="flex">
+      <CssBaseline />
       <nav className={classes.drawer}>
         <Sidebar />
       </nav>
@@ -102,25 +111,23 @@ const Layout = ({ children }) => {
         <Box pl={1} pr={2}>
           <GlobalSearch />
         </Box>
-        <Box
-          flex="0 1 100%"
-          mb={3}
-          overflow="auto"
-        >
-          <AutoSizer>
-            {
-              ({ height, width }) => (
-                <Box
-                  height={height}
-                  width={width}
-                  overflow="auto"
-                >
-                  {children}
-                </Box>
-              )
-            }
-          </AutoSizer>
-        </Box>
+        <Paper className={classes.contentPaper}>
+          <Box overflow="auto" width="100%" height="100%">
+            <AutoSizer>
+              {
+                ({ height, width }) => (
+                  <Box
+                    height={height}
+                    width={width}
+                    overflow="auto"
+                  >
+                    {children}
+                  </Box>
+                )
+              }
+            </AutoSizer>
+          </Box>
+        </Paper>
       </Box>
     </Box>
   );
