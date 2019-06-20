@@ -28,17 +28,24 @@ const useStyles = makeStyles({
   paper: {
     width: '3.2rem',
     backgroundColor: grey[900],
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
   },
   listItem: {
     height: '3.2rem',
     cursor: 'pointer',
+    fontSize: '1.05rem',
     color: theme.palette.grey[400],
     '&:hover': {
       color: theme.palette.common.white,
     },
   },
   logo: {
+    marginTop: '0.8rem',
+    marginBottom: '0.35rem',
     width: '2.2rem',
+    height: '2.2rem',
     '& *': {
       fill: theme.palette.common.white,
     },
@@ -64,39 +71,75 @@ const Sidebar = ({
         paper: classes.paper,
       }}
     >
-      <Box display="flex" justifyContent="center" width="100%">
-        <Logo className={classes.logo} />
+      <Box>
+        <Box display="flex" justifyContent="center" width="100%">
+          <Logo className={classes.logo} />
+        </Box>
+        <List>
+          <ListItem
+            button
+            className={classes.listItem}
+            onClick={() => history.push('/zipkin')}
+            style={
+              location.pathname === '/zipkin'
+                ? {
+                  color: theme.palette.common.white,
+                  backgroundColor: theme.palette.primary.dark,
+                }
+                : null
+            }
+          >
+            <Box component="span" className="fas fa-search" />
+          </ListItem>
+          <ListItem
+            button
+            className={classes.listItem}
+            onClick={() => history.push('/zipkin/dependency')}
+            style={
+              location.pathname === '/zipkin/dependency'
+                ? {
+                  color: theme.palette.common.white,
+                  backgroundColor: theme.palette.primary.dark,
+                }
+                : null
+            }
+          >
+            <Box component="span" className="fas fa-project-diagram" />
+          </ListItem>
+        </List>
       </Box>
       <List>
         <ListItem
           button
+          component="a"
+          href="https://zipkin.io/"
           className={classes.listItem}
-          onClick={() => history.push('/zipkin')}
-          style={
-            location.pathname === '/zipkin'
-              ? {
-                color: theme.palette.common.white,
-                backgroundColor: theme.palette.primary.dark,
-              }
-              : null
-          }
         >
-          <Box component="span" className="fas fa-search" />
+          <Box component="span" className="fas fa-home" />
         </ListItem>
         <ListItem
           button
+          component="a"
+          href="https://github.com/openzipkin/zipkin"
           className={classes.listItem}
-          onClick={() => history.push('/zipkin/dependency')}
-          style={
-            location.pathname === '/zipkin/dependency'
-              ? {
-                color: theme.palette.common.white,
-                backgroundColor: theme.palette.primary.dark,
-              }
-              : null
-          }
         >
-          <Box component="span" className="fas fa-project-diagram" />
+          <Box component="span" className="fab fa-github" />
+        </ListItem>
+        <ListItem
+          button
+          component="a"
+          href="https://twitter.com/zipkinproject"
+          className={classes.listItem}
+        >
+          <Box component="span" className="fab fa-twitter" />
+        </ListItem>
+        <ListItem
+          button
+          component="a"
+          href="https://gitter.im/openzipkin/zipkin/"
+          className={classes.listItem}
+        >
+          <Box component="span" className="fab fa-gitter" />
         </ListItem>
       </List>
     </Drawer>
