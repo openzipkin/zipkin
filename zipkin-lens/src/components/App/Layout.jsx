@@ -24,19 +24,13 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Sidebar from './Sidebar';
 import TraceId from './TraceId';
+import TraceUploader from './TraceUploader';
 import GlobalSearch from '../GlobalSearch';
 
 const useStyles = makeStyles({
   drawer: {
     width: '3.2rem',
     flexShrink: 0,
-  },
-  uploadButton: {
-    marginTop: '8px', // for align with TraceID input.
-    marginRight: '0.4rem',
-    height: '1.8rem',
-    width: '1.4rem',
-    minWidth: '1.4rem',
   },
   contentPaper: {
     flex: '0 1 100%',
@@ -87,9 +81,7 @@ const Layout = ({ children }) => {
             display="flex"
             alignItems="center"
           >
-            <Button variant="outlined" className={classes.uploadButton}>
-              <Box component="span" className="fas fa-upload" />
-            </Button>
+            <TraceUploader />
             <TraceId />
           </Box>
         </Box>
