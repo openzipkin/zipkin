@@ -17,7 +17,6 @@ import { withRouter } from 'react-router';
 import { AutoSizer } from 'react-virtualized';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 import Paper from '@material-ui/core/Paper';
 import CssBaseline from '@material-ui/core/CssBaseline';
@@ -34,7 +33,7 @@ const useStyles = makeStyles({
   },
   contentPaper: {
     flex: '0 1 100%',
-    marginTop: '1rem',
+    marginTop: '1.5rem',
     marginBottom: '1rem',
     overflow: 'auto',
   },
@@ -59,8 +58,8 @@ const Layout = ({ children }) => {
         flexDirection="column"
         height="100vh"
         width="100%"
-        pl={1}
-        pr={1}
+        pl={3}
+        pr={3}
         overflow="hidden"
       >
         <Box
@@ -85,9 +84,7 @@ const Layout = ({ children }) => {
             <TraceId />
           </Box>
         </Box>
-        <Box pl={1} pr={2}>
-          <GlobalSearch />
-        </Box>
+        <GlobalSearch />
         <Paper className={classes.contentPaper}>
           <Box overflow="auto" width="100%" height="100%">
             <AutoSizer>
