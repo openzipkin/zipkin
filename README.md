@@ -3,9 +3,14 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:io.zipkin%20AND%20a:zipkin-server)
 
 # zipkin
-[Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data. Zipkin’s design is based on the [Google Dapper paper](http://research.google.com/pubs/pub36356.html).
+[Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather 
+timing data needed to troubleshoot latency problems in service architectures. 
+Features include both the collection and lookup of this data.
 
-This project includes a dependency-free library and a [spring-boot](http://projects.spring.io/spring-boot/) server. Storage options include in-memory, JDBC (mysql), Cassandra, and Elasticsearch.
+This repository includes a dependency-free Java library and a [spring-boot](http://projects.spring.io/spring-boot/) server.
+Storage options include in-memory, MySQL, Apache Cassandra and Elasticsearch.
+Transport options include HTTP, gRPC, Scribe (Apache Thrift), RabbitMQ and
+Apache Kafka.
 
 ## Quick-start
 
