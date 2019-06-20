@@ -65,6 +65,7 @@ const useStyles = makeStyles(theme => ({
     whiteSpace: 'nowrap',
     borderRadius: 0,
     boxShadow: 'none',
+    borderRight: `1px solid ${theme.palette.grey[600]}`,
   },
   timePicker: {
     display: 'block',
@@ -196,7 +197,7 @@ const LookbackCondition = ({
   return (
     <Box minHeight="100%" maxHeight="10rem">
       <Button
-        color="secondary"
+        color="primary"
         variant="contained"
         onClick={handleButtonClick}
         className={classes.lookbackButton}

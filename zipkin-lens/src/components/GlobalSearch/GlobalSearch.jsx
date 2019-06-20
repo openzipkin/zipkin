@@ -156,7 +156,7 @@ const GlobalSearch = ({
         maxheight="10rem"
       >
         <Button
-          color="secondary"
+          color="primary"
           variant="contained"
           onClick={handleFindButtonClick}
           className={classes.findButton}

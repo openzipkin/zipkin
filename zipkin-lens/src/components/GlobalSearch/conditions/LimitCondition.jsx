@@ -24,12 +24,12 @@ const useStyles = makeStyles(theme => ({
     width: '6rem',
     padding: '0 0.5rem',
     color: theme.palette.secondary.contrastText,
-    backgroundColor: theme.palette.secondary.main,
+    backgroundColor: theme.palette.primary.main,
     '&:hover': {
-      backgroundColor: theme.palette.secondary.dark,
+      backgroundColor: theme.palette.primary.dark,
     },
     '&:focus-within': {
-      backgroundColor: theme.palette.secondary.dark,
+      backgroundColor: theme.palette.primary.dark,
     },
   },
 }));
