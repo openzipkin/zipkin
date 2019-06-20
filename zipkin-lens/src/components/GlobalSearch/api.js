@@ -12,6 +12,10 @@
  * the License.
  */
 export const lookbackDurations = {
+  '1m': 60000,
+  '5m': 300000,
+  '15m': 900000,
+  '30m': 1800000,
   '1h': 3600000,
   '2h': 7200000,
   '6h': 21600000,
@@ -143,6 +147,10 @@ export const extractConditionsFromQueryParameters = (queryParameters) => {
         break;
       case 'lookback':
         switch (conditionValue) {
+          case '1m':
+          case '5m':
+          case '15m':
+          case '30m':
           case '1h':
           case '2h':
           case '6h':

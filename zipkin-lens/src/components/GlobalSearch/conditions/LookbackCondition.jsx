@@ -24,12 +24,18 @@ import DialogContent from '@material-ui/core/DialogContent';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
+import Menu from '@material-ui/core/Menu';
+import MenuItem from '@material-ui/core/MenuItem';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 
 import * as globalSearchActionCreators from '../../../actions/global-search-action';
 import { globalSearchLookbackConditionPropTypes } from '../../../prop-types';
 
 const lookbackOptions = [
+  { value: '1m', label: '1 Minute' },
+  { value: '5m', label: '5 Minutes' },
+  { value: '15m', label: '15 Minutes' },
+  { value: '30m', label: '30 Minutes' },
   { value: '1h', label: '1 Hour' },
   { value: '2h', label: '2 Hours' },
   { value: '6h', label: '6 Hours' },
@@ -45,6 +51,14 @@ const lookbackOptionMap = lookbackOptions.reduce((acc, cur) => {
   return acc;
 }, {});
 
+const lookbackMenuOptions = ['1h', '2h', '6h', '12h'].map(value => ({
+  value,
+  label: lookbackOptionMap[value],
+})).concat([{
+  value: 'more',
+  label: 'More...',
+}]);
+
 const useStyles = makeStyles(theme => ({
   lookbackButton: {
     height: '100%',
@@ -54,6 +68,7 @@ const useStyles = makeStyles(theme => ({
   },
   timePicker: {
     display: 'block',
+    width: '14rem',
   },
   custom: {
     paddingRight: '2rem',
@@ -61,9 +76,6 @@ const useStyles = makeStyles(theme => ({
   },
   content: {
     display: 'flex',
-  },
-  fixedLookback: {
-    paddingLeft: '2rem',
   },
   fixedLookbackItem: {
     minWidth: '14rem',
@@ -83,15 +95,24 @@ const LookbackCondition = ({
 
   const isCustom = lookbackCondition.value === 'custom';
 
-  const [isOpen, setIsOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const [customRange, setCustomRange] = useState({
     startTime: moment(lookbackCondition.startTs),
     endTime: moment(lookbackCondition.endTs),
   });
 
-  const handleClick = () => setIsOpen(true);
-  const handleClose = () => setIsOpen(false);
+  const [menuAnchor, setMenuAnchor] = useState(null);
+
+  const handleButtonClick = event => setMenuAnchor(event.currentTarget);
+  const handleMenuClose = () => setMenuAnchor(null);
+
+  const handleMoreClick = () => {
+    setMenuAnchor(null);
+    setIsModalOpen(true);
+  };
+
+  const handleModalClose = () => setIsModalOpen(false);
 
   const handleStartTimeChange = (startTime) => {
     setCustomRange({
@@ -108,7 +129,7 @@ const LookbackCondition = ({
   };
 
   const handleApplyButtonClick = () => {
-    setIsOpen(false);
+    setIsModalOpen(false);
     onChange({
       value: 'custom',
       startTs: customRange.startTime.valueOf(),
@@ -128,17 +149,68 @@ const LookbackCondition = ({
     lookbackButtonText = lookbackOptionMap[lookbackCondition.value];
   }
 
+  const renderMenuItems = (lookbackOption) => {
+    if (lookbackOption.value === 'more') {
+      return (
+        <MenuItem onClick={handleMoreClick}>
+          {lookbackOption.label}
+        </MenuItem>
+      );
+    }
+    return (
+      <MenuItem
+        onClick={() => {
+          setMenuAnchor(null);
+          onChange({
+            ...lookbackCondition,
+            value: lookbackOption.value,
+          });
+        }}
+      >
+        {lookbackOption.label}
+      </MenuItem>
+    );
+  };
+
+  const renderListItems = (lookbackOption) => {
+    if (lookbackOption.value === 'custom') {
+      return null;
+    }
+    return (
+      <ListItem
+        button
+        className={classes.fixedLookbackItem}
+        onClick={() => {
+          setIsModalOpen(false);
+          onChange({
+            ...lookbackCondition,
+            value: lookbackOption.value,
+          });
+        }}
+      >
+        <ListItemText primary={lookbackOption.label} />
+      </ListItem>
+    );
+  };
+
   return (
     <Box minHeight="100%" maxHeight="10rem">
       <Button
         color="secondary"
         variant="contained"
-        onClick={handleClick}
+        onClick={handleButtonClick}
         className={classes.lookbackButton}
       >
         {lookbackButtonText}
       </Button>
-      <Dialog open={isOpen} onClose={handleClose}>
+      <Menu
+        anchorEl={menuAnchor}
+        open={Boolean(menuAnchor)}
+        onClose={handleMenuClose}
+      >
+        { lookbackMenuOptions.map(renderMenuItems) }
+      </Menu>
+      <Dialog open={isModalOpen} onClose={handleModalClose}>
         <DialogTitle>
           Lookback
         </DialogTitle>
@@ -168,30 +240,15 @@ const LookbackCondition = ({
               Apply
             </Button>
           </Box>
-          <Box className={classes.fixedLookback}>
+          <Box pl={2} display="flex">
             <List>
               {
-                lookbackOptions.map((opt) => {
-                  if (opt.value === 'custom') {
-                    return null;
-                  }
-                  return (
-                    <ListItem
-                      button
-                      className={classes.fixedLookbackItem}
-                      onClick={() => {
-                        console.log(opt.value);
-                        setIsOpen(false);
-                        onChange({
-                          ...lookbackCondition,
-                          value: opt.value,
-                        });
-                      }}
-                    >
-                      <ListItemText primary={opt.label} />
-                    </ListItem>
-                  );
-                })
+                lookbackOptions.slice(0, Math.ceil(lookbackOptions.length / 2)).map(renderListItems)
+              }
+            </List>
+            <List>
+              {
+                lookbackOptions.slice(Math.ceil(lookbackOptions.length / 2)).map(renderListItems)
               }
             </List>
           </Box>
