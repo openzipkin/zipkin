@@ -18,23 +18,18 @@ import { AutoSizer } from 'react-virtualized';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 import Paper from '@material-ui/core/Paper';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Sidebar from './Sidebar';
+import TraceId from './TraceId';
 import GlobalSearch from '../GlobalSearch';
 
 const useStyles = makeStyles({
   drawer: {
     width: '3.2rem',
     flexShrink: 0,
-  },
-  traceIdInput: {
-    fontSize: '0.8rem',
-    height: '1.4rem',
-    padding: '0.2rem 0.2rem',
   },
   uploadButton: {
     marginTop: '8px', // for align with TraceID input.
@@ -95,17 +90,7 @@ const Layout = ({ children }) => {
             <Button variant="outlined" className={classes.uploadButton}>
               <Box component="span" className="fas fa-upload" />
             </Button>
-            <TextField
-              id="standard-name"
-              label="Trace ID"
-              className={classes.textField}
-              value="hello"
-              margin="normal"
-              variant="outlined"
-              InputProps={{
-                classes: { input: classes.traceIdInput },
-              }}
-            />
+            <TraceId />
           </Box>
         </Box>
         <Box pl={1} pr={2}>
