@@ -16,25 +16,18 @@ import React from 'react';
 import { withRouter } from 'react-router';
 import { AutoSizer } from 'react-virtualized';
 import { makeStyles } from '@material-ui/styles';
-import grey from '@material-ui/core/colors/grey';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import Drawer from '@material-ui/core/Drawer';
 import TextField from '@material-ui/core/TextField';
 import Typography from '@material-ui/core/Typography';
 
 import Sidebar from './Sidebar';
 import GlobalSearch from '../GlobalSearch';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles({
   drawer: {
-    width: '3rem',
+    width: '3.2rem',
     flexShrink: 0,
-  },
-  drawerPaper: {
-    color: theme.palette.common.white,
-    width: '3rem',
-    backgroundColor: grey[900],
   },
   traceIdInput: {
     fontSize: '0.8rem',
@@ -48,28 +41,19 @@ const useStyles = makeStyles(theme => ({
     width: '1.4rem',
     minWidth: '1.4rem',
   },
-}));
+});
 
 const propTypes = {
-  location: PropTypes.shape({}).isRequired,
   children: PropTypes.arrayOf(PropTypes.element).isRequired,
 };
 
-const Layout = ({ location, children }) => {
+const Layout = ({ children }) => {
   const classes = useStyles();
 
   return (
     <Box display="flex">
       <nav className={classes.drawer}>
-        <Drawer
-          variant="permanent"
-          open
-          classes={{
-            paper: classes.drawerPaper,
-          }}
-        >
-          <Sidebar />
-        </Drawer>
+        <Sidebar />
       </nav>
       <Box
         component="main"
@@ -141,25 +125,6 @@ const Layout = ({ location, children }) => {
     </Box>
   );
 };
-
-/*
-const Layout = ({ location, children }) => (
-  <div className="app__layout">
-    <Sidebar location={location} />
-    <div className="app__header">
-      <div className="app__global-search-wrapper">
-        <GlobalSearch />
-      </div>
-      <div className="app__global-menu-wrapper">
-        <GlobalMenu />
-      </div>
-    </div>
-    <div className="app__content">
-      {children}
-    </div>
-  </div>
-);
-*/
 
 Layout.propTypes = propTypes;
 
