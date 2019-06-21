@@ -18,6 +18,7 @@ import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import { ensureV2TraceData } from '../../util/trace';
 import * as traceViewerActionCreators from '../../actions/trace-viewer-action';
@@ -100,13 +101,15 @@ const TraceUploader = ({
         ref={inputRef}
         onChange={handleFileChange}
       />
-      <Button
-        variant="outlined"
-        className={classes.button}
-        onClick={handleClick}
-      >
-        <Box component="span" className="fas fa-upload" />
-      </Button>
+      <Tooltip title="Upload JSON">
+        <Button
+          variant="outlined"
+          className={classes.button}
+          onClick={handleClick}
+        >
+          <Box component="span" className="fas fa-upload" />
+        </Button>
+      </Tooltip>
     </Box>
   );
 };
