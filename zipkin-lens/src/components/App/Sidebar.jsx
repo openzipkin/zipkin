@@ -19,6 +19,7 @@ import Box from '@material-ui/core/Box';
 import Drawer from '@material-ui/core/Drawer';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
+import Tooltip from '@material-ui/core/Tooltip';
 import grey from '@material-ui/core/colors/grey';
 
 import { theme } from '../../colors';
@@ -76,71 +77,83 @@ const Sidebar = ({
           <Logo className={classes.logo} />
         </Box>
         <List>
-          <ListItem
-            button
-            className={classes.listItem}
-            onClick={() => history.push('/zipkin')}
-            style={
-              location.pathname === '/zipkin'
-                ? {
-                  color: theme.palette.common.white,
-                  backgroundColor: theme.palette.primary.dark,
-                }
-                : null
-            }
-          >
-            <Box component="span" className="fas fa-search" />
-          </ListItem>
-          <ListItem
-            button
-            className={classes.listItem}
-            onClick={() => history.push('/zipkin/dependency')}
-            style={
-              location.pathname === '/zipkin/dependency'
-                ? {
-                  color: theme.palette.common.white,
-                  backgroundColor: theme.palette.primary.dark,
-                }
-                : null
-            }
-          >
-            <Box component="span" className="fas fa-project-diagram" />
-          </ListItem>
+          <Tooltip title="Traces">
+            <ListItem
+              button
+              className={classes.listItem}
+              onClick={() => history.push('/zipkin')}
+              style={
+                location.pathname === '/zipkin'
+                  ? {
+                    color: theme.palette.common.white,
+                    backgroundColor: theme.palette.primary.dark,
+                  }
+                  : null
+              }
+            >
+              <Box component="span" className="fas fa-search" />
+            </ListItem>
+          </Tooltip>
+          <Tooltip title="Dependency Links">
+            <ListItem
+              button
+              className={classes.listItem}
+              onClick={() => history.push('/zipkin/dependency')}
+              style={
+                location.pathname === '/zipkin/dependency'
+                  ? {
+                    color: theme.palette.common.white,
+                    backgroundColor: theme.palette.primary.dark,
+                  }
+                  : null
+              }
+            >
+              <Box component="span" className="fas fa-project-diagram" />
+            </ListItem>
+          </Tooltip>
         </List>
       </Box>
       <List>
-        <ListItem
-          button
-          component="a"
-          href="https://zipkin.io/"
-          className={classes.listItem}
-        >
-          <Box component="span" className="fas fa-home" />
-        </ListItem>
-        <ListItem
-          button
-          component="a"
-          href="https://github.com/openzipkin/zipkin"
-          className={classes.listItem}
-        >
-          <Box component="span" className="fab fa-github" />
-        </ListItem>
-        <ListItem
-          button
-          component="a"
-          href="https://twitter.com/zipkinproject"
-          className={classes.listItem}
-        >
-          <Box component="span" className="fab fa-twitter" />
-        </ListItem>
-        <ListItem
-          button
-          component="a"
-          href="https://gitter.im/openzipkin/zipkin/"
-          className={classes.listItem}
-        >
-          <Box component="span" className="fab fa-gitter" />
-        </ListItem>
+        <Tooltip title="Zipkin Home">
+          <ListItem
+            button
+            component="a"
+            href="https://zipkin.io/"
+            className={classes.listItem}
+          >
+            <Box component="span" className="fas fa-home" />
+          </ListItem>
+        </Tooltip>
+        <Tooltip title="Repository">
+          <ListItem
+            button
+            component="a"
+            href="https://github.com/openzipkin/zipkin"
+            className={classes.listItem}
+          >
+            <Box component="span" className="fab fa-github" />
+          </ListItem>
+        </Tooltip>
+        <Tooltip title="Twitter">
+          <ListItem
+            button
+            component="a"
+            href="https://twitter.com/zipkinproject"
+            className={classes.listItem}
+          >
+            <Box component="span" className="fab fa-twitter" />
+          </ListItem>
+        </Tooltip>
+        <Tooltip title="Gitter">
+          <ListItem
+            button
+            component="a"
+            href="https://gitter.im/openzipkin/zipkin/"
+            className={classes.listItem}
+          >
+            <Box component="span" className="fab fa-gitter" />
+          </ListItem>
+        </Tooltip>
       </List>
     </Drawer>
   );
