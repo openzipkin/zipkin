@@ -22,8 +22,8 @@ import Paper from '@material-ui/core/Paper';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Sidebar from './Sidebar';
-import TraceId from './TraceId';
-import TraceUploader from './TraceUploader';
+import TraceIdSearchInput from './TraceIdSearchInput';
+import TraceJsonUploader from './TraceJsonUploader';
 import GlobalSearch from '../GlobalSearch';
 
 const useStyles = makeStyles({
@@ -80,8 +80,8 @@ const Layout = ({ children }) => {
             display="flex"
             alignItems="center"
           >
-            <TraceUploader />
-            <TraceId />
+            <TraceJsonUploader />
+            <TraceIdSearchInput />
           </Box>
         </Box>
         <GlobalSearch />

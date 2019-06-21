@@ -30,7 +30,7 @@ const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-const TraceId = ({ history }) => {
+const TraceIdSearchInput = ({ history }) => {
   const classes = useStyles();
 
   const [traceId, setTraceId] = useState('');
@@ -70,6 +70,6 @@ const TraceId = ({ history }) => {
   );
 };
 
-TraceId.propTypes = propTypes;
+TraceIdSearchInput.propTypes = propTypes;
 
-export default withRouter(TraceId);
+export default withRouter(TraceIdSearchInput);

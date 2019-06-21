@@ -39,7 +39,7 @@ const useStyles = makeStyles({
   },
 });
 
-const TraceUploader = ({
+const TraceJsonUploader = ({
   history,
   loadTrace,
   loadTraceFailure,
@@ -114,7 +114,7 @@ const TraceUploader = ({
   );
 };
 
-TraceUploader.propTypes = propTypes;
+TraceJsonUploader.propTypes = propTypes;
 
 const mapDispatchToProps = (dispatch) => {
   const { loadTrace, loadTraceFailure } = traceViewerActionCreators;
@@ -127,4 +127,4 @@ const mapDispatchToProps = (dispatch) => {
 export default connect(
   null,
   mapDispatchToProps,
-)(withRouter(TraceUploader));
+)(withRouter(TraceJsonUploader));
