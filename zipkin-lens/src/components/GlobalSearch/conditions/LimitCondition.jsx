@@ -16,6 +16,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import InputBase from '@material-ui/core/InputBase';
+import Tooltip from '@material-ui/core/Tooltip';
 
 import * as globalSearchActionCreators from '../../../actions/global-search-action';
 
@@ -50,12 +51,14 @@ const LimitCondition = ({
   };
 
   return (
-    <InputBase
-      value={limitCondition}
-      className={classes.input}
-      onChange={handleValueChange}
-      type="number"
-    />
+    <Tooltip title="Limit">
+      <InputBase
+        value={limitCondition}
+        className={classes.input}
+        onChange={handleValueChange}
+        type="number"
+      />
+    </Tooltip>
   );
 };
 
