@@ -16,6 +16,7 @@ import React, { useState } from 'react';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import TextField from '@material-ui/core/TextField';
+import Tooltip from '@material-ui/core/Tooltip';
 
 const useStyles = makeStyles({
   input: {
@@ -47,23 +48,25 @@ const TraceId = ({ history }) => {
   };
 
   return (
-    <TextField
-      label="Trace ID"
-      value={traceId}
-      onChange={handleChange}
-      onKeyDown={handleKeyDown}
-      margin="normal"
-      variant="outlined"
-      placeholder="trace id..."
-      InputLabelProps={{
-        shrink: true,
-      }}
-      InputProps={{
-        classes: {
-          input: classes.input,
-        },
-      }}
-    />
+    <Tooltip title="Search by Trace ID">
+      <TextField
+        label="Trace ID"
+        value={traceId}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        margin="normal"
+        variant="outlined"
+        placeholder="trace id..."
+        InputLabelProps={{
+          shrink: true,
+        }}
+        InputProps={{
+          classes: {
+            input: classes.input,
+          },
+        }}
+      />
+    </Tooltip>
   );
 };
 
