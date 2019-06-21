@@ -26,6 +26,7 @@ import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Menu from '@material-ui/core/Menu';
 import MenuItem from '@material-ui/core/MenuItem';
+import Tooltip from '@material-ui/core/Tooltip';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 
 import * as globalSearchActionCreators from '../../../actions/global-search-action';
@@ -196,14 +197,16 @@ const LookbackCondition = ({
 
   return (
     <Box minHeight="100%" maxHeight="10rem">
-      <Button
-        color="primary"
-        variant="contained"
-        onClick={handleButtonClick}
-        className={classes.lookbackButton}
-      >
-        {lookbackButtonText}
-      </Button>
+      <Tooltip title="Lookback">
+        <Button
+          color="primary"
+          variant="contained"
+          onClick={handleButtonClick}
+          className={classes.lookbackButton}
+        >
+          {lookbackButtonText}
+        </Button>
+      </Tooltip>
       <Menu
         anchorEl={menuAnchor}
         open={Boolean(menuAnchor)}
