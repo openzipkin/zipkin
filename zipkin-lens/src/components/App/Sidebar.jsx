@@ -77,7 +77,7 @@ const Sidebar = ({
           <Logo className={classes.logo} />
         </Box>
         <List>
-          <Tooltip title="Traces">
+          <Tooltip title="Traces" placement="right">
             <ListItem
               button
               className={classes.listItem}
@@ -94,7 +94,7 @@ const Sidebar = ({
               <Box component="span" className="fas fa-search" />
             </ListItem>
           </Tooltip>
-          <Tooltip title="Dependency Links">
+          <Tooltip title="Dependency Links" placement="right">
             <ListItem
               button
               className={classes.listItem}
@@ -114,7 +114,7 @@ const Sidebar = ({
         </List>
       </Box>
       <List>
-        <Tooltip title="Zipkin Home">
+        <Tooltip title="Zipkin Home" placement="right">
           <ListItem
             button
             component="a"
@@ -124,7 +124,7 @@ const Sidebar = ({
             <Box component="span" className="fas fa-home" />
           </ListItem>
         </Tooltip>
-        <Tooltip title="Repository">
+        <Tooltip title="Repository" placement="right">
           <ListItem
             button
             component="a"
@@ -134,7 +134,7 @@ const Sidebar = ({
             <Box component="span" className="fab fa-github" />
           </ListItem>
         </Tooltip>
-        <Tooltip title="Twitter">
+        <Tooltip title="Twitter" placement="right">
           <ListItem
             button
             component="a"
@@ -144,7 +144,7 @@ const Sidebar = ({
             <Box component="span" className="fab fa-twitter" />
           </ListItem>
         </Tooltip>
-        <Tooltip title="Gitter">
+        <Tooltip title="Gitter" placement="right">
           <ListItem
             button
             component="a"
