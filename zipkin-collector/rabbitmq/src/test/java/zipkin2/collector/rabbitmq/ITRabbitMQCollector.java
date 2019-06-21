@@ -15,6 +15,7 @@ package zipkin2.collector.rabbitmq;
 
 import com.rabbitmq.client.Channel;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -60,8 +61,8 @@ public class ITRabbitMQCollector {
     String notRabbitMqAddress = "localhost:80";
     try (RabbitMQCollector collector =
         builder().addresses(Collections.singletonList(notRabbitMqAddress)).build()) {
-      thrown.expect(IllegalStateException.class);
-      thrown.expectMessage("Unable to establish connection to RabbitMQ server");
+      thrown.expect(UncheckedIOException.class);
+      thrown.expectMessage("Unable to establish connection to RabbitMQ server: Connection refused");
       collector.start();
     }
   }

@@ -21,6 +21,7 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -169,8 +170,11 @@ public final class RabbitMQCollector extends CollectorComponent {
                 ? builder.connectionFactory.newConnection()
                 : builder.connectionFactory.newConnection(builder.addresses);
         declareQueueIfMissing(connection);
-      } catch (IOException | TimeoutException e) {
-        throw new IllegalStateException("Unable to establish connection to RabbitMQ server", e);
+      } catch (IOException e) {
+        throw new UncheckedIOException(
+          "Unable to establish connection to RabbitMQ server: " + e.getMessage(), e);
+      } catch (TimeoutException e) {
+        throw new RuntimeException("Timeout establishing connection to RabbitMQ server: " + e.getMessage(), e);
       }
       Collector collector = builder.delegate.build();
       CollectorMetrics metrics = builder.metrics;
