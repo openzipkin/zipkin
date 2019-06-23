@@ -54,6 +54,14 @@ class ZipkinActiveMQCollectorProperties {
     this.queue = emptyToNull(queue);
   }
 
+  public String getClientIdPrefix() {
+    return clientIdPrefix;
+  }
+
+  public void setClientIdPrefix(String clientIdPrefix) {
+    this.clientIdPrefix = clientIdPrefix;
+  }
+
   public Integer getConcurrency() {
     return concurrency;
   }
