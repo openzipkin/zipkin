@@ -29,6 +29,9 @@ class ZipkinActiveMQCollectorProperties {
   /** Client ID prefix for queue consumers */
   private String clientIdPrefix = "zipkin";
 
+  /** Connection ID prefix for queue consumers */
+  private String connectionIdPrefix = "zipkin";
+
   /** Number of concurrent span consumers */
   private Integer concurrency;
 
@@ -60,6 +63,14 @@ class ZipkinActiveMQCollectorProperties {
 
   public void setClientIdPrefix(String clientIdPrefix) {
     this.clientIdPrefix = clientIdPrefix;
+  }
+
+  public String getConnectionIdPrefix() {
+    return connectionIdPrefix;
+  }
+
+  public void setConnectionIdPrefix(String connectionIdPrefix) {
+    this.connectionIdPrefix = connectionIdPrefix;
   }
 
   public Integer getConcurrency() {
@@ -98,6 +109,7 @@ class ZipkinActiveMQCollectorProperties {
       connectionFactory = new ActiveMQConnectionFactory(url);
     }
     connectionFactory.setClientIDPrefix(clientIdPrefix);
+    connectionFactory.setConnectionIDPrefix(connectionIdPrefix);
     result.connectionFactory(connectionFactory);
     return result;
   }

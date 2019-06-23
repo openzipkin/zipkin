@@ -13,6 +13,8 @@
  */
 package zipkin2.collector.activemq
 
+import org.apache.activemq.ActiveMQConnection
+import org.apache.activemq.ActiveMQConnectionFactory
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
@@ -31,6 +33,12 @@ class ZipkinActiveMQPropertiesOverrideTest(
 
   companion object {
     @JvmStatic @Parameterized.Parameters fun data(): List<Array<Any?>> {
+      val field = ActiveMQConnectionFactory::class.java.getDeclaredField("connectionIDPrefix")
+      field.isAccessible = true
+
+      val connectionIDPrefixExtractor: (ActiveMQCollector.Builder) -> Any =
+        { builder -> field.get(builder.connectionFactory).toString() }
+
       return listOf(
         parameters("url", "failover:(tcp://localhost:61616,tcp://remotehost:61616)",
           { builder -> builder.connectionFactory.brokerURL.toString() }),
@@ -40,6 +48,8 @@ class ZipkinActiveMQPropertiesOverrideTest(
           { builder -> builder.queue }),
         parameters("client-id-prefix", "zipkin-prod",
           { builder -> builder.connectionFactory.clientIDPrefix }),
+        parameters("connection-id-prefix", "zipkin-prod",
+          { builder -> connectionIDPrefixExtractor(builder) }),
         parameters("username", "u",
           { builder -> builder.connectionFactory.userName }),
         parameters("password", "p",
