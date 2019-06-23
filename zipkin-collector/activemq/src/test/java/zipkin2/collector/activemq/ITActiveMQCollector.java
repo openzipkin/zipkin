@@ -49,7 +49,7 @@ import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 public class ITActiveMQCollector {
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
-  @ClassRule public static EmbeddedActiveMQBroker active = new EmbeddedActiveMQBroker();
+  @ClassRule public static EmbeddedActiveMQBroker activemq = new EmbeddedActiveMQBroker();
   @Rule public TestName testName = new TestName();
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -79,14 +79,22 @@ public class ITActiveMQCollector {
   }
 
   @Test public void startFailsWithInvalidActiveMqServer() throws Exception {
+    collector.close();
+
     ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory();
     // we can be pretty certain ActiveMQ isn't running on localhost port 80
     connectionFactory.setBrokerURL("tcp://localhost:80");
-    try (ActiveMQCollector collector = builder().connectionFactory(connectionFactory).build()) {
-      thrown.expect(UncheckedIOException.class);
-      thrown.expectMessage("Unable to establish connection to ActiveMQ broker: Connection refused");
-      collector.start();
-    }
+    collector = builder().connectionFactory(connectionFactory).build();
+
+    thrown.expect(UncheckedIOException.class);
+    thrown.expectMessage("Unable to establish connection to ActiveMQ broker: Connection refused");
+    collector.start();
+  }
+
+  @Test public void toStringContainsOnlySummaryInformation() {
+    assertThat(collector).hasToString(String.format("ActiveMQCollector{brokerURL=%s, queue=%s}",
+      activemq.getVmURL(), testName.getMethodName())
+    );
   }
 
   /** Ensures list encoding works: a json encoded list of spans */
@@ -106,7 +114,7 @@ public class ITActiveMQCollector {
 
   void messageWithMultipleSpans(SpanBytesEncoder encoder) throws Exception {
     byte[] message = encoder.encodeList(spans);
-    active.pushMessage(collector.queue, message);
+    activemq.pushMessage(collector.queue, message);
 
     assertThat(receivedSpans.take()).isEqualTo(spans);
 
@@ -121,11 +129,11 @@ public class ITActiveMQCollector {
   @Test public void skipsMalformedData() throws Exception {
     byte[] malformed1 = "[\"='".getBytes(UTF_8); // screwed up json
     byte[] malformed2 = "malformed".getBytes(UTF_8);
-    active.pushMessage(collector.queue, THRIFT.encodeList(spans));
-    active.pushMessage(collector.queue, new byte[0]);
-    active.pushMessage(collector.queue, malformed1);
-    active.pushMessage(collector.queue, malformed2);
-    active.pushMessage(collector.queue, THRIFT.encodeList(spans));
+    activemq.pushMessage(collector.queue, THRIFT.encodeList(spans));
+    activemq.pushMessage(collector.queue, new byte[0]);
+    activemq.pushMessage(collector.queue, malformed1);
+    activemq.pushMessage(collector.queue, malformed2);
+    activemq.pushMessage(collector.queue, THRIFT.encodeList(spans));
 
     Thread.sleep(1000);
 
@@ -161,9 +169,9 @@ public class ITActiveMQCollector {
       }
     };
 
-    active.pushMessage(collector.queue, PROTO3.encodeList(spans));
-    active.pushMessage(collector.queue, PROTO3.encodeList(spans)); // tossed on error
-    active.pushMessage(collector.queue, PROTO3.encodeList(spans));
+    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
+    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans)); // tossed on error
+    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
 
     collector = builder().storage(buildStorage(consumer)).build().start();
 
@@ -192,9 +200,9 @@ public class ITActiveMQCollector {
       return consumer.accept(spans);
     })).build().start();
 
-    active.pushMessage(collector.queue, ""); // empty bodies don't go to storage
-    active.pushMessage(collector.queue, PROTO3.encodeList(spans));
-    active.pushMessage(collector.queue, PROTO3.encodeList(spans));
+    activemq.pushMessage(collector.queue, ""); // empty bodies don't go to storage
+    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
+    activemq.pushMessage(collector.queue, PROTO3.encodeList(spans));
 
     assertThat(receivedSpans.take()).containsExactlyElementsOf(spans);
     latch.countDown();
@@ -211,7 +219,7 @@ public class ITActiveMQCollector {
 
   ActiveMQCollector.Builder builder() {
     return ActiveMQCollector.builder()
-      .connectionFactory(active.createConnectionFactory())
+      .connectionFactory(activemq.createConnectionFactory())
       .storage(buildStorage(consumer))
       .metrics(metrics)
       // prevent test flakes by having each run in an individual queue

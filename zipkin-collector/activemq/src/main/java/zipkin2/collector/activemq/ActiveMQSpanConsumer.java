@@ -128,11 +128,7 @@ final class ActiveMQSpanConsumer implements TransportListener, MessageListener, 
         sessionReceiver.getKey().close();
       }
       connection.close();
-    } catch (JMSException e) {
-      if (e.getLinkedException() instanceof IOException) {
-        throw (IOException) e.getLinkedException();
-      }
-      throw new IOException(e);
+    } catch (JMSException ignored) {
     }
   }
 }

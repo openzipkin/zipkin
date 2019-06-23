@@ -14,6 +14,8 @@
 package zipkin2.collector.activemq;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import javax.jms.JMSException;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
@@ -101,5 +103,24 @@ public final class ActiveMQCollector extends CollectorComponent {
 
   @Override public void close() throws IOException {
     lazyInit.close();
+  }
+
+  @Override public final String toString() {
+    return "ActiveMQCollector{"
+      + "brokerURL=" + lazyInit.connectionFactory.getBrokerURL()
+      + ", queue=" + lazyInit.queue
+      + "}";
+  }
+
+  static RuntimeException uncheckedException(String prefix, JMSException e) {
+    Exception cause = e.getLinkedException();
+    if (cause instanceof IOException) {
+      return new UncheckedIOException(prefix + message(cause), (IOException) cause);
+    }
+    return new RuntimeException(prefix + message(e), e);
+  }
+
+  static String message(Exception cause) {
+    return cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
   }
 }

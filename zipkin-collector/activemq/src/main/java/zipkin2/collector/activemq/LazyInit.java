@@ -14,12 +14,13 @@
 package zipkin2.collector.activemq;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import javax.jms.JMSException;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
+
+import static zipkin2.collector.activemq.ActiveMQCollector.uncheckedException;
 
 /**
  * Lazy creates a connection and registers a message listener up to the specified concurrency level.
@@ -64,12 +65,7 @@ final class LazyInit {
       connection = (ActiveMQConnection) connectionFactory.createQueueConnection();
       connection.start();
     } catch (JMSException e) {
-      String prefix = "Unable to establish connection to ActiveMQ broker: ";
-      Exception cause = e.getLinkedException();
-      if (cause instanceof IOException) {
-        throw new UncheckedIOException(prefix + message(cause), (IOException) cause);
-      }
-      throw new RuntimeException(prefix + message(e), e);
+      throw uncheckedException("Unable to establish connection to ActiveMQ broker: ", e);
     }
 
     try {
@@ -85,11 +81,7 @@ final class LazyInit {
         connection.close();
       } catch (JMSException ignored) {
       }
-      throw new RuntimeException("Unable to create receiver for queue: " + queue, e);
+      throw uncheckedException("Unable to create queueReceiver(" + queue + "): ", e);
     }
-  }
-
-  String message(Exception cause) {
-    return cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
   }
 }
