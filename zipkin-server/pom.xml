@@ -220,6 +220,14 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- ActiveMQ Collector -->
+    <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-collector-activemq</artifactId>
+      <version>${project.version}</version>
+      <optional>true</optional>
+    </dependency>
+
     <!-- Kafka Collector -->
     <dependency>
       <groupId>${project.groupId}.zipkin2</groupId>

@@ -18,41 +18,51 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>io.zipkin</groupId>
-    <artifactId>zipkin-parent</artifactId>
+    <groupId>io.zipkin.zipkin2</groupId>
+    <artifactId>zipkin-collector-parent</artifactId>
     <version>2.14.3-SNAPSHOT</version>
   </parent>
 
-  <groupId>io.zipkin.zipkin2</groupId>
-  <artifactId>zipkin-collector-parent</artifactId>
-  <name>Collector</name>
-  <packaging>pom</packaging>
+  <artifactId>zipkin-collector-activemq</artifactId>
+  <name>Collector: ActiveMQ</name>
+  <description>Zipkin span collector for ActiveMQ transport</description>
 
   <properties>
-    <main.basedir>${project.basedir}/..</main.basedir>
-    <main.java.version>1.8</main.java.version>
-    <main.signature.artifact>java18</main.signature.artifact>
+    <main.basedir>${project.basedir}/../..</main.basedir>
+    <amqp-client.version>5.15.9</amqp-client.version>
   </properties>
-
-  <modules>
-    <module>core</module>
-    <module>activemq</module>
-    <module>kafka</module>
-    <module>rabbitmq</module>
-    <module>scribe</module>
-  </modules>
 
   <dependencies>
     <dependency>
       <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
+      <artifactId>zipkin-collector</artifactId>
       <version>${project.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-tests</artifactId>
-      <version>${project.version}</version>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-client</artifactId>
+      <version>${amqp-client.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.activemq</groupId>
+      <artifactId>activemq-broker</artifactId>
+      <version>${amqp-client.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.activemq.tooling</groupId>
+      <artifactId>activemq-junit</artifactId>
+      <version>${amqp-client.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <version>${log4j.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

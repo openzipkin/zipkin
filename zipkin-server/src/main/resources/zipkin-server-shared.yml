@@ -9,6 +9,17 @@ zipkin:
   collector:
     # percentage to traces to retain
     sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}
+    activemq:
+      # ActiveMQ broker url. Ex. tcp://localhost:61616 or failover:(tcp://localhost:61616,tcp://remotehost:61616)
+      url: ${ACTIVEMQ_URL:}
+      # Queue from which to collect span messages.
+      queue: ${ACTIVEMQ_QUEUE:zipkin}
+      # Number of concurrent span consumers.
+      concurrency: ${ACTIVEMQ_CONCURRENCY:1}
+      # Optional username to connect to the broker
+      username: ${ACTIVEMQ_USERNAME:}
+      # Optional password to connect to the broker
+      password: ${ACTIVEMQ_PASSWORD:}
     http:
       # Set to false to disable creation of spans via HTTP collector API
       enabled: ${HTTP_COLLECTOR_ENABLED:true}
@@ -189,6 +200,7 @@ spring:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration
+      - org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
 info:
   zipkin:
     version: "@project.version@"
