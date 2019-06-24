@@ -11,20 +11,54 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { shallow } from 'enzyme';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
-import { shallow } from 'enzyme';
+import { ThemeProvider } from '@material-ui/styles';
+import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 
 import App from './App';
 import Layout from './Layout';
 
 describe('<App />', () => {
-  it('should have appropriate components', () => {
-    const wrapper = shallow(<App />);
-    expect(wrapper.find(Provider).length).toEqual(1);
-    expect(wrapper.find(BrowserRouter).length).toEqual(1);
-    expect(wrapper.find(Layout).length).toEqual(1);
-    expect(wrapper.find(Route).length).toEqual(4);
+  let wrapper;
+
+  beforeEach(() => {
+    wrapper = shallow(<App />);
+  });
+
+  it('should render Layout', () => {
+    const items = wrapper.find(Layout);
+    expect(items.length).toBe(1);
+  });
+
+  describe('should render router', () => {
+    it('should render BrowserRouter', () => {
+      const items = wrapper.find(BrowserRouter);
+      expect(items.length).toBe(1);
+    });
+
+    it('should render 4 routes', () => {
+      const items = wrapper.find(Route);
+      expect(items.length).toBe(4);
+    });
+  });
+
+  describe('should render providers', () => {
+    it('should render MuiPickersUtilsProvider', () => {
+      const items = wrapper.find(MuiPickersUtilsProvider);
+      expect(items.length).toBe(1);
+    });
+
+    it('should render ThemeProvider', () => {
+      const items = wrapper.find(ThemeProvider);
+      expect(items.length).toBe(1);
+    });
+
+    it('should render redux Provider', () => {
+      const items = wrapper.find(Provider);
+      expect(items.length).toBe(1);
+    });
   });
 });
