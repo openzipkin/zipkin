@@ -180,15 +180,15 @@ public final class RabbitMQCollector extends CollectorComponent {
       CollectorMetrics metrics = builder.metrics;
 
       for (int i = 0; i < builder.concurrency; i++) {
-        String name = RabbitMQSpanConsumer.class.getName() + i;
+        String consumerTag = "zipkin-rabbitmq." + i;
         try {
           // this sets up a channel for each consumer thread.
           // We don't track channels, as the connection will close its channels implicitly
           Channel channel = connection.createChannel();
           RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
-          channel.basicConsume(builder.queue, true, name, consumer);
+          channel.basicConsume(builder.queue, true, consumerTag, consumer);
         } catch (IOException e) {
-          throw new IllegalStateException("Failed to start RabbitMQ consumer " + name, e);
+          throw new IllegalStateException("Failed to start RabbitMQ consumer " + consumerTag, e);
         }
       }
       return connection;
