@@ -35,7 +35,7 @@ const useStyles = makeStyles({
 
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
-  location: PropTypes.shape({ search: PropTypes.string.isRequired }).isRequired,
+  location: PropTypes.shape({ pathname: PropTypes.string.isRequired }).isRequired,
   isExternalLink: PropTypes.bool,
   title: PropTypes.string.isRequired,
   url: PropTypes.string.isRequired,
