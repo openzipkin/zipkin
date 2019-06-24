@@ -27,10 +27,6 @@ import TraceJsonUploader from './TraceJsonUploader';
 import GlobalSearch from '../GlobalSearch';
 
 const useStyles = makeStyles({
-  drawer: {
-    width: '3.2rem',
-    flexShrink: 0,
-  },
   contentPaper: {
     flex: '0 1 100%',
     marginTop: '1.5rem',
@@ -49,9 +45,9 @@ const Layout = ({ children }) => {
   return (
     <Box display="flex">
       <CssBaseline />
-      <nav className={classes.drawer}>
+      <Box component="nav" width="3.2rem" flexShrink="0">
         <Sidebar />
-      </nav>
+      </Box>
       <Box
         component="main"
         display="flex"
@@ -62,39 +58,24 @@ const Layout = ({ children }) => {
         pr={3}
         overflow="hidden"
       >
-        <Box
-          width="100%"
-          display="flex"
-          justifyContent="space-between"
-        >
-          <Box
-            display="flex"
-            alignItems="center"
-          >
+        <Box width="100%" display="flex" justifyContent="space-between">
+          <Box display="flex" alignItems="center">
             <Typography variant="h5">
               Discover
             </Typography>
           </Box>
-          <Box
-            pr={4}
-            display="flex"
-            alignItems="center"
-          >
+          <Box pr={4} display="flex" alignItems="center">
             <TraceJsonUploader />
             <TraceIdSearchInput />
           </Box>
         </Box>
         <GlobalSearch />
         <Paper className={classes.contentPaper}>
-          <Box overflow="auto" width="100%" height="100%">
+          <Box overflow="auto" height="100%">
             <AutoSizer>
               {
                 ({ height, width }) => (
-                  <Box
-                    height={height}
-                    width={width}
-                    overflow="auto"
-                  >
+                  <Box height={height} width={width} overflow="auto">
                     {children}
                   </Box>
                 )
