@@ -9,8 +9,8 @@ Features include both the collection and lookup of this data.
 
 This repository includes a dependency-free Java library and a [spring-boot](http://projects.spring.io/spring-boot/) server.
 Storage options include in-memory, MySQL, Apache Cassandra and Elasticsearch.
-Transport options include HTTP, gRPC, Scribe (Apache Thrift), RabbitMQ and
-Apache Kafka.
+Transport options include HTTP, Apache ActiveMQ, Apache Kafka, gRPC, RabbitMQ
+and Scribe (Apache Thrift).
 
 ## Quick-start
 
