@@ -59,7 +59,7 @@ const Layout = ({ children }) => {
         overflow="hidden"
       >
         <Box width="100%" display="flex" justifyContent="space-between">
-          <Box display="flex" alignItems="center">
+          <Box display="flex" alignItems="center" data-test="page-title">
             <Typography variant="h5">
               Discover
             </Typography>
@@ -70,7 +70,7 @@ const Layout = ({ children }) => {
           </Box>
         </Box>
         <GlobalSearch />
-        <Paper className={classes.contentPaper}>
+        <Paper className={classes.contentPaper} data-test="content-paper">
           <Box overflow="auto" height="100%">
             <AutoSizer>
               {

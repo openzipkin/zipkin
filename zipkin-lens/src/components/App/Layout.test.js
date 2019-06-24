@@ -13,27 +13,53 @@
  */
 import React from 'react';
 import { shallow } from 'enzyme';
+import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Layout from './Layout';
 import Sidebar from './Sidebar';
-import GlobalSearchContainer from '../../containers/GlobalSearch/GlobalSearchContainer';
+import TraceIdSearchInput from './TraceIdSearchInput';
+import TraceJsonUploader from './TraceJsonUploader';
 
 describe('<Layout />', () => {
-  it('should have appropriate components and classes', () => {
-    const wrapper = shallow(
-      <Layout.WrappedComponent location={{}}>
-        <div className="dummy1" />
-        <div className="dummy2" />
-        <div className="dummy3" />
+  let wrapper;
+
+  beforeEach(() => {
+    wrapper = shallow(
+      <Layout.WrappedComponent>
+        <div className="child-1" />
+        <div className="child-2" />
+        <div className="child-3" />
       </Layout.WrappedComponent>,
     );
-    expect(wrapper.find('.app__layout').length).toEqual(1);
-    expect(wrapper.find('.app__global-search-wrapper').length).toEqual(1);
-    expect(wrapper.find('.app__content').length).toEqual(1);
-    expect(wrapper.find('.dummy1').length).toEqual(1);
-    expect(wrapper.find('.dummy2').length).toEqual(1);
-    expect(wrapper.find('.dummy3').length).toEqual(1);
-    expect(wrapper.find(Sidebar).length).toEqual(1);
-    expect(wrapper.find(GlobalSearchContainer).length).toEqual(1);
+  });
+
+  it('should render CssBaseline', () => {
+    const items = wrapper.find(CssBaseline);
+    expect(items.length).toBe(1);
+  });
+
+  it('should render Sidebar', () => {
+    const items = wrapper.find(Sidebar);
+    expect(items.length).toBe(1);
+  });
+
+  it('should render page title', () => {
+    const items = wrapper.find('[data-test="page-title"]');
+    expect(items.length).toBe(1);
+  });
+
+  it('should render TraceIdSearchInput', () => {
+    const items = wrapper.find(TraceIdSearchInput);
+    expect(items.length).toBe(1);
+  });
+
+  it('should render TraceJsonUploader', () => {
+    const items = wrapper.find(TraceJsonUploader);
+    expect(items.length).toBe(1);
+  });
+
+  it('should render content\'s paper', () => {
+    const items = wrapper.find('[data-test="content-paper"]');
+    expect(items.length).toBe(1);
   });
 });
