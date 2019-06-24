@@ -13,15 +13,13 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Drawer from '@material-ui/core/Drawer';
 import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import Tooltip from '@material-ui/core/Tooltip';
 import grey from '@material-ui/core/colors/grey';
 
+import SidebarMenuItem from './SidebarMenuItem';
 import { theme } from '../../colors';
 import Logo from '../../img/zipkin-sm-logo.svg';
 
@@ -32,15 +30,6 @@ const useStyles = makeStyles({
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
-  },
-  listItem: {
-    height: '3.2rem',
-    cursor: 'pointer',
-    fontSize: '1.05rem',
-    color: theme.palette.grey[400],
-    '&:hover': {
-      color: theme.palette.common.white,
-    },
   },
   logo: {
     marginTop: '0.8rem',
@@ -53,15 +42,7 @@ const useStyles = makeStyles({
   },
 });
 
-const propTypes = {
-  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
-  location: PropTypes.shape({ search: PropTypes.string.isRequired }).isRequired,
-};
-
-const Sidebar = ({
-  history,
-  location,
-}) => {
+const Sidebar = () => {
   const classes = useStyles();
 
   return (
@@ -77,88 +58,18 @@ const Sidebar = ({
           <Logo className={classes.logo} />
         </Box>
         <List>
-          <Tooltip title="Traces" placement="right">
-            <ListItem
-              button
-              className={classes.listItem}
-              onClick={() => history.push('/zipkin')}
-              style={
-                location.pathname === '/zipkin'
-                  ? {
-                    color: theme.palette.common.white,
-                    backgroundColor: theme.palette.primary.dark,
-                  }
-                  : null
-              }
-            >
-              <Box component="span" className="fas fa-search" />
-            </ListItem>
-          </Tooltip>
-          <Tooltip title="Dependency Links" placement="right">
-            <ListItem
-              button
-              className={classes.listItem}
-              onClick={() => history.push('/zipkin/dependency')}
-              style={
-                location.pathname === '/zipkin/dependency'
-                  ? {
-                    color: theme.palette.common.white,
-                    backgroundColor: theme.palette.primary.dark,
-                  }
-                  : null
-              }
-            >
-              <Box component="span" className="fas fa-project-diagram" />
-            </ListItem>
-          </Tooltip>
+          <SidebarMenuItem title="Traces" url="/zipkin" buttonClassName="fas fa-search" />
+          <SidebarMenuItem title="Dependency Links" url="/zipkin/dependency" buttonClassName="fas fa-project-diagram" />
         </List>
       </Box>
       <List>
-        <Tooltip title="Zipkin Home" placement="right">
-          <ListItem
-            button
-            component="a"
-            href="https://zipkin.io/"
-            className={classes.listItem}
-          >
-            <Box component="span" className="fas fa-home" />
-          </ListItem>
-        </Tooltip>
-        <Tooltip title="Repository" placement="right">
-          <ListItem
-            button
-            component="a"
-            href="https://github.com/openzipkin/zipkin"
-            className={classes.listItem}
-          >
-            <Box component="span" className="fab fa-github" />
-          </ListItem>
-        </Tooltip>
-        <Tooltip title="Twitter" placement="right">
-          <ListItem
-            button
-            component="a"
-            href="https://twitter.com/zipkinproject"
-            className={classes.listItem}
-          >
-            <Box component="span" className="fab fa-twitter" />
-          </ListItem>
-        </Tooltip>
-        <Tooltip title="Gitter" placement="right">
-          <ListItem
-            button
-            component="a"
-            href="https://gitter.im/openzipkin/zipkin/"
-            className={classes.listItem}
-          >
-            <Box component="span" className="fab fa-gitter" />
-          </ListItem>
-        </Tooltip>
+        <SidebarMenuItem isExternalLink title="Zipkin Home" url="https://zipkin.io/" buttonClassName="fas fa-home" />
+        <SidebarMenuItem isExternalLink title="Repository" url="https://github.com/openzipkin/zipkin" buttonClassName="fab fa-github" />
+        <SidebarMenuItem isExternalLink title="Twitter" url="https://twitter.com/zipkinproject" buttonClassName="fab fa-twitter" />
+        <SidebarMenuItem isExternalLink title="Gitter" url="https://gitter.im/openzipkin/zipkin/" buttonClassName="fab fa-gitter" />
       </List>
     </Drawer>
   );
 };
 
-Sidebar.propTypes = propTypes;
-
-export default withRouter(Sidebar);
+export default Sidebar;
