@@ -90,7 +90,7 @@ const TraceJsonUploader = ({ history }) => {
   });
 
   return (
-    <Box>
+    <React.Fragment>
       <input
         type="file"
         style={{ display: 'none' }}
@@ -106,7 +106,7 @@ const TraceJsonUploader = ({ history }) => {
           <Box component="span" className="fas fa-upload" />
         </Button>
       </Tooltip>
-    </Box>
+    </React.Fragment>
   );
 };
 
