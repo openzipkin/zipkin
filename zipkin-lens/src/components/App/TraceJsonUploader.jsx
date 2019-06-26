@@ -12,8 +12,8 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useRef } from 'react';
-import { connect } from 'react-redux';
+import React, { useRef, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -21,12 +21,10 @@ import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
 
 import { ensureV2TraceData } from '../../util/trace';
-import * as traceViewerActionCreators from '../../actions/trace-viewer-action';
+import { loadTrace, loadTraceFailure } from '../../actions/trace-viewer-action';
 
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
-  loadTrace: PropTypes.func.isRequired,
-  loadTraceFailure: PropTypes.func.isRequired,
 };
 
 const useStyles = makeStyles({
@@ -39,12 +37,10 @@ const useStyles = makeStyles({
   },
 });
 
-const TraceJsonUploader = ({
-  history,
-  loadTrace,
-  loadTraceFailure,
-}) => {
+const TraceJsonUploader = ({ history }) => {
   const classes = useStyles();
+
+  const dispatch = useDispatch();
 
   const inputRef = useRef(null);
 
@@ -58,7 +54,7 @@ const TraceJsonUploader = ({
     }
   };
 
-  const handleFileChange = (event) => {
+  const handleFileChange = useCallback((event) => {
     const fileReader = new FileReader();
 
     fileReader.onload = () => {
@@ -68,30 +64,30 @@ const TraceJsonUploader = ({
       try {
         rawTraceData = JSON.parse(result);
       } catch (error) {
-        loadTraceFailure('This file does not contain JSON');
+        dispatch(loadTraceFailure('This file does not contain JSON'));
         goToTraceViewerPage();
         return;
       }
 
       try {
         ensureV2TraceData(rawTraceData);
-        loadTrace(rawTraceData);
+        dispatch(loadTrace(rawTraceData));
       } catch (error) {
-        loadTraceFailure('Only V2 format is supported');
+        dispatch(loadTraceFailure('Only V2 format is supported'));
       }
       goToTraceViewerPage();
     };
 
     fileReader.onabort = () => {
-      loadTraceFailure('Failed to load this file');
+      dispatch(loadTraceFailure('Failed to load this file'));
       goToTraceViewerPage();
     };
 
-    FileReader.onerror = fileReader.onabort;
+    fileReader.onerror = fileReader.onabort;
 
     const [file] = event.target.files;
     fileReader.readAsText(file);
-  };
+  });
 
   return (
     <Box>
@@ -116,15 +112,4 @@ const TraceJsonUploader = ({
 
 TraceJsonUploader.propTypes = propTypes;
 
-const mapDispatchToProps = (dispatch) => {
-  const { loadTrace, loadTraceFailure } = traceViewerActionCreators;
-  return {
-    loadTrace: trace => dispatch(loadTrace(trace)),
-    loadTraceFailure: errorMessage => dispatch(loadTraceFailure(errorMessage)),
-  };
-};
-
-export default connect(
-  null,
-  mapDispatchToProps,
-)(withRouter(TraceJsonUploader));
+export default withRouter(TraceJsonUploader);
