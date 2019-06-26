@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
 import moment from 'moment';
 import queryString from 'query-string';
@@ -25,15 +25,14 @@ import GlobalSearchConditionList from './GlobalSearchConditionList';
 import LimitCondition from './conditions/LimitCondition';
 import LookbackCondition from './conditions/LookbackCondition';
 import { buildTracesQueryParameters, buildTracesApiQueryParameters, extractConditionsFromQueryParameters } from './api';
-import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
 import { buildQueryParameters } from '../../util/api';
 import { useMount, useUnmount } from '../../hooks';
-import * as globalSearchActionCreators from '../../actions/global-search-action';
-import * as tracesActionCreators from '../../actions/traces-action';
-import * as servicesActionCreators from '../../actions/services-action';
-import * as remoteServicesActionCreators from '../../actions/remote-services-action';
-import * as spansActionCreators from '../../actions/spans-action';
-import * as autocompleteKeysActionCreators from '../../actions/autocomplete-keys-action';
+import { addCondition, setLookbackCondition, setLimitCondition } from '../../actions/global-search-action';
+import { fetchTraces } from '../../actions/traces-action';
+import { fetchServices } from '../../actions/services-action';
+import { fetchRemoteServices } from '../../actions/remote-services-action';
+import { fetchSpans } from '../../actions/spans-action';
+import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
 
 const useStyles = makeStyles({
   findButton: {
@@ -49,35 +48,16 @@ const useStyles = makeStyles({
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
   location: PropTypes.shape({ search: PropTypes.string.isRequired }).isRequired,
-  conditions: globalSearchConditionsPropTypes.isRequired,
-  lookbackCondition: globalSearchLookbackConditionPropTypes.isRequired,
-  limitCondition: PropTypes.number.isRequired,
-  addCondition: PropTypes.func.isRequired,
-  setLookbackCondition: PropTypes.func.isRequired,
-  setLimitCondition: PropTypes.func.isRequired,
-  fetchTraces: PropTypes.func.isRequired,
-  fetchServices: PropTypes.func.isRequired,
-  fetchRemoteServices: PropTypes.func.isRequired,
-  fetchSpans: PropTypes.func.isRequired,
-  fetchAutocompleteKeys: PropTypes.func.isRequired,
 };
 
-const GlobalSearch = ({
-  history,
-  location,
-  conditions,
-  lookbackCondition,
-  limitCondition,
-  addCondition,
-  setLookbackCondition,
-  setLimitCondition,
-  fetchTraces,
-  fetchServices,
-  fetchRemoteServices,
-  fetchSpans,
-  fetchAutocompleteKeys,
-}) => {
+const GlobalSearch = ({ history, location }) => {
   const classes = useStyles();
+
+  const dispatch = useDispatch();
+
+  const conditions = useSelector(state => state.globalSearch.conditions);
+  const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
+  const limitCondition = useSelector(state => state.globalSearch.limitCondition);
 
   const findTraces = () => {
     const queryParameters = buildQueryParameters(buildTracesQueryParameters(
@@ -87,11 +67,11 @@ const GlobalSearch = ({
     ));
     const loc = { pathname: '/zipkin', search: queryParameters };
     history.push(loc);
-    fetchTraces(buildTracesApiQueryParameters(
+    dispatch(fetchTraces(buildTracesApiQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
-    ));
+    )));
   };
 
   const handleFindButtonClick = findTraces;
@@ -104,34 +84,36 @@ const GlobalSearch = ({
 
   useMount(() => {
     window.addEventListener('keydown', handleKeyDown);
+
     const queryParams = queryString.parse(location.search);
     const {
       conditions: conditionsFromUrl,
       lookbackCondition: lookbackConditionFromUrl,
       limitCondition: limitConditionFromUrl,
     } = extractConditionsFromQueryParameters(queryParams);
-    conditionsFromUrl.forEach(condition => addCondition(condition));
-    setLookbackCondition({
+
+    conditionsFromUrl.forEach(condition => dispatch(addCondition(condition)));
+    dispatch(setLookbackCondition({
       value: lookbackCondition.value || '1h',
       endTs: lookbackCondition.endTs || moment().valueOf(),
       startTs: lookbackCondition.startTs || moment().subtract(1, 'hours').valueOf(),
-    });
-    setLimitCondition(limitCondition || 10);
+    }));
+    dispatch(setLimitCondition(limitCondition || 10));
 
-    fetchServices();
+    dispatch(fetchServices());
     const serviceNameCondition = conditionsFromUrl.find(
       condition => condition.key === 'serviceName',
     );
     if (serviceNameCondition) {
-      fetchRemoteServices(serviceNameCondition.value);
-      fetchSpans(serviceNameCondition.value);
+      dispatch(fetchRemoteServices(serviceNameCondition.value));
+      dispatch(fetchSpans(serviceNameCondition.value));
     }
-    fetchAutocompleteKeys();
-    fetchTraces(buildTracesApiQueryParameters(
+    dispatch(fetchAutocompleteKeys());
+    dispatch(fetchTraces(buildTracesApiQueryParameters(
       conditionsFromUrl,
       lookbackConditionFromUrl,
       limitConditionFromUrl,
-    ));
+    )));
   });
 
   useUnmount(() => document.removeEventListener('keydown', handleKeyDown));
@@ -171,33 +153,4 @@ const GlobalSearch = ({
 
 GlobalSearch.propTypes = propTypes;
 
-const mapStateToProps = state => ({
-  conditions: state.globalSearch.conditions,
-  lookbackCondition: state.globalSearch.lookbackCondition,
-  limitCondition: state.globalSearch.limitCondition,
-});
-
-const mapDispatchToProps = (dispatch) => {
-  const { fetchTraces } = tracesActionCreators;
-  const { fetchServices } = servicesActionCreators;
-  const { fetchRemoteServices } = remoteServicesActionCreators;
-  const { fetchSpans } = spansActionCreators;
-  const { fetchAutocompleteKeys } = autocompleteKeysActionCreators;
-  const { addCondition, setLookbackCondition, setLimitCondition } = globalSearchActionCreators;
-
-  return {
-    addCondition: condition => dispatch(addCondition(condition)),
-    setLookbackCondition: lookbackCondition => dispatch(setLookbackCondition(lookbackCondition)),
-    setLimitCondition: limitCondition => dispatch(setLimitCondition(limitCondition)),
-    fetchTraces: params => dispatch(fetchTraces(params)),
-    fetchServices: () => dispatch(fetchServices()),
-    fetchRemoteServices: serviceName => dispatch(fetchRemoteServices(serviceName)),
-    fetchSpans: serviceName => dispatch(fetchSpans(serviceName)),
-    fetchAutocompleteKeys: () => dispatch(fetchAutocompleteKeys),
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(withRouter(GlobalSearch));
+export default withRouter(GlobalSearch);
