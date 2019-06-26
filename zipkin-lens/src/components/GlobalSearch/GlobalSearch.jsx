@@ -94,11 +94,11 @@ const GlobalSearch = ({ history, location }) => {
 
     conditionsFromUrl.forEach(condition => dispatch(addCondition(condition)));
     dispatch(setLookbackCondition({
-      value: lookbackCondition.value || '1h',
-      endTs: lookbackCondition.endTs || moment().valueOf(),
-      startTs: lookbackCondition.startTs || moment().subtract(1, 'hours').valueOf(),
+      value: lookbackConditionFromUrl.value || '1h',
+      endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
+      startTs: lookbackConditionFromUrl.startTs || moment().subtract(1, 'hours').valueOf(),
     }));
-    dispatch(setLimitCondition(limitCondition || 10));
+    dispatch(setLimitCondition(limitConditionFromUrl || 10));
 
     dispatch(fetchServices());
     const serviceNameCondition = conditionsFromUrl.find(
