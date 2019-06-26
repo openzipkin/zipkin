@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import moment from 'moment';
@@ -27,6 +27,7 @@ import LookbackCondition from './conditions/LookbackCondition';
 import { buildTracesQueryParameters, buildTracesApiQueryParameters, extractConditionsFromQueryParameters } from './api';
 import { globalSearchConditionsPropTypes, globalSearchLookbackConditionPropTypes } from '../../prop-types';
 import { buildQueryParameters } from '../../util/api';
+import { useMount, useUnmount } from '../../hooks';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import * as tracesActionCreators from '../../actions/traces-action';
 import * as servicesActionCreators from '../../actions/services-action';
@@ -101,7 +102,7 @@ const GlobalSearch = ({
     }
   };
 
-  useEffect(() => {
+  useMount(() => {
     window.addEventListener('keydown', handleKeyDown);
     const queryParams = queryString.parse(location.search);
     const {
@@ -131,9 +132,9 @@ const GlobalSearch = ({
       lookbackConditionFromUrl,
       limitConditionFromUrl,
     ));
-  }, []);
+  });
 
-  useEffect(() => () => document.removeEventListener('keydown', handleKeyDown));
+  useUnmount(() => document.removeEventListener('keydown', handleKeyDown));
 
   return (
     <Box
