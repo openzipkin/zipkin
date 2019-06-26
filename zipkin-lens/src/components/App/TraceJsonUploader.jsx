@@ -87,7 +87,7 @@ const TraceJsonUploader = ({ history }) => {
 
     const [file] = event.target.files;
     fileReader.readAsText(file);
-  });
+  }, [dispatch]);
 
   return (
     <React.Fragment>
