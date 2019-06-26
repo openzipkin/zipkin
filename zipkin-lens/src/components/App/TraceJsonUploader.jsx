@@ -44,10 +44,6 @@ const TraceJsonUploader = ({ history }) => {
 
   const inputRef = useRef(null);
 
-  const goToTraceViewerPage = () => {
-    history.push({ pathname: '/zipkin/traceViewer' });
-  };
-
   const handleClick = () => {
     if (inputRef.current) {
       inputRef.current.click();
@@ -56,6 +52,10 @@ const TraceJsonUploader = ({ history }) => {
 
   const handleFileChange = useCallback((event) => {
     const fileReader = new FileReader();
+
+    const goToTraceViewerPage = () => {
+      history.push({ pathname: '/zipkin/traceViewer' });
+    };
 
     fileReader.onload = () => {
       const { result } = fileReader;
@@ -87,7 +87,7 @@ const TraceJsonUploader = ({ history }) => {
 
     const [file] = event.target.files;
     fileReader.readAsText(file);
-  }, [dispatch]);
+  }, [dispatch, history]);
 
   return (
     <React.Fragment>

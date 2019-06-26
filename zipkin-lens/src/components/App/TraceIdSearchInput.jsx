@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import TextField from '@material-ui/core/TextField';
@@ -35,17 +35,17 @@ const TraceIdSearchInput = ({ history }) => {
 
   const [traceId, setTraceId] = useState('');
 
-  const handleChange = (event) => {
+  const handleChange = useCallback((event) => {
     setTraceId(event.target.value);
-  };
+  }, []);
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = useCallback((event) => {
     if (event.key === 'Enter') {
       history.push({
         pathname: `/zipkin/traces/${traceId}`,
       });
     }
-  };
+  }, [history, traceId]);
 
   return (
     <Tooltip title="Search by Trace ID">
