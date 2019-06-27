@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { connect } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import InputBase from '@material-ui/core/InputBase';
@@ -46,16 +46,40 @@ const LimitCondition = ({
 }) => {
   const classes = useStyles();
 
-  const handleValueChange = (event) => {
-    onChange(event.target.value);
-  };
+  const inputRef = useRef(null);
+
+  const [value, setValue] = useState(limitCondition);
+
+  const handleValueChange = useCallback((event) => {
+    setValue(event.target.value);
+  }, []);
+
+  const handleKeyDown = useCallback((event) => {
+    if (event.key === 'Enter') {
+      const newLimitCondition = value === '' ? 0 : parseInt(value, 10);
+      setValue(newLimitCondition);
+      onChange(newLimitCondition);
+
+      // Need to delay for avoiding from execute searching.
+      setTimeout(() => inputRef.current.blur(), 0);
+    }
+  }, [onChange, value]);
+
+  const handleBlur = useCallback(() => {
+    const newLimitCondition = value === '' ? 0 : parseInt(value, 10);
+    setValue(newLimitCondition);
+    onChange(newLimitCondition);
+  }, [onChange, value]);
 
   return (
     <Tooltip title="Limit">
       <InputBase
-        value={limitCondition}
+        inputRef={inputRef}
+        value={value}
         className={classes.input}
         onChange={handleValueChange}
+        onKeyDown={handleKeyDown}
+        onBlur={handleBlur}
         type="number"
       />
     </Tooltip>
