@@ -51,8 +51,12 @@ export const buildTracesQueryParameters = (
         break;
     }
   });
-  conditionMap.tags = tagConditions.join(' and ');
-  conditionMap.autocompleteTags = autocompleteTagConditions.join(' and ');
+  if (tagConditions.length > 0) {
+    conditionMap.tags = tagConditions.join(' and ');
+  }
+  if (autocompleteTagConditions.length > 0) {
+    conditionMap.autocompleteTags = autocompleteTagConditions.join(' and ');
+  }
   conditionMap.limit = limitCondition;
   conditionMap.lookback = lookbackCondition.value;
   conditionMap.endTs = lookbackCondition.endTs;
@@ -88,7 +92,9 @@ export const buildTracesApiQueryParameters = (
         break;
     }
   });
-  conditionMap.annotationQuery = annotationQueryConditions.join(' and ');
+  if (annotationQueryConditions.length > 0) {
+    conditionMap.annotationQuery = annotationQueryConditions.join(' and ');
+  }
 
   conditionMap.limit = limitCondition;
 
