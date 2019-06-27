@@ -44,6 +44,9 @@ const propTypes = {
 };
 
 const initialUnit = (value) => {
+  if (value === 0) {
+    return 'μs';
+  }
   if (value % (1000 * 1000) === 0) {
     return 's';
   }
@@ -72,9 +75,9 @@ const DurationCondition = ({
       newValue = 0;
     }
     switch (unit) {
-      case 'μs': onChange(String(newValue)); break;
-      case 'ms': onChange(String(newValue * 1000)); break;
-      case 's': onChange(String(newValue * 1000 * 1000)); break;
+      case 'μs': onChange(newValue); break;
+      case 'ms': onChange(newValue * 1000); break;
+      case 's': onChange(newValue * 1000 * 1000); break;
       default: break;
     }
   };
@@ -86,22 +89,22 @@ const DurationCondition = ({
     switch (prevUnit) {
       case 'μs':
         switch (newUnit) {
-          case 'ms': onChange(String(value * 1000)); break;
-          case 's': onChange(String(value * 1000 * 1000)); break;
+          case 'ms': onChange(value * 1000); break;
+          case 's': onChange(value * 1000 * 1000); break;
           default: break; // Do nothing
         }
         break;
       case 'ms':
         switch (newUnit) {
-          case 'μs': onChange(String(value / 1000)); break;
-          case 's': onChange(String(value * 1000)); break;
+          case 'μs': onChange(value / 1000); break;
+          case 's': onChange(value * 1000); break;
           default: break; // Do nothing
         }
         break;
       case 's':
         switch (newUnit) {
-          case 'μs': onChange(String(value / (1000 * 1000))); break;
-          case 'ms': onChange(String(value / 1000)); break;
+          case 'μs': onChange(value / (1000 * 1000)); break;
+          case 'ms': onChange(value / 1000); break;
           default: break; // Do nothing
         }
         break;
