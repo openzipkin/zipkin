@@ -15,7 +15,7 @@ import moment from 'moment';
 import shortid from 'shortid';
 
 import * as types from '../constants/action-types';
-import { defaultConditionValues } from '../util/global-search';
+import { retrieveDefaultConditionValue } from '../components/GlobalSearch/util';
 
 const initialState = {
   conditions: [],
@@ -64,7 +64,7 @@ const globalSearch = (state = initialState, action) => {
       const conditions = [...state.conditions];
       const condition = { ...conditions[action.index] };
       condition.key = action.conditionKey;
-      condition.value = defaultConditionValues(action.conditionKey);
+      condition.value = retrieveDefaultConditionValue(action.conditionKey);
       conditions[action.index] = condition;
       return {
         ...state,
