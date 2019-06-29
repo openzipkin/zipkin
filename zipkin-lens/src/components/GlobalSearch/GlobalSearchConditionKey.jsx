@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import ReactSelect from 'react-select';
 
@@ -43,30 +43,39 @@ const GlobalSearchConditionKey = ({
 
   const { key: conditionKey } = conditions[conditionIndex];
 
-  const clearConditionValue = (idx, key) => dispatch(changeConditionValue(
-    idx,
-    retrieveDefaultConditionValue(key),
-  ));
+  const clearConditionValue = useCallback(
+    (idx, key) => dispatch(changeConditionValue(
+      idx,
+      retrieveDefaultConditionValue(key),
+    )),
+    [dispatch],
+  );
 
-  const handleKeyChange = (selected) => {
-    const key = selected.value;
-    dispatch(changeConditionKey(conditionIndex, key));
-    clearConditionValue(conditionIndex, key);
-    if (autocompleteKeys.includes(key)) {
-      dispatch(fetchAutocompleteValues(key));
-    }
-    focusValue();
-  };
+  const handleKeyChange = useCallback(
+    (selected) => {
+      const key = selected.value;
+      dispatch(changeConditionKey(conditionIndex, key));
+      clearConditionValue(conditionIndex, key);
+      if (autocompleteKeys.includes(key)) {
+        dispatch(fetchAutocompleteValues(key));
+      }
+      focusValue();
+    },
+    [autocompleteKeys, clearConditionValue, conditionIndex, dispatch, focusValue],
+  );
 
-  const options = buildConditionKeyOptions(
-    conditionKey,
-    conditions,
-    autocompleteKeys,
-  ).map(opt => ({
-    value: opt.conditionKey,
-    label: opt.conditionKey,
-    isDisabled: opt.isDisabled,
-  }));
+  const options = useMemo(
+    () => buildConditionKeyOptions(
+      conditionKey,
+      conditions,
+      autocompleteKeys,
+    ).map(opt => ({
+      value: opt.conditionKey,
+      label: opt.conditionKey,
+      isDisabled: opt.isDisabled,
+    })),
+    [conditionKey, conditions, autocompleteKeys],
+  );
 
   const styles = {
     control: base => ({
