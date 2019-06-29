@@ -11,17 +11,15 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import PropTypes from 'prop-types';
 import React from 'react';
-import { connect } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 
 import { retrieveNextConditionKey, retrieveDefaultConditionValue } from './util';
 import GlobalSearchCondition from './GlobalSearchCondition';
-import { globalSearchConditionsPropTypes } from '../../prop-types';
-import * as globalSearchActionCreators from '../../actions/global-search-action';
+import { addCondition } from '../../actions/global-search-action';
 
 const useStyles = makeStyles({
   root: {
@@ -37,21 +35,20 @@ const useStyles = makeStyles({
   },
 });
 
-const propTypes = {
-  conditions: globalSearchConditionsPropTypes.isRequired,
-  addCondition: PropTypes.func.isRequired,
-  autocompleteKeys: PropTypes.arrayOf(PropTypes.string).isRequired,
-};
-
-const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys }) => {
+const GlobalSearchConditionList = () => {
   const classes = useStyles();
+
+  const dispatch = useDispatch();
+
+  const conditions = useSelector(state => state.globalSearch.conditions);
+  const autocompleteKeys = useSelector(state => state.autocompleteKeys.autocompleteKeys);
 
   const addNewCondition = () => {
     const nextConditionKey = retrieveNextConditionKey(conditions, autocompleteKeys);
-    addCondition({
+    dispatch(addCondition({
       key: nextConditionKey,
       value: retrieveDefaultConditionValue(nextConditionKey),
-    });
+    }));
   };
 
   const handleAddButtonClick = addNewCondition;
@@ -104,22 +101,4 @@ const GlobalSearchConditionList = ({ conditions, addCondition, autocompleteKeys 
   );
 };
 
-GlobalSearchConditionList.propTypes = propTypes;
-
-const mapStateToProps = state => ({
-  conditions: state.globalSearch.conditions,
-  autocompleteKeys: state.autocompleteKeys.autocompleteKeys,
-});
-
-const mapDispatchToProps = (dispatch) => {
-  const { addCondition } = globalSearchActionCreators;
-
-  return {
-    addCondition: condition => dispatch(addCondition(condition)),
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(GlobalSearchConditionList);
+export default GlobalSearchConditionList;
