@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useState, useRef } from 'react';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -21,8 +21,7 @@ import Paper from '@material-ui/core/Paper';
 
 import GlobalSearchConditionKey from './GlobalSearchConditionKey';
 import GlobalSearchConditionValue from './GlobalSearchConditionValue';
-import { globalSearchConditionsPropTypes } from '../../prop-types';
-import * as globalSearchActionCreators from '../../actions/global-search-action';
+import { deleteCondition } from '../../actions/global-search-action';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -54,29 +53,27 @@ const useStyles = makeStyles(theme => ({
 
 const propTypes = {
   conditionIndex: PropTypes.number.isRequired,
-  deleteCondition: PropTypes.func.isRequired,
   addCondition: PropTypes.func.isRequired,
-  conditions: globalSearchConditionsPropTypes.isRequired,
 };
 
-const GlobalSearchCondition = ({
-  conditions,
-  conditionIndex,
-  deleteCondition,
-  addCondition,
-}) => {
+const GlobalSearchCondition = ({ conditionIndex, addCondition }) => {
   const classes = useStyles();
+
+  const dispatch = useDispatch();
+
+  const conditions = useSelector(state => state.globalSearch.conditions);
 
   const [isKeyFocused, setIsKeyFocused] = useState(false);
   const [isValueFocused, setIsValueFocused] = useState(false);
 
-  // These ref are necessary, because in callback function raw props value will be old value.
+  // These ref are needed for using a new data in setTimeout of
+  // deleteWhenValueIsEmpty function.
   // Please see: https://reactjs.org/docs/hooks-faq.html#why-am-i-seeing-stale-props-or-state-inside-my-function
   const conditionsRef = useRef(conditions);
-  conditionsRef.current = conditions;
-
   const isKeyFocusedRef = useRef(isKeyFocused);
   const isValueFocusedRef = useRef(isValueFocused);
+
+  conditionsRef.current = conditions;
   isKeyFocusedRef.current = isKeyFocused;
   isValueFocusedRef.current = isValueFocused;
 
@@ -87,23 +84,32 @@ const GlobalSearchCondition = ({
         && !isValueFocusedRef.current
         && !conditionsRef.current[conditionIndex].value
       ) {
-        deleteCondition(conditionIndex);
+        dispatch(deleteCondition(conditionIndex));
       }
     }, 0);
   };
 
   const handleKeyFocus = () => setIsKeyFocused(true);
+
   const handleKeyBlur = () => {
     setIsKeyFocused(false);
-    deleteWhenValueIsEmpty();
-  };
-  const handleValueFocus = () => setIsValueFocused(true);
-  const handleValueBlur = () => {
-    setIsValueFocused(false);
+    // If the user blurs with en empty value, delete this condition component.
+    // This behavior improves usability,
     deleteWhenValueIsEmpty();
   };
 
-  const handleDeleteButtonClick = () => deleteCondition(conditionIndex);
+  const handleValueFocus = () => setIsValueFocused(true);
+
+  const handleValueBlur = () => {
+    setIsValueFocused(false);
+    // If the user blurs with en empty value, delete this condition component.
+    // This behavior improves usability,
+    deleteWhenValueIsEmpty();
+  };
+
+  const handleDeleteButtonClick = () => {
+    dispatch(deleteCondition(conditionIndex));
+  };
 
   const valueRef = useRef(null);
   const focusValue = () => {
@@ -143,18 +149,4 @@ const GlobalSearchCondition = ({
 
 GlobalSearchCondition.propTypes = propTypes;
 
-const mapStateToProps = state => ({
-  conditions: state.globalSearch.conditions,
-});
-
-const mapDispatchToProps = (dispatch) => {
-  const { deleteCondition } = globalSearchActionCreators;
-  return {
-    deleteCondition: index => dispatch(deleteCondition(index)),
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(GlobalSearchCondition);
+export default GlobalSearchCondition;
