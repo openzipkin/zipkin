@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -43,15 +43,18 @@ const GlobalSearchConditionList = () => {
   const conditions = useSelector(state => state.globalSearch.conditions);
   const autocompleteKeys = useSelector(state => state.autocompleteKeys.autocompleteKeys);
 
-  const addNewCondition = () => {
-    const nextConditionKey = retrieveNextConditionKey(conditions, autocompleteKeys);
-    dispatch(addCondition({
-      key: nextConditionKey,
-      value: retrieveDefaultConditionValue(nextConditionKey),
-    }));
-  };
+  const addNewCondition = useCallback(
+    () => {
+      const nextConditionKey = retrieveNextConditionKey(conditions, autocompleteKeys);
+      dispatch(addCondition({
+        key: nextConditionKey,
+        value: retrieveDefaultConditionValue(nextConditionKey),
+      }));
+    },
+    [autocompleteKeys, conditions, dispatch],
+  );
 
-  const handleAddButtonClick = addNewCondition;
+  const handleAddButtonClick = useMemo(() => addNewCondition, [addNewCondition]);
 
   return (
     <Box
