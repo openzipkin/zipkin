@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -77,47 +77,62 @@ const GlobalSearchCondition = ({ conditionIndex, addCondition }) => {
   isKeyFocusedRef.current = isKeyFocused;
   isValueFocusedRef.current = isValueFocused;
 
-  const deleteWhenValueIsEmpty = () => {
-    setTimeout(() => {
-      if (
-        !isKeyFocusedRef.current
-        && !isValueFocusedRef.current
-        && !conditionsRef.current[conditionIndex].value
-      ) {
-        dispatch(deleteCondition(conditionIndex));
-      }
-    }, 0);
-  };
+  const deleteWhenValueIsEmpty = useCallback(
+    () => {
+      setTimeout(() => {
+        if (
+          !isKeyFocusedRef.current
+          && !isValueFocusedRef.current
+          && !conditionsRef.current[conditionIndex].value
+        ) {
+          dispatch(deleteCondition(conditionIndex));
+        }
+      }, 0);
+    },
+    [conditionIndex, dispatch],
+  );
 
-  const handleKeyFocus = () => setIsKeyFocused(true);
+  const handleKeyFocus = useCallback(() => setIsKeyFocused(true), []);
 
-  const handleKeyBlur = () => {
-    setIsKeyFocused(false);
-    // If the user blurs with en empty value, delete this condition component.
-    // This behavior improves usability,
-    deleteWhenValueIsEmpty();
-  };
+  const handleKeyBlur = useCallback(
+    () => {
+      setIsKeyFocused(false);
+      // If the user blurs with en empty value, delete this condition component.
+      // This behavior improves usability,
+      deleteWhenValueIsEmpty();
+    },
+    [deleteWhenValueIsEmpty],
+  );
 
-  const handleValueFocus = () => setIsValueFocused(true);
+  const handleValueFocus = useCallback(() => setIsValueFocused(true), []);
 
-  const handleValueBlur = () => {
-    setIsValueFocused(false);
-    // If the user blurs with en empty value, delete this condition component.
-    // This behavior improves usability,
-    deleteWhenValueIsEmpty();
-  };
+  const handleValueBlur = useCallback(
+    () => {
+      setIsValueFocused(false);
+      // If the user blurs with en empty value, delete this condition component.
+      // This behavior improves usability,
+      deleteWhenValueIsEmpty();
+    },
+    [deleteWhenValueIsEmpty],
+  );
 
-  const handleDeleteButtonClick = () => {
-    dispatch(deleteCondition(conditionIndex));
-  };
+  const handleDeleteButtonClick = useCallback(
+    () => {
+      dispatch(deleteCondition(conditionIndex));
+    },
+    [conditionIndex, dispatch],
+  );
 
   const valueRef = useRef(null);
-  const focusValue = () => {
-    // Delay is needed to avoid calling focus
-    // until the value element is mounted.
-    // If don't delay, focus cannot be executed.
-    setTimeout(() => valueRef.current.focus(), 0);
-  };
+  const focusValue = useCallback(
+    () => {
+      // Delay is needed to avoid calling focus
+      // until the value element is mounted.
+      // If don't delay, focus cannot be executed.
+      setTimeout(() => valueRef.current.focus(), 0);
+    },
+    [],
+  );
 
   return (
     <Paper className={classes.root}>
