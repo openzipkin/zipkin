@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 
 import DurationCondition from './conditions/DurationCondition';
@@ -49,13 +49,13 @@ const GlobalSearchConditionValue = ({
 
   const { key: conditionKey, value: conditionValue } = conditions[conditionIndex];
 
-  const handleValueChange = (value) => {
+  const handleValueChange = useCallback((value) => {
     dispatch(changeConditionValue(conditionIndex, value));
     if (conditionKey === 'serviceName') {
       dispatch(fetchRemoteServices(value));
       dispatch(fetchSpans(value));
     }
-  };
+  }, [conditionIndex, conditionKey, dispatch]);
 
   const commonProps = {
     value: conditionValue,
