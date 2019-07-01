@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback } from 'react';
 import ReactSelect from 'react-select';
 
 import { theme } from '../../../colors';
@@ -77,10 +77,10 @@ const NameCondition = ({
     }),
   };
 
-  const handleChange = (selected) => {
+  const handleChange = useCallback((selected) => {
     onChange(selected.value);
     addCondition();
-  };
+  }, [addCondition, onChange]);
 
   return (
     <ReactSelect
