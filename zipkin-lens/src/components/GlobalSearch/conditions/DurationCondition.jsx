@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import ReactSelect from 'react-select';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -69,7 +69,7 @@ const DurationCondition = ({
 
   const [unit, setUnit] = useState(initialUnit(value));
 
-  const handleValueChange = (event) => {
+  const handleValueChange = useCallback((event) => {
     let newValue = parseInt(event.target.value, 10);
     if (Number.isNaN(newValue)) {
       newValue = 0;
@@ -80,9 +80,9 @@ const DurationCondition = ({
       case 's': onChange(newValue * 1000 * 1000); break;
       default: break;
     }
-  };
+  }, [onChange, unit]);
 
-  const handleUnitChange = (selected) => {
+  const handleUnitChange = useCallback((selected) => {
     const prevUnit = unit;
     const newUnit = selected.value;
     setUnit(newUnit);
@@ -110,25 +110,25 @@ const DurationCondition = ({
         break;
       default: break; // Do nothing
     }
-  };
+  }, [onChange, unit, value]);
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = useCallback((event) => {
     if (event.key === 'Enter') {
       valueRef.current.blur();
       addCondition();
     }
-  };
+  }, [addCondition, valueRef]);
 
-  const displayedValue = (() => {
+  const displayedValue = useMemo(() => {
     switch (unit) {
       case 'μs': return value;
       case 'ms': return value / 1000;
       case 's': return value / (1000 * 1000);
       default: return null;
     }
-  })();
+  }, [unit, value]);
 
-  const styles = {
+  const styles = useMemo(() => ({
     control: base => ({
       ...base,
       width: '3rem',
@@ -155,7 +155,7 @@ const DurationCondition = ({
       ...base,
       display: 'none',
     }),
-  };
+  }), [isFocused]);
 
   return (
     <Box display="flex" alignItems="center">
