@@ -11,9 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import PropTypes from 'prop-types';
 import React, { useState } from 'react';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import moment from 'moment';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -29,8 +28,7 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Tooltip from '@material-ui/core/Tooltip';
 import { KeyboardDateTimePicker } from '@material-ui/pickers';
 
-import * as globalSearchActionCreators from '../../../actions/global-search-action';
-import { globalSearchLookbackConditionPropTypes } from '../../../prop-types';
+import { setLookbackCondition } from '../../../actions/global-search-action';
 
 const lookbackOptions = [
   { value: '1m', label: '1 Minute' },
@@ -84,16 +82,12 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const propTypes = {
-  lookbackCondition: globalSearchLookbackConditionPropTypes.isRequired,
-  onChange: PropTypes.func.isRequired,
-};
-
-const LookbackCondition = ({
-  lookbackCondition,
-  onChange,
-}) => {
+const LookbackCondition = () => {
   const classes = useStyles();
+
+  const dispatch = useDispatch();
+
+  const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
 
   const isCustom = lookbackCondition.value === 'custom';
 
@@ -132,11 +126,11 @@ const LookbackCondition = ({
 
   const handleApplyButtonClick = () => {
     setIsModalOpen(false);
-    onChange({
+    dispatch(setLookbackCondition({
       value: 'custom',
       startTs: customRange.startTime.valueOf(),
       endTs: customRange.endTime.valueOf(),
-    });
+    }));
   };
 
   const startTime = moment(lookbackCondition.startTs);
@@ -163,10 +157,10 @@ const LookbackCondition = ({
       <MenuItem
         onClick={() => {
           setMenuAnchor(null);
-          onChange({
+          dispatch(setLookbackCondition({
             ...lookbackCondition,
             value: lookbackOption.value,
-          });
+          }));
         }}
       >
         {lookbackOption.label}
@@ -184,10 +178,10 @@ const LookbackCondition = ({
         className={classes.fixedLookbackItem}
         onClick={() => {
           setIsModalOpen(false);
-          onChange({
+          dispatch(setLookbackCondition({
             ...lookbackCondition,
             value: lookbackOption.value,
-          });
+          }));
         }}
       >
         <ListItemText primary={lookbackOption.label} />
@@ -262,20 +256,4 @@ const LookbackCondition = ({
   );
 };
 
-LookbackCondition.propTypes = propTypes;
-
-const mapStateToProps = state => ({
-  lookbackCondition: state.globalSearch.lookbackCondition,
-});
-
-const mapDispatchToProps = (dispatch) => {
-  const { setLookbackCondition } = globalSearchActionCreators;
-  return {
-    onChange: lookbackCondition => dispatch(setLookbackCondition(lookbackCondition)),
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(LookbackCondition);
+export default LookbackCondition;
