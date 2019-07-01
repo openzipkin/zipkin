@@ -18,6 +18,7 @@ import InputBase from '@material-ui/core/InputBase';
 import Tooltip from '@material-ui/core/Tooltip';
 
 import { setLimitCondition } from '../../../actions/global-search-action';
+import { useMount } from '../../../hooks';
 
 const useStyles = makeStyles(theme => ({
   input: {
@@ -40,10 +41,16 @@ const LimitCondition = () => {
   const dispatch = useDispatch();
 
   const limitCondition = useSelector(state => state.globalSearch.limitCondition);
+  const limitConditionRef = useRef();
+  limitConditionRef.current = limitCondition;
 
   const inputRef = useRef(null);
 
   const [value, setValue] = useState(limitCondition);
+
+  useMount(() => {
+    setTimeout(() => setValue(limitConditionRef.current), 0);
+  });
 
   const handleValueChange = useCallback((event) => {
     if (event.target.value === '') {
