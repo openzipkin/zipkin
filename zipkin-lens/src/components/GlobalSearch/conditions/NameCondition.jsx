@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import ReactSelect from 'react-select';
 
 import { theme } from '../../../colors';
@@ -42,7 +42,7 @@ const NameCondition = ({
   valueRef,
   addCondition,
 }) => {
-  const styles = {
+  const styles = useMemo(() => ({
     control: base => ({
       ...base,
       width: isFocused
@@ -75,7 +75,7 @@ const NameCondition = ({
       ...base,
       color: theme.palette.primary.contrastText,
     }),
-  };
+  }), [isFocused]);
 
   const handleChange = useCallback((selected) => {
     onChange(selected.value);
