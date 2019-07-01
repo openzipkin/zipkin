@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { makeStyles } from '@material-ui/styles';
 import InputBase from '@material-ui/core/InputBase';
 import { theme } from '../../../colors';
@@ -49,16 +49,16 @@ const TagCondition = ({
 }) => {
   const classes = useStyles();
 
-  const handleValueChange = (event) => {
+  const handleValueChange = useCallback((event) => {
     onChange(event.target.value);
-  };
+  }, [onChange]);
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = useCallback((event) => {
     if (event.key === 'Enter') {
       valueRef.current.blur();
       addCondition();
     }
-  };
+  }, [addCondition, valueRef]);
 
   return (
     <InputBase
