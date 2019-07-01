@@ -11,14 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import PropTypes from 'prop-types';
 import React, { useState, useRef, useCallback } from 'react';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import InputBase from '@material-ui/core/InputBase';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import * as globalSearchActionCreators from '../../../actions/global-search-action';
+import { setLimitCondition } from '../../../actions/global-search-action';
 
 const useStyles = makeStyles(theme => ({
   input: {
@@ -35,41 +34,32 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const propTypes = {
-  limitCondition: PropTypes.number.isRequired,
-  onChange: PropTypes.func.isRequired,
-};
-
-const LimitCondition = ({
-  limitCondition,
-  onChange,
-}) => {
+const LimitCondition = () => {
   const classes = useStyles();
+
+  const dispatch = useDispatch();
+
+  const limitCondition = useSelector(state => state.globalSearch.limitCondition);
 
   const inputRef = useRef(null);
 
   const [value, setValue] = useState(limitCondition);
 
   const handleValueChange = useCallback((event) => {
+    if (event.target.value === '') {
+      dispatch(setLimitCondition(0));
+    } else {
+      dispatch(setLimitCondition(parseInt(event.target.value, 10)));
+    }
     setValue(event.target.value);
-  }, []);
+  }, [dispatch]);
 
   const handleKeyDown = useCallback((event) => {
     if (event.key === 'Enter') {
-      const newLimitCondition = value === '' ? 0 : parseInt(value, 10);
-      setValue(newLimitCondition);
-      onChange(newLimitCondition);
-
       // Need to delay for avoiding from execute searching.
       setTimeout(() => inputRef.current.blur(), 0);
     }
-  }, [onChange, value]);
-
-  const handleBlur = useCallback(() => {
-    const newLimitCondition = value === '' ? 0 : parseInt(value, 10);
-    setValue(newLimitCondition);
-    onChange(newLimitCondition);
-  }, [onChange, value]);
+  }, []);
 
   return (
     <Tooltip title="Limit">
@@ -79,27 +69,10 @@ const LimitCondition = ({
         className={classes.input}
         onChange={handleValueChange}
         onKeyDown={handleKeyDown}
-        onBlur={handleBlur}
         type="number"
       />
     </Tooltip>
   );
 };
 
-LimitCondition.propTypes = propTypes;
-
-const mapStateToProps = state => ({
-  limitCondition: state.globalSearch.limitCondition,
-});
-
-const mapDispatchToProps = (dispatch) => {
-  const { setLimitCondition } = globalSearchActionCreators;
-  return {
-    onChange: limitCondition => dispatch(setLimitCondition(limitCondition)),
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(LimitCondition);
+export default LimitCondition;
