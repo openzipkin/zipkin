@@ -13,56 +13,47 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { connect } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 
 import DurationCondition from './conditions/DurationCondition';
 import NameCondition from './conditions/NameCondition';
 import TagCondition from './conditions/TagCondition';
-import { globalSearchConditionsPropTypes } from '../../prop-types';
-import * as globalSearchActionCreators from '../../actions/global-search-action';
-import * as spansActionCreators from '../../actions/spans-action';
-import * as remoteServicesActionCreators from '../../actions/remote-services-action';
+import { changeConditionValue } from '../../actions/global-search-action';
+import { fetchSpans } from '../../actions/spans-action';
+import { fetchRemoteServices } from '../../actions/remote-services-action';
 
 const propTypes = {
   conditionIndex: PropTypes.number.isRequired,
   valueRef: PropTypes.shape({}).isRequired,
   addCondition: PropTypes.func.isRequired,
-  services: PropTypes.arrayOf(PropTypes.string).isRequired,
-  remoteServices: PropTypes.arrayOf(PropTypes.string).isRequired,
-  spans: PropTypes.arrayOf(PropTypes.string).isRequired,
-  autocompleteValues: PropTypes.arrayOf(PropTypes.string).isRequired,
-  conditions: globalSearchConditionsPropTypes.isRequired,
-  onChange: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
-  fetchSpans: PropTypes.func.isRequired,
-  fetchRemoteServices: PropTypes.func.isRequired,
 };
 
 const GlobalSearchConditionValue = ({
   conditionIndex,
   valueRef,
   addCondition,
-  services,
-  remoteServices,
-  spans,
-  autocompleteValues,
-  conditions,
-  onChange,
   isFocused,
   onFocus,
   onBlur,
-  fetchSpans,
-  fetchRemoteServices,
 }) => {
+  const dispatch = useDispatch();
+
+  const services = useSelector(state => state.services.services);
+  const remoteServices = useSelector(state => state.remoteServices.remoteServices);
+  const spans = useSelector(state => state.spans.spans);
+  const autocompleteValues = useSelector(state => state.autocompleteValues.autocompleteValues);
+  const conditions = useSelector(state => state.globalSearch.conditions);
+
   const { key: conditionKey, value: conditionValue } = conditions[conditionIndex];
 
   const handleValueChange = (value) => {
-    onChange(conditionIndex, value);
+    dispatch(changeConditionValue(conditionIndex, value));
     if (conditionKey === 'serviceName') {
-      fetchRemoteServices(value);
-      fetchSpans(value);
+      dispatch(fetchRemoteServices(value));
+      dispatch(fetchSpans(value));
     }
   };
 
@@ -101,27 +92,4 @@ const GlobalSearchConditionValue = ({
 
 GlobalSearchConditionValue.propTypes = propTypes;
 
-const mapStateToProps = state => ({
-  services: state.services.services,
-  remoteServices: state.remoteServices.remoteServices,
-  spans: state.spans.spans,
-  autocompleteValues: state.autocompleteValues.autocompleteValues,
-  conditions: state.globalSearch.conditions,
-});
-
-const mapDispatchToProps = (dispatch) => {
-  const { changeConditionValue } = globalSearchActionCreators;
-  const { fetchSpans } = spansActionCreators;
-  const { fetchRemoteServices } = remoteServicesActionCreators;
-
-  return {
-    onChange: (idx, value) => dispatch(changeConditionValue(idx, value)),
-    fetchSpans: serviceName => dispatch(fetchSpans(serviceName)),
-    fetchRemoteServices: serviceName => dispatch(fetchRemoteServices(serviceName)),
-  };
-};
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(GlobalSearchConditionValue);
+export default GlobalSearchConditionValue;
