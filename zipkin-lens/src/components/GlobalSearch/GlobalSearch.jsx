@@ -20,6 +20,7 @@ import queryString from 'query-string';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
+import _ from 'lodash';
 
 import GlobalSearchConditionList from './GlobalSearchConditionList';
 import LimitCondition from './conditions/LimitCondition';
@@ -67,6 +68,7 @@ const GlobalSearch = ({ history, location }) => {
     ));
     const loc = { pathname: '/zipkin', search: queryParameters };
     history.push(loc);
+
     dispatch(fetchTraces(buildTracesApiQueryParameters(
       conditions,
       lookbackCondition,
@@ -109,11 +111,18 @@ const GlobalSearch = ({ history, location }) => {
       dispatch(fetchSpans(serviceNameCondition.value));
     }
     dispatch(fetchAutocompleteKeys());
-    dispatch(fetchTraces(buildTracesApiQueryParameters(
-      conditionsFromUrl,
-      lookbackConditionFromUrl,
-      limitConditionFromUrl,
-    )));
+
+    // Fetch traces only if one or more conditions are set.
+    if (!_.isEmpty(conditionsFromUrl)
+      || !_.isEmpty(lookbackConditionFromUrl)
+      || !!limitConditionFromUrl
+    ) {
+      dispatch(fetchTraces(buildTracesApiQueryParameters(
+        conditionsFromUrl,
+        lookbackConditionFromUrl,
+        limitConditionFromUrl,
+      )));
+    }
   });
 
   useUnmount(() => document.removeEventListener('keydown', handleKeyDown));
