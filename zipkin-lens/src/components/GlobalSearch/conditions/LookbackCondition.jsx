@@ -148,13 +148,14 @@ const LookbackCondition = () => {
   const renderMenuItems = (lookbackOption) => {
     if (lookbackOption.value === 'more') {
       return (
-        <MenuItem onClick={handleMoreClick}>
+        <MenuItem onClick={handleMoreClick} key={lookbackCondition.value}>
           {lookbackOption.label}
         </MenuItem>
       );
     }
     return (
       <MenuItem
+        key={lookbackCondition.value}
         onClick={() => {
           setMenuAnchor(null);
           dispatch(setLookbackCondition({
@@ -174,6 +175,7 @@ const LookbackCondition = () => {
     }
     return (
       <ListItem
+        key={lookbackOption.value}
         button
         className={classes.fixedLookbackItem}
         onClick={() => {
