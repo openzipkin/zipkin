@@ -30,7 +30,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <kotlin.version>1.3.31</kotlin.version>
+    <kotlin.version>1.3.40</kotlin.version>
     <maven-invoker-plugin.version>3.2.0</maven-invoker-plugin.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
@@ -72,7 +72,7 @@
     </dependency>
     <dependency>
       <groupId>com.linecorp.armeria</groupId>
-      <artifactId>armeria-zipkin</artifactId>
+      <artifactId>armeria-brave</artifactId>
     </dependency>
     <dependency>
       <groupId>com.linecorp.armeria</groupId>

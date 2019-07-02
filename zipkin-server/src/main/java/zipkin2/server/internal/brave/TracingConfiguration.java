@@ -22,8 +22,8 @@ import brave.propagation.CurrentTraceContext;
 import brave.propagation.ThreadLocalSpan;
 import brave.sampler.BoundarySampler;
 import brave.sampler.Sampler;
-import com.linecorp.armeria.common.tracing.RequestContextCurrentTraceContext;
-import com.linecorp.armeria.server.tracing.HttpTracingService;
+import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
+import com.linecorp.armeria.server.brave.BraveService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +70,7 @@ public class TracingConfiguration {
   }
 
   @Bean CurrentTraceContext currentTraceContext() {
-    return RequestContextCurrentTraceContext.newBuilder()
+    return RequestContextCurrentTraceContext.builder()
       .addScopeDecorator(ThreadContextScopeDecorator.create()) // puts trace IDs into logs
       .build();
   }
@@ -98,21 +98,19 @@ public class TracingConfiguration {
   HttpTracing httpTracing(Tracing tracing) {
     return HttpTracing.newBuilder(tracing)
         // server starts traces for read requests under the path /api
-        .serverSampler(
-            new HttpSampler() {
-              @Override
-              public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
-                return "GET".equals(adapter.method(request))
-                    && adapter.path(request).startsWith("/api");
-              }
-            })
+        .serverSampler(new HttpSampler() {
+          @Override public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
+            return "GET".equals(adapter.method(request))
+                && adapter.path(request).startsWith("/api");
+          }
+        })
         // client doesn't start new traces
         .clientSampler(HttpSampler.NEVER_SAMPLE)
         .build();
   }
 
   @Bean ArmeriaServerConfigurator tracingConfigurator(Tracing tracing) {
-    return server -> server.decorator(HttpTracingService.newDecorator(tracing));
+    return server -> server.decorator(BraveService.newDecorator(tracing));
   }
 
   /**
@@ -125,23 +123,19 @@ public class TracingConfiguration {
       this.delegate = delegate;
     }
 
-    @Override
-    public Encoding encoding() {
+    @Override public Encoding encoding() {
       return Encoding.PROTO3;
     }
 
-    @Override
-    public int messageMaxBytes() {
+    @Override public int messageMaxBytes() {
       return 5 * 1024 * 1024; // arbitrary
     }
 
-    @Override
-    public int messageSizeInBytes(List<byte[]> list) {
+    @Override public int messageSizeInBytes(List<byte[]> list) {
       return Encoding.PROTO3.listSizeInBytes(list);
     }
 
-    @Override
-    public Call<Void> sendSpans(List<byte[]> encodedSpans) {
+    @Override public Call<Void> sendSpans(List<byte[]> encodedSpans) {
       List<Span> spans = new ArrayList<>(encodedSpans.size());
       for (byte[] encodedSpan : encodedSpans) {
         Span v2Span = SpanBytesDecoder.PROTO3.decodeOne(encodedSpan);
@@ -150,13 +144,13 @@ public class TracingConfiguration {
       return delegate.spanConsumer().accept(spans);
     }
 
-    @Override
-    public CheckResult check() {
-      return CheckResult.OK;
+    @Override public CheckResult check() {
+      return delegate.check();
     }
 
-    @Override
-    public void close() {}
+    @Override public void close() {
+      // don't close delegate as we didn't open it!
+    }
   }
 
   static final class ReporterMetricsAdapter implements ReporterMetrics {
@@ -166,38 +160,33 @@ public class TracingConfiguration {
       this.delegate = delegate;
     }
 
-    @Override
-    public void incrementMessages() {
+    @Override public void incrementMessages() {
       delegate.incrementMessages();
     }
 
-    @Override
-    public void incrementMessagesDropped(Throwable throwable) {
+    @Override public void incrementMessagesDropped(Throwable throwable) {
       delegate.incrementMessagesDropped();
     }
 
-    @Override
-    public void incrementSpans(int i) {
+    @Override public void incrementSpans(int i) {
       delegate.incrementSpans(i);
     }
 
-    @Override
-    public void incrementSpanBytes(int i) {
+    @Override public void incrementSpanBytes(int i) {
       delegate.incrementBytes(i);
     }
 
-    @Override
-    public void incrementMessageBytes(int i) {}
+    @Override public void incrementMessageBytes(int i) {
+    }
 
-    @Override
-    public void incrementSpansDropped(int i) {
+    @Override public void incrementSpansDropped(int i) {
       delegate.incrementMessagesDropped();
     }
 
-    @Override
-    public void updateQueuedSpans(int i) {}
+    @Override public void updateQueuedSpans(int i) {
+    }
 
-    @Override
-    public void updateQueuedBytes(int i) {}
+    @Override public void updateQueuedBytes(int i) {
+    }
   }
 }
