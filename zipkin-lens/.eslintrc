@@ -4,6 +4,8 @@
     "import/prefer-default-export": "off",
     "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],
     "react/no-array-index-key": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn",
     "no-console": 0,
     "no-underscore-dangle": ["off"],
     "no-continue": ["off"],
@@ -12,7 +14,10 @@
       "VariableDeclarator": {"array": true, "object": true}
     }],
   },
-  "plugins": ["jest"],
+  "plugins": [
+    "jest",
+    "react-hooks"
+  ],
   "globals": {
     "fetch": false,
     "document": false

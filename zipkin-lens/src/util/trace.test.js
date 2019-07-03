@@ -11,18 +11,18 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { ensureV2 } from './trace';
+import { ensureV2TraceData } from './trace';
 import v2Trace from '../test/data/netflix';
 
 describe('ensureV2', () => {
   it('does not throw on v2 format', () => {
-    ensureV2(v2Trace);
+    ensureV2TraceData(v2Trace);
   });
 
   it('should raise error if not a list', () => {
     let error;
     try {
-      ensureV2();
+      ensureV2TraceData();
     } catch (err) {
       error = err;
     }
@@ -30,7 +30,7 @@ describe('ensureV2', () => {
     expect(error.message).toEqual('input is not a list');
 
     try {
-      ensureV2({ traceId: 'a', id: 'b' });
+      ensureV2TraceData({ traceId: 'a', id: 'b' });
     } catch (err) {
       expect(err.message).toEqual(error.message);
     }
@@ -39,7 +39,7 @@ describe('ensureV2', () => {
   it('should raise error if missing trace ID or span ID', () => {
     let error;
     try {
-      ensureV2([{ traceId: 'a' }]);
+      ensureV2TraceData([{ traceId: 'a' }]);
     } catch (err) {
       error = err;
     }
@@ -47,7 +47,7 @@ describe('ensureV2', () => {
     expect(error.message).toEqual('List<Span> implies at least traceId and id fields');
 
     try {
-      ensureV2([{ id: 'b' }]);
+      ensureV2TraceData([{ id: 'b' }]);
     } catch (err) {
       expect(err.message).toEqual(error.message);
     }
@@ -56,7 +56,7 @@ describe('ensureV2', () => {
   it('should raise error if in v1 format', () => {
     let error;
     try {
-      ensureV2([{ traceId: 'a', id: 'b', binaryAnnotations: [] }]);
+      ensureV2TraceData([{ traceId: 'a', id: 'b', binaryAnnotations: [] }]);
     } catch (err) {
       error = err;
     }

@@ -11,4 +11,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export { default } from './Sidebar';
+import { createMuiTheme } from '@material-ui/core/styles';
+
+
+export const primaryColor = '#6a9fb5';
+
+export const theme = createMuiTheme({
+  palette: {
+    primary: {
+      main: primaryColor,
+      contrastText: '#fff',
+    },
+  },
+});

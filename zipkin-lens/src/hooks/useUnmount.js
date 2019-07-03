@@ -11,20 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { getInitialUnit } from './ConditionDuration';
+import { useEffect } from 'react';
 
-describe('getInitialUnit', () => {
-  it('should return "s" when value is divisible by 1.000.000', () => {
-    expect(getInitialUnit(1000000)).toBe('s');
-  });
+const useUnmount = f => useEffect(() => () => f, []);
 
-  it('should return "ms" when value is divisible by 1.000', () => {
-    expect(getInitialUnit(1500000)).toBe('ms');
-    expect(getInitialUnit(1000)).toBe('ms');
-  });
-
-  it('should return "μs" otherwise', () => {
-    expect(getInitialUnit(1500)).toBe('μs');
-    expect(getInitialUnit(100)).toBe('μs');
-  });
-});
+export default useUnmount;
