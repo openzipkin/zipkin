@@ -64,7 +64,7 @@ env:
     # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx
     - secure: "JC8sJHol2tGQT8QK00L8YQZjeo8gUnGS3x+kuYwF4UknJrJbz4+UU4uz2VDQJNdomjROngO6qLZrZmHOuV9l2LswZ7atlvMdEA16lxwKUQKK9xq4Qs5RxdZsz+zJwmEW5QcocjM1bRAQv+y4MPY9rHmoWEjtFQzfEovBpwFjafM="
     # Ex. travis encrypt GH_TOKEN=XXX-https://github.com/settings/tokens-XXX
-    - "MHpcpzQD/IVIDYtqK8DTJZ8qRsOUjUQhMqgLRCUtgOJUT/viM4QyrTZ1Yy+RkMsk5yO1+0wzteUuKJdni6Qo9PGBKU6arNPovf3/6vBZIeGPzFSeW+Mv9f83xLtvmneactNUBshJVr9jERycBy0/CRRWZqHwlWxXm9AfIZWzIDA="
+    - secure: "MHpcpzQD/IVIDYtqK8DTJZ8qRsOUjUQhMqgLRCUtgOJUT/viM4QyrTZ1Yy+RkMsk5yO1+0wzteUuKJdni6Qo9PGBKU6arNPovf3/6vBZIeGPzFSeW+Mv9f83xLtvmneactNUBshJVr9jERycBy0/CRRWZqHwlWxXm9AfIZWzIDA="
     # Ex. travis encrypt SONATYPE_USER=your_sonatype_account
     - secure: "RF2kzoNPeQO6As/2VcNAxb8HDptXLf3dejJBiZHNNTSYTDWeAIjGQeW0edu908+OQwuhC1y94oXWADzuaAgLTg32YU8rwU0esNjTp4e2QL7EsELVzoTUPJrvoG2DasF8wOXd+Vr2nPEIZiuUonrFQR75Bb7OWq1FQjtXemfVksI="
     # Ex. travis encrypt SONATYPE_PASSWORD=your_sonatype_password
