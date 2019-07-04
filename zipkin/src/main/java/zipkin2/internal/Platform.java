@@ -61,47 +61,33 @@ public abstract class Platform {
 
   /** Attempt to match the host runtime to a capable Platform implementation. */
   static Platform findPlatform() {
-    Platform jre8 = Jre8.buildIfSupported();
+    // Find JRE 8 new types
+    try {
+      Class.forName("java.io.UncheckedIOException");
+      return new Jre8(); // intentionally doesn't not access the type prior to the above guard
+    } catch (ClassNotFoundException e) {
+      // pre JRE 8
+    }
 
-    if (jre8 != null) return jre8;
-
-    Platform jre7 = Jre7.buildIfSupported();
-
-    if (jre7 != null) return jre7;
+    // Find JRE 7 new types
+    try {
+      Class.forName("java.util.concurrent.ThreadLocalRandom");
+      return new Jre7(); // intentionally doesn't not access the type prior to the above guard
+    } catch (ClassNotFoundException e) {
+      // pre JRE 7
+    }
 
     // compatible with JRE 6
     return Jre6.build();
   }
 
   static final class Jre8 extends Jre7 {
-    static Jre8 buildIfSupported() {
-      // Find JRE 8 new types
-      try {
-        Class.forName("java.io.UncheckedIOException");
-        return new Jre8();
-      } catch (ClassNotFoundException e) {
-        // pre JRE 8
-      }
-      return null;
-    }
-
     @IgnoreJRERequirement @Override public RuntimeException uncheckedIOException(IOException e) {
       return new java.io.UncheckedIOException(e);
     }
   }
 
   static class Jre7 extends Platform {
-    static Jre7 buildIfSupported() {
-      // Find JRE 7 new types
-      try {
-        Class.forName("java.util.concurrent.ThreadLocalRandom");
-        return new Jre7();
-      } catch (ClassNotFoundException e) {
-        // pre JRE 7
-      }
-      return null;
-    }
-
     @IgnoreJRERequirement @Override
     public AssertionError assertionError(String message, Throwable cause) {
       return new AssertionError(message, cause);
