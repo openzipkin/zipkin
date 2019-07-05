@@ -25,6 +25,7 @@ import Sidebar from './Sidebar';
 import TraceIdSearchInput from './TraceIdSearchInput';
 import TraceJsonUploader from './TraceJsonUploader';
 import GlobalSearch from '../GlobalSearch';
+import DiscoverPage from '../DiscoverPage';
 
 const useStyles = makeStyles({
   contentPaper: {
@@ -58,31 +59,7 @@ const Layout = ({ children }) => {
         pr={3}
         overflow="hidden"
       >
-        <Box width="100%" display="flex" justifyContent="space-between">
-          <Box display="flex" alignItems="center" data-test="page-title">
-            <Typography variant="h5">
-              Discover
-            </Typography>
-          </Box>
-          <Box pr={4} display="flex" alignItems="center">
-            <TraceJsonUploader />
-            <TraceIdSearchInput />
-          </Box>
-        </Box>
-        <GlobalSearch />
-        <Paper className={classes.contentPaper} data-test="content-paper">
-          <Box overflow="auto" height="100%">
-            <AutoSizer>
-              {
-                ({ height, width }) => (
-                  <Box height={height} width={width} overflow="auto">
-                    {children}
-                  </Box>
-                )
-              }
-            </AutoSizer>
-          </Box>
-        </Paper>
+        <DiscoverPage />
       </Box>
     </Box>
   );
