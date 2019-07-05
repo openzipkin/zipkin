@@ -13,17 +13,18 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestHeaders;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.Moshi;
 import java.util.List;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import zipkin2.internal.Nullable;
 
 public class SearchCallFactory {
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   final HttpCall.Factory http;
   final JsonAdapter<SearchRequest> searchRequest =
@@ -34,22 +35,19 @@ public class SearchCallFactory {
   }
 
   public <V> HttpCall<V> newCall(SearchRequest request, HttpCall.BodyConverter<V> bodyConverter) {
-    Request httpRequest = new Request.Builder().url(lenientSearch(request.indices, request.type))
-        .post(RequestBody.create(APPLICATION_JSON, searchRequest.toJson(request)))
-        .header("Accept-Encoding", "gzip")
-        .tag(request.tag()).build();
+    AggregatedHttpRequest httpRequest = AggregatedHttpRequest.of(
+      RequestHeaders.of(
+        HttpMethod.POST, lenientSearch(request.indices, request.type),
+        HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8,
+        HttpHeaderNames.ACCEPT_ENCODING, "gzip"),
+      HttpData.ofUtf8(searchRequest.toJson(request)));
     return http.newCall(httpRequest, bodyConverter);
   }
 
   /** Matches the behavior of {@code IndicesOptions#lenientExpandOpen()} */
-  HttpUrl lenientSearch(List<String> indices, @Nullable String type) {
-    HttpUrl.Builder builder = http.baseUrl.newBuilder().addPathSegment(join(indices));
-    if (type != null) builder.addPathSegment(type);
-    return builder.addPathSegment("_search")
-                  // keep these in alphabetical order as it simplifies amazon signatures!
-                  .addQueryParameter("allow_no_indices", "true")
-                  .addQueryParameter("expand_wildcards", "open")
-                  .addQueryParameter("ignore_unavailable", "true").build();
+  String lenientSearch(List<String> indices, @Nullable String type) {
+    return '/' + join(indices) +
+      "/_search?allow_no_indices=true&expand_wildcards=open&ignore_unavailable=true";
   }
 
   static String join(List<String> parts) {

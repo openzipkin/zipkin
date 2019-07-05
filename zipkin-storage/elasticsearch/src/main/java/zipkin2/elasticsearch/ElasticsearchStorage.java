@@ -15,17 +15,27 @@ package zipkin2.elasticsearch;
 
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
+import com.linecorp.armeria.client.Endpoint;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.encoding.HttpDecodingClient;
+import com.linecorp.armeria.client.endpoint.EndpointGroup;
+import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
+import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
+import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.HttpMethod;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
+import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
-import okhttp3.Request;
 import okio.Buffer;
 import okio.BufferedSource;
 import zipkin2.CheckResult;
@@ -56,11 +66,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     List<String> get();
   }
 
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
-
-  public static Builder newBuilder(OkHttpClient client) {
+  public static Builder newBuilder() {
     return new $AutoValue_ElasticsearchStorage.Builder()
-        .client(client)
         .hosts(Collections.singletonList("http://localhost:9200"))
         .maxRequests(64)
         .strictTraceId(true)
@@ -70,17 +77,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .indexShards(5)
         .indexReplicas(1)
         .namesLookback(86400000)
-        .shutdownClientOnClose(false)
         .flushOnWrites(false)
         .autocompleteKeys(Collections.emptyList())
         .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
         .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
-  }
-
-  public static Builder newBuilder() {
-    Builder result = newBuilder(new OkHttpClient());
-    result.shutdownClientOnClose(true);
-    return result;
   }
 
   abstract Builder toBuilder();
@@ -88,8 +88,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
     abstract Builder client(OkHttpClient client);
-
-    public abstract Builder shutdownClientOnClose(boolean shutdownClientOnClose);
 
     /**
      * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
@@ -217,10 +215,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     Builder() {}
   }
 
-  abstract OkHttpClient client();
-
-  abstract boolean shutdownClientOnClose();
-
   public abstract HostsSupplier hostsSupplier();
 
   @Nullable
@@ -289,8 +283,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   void clear(String index) throws IOException {
-    HttpUrl.Builder url = http().baseUrl.newBuilder().addPathSegment(index);
-    Request delete = new Request.Builder().url(url.build()).delete().tag("delete-index").build();
+    String url = '/' + index;
+    AggregatedHttpRequest delete = AggregatedHttpRequest.of(HttpMethod.DELETE, url);
     http().newCall(delete, BodyConverters.NULL).execute();
   }
 
@@ -303,10 +297,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   CheckResult ensureClusterReady(String index) {
     try {
       HttpCall.Factory http = http();
-      Request request = new Request.Builder()
-        .url(http.baseUrl.resolve("/_cluster/health/" + index))
-        .tag("get-cluster-health")
-        .build();
+      AggregatedHttpRequest request = AggregatedHttpRequest.of(
+        HttpMethod.GET, "/_cluster/health/ + index");
       return http.newCall(request, ReadStatus.INSTANCE).execute();
     } catch (IOException | RuntimeException e) {
       return CheckResult.failed(e);
@@ -341,41 +333,50 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     try {
       IndexTemplates templates = new VersionSpecificTemplates(this).get();
       HttpCall.Factory http = http();
-      ensureIndexTemplate(http, buildUrl(http, templates, SPAN), templates.span());
-      ensureIndexTemplate(http, buildUrl(http, templates, DEPENDENCY), templates.dependency());
-      ensureIndexTemplate(http, buildUrl(http, templates, AUTOCOMPLETE), templates.autocomplete());
+      ensureIndexTemplate(http, buildUrl(templates, SPAN), templates.span());
+      ensureIndexTemplate(http, buildUrl(templates, DEPENDENCY), templates.dependency());
+      ensureIndexTemplate(http, buildUrl(templates, AUTOCOMPLETE), templates.autocomplete());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
     }
   }
 
-  HttpUrl buildUrl(HttpCall.Factory http, IndexTemplates templates, String type) {
-    HttpUrl.Builder builder = http.baseUrl.newBuilder("_template");
+  String buildUrl(IndexTemplates templates, String type) {
     String indexPrefix = indexNameFormatter().index() + templates.indexTypeDelimiter();
-    return builder.addPathSegment(indexPrefix + type + "_template").build();
+    return "/_template/" + indexPrefix + type + "_template";
   }
 
   @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
   public HttpCall.Factory http() {
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
-    OkHttpClient ok =
-        hosts.size() == 1
-            ? client()
-            : client()
-                .newBuilder()
-                .dns(PseudoAddressRecordSet.create(hosts, client().dns()))
-                .build();
-    ok.dispatcher().setMaxRequests(maxRequests());
-    ok.dispatcher().setMaxRequestsPerHost(maxRequests());
-    return new HttpCall.Factory(ok, HttpUrl.parse(hosts.get(0)));
-  }
 
-  @Override
-  public void close() {
-    if (!shutdownClientOnClose()) return;
-    http().close();
+    final String clientUrl;
+    if (hosts.size() == 1) {
+      clientUrl = hosts.get(0);
+    } else {
+      List<URL> urls = hosts.stream()
+        .map(host -> {
+          try {
+            return new URL(host);
+          } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid host: " + host, e);
+          }
+        })
+        .collect(Collectors.toList());
+      List<Endpoint> endpoints = urls.stream()
+        .map(url -> Endpoint.parse(url.getAuthority()))
+        .collect(Collectors.toList());
+      EndpointGroup group = new StaticEndpointGroup(endpoints);
+      EndpointGroupRegistry.register("elasticsearch", group, EndpointSelectionStrategy.ROUND_ROBIN);
+      clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
+    }
+
+    HttpClient client = new HttpClientBuilder(clientUrl)
+      .decorator(HttpDecodingClient.newDecorator())
+      .build();
+    return new HttpCall.Factory(client, maxRequests());
   }
 
   ElasticsearchStorage() {}

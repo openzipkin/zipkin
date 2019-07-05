@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import java.io.IOException;
 import okhttp3.OkHttpClient;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
@@ -33,7 +32,7 @@ public class SearchCallFactoryTest {
 
   @After
   public void close() {
-    client.http.ok.dispatcher().executorService().shutdownNow();
+    client.http.httpClient.dispatcher().executorService().shutdownNow();
   }
 
   /** Declaring queries alphabetically helps simplify amazon signature logic */
