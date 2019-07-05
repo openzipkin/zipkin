@@ -13,72 +13,78 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import java.io.Closeable;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpStatusClass;
+import io.netty.buffer.ByteBufHolder;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
-import okhttp3.internal.http.HttpHeaders;
-import okio.BufferedSource;
-import okio.GzipSource;
-import okio.Okio;
 import zipkin2.Call;
 import zipkin2.Callback;
 
 public final class HttpCall<V> extends Call.Base<V> {
 
   public interface BodyConverter<V> {
-    V convert(BufferedSource content) throws IOException;
+    V convert(ByteBuffer content) throws IOException;
   }
 
-  public static class Factory implements Closeable {
-    final OkHttpClient ok;
+  public static class Factory {
+    final HttpClient httpClient;
     final Semaphore semaphore;
-    public final HttpUrl baseUrl;
+    public final String baseUrl;
 
-    public Factory(OkHttpClient ok, HttpUrl baseUrl) {
-      this.ok = ok;
-      this.semaphore = new Semaphore(ok.dispatcher().getMaxRequests());
+    public Factory(HttpClient httpClient, String baseUrl, int maxRequests) {
+      this.httpClient = httpClient;
+      this.semaphore = new Semaphore(maxRequests);
       this.baseUrl = baseUrl;
     }
 
-    public <V> HttpCall<V> newCall(Request request, BodyConverter<V> bodyConverter) {
+    public <V> HttpCall<V> newCall(AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
       return new HttpCall<>(this, request, bodyConverter);
-    }
-
-    @Override public void close() {
-      ok.dispatcher().executorService().shutdownNow();
     }
   }
 
-  public final okhttp3.Call call;
+
+  public final AggregatedHttpRequest request;
   public final BodyConverter<V> bodyConverter;
+
+  final HttpClient httpClient;
   final Semaphore semaphore;
 
-  HttpCall(Factory factory, Request request, BodyConverter<V> bodyConverter) {
+  volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
+
+  HttpCall(Factory factory, AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
     this(
-      factory.ok.newCall(request),
+      factory.httpClient,
+      request,
       factory.semaphore,
       bodyConverter
     );
   }
 
-  HttpCall(okhttp3.Call call, Semaphore semaphore, BodyConverter<V> bodyConverter) {
-    this.call = call;
+  HttpCall(
+    HttpClient httpClient, AggregatedHttpRequest request, Semaphore semaphore,
+    BodyConverter<V> bodyConverter) {
+    this.httpClient = httpClient;
+    this.request = request;
     this.semaphore = semaphore;
     this.bodyConverter = bodyConverter;
   }
 
   @Override protected V doExecute() throws IOException {
     if (!semaphore.tryAcquire()) throw new IllegalStateException("over capacity");
+    final AggregatedHttpResponse response;
     try {
-      return parseResponse(call.execute(), bodyConverter);
+      response = sendRequest().join();
     } finally {
       semaphore.release();
     }
+    return parseResponse(response, bodyConverter);
   }
 
   @Override protected void doEnqueue(Callback<V> callback) {
@@ -86,70 +92,70 @@ public final class HttpCall<V> extends Call.Base<V> {
       callback.onError(new IllegalStateException("over capacity"));
       return;
     }
-    call.enqueue(new V2CallbackAdapter<>(semaphore, bodyConverter, callback));
+    sendRequest().handle((response, t) -> {
+      semaphore.release();
+      if (t != null) {
+        callback.onError(t);
+      } else {
+        try {
+          callback.onSuccess(parseResponse(response, bodyConverter));
+        } catch (IOException e) {
+          callback.onError(e);
+        }
+      }
+      return null;
+    });
   }
 
   @Override protected void doCancel() {
-    call.cancel();
+    CompletableFuture<AggregatedHttpResponse> responseFuture = this.responseFuture;
+    if (responseFuture != null) {
+      responseFuture.cancel(false);
+    }
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<V>(call.clone(), semaphore, bodyConverter);
+    return new HttpCall<V>(httpClient, request, semaphore, bodyConverter);
   }
 
   @Override
   public String toString() {
-    return "HttpCall(" + call + ")";
+    return "HttpCall(" + request + ")";
   }
 
-  static class V2CallbackAdapter<V> implements okhttp3.Callback {
-    final Semaphore semaphore;
-    final BodyConverter<V> bodyConverter;
-    final Callback<V> delegate;
-
-    V2CallbackAdapter(Semaphore semaphore, BodyConverter<V> bodyConverter, Callback<V> delegate) {
-      this.semaphore = semaphore;
-      this.bodyConverter = bodyConverter;
-      this.delegate = delegate;
-    }
-
-    @Override public void onFailure(okhttp3.Call call, IOException e) {
-      semaphore.release();
-      delegate.onError(e);
-    }
-
-    /** Note: this runs on the {@link okhttp3.OkHttpClient#dispatcher() dispatcher} thread! */
-    @Override public void onResponse(okhttp3.Call call, Response response) {
-      semaphore.release();
-      try {
-        delegate.onSuccess(parseResponse(response, bodyConverter));
-      } catch (Throwable e) {
-        propagateIfFatal(e);
-        delegate.onError(e);
-      }
-    }
+  CompletableFuture<AggregatedHttpResponse> sendRequest() {
+    CompletableFuture<AggregatedHttpResponse> responseFuture =
+      httpClient.execute(request).aggregate();
+    this.responseFuture = responseFuture;
+    return responseFuture;
   }
 
-  public static <V> V parseResponse(Response response, BodyConverter<V> bodyConverter)
+  <V> V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
     throws IOException {
-    if (!HttpHeaders.hasBody(response)) {
-      if (response.isSuccessful()) {
+    if (response.content().isEmpty()) {
+      if (response.status().codeClass().equals(HttpStatusClass.SUCCESS)) {
         return null;
       } else {
         throw new IllegalStateException("response failed: " + response);
       }
     }
-    try (ResponseBody responseBody = response.body()) {
-      BufferedSource content = responseBody.source();
-      if ("gzip".equalsIgnoreCase(response.header("Content-Encoding"))) {
-        content = Okio.buffer(new GzipSource(responseBody.source()));
-      }
-      if (response.isSuccessful()) {
-        return bodyConverter.convert(content);
+
+    HttpData content = response.content();
+    try {
+      if (response.status().codeClass().equals(HttpStatusClass.SUCCESS)) {
+        final ByteBuffer buf;
+        if (content instanceof ByteBufHolder) {
+          buf = ((ByteBufHolder) content).content().nioBuffer();
+        } else {
+          buf = ByteBuffer.wrap(content.array());
+        }
+        return bodyConverter.convert(buf);
       } else {
         throw new IllegalStateException(
-          "response for " + response.request().tag() + " failed: " + content.readUtf8());
+          "response for " + request.path() + " failed: " + response.contentUtf8());
       }
+    } finally {
+      ReferenceCountUtil.safeRelease(content);
     }
   }
 }

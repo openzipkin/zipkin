@@ -69,7 +69,7 @@
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
     <mariadb-java-client.version>2.4.2</mariadb-java-client.version>
-    <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
+    <!-- Java 8 dep, which is httpClient as zipkin-mysql is Java 8 anyway -->
     <HikariCP.version>3.3.1</HikariCP.version>
     <log4j.version>2.12.0</log4j.version>
 

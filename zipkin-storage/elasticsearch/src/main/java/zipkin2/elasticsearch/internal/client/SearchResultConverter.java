@@ -16,10 +16,12 @@ package zipkin2.elasticsearch.internal.client;
 import com.squareup.moshi.JsonAdapter;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import okio.BufferedSource;
+import zipkin2.elasticsearch.BodyConverters;
+import zipkin2.internal.JsonCodec;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
@@ -27,7 +29,7 @@ public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>>
   final JsonAdapter<T> adapter;
   final List<T> defaultValue;
 
-  public static <T> SearchResultConverter<T> create(JsonAdapter<T> adapter) {
+  public static <T> SearchResultConverter<T> create(JsonCodec.JsonReaderAdapter<T> adapter) {
     return new SearchResultConverter<>(adapter);
   }
 
@@ -36,8 +38,8 @@ public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>>
     this.defaultValue = Collections.emptyList();
   }
 
-  @Override public List<T> convert(BufferedSource content) throws IOException {
-    JsonReader hits = enterPath(JsonReader.of(content), "hits", "hits");
+  @Override public List<T> convert(ByteBuffer content) throws IOException {
+    JsonReader hits = enterPath(BodyConverters.JsonReader.of(content), "hits", "hits");
     if (hits == null || hits.peek() != JsonReader.Token.BEGIN_ARRAY) return defaultValue;
 
     List<T> result = new ArrayList<>();

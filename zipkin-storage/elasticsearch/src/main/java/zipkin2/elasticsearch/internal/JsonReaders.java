@@ -13,8 +13,8 @@
  */
 package zipkin2.elasticsearch.internal;
 
-import com.squareup.moshi.JsonReader;
-import java.io.EOFException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -49,61 +49,70 @@ public final class JsonReaders {
    * }</pre>
    */
   @Nullable
-  public static JsonReader enterPath(JsonReader reader, String path1, String path2)
+  public static JsonParser enterPath(JsonParser parser, String path1, String path2)
       throws IOException {
-    return enterPath(reader, path1) != null ? enterPath(reader, path2) : null;
+    return enterPath(parser, path1) != null ? enterPath(parser, path2) : null;
   }
 
   @Nullable
-  public static JsonReader enterPath(JsonReader reader, String path) throws IOException {
-    try {
-      if (reader.peek() != JsonReader.Token.BEGIN_OBJECT) return null;
-    } catch (EOFException e) {
-      return null;
-    }
-    reader.beginObject();
-    while (reader.hasNext()) {
-      if (reader.nextName().equals(path) && reader.peek() != JsonReader.Token.NULL) {
-        return reader;
-      } else {
-        reader.skipValue();
+  public static JsonParser enterPath(JsonParser parser, String path) throws IOException {
+    if (parser.isExpectedStartObjectToken()) return null;
+    JsonToken value;
+    while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
+      if (value == null) {
+        // End of input.
+        throw new IOException("End of input while parsing object.");
+      }
+      if (parser.getCurrentName().equals(path) && value != JsonToken.VALUE_NULL) {
+        return parser;
       }
     }
-    reader.endObject();
+    parser.nextToken();
     return null;
   }
 
-  public static List<String> collectValuesNamed(JsonReader reader, String name) throws IOException {
+  public static List<String> collectValuesNamed(JsonParser parser, String name) throws IOException {
     Set<String> result = new LinkedHashSet<>();
-    visitObject(reader, name, result);
+    visitObject(parser, name, result);
     return new ArrayList<>(result);
   }
 
-  static void visitObject(JsonReader reader, String name, Set<String> result) throws IOException {
-    reader.beginObject();
-    while (reader.hasNext()) {
-      if (reader.nextName().equals(name)) {
-        result.add(reader.nextString());
+  static void visitObject(JsonParser parser, String name, Set<String> result) throws IOException {
+    if (!parser.isExpectedStartObjectToken()) {
+      throw new IOException("Expecting object start, got " + parser.currentToken());
+    }
+    JsonToken value;
+    while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
+      if (value == null) {
+        throw new IOException("End of input while parsing object.");
+      }
+      if (parser.getCurrentName().equals(name)) {
+        result.add(value.asString());
       } else {
-        visitNextOrSkip(reader, name, result);
+        visitObject(parser, name, result);
       }
     }
-    reader.endObject();
+    parser.nextToken();
   }
 
-  static void visitNextOrSkip(JsonReader reader, String name, Set<String> result)
+  static void visitNextOrSkip(JsonParser parser, String name, Set<String> result)
       throws IOException {
-    switch (reader.peek()) {
-      case BEGIN_ARRAY:
-        reader.beginArray();
-        while (reader.hasNext()) visitObject(reader, name, result);
-        reader.endArray();
+    switch (parser.currentToken()) {
+      case START_ARRAY:
+        parser.nextToken();
+        while (parser.currentToken() != JsonToken.END_ARRAY) {
+          if (parser.currentToken() == null) {
+            throw new IOException("End of input while parsing array.");
+          }
+          visitObject(parser, name, result);
+        }
+        parser.nextToken();
         break;
-      case BEGIN_OBJECT:
-        visitObject(reader, name, result);
+      case START_OBJECT:
+        visitObject(parser, name, result);
         break;
       default:
-        reader.skipValue();
+        // Skip current value.
     }
   }
 
