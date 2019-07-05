@@ -16,7 +16,6 @@ package zipkin2.elasticsearch;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.Endpoint;
-import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.HttpClientBuilder;
 import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
@@ -25,6 +24,7 @@ import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.SessionProtocol;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -34,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import okhttp3.OkHttpClient;
 import okio.Buffer;
@@ -66,8 +67,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     List<String> get();
   }
 
-  public static Builder newBuilder() {
+  public static Builder newBuilder(Consumer<HttpClientBuilder> clientCustomizer) {
     return new $AutoValue_ElasticsearchStorage.Builder()
+        .clientCustomizer(clientCustomizer)
         .hosts(Collections.singletonList("http://localhost:9200"))
         .maxRequests(64)
         .strictTraceId(true)
@@ -83,11 +85,21 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
 
+  public static Builder newBuilder() {
+    return newBuilder(unused -> {});
+  }
+
   abstract Builder toBuilder();
 
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
     abstract Builder client(OkHttpClient client);
+
+    /**
+     * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. Mostly for
+     * testing.
+     */
+    public abstract Builder clientCustomizer(Consumer<HttpClientBuilder> clientCustomizer);
 
     /**
      * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
@@ -215,6 +227,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     Builder() {}
   }
 
+  abstract Consumer<HttpClientBuilder> clientCustomizer();
+
   public abstract HostsSupplier hostsSupplier();
 
   @Nullable
@@ -298,7 +312,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     try {
       HttpCall.Factory http = http();
       AggregatedHttpRequest request = AggregatedHttpRequest.of(
-        HttpMethod.GET, "/_cluster/health/ + index");
+        HttpMethod.GET, "/_cluster/health/" + index);
       return http.newCall(request, ReadStatus.INSTANCE).execute();
     } catch (IOException | RuntimeException e) {
       return CheckResult.failed(e);
@@ -352,6 +366,26 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
 
+    final URL parsed;
+    try {
+      parsed = new URL(hosts.get(0));
+    } catch (MalformedURLException e) {
+      throw new IllegalArgumentException("invalid host " + hosts.get(0), e);
+    }
+
+    final SessionProtocol protocol;
+    switch (parsed.getProtocol()) {
+      case "http":
+        protocol = SessionProtocol.HTTP;
+        break;
+      case "https":
+        protocol = SessionProtocol.HTTPS;
+        break;
+      default:
+        throw new IllegalArgumentException("invalid protocol " + parsed.getProtocol() +
+          ". Must be http or https.");
+    }
+
     final String clientUrl;
     if (hosts.size() == 1) {
       clientUrl = hosts.get(0);
@@ -373,10 +407,12 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
     }
 
-    HttpClient client = new HttpClientBuilder(clientUrl)
-      .decorator(HttpDecodingClient.newDecorator())
-      .build();
-    return new HttpCall.Factory(client, maxRequests());
+    HttpClientBuilder client = new HttpClientBuilder(clientUrl)
+      .decorator(HttpDecodingClient.newDecorator());
+
+    clientCustomizer().accept(client);
+
+    return new HttpCall.Factory(client.build(), maxRequests());
   }
 
   ElasticsearchStorage() {}

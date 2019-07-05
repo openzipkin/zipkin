@@ -14,9 +14,11 @@
 package zipkin2.elasticsearch.integration;
 
 import com.google.common.io.Closer;
+import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.logging.LoggingClientBuilder;
+import com.linecorp.armeria.common.logging.LogLevel;
 import java.util.Arrays;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
+import java.util.function.Consumer;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TestName;
@@ -82,18 +84,16 @@ public class ElasticsearchStorageRule extends ExternalResource {
   }
 
   public ElasticsearchStorage.Builder computeStorageBuilder() {
-    OkHttpClient ok =
+    Consumer<HttpClientBuilder> customizer =
         Boolean.valueOf(System.getenv("ES_DEBUG"))
-            ? new OkHttpClient.Builder()
-                .addInterceptor(
-                    new HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BODY))
-                .addNetworkInterceptor(
-                    chain ->
-                        chain.proceed( // logging interceptor doesn't gunzip
-                            chain.request().newBuilder().removeHeader("Accept-Encoding").build()))
-                .build()
-            : new OkHttpClient();
-    return ElasticsearchStorage.newBuilder(ok)
+          ? client -> client.decorator(
+            new LoggingClientBuilder()
+              .requestLogLevel(LogLevel.INFO)
+              .successfulResponseLogLevel(LogLevel.INFO)
+              .failureResponseLogLevel(LogLevel.WARN)
+              .newDecorator())
+          : unused -> {};
+    return ElasticsearchStorage.newBuilder(customizer)
         .index(index)
         .flushOnWrites(true)
         .hosts(Arrays.asList(baseUrl()));
