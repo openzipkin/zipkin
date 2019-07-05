@@ -15,7 +15,6 @@ package zipkin2.elasticsearch;
 
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -93,10 +92,6 @@ public class VersionSpecificTemplatesTest {
 
   ElasticsearchStorage storage =
     ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
-
-  @After public void close() {
-    storage.close();
-  }
 
   /** Unsupported, but we should test that parsing works */
   @Test public void version2_unsupported() throws Exception {

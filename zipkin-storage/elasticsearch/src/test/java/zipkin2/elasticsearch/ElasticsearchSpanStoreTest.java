@@ -13,12 +13,10 @@
  */
 package zipkin2.elasticsearch;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import zipkin2.TestObjects;
@@ -35,11 +33,6 @@ public class ElasticsearchSpanStoreTest {
   ElasticsearchStorage storage =
       ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
   ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
-
-  @After
-  public void close() {
-    storage.close();
-  }
 
   @Test
   public void doesntTruncateTraceIdByDefault() throws Exception {

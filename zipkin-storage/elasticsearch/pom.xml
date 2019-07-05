@@ -65,6 +65,11 @@
       <artifactId>moshi</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- For HttpCallTest -->
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -88,6 +93,12 @@
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>logging-interceptor</artifactId>
       <version>${okhttp.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-testing-junit4</artifactId>
+      <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

@@ -93,8 +93,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
-    abstract Builder client(OkHttpClient client);
-
     /**
      * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. Mostly for
      * testing.

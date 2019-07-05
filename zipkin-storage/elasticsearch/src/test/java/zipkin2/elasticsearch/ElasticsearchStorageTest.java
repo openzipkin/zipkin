@@ -13,11 +13,12 @@
  */
 package zipkin2.elasticsearch;
 
-import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
+import com.linecorp.armeria.client.ClientFactory;
+import com.linecorp.armeria.client.ClientFactoryBuilder;
+import com.linecorp.armeria.client.HttpClientBuilder;
+import java.util.function.Consumer;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import zipkin2.CheckResult;
@@ -32,11 +33,6 @@ public class ElasticsearchStorageTest {
 
   ElasticsearchStorage storage =
       ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
-
-  @After
-  public void close() {
-    storage.close();
-  }
 
   @Test
   public void memoizesIndexTemplate() throws Exception {
@@ -90,53 +86,40 @@ public class ElasticsearchStorageTest {
 
   @Test
   public void check_oneHostDown() {
-    storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder().connectTimeout(100, TimeUnit.MILLISECONDS).build();
+    ClientFactory clientFactory = new ClientFactoryBuilder()
+      .connectTimeoutMillis(100)
+      .build();
+    Consumer<HttpClientBuilder> customizer = client -> client.factory(clientFactory);
     storage =
-        ElasticsearchStorage.newBuilder(client)
+        ElasticsearchStorage.newBuilder(customizer)
             .hosts(asList("http://1.2.3.4:" + es.getPort(), es.url("").toString()))
             .build();
 
     es.enqueue(new MockResponse().setBody(healthResponse));
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
+
+    clientFactory.close();
   }
 
   @Test
   public void check_ssl() throws Exception {
-    storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder()
-            .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
-            .hostnameVerifier((host, session) -> true)
-            .build();
+    ClientFactory clientFactory = new ClientFactoryBuilder()
+      .sslContextCustomizer(ssl ->
+        ssl.trustManager(localhost().trustManager().getAcceptedIssuers()))
+      .build();
+    Consumer<HttpClientBuilder> customizer = client -> client.factory(clientFactory);
     es.useHttps(localhost().sslSocketFactory(), false);
 
-    storage = ElasticsearchStorage.newBuilder(client).hosts(asList(es.url("").toString())).build();
+    storage = ElasticsearchStorage
+      .newBuilder(customizer).hosts(asList(es.url("").toString())).build();
 
     es.enqueue(new MockResponse().setBody(healthResponse));
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
 
     assertThat(es.takeRequest().getTlsVersion()).isNotNull();
-  }
 
-  @Test
-  public void multipleSslNotYetSupported() {
-    storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder()
-          .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
-            .build();
-    es.useHttps(localhost().sslSocketFactory(), false);
-
-    storage =
-        ElasticsearchStorage.newBuilder(client)
-            .hosts(asList("https://1.2.3.4:" + es.getPort(), es.url("").toString()))
-            .build();
-
-    assertThat(storage.check().error())
-      .isInstanceOf(IllegalArgumentException.class);
+    clientFactory.close();
   }
 }

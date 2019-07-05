@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
 import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -65,11 +64,6 @@ public class ElasticsearchSpanConsumerTest {
     es.takeRequest(); // get span template
     es.takeRequest(); // get dependency template
     es.takeRequest(); // get tags template
-  }
-
-  @After
-  public void close() {
-    storage.close();
   }
 
   @Test
@@ -132,8 +126,6 @@ public class ElasticsearchSpanConsumerTest {
 
   @Test
   public void addsPipelineId() throws Exception {
-    close();
-
     storage =
       ElasticsearchStorage.newBuilder()
         .hosts(asList(es.url("").toString()))
@@ -151,8 +143,6 @@ public class ElasticsearchSpanConsumerTest {
 
   @Test
   public void dropsWhenBacklog() throws Exception {
-    close();
-
     storage =
       ElasticsearchStorage.newBuilder()
         .hosts(asList(es.url("").toString()))

@@ -13,25 +13,50 @@
  */
 package zipkin2.elasticsearch;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.After;
-import org.junit.Rule;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.ServerBuilder;
+import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class ElasticsearchAutocompleteTagsTest {
-  @Rule public MockWebServer es = new MockWebServer();
 
-  ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
-    .hosts(asList(es.url("").toString()))
-    .autocompleteKeys(asList("http#host", "http-url", "http.method")).build();
-  ElasticsearchAutocompleteTags tagStore = new ElasticsearchAutocompleteTags(storage);
+  static final AtomicReference<AggregatedHttpRequest> CAPTURED_REQUEST =
+    new AtomicReference<>();
+  static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
+    new AtomicReference<>();
+  static final AggregatedHttpResponse SUCCESS_RESPONSE =
+    AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
+      HttpData.ofUtf8(TestResponses.AUTOCOMPLETE_VALUES));
 
-  @After public void close() {
-    storage.close();
+  @ClassRule public static ServerRule server = new ServerRule() {
+    @Override protected void configure(ServerBuilder sb) {
+      sb.serviceUnder("/", ((ctx, req) -> HttpResponse.from(
+        req.aggregate().thenApply(agg -> {
+          CAPTURED_REQUEST.set(agg);
+          return HttpResponse.of(MOCK_RESPONSE.get());
+        }))));
+    }
+  };
+
+  ElasticsearchStorage storage;
+  ElasticsearchAutocompleteTags tagStore;
+
+  @Before public void setUp() {
+    storage = ElasticsearchStorage.newBuilder()
+      .hosts(asList(server.httpUri("/")))
+      .autocompleteKeys(asList("http#host", "http-url", "http.method")).build();
+    tagStore = new ElasticsearchAutocompleteTags(storage);
   }
 
   @Test public void get_list_of_autocomplete_keys() throws Exception {
@@ -41,13 +66,13 @@ public class ElasticsearchAutocompleteTagsTest {
   }
 
   @Test public void getValues_requestIncludesKeyName() throws Exception {
-    es.enqueue(new MockResponse().setBody(TestResponses.AUTOCOMPLETE_VALUES));
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
     tagStore.getValues("http.method").execute();
-    assertThat(es.takeRequest().getBody().readUtf8()).contains("\"tagKey\":\"http.method\"");
+    assertThat(CAPTURED_REQUEST.get().contentUtf8()).contains("\"tagKey\":\"http.method\"");
   }
 
   @Test public void getValues() throws Exception {
-    es.enqueue(new MockResponse().setBody(TestResponses.AUTOCOMPLETE_VALUES));
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     assertThat(tagStore.getValues("http.method").execute()).containsOnly("get", "post");
   }
