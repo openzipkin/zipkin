@@ -250,7 +250,7 @@ const DiscoverPage = ({ history, location }) => {
                     width={width}
                     overflow="auto"
                   >
-                    {tabValue === tracesTab && withRouter(<TracesTab />)}
+                    {tabValue === tracesTab && <TracesTab />}
                     {tabValue === dependenciesTab && <DependenciesTab />}
                   </Box>
                 )
