@@ -16,7 +16,6 @@ import React from 'react';
 import { withRouter } from 'react-router';
 import ReactSelect from 'react-select';
 import queryString from 'query-string';
-import moment from 'moment';
 
 import DependenciesGraph from './DependenciesGraph';
 import DependenciesSidebar from './DependenciesSidebar';
@@ -29,7 +28,6 @@ const propTypes = {
   isLoading: PropTypes.bool.isRequired,
   graph: PropTypes.shape({}).isRequired,
   fetchDependencies: PropTypes.func.isRequired,
-  clearDependencies: PropTypes.func.isRequired,
   history: PropTypes.shape({
     push: PropTypes.func.isRequired,
   }).isRequired,
@@ -40,38 +38,12 @@ export class Dependencies extends React.Component { // export for testing withou
     super(props);
 
     this.state = {
-      startTs: moment().subtract(1, 'days'),
-      endTs: moment(),
       selectedServiceName: '',
       filter: '',
     };
 
-    this.handleStartTsChange = this.handleStartTsChange.bind(this);
-    this.handleEndTsChange = this.handleEndTsChange.bind(this);
     this.handleServiceSelect = this.handleServiceSelect.bind(this);
     this.handleFilterChange = this.handleFilterChange.bind(this);
-    this.handleAnalyzeButtonClick = this.handleAnalyzeButtonClick.bind(this);
-  }
-
-  componentDidMount() {
-    const { location } = this.props;
-
-    const queryParams = queryString.parse(location.search);
-    const endTs = queryParams.endTs ? moment(parseInt(queryParams.endTs, 10)) : moment();
-    const lookback = queryParams.lookback
-      ? moment.duration(parseInt(queryParams.lookback, 10))
-      : moment.duration(1, 'days');
-    const startTs = endTs.clone().subtract(lookback); // subtract is not immutable.
-    this.setState({
-      startTs,
-      endTs,
-    });
-    this.fetchDependencies(location);
-  }
-
-  componentWillUnmount() {
-    const { clearDependencies } = this.props;
-    clearDependencies();
   }
 
   fetchDependencies(location) {
@@ -82,67 +54,12 @@ export class Dependencies extends React.Component { // export for testing withou
     }
   }
 
-  handleStartTsChange(startTs) {
-    this.setState({ startTs });
-  }
-
-  handleEndTsChange(endTs) {
-    this.setState({ endTs });
-  }
-
   handleServiceSelect(selectedServiceName) {
     this.setState({ selectedServiceName });
   }
 
   handleFilterChange(filter) {
     this.setState({ filter });
-  }
-
-  handleAnalyzeButtonClick() {
-    const { startTs, endTs } = this.state;
-    const { history } = this.props;
-    const queryParameters = buildQueryParameters({
-      endTs: endTs.valueOf(),
-      lookback: endTs.valueOf() - startTs.valueOf(),
-    });
-    const location = {
-      pathname: '/zipkin/dependency',
-      search: queryParameters,
-    };
-    history.push(location);
-    this.fetchDependencies(location);
-  }
-
-  renderSearch() {
-    const { startTs, endTs } = this.state;
-    return (
-      <div className="dependencies__search">
-        <div className="dependencies__lookback-condition">
-          <DatePicker
-            onChange={this.handleStartTsChange}
-            selected={startTs}
-          />
-        </div>
-        <div className="dependencies__lookback-condition-separator">
-          -
-        </div>
-        <div className="dependencies__lookback-condition">
-          <DatePicker
-            onChange={this.handleEndTsChange}
-            selected={endTs}
-          />
-        </div>
-        <div className="dependencies__analyze-button-wrapper">
-          <div
-            role="presentation"
-            onClick={this.handleAnalyzeButtonClick}
-            className="dependencies__analyze-button"
-          >
-            Analyze Dependencies
-          </div>
-        </div>
-      </div>
-    );
   }
 
   renderFilter() {
@@ -181,9 +98,6 @@ export class Dependencies extends React.Component { // export for testing withou
             ? 'dependencies__main--narrow'
             : 'dependencies__main--wide'}`}
         >
-          <div className="dependencies__search-wrapper">
-            {this.renderSearch()}
-          </div>
           {
             graph.allNodes().length === 0
               ? null
