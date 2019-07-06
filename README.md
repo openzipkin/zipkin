@@ -3,6 +3,8 @@
 [![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:io.zipkin%20AND%20a:zipkin-server)
 
 # zipkin
+<img src="https://zipkin.io/public/img/web-screenshot.png">
+
 [Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather 
 timing data needed to troubleshoot latency problems in service architectures. 
 Features include both the collection and lookup of this data.
