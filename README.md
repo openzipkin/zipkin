@@ -12,13 +12,13 @@ you can query based on attributes such as service, operation name, tags and
 duration. Some interesting data will be summarized for you, such as the
 percentage of time spent in a service, and whether or not operations failed.
 
-<img src="/public/img/web-screenshot.png" alt="Trace view screenshot" />
+<img src="https://zipkin.io/public/img/web-screenshot.png" alt="Trace view screenshot" />
 
 The Zipkin UI also presents a Dependency diagram showing how many traced
 requests went through each application. This can be helpful for identifying
 aggregate behavior including error paths or calls to deprecated services.
 
-<img src="/public/img/dependency-graph.png" alt="Dependency graph screenshot" />
+<img src="https://zipkin.io/public/img/dependency-graph.png" alt="Dependency graph screenshot" />
 
 Application’s need to be “instrumented” to report trace data to Zipkin. This
 usually means configuration of a [tracer or instrumentation library](https://zipkin.io/pages/tracers_instrumentation.html). The most
