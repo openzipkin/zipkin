@@ -41,11 +41,12 @@ public class ElasticsearchAutocompleteTagsTest {
 
   @ClassRule public static ServerRule server = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
-      sb.serviceUnder("/", ((ctx, req) -> HttpResponse.from(
+      sb.service("/_cluster/health", (ctx, req) -> HttpResponse.of(SUCCESS_RESPONSE));
+      sb.serviceUnder("/", (ctx, req) -> HttpResponse.from(
         req.aggregate().thenApply(agg -> {
           CAPTURED_REQUEST.set(agg);
           return HttpResponse.of(MOCK_RESPONSE.get());
-        }))));
+        })));
     }
   };
 

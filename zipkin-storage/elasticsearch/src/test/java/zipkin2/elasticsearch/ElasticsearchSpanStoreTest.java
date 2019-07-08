@@ -13,11 +13,19 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.server.ServerBuilder;
+import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.TimeUnit;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.Rule;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
@@ -28,18 +36,45 @@ import static zipkin2.TestObjects.TODAY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 
 public class ElasticsearchSpanStoreTest {
-  @Rule public MockWebServer es = new MockWebServer();
 
-  ElasticsearchStorage storage =
-      ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
-  ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
+  static final AtomicReference<AggregatedHttpRequest> CAPTURED_REQUEST =
+    new AtomicReference<>();
+  static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
+    new AtomicReference<>();
+  static final AggregatedHttpResponse SUCCESS_RESPONSE =
+    AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
+
+  @ClassRule public static ServerRule server = new ServerRule() {
+    @Override protected void configure(ServerBuilder sb) {
+      sb.service("/_cluster/health", (ctx, req) -> HttpResponse.of(SUCCESS_RESPONSE));
+      sb.serviceUnder("/", (ctx, req) -> HttpResponse.from(
+        req.aggregate().thenApply(agg -> {
+          CAPTURED_REQUEST.set(agg);
+          return HttpResponse.of(MOCK_RESPONSE.get());
+        })));
+    }
+  };
+
+  @Before public void setUp() {
+    storage =
+      ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
+    spanStore = new ElasticsearchSpanStore(storage);
+  }
+
+  @Before public void tearDown() {
+    MOCK_RESPONSE.set(null);
+    CAPTURED_REQUEST.set(null);
+  }
+
+  ElasticsearchStorage storage;
+  ElasticsearchSpanStore spanStore;
 
   @Test
   public void doesntTruncateTraceIdByDefault() throws Exception {
-    es.enqueue(new MockResponse());
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
-    assertThat(es.takeRequest().getBody().readUtf8())
+    assertThat(CAPTURED_REQUEST.get().contentUtf8())
         .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
   }
 
@@ -48,15 +83,16 @@ public class ElasticsearchSpanStoreTest {
     storage = storage.toBuilder().strictTraceId(false).build();
     spanStore = new ElasticsearchSpanStore(storage);
 
-    es.enqueue(new MockResponse());
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
-    assertThat(es.takeRequest().getBody().readUtf8()).contains("\"traceId\":\"3041d36dc43227fd\"");
+    assertThat(CAPTURED_REQUEST.get().contentUtf8()).contains("\"traceId\":\"3041d36dc43227fd\"");
   }
 
   @Test
   public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
-    es.enqueue(new MockResponse().setBody(TestResponses.SERVICE_NAMES));
+    MOCK_RESPONSE.set(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, TestResponses.SERVICE_NAMES));
     spanStore.getServiceNames().execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
@@ -64,7 +100,8 @@ public class ElasticsearchSpanStoreTest {
 
   @Test
   public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
-    es.enqueue(new MockResponse().setBody(TestResponses.SPAN_NAMES));
+    MOCK_RESPONSE.set(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, TestResponses.SPAN_NAMES));
     spanStore.getSpanNames("foo").execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
@@ -90,7 +127,7 @@ public class ElasticsearchSpanStoreTest {
       assertThat(spanStore.getServiceNames().execute()).isEmpty();
       assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
 
-      assertThat(es.getRequestCount()).isZero();
+      assertThat(CAPTURED_REQUEST.get()).isNull();
     }
   }
 
@@ -105,7 +142,7 @@ public class ElasticsearchSpanStoreTest {
             + ","
             + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
 
-    RecordedRequest request = es.takeRequest();
-    assertThat(request.getPath()).startsWith("/" + indexesToSearch + "/_search");
+    AggregatedHttpRequest request = CAPTURED_REQUEST.get();
+    assertThat(request.path()).startsWith("/" + indexesToSearch + "/_search");
   }
 }

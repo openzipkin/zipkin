@@ -15,8 +15,10 @@ package zipkin2.elasticsearch.internal;
 
 import com.google.auto.value.AutoValue;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.RequestHeaders;
 import com.squareup.moshi.JsonWriter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
@@ -94,7 +96,9 @@ public final class BulkCallBuilder {
       throw new Error("No I/O writing to a ByteBuf");
     }
 
-    AggregatedHttpRequest request = AggregatedHttpRequest.of(HttpMethod.GET, urlBuilder.toString());
+    AggregatedHttpRequest request = AggregatedHttpRequest.of(
+      RequestHeaders.of(HttpMethod.POST, urlBuilder.toString()),
+      HttpData.wrap(body));
     return http.newCall(request, CheckForErrors.INSTANCE);
   }
 

@@ -22,6 +22,7 @@ import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
+import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.SessionProtocol;
@@ -36,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import okhttp3.OkHttpClient;
 import okio.Buffer;
 import okio.BufferedSource;
 import zipkin2.CheckResult;
@@ -400,7 +400,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       List<Endpoint> endpoints = urls.stream()
         .map(url -> Endpoint.parse(url.getAuthority()))
         .collect(Collectors.toList());
-      EndpointGroup group = new StaticEndpointGroup(endpoints);
+      EndpointGroup group = HttpHealthCheckedEndpointGroup.of(
+        new StaticEndpointGroup(endpoints), "/_cluster/health");
       EndpointGroupRegistry.register("elasticsearch", group, EndpointSelectionStrategy.ROUND_ROBIN);
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
     }

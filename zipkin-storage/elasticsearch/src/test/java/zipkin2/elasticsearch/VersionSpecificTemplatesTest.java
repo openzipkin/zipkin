@@ -13,8 +13,15 @@
  */
 package zipkin2.elasticsearch;
 
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.ServerBuilder;
+import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -23,7 +30,8 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class VersionSpecificTemplatesTest {
-  static final MockResponse VERSION_RESPONSE_7 = new MockResponse().setBody(""
+  static final AggregatedHttpResponse VERSION_RESPONSE_7 = AggregatedHttpResponse.of(
+    HttpStatus.OK, MediaType.JSON_UTF_8, ""
     + "{\n"
     + "  \"name\" : \"zipkin-elasticsearch\",\n"
     + "  \"cluster_name\" : \"docker-cluster\",\n"
@@ -41,7 +49,8 @@ public class VersionSpecificTemplatesTest {
     + "  },\n"
     + "  \"tagline\" : \"You Know, for Search\"\n"
     + "}");
-  static final MockResponse VERSION_RESPONSE_6 = new MockResponse().setBody(""
+  static final AggregatedHttpResponse VERSION_RESPONSE_6 = AggregatedHttpResponse.of(
+    HttpStatus.OK, MediaType.JSON_UTF_8, ""
     + "{\n"
     + "  \"name\" : \"PV-NhJd\",\n"
     + "  \"cluster_name\" : \"CollectorDBCluster\",\n"
@@ -59,7 +68,8 @@ public class VersionSpecificTemplatesTest {
     + "  },\n"
     + "  \"tagline\" : \"You Know, for Search\"\n"
     + "}");
-  static final MockResponse VERSION_RESPONSE_5 = new MockResponse().setBody(""
+  static final AggregatedHttpResponse VERSION_RESPONSE_5 = AggregatedHttpResponse.of(
+    HttpStatus.OK, MediaType.JSON_UTF_8, ""
     + "{\n"
     + "  \"name\" : \"vU0g1--\",\n"
     + "  \"cluster_name\" : \"elasticsearch\",\n"
@@ -73,7 +83,8 @@ public class VersionSpecificTemplatesTest {
     + "  },\n"
     + "  \"tagline\" : \"You Know, for Search\"\n"
     + "}");
-  static final MockResponse VERSION_RESPONSE_2 = new MockResponse().setBody(""
+  static final AggregatedHttpResponse VERSION_RESPONSE_2 = AggregatedHttpResponse.of(
+    HttpStatus.OK, MediaType.JSON_UTF_8, ""
     + "{\n"
     + "  \"name\" : \"Kamal\",\n"
     + "  \"cluster_name\" : \"elasticsearch\",\n"
@@ -87,15 +98,27 @@ public class VersionSpecificTemplatesTest {
     + "  \"tagline\" : \"You Know, for Search\"\n"
     + "}");
 
-  @Rule public ExpectedException thrown = ExpectedException.none();
-  @Rule public MockWebServer es = new MockWebServer();
+  static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
+    new AtomicReference<>();
 
-  ElasticsearchStorage storage =
-    ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
+  @Rule public ExpectedException thrown = ExpectedException.none();
+
+  @ClassRule public static ServerRule server = new ServerRule() {
+    @Override protected void configure(ServerBuilder sb) {
+      sb.serviceUnder("/", (ctx, req) -> HttpResponse.of(MOCK_RESPONSE.get()));
+    }
+  };
+
+  @Before public void setUp() {
+    storage =
+      ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
+  }
+
+  ElasticsearchStorage storage;
 
   /** Unsupported, but we should test that parsing works */
   @Test public void version2_unsupported() throws Exception {
-    es.enqueue(VERSION_RESPONSE_2);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_2);
 
     thrown.expectMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
 
@@ -103,7 +126,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void version5() throws Exception {
-    es.enqueue(VERSION_RESPONSE_5);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_5);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -119,7 +142,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void version6() throws Exception {
-    es.enqueue(VERSION_RESPONSE_6);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -132,7 +155,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void version6_wrapsPropertiesWithType() throws Exception {
-    es.enqueue(VERSION_RESPONSE_6);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -156,7 +179,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void version7() throws Exception {
-    es.enqueue(VERSION_RESPONSE_7);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_7);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -170,7 +193,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void version7_doesntWrapPropertiesWithType() throws Exception {
-    es.enqueue(VERSION_RESPONSE_7);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_7);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -194,7 +217,7 @@ public class VersionSpecificTemplatesTest {
       .searchEnabled(false)
       .build();
 
-    es.enqueue(VERSION_RESPONSE_6);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -216,7 +239,7 @@ public class VersionSpecificTemplatesTest {
       .searchEnabled(false)
       .build();
 
-    es.enqueue(VERSION_RESPONSE_7);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_7);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -233,7 +256,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void strictTraceId_doesNotIncludeAnalysisSection() throws Exception {
-    es.enqueue(VERSION_RESPONSE_6);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -245,7 +268,7 @@ public class VersionSpecificTemplatesTest {
       .strictTraceId(false)
       .build();
 
-    es.enqueue(VERSION_RESPONSE_6);
+    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
