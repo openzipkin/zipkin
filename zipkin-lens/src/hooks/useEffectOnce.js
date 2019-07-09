@@ -11,19 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { connect } from 'react-redux';
+import { useEffect } from 'react';
 
-import Dependencies from '../../components/Dependencies'; // eslint-disable-line import/no-named-as-default
-import Graph from '../../util/dependencies-graph';
+const useEffectOnce = effect => useEffect(effect, []);
 
-const mapStateToProps = state => ({
-  isLoading: state.dependencies.isLoading,
-  graph: new Graph(state.dependencies.dependencies),
-});
-
-const DependenciesContainer = connect(
-  mapStateToProps,
-  null,
-)(Dependencies);
-
-export default DependenciesContainer;
+export default useEffectOnce;

@@ -11,8 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { useEffect } from 'react';
+import useEffectOnce from './useEffectOnce';
 
-const useMount = f => useEffect(f, []);
+const useMount = f => useEffectOnce(() => {
+  f();
+});
 
 export default useMount;

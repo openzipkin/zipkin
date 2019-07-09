@@ -25,7 +25,7 @@ export const lookbackDurations = {
   '7d': 604800000,
 };
 
-export const buildTracesQueryParameters = (
+export const buildCommonQueryParameters = (
   conditions,
   lookbackCondition,
   limitCondition,
@@ -105,6 +105,19 @@ export const buildTracesApiQueryParameters = (
     conditionMap.lookback = lookbackDurations[lookbackCondition.value];
   }
 
+  return conditionMap;
+};
+
+export const buildDependenciesApiQueryParameters = (
+  lookbackCondition,
+) => {
+  const conditionMap = {};
+  conditionMap.endTs = lookbackCondition.endTs;
+  if (lookbackCondition.value === 'custom') {
+    conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
+  } else {
+    conditionMap.lookback = lookbackDurations[lookbackCondition.value];
+  }
   return conditionMap;
 };
 

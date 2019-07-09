@@ -13,6 +13,7 @@
  */
 import { connect } from 'react-redux';
 import queryString from 'query-string';
+import { withRouter } from 'react-router';
 
 import Browser from '../../components/Browser';
 import { clearTraces } from '../../actions/traces-action';
@@ -55,9 +56,9 @@ const mapDispatchToProps = dispatch => ({
   clearTraces: () => dispatch(clearTraces()),
 });
 
-const BrowserContainer = connect(
+const BrowserContainer = withRouter(connect(
   mapStateToProps,
   mapDispatchToProps,
-)(Browser);
+)(Browser));
 
 export default BrowserContainer;
