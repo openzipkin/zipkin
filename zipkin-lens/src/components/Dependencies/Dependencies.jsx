@@ -15,19 +15,15 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { withRouter } from 'react-router';
 import ReactSelect from 'react-select';
-import queryString from 'query-string';
 
 import DependenciesGraph from './DependenciesGraph';
 import DependenciesSidebar from './DependenciesSidebar';
-import DatePicker from '../Common/DatePicker';
 import LoadingOverlay from '../Common/LoadingOverlay';
-import { buildQueryParameters } from '../../util/api';
 
 const propTypes = {
   location: PropTypes.shape({}).isRequired,
   isLoading: PropTypes.bool.isRequired,
   graph: PropTypes.shape({}).isRequired,
-  fetchDependencies: PropTypes.func.isRequired,
   history: PropTypes.shape({
     push: PropTypes.func.isRequired,
   }).isRequired,
@@ -44,14 +40,6 @@ export class Dependencies extends React.Component { // export for testing withou
 
     this.handleServiceSelect = this.handleServiceSelect.bind(this);
     this.handleFilterChange = this.handleFilterChange.bind(this);
-  }
-
-  fetchDependencies(location) {
-    const { fetchDependencies } = this.props;
-    if (location.search !== '' && location.search !== '?') {
-      const queryParameters = queryString.parse(location.search);
-      fetchDependencies(queryParameters);
-    }
   }
 
   handleServiceSelect(selectedServiceName) {
