@@ -38,8 +38,7 @@ public class SearchCallFactory {
     AggregatedHttpRequest httpRequest = AggregatedHttpRequest.of(
       RequestHeaders.of(
         HttpMethod.POST, lenientSearch(request.indices, request.type),
-        HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8,
-        HttpHeaderNames.ACCEPT_ENCODING, "gzip"),
+        HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
       HttpData.ofUtf8(searchRequest.toJson(request)));
     return http.newCall(httpRequest, bodyConverter);
   }

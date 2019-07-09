@@ -13,11 +13,24 @@
  */
 package zipkin2.elasticsearch
 
+import com.linecorp.armeria.client.Client
+import com.linecorp.armeria.client.ClientRequestContext
+import com.linecorp.armeria.client.HttpClientBuilder
+import com.linecorp.armeria.common.HttpHeaderNames
+import com.linecorp.armeria.common.HttpMethod
+import com.linecorp.armeria.common.HttpRequest
+import com.linecorp.armeria.common.HttpResponse
+import com.linecorp.armeria.common.HttpStatus
 import okhttp3.Interceptor
-import okhttp3.OkHttpClient
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
+import org.mockito.ArgumentMatchers.any
+import org.mockito.ArgumentMatchers.eq
+import org.mockito.Mockito.`when`
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.spy
+import org.mockito.Mockito.verify
 import org.springframework.beans.factory.BeanCreationException
 import org.springframework.beans.factory.NoSuchBeanDefinitionException
 import org.springframework.beans.factory.annotation.Qualifier
@@ -27,6 +40,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import zipkin2.server.internal.elasticsearch.Access
 import java.util.concurrent.TimeUnit
+import java.util.function.Consumer
 
 class ZipkinElasticsearchStorageAutoConfigurationTest {
   val context = AnnotationConfigApplicationContext()
@@ -124,19 +138,21 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
   }
 
   @Configuration
-  open class InterceptorConfiguration {
+  open class CustomizerConfiguration {
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") open fun one(): Interceptor {
+    @Bean @Qualifier("zipkinElasticsearchHttp") open fun one(): Consumer<HttpClientBuilder> {
       return one
     }
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") open fun two(): Interceptor {
+    @Bean @Qualifier("zipkinElasticsearchHttp") open fun two(): Consumer<HttpClientBuilder> {
       return two
     }
 
     companion object {
-      val one: Interceptor = Interceptor { chain -> chain.proceed(chain.request()) }
-      val two: Interceptor = Interceptor { chain -> chain.proceed(chain.request()) }
+      val one: Consumer<HttpClientBuilder> = Consumer { client -> client.maxResponseLength(12345L) }
+      val two: Consumer<HttpClientBuilder> = Consumer {
+        client -> client.addHttpHeader("test", "bar")
+      }
     }
   }
 
@@ -147,11 +163,12 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:host1:9200")
       .applyTo(context)
     Access.registerElasticsearchHttp(context)
-    context.register(InterceptorConfiguration::class.java)
+    context.register(CustomizerConfiguration::class.java)
     context.refresh()
 
-    assertThat(context.getBean(OkHttpClient::class.java).networkInterceptors())
-      .containsOnlyOnce(InterceptorConfiguration.one, InterceptorConfiguration.two)
+    val storage = context.getBean(ElasticsearchStorage::class.java)
+    assertThat(storage.httpClient().options().maxResponseLength()).isEqualTo(12345L)
+    assertThat(storage.httpClient().options().httpHeaders().get("test")).isEqualTo("bar")
   }
 
   @Test fun timeout_defaultsTo10Seconds() {
@@ -162,14 +179,13 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
     Access.registerElasticsearchHttp(context)
     context.refresh()
 
-    val client = context.getBean(OkHttpClient::class.java)
-    assertThat(client.connectTimeoutMillis()).isEqualTo(10000)
-    assertThat(client.readTimeoutMillis()).isEqualTo(10000)
-    assertThat(client.writeTimeoutMillis()).isEqualTo(10000)
+    val storage = context.getBean(ElasticsearchStorage::class.java)
+    assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(10000L)
+    assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(10000L)
   }
 
   @Test fun timeout_override() {
-    val timeout = 30000
+    val timeout = 30000L
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
@@ -178,10 +194,9 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
     Access.registerElasticsearchHttp(context)
     context.refresh()
 
-    val client = context.getBean(OkHttpClient::class.java)
-    assertThat(client.connectTimeoutMillis()).isEqualTo(timeout)
-    assertThat(client.readTimeoutMillis()).isEqualTo(timeout)
-    assertThat(client.writeTimeoutMillis()).isEqualTo(timeout)
+    val storage = context.getBean(ElasticsearchStorage::class.java)
+    assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(timeout)
+    assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(timeout)
   }
 
   @Test fun strictTraceId_defaultsToTrue() {
@@ -303,9 +318,20 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
     Access.registerElasticsearchHttp(context)
     context.refresh()
 
-    assertThat(context.getBean(OkHttpClient::class.java).networkInterceptors())
-      .extracting<String, RuntimeException> { i -> i.javaClass.name }
-      .contains("zipkin2.server.internal.elasticsearch.BasicAuthInterceptor")
+    val storage = context.getBean(ElasticsearchStorage::class.java)
+
+    val delegate = mock(Client::class.java) as Client<HttpRequest, HttpResponse>
+    val decorated = storage.httpClient().options().decoration().decorate(
+      HttpRequest::class.java, HttpResponse::class.java, delegate)
+
+    // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
+    val req = HttpRequest.of(HttpMethod.GET, "/")
+    val ctx = spy(ClientRequestContext.of(req))
+    `when`(delegate.execute(any(), any())).thenReturn(HttpResponse.of(HttpStatus.OK))
+
+    decorated.execute(ctx, req)
+
+    verify(ctx).addAdditionalRequestHeader(eq(HttpHeaderNames.AUTHORIZATION), any())
   }
 
   @Test fun searchEnabled_false() {

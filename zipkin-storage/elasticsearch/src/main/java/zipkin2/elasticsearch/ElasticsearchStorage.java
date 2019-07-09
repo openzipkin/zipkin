@@ -16,6 +16,7 @@ package zipkin2.elasticsearch;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.Endpoint;
+import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.HttpClientBuilder;
 import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
@@ -25,7 +26,6 @@ import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.SessionProtocol;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -360,29 +360,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
-  public HttpCall.Factory http() {
+  public HttpClient httpClient() {
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
-
-    final URL parsed;
-    try {
-      parsed = new URL(hosts.get(0));
-    } catch (MalformedURLException e) {
-      throw new IllegalArgumentException("invalid host " + hosts.get(0), e);
-    }
-
-    final SessionProtocol protocol;
-    switch (parsed.getProtocol()) {
-      case "http":
-        protocol = SessionProtocol.HTTP;
-        break;
-      case "https":
-        protocol = SessionProtocol.HTTPS;
-        break;
-      default:
-        throw new IllegalArgumentException("invalid protocol " + parsed.getProtocol() +
-          ". Must be http or https.");
-    }
 
     final String clientUrl;
     if (hosts.size() == 1) {
@@ -411,7 +391,12 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     clientCustomizer().accept(client);
 
-    return new HttpCall.Factory(client.build(), maxRequests());
+    return client.build();
+  }
+
+  @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
+  public HttpCall.Factory http() {
+    return new HttpCall.Factory(httpClient(), maxRequests());
   }
 
   ElasticsearchStorage() {}
