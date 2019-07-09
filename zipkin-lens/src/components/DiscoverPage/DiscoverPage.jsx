@@ -117,7 +117,7 @@ const DiscoverPage = ({ history, location }) => {
 
   const [tabValue, setTabValue] = React.useState(tracesTab);
 
-  const findData = () => {
+  const findData = useCallback(() => {
     switch (tabValue) {
       case tracesTab:
         findTraces();
@@ -127,7 +127,7 @@ const DiscoverPage = ({ history, location }) => {
         break;
       default:
     }
-  };
+  }, [findDependencies, findTraces, tabValue]);
 
   const handleTabChange = useCallback((event, newTabValue) => {
     setTabValue(newTabValue);
