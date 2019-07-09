@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
-import okhttp3.MediaType;
 import okio.Buffer;
 import okio.BufferedSink;
 import okio.BufferedSource;
@@ -38,7 +37,6 @@ import zipkin2.elasticsearch.internal.client.HttpCall;
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class BulkCallBuilder {
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   final String tag;
   final boolean shouldAddType;

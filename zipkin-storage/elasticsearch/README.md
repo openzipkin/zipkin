@@ -1,7 +1,7 @@
 # storage-elasticsearch-http
 
 This is is a plugin to the Elasticsearch storage component, which uses
-HTTP by way of [OkHttp 3](https://github.com/square/okttp) and
+HTTP by way of [Armeria](https://github.com/line/armeria) and
 [Moshi](https://github.com/square/moshi). This uses Elasticsearch 5+
 features, but is tested against Elasticsearch 6-7.x.
 

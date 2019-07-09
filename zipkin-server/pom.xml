@@ -190,17 +190,6 @@
       <version>${project.version}</version>
       <optional>true</optional>
     </dependency>
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>logging-interceptor</artifactId>
-      <version>${okhttp.version}</version>
-      <optional>true</optional>
-    </dependency>
 
     <!-- MySQL backend -->
     <dependency>
@@ -315,11 +304,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>mockwebserver</artifactId>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>com.jayway.jsonpath</groupId>
       <artifactId>json-path</artifactId>

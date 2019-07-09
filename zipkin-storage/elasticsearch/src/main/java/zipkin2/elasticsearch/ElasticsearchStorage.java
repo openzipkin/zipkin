@@ -359,7 +359,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return "/_template/" + indexPrefix + type + "_template";
   }
 
-  @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
+  @Memoized // hosts resolution might imply a network call, and we might make a new client instance
   public HttpClient httpClient() {
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
@@ -394,7 +394,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return client.build();
   }
 
-  @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
+  @Memoized // hosts resolution might imply a network call, and we might make a new client instance
   public HttpCall.Factory http() {
     return new HttpCall.Factory(httpClient(), maxRequests());
   }

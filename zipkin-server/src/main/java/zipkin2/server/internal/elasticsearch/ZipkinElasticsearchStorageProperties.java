@@ -15,11 +15,12 @@ package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.HttpClientBuilder;
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
-import okhttp3.HttpUrl;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.elasticsearch.ElasticsearchStorage;
@@ -97,8 +98,13 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
           converted.add(host);
           continue;
         }
-        int port = HttpUrl.parse("http://" + host).port();
-        if (port == 80) {
+        final int port;
+        try {
+          port = new URL("http://" + host).getPort();
+        } catch (MalformedURLException e) {
+          throw new IllegalArgumentException("Malformed elasticsearch host: " + host);
+        }
+        if (port == -1) {
           host += ":9200";
         } else if (port == 9300) {
           log.warning(

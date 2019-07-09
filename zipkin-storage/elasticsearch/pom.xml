@@ -41,11 +41,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>com.squareup.okio</groupId>
       <artifactId>okio</artifactId>
     </dependency>
@@ -78,23 +73,6 @@
       <scope>test</scope>
     </dependency>
 
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>mockwebserver</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp-tls</artifactId>
-      <version>${okhttp.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>logging-interceptor</artifactId>
-      <version>${okhttp.version}</version>
-      <scope>test</scope>
-    </dependency>
     <dependency>
       <groupId>com.linecorp.armeria</groupId>
       <artifactId>armeria-testing-junit4</artifactId>

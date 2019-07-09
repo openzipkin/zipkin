@@ -21,7 +21,6 @@ import com.linecorp.armeria.common.HttpMethod
 import com.linecorp.armeria.common.HttpRequest
 import com.linecorp.armeria.common.HttpResponse
 import com.linecorp.armeria.common.HttpStatus
-import okhttp3.Interceptor
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.After
 import org.junit.Test
@@ -29,6 +28,7 @@ import org.mockito.ArgumentMatchers.any
 import org.mockito.ArgumentMatchers.eq
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.spy
 import org.mockito.Mockito.verify
 import org.springframework.beans.factory.BeanCreationException
@@ -296,7 +296,7 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
     assertThat(es().namesLookback()).isEqualTo(TimeUnit.DAYS.toMillis(2).toInt())
   }
 
-  @Test(expected = NoSuchBeanDefinitionException::class)
+  @Test
   fun doesntProvideBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
@@ -305,7 +305,20 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
     Access.registerElasticsearchHttp(context)
     context.refresh()
 
-    context.getBean(Interceptor::class.java)
+    val storage = context.getBean(ElasticsearchStorage::class.java)
+
+    val delegate = mock(Client::class.java) as Client<HttpRequest, HttpResponse>
+    val decorated = storage.httpClient().options().decoration().decorate(
+      HttpRequest::class.java, HttpResponse::class.java, delegate)
+
+    // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
+    val req = HttpRequest.of(HttpMethod.GET, "/")
+    val ctx = spy(ClientRequestContext.of(req))
+    `when`(delegate.execute(any(), any())).thenReturn(HttpResponse.of(HttpStatus.OK))
+
+    decorated.execute(ctx, req)
+
+    verify(ctx, never()).addAdditionalRequestHeader(eq(HttpHeaderNames.AUTHORIZATION), any())
   }
 
   @Test fun providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured() {
