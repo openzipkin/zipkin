@@ -17,19 +17,17 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Layout from './Layout';
 import Sidebar from './Sidebar';
-import TraceIdSearchInput from './TraceIdSearchInput';
-import TraceJsonUploader from './TraceJsonUploader';
 
 describe('<Layout />', () => {
   let wrapper;
 
   beforeEach(() => {
     wrapper = shallow(
-      <Layout.WrappedComponent>
+      <Layout>
         <div className="child-1" />
         <div className="child-2" />
         <div className="child-3" />
-      </Layout.WrappedComponent>,
+      </Layout>,
     );
   });
 
@@ -40,26 +38,6 @@ describe('<Layout />', () => {
 
   it('should render Sidebar', () => {
     const items = wrapper.find(Sidebar);
-    expect(items.length).toBe(1);
-  });
-
-  it('should render page title', () => {
-    const items = wrapper.find('[data-test="page-title"]');
-    expect(items.length).toBe(1);
-  });
-
-  it('should render TraceIdSearchInput', () => {
-    const items = wrapper.find(TraceIdSearchInput);
-    expect(items.length).toBe(1);
-  });
-
-  it('should render TraceJsonUploader', () => {
-    const items = wrapper.find(TraceJsonUploader);
-    expect(items.length).toBe(1);
-  });
-
-  it('should render content\'s paper', () => {
-    const items = wrapper.find('[data-test="content-paper"]');
     expect(items.length).toBe(1);
   });
 });
