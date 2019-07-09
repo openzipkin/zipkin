@@ -21,7 +21,6 @@ import MomentUtils from '@date-io/moment';
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
 import TracePageContainer from '../../containers/TracePage/TracePageContainer';
-import DependenciesContainer from '../../containers/Dependencies/DependenciesContainer';
 import TraceViewerContainer from '../../containers/TraceViewer/TraceViewerContainer';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
@@ -42,18 +41,13 @@ class App extends React.Component {
               <Layout>
                 <Route
                   exact
-                  path={['/zipkin/', '/zipkin/dependency']}
+                  path={['/zipkin', '/zipkin/dependency']}
                   component={DiscoverPage}
                 />
                 <Route
                   exact
                   path="/zipkin/traces/:traceId"
                   component={TracePageContainer}
-                />
-                <Route
-                  exact
-                  path="/zipkin/dependency"
-                  component={DependenciesContainer}
                 />
                 <Route
                   exact

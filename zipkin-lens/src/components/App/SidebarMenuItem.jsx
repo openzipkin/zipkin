@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useMemo } from 'react';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -38,7 +38,7 @@ const propTypes = {
   location: PropTypes.shape({ pathname: PropTypes.string.isRequired }).isRequired,
   isExternalLink: PropTypes.bool,
   title: PropTypes.string.isRequired,
-  url: PropTypes.string.isRequired,
+  urls: PropTypes.arrayOf(PropTypes.string).isRequired,
   buttonClassName: PropTypes.string.isRequired,
 };
 
@@ -51,25 +51,32 @@ const SidebarMenuItem = ({
   location,
   isExternalLink,
   title,
-  url,
+  urls,
   buttonClassName,
 }) => {
   const classes = useStyles();
 
-  const style = location.pathname === url
-    ? {
-      color: theme.palette.common.white,
-      backgroundColor: theme.palette.primary.dark,
+  const style = useMemo(() => {
+    if (urls.includes(location.pathname)) {
+      return {
+        color: theme.palette.common.white,
+        backgroundColor: theme.palette.primary.dark,
+      };
     }
-    : null;
+    return null;
+  }, [location.pathname, urls]);
 
   const props = { button: true, style, className: classes.item };
 
   if (isExternalLink) {
     props.component = 'a';
-    props.href = url;
+    props.href = urls[0];
   } else {
-    props.onClick = () => history.push(url);
+    props.onClick = () => {
+      if (!urls.includes(location.pathname)) {
+        history.push(urls[0]);
+      }
+    };
   }
 
   return (
