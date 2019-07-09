@@ -131,25 +131,35 @@ const DiscoverPage = ({ history, location }) => {
 
   const handleTabChange = useCallback((event, newTabValue) => {
     setTabValue(newTabValue);
-    switch (newTabValue) {
-      case tracesTab:
-        // Fetch traces only if one or more conditions are set.
-        if (!_.isEmpty(conditions)
-          || !_.isEmpty(lookbackCondition)
-          || !!limitCondition
-        ) {
-          findTraces();
-        }
-        break;
-      case dependenciesTab:
-        if (!_.isEmpty(conditions) || !_.isEmpty(lookbackCondition)) {
-          findDependencies();
-        }
-        break;
-      default:
-        // Do nothing
+
+    if (location.search) {
+      switch (newTabValue) {
+        case tracesTab:
+          // Fetch traces only if one or more conditions are set.
+          if (!_.isEmpty(conditions)
+            || !_.isEmpty(lookbackCondition)
+            || !!limitCondition
+          ) {
+            findTraces();
+          }
+          break;
+        case dependenciesTab:
+          if (!_.isEmpty(conditions) || !_.isEmpty(lookbackCondition)) {
+            findDependencies();
+          }
+          break;
+        default:
+          // Do nothing
+      }
     }
-  }, [findTraces, findDependencies, conditions, lookbackCondition, limitCondition]);
+  }, [
+    findTraces,
+    findDependencies,
+    conditions,
+    lookbackCondition,
+    limitCondition,
+    location.search,
+  ]);
 
   const handleKeyDown = (event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
