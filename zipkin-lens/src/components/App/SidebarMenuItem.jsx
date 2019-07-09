@@ -73,9 +73,7 @@ const SidebarMenuItem = ({
     props.href = urls[0];
   } else {
     props.onClick = () => {
-      if (!urls.includes(location.pathname)) {
-        history.push(urls[0]);
-      }
+      history.push(urls[0]);
     };
   }
 

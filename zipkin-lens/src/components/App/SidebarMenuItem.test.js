@@ -31,7 +31,7 @@ describe('<SidebarMenuItem />', () => {
           location={{ pathname: '/zipkin' }}
           isExternalLink
           title="Title"
-          url="http://example.com"
+          urls={['http://example.com']}
           buttonClassName="fas fa-search"
         />,
       );
@@ -65,12 +65,12 @@ describe('<SidebarMenuItem />', () => {
       commonProps = {
         history: { push: pushMock },
         title: 'Some Page',
-        url: '/zipkin/somePage',
+        urls: ['/zipkin/somePage'],
         buttonClassName: 'fas fa-search',
       };
     });
 
-    it('should be lighter when the current location equals to the url', () => {
+    it('should be lighter when the current location equals to the first url', () => {
       const wrapper = shallow(
         <SidebarMenuItem.WrappedComponent
           {...commonProps}
@@ -83,7 +83,7 @@ describe('<SidebarMenuItem />', () => {
       });
     });
 
-    it('should be darker when the current location does not equal to the url', () => {
+    it('should be darker when the current location does not equal to the first url', () => {
       const wrapper = shallow(
         <SidebarMenuItem.WrappedComponent
           {...commonProps}
@@ -117,7 +117,7 @@ describe('<SidebarMenuItem />', () => {
         location: { pathname: '/zipkin/somePage' },
         isExternalLink: true,
         title: 'Some Page',
-        url: 'https://example.com',
+        urls: ['https://example.com'],
         buttonClassName: 'fas fa-search',
       };
     });
