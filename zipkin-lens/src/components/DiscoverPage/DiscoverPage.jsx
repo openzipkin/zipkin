@@ -197,6 +197,7 @@ const DiscoverPage = ({ history, location }) => {
 
     switch (location.pathname) {
       case '/zipkin':
+      case '/zipkin/':
         setTabValue(tracesTab);
         // Fetch traces only if one or more conditions are set.
         if (!_.isEmpty(conditionsFromUrl)
