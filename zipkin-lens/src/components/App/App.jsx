@@ -24,43 +24,42 @@ import TracePageContainer from '../../containers/TracePage/TracePageContainer';
 import TraceViewerContainer from '../../containers/TraceViewer/TraceViewerContainer';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
+import { useMount } from '../../hooks';
 
 const applicationTitle = 'Zipkin';
 
-class App extends React.Component {
-  componentDidMount() {
+const App = () => {
+  useMount(() => {
     document.title = applicationTitle;
-  }
+  });
 
-  render() {
-    return (
-      <MuiPickersUtilsProvider utils={MomentUtils}>
-        <ThemeProvider theme={theme}>
-          <Provider store={configureStore()}>
-            <BrowserRouter>
-              <Layout>
-                <Route
-                  exact
-                  path={['/zipkin', '/zipkin/dependency']}
-                  component={DiscoverPage}
-                />
-                <Route
-                  exact
-                  path="/zipkin/traces/:traceId"
-                  component={TracePageContainer}
-                />
-                <Route
-                  exact
-                  path="/zipkin/traceViewer"
-                  component={TraceViewerContainer}
-                />
-              </Layout>
-            </BrowserRouter>
-          </Provider>
-        </ThemeProvider>
-      </MuiPickersUtilsProvider>
-    );
-  }
-}
+  return (
+    <MuiPickersUtilsProvider utils={MomentUtils}>
+      <ThemeProvider theme={theme}>
+        <Provider store={configureStore()}>
+          <BrowserRouter>
+            <Layout>
+              <Route
+                exact
+                path={['/zipkin', '/zipkin/dependency']}
+                component={DiscoverPage}
+              />
+              <Route
+                exact
+                path="/zipkin/traces/:traceId"
+                component={TracePageContainer}
+              />
+              <Route
+                exact
+                path="/zipkin/traceViewer"
+                component={TraceViewerContainer}
+              />
+            </Layout>
+          </BrowserRouter>
+        </Provider>
+      </ThemeProvider>
+    </MuiPickersUtilsProvider>
+  );
+};
 
 export default App;
