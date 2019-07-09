@@ -19,7 +19,7 @@ import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 
 import Layout from './Layout';
-import BrowserContainer from '../../containers/Browser/BrowserContainer';
+import DiscoverPage from '../DiscoverPage';
 import TracePageContainer from '../../containers/TracePage/TracePageContainer';
 import DependenciesContainer from '../../containers/Dependencies/DependenciesContainer';
 import TraceViewerContainer from '../../containers/TraceViewer/TraceViewerContainer';
@@ -42,8 +42,8 @@ class App extends React.Component {
               <Layout>
                 <Route
                   exact
-                  path="/zipkin/"
-                  component={BrowserContainer}
+                  path={['/zipkin/', '/zipkin/dependency']}
+                  component={DiscoverPage}
                 />
                 <Route
                   exact

@@ -13,58 +13,37 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { withRouter } from 'react-router';
-import { AutoSizer } from 'react-virtualized';
-import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
-import Typography from '@material-ui/core/Typography';
-import Paper from '@material-ui/core/Paper';
 import CssBaseline from '@material-ui/core/CssBaseline';
 
 import Sidebar from './Sidebar';
-import TraceIdSearchInput from './TraceIdSearchInput';
-import TraceJsonUploader from './TraceJsonUploader';
-import GlobalSearch from '../GlobalSearch';
-import DiscoverPage from '../DiscoverPage';
-
-const useStyles = makeStyles({
-  contentPaper: {
-    flex: '0 1 100%',
-    marginTop: '1.5rem',
-    marginBottom: '1rem',
-    overflow: 'auto',
-  },
-});
 
 const propTypes = {
   children: PropTypes.arrayOf(PropTypes.element).isRequired,
 };
 
-const Layout = ({ children }) => {
-  const classes = useStyles();
-
-  return (
-    <Box display="flex">
-      <CssBaseline />
-      <Box component="nav" width="3.2rem" flexShrink="0">
-        <Sidebar />
-      </Box>
-      <Box
-        component="main"
-        display="flex"
-        flexDirection="column"
-        height="100vh"
-        width="100%"
-        pl={3}
-        pr={3}
-        overflow="hidden"
-      >
-        <DiscoverPage />
-      </Box>
+const Layout = ({ children }) => (
+  <Box display="flex">
+    <CssBaseline />
+    <Box component="nav" width="3.2rem" flexShrink="0">
+      <Sidebar />
     </Box>
-  );
-};
+    <Box
+      component="main"
+      display="flex"
+      flexDirection="column"
+      height="100vh"
+      width="100%"
+      pl={3}
+      pr={3}
+      overflow="hidden"
+    >
+      {children}
+    </Box>
+  </Box>
+);
+
 
 Layout.propTypes = propTypes;
 
-export default withRouter(Layout);
+export default Layout;
