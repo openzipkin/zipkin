@@ -13,11 +13,20 @@
  */
 package zipkin2;
 
+import com.diffblue.deeptestutils.Reflector;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import org.powermock.api.mockito.PowerMockito;
+import zipkin2.Endpoint.Builder;
+import zipkin2.Endpoint.IpFamily;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -234,5 +243,237 @@ public class EndpointTest {
       .isNull();
     assertThat(endpoint.ipv6Bytes())
       .isNull();
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void ipInputNotNullOutputNotNull() {
+    // Arrange
+    final Builder objectUnderTest = new Builder();
+    objectUnderTest.port = 0;
+    objectUnderTest.ipv4Bytes = null;
+    objectUnderTest.ipv6 = null;
+    objectUnderTest.serviceName = null;
+    objectUnderTest.ipv6Bytes = null;
+    objectUnderTest.ipv4 = null;
+    final InetAddress addr = PowerMockito.mock(InetAddress.class);
+    // Act
+    final Builder retval = objectUnderTest.ip(addr);
+    // Assert result
+    Assert.assertNotNull(retval);
+    Assert.assertEquals(0, retval.port);
+    Assert.assertNull(retval.ipv4Bytes);
+    Assert.assertNull(retval.ipv6);
+    Assert.assertNull(retval.serviceName);
+    Assert.assertNull(retval.ipv6Bytes);
+    Assert.assertNull(retval.ipv4);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void parseIpInput0OutputFalse() {
+    // Arrange
+    final Builder objectUnderTest = new Builder();
+    objectUnderTest.port = 0;
+    objectUnderTest.ipv4Bytes = null;
+    objectUnderTest.ipv6 = null;
+    objectUnderTest.serviceName = null;
+    objectUnderTest.ipv6Bytes = null;
+    objectUnderTest.ipv4 = null;
+    final byte[] ipBytes = {};
+    // Act
+    final boolean retval = objectUnderTest.parseIp(ipBytes);
+    // Assert result
+    Assert.assertFalse(retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void portInputNotNullOutputIllegalArgumentException() {
+    // Arrange
+    final Builder objectUnderTest = new Builder();
+    final Integer port = new Integer(65_536);
+    // Act
+    thrown.expect(IllegalArgumentException.class);
+    objectUnderTest.port(port);
+    // Method is not expected to return due to exception thrown
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void portInputNotNullOutputNotNull() {
+    // Arrange
+    final Builder objectUnderTest = new Builder();
+    final Integer port = new Integer(1);
+    // Act
+    final Builder retval = objectUnderTest.port(port);
+    // Assert side effects
+    Assert.assertEquals(1, objectUnderTest.port);
+    // Assert result
+    Assert.assertNotNull(retval);
+    Assert.assertEquals(1, retval.port);
+    Assert.assertNull(retval.ipv4Bytes);
+    Assert.assertNull(retval.ipv6);
+    Assert.assertNull(retval.serviceName);
+    Assert.assertNull(retval.ipv6Bytes);
+    Assert.assertNull(retval.ipv4);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void portInputNotNullOutputNotNull2() {
+    // Arrange
+    final Builder objectUnderTest = new Builder();
+    final Integer port = new Integer(-37_749_736);
+    // Act
+    final Builder retval = objectUnderTest.port(port);
+    // Assert result
+    Assert.assertNotNull(retval);
+    Assert.assertEquals(0, retval.port);
+    Assert.assertNull(retval.ipv4Bytes);
+    Assert.assertNull(retval.ipv6);
+    Assert.assertNull(retval.serviceName);
+    Assert.assertNull(retval.ipv6Bytes);
+    Assert.assertNull(retval.ipv4);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void portInputNullOutputNotNull() {
+    // Arrange
+    final Builder objectUnderTest = new Builder();
+    final Integer port = null;
+    // Act
+    final Builder retval = objectUnderTest.port(port);
+    // Assert result
+    Assert.assertNotNull(retval);
+    Assert.assertEquals(0, retval.port);
+    Assert.assertNull(retval.ipv4Bytes);
+    Assert.assertNull(retval.ipv6);
+    Assert.assertNull(retval.serviceName);
+    Assert.assertNull(retval.ipv6Bytes);
+    Assert.assertNull(retval.ipv4);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void detectFamilyInputNotNullOutputNotNull()
+    throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    // Arrange
+    final String ipString = ",";
+    // Act
+    final Class<?> classUnderTest = Reflector.forName("zipkin2.Endpoint");
+    final Method methodUnderTest =
+      classUnderTest.getDeclaredMethod("detectFamily", Reflector.forName("java.lang.String"));
+    methodUnderTest.setAccessible(true);
+    final IpFamily retval = (IpFamily) methodUnderTest.invoke(null, ipString);
+    // Assert result
+    Assert.assertEquals(IpFamily.Unknown, retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void detectFamilyInputNotNullOutputNotNull2() {
+    // Arrange
+    final String ipString = ":.";
+    // Act
+    final Endpoint.IpFamily retval = Endpoint.detectFamily(ipString);
+    // Assert result
+    Assert.assertEquals(Endpoint.IpFamily.Unknown, retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void detectFamilyInputNotNullOutputNotNull3() {
+    // Arrange
+    final String ipString = "1";
+    // Act
+    final Endpoint.IpFamily retval = Endpoint.detectFamily(ipString);
+    // Assert result
+    Assert.assertEquals(Endpoint.IpFamily.Unknown, retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void detectFamilyInputNotNullOutputNotNull4() {
+    // Arrange
+    final String ipString = ".";
+    // Act
+    final Endpoint.IpFamily retval = Endpoint.detectFamily(ipString);
+    // Assert result
+    Assert.assertEquals(Endpoint.IpFamily.Unknown, retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void textToNumericFormatV6InputNotNullOutputNull()
+    throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    // Arrange
+    final String ipString = "700:0";
+    // Act
+    final Class<?> classUnderTest = Reflector.forName("zipkin2.Endpoint");
+    final Method methodUnderTest = classUnderTest.getDeclaredMethod(
+      "textToNumericFormatV6", Reflector.forName("java.lang.String"));
+    methodUnderTest.setAccessible(true);
+    final byte[] retval = (byte[]) methodUnderTest.invoke(null, ipString);
+    // Assert result
+    Assert.assertNull(retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void textToNumericFormatV6InputNotNullOutputNull2()
+    throws InvocationTargetException, IllegalAccessException, NoSuchMethodException {
+    // Arrange
+    final String ipString = "7078:0:7";
+    // Act
+    final Class<?> classUnderTest = Reflector.forName("zipkin2.Endpoint");
+    final Method methodUnderTest = classUnderTest.getDeclaredMethod(
+      "textToNumericFormatV6", Reflector.forName("java.lang.String"));
+    methodUnderTest.setAccessible(true);
+    final byte[] retval = (byte[]) methodUnderTest.invoke(null, ipString);
+    // Assert result
+    Assert.assertNull(retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void parseHextetInputNotNullOutputNumberFormatException() {
+    // Arrange
+    final String ipPart = "A1B2C3";
+    // Act
+    thrown.expect(NumberFormatException.class);
+    Endpoint.parseHextet(ipPart);
+    // Method is not expected to return due to exception thrown
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void isValidIpV4WordInputNotNullZeroPositiveOutputFalse() {
+    // Arrange
+    final CharSequence word = "$\u0ffe";
+    final int from = 0;
+    final int toExclusive = 2;
+    // Act
+    final boolean retval = Endpoint.isValidIpV4Word(word, from, toExclusive);
+    // Assert result
+    Assert.assertFalse(retval);
+  }
+
+  // Test written by Diffblue Cover.
+  @Test
+  public void toStringOutputNotNull() throws InvocationTargetException {
+    // Arrange
+    final Endpoint objectUnderTest = (Endpoint) Reflector.getInstance("zipkin2.Endpoint");
+    Reflector.setField(objectUnderTest, "port", -64);
+    Reflector.setField(objectUnderTest, "ipv4Bytes", null);
+    Reflector.setField(objectUnderTest, "ipv6", "3");
+    Reflector.setField(objectUnderTest, "serviceName", "A1B2C3");
+    Reflector.setField(objectUnderTest, "ipv6Bytes", null);
+    Reflector.setField(objectUnderTest, "ipv4", "2");
+    // Act
+    final String retval = objectUnderTest.toString();
+    // Assert result
+    Assert.assertEquals("Endpoint{serviceName=A1B2C3, ipv4=2, ipv6=3, port=-64}", retval);
   }
 }
