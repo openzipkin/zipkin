@@ -132,6 +132,8 @@ const DiscoverPage = ({ history, location }) => {
   const handleTabChange = useCallback((event, newTabValue) => {
     setTabValue(newTabValue);
 
+    // If there are not any query parameters in the address bar, don't
+    // fetch any data.
     if (location.search) {
       switch (newTabValue) {
         case tracesTab:
@@ -170,6 +172,8 @@ const DiscoverPage = ({ history, location }) => {
   useMount(() => {
     window.addEventListener('keydown', handleKeyDown);
 
+    // When mounted, parse a query parameter of a browser's address bar
+    // and retrieve initial conditions, and setup these conditions as redux state.
     const queryParams = queryString.parse(location.search);
     const {
       conditions: conditionsFromUrl,
@@ -185,6 +189,7 @@ const DiscoverPage = ({ history, location }) => {
     }));
     dispatch(setLimitCondition(limitConditionFromUrl || 10));
 
+    // Next, fetch data which will be shown as conditions in GlobalSearch.
     dispatch(fetchServices());
     const serviceNameCondition = conditionsFromUrl.find(
       condition => condition.key === 'serviceName',
@@ -195,6 +200,7 @@ const DiscoverPage = ({ history, location }) => {
     }
     dispatch(fetchAutocompleteKeys());
 
+    // Finally fetch traces-data or dependencies-data according to location.pathname.
     switch (location.pathname) {
       case '/zipkin':
       case '/zipkin/':
