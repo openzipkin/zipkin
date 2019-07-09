@@ -153,6 +153,17 @@ const DiscoverPage = ({ history, location }) => {
         default:
           // Do nothing
       }
+    } else {
+      switch (newTabValue) {
+        case tracesTab:
+          history.push({ pathname: '/zipkin' });
+          break;
+        case dependenciesTab:
+          history.push({ pathname: '/zipkin/dependency' });
+          break;
+        default:
+          // Do nothing
+      }
     }
   }, [
     findTraces,
@@ -161,6 +172,7 @@ const DiscoverPage = ({ history, location }) => {
     lookbackCondition,
     limitCondition,
     location.search,
+    history,
   ]);
 
   const handleKeyDown = (event) => {
