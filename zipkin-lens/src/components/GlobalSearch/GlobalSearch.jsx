@@ -13,27 +13,15 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
-import moment from 'moment';
-import queryString from 'query-string';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import _ from 'lodash';
 
 import GlobalSearchConditionList from './GlobalSearchConditionList';
 import LimitCondition from './conditions/LimitCondition';
 import LookbackCondition from './conditions/LookbackCondition';
-import { buildTracesQueryParameters, buildTracesApiQueryParameters, extractConditionsFromQueryParameters } from './api';
-import { buildQueryParameters } from '../../util/api';
-import { useMount, useUnmount } from '../../hooks';
-import { addCondition, setLookbackCondition, setLimitCondition } from '../../actions/global-search-action';
-import { fetchTraces } from '../../actions/traces-action';
-import { fetchServices } from '../../actions/services-action';
-import { fetchRemoteServices } from '../../actions/remote-services-action';
-import { fetchSpans } from '../../actions/spans-action';
-import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
+import { useUnmount } from '../../hooks';
 
 const useStyles = makeStyles({
   findButton: {
@@ -47,83 +35,17 @@ const useStyles = makeStyles({
 });
 
 const propTypes = {
-  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
-  location: PropTypes.shape({ search: PropTypes.string.isRequired }).isRequired,
+  findData: PropTypes.func.isRequired,
 };
 
-const GlobalSearch = ({ history, location }) => {
+const GlobalSearch = ({ findData }) => {
   const classes = useStyles();
-
-  const dispatch = useDispatch();
-
-  const conditions = useSelector(state => state.globalSearch.conditions);
-  const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
-  const limitCondition = useSelector(state => state.globalSearch.limitCondition);
-
-  const findTraces = () => {
-    const queryParameters = buildQueryParameters(buildTracesQueryParameters(
-      conditions,
-      lookbackCondition,
-      limitCondition,
-    ));
-    const loc = { pathname: '/zipkin', search: queryParameters };
-    history.push(loc);
-
-    dispatch(fetchTraces(buildTracesApiQueryParameters(
-      conditions,
-      lookbackCondition,
-      limitCondition,
-    )));
-  };
-
-  const handleFindButtonClick = findTraces;
 
   const handleKeyDown = (event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
-      findTraces();
+      findData();
     }
   };
-
-  useMount(() => {
-    window.addEventListener('keydown', handleKeyDown);
-
-    const queryParams = queryString.parse(location.search);
-    const {
-      conditions: conditionsFromUrl,
-      lookbackCondition: lookbackConditionFromUrl,
-      limitCondition: limitConditionFromUrl,
-    } = extractConditionsFromQueryParameters(queryParams);
-
-    conditionsFromUrl.forEach(condition => dispatch(addCondition(condition)));
-    dispatch(setLookbackCondition({
-      value: lookbackConditionFromUrl.value || '1h',
-      endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
-      startTs: lookbackConditionFromUrl.startTs || moment().subtract(1, 'hours').valueOf(),
-    }));
-    dispatch(setLimitCondition(limitConditionFromUrl || 10));
-
-    dispatch(fetchServices());
-    const serviceNameCondition = conditionsFromUrl.find(
-      condition => condition.key === 'serviceName',
-    );
-    if (serviceNameCondition) {
-      dispatch(fetchRemoteServices(serviceNameCondition.value));
-      dispatch(fetchSpans(serviceNameCondition.value));
-    }
-    dispatch(fetchAutocompleteKeys());
-
-    // Fetch traces only if one or more conditions are set.
-    if (!_.isEmpty(conditionsFromUrl)
-      || !_.isEmpty(lookbackConditionFromUrl)
-      || !!limitConditionFromUrl
-    ) {
-      dispatch(fetchTraces(buildTracesApiQueryParameters(
-        conditionsFromUrl,
-        lookbackConditionFromUrl,
-        limitConditionFromUrl,
-      )));
-    }
-  });
 
   useUnmount(() => document.removeEventListener('keydown', handleKeyDown));
 
@@ -150,7 +72,7 @@ const GlobalSearch = ({ history, location }) => {
         <Button
           color="primary"
           variant="contained"
-          onClick={handleFindButtonClick}
+          onClick={findData}
           className={classes.findButton}
         >
           <Box component="span" className="fas fa-search" />
