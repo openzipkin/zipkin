@@ -15,6 +15,8 @@ package zipkin2.elasticsearch;
 
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
+import com.linecorp.armeria.client.ClientFactory;
+import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.HttpClientBuilder;
@@ -67,26 +69,23 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     List<String> get();
   }
 
-  public static Builder newBuilder(Consumer<HttpClientBuilder> clientCustomizer) {
-    return new $AutoValue_ElasticsearchStorage.Builder()
-        .clientCustomizer(clientCustomizer)
-        .hosts(Collections.singletonList("http://localhost:9200"))
-        .maxRequests(64)
-        .strictTraceId(true)
-        .searchEnabled(true)
-        .index("zipkin")
-        .dateSeparator('-')
-        .indexShards(5)
-        .indexReplicas(1)
-        .namesLookback(86400000)
-        .flushOnWrites(false)
-        .autocompleteKeys(Collections.emptyList())
-        .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
-        .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
-  }
-
   public static Builder newBuilder() {
-    return newBuilder(unused -> {});
+    return new $AutoValue_ElasticsearchStorage.Builder()
+      .clientCustomizer(unused -> {})
+      .clientFactoryCustomizer(unused -> {})
+      .hosts(Collections.singletonList("http://localhost:9200"))
+      .maxRequests(64)
+      .strictTraceId(true)
+      .searchEnabled(true)
+      .index("zipkin")
+      .dateSeparator('-')
+      .indexShards(5)
+      .indexReplicas(1)
+      .namesLookback(86400000)
+      .flushOnWrites(false)
+      .autocompleteKeys(Collections.emptyList())
+      .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
+      .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
 
   abstract Builder toBuilder();
@@ -98,6 +97,13 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      * testing.
      */
     public abstract Builder clientCustomizer(Consumer<HttpClientBuilder> clientCustomizer);
+
+    /**
+     * Customizes the {@link ClientFactoryBuilder} used when connecting to ElasticSearch. Mostly for
+     * testing.
+     */
+    public abstract Builder clientFactoryCustomizer(
+      Consumer<ClientFactoryBuilder> clientFactoryCustomizer);
 
     /**
      * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
@@ -227,6 +233,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   abstract Consumer<HttpClientBuilder> clientCustomizer();
 
+  abstract Consumer<ClientFactoryBuilder> clientFactoryCustomizer();
+
   public abstract HostsSupplier hostsSupplier();
 
   @Nullable
@@ -306,6 +314,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return ensureClusterReady(indexNameFormatter().formatType(SPAN));
   }
 
+  @Override public void close() {
+    clientFactory().close();
+  }
+
   CheckResult ensureClusterReady(String index) {
     try {
       HttpCall.Factory http = http();
@@ -359,6 +371,13 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return "/_template/" + indexPrefix + type + "_template";
   }
 
+  @Memoized // a new client factory means new connections
+  ClientFactory clientFactory() {
+    ClientFactoryBuilder builder = new ClientFactoryBuilder();
+    clientFactoryCustomizer().accept(builder);
+    return builder.build();
+  }
+
   @Memoized // hosts resolution might imply a network call, and we might make a new client instance
   public HttpClient httpClient() {
     List<String> hosts = hostsSupplier().get();
@@ -387,6 +406,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
 
     HttpClientBuilder client = new HttpClientBuilder(clientUrl)
+      .factory(clientFactory())
       .decorator(HttpDecodingClient.newDecorator());
 
     clientCustomizer().accept(client);

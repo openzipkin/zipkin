@@ -13,13 +13,11 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.client.HttpClientBuilder;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -193,8 +191,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.timeout = timeout;
   }
 
-  public ElasticsearchStorage.Builder toBuilder(Consumer<HttpClientBuilder> customizer) {
-    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder(customizer);
+  public ElasticsearchStorage.Builder toBuilder() {
+    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder();
     if (hosts != null) builder.hosts(hosts);
     return builder
         .index(index)

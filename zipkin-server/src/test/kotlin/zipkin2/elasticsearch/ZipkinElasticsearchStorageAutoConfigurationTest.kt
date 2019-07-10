@@ -180,6 +180,7 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.refresh()
 
     val storage = context.getBean(ElasticsearchStorage::class.java)
+    // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
     assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(10000L)
     assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(10000L)
   }
@@ -195,6 +196,7 @@ class ZipkinElasticsearchStorageAutoConfigurationTest {
     context.refresh()
 
     val storage = context.getBean(ElasticsearchStorage::class.java)
+    // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
     assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(timeout)
     assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(timeout)
   }

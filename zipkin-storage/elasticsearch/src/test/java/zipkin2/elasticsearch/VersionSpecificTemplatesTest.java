@@ -20,6 +20,7 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -112,6 +113,10 @@ public class VersionSpecificTemplatesTest {
   @Before public void setUp() {
     storage =
       ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
+  }
+
+  @After public void tearDown() {
+    storage.close();
   }
 
   ElasticsearchStorage storage;
@@ -213,6 +218,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void searchEnabled_minimalSpanIndexing_6x() throws Exception {
+    storage.close();
     storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
       .searchEnabled(false)
       .build();
@@ -264,6 +270,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void strictTraceId_false_includesAnalysisForMixedLengthTraceId() throws Exception {
+    storage.close();
     storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
       .strictTraceId(false)
       .build();

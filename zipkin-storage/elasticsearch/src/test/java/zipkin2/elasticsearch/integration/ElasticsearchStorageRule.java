@@ -93,7 +93,8 @@ public class ElasticsearchStorageRule extends ExternalResource {
               .failureResponseLogLevel(LogLevel.WARN)
               .newDecorator())
           : unused -> {};
-    return ElasticsearchStorage.newBuilder(customizer)
+    return ElasticsearchStorage.newBuilder()
+        .clientCustomizer(customizer)
         .index(index)
         .flushOnWrites(true)
         .hosts(Arrays.asList(baseUrl()));

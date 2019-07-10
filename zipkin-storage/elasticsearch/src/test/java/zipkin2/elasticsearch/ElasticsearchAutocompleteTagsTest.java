@@ -22,6 +22,7 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -41,7 +42,6 @@ public class ElasticsearchAutocompleteTagsTest {
 
   @ClassRule public static ServerRule server = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
-      sb.service("/_cluster/health", (ctx, req) -> HttpResponse.of(SUCCESS_RESPONSE));
       sb.serviceUnder("/", (ctx, req) -> HttpResponse.from(
         req.aggregate().thenApply(agg -> {
           CAPTURED_REQUEST.set(agg);
@@ -58,6 +58,10 @@ public class ElasticsearchAutocompleteTagsTest {
       .hosts(asList(server.httpUri("/")))
       .autocompleteKeys(asList("http#host", "http-url", "http.method")).build();
     tagStore = new ElasticsearchAutocompleteTags(storage);
+  }
+
+  @After public void tearDown() {
+    storage.close();
   }
 
   @Test public void get_list_of_autocomplete_keys() throws Exception {

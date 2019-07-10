@@ -13,9 +13,6 @@
  */
 package zipkin2.elasticsearch;
 
-import com.linecorp.armeria.client.ClientFactory;
-import com.linecorp.armeria.client.ClientFactoryBuilder;
-import com.linecorp.armeria.client.HttpClientBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -30,7 +27,6 @@ import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.function.Consumer;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
@@ -79,6 +75,8 @@ public class ElasticsearchStorageTest {
   }
 
   @After public void tearDown() {
+    storage.close();
+
     assertThat(MOCK_RESPONSES).isEmpty();
 
     // Tests don't have to take all requests.
@@ -143,39 +141,32 @@ public class ElasticsearchStorageTest {
 
   @Test
   public void check_oneHostDown() {
-    ClientFactory clientFactory = new ClientFactoryBuilder()
-      .connectTimeoutMillis(100)
-      .build();
-    Consumer<HttpClientBuilder> customizer = client -> client.factory(clientFactory);
+    storage.close();
     storage =
-        ElasticsearchStorage.newBuilder(customizer)
-            .hosts(asList("http://1.2.3.4:" + server.httpPort(), server.httpUri("/")))
-            .build();
+        ElasticsearchStorage.newBuilder()
+          .clientFactoryCustomizer(factory -> factory.connectTimeoutMillis(100))
+          .hosts(asList("http://1.2.3.4:" + server.httpPort(), server.httpUri("/")))
+          .build();
 
     MOCK_RESPONSES.add(HEALTH_RESPONSE);
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
-
-    clientFactory.close();
   }
 
   @Test
   public void check_ssl() throws Exception {
-    ClientFactory clientFactory = new ClientFactoryBuilder()
-      .sslContextCustomizer(ssl ->
-        ssl.trustManager(InsecureTrustManagerFactory.INSTANCE))
-      .build();
-    Consumer<HttpClientBuilder> customizer = client -> client.factory(clientFactory);
-
+    storage.close();
     storage = ElasticsearchStorage
-      .newBuilder(customizer).hosts(asList(server.httpsUri("/"))).build();
+      .newBuilder()
+      .clientFactoryCustomizer(factory -> factory.sslContextCustomizer(
+        ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)))
+      .hosts(asList(server.httpsUri("/")))
+      .build();
 
     MOCK_RESPONSES.add(HEALTH_RESPONSE);
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
 
     assertThat(CAPTURED_CONTEXTS.take().sessionProtocol().isTls()).isTrue();
-
-    clientFactory.close();
   }
 }

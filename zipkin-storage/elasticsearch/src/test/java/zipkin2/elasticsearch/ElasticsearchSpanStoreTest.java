@@ -24,6 +24,7 @@ import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -46,7 +47,6 @@ public class ElasticsearchSpanStoreTest {
 
   @ClassRule public static ServerRule server = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) {
-      sb.service("/_cluster/health", (ctx, req) -> HttpResponse.of(SUCCESS_RESPONSE));
       sb.serviceUnder("/", (ctx, req) -> HttpResponse.from(
         req.aggregate().thenApply(agg -> {
           CAPTURED_REQUEST.set(agg);
@@ -61,7 +61,9 @@ public class ElasticsearchSpanStoreTest {
     spanStore = new ElasticsearchSpanStore(storage);
   }
 
-  @Before public void tearDown() {
+  @After public void tearDown() {
+    storage.close();
+
     MOCK_RESPONSE.set(null);
     CAPTURED_REQUEST.set(null);
   }
@@ -80,6 +82,7 @@ public class ElasticsearchSpanStoreTest {
 
   @Test
   public void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
+    storage.close();
     storage = storage.toBuilder().strictTraceId(false).build();
     spanStore = new ElasticsearchSpanStore(storage);
 

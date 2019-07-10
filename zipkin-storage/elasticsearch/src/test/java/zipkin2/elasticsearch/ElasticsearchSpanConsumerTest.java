@@ -56,7 +56,6 @@ public class ElasticsearchSpanConsumerTest {
 
   @ClassRule public static ServerRule server = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) throws Exception {
-      sb.service("/_cluster/health", (ctx, req) -> HttpResponse.of(SUCCESS_RESPONSE));
       sb.serviceUnder("/", (ctx, req) -> {
         CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
         req.aggregate().thenAccept(agg -> {
@@ -87,6 +86,10 @@ public class ElasticsearchSpanConsumerTest {
       .build();
 
     ensureIndexTemplate();
+  }
+
+  @After public void tearDown() {
+    storage.close();
   }
 
   void ensureIndexTemplate() throws Exception {
@@ -175,6 +178,7 @@ public class ElasticsearchSpanConsumerTest {
 
   @Test
   public void addsPipelineId() throws Exception {
+    storage.close();
     storage =
       ElasticsearchStorage.newBuilder()
         .hosts(asList(server.httpUri("/")))
@@ -192,6 +196,7 @@ public class ElasticsearchSpanConsumerTest {
 
   @Test
   public void dropsWhenBacklog() throws Exception {
+    storage.close();
     storage =
       ElasticsearchStorage.newBuilder()
         .hosts(asList(server.httpUri("/")))

@@ -14,6 +14,7 @@
 package zipkin2.server.internal.elasticsearch;
 
 import brave.Tracing;
+import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.HttpClientBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
@@ -50,6 +51,12 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     return client -> client.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
   }
 
+  @Bean @Qualifier(QUALIFIER) Consumer<ClientFactoryBuilder> zipkinElasticsearchClientFactory(
+    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    return factory -> factory.connectTimeoutMillis(timeout);
+  }
+
+
   @Bean @Qualifier(QUALIFIER) @Conditional(HttpLoggingSet.class)
   Consumer<HttpClientBuilder> zipkinElasticsearchHttpLogging(
     ZipkinElasticsearchStorageProperties es) {
@@ -82,6 +89,8 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
   @Bean @ConditionalOnMissingBean StorageComponent storage(
     ZipkinElasticsearchStorageProperties elasticsearch,
     @Qualifier(QUALIFIER) List<Consumer<HttpClientBuilder>> zipkinElasticsearchHttpCustomizers,
+    @Qualifier(QUALIFIER) List<Consumer<ClientFactoryBuilder>>
+      zipkinElasticsearchClientFactoryCustomizers,
     Optional<HostsSupplier> hostsSupplier,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
@@ -90,7 +99,10 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     ElasticsearchStorage.Builder result = elasticsearch
-      .toBuilder(client -> zipkinElasticsearchHttpCustomizers.forEach(c -> c.accept(client)))
+      .toBuilder()
+      .clientCustomizer(client -> zipkinElasticsearchHttpCustomizers.forEach(c -> c.accept(client)))
+      .clientFactoryCustomizer(factory ->
+        zipkinElasticsearchClientFactoryCustomizers.forEach(c -> c.accept(factory)))
       .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
