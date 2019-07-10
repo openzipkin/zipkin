@@ -373,7 +373,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   @Memoized // a new client factory means new connections
   ClientFactory clientFactory() {
-    ClientFactoryBuilder builder = new ClientFactoryBuilder();
+    ClientFactoryBuilder builder = new ClientFactoryBuilder()
+      .useHttp2Preface(false);
     clientFactoryCustomizer().accept(builder);
     return builder.build();
   }
