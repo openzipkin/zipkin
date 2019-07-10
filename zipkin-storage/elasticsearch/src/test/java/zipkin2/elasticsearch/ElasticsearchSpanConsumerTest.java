@@ -29,7 +29,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
 import zipkin2.Callback;
 import zipkin2.Endpoint;
@@ -49,12 +49,12 @@ public class ElasticsearchSpanConsumerTest {
   static final Endpoint WEB_ENDPOINT = Endpoint.newBuilder().serviceName("web").build();
   static final Endpoint APP_ENDPOINT = Endpoint.newBuilder().serviceName("app").build();
 
-  static final BlockingQueue<AggregatedHttpRequest> CAPTURED_REQUESTS = new LinkedBlockingQueue<>();
-  static final BlockingQueue<AggregatedHttpResponse> MOCK_RESPONSES = new LinkedBlockingQueue<>();
-  static final AggregatedHttpResponse SUCCESS_RESPONSE =
+  final BlockingQueue<AggregatedHttpRequest> CAPTURED_REQUESTS = new LinkedBlockingQueue<>();
+  final BlockingQueue<AggregatedHttpResponse> MOCK_RESPONSES = new LinkedBlockingQueue<>();
+  final AggregatedHttpResponse SUCCESS_RESPONSE =
     AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
 
-  @ClassRule public static ServerRule server = new ServerRule() {
+  @Rule public ServerRule server = new ServerRule() {
     @Override protected void configure(ServerBuilder sb) throws Exception {
       sb.serviceUnder("/", (ctx, req) -> {
         CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
@@ -90,19 +90,16 @@ public class ElasticsearchSpanConsumerTest {
 
   @After public void tearDown() {
     storage.close();
+    assertThat(MOCK_RESPONSES).isEmpty();
+
+    // Tests don't have to extract every request.
+    CAPTURED_REQUESTS.clear();
   }
 
   void ensureIndexTemplate() throws Exception {
     // gets the index template so that each test doesn't have to
     ensureIndexTemplates(storage);
     spanConsumer = storage.spanConsumer();
-  }
-
-  @After public void checkMocks() {
-    assertThat(MOCK_RESPONSES).isEmpty();
-
-    // Tests don't have to extract every request.
-    CAPTURED_REQUESTS.clear();
   }
 
   private void ensureIndexTemplates(ElasticsearchStorage storage) throws InterruptedException {
