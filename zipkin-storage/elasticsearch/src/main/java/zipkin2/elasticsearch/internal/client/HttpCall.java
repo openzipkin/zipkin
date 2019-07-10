@@ -19,6 +19,7 @@ import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatusClass;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
@@ -72,7 +73,21 @@ public final class HttpCall<V> extends Call.Base<V> {
     HttpClient httpClient, AggregatedHttpRequest request, Semaphore semaphore,
     BodyConverter<V> bodyConverter) {
     this.httpClient = httpClient;
-    this.request = request;
+
+    if (request.content() instanceof ByteBufHolder) {
+      // Unfortunately it's not possible to use pooled objects in requests and support clone() after
+      // sending the request.
+      ByteBuf buf = ((ByteBufHolder) request.content()).content();
+      try {
+        this.request = AggregatedHttpRequest.of(
+          request.headers(), HttpData.copyOf(buf), request.trailers());
+      } finally {
+        buf.release();
+      }
+    } else {
+      this.request = request;
+    }
+
     this.semaphore = semaphore;
     this.bodyConverter = bodyConverter;
   }
@@ -116,7 +131,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<V>(httpClient, request, semaphore, bodyConverter);
+    return new HttpCall<>(httpClient, request, semaphore, bodyConverter);
   }
 
   @Override
