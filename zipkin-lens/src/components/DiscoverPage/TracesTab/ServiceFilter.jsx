@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
+import { makeStyles } from '@material-ui/styles';
 import Badge from '@material-ui/core/Badge';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -27,6 +28,13 @@ const propTypes = {
   deleteFilter: PropTypes.func.isRequired,
   allServiceNames: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
+
+const useStyles = makeStyles({
+  popover: {
+    overflow: 'visible',
+    padding: '0.2rem',
+  },
+});
 
 const reactSelectStyles = {
   control: base => ({
@@ -43,6 +51,8 @@ const ServiceFilter = ({
   deleteFilter,
   allServiceNames,
 }) => {
+  const classes = useStyles();
+
   const [menuAnchor, setMenuAnchor] = useState(null);
 
   const handleButtonClick = event => setMenuAnchor(event.currentTarget);
@@ -85,6 +95,9 @@ const ServiceFilter = ({
           vertical: 'bottom',
           horizontal: 'left',
         }}
+        classes={{
+          paper: classes.popover,
+        }}
       >
         <Box
           p={1}
@@ -97,7 +110,7 @@ const ServiceFilter = ({
         {
           filters.length > 0
             ? (
-              <Box p={1} display="flex">
+              <Box p={1} display="flex" flexWrap="wrap">
                 {
                   filters.map(filter => (
                     <Box m={0.1}>
@@ -112,11 +125,9 @@ const ServiceFilter = ({
             )
             : null
         }
-
         <ReactSelect
           value={null}
           options={options}
-          menuPortalTarget={document.body}
           styles={reactSelectStyles}
           onChange={handleMenuChange}
         />

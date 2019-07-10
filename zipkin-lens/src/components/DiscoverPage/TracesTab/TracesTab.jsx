@@ -14,7 +14,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import Box from '@material-ui/core/Box';
-import Button from '@material-ui/core/Button';
 
 import ServiceFilter from './ServiceFilter';
 
@@ -72,12 +71,14 @@ const TracesTab = () => {
           &nbsp;
           Results
         </Box>
-        <ServiceFilter
-          filters={filters}
-          addFilter={addFilter}
-          deleteFilter={deleteFilter}
-          allServiceNames={allServiceNames}
-        />
+        <Box mr={2}>
+          <ServiceFilter
+            filters={filters}
+            addFilter={addFilter}
+            deleteFilter={deleteFilter}
+            allServiceNames={allServiceNames}
+          />
+        </Box>
       </Box>
       <Box width="100%" height="100%">
         <div>
