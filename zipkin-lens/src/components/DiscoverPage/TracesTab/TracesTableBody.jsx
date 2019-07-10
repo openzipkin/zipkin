@@ -1,0 +1,79 @@
+/*
+ * Copyright 2015-2019 The OpenZipkin Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+import React from 'react';
+import moment from 'moment';
+import Box from '@material-ui/core/Box';
+import TableBody from '@material-ui/core/TableBody';
+import TableRow from '@material-ui/core/TableRow';
+import TableCell from '@material-ui/core/TableCell';
+
+import ServiceNameBadge from '../../Common/ServiceNameBadge';
+import { traceSummariesPropTypes } from '../../../prop-types';
+
+const propTypes = {
+  traceSummaries: traceSummariesPropTypes.isRequired,
+};
+
+const TracesTableBody = ({ traceSummaries }) => {
+  return (
+    <TableBody>
+      {
+        traceSummaries.map((traceSummary) => {
+          const startTime = moment(traceSummary.timestamp / 1000);
+
+          return (
+            <React.Fragment>
+              <TableRow key={traceSummary.traceId}>
+                <TableCell component="th" scope="row">
+                  {traceSummary.traceId}
+                </TableCell>
+                <TableCell>
+                  <Box>
+                    {startTime.format('MM/DD HH:mm:ss:SSS')}
+                  </Box>
+                  <Box>
+                    {startTime.fromNow()}
+                  </Box>
+                </TableCell>
+                <TableCell>
+                  {traceSummary.durationStr}
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell colSpan={3}>
+                  <Box display="flex">
+                    {
+                      traceSummary.serviceSummaries.map(serviceSummary => (
+                        <Box key={serviceSummary.serviceName}>
+                          <ServiceNameBadge
+                            serviceName={serviceSummary.serviceName}
+                            count={serviceSummary.spanCount}
+                          />
+                        </Box>
+                      ))
+                    }
+                  </Box>
+                </TableCell>
+              </TableRow>
+            </React.Fragment>
+          );
+        })
+      }
+    </TableBody>
+  );
+};
+
+TracesTableBody.propTypes = propTypes;
+
+export default TracesTableBody;

@@ -15,6 +15,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import Box from '@material-ui/core/Box';
 
+import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
 
 import { treeCorrectedForClockSkew, traceSummary as buildTraceSummary, traceSummaries as buildTraceSummaries } from '../../../zipkin';
@@ -35,6 +36,7 @@ const TracesTab = () => {
       const [{ traceId }] = traces[index];
       result[traceId] = trace;
     });
+    return result;
   }, [correctedTraces, traces]);
 
   const allServiceNames = useMemo(() => {
@@ -80,11 +82,9 @@ const TracesTab = () => {
           />
         </Box>
       </Box>
-      <Box width="100%" height="100%">
-        <div>
-          TODO: TracesTable
-        </div>
-      </Box>
+      <TracesTable
+        traceSummaries={traceSummaries}
+      />
     </Box>
   );
 };
