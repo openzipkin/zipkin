@@ -81,6 +81,8 @@ public class ElasticsearchSpanConsumerTest {
 
   @Before public void setUp() throws Exception {
     storage = ElasticsearchStorage.newBuilder()
+      // https://github.com/line/armeria/issues/1895
+      .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
       .hosts(asList(server.httpUri("/")))
       .autocompleteKeys(asList("environment"))
       .build();
@@ -178,6 +180,8 @@ public class ElasticsearchSpanConsumerTest {
     storage.close();
     storage =
       ElasticsearchStorage.newBuilder()
+        // https://github.com/line/armeria/issues/1895
+        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
         .hosts(asList(server.httpUri("/")))
         .pipeline("zipkin")
         .build();
@@ -196,6 +200,8 @@ public class ElasticsearchSpanConsumerTest {
     storage.close();
     storage =
       ElasticsearchStorage.newBuilder()
+        // https://github.com/line/armeria/issues/1895
+        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
         .hosts(asList(server.httpUri("/")))
         .maxRequests(1)
         .build();
@@ -262,6 +268,8 @@ public class ElasticsearchSpanConsumerTest {
   public void searchDisabled_simplerIndexTemplate() throws Exception {
     try (ElasticsearchStorage storage =
            ElasticsearchStorage.newBuilder()
+             // https://github.com/line/armeria/issues/1895
+             .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
              .hosts(this.storage.hostsSupplier().get())
              .searchEnabled(false)
              .build()) {
@@ -296,6 +304,8 @@ public class ElasticsearchSpanConsumerTest {
   public void searchDisabled_doesntAddTimestampMillis() throws Exception {
     try (ElasticsearchStorage storage =
            ElasticsearchStorage.newBuilder()
+             // https://github.com/line/armeria/issues/1895
+             .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
              .hosts(this.storage.hostsSupplier().get())
              .searchEnabled(false)
              .build()) {

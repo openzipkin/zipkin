@@ -112,7 +112,11 @@ public class VersionSpecificTemplatesTest {
 
   @Before public void setUp() {
     storage =
-      ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
+      ElasticsearchStorage.newBuilder()
+        // https://github.com/line/armeria/issues/1895
+        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
+        .hosts(asList(server.httpUri("/")))
+        .build();
   }
 
   @After public void tearDown() {

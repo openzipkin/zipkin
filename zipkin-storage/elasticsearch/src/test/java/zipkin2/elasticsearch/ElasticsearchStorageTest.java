@@ -71,7 +71,11 @@ public class ElasticsearchStorageTest {
 
   @Before public void setUp() {
     storage =
-      ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/").toString())).build();
+      ElasticsearchStorage.newBuilder()
+        // https://github.com/line/armeria/issues/1895
+        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
+        .hosts(asList(server.httpUri("/")))
+        .build();
   }
 
   @After public void tearDown() {
@@ -158,8 +162,12 @@ public class ElasticsearchStorageTest {
     storage.close();
     storage = ElasticsearchStorage
       .newBuilder()
-      .clientFactoryCustomizer(factory -> factory.sslContextCustomizer(
-        ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)))
+      .clientFactoryCustomizer(factory ->
+        factory
+          // https://github.com/line/armeria/issues/1895
+          .useHttp2Preface(true)
+          .sslContextCustomizer(
+            ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)))
       .hosts(asList(server.httpsUri("/")))
       .build();
 
