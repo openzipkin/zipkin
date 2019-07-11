@@ -148,7 +148,11 @@ public class ElasticsearchStorageTest {
     storage.close();
     storage =
         ElasticsearchStorage.newBuilder()
-          .clientFactoryCustomizer(factory -> factory.connectTimeoutMillis(100))
+          .clientFactoryCustomizer(factory ->
+            factory
+              // https://github.com/line/armeria/issues/1895
+              .useHttp2Preface(true)
+              .connectTimeoutMillis(100))
           .hosts(asList("http://1.2.3.4:" + server.httpPort(), server.httpUri("/")))
           .build();
 
