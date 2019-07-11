@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
 import com.linecorp.armeria.client.SimpleDecoratingClient;

@@ -8,10 +8,10 @@ features, but is tested against Elasticsearch 6-7.x.
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
 records. For example, `http://elasticsearch:9200` will use normal host
-lookups to get the list of IP addresses.
-
-You can alternatively supply a list of http base urls. This list is used
-to recover from failures.
+lookups to get the list of IP addresses, though you can alternatively supply 
+a list of http base urls. In either case, all of the resolved IP addresses
+from all provided hosts will be iterated over round-robin, with requests made
+only to healthy addresses.
 
 Here are some examples:
 
