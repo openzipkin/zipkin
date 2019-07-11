@@ -32,6 +32,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import okio.Okio;
+import zipkin2.internal.ReadBuffer;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
@@ -70,7 +71,7 @@ final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpRequest, Htt
             }
             try {
               JsonReader message = enterPath(JsonReader.of(
-                Okio.buffer(Okio.source(new ByteBufferBackedInputStream(buf)))), "message");
+                Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf)))), "message");
               if (message != null) throw new IllegalStateException(message.nextString());
             } catch (IOException e) {
               Exceptions.throwUnsafely(e);

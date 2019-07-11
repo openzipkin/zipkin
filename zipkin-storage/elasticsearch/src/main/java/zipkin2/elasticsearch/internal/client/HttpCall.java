@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
@@ -30,6 +29,7 @@ import okio.BufferedSource;
 import okio.Okio;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.internal.ReadBuffer;
 
 public final class HttpCall<V> extends Call.Base<V> {
 
@@ -165,10 +165,7 @@ public final class HttpCall<V> extends Call.Base<V> {
         } else {
           buf = ByteBuffer.wrap(content.array());
         }
-        // TODO(anuraaga): Investigate why ReadBuffer.wrapUnsafe causes okio to hang reading the
-        // buffer but ByteBufferBackedInputStream works, it's probably a bug in ReadBuffer.
-        return bodyConverter.convert(Okio.buffer(
-          Okio.source(new ByteBufferBackedInputStream(buf))));
+        return bodyConverter.convert(Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf))));
       } else {
         throw new IllegalStateException(
           "response for " + request.path() + " failed: " + response.contentUtf8());

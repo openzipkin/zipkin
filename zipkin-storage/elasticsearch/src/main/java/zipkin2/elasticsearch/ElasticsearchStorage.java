@@ -25,13 +25,16 @@ import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
-import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
+import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
+import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.util.AbstractListenable;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -384,26 +387,62 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
 
-    final String clientUrl;
-    if (hosts.size() == 1) {
-      clientUrl = hosts.get(0);
+    List<URL> urls = hosts.stream()
+      .map(host -> {
+        try {
+          return new URL(host);
+        } catch (MalformedURLException e) {
+          throw new IllegalArgumentException("Invalid host: " + host, e);
+        }
+      })
+      .collect(Collectors.toList());
+
+    final EndpointGroup endpointGroup;
+    if (urls.size() == 1) {
+      URL url = urls.get(0);
+      if (isIpAddress(url.getHost())) {
+        endpointGroup = null;
+      } else {
+        endpointGroup = url.getPort() == -1
+          ? DnsAddressEndpointGroup.of(url.getHost())
+          : DnsAddressEndpointGroup.of(url.getHost(), url.getPort());
+      }
     } else {
-      List<URL> urls = hosts.stream()
-        .map(host -> {
-          try {
-            return new URL(host);
-          } catch (MalformedURLException e) {
-            throw new IllegalArgumentException("Invalid host: " + host, e);
-          }
-        })
-        .collect(Collectors.toList());
-      List<Endpoint> endpoints = urls.stream()
-        .map(url -> Endpoint.parse(url.getAuthority()))
-        .collect(Collectors.toList());
-      EndpointGroup group = HttpHealthCheckedEndpointGroup.of(
-        new StaticEndpointGroup(endpoints), "/_cluster/health");
-      EndpointGroupRegistry.register("elasticsearch", group, EndpointSelectionStrategy.ROUND_ROBIN);
+      List<EndpointGroup> endpointGroups = new ArrayList<>();
+      List<Endpoint> staticEndpoints = new ArrayList<>();
+      for (URL url : urls) {
+        if (isIpAddress(url.getHost())) {
+          staticEndpoints.add(Endpoint.parse(url.getAuthority()));
+        } else {
+          endpointGroups.add(url.getPort() == -1
+            ? DnsAddressEndpointGroup.of(url.getHost())
+            : DnsAddressEndpointGroup.of(url.getHost(), url.getPort()));
+        }
+      }
+
+      if (!staticEndpoints.isEmpty()) {
+        endpointGroups.add(new StaticEndpointGroup(staticEndpoints));
+      }
+
+      if (endpointGroups.size() == 1) {
+        endpointGroup = endpointGroups.get(0);
+      } else {
+        endpointGroup = new CompositeEndpointGroup(endpointGroups);
+      }
+    }
+
+    final String clientUrl;
+    if (endpointGroup != null) {
+      EndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
+        endpointGroup, "/_cluster/health")
+        .clientFactory(clientFactory())
+        .build();
+      EndpointGroupRegistry.register(
+        "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
+    } else {
+      // Just one non-domain URL, can connect directly without enabling load balancing.
+      clientUrl = hosts.get(0);
     }
 
     HttpClientBuilder client = new HttpClientBuilder(clientUrl)
@@ -413,6 +452,32 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     clientCustomizer().accept(client);
 
     return client.build();
+  }
+
+  static boolean isIpAddress(String address) {
+    return zipkin2.Endpoint.newBuilder().parseIp(address);
+  }
+
+  // TODO(anuraaga): Move this upstream - https://github.com/line/armeria/issues/1897
+  static class CompositeEndpointGroup
+    extends AbstractListenable<List<Endpoint>> implements EndpointGroup {
+
+    final List<EndpointGroup> endpointGroups;
+
+    CompositeEndpointGroup(List<EndpointGroup> endpointGroups) {
+      this.endpointGroups = endpointGroups;
+      for (EndpointGroup group : endpointGroups) {
+        group.addListener(unused -> notifyListeners(endpoints()));
+      }
+    }
+
+    @Override public List<Endpoint> endpoints() {
+      List<Endpoint> merged = new ArrayList<>();
+      for (EndpointGroup group : endpointGroups) {
+        merged.addAll(group.endpoints());
+      }
+      return merged;
+    }
   }
 
   @Memoized // hosts resolution might imply a network call, and we might make a new client instance
