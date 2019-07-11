@@ -26,6 +26,7 @@ import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
+import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
@@ -40,6 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import okio.Buffer;
@@ -433,12 +435,18 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     final String clientUrl;
     if (endpointGroup != null) {
-      EndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
+      HttpHealthCheckedEndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
         endpointGroup, "/_cluster/health")
         .clientFactory(clientFactory())
         .build();
       EndpointGroupRegistry.register(
         "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
+      try {
+        healthChecked.awaitInitialEndpoints(5, TimeUnit.SECONDS);
+      } catch (InterruptedException | TimeoutException e) {
+        // We give some time for the initial endpoints, but go ahead and startup even if there
+        // aren't any healthy ones.
+      }
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
     } else {
       // Just one non-domain URL, can connect directly without enabling load balancing.

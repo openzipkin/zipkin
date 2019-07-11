@@ -17,7 +17,9 @@ import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatusClass;
+import com.linecorp.armeria.common.RequestContext;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.util.ReferenceCountUtil;
@@ -140,8 +142,12 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
+    HttpResponse response = httpClient.execute(request);
     CompletableFuture<AggregatedHttpResponse> responseFuture =
-      httpClient.execute(request).aggregate();
+      RequestContext.mapCurrent(
+        ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
+        // This should never be used in practice since the module runs in an Armeria server.
+        response::aggregate);
     this.responseFuture = responseFuture;
     return responseFuture;
   }
