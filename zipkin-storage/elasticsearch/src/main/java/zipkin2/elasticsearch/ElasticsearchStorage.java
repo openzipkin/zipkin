@@ -26,6 +26,7 @@ import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
+import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
@@ -415,9 +416,12 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       if (isIpAddress(url.getHost())) {
         endpointGroup = null;
       } else {
-        endpointGroup = url.getPort() == -1
-          ? DnsAddressEndpointGroup.of(url.getHost())
-          : DnsAddressEndpointGroup.of(url.getHost(), url.getPort());
+        DnsAddressEndpointGroupBuilder dnsEndpoint =
+          new DnsAddressEndpointGroupBuilder(url.getHost());
+        if (url.getPort() != -1) {
+          dnsEndpoint.port(url.getPort());
+        }
+        endpointGroup = dnsEndpoint.build();
       }
     } else {
       List<EndpointGroup> endpointGroups = new ArrayList<>();
