@@ -82,7 +82,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     return client -> client
       .decorator(builder.newDecorator())
       .decorator(es.getHttpLogging() == ZipkinElasticsearchStorageProperties.HttpLoggingLevel.BODY
-        ? RawContentLoggingClient::new
+        ? RawContentLoggingClient.newDecorator()
         : Function.identity());
   }
 

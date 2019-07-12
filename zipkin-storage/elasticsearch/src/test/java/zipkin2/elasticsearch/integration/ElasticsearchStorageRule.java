@@ -94,7 +94,7 @@ public class ElasticsearchStorageRule extends ExternalResource {
               .successfulResponseLogLevel(LogLevel.WARN)
               .failureResponseLogLevel(LogLevel.WARN)
               .newDecorator())
-          .decorator(RawContentLoggingClient::new)
+          .decorator(RawContentLoggingClient.newDecorator())
           : unused -> {};
     return ElasticsearchStorage.newBuilder()
         .clientCustomizer(customizer)

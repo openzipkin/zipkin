@@ -20,6 +20,7 @@ import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 /**
  * A simple decorator to record raw content strings into HTTP logs. By default, Armeria only logs
@@ -27,10 +28,15 @@ import java.util.concurrent.CompletableFuture;
  */
 public class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
 
+  public static Function<Client<HttpRequest, HttpResponse>, Client<HttpRequest, HttpResponse>>
+  newDecorator() {
+    return RawContentLoggingClient::new;
+  }
+
   /**
    * Creates a new instance that decorates the specified {@link Client}.
    */
-  public RawContentLoggingClient(Client<HttpRequest, HttpResponse> delegate) {
+  RawContentLoggingClient(Client<HttpRequest, HttpResponse> delegate) {
     super(delegate);
   }
 
