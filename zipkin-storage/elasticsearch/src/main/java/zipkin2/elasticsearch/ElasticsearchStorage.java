@@ -320,6 +320,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   @Override public void close() {
+    EndpointGroup endpointGroup = EndpointGroupRegistry.get("elasticsearch");
+    if (endpointGroup != null) {
+      endpointGroup.close();
+      EndpointGroupRegistry.unregister("elasticsearch");
+    }
     clientFactory().close();
   }
 

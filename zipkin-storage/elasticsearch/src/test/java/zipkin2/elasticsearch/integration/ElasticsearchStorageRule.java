@@ -78,9 +78,13 @@ public class ElasticsearchStorageRule extends ExternalResource {
 
   void tryToInitializeSession() {
     ElasticsearchStorage result = computeStorageBuilder().build();
-    CheckResult check = result.check();
-    if (!check.ok()) {
-      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+    try {
+      CheckResult check = result.check();
+      if (!check.ok()) {
+        throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+      }
+    } finally {
+      result.close();
     }
   }
 

@@ -44,6 +44,7 @@ public class ITElasticsearchStorageV7 {
 
     @Before public void connect() {
       storage = backend.computeStorageBuilder().index(index(testName)).build();
+      storage.check();
     }
 
     @Override protected StorageComponent storage() {
