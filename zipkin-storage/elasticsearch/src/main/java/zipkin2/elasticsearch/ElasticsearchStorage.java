@@ -48,8 +48,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import okio.Buffer;
 import okio.BufferedSource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
