@@ -29,6 +29,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 
 public class ElasticsearchStorageRule extends ExternalResource {
   static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageRule.class);
@@ -86,12 +87,14 @@ public class ElasticsearchStorageRule extends ExternalResource {
   public ElasticsearchStorage.Builder computeStorageBuilder() {
     Consumer<HttpClientBuilder> customizer =
         Boolean.valueOf(System.getenv("ES_DEBUG"))
-          ? client -> client.decorator(
+          ? client -> client
+          .decorator(
             new LoggingClientBuilder()
-              .requestLogLevel(LogLevel.INFO)
-              .successfulResponseLogLevel(LogLevel.INFO)
+              .requestLogLevel(LogLevel.WARN)
+              .successfulResponseLogLevel(LogLevel.WARN)
               .failureResponseLogLevel(LogLevel.WARN)
               .newDecorator())
+          .decorator(RawContentLoggingClient::new)
           : unused -> {};
     return ElasticsearchStorage.newBuilder()
         .clientCustomizer(customizer)

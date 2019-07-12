@@ -23,6 +23,7 @@ import com.linecorp.armeria.common.logging.LogLevel;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -36,6 +37,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.HostsSupplier;
+import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
@@ -77,7 +79,11 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
         break;
     }
 
-    return client -> client.decorator(builder.newDecorator());
+    return client -> client
+      .decorator(builder.newDecorator())
+      .decorator(es.getHttpLogging() == ZipkinElasticsearchStorageProperties.HttpLoggingLevel.BODY
+        ? RawContentLoggingClient::new
+        : Function.identity());
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
