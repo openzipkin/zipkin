@@ -19,12 +19,8 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
-import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
 import com.squareup.moshi.JsonWriter;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -87,20 +83,13 @@ public final class BulkCallBuilder {
       write(okioBuffer, entry, shouldAddType);
     }
 
-    ByteBuf body = RequestContext.mapCurrent(
-      ctx -> ctx.alloc().buffer((int) okioBuffer.size()),
-      () -> PooledByteBufAllocator.DEFAULT.buffer((int) okioBuffer.size()));
-    try {
-      okioBuffer.copyTo(new ByteBufOutputStream(body));
-    } catch (IOException e) {
-      throw new Error("No I/O writing to a ByteBuf");
-    }
+    HttpData body = HttpData.wrap(okioBuffer.readByteArray());
 
     AggregatedHttpRequest request = AggregatedHttpRequest.of(
       RequestHeaders.of(
         HttpMethod.POST, urlBuilder.toString(),
         HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
-      HttpData.wrap(body));
+      body);
     return http.newCall(request, CheckForErrors.INSTANCE);
   }
 
