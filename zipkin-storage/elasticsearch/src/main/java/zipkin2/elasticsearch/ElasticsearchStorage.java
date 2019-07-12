@@ -29,8 +29,10 @@ import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.Flags;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.util.AbstractListenable;
+import com.linecorp.armeria.common.util.EventLoopGroups;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -46,6 +48,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import okio.Buffer;
 import okio.BufferedSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
@@ -384,6 +388,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   @Memoized // a new client factory means new connections
   ClientFactory clientFactory() {
     ClientFactoryBuilder builder = new ClientFactoryBuilder()
+      // TODO(anuraaga): Remove after https://github.com/line/armeria/pull/1899
+      .workerGroup(EventLoopGroups.newEventLoopGroup(
+        Flags.numCommonWorkers(), "armeria-common-worker", true), true)
       .useHttp2Preface(false);
     clientFactoryCustomizer().accept(builder);
     return builder.build();
