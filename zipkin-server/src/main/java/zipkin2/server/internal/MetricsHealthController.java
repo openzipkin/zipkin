@@ -17,9 +17,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.annotation.Get;
@@ -85,7 +85,7 @@ public class MetricsHealthController {
   // Delegates the health endpoint from the Actuator to the root context path and can be deprecated
   // in future in favour of Actuator endpoints
   @Get("/health")
-  public HttpResponse getHealth() throws JsonProcessingException {
+  public AggregatedHttpResponse getHealth() throws JsonProcessingException {
     Health health = healthEndpoint.health();
 
     Map<String, Object> healthJson = new LinkedHashMap<>();
@@ -96,6 +96,6 @@ public class MetricsHealthController {
     ResponseHeaders headers = ResponseHeaders.builder(statusMapper.mapStatus(health.getStatus()))
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build();
-    return HttpResponse.of(headers, HttpData.wrap(body));
+    return AggregatedHttpResponse.of(headers, HttpData.wrap(body));
   }
 }

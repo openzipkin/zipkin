@@ -442,7 +442,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       EndpointGroupRegistry.register(
         "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
       try {
-        healthChecked.awaitInitialEndpoints(5, TimeUnit.SECONDS);
+        healthChecked.awaitInitialEndpoints(30, TimeUnit.SECONDS);
       } catch (InterruptedException | TimeoutException e) {
         // We give some time for the initial endpoints, but go ahead and startup even if there
         // aren't any healthy ones.

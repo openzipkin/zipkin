@@ -58,10 +58,10 @@ final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpRequest, Htt
       delegate().execute(ctx, req).aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc())
         .thenApply(msg -> {
           HttpData content = msg.content();
+          if (!msg.status().equals(HttpStatus.FORBIDDEN) || content.isEmpty()) {
+            return HttpResponse.of(msg);
+          }
           try {
-            if (!msg.status().equals(HttpStatus.FORBIDDEN) || content.isEmpty()) {
-              return HttpResponse.of(msg);
-            }
             final ByteBuffer buf;
             if (content instanceof ByteBufHolder) {
               buf = ((ByteBufHolder) content).content().nioBuffer();
