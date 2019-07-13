@@ -36,7 +36,7 @@ const Layout = ({ children }) => (
       width="100%"
       pl={3}
       pr={3}
-      overflow="hidden"
+      overflow="auto"
     >
       {children}
     </Box>
