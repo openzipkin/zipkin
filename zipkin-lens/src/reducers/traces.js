@@ -15,32 +15,42 @@ import * as types from '../constants/action-types';
 
 const initialState = {
   isLoading: false,
+  isCalculating: false,
   traces: [],
+  traceSummaries: [],
+  correctedTraceMap: {},
 };
 
 const traces = (state = initialState, action) => {
   switch (action.type) {
-    case types.FETCH_TRACES_REQUEST:
+    case types.TRACES_LOAD_REQUEST:
       return {
         ...state,
         isLoading: true,
       };
-    case types.FETCH_TRACES_SUCCESS:
+    case types.TRACES_LOAD_SUCCESS:
       return {
         ...state,
         isLoading: false,
         traces: action.traces,
+        traceSummaries: action.traceSummaries,
+        correctedTraceMap: action.correctedTraceMap,
       };
-    case types.FETCH_TRACES_FAILURE:
+    case types.TRACES_LOAD_FAILURE:
       return {
         ...state,
         isLoading: false,
         traces: [],
+        traceSummaries: [],
+        correctedTraceMap: {},
       };
-    case types.CLEAR_TRACES:
+    case types.TRACES_CLEAR:
       return {
         ...state,
+        isLoading: false,
         traces: [],
+        traceSummaries: [],
+        correctedTraceMap: {},
       };
     default:
       return state;

@@ -15,42 +15,76 @@ import queryString from 'query-string';
 
 import * as types from '../constants/action-types';
 import * as api from '../constants/api';
+import {
+  treeCorrectedForClockSkew,
+  traceSummary as buildTraceSummary,
+  traceSummaries as buildTraceSummaries,
+} from '../zipkin';
 
-export const fetchTracesRequest = () => ({
-  type: types.FETCH_TRACES_REQUEST,
+export const loadTracesRequest = () => ({
+  type: types.TRACES_LOAD_REQUEST,
 });
 
-export const fetchTracesSuccess = traces => ({
-  type: types.FETCH_TRACES_SUCCESS,
+export const loadTracesSuccess = (traces, traceSummaries, correctedTraceMap) => ({
+  type: types.TRACES_LOAD_SUCCESS,
   traces,
+  traceSummaries,
+  correctedTraceMap,
 });
 
-export const fetchTracesFailure = () => ({
-  type: types.FETCH_TRACES_FAILURE,
+export const loadTracesFailure = () => ({
+  type: types.TRACES_LOAD_FAILURE,
 });
 
-const fetchTracesTimeout = 500;
+const calculateTraceSummaries = (traces, serviceName) => {
+  const correctedTraces = traces.map(treeCorrectedForClockSkew);
 
-export const fetchTraces = params => async (dispatch) => {
-  dispatch(fetchTracesRequest());
+  const correctedTraceMap = {};
+  correctedTraces.forEach((trace, index) => {
+    const [{ traceId }] = traces[index];
+    correctedTraceMap[traceId] = trace;
+  });
+
+  const traceSummaries = buildTraceSummaries(serviceName, correctedTraces.map(buildTraceSummary));
+
+  return {
+    traceSummaries,
+    correctedTraces,
+  };
+};
+
+export const loadTraces = params => async (dispatch) => {
+  dispatch(loadTracesRequest());
   try {
     const query = queryString.stringify(params);
 
-    /* Make the users feel loading time ... */
-    const res = await Promise.all([
-      fetch(`${api.TRACES}?${query}`),
-      new Promise(resolve => setTimeout(resolve, fetchTracesTimeout)),
-    ]);
-    if (!res[0].ok) {
-      throw Error(res[0].statusText);
+    const res = await fetch(`${api.TRACES}?${query}`);
+
+    if (!res.ok) {
+      throw Error(res.statusText);
     }
-    const traces = await res[0].json();
-    dispatch(fetchTracesSuccess(traces));
+    const traces = await res.json();
+
+    const correctedTraces = traces.map(treeCorrectedForClockSkew);
+
+    const correctedTraceMap = {};
+    correctedTraces.forEach((trace, index) => {
+      const [{ traceId }] = traces[index];
+      correctedTraceMap[traceId] = trace;
+      console.log(trace, index);
+    });
+
+    const traceSummaries = buildTraceSummaries(
+      params.serviceName,
+      correctedTraces.map(buildTraceSummary),
+    );
+
+    dispatch(loadTracesSuccess(traces, traceSummaries, correctedTraceMap));
   } catch (err) {
-    dispatch(fetchTracesFailure());
+    dispatch(loadTracesFailure());
   }
 };
 
 export const clearTraces = () => ({
-  type: types.CLEAR_TRACES,
+  type: types.TRACES_CLEAR,
 });
