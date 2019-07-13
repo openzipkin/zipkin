@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
 import moment from 'moment';
@@ -175,15 +175,20 @@ const DiscoverPage = ({ history, location }) => {
     history,
   ]);
 
-  const handleKeyDown = (event) => {
+  const handleKeyDown = useCallback((event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
-      findTraces();
+      findData();
     }
-  };
+  }, [findData]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown]);
 
   useMount(() => {
-    window.addEventListener('keydown', handleKeyDown);
-
     // When mounted, parse a query parameter of a browser's address bar
     // and retrieve initial conditions, and setup these conditions as redux state.
     const queryParams = queryString.parse(location.search);

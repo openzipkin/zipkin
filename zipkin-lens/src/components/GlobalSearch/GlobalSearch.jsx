@@ -21,7 +21,6 @@ import Button from '@material-ui/core/Button';
 import GlobalSearchConditionList from './GlobalSearchConditionList';
 import LimitCondition from './conditions/LimitCondition';
 import LookbackCondition from './conditions/LookbackCondition';
-import { useUnmount } from '../../hooks';
 
 const useStyles = makeStyles({
   findButton: {
@@ -40,14 +39,6 @@ const propTypes = {
 
 const GlobalSearch = ({ findData }) => {
   const classes = useStyles();
-
-  const handleKeyDown = (event) => {
-    if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
-      findData();
-    }
-  };
-
-  useUnmount(() => document.removeEventListener('keydown', handleKeyDown));
 
   return (
     <Box
