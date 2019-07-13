@@ -50,12 +50,28 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
 
   @Bean @Qualifier(QUALIFIER) Consumer<HttpClientBuilder> zipkinElasticsearchHttp(
     @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    return client -> client.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
+    return new Consumer<HttpClientBuilder>() {
+      @Override public void accept(HttpClientBuilder client) {
+        client.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
+      }
+
+      @Override public String toString() {
+        return "TimeoutCustomizer{timeout=" + timeout + "ms}";
+      }
+    };
   }
 
   @Bean @Qualifier(QUALIFIER) Consumer<ClientFactoryBuilder> zipkinElasticsearchClientFactory(
     @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    return factory -> factory.connectTimeoutMillis(timeout);
+    return new Consumer<ClientFactoryBuilder>() {
+      @Override public void accept(ClientFactoryBuilder factory) {
+        factory.connectTimeoutMillis(timeout);
+      }
+
+      @Override public String toString() {
+        return "TimeoutCustomizer{timeout=" + timeout + "ms}";
+      }
+    };
   }
 
 
@@ -79,17 +95,34 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
         break;
     }
 
-    return client -> client
-      .decorator(builder.newDecorator())
-      .decorator(es.getHttpLogging() == ZipkinElasticsearchStorageProperties.HttpLoggingLevel.BODY
-        ? RawContentLoggingClient.newDecorator()
-        : Function.identity());
+    return new Consumer<HttpClientBuilder>() {
+      @Override public void accept(HttpClientBuilder client) {
+        client
+          .decorator(builder.newDecorator())
+          .decorator(
+            es.getHttpLogging() == ZipkinElasticsearchStorageProperties.HttpLoggingLevel.BODY
+            ? RawContentLoggingClient.newDecorator()
+            : Function.identity());
+      }
+
+      @Override public String toString() {
+        return "LoggingCustomizer{httpLogging=" + es.getHttpLogging() + "}";
+      }
+    };
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
   Consumer<HttpClientBuilder> zipkinElasticsearchHttpBasicAuth(
     ZipkinElasticsearchStorageProperties es) {
-    return client -> client.decorator(delegate -> new BasicAuthInterceptor(delegate, es));
+    return new Consumer<HttpClientBuilder>() {
+      @Override public void accept(HttpClientBuilder client) {
+        client.decorator(delegate -> new BasicAuthInterceptor(delegate, es));
+      }
+
+      @Override public String toString() {
+        return "BasicAuthCustomizer{basicCredentials=<redacted>}";
+      }
+    };
   }
 
   @Bean @ConditionalOnMissingBean StorageComponent storage(
@@ -106,9 +139,9 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     ElasticsearchStorage.Builder result = elasticsearch
       .toBuilder()
-      .clientCustomizer(client -> zipkinElasticsearchHttpCustomizers.forEach(c -> c.accept(client)))
-      .clientFactoryCustomizer(factory ->
-        zipkinElasticsearchClientFactoryCustomizers.forEach(c -> c.accept(factory)))
+      .clientCustomizer(new CompositeCustomizer<>(zipkinElasticsearchHttpCustomizers))
+      .clientFactoryCustomizer(
+        new CompositeCustomizer<>(zipkinElasticsearchClientFactoryCustomizers))
       .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
@@ -141,6 +174,24 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
       String password =
         condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.password");
       return !isEmpty(userName) && !isEmpty(password);
+    }
+  }
+
+  static final class CompositeCustomizer<T> implements Consumer<T> {
+    final List<Consumer<T>> customizers;
+
+    CompositeCustomizer(List<Consumer<T>> customizers) {
+      this.customizers = customizers;
+    }
+
+    @Override public void accept(T target) {
+      for (Consumer<T> customizer : customizers) {
+        customizer.accept(target);
+      }
+    }
+
+    @Override public String toString() {
+      return customizers.toString();
     }
   }
 
