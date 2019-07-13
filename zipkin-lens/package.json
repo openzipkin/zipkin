@@ -33,7 +33,6 @@
     "@fortawesome/fontawesome-free": "^5.4.1",
     "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.6",
-    "core-js": "^3.1.4",
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.0",
     "enzyme": "^3.7.0",
@@ -56,7 +55,6 @@
     "optimize-css-assets-webpack-plugin": "^5.0.1",
     "react-svg-loader": "^2.1.0",
     "redux-mock-store": "^1.5.3",
-    "regenerator-runtime": "^0.13.2",
     "resolve-url-loader": "^3.1.0",
     "sass-loader": "^7.1.0",
     "style-loader": "^0.21.0",
@@ -71,6 +69,7 @@
     "@material-ui/pickers": "^3.1.1",
     "@material-ui/styles": "^4.1.1",
     "chart.js": "^2.7.2",
+    "core-js": "^3.1.4",
     "js-cookie": "^2.2.0",
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
@@ -89,6 +88,7 @@
     "react-virtualized": "^9.21.1",
     "redux": "^4.0.0",
     "redux-thunk": "^2.3.0",
+    "regenerator-runtime": "^0.13.2",
     "shortid": "^2.2.14",
     "vizceral-react": "^4.6.5"
   }
