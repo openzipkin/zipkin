@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --ci",
     "lint": "eslint src",
     "build": "cross-env NODE_ENV=production webpack -p --config ./webpack.prod.config.js",
     "start": "cross-env NODE_ENV=development webpack-dev-server -d --config ./webpack.dev.config.js"
@@ -31,6 +31,7 @@
     "@babel/preset-env": "^7.5.4",
     "@babel/preset-react": "^7.0.0",
     "@fortawesome/fontawesome-free": "^5.4.1",
+    "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.6.0",
     "babel-loader": "^8.0.6",
     "cross-env": "^5.2.0",
