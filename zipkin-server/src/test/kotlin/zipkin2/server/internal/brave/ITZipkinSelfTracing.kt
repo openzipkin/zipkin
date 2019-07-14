@@ -34,7 +34,10 @@ import zipkin2.storage.InMemoryStorage
 class ITZipkinSelfTracing {
   @Autowired lateinit var server: Server
   @Autowired lateinit var storage: TracingStorageComponent
-  @Before fun clearStorage() = (storage.delegate as InMemoryStorage).clear()
+  @Before fun clearStorage() {
+    Thread.sleep(1500) // wait for reporting interval to make sure any generated spans are cleared
+    (storage.delegate as InMemoryStorage).clear()
+  }
 
   @Test fun getIsTraced_v2() {
     assertThat(Http.getAsString(server, "/api/v2/services"))
