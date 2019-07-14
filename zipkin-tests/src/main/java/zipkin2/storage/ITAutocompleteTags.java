@@ -14,8 +14,10 @@
 package zipkin2.storage;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Span;
@@ -34,6 +36,14 @@ public abstract class ITAutocompleteTags {
 
   @Before public void before() {
     storage = storageBuilder().autocompleteKeys(asList("http.host")).build();
+  }
+
+  @After public void after() {
+    try {
+      storage.close();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 
   protected abstract StorageComponent.Builder storageBuilder();

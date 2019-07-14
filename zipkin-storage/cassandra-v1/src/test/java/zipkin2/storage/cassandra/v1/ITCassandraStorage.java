@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Ignore;
@@ -59,6 +60,10 @@ public class ITCassandraStorage {
 
     @Before public void connect() {
       storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
+    }
+
+    @After public void disconnect() {
+      storage.close();
     }
 
     @Override protected StorageComponent storage() {
@@ -180,6 +185,10 @@ public class ITCassandraStorage {
         backend.computeStorageBuilder().keyspace(keyspace(testName)).searchEnabled(false).build();
     }
 
+    @After public void disconnect() {
+      storage.close();
+    }
+
     @Override protected StorageComponent storage() {
       return storage;
     }
@@ -200,6 +209,10 @@ public class ITCassandraStorage {
         backend.computeStorageBuilder().keyspace(keyspace(testName)).strictTraceId(false).build();
     }
 
+    @After public void disconnect() {
+      storage.close();
+    }
+
     @Override protected StorageComponent storage() {
       return storage;
     }
@@ -217,6 +230,10 @@ public class ITCassandraStorage {
 
     @Before public void connect() {
       storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
+    }
+
+    @After public void disconnect() {
+      storage.close();
     }
 
     @Override protected StorageComponent storage() {
@@ -249,6 +266,10 @@ public class ITCassandraStorage {
 
     @Before public void connect() {
       storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
+    }
+
+    @After public void disconnect() {
+      storage.close();
     }
 
     @Override protected StorageComponent storage() {
