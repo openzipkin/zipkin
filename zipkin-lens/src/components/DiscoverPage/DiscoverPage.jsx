@@ -225,6 +225,8 @@ const DiscoverPage = ({ history, location }) => {
     }
     dispatch(fetchAutocompleteKeys());
 
+    const currentTime = moment();
+
     // Finally fetch traces-data or dependencies-data according to location.pathname.
     switch (location.pathname) {
       case '/zipkin':
@@ -239,6 +241,7 @@ const DiscoverPage = ({ history, location }) => {
             conditionsFromUrl,
             lookbackConditionFromUrl,
             limitConditionFromUrl,
+            currentTime,
           )));
         }
         break;
@@ -247,6 +250,7 @@ const DiscoverPage = ({ history, location }) => {
         if (!_.isEmpty(conditionsFromUrl) || !_.isEmpty(lookbackConditionFromUrl)) {
           dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
             lookbackConditionFromUrl,
+            currentTime,
           )));
         }
         break;

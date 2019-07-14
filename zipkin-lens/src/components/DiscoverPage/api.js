@@ -123,7 +123,7 @@ export const buildDependenciesApiQueryParameters = (
     conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
   } else {
-    conditionMap.endTs = currentTime;
+    conditionMap.endTs = currentTime.valueOf();
     conditionMap.lookback = lookbackDurations[lookbackCondition.value];
   }
   return conditionMap;
