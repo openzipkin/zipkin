@@ -14,15 +14,18 @@
 package zipkin2.elasticsearch.internal;
 
 import com.google.auto.value.AutoValue;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestHeaders;
 import com.squareup.moshi.JsonWriter;
+import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import okio.Buffer;
 import okio.BufferedSink;
 import okio.BufferedSource;
@@ -32,7 +35,6 @@ import zipkin2.elasticsearch.internal.client.HttpCall;
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class BulkCallBuilder {
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
 
   final String tag;
   final boolean shouldAddType;
@@ -72,44 +74,36 @@ public final class BulkCallBuilder {
 
   /** Creates a bulk request when there is more than one object to store */
   public HttpCall<Void> build() {
-    HttpUrl.Builder urlBuilder = http.baseUrl.newBuilder("_bulk");
-    if (pipeline != null) urlBuilder.addQueryParameter("pipeline", pipeline);
-    if (waitForRefresh) urlBuilder.addQueryParameter("refresh", "wait_for");
+    QueryStringEncoder urlBuilder = new QueryStringEncoder("/_bulk");
+    if (pipeline != null) urlBuilder.addParam("pipeline", pipeline);
+    if (waitForRefresh) urlBuilder.addParam("refresh", "wait_for");
 
-    RequestBody body = new BulkRequestBody(entries, shouldAddType);
+    Buffer okioBuffer = new Buffer();
+    for (IndexEntry<?> entry : entries) {
+      write(okioBuffer, entry, shouldAddType);
+    }
 
-    Request request = new Request.Builder().url(urlBuilder.build()).tag(tag).post(body).build();
+    HttpData body = HttpData.wrap(okioBuffer.readByteArray());
+
+    AggregatedHttpRequest request = AggregatedHttpRequest.of(
+      RequestHeaders.of(
+        HttpMethod.POST, urlBuilder.toString(),
+        HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
+      body);
     return http.newCall(request, CheckForErrors.INSTANCE);
   }
 
-  /** This avoids allocating a large byte array (by using a poolable buffer instead). */
-  static final class BulkRequestBody extends RequestBody {
-    final List<IndexEntry<?>> entries;
-    final boolean shouldAddType;
-
-    BulkRequestBody(List<IndexEntry<?>> entries, boolean shouldAddType) {
-      this.entries = entries;
-      this.shouldAddType = shouldAddType;
-    }
-
-    @Override public MediaType contentType() {
-      return APPLICATION_JSON;
-    }
-
-    @Override public void writeTo(BufferedSink sink) throws IOException {
-      for (int i = 0, length = entries.size(); i < length; i++) {
-        write(sink, entries.get(i), shouldAddType);
-      }
-    }
-  }
-
-  static void write(BufferedSink sink, IndexEntry entry, boolean shouldAddType) throws IOException {
+  static void write(BufferedSink sink, IndexEntry entry, boolean shouldAddType) {
     Buffer document = new Buffer();
     String id = entry.writer().writeDocument(entry.input(), document);
     writeIndexMetadata(sink, entry, id, shouldAddType);
-    sink.writeByte('\n');
-    sink.write(document, document.size());
-    sink.writeByte('\n');
+    try {
+      sink.writeByte('\n');
+      sink.write(document, document.size());
+      sink.writeByte('\n');
+    } catch (IOException e) {
+      throw new AssertionError(e); // No I/O writing to a Buffer.
+    }
   }
 
   static void writeIndexMetadata(BufferedSink sink, IndexEntry entry, String id,

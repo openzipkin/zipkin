@@ -13,13 +13,25 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import com.linecorp.armeria.client.Client;
+import com.linecorp.armeria.client.ClientRequestContext;
+import com.linecorp.armeria.client.SimpleDecoratingClient;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.util.Exceptions;
 import com.squareup.moshi.JsonReader;
+import io.netty.buffer.ByteBufHolder;
+import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
-import okhttp3.Credentials;
-import okhttp3.Interceptor;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import okio.Okio;
+import zipkin2.internal.ReadBuffer;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
@@ -27,33 +39,47 @@ import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
  * Adds basic auth username and password to every request per
  * https://www.elastic.co/guide/en/x-pack/current/how-security-works.html
  */
-final class BasicAuthInterceptor implements Interceptor {
+final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
 
   private String basicCredentials;
 
-  BasicAuthInterceptor(ZipkinElasticsearchStorageProperties es) {
-    basicCredentials = Credentials.basic(es.getUsername(), es.getPassword());
+  BasicAuthInterceptor(
+    Client<HttpRequest, HttpResponse> client,
+    ZipkinElasticsearchStorageProperties es) {
+    super(client);
+    String token = es.getUsername() + ':' + es.getPassword();
+    basicCredentials = Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8));
   }
 
-  @Override
-  public Response intercept(Chain chain) throws IOException {
-
-    Request input = chain.request();
-    Request requestWithCredentials = appendBasicAuthHeaderParameters(input);
-    Response response = chain.proceed(requestWithCredentials);
-    if (response.code() == 403) {
-      try (ResponseBody body = response.body()) {
-        JsonReader message = enterPath(JsonReader.of(body.source()), "message");
-        if (message != null) throw new IllegalStateException(message.nextString());
-      }
-      throw new IllegalStateException(response.toString());
-    }
-    return response;
-  }
-
-  private Request appendBasicAuthHeaderParameters(Request input) {
-
-    Request.Builder builder = input.newBuilder();
-    return builder.header("authorization", basicCredentials).build();
+  @Override public HttpResponse execute(ClientRequestContext ctx, HttpRequest req)
+    throws Exception {
+    ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, basicCredentials);
+    return HttpResponse.from(
+      delegate().execute(ctx, req).aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc())
+        .thenApply(msg -> {
+          HttpData content = msg.content();
+          if (!msg.status().equals(HttpStatus.FORBIDDEN) || content.isEmpty()) {
+            return HttpResponse.of(msg);
+          }
+          try {
+            final ByteBuffer buf;
+            if (content instanceof ByteBufHolder) {
+              buf = ((ByteBufHolder) content).content().nioBuffer();
+            } else {
+              buf = ByteBuffer.wrap(content.array());
+            }
+            try {
+              JsonReader message = enterPath(JsonReader.of(
+                Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf)))), "message");
+              if (message != null) throw new IllegalStateException(message.nextString());
+            } catch (IOException e) {
+              Exceptions.throwUnsafely(e);
+              throw new UncheckedIOException(e);  // unreachable
+            }
+            throw new IllegalStateException(msg.toString());
+          } finally {
+            ReferenceCountUtil.safeRelease(content);
+          }
+        }));
   }
 }

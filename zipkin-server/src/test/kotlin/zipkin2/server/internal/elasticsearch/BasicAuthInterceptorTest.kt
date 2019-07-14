@@ -13,29 +13,53 @@
  */
 package zipkin2.server.internal.elasticsearch
 
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.mockwebserver.MockResponse
-import okhttp3.mockwebserver.MockWebServer
-import org.junit.Rule
+import com.linecorp.armeria.client.Client
+import com.linecorp.armeria.client.HttpClient
+import com.linecorp.armeria.client.HttpClientBuilder
+import com.linecorp.armeria.common.AggregatedHttpResponse
+import com.linecorp.armeria.common.HttpRequest
+import com.linecorp.armeria.common.HttpResponse
+import com.linecorp.armeria.common.HttpStatus
+import com.linecorp.armeria.common.MediaType
+import com.linecorp.armeria.server.ServerBuilder
+import com.linecorp.armeria.server.ServiceRequestContext
+import com.linecorp.armeria.testing.junit4.server.ServerRule
+import org.assertj.core.api.Assertions.assertThat
+import org.assertj.core.api.Assertions.catchThrowable
+import org.junit.Before
+import org.junit.ClassRule
 import org.junit.Test
-import org.junit.rules.ExpectedException
+import java.util.concurrent.CompletionException
 
 class BasicAuthInterceptorTest {
-  @Rule @JvmField val mockWebServer = MockWebServer()
-  @Rule @JvmField val thrown: ExpectedException = ExpectedException.none()
 
-  var client: OkHttpClient = OkHttpClient.Builder()
-    .addNetworkInterceptor(BasicAuthInterceptor(ZipkinElasticsearchStorageProperties(false, 0)))
-    .build()
+  companion object {
+    @ClassRule @JvmField val server = object: ServerRule() {
+      override fun configure(sb: ServerBuilder) {
+        sb.service("/") { _: ServiceRequestContext, _: HttpRequest ->
+          HttpResponse.of(AggregatedHttpResponse.of(
+            HttpStatus.FORBIDDEN, MediaType.JSON_UTF_8, "{\"message\":\"Sadness.\"}"))
+        }
+      }
+    }
+  }
+
+  @Before
+  fun setUp() {
+    client = HttpClientBuilder(server.httpUri("/"))
+      .decorator{ client: Client<HttpRequest, HttpResponse> ->
+        BasicAuthInterceptor(client, ZipkinElasticsearchStorageProperties(false, 0))
+      }
+      .build()
+  }
+
+  var client: HttpClient? = null
 
   @Test fun intercept_whenESReturns403AndJsonBody_throwsWithResponseBodyMessage() {
-    thrown.expect(IllegalStateException::class.java)
-    thrown.expectMessage("Sadness.")
-
-    mockWebServer.enqueue(
-      MockResponse().setResponseCode(403).setBody("{\"message\":\"Sadness.\"}"))
-
-    client.newCall(Request.Builder().url(mockWebServer.url("/")).build()).execute()
+    val t = catchThrowable { client!!.get("/").aggregate().join() }
+    assertThat(t).isInstanceOf(CompletionException::class.java)
+    assertThat(t.cause)
+      .isInstanceOf(IllegalStateException::class.java)
+      .hasMessage("Sadness.")
   }
 }

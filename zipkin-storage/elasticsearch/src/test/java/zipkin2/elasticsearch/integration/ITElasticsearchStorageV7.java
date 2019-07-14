@@ -15,7 +15,9 @@ package zipkin2.elasticsearch.integration;
 
 import java.io.IOException;
 import java.util.List;
+import org.junit.AfterClass;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.experimental.runners.Enclosed;
@@ -38,12 +40,12 @@ public class ITElasticsearchStorageV7 {
 
   public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
     @ClassRule public static ElasticsearchStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
 
-    ElasticsearchStorage storage;
+    static ElasticsearchStorage storage;
 
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName)).build();
+    @BeforeClass public static void connect() {
+      storage = backend.computeStorageBuilder().index("zipkin-test").build();
+      storage.check();
     }
 
     @Override protected StorageComponent storage() {
@@ -53,16 +55,19 @@ public class ITElasticsearchStorageV7 {
     @Before @Override public void clear() throws IOException {
       storage.clear();
     }
+
+    @AfterClass public static void close() {
+      storage.close();
+    }
   }
 
   public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
     @ClassRule public static ElasticsearchStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
 
-    ElasticsearchStorage storage;
+    static ElasticsearchStorage storage;
 
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName))
+    @BeforeClass public static void connect() {
+      storage = backend.computeStorageBuilder().index("zipkin-test")
         .searchEnabled(false).build();
     }
 
@@ -73,16 +78,19 @@ public class ITElasticsearchStorageV7 {
     @Before @Override public void clear() throws IOException {
       storage.clear();
     }
+
+    @AfterClass public static void close() {
+      storage.close();
+    }
   }
 
   public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
     @ClassRule public static ElasticsearchStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
 
-    ElasticsearchStorage storage;
+    static ElasticsearchStorage storage;
 
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName)).build();
+    @BeforeClass public static void connect() {
+      storage = backend.computeStorageBuilder().index("zipkin-test").build();
     }
 
     @Override protected StorageComponent storage() {
@@ -91,6 +99,10 @@ public class ITElasticsearchStorageV7 {
 
     @Before @Override public void clear() throws IOException {
       storage.clear();
+    }
+
+    @AfterClass public static void close() {
+      storage.close();
     }
   }
 
@@ -109,12 +121,11 @@ public class ITElasticsearchStorageV7 {
 
   public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
     @ClassRule public static ElasticsearchStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
 
-    ElasticsearchStorage storage;
+    static ElasticsearchStorage storage;
 
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName)).strictTraceId(false).build();
+    @BeforeClass public static void connect() {
+      storage = backend.computeStorageBuilder().index("zipkin-test").strictTraceId(false).build();
     }
 
     @Override protected StorageComponent storage() {
@@ -124,16 +135,19 @@ public class ITElasticsearchStorageV7 {
     @Before @Override public void clear() throws IOException {
       storage.clear();
     }
+
+    @AfterClass public static void close() {
+      storage.close();
+    }
   }
 
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
     @ClassRule public static ElasticsearchStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
 
-    ElasticsearchStorage storage;
+    static ElasticsearchStorage storage;
 
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().index(index(testName)).build();
+    @BeforeClass public static void connect() {
+      storage = backend.computeStorageBuilder().index("zipkin-test").build();
     }
 
     @Override protected StorageComponent storage() {
@@ -151,6 +165,10 @@ public class ITElasticsearchStorageV7 {
 
     @Before @Override public void clear() throws IOException {
       storage.clear();
+    }
+
+    @AfterClass public static void close() {
+      storage.close();
     }
   }
 }

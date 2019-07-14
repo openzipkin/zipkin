@@ -61,7 +61,7 @@ public class BulkRequestBenchmarks {
   @Benchmark public void buildAndWriteRequest_singleSpan() throws IOException {
     BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
-    builder.build().call.request().body().writeTo(Okio.buffer(Okio.blackhole()));
+    Okio.buffer(Okio.blackhole()).write(builder.build().request.content().array());
   }
 
   @Benchmark public void buildAndWriteRequest_tenSpans() throws IOException {
@@ -69,7 +69,7 @@ public class BulkRequestBenchmarks {
     for (int i = 0; i < 10; i++) {
       builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     }
-    builder.build().call.request().body().writeTo(Okio.buffer(Okio.blackhole()));
+    Okio.buffer(Okio.blackhole()).write(builder.build().request.content().array());
   }
 
   // Convenience main entry-point

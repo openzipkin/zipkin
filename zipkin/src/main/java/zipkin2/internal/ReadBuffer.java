@@ -133,6 +133,7 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public int read(byte[] dst, int offset, int length) {
+      if (available() == 0) return -1;
       int toRead = checkReadArguments(dst, offset, length);
       if (toRead == 0) return 0;
       buf.get(dst, offset, toRead);
@@ -173,6 +174,7 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public int read(byte[] dst, int offset, int length) {
+      if (available() == 0) return -1;
       int toRead = checkReadArguments(dst, offset, length);
       if (toRead == 0) return 0;
       System.arraycopy(buf, this.offset, dst, 0, toRead);

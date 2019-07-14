@@ -13,36 +13,25 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import java.io.IOException;
-import okhttp3.OkHttpClient;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.After;
-import org.junit.Rule;
+import com.linecorp.armeria.client.HttpClient;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SearchCallFactoryTest {
-  @Rule
-  public MockWebServer es = new MockWebServer();
+
+  @Mock
+  private HttpClient httpClient;
 
   SearchCallFactory client =
-    new SearchCallFactory(new HttpCall.Factory(new OkHttpClient(), es.url("")));
-
-  @After
-  public void close() {
-    client.http.ok.dispatcher().executorService().shutdownNow();
-  }
+    new SearchCallFactory(new HttpCall.Factory(httpClient, 0));
 
   /** Declaring queries alphabetically helps simplify amazon signature logic */
   @Test
   public void lenientSearchOrdersQueryAlphabetically() {
-    es.enqueue(new MockResponse());
-
-    assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null)
-        .queryParameterNames())
-        .containsExactly("allow_no_indices", "expand_wildcards", "ignore_unavailable");
+    assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null))
+        .endsWith("/_search?allow_no_indices=true&expand_wildcards=open&ignore_unavailable=true");
   }
 }

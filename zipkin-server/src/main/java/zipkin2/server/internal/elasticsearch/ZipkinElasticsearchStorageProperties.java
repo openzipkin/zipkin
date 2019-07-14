@@ -14,12 +14,11 @@
 package zipkin2.server.internal.elasticsearch;
 
 import java.io.Serializable;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.elasticsearch.ElasticsearchStorage;
@@ -50,11 +49,17 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private String username;
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
+
+  public enum HttpLoggingLevel {
+    BASIC,
+    HEADERS,
+    BODY
+  }
   /**
    * When set, controls the volume of HTTP logging of the Elasticsearch Api. Options are BASIC,
    * HEADERS, BODY
    */
-  private HttpLoggingInterceptor.Level httpLogging;
+  private HttpLoggingLevel httpLogging;
   /**
    * Controls the connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api
    * requests. Defaults to 10000 (10 seconds)
@@ -91,8 +96,13 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
           converted.add(host);
           continue;
         }
-        int port = HttpUrl.parse("http://" + host).port();
-        if (port == 80) {
+        final int port;
+        try {
+          port = new URL("http://" + host).getPort();
+        } catch (MalformedURLException e) {
+          throw new IllegalArgumentException("Malformed elasticsearch host: " + host);
+        }
+        if (port == -1) {
           host += ":9200";
         } else if (port == 9300) {
           log.warning(
@@ -165,11 +175,11 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.password = password;
   }
 
-  public HttpLoggingInterceptor.Level getHttpLogging() {
+  public HttpLoggingLevel getHttpLogging() {
     return httpLogging;
   }
 
-  public void setHttpLogging(HttpLoggingInterceptor.Level httpLogging) {
+  public void setHttpLogging(HttpLoggingLevel httpLogging) {
     this.httpLogging = httpLogging;
   }
 
@@ -181,8 +191,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.timeout = timeout;
   }
 
-  public ElasticsearchStorage.Builder toBuilder(OkHttpClient client) {
-    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder(client);
+  public ElasticsearchStorage.Builder toBuilder() {
+    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder();
     if (hosts != null) builder.hosts(hosts);
     return builder
         .index(index)

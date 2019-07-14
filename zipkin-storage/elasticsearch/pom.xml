@@ -35,8 +35,9 @@
 
   <dependencies>
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
 
     <dependency>
@@ -59,6 +60,11 @@
       <artifactId>moshi</artifactId>
     </dependency>
 
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-slf4j-impl</artifactId>
+      <scope>test</scope>
+    </dependency>
     <!-- For HttpCallTest -->
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -68,20 +74,14 @@
     </dependency>
 
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>mockwebserver</artifactId>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-testing-junit4</artifactId>
+      <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp-tls</artifactId>
-      <version>${okhttp.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>logging-interceptor</artifactId>
-      <version>${okhttp.version}</version>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
 
