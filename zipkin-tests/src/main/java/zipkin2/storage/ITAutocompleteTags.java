@@ -14,9 +14,11 @@
 package zipkin2.storage;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
 import org.junit.AssumptionViolatedException;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin2.CheckResult;
@@ -39,6 +41,14 @@ public abstract class ITAutocompleteTags {
     CheckResult check = storage.check();
     if (!check.ok()) {
       throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+    }
+  }
+
+  @After public void after() {
+    try {
+      storage.close();
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
     }
   }
 
