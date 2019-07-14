@@ -20,8 +20,6 @@ import brave.propagation.ThreadLocalSpan;
 import brave.sampler.BoundarySampler;
 import brave.sampler.Sampler;
 import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
-import com.linecorp.armeria.server.brave.BraveService;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -89,10 +87,6 @@ public class TracingConfiguration {
         .currentTraceContext(currentTraceContext())
         .spanReporter(reporter)
         .build();
-  }
-
-  @Bean ArmeriaServerConfigurator tracingConfigurator(Tracing tracing) {
-    return server -> server.decorator(BraveService.newDecorator(tracing));
   }
 
   /**
