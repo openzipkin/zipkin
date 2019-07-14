@@ -80,7 +80,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
         sb.annotatedService(httpQuery, tracingDecorator);
         sb.annotatedService("/zipkin", httpQuery, tracingDecorator); // For UI.
       }
-      if (httpCollector != null) sb.annotatedService(httpCollector);
+      if (httpCollector != null) sb.annotatedService(httpCollector, tracingDecorator);
       if (healthController != null) sb.annotatedService(healthController);
       // Redirects the prometheus scrape endpoint for backward compatibility
       sb.service("/prometheus", new RedirectService("/actuator/prometheus"));
