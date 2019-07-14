@@ -14,8 +14,9 @@
 package zipkin2.storage;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Endpoint;
@@ -74,23 +75,27 @@ public abstract class ITServiceAndSpanNames {
 
   @Test public void getRemoteServiceNames_allReturned() throws IOException {
     // Assure a default store limit isn't hit by assuming if 50 are returned, all are returned
-    List<String> remoteServiceNames = new ArrayList<>();
-    for (int i = 0; i < 50; i++) {
-      String suffix = i < 10 ? "0" + i : String.valueOf(i);
-      accept(CLIENT_SPAN.toBuilder()
-        .id(i + 1)
-        .remoteEndpoint(Endpoint.newBuilder().serviceName("yak" + suffix).build())
-        .build());
-      remoteServiceNames.add("yak" + suffix);
-    }
+    List<Span> spans = IntStream.rangeClosed(0, 50)
+      .mapToObj(i -> {
+        String suffix = i < 10 ? "0" + i : String.valueOf(i);
+        return CLIENT_SPAN.toBuilder()
+          .id(i + 1)
+          .remoteEndpoint(Endpoint.newBuilder().serviceName("yak" + suffix).build())
+          .build();
+      })
+      .collect(Collectors.toList());
+    accept(spans);
 
     assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute())
-      .containsExactlyInAnyOrderElementsOf(remoteServiceNames);
+      .containsExactlyInAnyOrderElementsOf(spans.stream().map(Span::remoteServiceName)::iterator);
   }
 
   /** Ensures the service name index returns distinct results */
   @Test public void getRemoteServiceNames_dedupes() throws IOException {
-    for (int i = 0; i < 50; i++) accept(CLIENT_SPAN.toBuilder().id(i + 1).build());
+    List<Span> spans = IntStream.rangeClosed(0, 50)
+      .mapToObj(i -> CLIENT_SPAN.toBuilder().id(i + 1).build())
+      .collect(Collectors.toList());
+    accept(spans);
 
     assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute())
       .containsExactly(CLIENT_SPAN.remoteServiceName());
@@ -131,20 +136,24 @@ public abstract class ITServiceAndSpanNames {
 
   @Test public void getSpanNames_allReturned() throws IOException {
     // Assure a default store limit isn't hit by assuming if 50 are returned, all are returned
-    List<String> spanNames = new ArrayList<>();
-    for (int i = 0; i < 50; i++) {
-      String suffix = i < 10 ? "0" + i : String.valueOf(i);
-      accept(CLIENT_SPAN.toBuilder().id(i + 1).name("yak" + suffix).build());
-      spanNames.add("yak" + suffix);
-    }
+    List<Span> spans = IntStream.rangeClosed(0, 50)
+      .mapToObj(i -> {
+        String suffix = i < 10 ? "0" + i : String.valueOf(i);
+        return CLIENT_SPAN.toBuilder().id(i + 1).name("yak" + suffix).build();
+      })
+      .collect(Collectors.toList());
+    accept(spans);
 
     assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
-      .containsExactlyInAnyOrderElementsOf(spanNames);
+      .containsExactlyInAnyOrderElementsOf(spans.stream().map(Span::name)::iterator);
   }
 
   /** Ensures the span name index returns distinct results */
   @Test public void getSpanNames_dedupes() throws IOException {
-    for (int i = 0; i < 50; i++) accept(CLIENT_SPAN.toBuilder().id(i + 1).build());
+    List<Span> spans = IntStream.rangeClosed(0, 50)
+      .mapToObj(i -> CLIENT_SPAN.toBuilder().id(i + 1).build())
+      .collect(Collectors.toList());
+    accept(spans);
 
     assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
       .containsExactly(CLIENT_SPAN.name());
