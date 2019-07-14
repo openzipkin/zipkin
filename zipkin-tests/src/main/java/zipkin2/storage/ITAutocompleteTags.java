@@ -16,8 +16,10 @@ package zipkin2.storage;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.Test;
+import zipkin2.CheckResult;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 
@@ -34,6 +36,10 @@ public abstract class ITAutocompleteTags {
 
   @Before public void before() {
     storage = storageBuilder().autocompleteKeys(asList("http.host")).build();
+    CheckResult check = storage.check();
+    if (!check.ok()) {
+      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+    }
   }
 
   protected abstract StorageComponent.Builder storageBuilder();

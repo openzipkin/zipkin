@@ -16,6 +16,7 @@ package zipkin2.elasticsearch.integration;
 import java.io.IOException;
 import java.util.List;
 import org.junit.AfterClass;
+import org.junit.AssumptionViolatedException;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -23,6 +24,7 @@ import org.junit.Rule;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
+import zipkin2.CheckResult;
 import zipkin2.Span;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.InternalForTests;
@@ -45,6 +47,10 @@ public class ITElasticsearchStorageV6 {
 
     @BeforeClass public static void connect() {
       storage = backend.computeStorageBuilder().index("zipkin-test").build();
+      CheckResult check = storage.check();
+      if (!check.ok()) {
+        throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+      }
     }
 
     @Override protected StorageComponent storage() {
@@ -68,6 +74,10 @@ public class ITElasticsearchStorageV6 {
     @BeforeClass public static void connect() {
       storage = backend.computeStorageBuilder().index("zipkin-test")
         .searchEnabled(false).build();
+      CheckResult check = storage.check();
+      if (!check.ok()) {
+        throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+      }
     }
 
     @Override protected StorageComponent storage() {
@@ -90,6 +100,10 @@ public class ITElasticsearchStorageV6 {
 
     @BeforeClass public static void connect() {
       storage = backend.computeStorageBuilder().index("zipkin-test").build();
+      CheckResult check = storage.check();
+      if (!check.ok()) {
+        throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+      }
     }
 
     @Override protected StorageComponent storage() {
@@ -125,6 +139,10 @@ public class ITElasticsearchStorageV6 {
 
     @BeforeClass public static void connect() {
       storage = backend.computeStorageBuilder().index("zipkin-test").strictTraceId(false).build();
+      CheckResult check = storage.check();
+      if (!check.ok()) {
+        throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+      }
     }
 
     @Override protected StorageComponent storage() {
@@ -147,6 +165,10 @@ public class ITElasticsearchStorageV6 {
 
     @BeforeClass public static void connect() {
       storage = backend.computeStorageBuilder().index("zipkin-test").build();
+      CheckResult check = storage.check();
+      if (!check.ok()) {
+        throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+      }
     }
 
     @Override protected StorageComponent storage() {
