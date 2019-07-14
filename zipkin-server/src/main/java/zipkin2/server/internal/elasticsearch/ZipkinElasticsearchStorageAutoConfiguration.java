@@ -152,10 +152,11 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     return result.build();
   }
 
-  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<HttpClientBuilder>
-  elasticsearchTracing(Optional<Tracing> tracing) {
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
+  Consumer<HttpClientBuilder> elasticsearchTracing(Optional<Tracing> tracing) {
     if (!tracing.isPresent()) {
-      return client -> {};
+      return client -> {
+      };
     }
     return client -> client.decorator(BraveClient.newDecorator(tracing.get(), "elasticsearch"));
   }

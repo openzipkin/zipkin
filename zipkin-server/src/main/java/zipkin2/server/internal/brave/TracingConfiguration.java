@@ -13,13 +13,14 @@
  */
 package zipkin2.server.internal.brave;
 
+import brave.Span.Kind;
 import brave.Tracing;
 import brave.context.log4j2.ThreadContextScopeDecorator;
-import brave.http.HttpAdapter;
-import brave.http.HttpSampler;
-import brave.http.HttpTracing;
+import brave.handler.FinishedSpanHandler;
+import brave.handler.MutableSpan;
 import brave.propagation.CurrentTraceContext;
 import brave.propagation.ThreadLocalSpan;
+import brave.propagation.TraceContext;
 import brave.sampler.BoundarySampler;
 import brave.sampler.Sampler;
 import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
@@ -90,23 +91,29 @@ public class TracingConfiguration {
         .localServiceName("zipkin-server")
         .sampler(rate < 0.01 ? BoundarySampler.create(rate) : Sampler.create(rate))
         .currentTraceContext(currentTraceContext())
+        .addFinishedSpanHandler(dropThingsUntilWeSample())
         .spanReporter(reporter)
         .build();
   }
 
-  @Bean // TODO armeria to use this
-  HttpTracing httpTracing(Tracing tracing) {
-    return HttpTracing.newBuilder(tracing)
-        // server starts traces for read requests under the path /api
-        .serverSampler(new HttpSampler() {
-          @Override public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
-            return "GET".equals(adapter.method(request))
-                && adapter.path(request).startsWith("/api");
-          }
-        })
-        // client doesn't start new traces
-        .clientSampler(HttpSampler.NEVER_SAMPLE)
-        .build();
+  // Stop-gap until armeria has a HttpTracing support. https://github.com/line/armeria/issues/1223
+  @Bean FinishedSpanHandler dropThingsUntilWeSample() {
+    return new FinishedSpanHandler() {
+      @Override public boolean handle(TraceContext context, MutableSpan span) {
+        if (context.parentIdAsLong() != 0L) return true; // don't drop children
+
+        // Single-span server sampling to follow. We can't deal with multi-span traces with this
+        // approach unless we do fancy partitioning.
+        if (span.kind() == null || span.kind() != Kind.SERVER) return false;
+        String path = span.tag("http.path");
+        if (path == null) return false;
+
+        // Starts traces for read requests under the path /api or /zipkin/api
+        // Mainly this gets rid of single-span traces for static assets and redirects
+        return "GET".equals(span.tag("http.method"))
+          && (path.startsWith("/api") || path.startsWith("/zipkin/api"));
+      }
+    };
   }
 
   @Bean ArmeriaServerConfigurator tracingConfigurator(Tracing tracing) {
