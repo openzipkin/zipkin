@@ -15,9 +15,6 @@ package zipkin2.server.internal.brave;
 
 import brave.Tracing;
 import brave.context.log4j2.ThreadContextScopeDecorator;
-import brave.http.HttpAdapter;
-import brave.http.HttpSampler;
-import brave.http.HttpTracing;
 import brave.propagation.CurrentTraceContext;
 import brave.propagation.ThreadLocalSpan;
 import brave.sampler.BoundarySampler;
@@ -91,21 +88,6 @@ public class TracingConfiguration {
         .sampler(rate < 0.01 ? BoundarySampler.create(rate) : Sampler.create(rate))
         .currentTraceContext(currentTraceContext())
         .spanReporter(reporter)
-        .build();
-  }
-
-  @Bean // TODO armeria to use this
-  HttpTracing httpTracing(Tracing tracing) {
-    return HttpTracing.newBuilder(tracing)
-        // server starts traces for read requests under the path /api
-        .serverSampler(new HttpSampler() {
-          @Override public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
-            return "GET".equals(adapter.method(request))
-                && adapter.path(request).startsWith("/api");
-          }
-        })
-        // client doesn't start new traces
-        .clientSampler(HttpSampler.NEVER_SAMPLE)
         .build();
   }
 
