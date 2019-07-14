@@ -96,6 +96,7 @@
     <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M3</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
+    <git-commit-id.version>3.0.0</git-commit-id.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
