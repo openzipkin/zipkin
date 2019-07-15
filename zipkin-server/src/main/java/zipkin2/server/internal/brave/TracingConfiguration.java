@@ -18,12 +18,13 @@ import brave.context.log4j2.ThreadContextScopeDecorator;
 import brave.propagation.CurrentTraceContext;
 import brave.propagation.ThreadLocalSpan;
 import brave.sampler.BoundarySampler;
+import brave.sampler.RateLimitingSampler;
 import brave.sampler.Sampler;
 import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
@@ -41,6 +42,7 @@ import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
+@EnableConfigurationProperties(SelfTracingProperties.class)
 @ConditionalOnSelfTracing
 public class TracingConfiguration {
 
@@ -56,10 +58,10 @@ public class TracingConfiguration {
   /** Configuration for how to buffer spans into messages for Zipkin */
   @Bean Reporter<Span> reporter(
       Sender sender,
-      @Value("${zipkin.self-tracing.message-timeout:1}") int messageTimeout,
+      SelfTracingProperties config,
       CollectorMetrics metrics) {
     return AsyncReporter.builder(sender)
-        .messageTimeout(messageTimeout, TimeUnit.SECONDS)
+        .messageTimeout(config.getMessageTimeout().toNanos(), TimeUnit.NANOSECONDS)
         .metrics(new ReporterMetricsAdapter(metrics.forTransport("local")))
         .build();
   }
@@ -80,10 +82,22 @@ public class TracingConfiguration {
 
   /** Controls aspects of tracing such as the name that shows up in the UI */
   @Bean Tracing tracing(
-      @Lazy Reporter<Span> reporter, @Value("${zipkin.self-tracing.sample-rate:1.0}") float rate) {
+      @Lazy Reporter<Span> reporter, SelfTracingProperties config) {
+    final Sampler sampler;
+    if (config.getSampleRate() != 1.0) {
+      if (config.getSampleRate() < 0.01) {
+        sampler = BoundarySampler.create(config.getSampleRate());
+      } else {
+        sampler = Sampler.create(config.getSampleRate());
+      }
+    } else if (config.getTracesPerSecond() != 0) {
+      sampler = RateLimitingSampler.create(config.getTracesPerSecond());
+    } else {
+      sampler = Sampler.ALWAYS_SAMPLE;
+    }
     return Tracing.newBuilder()
         .localServiceName("zipkin-server")
-        .sampler(rate < 0.01 ? BoundarySampler.create(rate) : Sampler.create(rate))
+        .sampler(sampler)
         .currentTraceContext(currentTraceContext())
         .spanReporter(reporter)
         .build();

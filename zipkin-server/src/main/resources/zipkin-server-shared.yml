@@ -2,8 +2,12 @@ zipkin:
   self-tracing:
     # Set to true to enable self-tracing.
     enabled: ${SELF_TRACING_ENABLED:false}
-    # percentage to self-traces to retain
+    # percentage of self-traces to retain. If set to a value other than 1.0, traces-per-second will
+    # not be used.
     sample-rate: ${SELF_TRACING_SAMPLE_RATE:1.0}
+    # Number of traces per second to retain. sample-rate must be set to 1.0 to use this value. If
+    # set to 0, an unlimited number of traces per second will be retained.
+    traces-per-second: ${SELF_TRACING_TRACES_PER_SECOND:1}
     # Timeout in seconds to flush self-tracing data to storage.
     message-timeout: ${SELF_TRACING_FLUSH_INTERVAL:1}
   collector:
