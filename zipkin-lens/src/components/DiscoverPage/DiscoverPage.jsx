@@ -88,10 +88,13 @@ const DiscoverPage = ({ history, location }) => {
   const limitCondition = useSelector(state => state.globalSearch.limitCondition);
 
   const findTraces = useCallback(() => {
+    const currentTime = moment();
+
     const queryParameters = buildQueryParameters(buildCommonQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
+      currentTime,
     ));
     history.push({ pathname: '/zipkin', search: queryParameters });
 
@@ -99,19 +102,24 @@ const DiscoverPage = ({ history, location }) => {
       conditions,
       lookbackCondition,
       limitCondition,
+      currentTime,
     )));
   }, [conditions, lookbackCondition, limitCondition, dispatch, history]);
 
   const findDependencies = useCallback(() => {
+    const currentTime = moment();
+
     const queryParameters = buildQueryParameters(buildCommonQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
+      currentTime,
     ));
     history.push({ pathname: '/zipkin/dependency', search: queryParameters });
 
     dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
       lookbackCondition,
+      currentTime,
     )));
   }, [conditions, lookbackCondition, limitCondition, dispatch, history]);
 
@@ -217,6 +225,8 @@ const DiscoverPage = ({ history, location }) => {
     }
     dispatch(fetchAutocompleteKeys());
 
+    const currentTime = moment();
+
     // Finally fetch traces-data or dependencies-data according to location.pathname.
     switch (location.pathname) {
       case '/zipkin':
@@ -231,6 +241,7 @@ const DiscoverPage = ({ history, location }) => {
             conditionsFromUrl,
             lookbackConditionFromUrl,
             limitConditionFromUrl,
+            currentTime,
           )));
         }
         break;
@@ -239,6 +250,7 @@ const DiscoverPage = ({ history, location }) => {
         if (!_.isEmpty(conditionsFromUrl) || !_.isEmpty(lookbackConditionFromUrl)) {
           dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
             lookbackConditionFromUrl,
+            currentTime,
           )));
         }
         break;
