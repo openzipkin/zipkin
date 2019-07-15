@@ -17,9 +17,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
+import org.junit.AssumptionViolatedException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import zipkin2.CheckResult;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 
@@ -36,9 +38,14 @@ public abstract class ITAutocompleteTags {
 
   @Before public void before() {
     storage = storageBuilder().autocompleteKeys(asList("http.host")).build();
+    CheckResult check = storage.check();
+    if (!check.ok()) {
+      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
+    }
   }
 
-  @After public void after() {
+  @After public void after() throws Exception {
+    clear();
     try {
       storage.close();
     } catch (IOException e) {
@@ -49,7 +56,7 @@ public abstract class ITAutocompleteTags {
   protected abstract StorageComponent.Builder storageBuilder();
 
   /** Clears store between tests. */
-  @Before public abstract void clear() throws Exception;
+  public abstract void clear() throws Exception;
 
   @Test public void Should_not_store_when_key_not_in_autocompleteTags() throws IOException {
     accept(TestObjects.LOTS_OF_SPANS[0].toBuilder()

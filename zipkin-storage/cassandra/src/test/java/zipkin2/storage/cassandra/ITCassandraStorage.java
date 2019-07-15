@@ -253,7 +253,7 @@ public class ITCassandraStorage {
       return backend.computeStorageBuilder().keyspace(keyspace(testName));
     }
 
-    @Before @Override public void clear() {
+    @Override public void clear() {
       dropKeyspace(backend.session(), keyspace(testName));
     }
   }
