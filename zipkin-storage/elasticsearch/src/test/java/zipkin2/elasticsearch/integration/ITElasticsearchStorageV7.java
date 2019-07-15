@@ -127,7 +127,7 @@ public class ITElasticsearchStorageV7 {
       return backend.computeStorageBuilder().index(index(testName));
     }
 
-    @Before @Override public void clear() throws IOException {
+    @Override public void clear() throws IOException {
       ((ElasticsearchStorage) storage).clear();
     }
   }

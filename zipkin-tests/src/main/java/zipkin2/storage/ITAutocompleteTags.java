@@ -44,7 +44,8 @@ public abstract class ITAutocompleteTags {
     }
   }
 
-  @After public void after() {
+  @After public void after() throws Exception {
+    clear();
     try {
       storage.close();
     } catch (IOException e) {
@@ -55,7 +56,7 @@ public abstract class ITAutocompleteTags {
   protected abstract StorageComponent.Builder storageBuilder();
 
   /** Clears store between tests. */
-  @Before public abstract void clear() throws Exception;
+  public abstract void clear() throws Exception;
 
   @Test public void Should_not_store_when_key_not_in_autocompleteTags() throws IOException {
     accept(TestObjects.LOTS_OF_SPANS[0].toBuilder()
