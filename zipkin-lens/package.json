@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --ci",
+    "test-dev": "jest",
     "lint": "eslint src",
     "build": "cross-env NODE_ENV=production webpack -p --config ./webpack.prod.config.js",
     "start": "cross-env NODE_ENV=development webpack-dev-server -d --config ./webpack.dev.config.js"
@@ -26,13 +27,14 @@
   "author": "https://gitter.im/openzipkin/zipkin",
   "license": "Apache-2.0",
   "devDependencies": {
+    "@babel/cli": "^7.5.0",
+    "@babel/core": "^7.5.4",
+    "@babel/preset-env": "^7.5.4",
+    "@babel/preset-react": "^7.0.0",
     "@fortawesome/fontawesome-free": "^5.4.1",
-    "babel-core": "^6.26.3",
+    "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^23.6.0",
-    "babel-loader": "^7.1.5",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react": "^6.24.1",
+    "babel-loader": "^8.0.6",
     "cross-env": "^5.2.0",
     "css-loader": "^1.0.0",
     "enzyme": "^3.7.0",
@@ -68,8 +70,8 @@
     "@material-ui/core": "^4.1.1",
     "@material-ui/pickers": "^3.1.1",
     "@material-ui/styles": "^4.1.1",
-    "babel-polyfill": "^6.26.0",
     "chart.js": "^2.7.2",
+    "core-js": "^3.1.4",
     "js-cookie": "^2.2.0",
     "lodash": "^4.17.11",
     "moment": "^2.24.0",
@@ -88,6 +90,7 @@
     "react-virtualized": "^9.21.1",
     "redux": "^4.0.0",
     "redux-thunk": "^2.3.0",
+    "regenerator-runtime": "^0.13.2",
     "shortid": "^2.2.14",
     "vizceral-react": "^4.6.5"
   }
