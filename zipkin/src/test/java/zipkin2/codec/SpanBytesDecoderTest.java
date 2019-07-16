@@ -13,6 +13,7 @@
  */
 package zipkin2.codec;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -186,6 +187,34 @@ public class SpanBytesDecoderTest {
     byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
 
     assertThat(SpanBytesDecoder.PROTO3.decodeList(message)).isEqualTo(TRACE);
+  }
+
+  @Test
+  public void traceRoundTrip_PROTO3_directBuffer() {
+    byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
+    ByteBuffer buf = ByteBuffer.allocateDirect(message.length);
+    buf.put(message);
+    buf.flip();
+
+    assertThat(SpanBytesDecoder.PROTO3.decodeList(buf)).isEqualTo(TRACE);
+  }
+
+  @Test
+  public void traceRoundTrip_PROTO3_heapBuffer() {
+    byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
+    ByteBuffer buf = ByteBuffer.wrap(message);
+
+    assertThat(SpanBytesDecoder.PROTO3.decodeList(buf)).isEqualTo(TRACE);
+  }
+
+  @Test
+  public void traceRoundTrip_PROTO3_heapBufferOffset() {
+    byte[] message = SpanBytesEncoder.PROTO3.encodeList(TRACE);
+    byte[] array = new byte[message.length + 4 + 5];
+    System.arraycopy(message, 0, array, 4, message.length);
+    ByteBuffer buf = ByteBuffer.wrap(array, 4, message.length);
+
+    assertThat(SpanBytesDecoder.PROTO3.decodeList(buf)).isEqualTo(TRACE);
   }
 
   @Test public void spansRoundTrip_JSON_V2() {

@@ -139,7 +139,7 @@ public class Proto3FieldsTest {
     VarintField field = new VarintField(128 << 3 | WIRETYPE_VARINT);
     field.write(buf, 0xffffffffffffffffL);
 
-    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length - 1);
     skipValue(readBuffer, WIRETYPE_VARINT);
   }
 
@@ -147,7 +147,7 @@ public class Proto3FieldsTest {
     Utf8Field field = new Utf8Field(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, "订单维护服务");
 
-    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length - 1);
     skipValue(readBuffer, WIRETYPE_LENGTH_DELIMITED);
   }
 
@@ -155,7 +155,7 @@ public class Proto3FieldsTest {
     Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 
-    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length - 1);
     skipValue(readBuffer, WIRETYPE_FIXED64);
   }
 
@@ -167,7 +167,7 @@ public class Proto3FieldsTest {
     buf.writeByte(0xff);
     buf.writeByte(0xff);
 
-    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length - 1);
     skipValue(readBuffer, WIRETYPE_FIXED32);
   }
 
@@ -175,7 +175,7 @@ public class Proto3FieldsTest {
     BytesField field = new BytesField(128 << 3 | WIRETYPE_LENGTH_DELIMITED);
     field.write(buf, new byte[10]);
 
-    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length - 1);
     assertThat(readBuffer.readVarint32())
       .isEqualTo(10);
   }
@@ -197,7 +197,7 @@ public class Proto3FieldsTest {
     Fixed64Field field = new Fixed64Field(128 << 3 | WIRETYPE_FIXED64);
     field.write(buf, 0xffffffffffffffffL);
 
-    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length);
+    ReadBuffer readBuffer = ReadBuffer.wrap(bytes, 1 /* skip the key */, bytes.length - 1);
     assertThat(field.readValue(readBuffer))
       .isEqualTo(0xffffffffffffffffL);
   }
