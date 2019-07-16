@@ -36,7 +36,7 @@ export const loadTracesFailure = () => ({
   type: types.TRACES_LOAD_FAILURE,
 });
 
-const calculateTraceSummaries = (traces, serviceName) => {
+const calculateTraceSummaries = async (traces, serviceName) => {
   const correctedTraces = traces.map(treeCorrectedForClockSkew);
 
   const correctedTraceMap = {};
@@ -49,7 +49,7 @@ const calculateTraceSummaries = (traces, serviceName) => {
 
   return {
     traceSummaries,
-    correctedTraces,
+    correctedTraceMap,
   };
 };
 
@@ -65,18 +65,10 @@ export const loadTraces = params => async (dispatch) => {
     }
     const traces = await res.json();
 
-    const correctedTraces = traces.map(treeCorrectedForClockSkew);
-
-    const correctedTraceMap = {};
-    correctedTraces.forEach((trace, index) => {
-      const [{ traceId }] = traces[index];
-      correctedTraceMap[traceId] = trace;
-    });
-
-    const traceSummaries = buildTraceSummaries(
-      params.serviceName,
-      correctedTraces.map(buildTraceSummary),
-    );
+    const {
+      traceSummaries,
+      correctedTraceMap,
+    } = await calculateTraceSummaries(traces, query.serviceName);
 
     dispatch(loadTracesSuccess(traces, traceSummaries, correctedTraceMap));
   } catch (err) {
