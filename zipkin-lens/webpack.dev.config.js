@@ -50,7 +50,7 @@ module.exports = {
       },
       {
         test: /webfonts\/.*\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*$|$)/,
-        loader: 'file-loader'
+        loader: 'file-loader',
       },
       {
         test: /\.(jpg|png)$/,
@@ -59,13 +59,16 @@ module.exports = {
       {
         test: /\.svg$/,
         use: [
-          {
-            loader: 'babel-loader',
-          },
+          { loader: 'babel-loader' },
           {
             loader: 'react-svg-loader',
             options: {
               jsx: true,
+              svgo: {
+                plugins: [
+                  { removeViewBox: false },
+                ],
+              },
             },
           },
         ],
