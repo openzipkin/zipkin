@@ -49,7 +49,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
   static final String QUALIFIER = "zipkinElasticsearchHttp";
 
   @Bean @Qualifier(QUALIFIER) Consumer<HttpClientBuilder> zipkinElasticsearchHttp(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    @Value("${zipkin.storage.elasticsearch.timeout:9000}") int timeout) {
     return new Consumer<HttpClientBuilder>() {
       @Override public void accept(HttpClientBuilder client) {
         client.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
@@ -62,7 +62,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
   }
 
   @Bean @Qualifier(QUALIFIER) Consumer<ClientFactoryBuilder> zipkinElasticsearchClientFactory(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    @Value("${zipkin.storage.elasticsearch.timeout:9000}") int timeout) {
     return new Consumer<ClientFactoryBuilder>() {
       @Override public void accept(ClientFactoryBuilder factory) {
         factory.connectTimeoutMillis(timeout);

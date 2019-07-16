@@ -130,7 +130,7 @@ zipkin:
       hosts: ${ES_HOSTS:}
       pipeline: ${ES_PIPELINE:}
       max-requests: ${ES_MAX_REQUESTS:64}
-      timeout: ${ES_TIMEOUT:10000}
+      timeout: ${ES_TIMEOUT:9000}
       index: ${ES_INDEX:zipkin}
       date-separator: ${ES_DATE_SEPARATOR:-}
       index-shards: ${ES_INDEX_SHARDS:5}
