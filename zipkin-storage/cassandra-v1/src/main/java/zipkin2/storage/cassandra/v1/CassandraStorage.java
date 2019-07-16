@@ -371,6 +371,10 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     return spanConsumer;
   }
 
+  @Override public final String toString() {
+    return "CassandraStorage{contactPoints=" + contactPoints + ", keyspace=" + keyspace + "}";
+  }
+
   @Override
   public CheckResult check() {
     if (closeCalled) throw new IllegalStateException("closed");

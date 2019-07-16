@@ -36,6 +36,7 @@ import org.junit.rules.Timeout;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.CheckResult;
+import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.InMemoryCollectorMetrics;
@@ -305,6 +306,23 @@ public class ITKafkaCollector {
       collector.start();
 
       assertThat(collector.kafkaWorkers.workers.get(0).topics).containsExactly("topic1", "topic2");
+    }
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test public void toStringContainsOnlySummaryInformation() {
+    try (KafkaCollector collector = builder("muah").build()) {
+      collector.start();
+
+      assertThat(collector).hasToString(
+        String.format("KafkaCollector{bootstrapServers=%s, topic=%s}",
+          broker.getBrokerList().get(), "muah")
+      );
     }
   }
 

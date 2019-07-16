@@ -11,25 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.storage.cassandra;
+package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.exceptions.NoHostAvailableException;
 import org.junit.Test;
-import zipkin2.CheckResult;
 import zipkin2.Component;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class CassandraStorageTest {
-
-  @Test
-  public void check_failsInsteadOfThrowing() {
-    CheckResult result = CassandraStorage.newBuilder().contactPoints("1.1.1.1").build().check();
-
-    assertThat(result.ok()).isFalse();
-    assertThat(result.error()).isInstanceOf(NoHostAvailableException.class);
-  }
-
   /**
    * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
    * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
@@ -41,7 +30,7 @@ public class CassandraStorageTest {
            CassandraStorage.newBuilder().contactPoints("1.1.1.1").build()) {
 
       assertThat(cassandra)
-        .hasToString("CassandraStorage{contactPoints=1.1.1.1, keyspace=zipkin2}");
+        .hasToString("CassandraStorage{contactPoints=1.1.1.1, keyspace=zipkin}");
     }
   }
 }

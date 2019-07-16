@@ -35,6 +35,7 @@ class RabbitMQCollectorRule extends ExternalResource {
   final InMemoryCollectorMetrics rabbitmqMetrics = metrics.forTransport("rabbitmq");
 
   final String image;
+  final String queue = "zipkin-test";
   GenericContainer container;
   RabbitMQCollector collector;
 
@@ -86,7 +87,7 @@ class RabbitMQCollectorRule extends ExternalResource {
     return RabbitMQCollector.builder()
         .storage(storage)
         .metrics(metrics)
-        .queue("zipkin-test")
+        .queue(queue)
         .addresses(Arrays.asList(address()));
   }
 
