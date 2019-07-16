@@ -15,28 +15,28 @@ import * as types from '../constants/action-types';
 
 const initialState = {
   isLoading: false,
-  trace: [],
+  traceSummary: {},
 };
 
 const trace = (state = initialState, action) => {
   switch (action.type) {
-    case types.FETCH_TRACE_REQUEST:
+    case types.TRACE_LOAD_REQUEST:
       return {
         ...state,
         isLoading: true,
-        trace: [], /* Initialize trace */
+        traceSummary: {}, /* Initialize trace */
       };
-    case types.FETCH_TRACE_SUCCESS:
+    case types.TRACE_LOAD_SUCCESS:
       return {
         ...state,
         isLoading: false,
-        trace: action.trace,
+        traceSummary: action.traceSummary,
       };
-    case types.FETCH_TRACE_FAILURE:
+    case types.TRACE_LOAD_FAILURE:
       return {
         ...state,
         isLoading: false,
-        trace: [],
+        trace: {},
       };
     default:
       return state;
