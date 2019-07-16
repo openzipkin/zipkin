@@ -71,7 +71,6 @@ export const loadTraces = params => async (dispatch) => {
     correctedTraces.forEach((trace, index) => {
       const [{ traceId }] = traces[index];
       correctedTraceMap[traceId] = trace;
-      console.log(trace, index);
     });
 
     const traceSummaries = buildTraceSummaries(
