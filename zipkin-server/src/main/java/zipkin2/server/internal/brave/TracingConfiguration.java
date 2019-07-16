@@ -94,7 +94,7 @@ public class TracingConfiguration {
    */
   static final class LocalSender extends Sender {
     final BeanFactory factory;
-    StorageComponent delegate;
+    volatile StorageComponent delegate; // volatile to prevent stale reads
 
     LocalSender(BeanFactory factory) {
       this.factory = factory;
@@ -138,6 +138,7 @@ public class TracingConfiguration {
     StorageComponent delegate() {
       StorageComponent result = delegate;
       if (result != null) return delegate;
+      // synchronization is not needed as redundant calls have no ill effects
       result = factory.getBean(StorageComponent.class);
       if (result instanceof TracingStorageComponent) {
         result = ((TracingStorageComponent) result).delegate;
@@ -148,7 +149,7 @@ public class TracingConfiguration {
 
   static final class ReporterMetricsAdapter implements ReporterMetrics {
     final BeanFactory factory;
-    CollectorMetrics delegate;
+    volatile CollectorMetrics delegate; // volatile to prevent stale reads
 
     ReporterMetricsAdapter(BeanFactory factory) {
       this.factory = factory;
@@ -187,6 +188,7 @@ public class TracingConfiguration {
     CollectorMetrics delegate() {
       CollectorMetrics result = delegate;
       if (result != null) return delegate;
+      // synchronization is not needed as redundant calls have no ill effects
       return delegate = factory.getBean(CollectorMetrics.class).forTransport("local");
     }
   }
