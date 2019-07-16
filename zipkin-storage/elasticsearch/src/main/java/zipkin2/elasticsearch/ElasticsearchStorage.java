@@ -101,14 +101,14 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
     /**
-     * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. Mostly for
-     * testing.
+     * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. This is used
+     * by the server and tests to enable detailed logging and tweak timeouts.
      */
     public abstract Builder clientCustomizer(Consumer<HttpClientBuilder> clientCustomizer);
 
     /**
-     * Customizes the {@link ClientFactoryBuilder} used when connecting to ElasticSearch. Mostly for
-     * testing.
+     * Customizes the {@link ClientFactoryBuilder} used when connecting to ElasticSearch. This is
+     * used by the server and tests to tweak timeouts.
      */
     public abstract Builder clientFactoryCustomizer(
       Consumer<ClientFactoryBuilder> clientFactoryCustomizer);
@@ -319,6 +319,16 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   /** This is blocking so that we can determine if the cluster is healthy or not */
   @Override
   public CheckResult check() {
+    HttpClient client = httpClient();
+    EndpointGroup healthChecked = EndpointGroupRegistry.get("elasticsearch");
+    if (healthChecked instanceof HttpHealthCheckedEndpointGroup) {
+      try {
+        ((HttpHealthCheckedEndpointGroup) healthChecked).awaitInitialEndpoints(
+          client.options().responseTimeoutMillis(), TimeUnit.MILLISECONDS);
+      } catch (InterruptedException | TimeoutException e) {
+        return CheckResult.failed(e);
+      }
+    }
     return ensureClusterReady(indexNameFormatter().formatType(SPAN));
   }
 
@@ -416,6 +426,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       if (isIpAddress(url.getHost())) {
         endpointGroup = null;
       } else {
+        // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint group
+        // to round-robin over them.
         DnsAddressEndpointGroupBuilder dnsEndpoint =
           new DnsAddressEndpointGroupBuilder(url.getHost());
         if (url.getPort() != -1) {
@@ -430,6 +442,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         if (isIpAddress(url.getHost())) {
           staticEndpoints.add(Endpoint.parse(url.getAuthority()));
         } else {
+          // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
+          // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
+          // with single IPs freely, they'll all get used.
           endpointGroups.add(url.getPort() == -1
             ? DnsAddressEndpointGroup.of(url.getHost())
             : DnsAddressEndpointGroup.of(url.getHost(), url.getPort()));
@@ -455,12 +470,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .build();
       EndpointGroupRegistry.register(
         "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
-      try {
-        healthChecked.awaitInitialEndpoints(30, TimeUnit.SECONDS);
-      } catch (InterruptedException | TimeoutException e) {
-        // We give some time for the initial endpoints, but go ahead and startup even if there
-        // aren't any healthy ones.
-      }
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
     } else {
       // Just one non-domain URL, can connect directly without enabling load balancing.

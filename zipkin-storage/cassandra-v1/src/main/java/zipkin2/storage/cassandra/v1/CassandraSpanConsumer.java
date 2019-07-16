@@ -145,10 +145,10 @@ final class CassandraSpanConsumer implements SpanConsumer {
   /** Clears any caches */
   @VisibleForTesting
   void clear() {
-    insertServiceName.clear();
+    if (insertServiceName != null) insertServiceName.clear();
     if (insertRemoteServiceName != null) insertRemoteServiceName.clear();
-    insertSpanName.clear();
-    indexer.clear();
+    if (insertSpanName != null) insertSpanName.clear();
+    if (indexer != null) indexer.clear();
     if (insertAutocompleteValue != null) insertAutocompleteValue.clear();
   }
 

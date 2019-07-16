@@ -11,14 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import ReactDOM from 'react-dom';
+const presets = [
+  [
+    '@babel/env',
+    {
+      targets: {
+        edge: '17',
+        firefox: '60',
+        chrome: '67',
+        safari: '11.1',
+      },
+      useBuiltIns: 'usage',
+      corejs: 3,
+    },
+  ],
+  '@babel/react',
+];
 
-import App from './components/App';
-
-import '../scss/main.scss';
-
-ReactDOM.render(
-  <App />,
-  document.getElementById('app'),
-);
+module.exports = { presets };

@@ -29,6 +29,14 @@ public class ReadBufferTest {
     assertThat(readBuffer.readUtf8(readBuffer.available()))
       .isEqualTo("love");
   }
+  @Test public void byteBuffer_arrayOffset() {
+    ByteBuffer buf = ByteBuffer.wrap("glove".getBytes(UTF_8), 1, 4);
+    ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buf.slice());
+    assertThat(readBuffer.pos()).isEqualTo(0);
+    assertThat(readBuffer.available()).isEqualTo(4);
+    assertThat(readBuffer.readUtf8(readBuffer.available()))
+      .isEqualTo("love");
+  }
 
   @Test public void readVarint32() {
     assertReadVarint32(0);

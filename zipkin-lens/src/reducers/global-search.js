@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import moment from 'moment';
 import shortid from 'shortid';
 
 import * as types from '../constants/action-types';
@@ -21,7 +20,6 @@ const initialState = {
   conditions: [],
   lookbackCondition: {
     value: '1h',
-    endTs: moment().valueOf(),
   },
   limitCondition: 10,
 };

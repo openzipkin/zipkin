@@ -33,14 +33,15 @@ public class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest,
     return RawContentLoggingClient::new;
   }
 
-  /**
-   * Creates a new instance that decorates the specified {@link Client}.
-   */
   RawContentLoggingClient(Client<HttpRequest, HttpResponse> delegate) {
     super(delegate);
   }
 
   @Override public HttpResponse execute(ClientRequestContext ctx, HttpRequest req) {
+    // We aggregate with pooled objects to keep things out of the heap as much as possible. For
+    // example, we want to keep a large response pooled, only copying small portions during JSON
+    // parsing, and copying once into a String for logging, while if we didn't aggregate with pooled
+    // objects, we would copy the entire response onto the heap, then once again into a String.
     return HttpResponse.from(
       req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc())
         .thenCompose(aggregatedReq -> {
