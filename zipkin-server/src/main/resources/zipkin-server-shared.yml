@@ -204,6 +204,7 @@ spring:
 info:
   zipkin:
     version: "@project.version@"
+    commit: "@git.commit.id.abbrev@"
 
 logging:
   pattern:

@@ -459,9 +459,6 @@
             </goals>
           </execution>
         </executions>
-        <configuration>
-          <generateGitPropertiesFile>true</generateGitPropertiesFile>
-        </configuration>
       </plugin>
 
       <plugin>
@@ -471,7 +468,6 @@
         <executions>
           <execution>
             <goals>
-              <goal>build-info</goal>
               <goal>repackage</goal>
             </goals>
           </execution>
