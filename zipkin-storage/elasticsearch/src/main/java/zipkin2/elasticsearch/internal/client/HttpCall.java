@@ -17,15 +17,21 @@ import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatusClass;
+import com.linecorp.armeria.common.RequestContext;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
+import okio.BufferedSource;
+import okio.Okio;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.internal.ReadBuffer;
 
 public final class HttpCall<V> extends Call.Base<V> {
 
@@ -36,12 +42,10 @@ public final class HttpCall<V> extends Call.Base<V> {
   public static class Factory {
     final HttpClient httpClient;
     final Semaphore semaphore;
-    public final String baseUrl;
 
-    public Factory(HttpClient httpClient, String baseUrl, int maxRequests) {
+    public Factory(HttpClient httpClient, int maxRequests) {
       this.httpClient = httpClient;
       this.semaphore = new Semaphore(maxRequests);
-      this.baseUrl = baseUrl;
     }
 
     public <V> HttpCall<V> newCall(AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
@@ -71,7 +75,21 @@ public final class HttpCall<V> extends Call.Base<V> {
     HttpClient httpClient, AggregatedHttpRequest request, Semaphore semaphore,
     BodyConverter<V> bodyConverter) {
     this.httpClient = httpClient;
-    this.request = request;
+
+    if (request.content() instanceof ByteBufHolder) {
+      // Unfortunately it's not possible to use pooled objects in requests and support clone() after
+      // sending the request.
+      ByteBuf buf = ((ByteBufHolder) request.content()).content();
+      try {
+        this.request = AggregatedHttpRequest.of(
+          request.headers(), HttpData.copyOf(buf), request.trailers());
+      } finally {
+        buf.release();
+      }
+    } else {
+      this.request = request;
+    }
+
     this.semaphore = semaphore;
     this.bodyConverter = bodyConverter;
   }
@@ -115,7 +133,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<V>(httpClient, request, semaphore, bodyConverter);
+    return new HttpCall<>(httpClient, request, semaphore, bodyConverter);
   }
 
   @Override
@@ -124,8 +142,12 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
+    HttpResponse response = httpClient.execute(request);
     CompletableFuture<AggregatedHttpResponse> responseFuture =
-      httpClient.execute(request).aggregate();
+      RequestContext.mapCurrent(
+        ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
+        // This should never be used in practice since the module runs in an Armeria server.
+        response::aggregate);
     this.responseFuture = responseFuture;
     return responseFuture;
   }
@@ -149,7 +171,7 @@ public final class HttpCall<V> extends Call.Base<V> {
         } else {
           buf = ByteBuffer.wrap(content.array());
         }
-        return bodyConverter.convert(buf);
+        return bodyConverter.convert(Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf))));
       } else {
         throw new IllegalStateException(
           "response for " + request.path() + " failed: " + response.contentUtf8());

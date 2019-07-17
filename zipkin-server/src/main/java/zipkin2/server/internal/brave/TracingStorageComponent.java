@@ -18,6 +18,7 @@ import brave.Tracing;
 import java.io.IOException;
 import java.util.List;
 import zipkin2.Call;
+import zipkin2.CheckResult;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.storage.AutocompleteTags;
@@ -49,9 +50,16 @@ public final class TracingStorageComponent extends StorageComponent {
     return delegate.spanConsumer();
   }
 
-  @Override
-  public void close() throws IOException {
+  @Override public CheckResult check() {
+    return delegate.check();
+  }
+
+  @Override public void close() throws IOException {
     delegate.close();
+  }
+
+  @Override public String toString() {
+    return "Traced{" + delegate.toString() + "}";
   }
 
   static final class TracingSpanStore implements SpanStore {
@@ -86,6 +94,10 @@ public final class TracingStorageComponent extends StorageComponent {
       return new TracedCall<>(
         tracer, delegate.getDependencies(endTs, lookback), "get-dependencies");
     }
+
+    @Override public String toString() {
+      return "Traced{" + delegate.toString() + "}";
+    }
   }
 
   static final class TracingAutocompleteTags implements AutocompleteTags {
@@ -103,6 +115,10 @@ public final class TracingStorageComponent extends StorageComponent {
 
     @Override public Call<List<String>> getValues(String key) {
       return new TracedCall<>(tracer, delegate.getValues(key), "get-values");
+    }
+
+    @Override public String toString() {
+      return "Traced{" + delegate.toString() + "}";
     }
   }
 }

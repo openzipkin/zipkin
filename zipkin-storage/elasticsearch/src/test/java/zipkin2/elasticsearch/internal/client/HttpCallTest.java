@@ -14,17 +14,22 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.server.ServerBuilder;
+import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.After;
-import org.junit.Rule;
+import java.util.concurrent.atomic.AtomicReference;
+import org.junit.Before;
+import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -34,23 +39,33 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 public class HttpCallTest {
-  @Rule
-  public MockWebServer mws = new MockWebServer();
 
-  HttpCall.Factory http = new HttpCall.Factory(new OkHttpClient(), mws.url(""));
-  Request request = new Request.Builder().url(http.baseUrl).build();
+  private static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
+    new AtomicReference<>();
+  private static final AggregatedHttpResponse SUCCESS_RESPONSE =
+    AggregatedHttpResponse.of(HttpStatus.OK);
 
-  @After
-  public void close() {
-    http.close();
+  @ClassRule public static ServerRule server = new ServerRule() {
+    @Override protected void configure(ServerBuilder sb) {
+      sb.service("/", ((ctx, req) -> HttpResponse.of(MOCK_RESPONSE.get())));
+    }
+  };
+
+  private static final AggregatedHttpRequest REQUEST =
+    AggregatedHttpRequest.of(HttpMethod.GET, "/");
+
+  HttpCall.Factory http;
+
+  @Before public void setUp() {
+    http = new HttpCall.Factory(HttpClient.of(server.httpUri("/")), Integer.MAX_VALUE);
   }
 
   @Test
   public void propagatesOnDispatcherThreadWhenFatal() throws Exception {
-    mws.enqueue(new MockResponse());
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
-    http.newCall(request, b -> {
+    http.newCall(REQUEST, b -> {
       throw new LinkageError();
     }).enqueue(new Callback<Object>() {
       @Override public void onSuccess(@Nullable Object value) {
@@ -75,9 +90,9 @@ public class HttpCallTest {
 
   @Test
   public void executionException_conversionException() throws Exception {
-    mws.enqueue(new MockResponse());
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(request, b -> {
+    Call<?> call = http.newCall(REQUEST, b -> {
       throw new IllegalArgumentException("eeek");
     });
 
@@ -91,9 +106,9 @@ public class HttpCallTest {
 
   @Test
   public void cloned() throws Exception {
-    mws.enqueue(new MockResponse());
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(request, b -> null);
+    Call<?> call = http.newCall(REQUEST, b -> null);
     call.execute();
 
     try {
@@ -103,16 +118,16 @@ public class HttpCallTest {
       assertThat(expected).isInstanceOf(IllegalStateException.class);
     }
 
-    mws.enqueue(new MockResponse());
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     call.clone().execute();
   }
 
   @Test
   public void executionException_httpFailure() throws Exception {
-    mws.enqueue(new MockResponse().setResponseCode(500));
+    MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
 
-    Call<?> call = http.newCall(request, b -> null);
+    Call<?> call = http.newCall(REQUEST, b -> null);
 
     try {
       call.execute();

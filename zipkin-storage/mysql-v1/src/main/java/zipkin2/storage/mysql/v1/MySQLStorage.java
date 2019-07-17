@@ -157,6 +157,10 @@ public final class MySQLStorage extends StorageComponent {
     return CheckResult.OK;
   }
 
+  @Override public final String toString() {
+    return "MySQLStorage{datasource=" + datasource + "}";
+  }
+
   @Override public void close() {
     // didn't open the DataSource or executor
   }

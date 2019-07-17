@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigException;
@@ -194,6 +195,13 @@ public final class KafkaCollector extends CollectorComponent {
     if (adminClient != null) adminClient.close(1, TimeUnit.SECONDS);
   }
 
+  @Override public final String toString() {
+    return "KafkaCollector{"
+      + "bootstrapServers=" + properties.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG)
+      + ", topic=" + kafkaWorkers.builder.topic
+      + "}";
+  }
+
   static final class LazyKafkaWorkers {
     final int streams;
     final Builder builder;
@@ -241,6 +249,8 @@ public final class KafkaCollector extends CollectorComponent {
               : Executors.newFixedThreadPool(streams);
 
       for (int i = 0; i < streams; i++) {
+        // TODO: bad idea to lazy reference properties from a mutable builder
+        // copy them here and then pass this to the KafkaCollectorWorker ctor instead
         KafkaCollectorWorker worker = new KafkaCollectorWorker(builder);
         workers.add(worker);
         pool.execute(guardFailures(worker));

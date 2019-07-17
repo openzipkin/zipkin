@@ -13,30 +13,19 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import brave.ScopedSpan;
-import brave.Tracer;
 import brave.Tracing;
-import brave.http.HttpTracing;
-import brave.okhttp3.TracingInterceptor;
-import brave.propagation.CurrentTraceContext;
-import com.linecorp.armeria.common.RequestContext;
-import java.io.IOException;
-import java.util.Collections;
+import com.linecorp.armeria.client.ClientFactoryBuilder;
+import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.brave.BraveClient;
+import com.linecorp.armeria.client.logging.LoggingClientBuilder;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.logging.LogLevel;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-import okhttp3.Dispatcher;
-import okhttp3.Interceptor;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.logging.HttpLoggingInterceptor;
-import org.springframework.beans.factory.annotation.Autowired;
+import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -48,8 +37,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.HostsSupplier;
+import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
-import zipkin2.server.internal.WrappingExecutorService;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
@@ -59,43 +48,89 @@ import zipkin2.storage.StorageComponent;
 public class ZipkinElasticsearchStorageAutoConfiguration {
   static final String QUALIFIER = "zipkinElasticsearchHttp";
 
-  // allows extensions like zipkin-storage-elasticsearch-aws to intercept requests
-  @Autowired(required = false) @Qualifier(QUALIFIER)
-  List<Interceptor> zipkinElasticsearchHttpNetworkInterceptors = Collections.emptyList();
-  // allows extensions like zipkin-storage-elasticsearch-aws to control host resolution
-  @Autowired(required = false) HostsSupplier hostsSupplier;
-
-  // Allows us to trace the elasticsearch client
-  @Bean @Qualifier(QUALIFIER)
-  OkHttpClient.Builder zipkinElasticsearchHttpBuilder() {
-    return new OkHttpClient.Builder();
-  }
-
-  @Bean @Qualifier(QUALIFIER) OkHttpClient zipkinElasticsearchHttp(
-    OkHttpClient.Builder zipkinElasticsearchHttpBuilder,
+  @Bean @Qualifier(QUALIFIER) Consumer<HttpClientBuilder> zipkinElasticsearchHttp(
     @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    for (Interceptor interceptor : zipkinElasticsearchHttpNetworkInterceptors) {
-      zipkinElasticsearchHttpBuilder.addNetworkInterceptor(interceptor);
-    }
-    return zipkinElasticsearchHttpBuilder.connectTimeout(timeout, TimeUnit.MILLISECONDS)
-      .readTimeout(timeout, TimeUnit.MILLISECONDS)
-      .writeTimeout(timeout, TimeUnit.MILLISECONDS).build();
+    return new Consumer<HttpClientBuilder>() {
+      @Override public void accept(HttpClientBuilder client) {
+        client.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
+      }
+
+      @Override public String toString() {
+        return "TimeoutCustomizer{timeout=" + timeout + "ms}";
+      }
+    };
   }
+
+  @Bean @Qualifier(QUALIFIER) Consumer<ClientFactoryBuilder> zipkinElasticsearchClientFactory(
+    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    return new Consumer<ClientFactoryBuilder>() {
+      @Override public void accept(ClientFactoryBuilder factory) {
+        factory.connectTimeoutMillis(timeout);
+      }
+
+      @Override public String toString() {
+        return "TimeoutCustomizer{timeout=" + timeout + "ms}";
+      }
+    };
+  }
+
 
   @Bean @Qualifier(QUALIFIER) @Conditional(HttpLoggingSet.class)
-  Interceptor zipkinElasticsearchHttpLoggingInterceptor(ZipkinElasticsearchStorageProperties es) {
-    Logger logger = Logger.getLogger(ElasticsearchStorage.class.getName());
-    return new HttpLoggingInterceptor(logger::info).setLevel(es.getHttpLogging());
+  Consumer<HttpClientBuilder> zipkinElasticsearchHttpLogging(
+    ZipkinElasticsearchStorageProperties es) {
+    LoggingClientBuilder builder = new LoggingClientBuilder()
+      .requestLogLevel(LogLevel.INFO)
+      .successfulResponseLogLevel(LogLevel.INFO);
+
+    switch (es.getHttpLogging()) {
+      case HEADERS:
+        builder.contentSanitizer(unused -> "");
+        break;
+      case BASIC:
+        builder.contentSanitizer(unused -> "");
+        builder.headersSanitizer(unused -> HttpHeaders.of());
+        break;
+      case BODY:
+      default:
+        break;
+    }
+
+    return new Consumer<HttpClientBuilder>() {
+      @Override public void accept(HttpClientBuilder client) {
+        client
+          .decorator(builder.newDecorator())
+          .decorator(
+            es.getHttpLogging() == ZipkinElasticsearchStorageProperties.HttpLoggingLevel.BODY
+            ? RawContentLoggingClient.newDecorator()
+            : Function.identity());
+      }
+
+      @Override public String toString() {
+        return "LoggingCustomizer{httpLogging=" + es.getHttpLogging() + "}";
+      }
+    };
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
-  Interceptor zipkinElasticsearchHttpBasicAuthInterceptor(ZipkinElasticsearchStorageProperties es) {
-    return new BasicAuthInterceptor(es);
+  Consumer<HttpClientBuilder> zipkinElasticsearchHttpBasicAuth(
+    ZipkinElasticsearchStorageProperties es) {
+    return new Consumer<HttpClientBuilder>() {
+      @Override public void accept(HttpClientBuilder client) {
+        client.decorator(delegate -> new BasicAuthInterceptor(delegate, es));
+      }
+
+      @Override public String toString() {
+        return "BasicAuthCustomizer{basicCredentials=<redacted>}";
+      }
+    };
   }
 
   @Bean @ConditionalOnMissingBean StorageComponent storage(
     ZipkinElasticsearchStorageProperties elasticsearch,
-    @Qualifier(QUALIFIER) OkHttpClient zipkinElasticsearchHttp,
+    @Qualifier(QUALIFIER) List<Consumer<HttpClientBuilder>> zipkinElasticsearchHttpCustomizers,
+    @Qualifier(QUALIFIER) List<Consumer<ClientFactoryBuilder>>
+      zipkinElasticsearchClientFactoryCustomizers,
+    Optional<HostsSupplier> hostsSupplier,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
     @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
@@ -103,82 +138,26 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     ElasticsearchStorage.Builder result = elasticsearch
-      .toBuilder(zipkinElasticsearchHttp)
+      .toBuilder()
+      .clientCustomizer(new CompositeCustomizer<>(zipkinElasticsearchHttpCustomizers))
+      .clientFactoryCustomizer(
+        new CompositeCustomizer<>(zipkinElasticsearchClientFactoryCustomizers))
       .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
       .autocompleteKeys(autocompleteKeys)
       .autocompleteTtl(autocompleteTtl)
       .autocompleteCardinality(autocompleteCardinality);
-    if (hostsSupplier != null) result.hostsSupplier(hostsSupplier);
+    hostsSupplier.ifPresent(result::hostsSupplier);
     return result.build();
   }
 
-  // our elasticsearch impl uses an instance of OkHttpClient, not Call.Factory, so we have to trace
-  // carefully the pieces inside OkHttpClient
-  @Configuration
-  @ConditionalOnSelfTracing
-  static class TracingOkHttpClientBuilderEnhancer implements BeanPostProcessor {
-
-    @Autowired(required = false) HttpTracing httpTracing;
-    @Autowired(required = false) Tracing tracing;
-
-    @Override public Object postProcessBeforeInitialization(Object bean, String beanName) {
-      return bean;
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<HttpClientBuilder>
+  elasticsearchTracing(Optional<Tracing> tracing) {
+    if (!tracing.isPresent()) {
+      return client -> {};
     }
-
-    @Override public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (httpTracing == null || !"zipkinElasticsearchHttpBuilder".equals(beanName)) return bean;
-      Tracer tracer = tracing.tracer();
-
-      OkHttpClient.Builder builder = (OkHttpClient.Builder) bean;
-      builder.addInterceptor(new Interceptor() {
-        /** create a local span with the same name as the request tag */
-        @Override public Response intercept(Chain chain) throws IOException {
-          // don't start new traces (to prevent amplifying writes to local storage)
-          if (tracer.currentSpan() == null) return chain.proceed(chain.request());
-
-          Request request = chain.request();
-          ScopedSpan span = tracer.startScopedSpan(request.tag().toString());
-          try {
-            return chain.proceed(request);
-          } catch (RuntimeException | IOException | Error e) {
-            span.error(e);
-            throw e;
-          } finally {
-            span.finish();
-          }
-        }
-      });
-      builder.addNetworkInterceptor(
-        TracingInterceptor.create(httpTracing.clientOf("elasticsearch")));
-      ExecutorService delegate = new Dispatcher().executorService();
-      builder.dispatcher(new Dispatcher(makeContextAware(delegate, tracing.currentTraceContext())));
-      return builder;
-    }
-  }
-
-  /**
-   * Decorates the input such that the {@link RequestContext#current() current request context} and
-   * the and the {@link CurrentTraceContext#get() current trace context} at assembly time is made
-   * current when task is executed.
-   */
-  static ExecutorService makeContextAware(ExecutorService delegate, CurrentTraceContext traceCtx) {
-    class TracingCurrentRequestContextExecutorService extends WrappingExecutorService {
-
-      @Override protected ExecutorService delegate() {
-        return delegate;
-      }
-
-      @Override protected <C> Callable<C> wrap(Callable<C> task) {
-        return RequestContext.current().makeContextAware(traceCtx.wrap(task));
-      }
-
-      @Override protected Runnable wrap(Runnable task) {
-        return RequestContext.current().makeContextAware(traceCtx.wrap(task));
-      }
-    }
-    return new TracingCurrentRequestContextExecutorService();
+    return client -> client.decorator(BraveClient.newDecorator(tracing.get(), "elasticsearch"));
   }
 
   static final class HttpLoggingSet implements Condition {
@@ -195,6 +174,24 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
       String password =
         condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.password");
       return !isEmpty(userName) && !isEmpty(password);
+    }
+  }
+
+  static final class CompositeCustomizer<T> implements Consumer<T> {
+    final List<Consumer<T>> customizers;
+
+    CompositeCustomizer(List<Consumer<T>> customizers) {
+      this.customizers = customizers;
+    }
+
+    @Override public void accept(T target) {
+      for (Consumer<T> customizer : customizers) {
+        customizer.accept(target);
+      }
+    }
+
+    @Override public String toString() {
+      return customizers.toString();
     }
   }
 

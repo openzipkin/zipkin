@@ -13,10 +13,13 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestHeaders;
 import java.io.IOException;
-import okhttp3.HttpUrl;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import zipkin2.elasticsearch.internal.client.HttpCall.Factory;
 
 /** Ensures the index template exists and saves off the version */
@@ -26,17 +29,16 @@ final class EnsureIndexTemplate {
    * This is a blocking call, used inside a lazy. That's because no writes should occur until the
    * template is available.
    */
-  static void ensureIndexTemplate(Factory callFactory, HttpUrl templateUrl, String indexTemplate)
+  static void ensureIndexTemplate(Factory callFactory, String templateUrl, String indexTemplate)
     throws IOException {
-    Request getTemplate = new Request.Builder().url(templateUrl).tag("get-template").build();
+    AggregatedHttpRequest getTemplate = AggregatedHttpRequest.of(HttpMethod.GET, templateUrl);
     try {
       callFactory.newCall(getTemplate, BodyConverters.NULL).execute();
     } catch (IllegalStateException e) { // TODO: handle 404 slightly more nicely
-      Request updateTemplate = new Request.Builder()
-        .url(templateUrl)
-        .put(RequestBody.create(ElasticsearchStorage.APPLICATION_JSON, indexTemplate))
-        .tag("update-template")
-        .build();
+      AggregatedHttpRequest updateTemplate = AggregatedHttpRequest.of(
+        RequestHeaders.of(
+          HttpMethod.PUT, templateUrl, HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
+        HttpData.ofUtf8(indexTemplate));
       callFactory.newCall(updateTemplate, BodyConverters.NULL).execute();
     }
   }

@@ -15,6 +15,7 @@ package zipkin2.storage.cassandra;
 
 import java.io.IOException;
 import java.util.stream.IntStream;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Span;
@@ -32,6 +33,10 @@ abstract class ITSpanConsumer {
 
   @Before public void connect() {
     storage = storageBuilder().autocompleteKeys(asList("environment")).keyspace(keyspace()).build();
+  }
+
+  @After public void disconnect() {
+    storage.close();
   }
 
   abstract CassandraStorage.Builder storageBuilder();

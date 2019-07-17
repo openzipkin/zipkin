@@ -33,6 +33,7 @@ import org.junit.rules.TestName;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.CheckResult;
+import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.InMemoryCollectorMetrics;
@@ -91,6 +92,12 @@ public class ITActiveMQCollector {
     collector.start();
   }
 
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
   @Test public void toStringContainsOnlySummaryInformation() {
     assertThat(collector).hasToString(String.format("ActiveMQCollector{brokerURL=%s, queue=%s}",
       activemq.getVmURL(), testName.getMethodName())

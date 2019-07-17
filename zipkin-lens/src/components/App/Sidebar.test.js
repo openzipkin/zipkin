@@ -42,8 +42,8 @@ describe('<Sidebar />', () => {
       internalLinks = wrapper.find('[data-test="internal-links"]');
     });
 
-    it('should render 2 links', () => {
-      expect(internalLinks.children().length).toBe(2);
+    it('should render 1 links', () => {
+      expect(internalLinks.children().length).toBe(1);
     });
 
     it('should not pass isExternalLink', () => {

@@ -1,22 +1,21 @@
 # storage-elasticsearch-http
 
 This is is a plugin to the Elasticsearch storage component, which uses
-HTTP by way of [OkHttp 3](https://github.com/square/okttp) and
+HTTP by way of [Armeria](https://github.com/line/armeria) and
 [Moshi](https://github.com/square/moshi). This uses Elasticsearch 5+
 features, but is tested against Elasticsearch 6-7.x.
 
 ## Multiple hosts
 Most users will supply a DNS name that's mapped to multiple A or AAAA
 records. For example, `http://elasticsearch:9200` will use normal host
-lookups to get the list of IP addresses.
-
-You can alternatively supply a list of http base urls. This list is used
-to recover from failures. Note that all ports must be the same, and the
-scheme must be http, not https.
+lookups to get the list of IP addresses, though you can alternatively supply 
+a list of http base urls. In either case, all of the resolved IP addresses
+from all provided hosts will be iterated over round-robin, with requests made
+only to healthy addresses.
 
 Here are some examples:
 
-* http://1.1.1.1:9200,http://2.2.2.2:9200
+* http://1.1.1.1:9200,http://2.2.2.2:19200
 * http://1.1.1.1:9200,http://[2001:db8::c001]:9200
 * http://elasticsearch:9200,http://1.2.3.4:9200
 * http://elasticsearch-1:9200,http://elasticsearch-2:9200

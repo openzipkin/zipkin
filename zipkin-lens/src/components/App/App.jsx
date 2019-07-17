@@ -19,54 +19,47 @@ import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 
 import Layout from './Layout';
-import BrowserContainer from '../../containers/Browser/BrowserContainer';
+import DiscoverPage from '../DiscoverPage';
 import TracePageContainer from '../../containers/TracePage/TracePageContainer';
-import DependenciesContainer from '../../containers/Dependencies/DependenciesContainer';
 import TraceViewerContainer from '../../containers/TraceViewer/TraceViewerContainer';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
+import { useMount } from '../../hooks';
 
 const applicationTitle = 'Zipkin';
 
-class App extends React.Component {
-  componentDidMount() {
+const App = () => {
+  useMount(() => {
     document.title = applicationTitle;
-  }
+  });
 
-  render() {
-    return (
-      <MuiPickersUtilsProvider utils={MomentUtils}>
-        <ThemeProvider theme={theme}>
-          <Provider store={configureStore()}>
-            <BrowserRouter>
-              <Layout>
-                <Route
-                  exact
-                  path="/zipkin/"
-                  component={BrowserContainer}
-                />
-                <Route
-                  exact
-                  path="/zipkin/traces/:traceId"
-                  component={TracePageContainer}
-                />
-                <Route
-                  exact
-                  path="/zipkin/dependency"
-                  component={DependenciesContainer}
-                />
-                <Route
-                  exact
-                  path="/zipkin/traceViewer"
-                  component={TraceViewerContainer}
-                />
-              </Layout>
-            </BrowserRouter>
-          </Provider>
-        </ThemeProvider>
-      </MuiPickersUtilsProvider>
-    );
-  }
-}
+  return (
+    <MuiPickersUtilsProvider utils={MomentUtils}>
+      <ThemeProvider theme={theme}>
+        <Provider store={configureStore()}>
+          <BrowserRouter>
+            <Layout>
+              <Route
+                exact
+                path={['/zipkin', '/zipkin/dependency']}
+                component={DiscoverPage}
+              />
+              <Route
+                exact
+                path="/zipkin/traces/:traceId"
+                component={TracePageContainer}
+              />
+              <Route
+                exact
+                path="/zipkin/traceViewer"
+                component={TraceViewerContainer}
+              />
+            </Layout>
+          </BrowserRouter>
+        </Provider>
+      </ThemeProvider>
+    </MuiPickersUtilsProvider>
+  );
+};
 
 export default App;

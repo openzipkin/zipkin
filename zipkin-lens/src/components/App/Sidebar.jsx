@@ -57,15 +57,14 @@ const Sidebar = () => {
           <Logo className={classes.logo} />
         </Box>
         <List data-test="internal-links">
-          <SidebarMenuItem title="Traces" url="/zipkin" buttonClassName="fas fa-search" />
-          <SidebarMenuItem title="Dependency Links" url="/zipkin/dependency" buttonClassName="fas fa-project-diagram" />
+          <SidebarMenuItem title="Discover Page" urls={['/zipkin', '/zipkin/dependency']} buttonClassName="fas fa-search" />
         </List>
       </Box>
       <List data-test="external-links">
-        <SidebarMenuItem isExternalLink title="Zipkin Home" url="https://zipkin.io/" buttonClassName="fas fa-home" />
-        <SidebarMenuItem isExternalLink title="Repository" url="https://github.com/openzipkin/zipkin" buttonClassName="fab fa-github" />
-        <SidebarMenuItem isExternalLink title="Twitter" url="https://twitter.com/zipkinproject" buttonClassName="fab fa-twitter" />
-        <SidebarMenuItem isExternalLink title="Gitter" url="https://gitter.im/openzipkin/zipkin/" buttonClassName="fab fa-gitter" />
+        <SidebarMenuItem isExternalLink title="Zipkin Home" urls={['https://zipkin.io/']} buttonClassName="fas fa-home" />
+        <SidebarMenuItem isExternalLink title="Repository" urls={['https://github.com/openzipkin/zipkin']} buttonClassName="fab fa-github" />
+        <SidebarMenuItem isExternalLink title="Twitter" urls={['https://twitter.com/zipkinproject']} buttonClassName="fab fa-twitter" />
+        <SidebarMenuItem isExternalLink title="Gitter" urls={['https://gitter.im/openzipkin/zipkin/']} buttonClassName="fab fa-gitter" />
       </List>
     </Drawer>
   );

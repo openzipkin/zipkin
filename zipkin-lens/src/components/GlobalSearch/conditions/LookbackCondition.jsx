@@ -133,14 +133,11 @@ const LookbackCondition = () => {
     }));
   };
 
-  const startTime = moment(lookbackCondition.startTs);
-  const endTime = moment(lookbackCondition.endTs);
-
   let lookbackButtonText = '';
   if (isCustom) {
-    const startTimeStr = startTime.format('MMM Do YY, hh:mm');
-    const endTimeStr = endTime.format('MMM Do YY, hh:mm');
-    lookbackButtonText = `${startTimeStr} to ${endTimeStr}`;
+    const startTimeStr = moment(lookbackCondition.startTs).format('MMM Do YY, hh:mm');
+    const endTimeStr = moment(lookbackCondition.endTs).format('MMM Do YY, hh:mm');
+    lookbackButtonText = `${startTimeStr} - ${endTimeStr}`;
   } else {
     lookbackButtonText = lookbackOptionMap[lookbackCondition.value];
   }
@@ -219,7 +216,7 @@ const LookbackCondition = () => {
             <Box mb={3}>
               <KeyboardDateTimePicker
                 label="Start Time"
-                value={startTime}
+                value={customRange.startTime}
                 className={classes.timePicker}
                 onChange={handleStartTimeChange}
               />
@@ -227,7 +224,7 @@ const LookbackCondition = () => {
             <Box mb={1.5}>
               <KeyboardDateTimePicker
                 label="End Time"
-                value={endTime}
+                value={customRange.endTime}
                 className={classes.timePicker}
                 onChange={handleEndTimeChange}
               />

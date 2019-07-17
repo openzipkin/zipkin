@@ -30,6 +30,7 @@ module.exports = {
     publicPath: '/zipkin/',
   },
   optimization: {
+    minimize: true,
     minimizer: [new TerserJSPlugin({}), new OptimizeCSSAssetsPlugin({})],
   },
   module: {
@@ -47,7 +48,7 @@ module.exports = {
           { loader: MiniCssExtractPlugin.loader },
           { loader: 'css-loader', options: { sourceMap: true } },
           { loader: 'resolve-url-loader' },
-          { loader: 'sass-loader', options: {sourceMap: true } },
+          { loader: 'sass-loader', options: { sourceMap: true } },
         ],
       },
       {
@@ -58,12 +59,13 @@ module.exports = {
         },
       },
       {
-        test: /webfonts\/.*\.(svg|woff|woff2|ttf|eot)$/,
-        loader: "file-loader",
+        test: /\.(svg|woff|woff2|ttf|eot)$/,
+        include: /webfonts/,
+        loader: 'file-loader',
         options: {
           outputPath: 'webfonts',
-          name: '[name]-[hash].[ext]'
-        }
+          name: '[name]-[hash].[ext]',
+        },
       },
       {
         test: /\.(jpg|png)$/,
@@ -72,13 +74,16 @@ module.exports = {
       {
         test: /\.svg$/,
         use: [
-          {
-            loader: 'babel-loader',
-          },
+          { loader: 'babel-loader' },
           {
             loader: 'react-svg-loader',
             options: {
               jsx: true,
+              svgo: {
+                plugins: [
+                  { removeViewBox: false },
+                ],
+              },
             },
           },
         ],
@@ -105,7 +110,4 @@ module.exports = {
       },
     }),
   ],
-  optimization: {
-    minimize: true,
-  },
 };

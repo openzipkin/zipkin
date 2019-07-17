@@ -13,9 +13,10 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.HttpMethod;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import okhttp3.Request;
 import okio.BufferedSource;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
@@ -218,7 +219,7 @@ final class VersionSpecificTemplates {
   }
 
   static float getVersion(HttpCall.Factory callFactory) throws IOException {
-    Request getNode = new Request.Builder().url(callFactory.baseUrl).tag("get-node").build();
+    AggregatedHttpRequest getNode = AggregatedHttpRequest.of(HttpMethod.GET, "/");;
     return callFactory.newCall(getNode, ReadVersionNumber.INSTANCE).execute();
   }
 

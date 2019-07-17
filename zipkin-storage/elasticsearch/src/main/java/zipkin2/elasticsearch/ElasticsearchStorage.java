@@ -15,17 +15,38 @@ package zipkin2.elasticsearch;
 
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
+import com.linecorp.armeria.client.ClientFactory;
+import com.linecorp.armeria.client.ClientFactoryBuilder;
+import com.linecorp.armeria.client.Endpoint;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.encoding.HttpDecodingClient;
+import com.linecorp.armeria.client.endpoint.EndpointGroup;
+import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
+import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
+import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
+import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
+import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
+import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
+import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.Flags;
+import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.util.AbstractListenable;
+import com.linecorp.armeria.common.util.EventLoopGroups;
 import com.squareup.moshi.JsonReader;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
+import java.util.concurrent.TimeoutException;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import okio.Buffer;
 import okio.BufferedSource;
 import zipkin2.CheckResult;
@@ -56,40 +77,41 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     List<String> get();
   }
 
-  static final MediaType APPLICATION_JSON = MediaType.parse("application/json");
-
-  public static Builder newBuilder(OkHttpClient client) {
-    return new $AutoValue_ElasticsearchStorage.Builder()
-        .client(client)
-        .hosts(Collections.singletonList("http://localhost:9200"))
-        .maxRequests(64)
-        .strictTraceId(true)
-        .searchEnabled(true)
-        .index("zipkin")
-        .dateSeparator('-')
-        .indexShards(5)
-        .indexReplicas(1)
-        .namesLookback(86400000)
-        .shutdownClientOnClose(false)
-        .flushOnWrites(false)
-        .autocompleteKeys(Collections.emptyList())
-        .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
-        .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
-  }
-
   public static Builder newBuilder() {
-    Builder result = newBuilder(new OkHttpClient());
-    result.shutdownClientOnClose(true);
-    return result;
+    return new $AutoValue_ElasticsearchStorage.Builder()
+      .clientCustomizer(unused -> {})
+      .clientFactoryCustomizer(unused -> {})
+      .hosts(Collections.singletonList("http://localhost:9200"))
+      .maxRequests(64)
+      .strictTraceId(true)
+      .searchEnabled(true)
+      .index("zipkin")
+      .dateSeparator('-')
+      .indexShards(5)
+      .indexReplicas(1)
+      .namesLookback(86400000)
+      .flushOnWrites(false)
+      .autocompleteKeys(Collections.emptyList())
+      .autocompleteTtl((int) TimeUnit.HOURS.toMillis(1))
+      .autocompleteCardinality(5 * 4000); // Ex. 5 site tags with cardinality 4000 each
   }
 
   abstract Builder toBuilder();
 
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
-    abstract Builder client(OkHttpClient client);
+    /**
+     * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. This is used
+     * by the server and tests to enable detailed logging and tweak timeouts.
+     */
+    public abstract Builder clientCustomizer(Consumer<HttpClientBuilder> clientCustomizer);
 
-    public abstract Builder shutdownClientOnClose(boolean shutdownClientOnClose);
+    /**
+     * Customizes the {@link ClientFactoryBuilder} used when connecting to ElasticSearch. This is
+     * used by the server and tests to tweak timeouts.
+     */
+    public abstract Builder clientFactoryCustomizer(
+      Consumer<ClientFactoryBuilder> clientFactoryCustomizer);
 
     /**
      * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
@@ -217,9 +239,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     Builder() {}
   }
 
-  abstract OkHttpClient client();
+  abstract Consumer<HttpClientBuilder> clientCustomizer();
 
-  abstract boolean shutdownClientOnClose();
+  abstract Consumer<ClientFactoryBuilder> clientFactoryCustomizer();
 
   public abstract HostsSupplier hostsSupplier();
 
@@ -289,24 +311,41 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   void clear(String index) throws IOException {
-    HttpUrl.Builder url = http().baseUrl.newBuilder().addPathSegment(index);
-    Request delete = new Request.Builder().url(url.build()).delete().tag("delete-index").build();
+    String url = '/' + index;
+    AggregatedHttpRequest delete = AggregatedHttpRequest.of(HttpMethod.DELETE, url);
     http().newCall(delete, BodyConverters.NULL).execute();
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
   @Override
   public CheckResult check() {
+    HttpClient client = httpClient();
+    EndpointGroup healthChecked = EndpointGroupRegistry.get("elasticsearch");
+    if (healthChecked instanceof HttpHealthCheckedEndpointGroup) {
+      try {
+        ((HttpHealthCheckedEndpointGroup) healthChecked).awaitInitialEndpoints(
+          client.options().responseTimeoutMillis(), TimeUnit.MILLISECONDS);
+      } catch (InterruptedException | TimeoutException e) {
+        return CheckResult.failed(e);
+      }
+    }
     return ensureClusterReady(indexNameFormatter().formatType(SPAN));
+  }
+
+  @Override public void close() {
+    EndpointGroup endpointGroup = EndpointGroupRegistry.get("elasticsearch");
+    if (endpointGroup != null) {
+      endpointGroup.close();
+      EndpointGroupRegistry.unregister("elasticsearch");
+    }
+    clientFactory().close();
   }
 
   CheckResult ensureClusterReady(String index) {
     try {
       HttpCall.Factory http = http();
-      Request request = new Request.Builder()
-        .url(http.baseUrl.resolve("/_cluster/health/" + index))
-        .tag("get-cluster-health")
-        .build();
+      AggregatedHttpRequest request = AggregatedHttpRequest.of(
+        HttpMethod.GET, "/_cluster/health/" + index);
       return http.newCall(request, ReadStatus.INSTANCE).execute();
     } catch (IOException | RuntimeException e) {
       return CheckResult.failed(e);
@@ -341,41 +380,145 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     try {
       IndexTemplates templates = new VersionSpecificTemplates(this).get();
       HttpCall.Factory http = http();
-      ensureIndexTemplate(http, buildUrl(http, templates, SPAN), templates.span());
-      ensureIndexTemplate(http, buildUrl(http, templates, DEPENDENCY), templates.dependency());
-      ensureIndexTemplate(http, buildUrl(http, templates, AUTOCOMPLETE), templates.autocomplete());
+      ensureIndexTemplate(http, buildUrl(templates, SPAN), templates.span());
+      ensureIndexTemplate(http, buildUrl(templates, DEPENDENCY), templates.dependency());
+      ensureIndexTemplate(http, buildUrl(templates, AUTOCOMPLETE), templates.autocomplete());
       return templates;
     } catch (IOException e) {
       throw Platform.get().uncheckedIOException(e);
     }
   }
 
-  HttpUrl buildUrl(HttpCall.Factory http, IndexTemplates templates, String type) {
-    HttpUrl.Builder builder = http.baseUrl.newBuilder("_template");
+  String buildUrl(IndexTemplates templates, String type) {
     String indexPrefix = indexNameFormatter().index() + templates.indexTypeDelimiter();
-    return builder.addPathSegment(indexPrefix + type + "_template").build();
+    return "/_template/" + indexPrefix + type + "_template";
   }
 
-  @Memoized // hosts resolution might imply a network call, and we might make a new okhttp instance
-  public HttpCall.Factory http() {
+  @Memoized // a new client factory means new connections
+  ClientFactory clientFactory() {
+    ClientFactoryBuilder builder = new ClientFactoryBuilder()
+      // TODO(anuraaga): Remove after https://github.com/line/armeria/pull/1899
+      .workerGroup(EventLoopGroups.newEventLoopGroup(
+        Flags.numCommonWorkers(), "armeria-common-worker", true), true)
+      .useHttp2Preface(false);
+    clientFactoryCustomizer().accept(builder);
+    return builder.build();
+  }
+
+  @Memoized // hosts resolution might imply a network call, and we might make a new client instance
+  public HttpClient httpClient() {
     List<String> hosts = hostsSupplier().get();
     if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
-    OkHttpClient ok =
-        hosts.size() == 1
-            ? client()
-            : client()
-                .newBuilder()
-                .dns(PseudoAddressRecordSet.create(hosts, client().dns()))
-                .build();
-    ok.dispatcher().setMaxRequests(maxRequests());
-    ok.dispatcher().setMaxRequestsPerHost(maxRequests());
-    return new HttpCall.Factory(ok, HttpUrl.parse(hosts.get(0)));
+
+    List<URL> urls = hosts.stream()
+      .map(host -> {
+        try {
+          return new URL(host);
+        } catch (MalformedURLException e) {
+          throw new IllegalArgumentException("Invalid host: " + host, e);
+        }
+      })
+      .collect(Collectors.toList());
+
+    final EndpointGroup endpointGroup;
+    if (urls.size() == 1) {
+      URL url = urls.get(0);
+      if (isIpAddress(url.getHost())) {
+        endpointGroup = null;
+      } else {
+        // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint group
+        // to round-robin over them.
+        DnsAddressEndpointGroupBuilder dnsEndpoint =
+          new DnsAddressEndpointGroupBuilder(url.getHost());
+        if (url.getPort() != -1) {
+          dnsEndpoint.port(url.getPort());
+        }
+        endpointGroup = dnsEndpoint.build();
+      }
+    } else {
+      List<EndpointGroup> endpointGroups = new ArrayList<>();
+      List<Endpoint> staticEndpoints = new ArrayList<>();
+      for (URL url : urls) {
+        if (isIpAddress(url.getHost())) {
+          staticEndpoints.add(Endpoint.parse(url.getAuthority()));
+        } else {
+          // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
+          // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
+          // with single IPs freely, they'll all get used.
+          endpointGroups.add(url.getPort() == -1
+            ? DnsAddressEndpointGroup.of(url.getHost())
+            : DnsAddressEndpointGroup.of(url.getHost(), url.getPort()));
+        }
+      }
+
+      if (!staticEndpoints.isEmpty()) {
+        endpointGroups.add(new StaticEndpointGroup(staticEndpoints));
+      }
+
+      if (endpointGroups.size() == 1) {
+        endpointGroup = endpointGroups.get(0);
+      } else {
+        endpointGroup = new CompositeEndpointGroup(endpointGroups);
+      }
+    }
+
+    final String clientUrl;
+    if (endpointGroup != null) {
+      HttpHealthCheckedEndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
+        endpointGroup, "/_cluster/health")
+        .clientFactory(clientFactory())
+        .build();
+      EndpointGroupRegistry.register(
+        "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
+      clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
+    } else {
+      // Just one non-domain URL, can connect directly without enabling load balancing.
+      clientUrl = hosts.get(0);
+    }
+
+    HttpClientBuilder client = new HttpClientBuilder(clientUrl)
+      .factory(clientFactory())
+      .decorator(HttpDecodingClient.newDecorator());
+
+    clientCustomizer().accept(client);
+
+    return client.build();
   }
 
-  @Override
-  public void close() {
-    if (!shutdownClientOnClose()) return;
-    http().close();
+  @Override public final String toString() {
+    return "ElasticsearchStorage{hosts=" + hostsSupplier().get()
+      + ", index=" + indexNameFormatter().index() + "}";
+  }
+
+  static boolean isIpAddress(String address) {
+    return zipkin2.Endpoint.newBuilder().parseIp(address);
+  }
+
+  // TODO(anuraaga): Move this upstream - https://github.com/line/armeria/issues/1897
+  static class CompositeEndpointGroup
+    extends AbstractListenable<List<Endpoint>> implements EndpointGroup {
+
+    final List<EndpointGroup> endpointGroups;
+
+    CompositeEndpointGroup(List<EndpointGroup> endpointGroups) {
+      this.endpointGroups = endpointGroups;
+      for (EndpointGroup group : endpointGroups) {
+        group.addListener(unused -> notifyListeners(endpoints()));
+      }
+    }
+
+    @Override public List<Endpoint> endpoints() {
+      List<Endpoint> merged = new ArrayList<>();
+      for (EndpointGroup group : endpointGroups) {
+        merged.addAll(group.endpoints());
+      }
+      return merged;
+    }
+  }
+
+  @Memoized // hosts resolution might imply a network call, and we might make a new client instance
+  public HttpCall.Factory http() {
+    return new HttpCall.Factory(httpClient(), maxRequests());
   }
 
   ElasticsearchStorage() {}

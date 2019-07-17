@@ -25,6 +25,7 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.CollectorMetrics;
@@ -137,6 +138,18 @@ public class ITRabbitMQCollector {
       channel.queueDelete("zipkin-test2");
       channel.close();
     }
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test public void toStringContainsOnlySummaryInformation() {
+    assertThat(rabbit.collector).hasToString(
+      String.format("RabbitMQCollector{addresses=[%s], queue=%s}", rabbit.address(), rabbit.queue)
+    );
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */

@@ -156,8 +156,13 @@ if ! is_pull_request && build_started_by_tag; then
   check_release_tag
 fi
 
+# During a release upload, don't run tests as they can flake or overrun the max time allowed by Travis.
 # skip license on travis due to #1512
-MYSQL_USER=root ./mvnw install -nsu -Dlicense.skip=true
+if is_release_commit; then
+  true
+else
+  MYSQL_USER=root ./mvnw verify -nsu -Dlicense.skip=true
+fi
 
 # If we are on a pull request, our only job is to run tests, which happened above via ./mvnw install
 if is_pull_request; then

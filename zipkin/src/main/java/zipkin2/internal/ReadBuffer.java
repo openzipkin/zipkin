@@ -27,8 +27,7 @@ public abstract class ReadBuffer extends InputStream {
   public static ReadBuffer wrapUnsafe(ByteBuffer buffer) {
     if (buffer.hasArray()) {
       int offset = buffer.arrayOffset() + buffer.position();
-      int limit = offset + buffer.remaining();
-      return wrap(buffer.array(), offset, limit);
+      return wrap(buffer.array(), offset, buffer.remaining());
     }
     return buffer.order() == ByteOrder.BIG_ENDIAN
       ? new BigEndianByteBuffer(buffer)
@@ -39,8 +38,8 @@ public abstract class ReadBuffer extends InputStream {
     return wrap(bytes, 0, bytes.length);
   }
 
-  public static ReadBuffer wrap(byte[] bytes, int pos, int limit) {
-    return new ReadBuffer.Array(bytes, pos, limit);
+  public static ReadBuffer wrap(byte[] bytes, int pos, int length) {
+    return new ReadBuffer.Array(bytes, pos, length);
   }
 
   static final class BigEndianByteBuffer extends Buff {
@@ -133,6 +132,7 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public int read(byte[] dst, int offset, int length) {
+      if (available() == 0) return -1;
       int toRead = checkReadArguments(dst, offset, length);
       if (toRead == 0) return 0;
       buf.get(dst, offset, toRead);
@@ -152,11 +152,11 @@ public abstract class ReadBuffer extends InputStream {
 
   static final class Array extends ReadBuffer {
     final byte[] buf;
-    int offset, length;
+    int arrayOffset, offset, length;
 
     Array(byte[] buf, int offset, int length) {
       this.buf = buf;
-      this.offset = offset;
+      this.arrayOffset = this.offset = offset;
       this.length = length;
     }
 
@@ -173,6 +173,7 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public int read(byte[] dst, int offset, int length) {
+      if (available() == 0) return -1;
       int toRead = checkReadArguments(dst, offset, length);
       if (toRead == 0) return 0;
       System.arraycopy(buf, this.offset, dst, 0, toRead);
@@ -231,7 +232,7 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public int pos() {
-      return offset;
+      return offset - arrayOffset;
     }
 
     @Override public long skip(long maxCount) {
@@ -241,7 +242,7 @@ public abstract class ReadBuffer extends InputStream {
     }
 
     @Override public int available() {
-      return length - offset;
+      return length - (offset - arrayOffset);
     }
   }
 

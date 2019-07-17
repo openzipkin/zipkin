@@ -247,6 +247,10 @@ public abstract class CassandraStorage extends StorageComponent {
     return CheckResult.OK;
   }
 
+  @Override public final String toString() {
+    return "CassandraStorage{contactPoints=" + contactPoints() + ", keyspace=" + keyspace() + "}";
+  }
+
   @Override
   public synchronized void close() {
     if (closeCalled) return;
