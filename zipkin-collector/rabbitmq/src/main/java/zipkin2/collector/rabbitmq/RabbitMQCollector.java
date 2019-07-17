@@ -22,6 +22,7 @@ import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -136,12 +137,22 @@ public final class RabbitMQCollector extends CollectorComponent {
     connection.close();
   }
 
+  @Override public final String toString() {
+    return "RabbitMQCollector{addresses="
+      + Arrays.toString(connection.builder.addresses)
+      + ", queue="
+      + queue
+      + "}";
+  }
+
   /** Lazy creates a connection and a queue before starting consumers */
   static final class LazyInit {
     final Builder builder;
     final AtomicReference<CheckResult> failure = new AtomicReference<>();
     volatile Connection connection;
 
+    // TODO: bad idea to lazy reference properties from a mutable builder
+    // copy them here and then pass this to the KafkaCollectorWorker ctor instead
     LazyInit(Builder builder) {
       this.builder = builder;
     }

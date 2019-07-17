@@ -24,6 +24,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
 import zipkin.server.ZipkinServer
+import zipkin2.Span
+import zipkin2.reporter.AsyncReporter
 import zipkin2.server.internal.Http
 import zipkin2.storage.InMemoryStorage
 
@@ -40,6 +42,7 @@ import zipkin2.storage.InMemoryStorage
 @RunWith(SpringRunner::class)
 class ITZipkinSelfTracing {
   @Autowired lateinit var server: Server
+  @Autowired lateinit var reporter: AsyncReporter<Span>
   @Autowired lateinit var storage: TracingStorageComponent
 
   lateinit var inMemoryStorage: InMemoryStorage
@@ -96,6 +99,17 @@ class ITZipkinSelfTracing {
     assertThat(traces[0]).anyMatch {
       it.name() == "post" && it.tags()["http.path"] == "/api/v2/spans"
     }
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test fun toStringContainsOnlySummaryInformation() {
+    assertThat(storage).hasToString("Traced{InMemoryStorage{traceCount=0}}")
+    assertThat(reporter).hasToString("AsyncReporter{StorageComponent}")
   }
 
   private fun assertServerTraced() {

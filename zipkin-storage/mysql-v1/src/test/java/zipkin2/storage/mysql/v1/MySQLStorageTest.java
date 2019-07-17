@@ -17,6 +17,7 @@ import java.sql.SQLException;
 import javax.sql.DataSource;
 import org.junit.Test;
 import zipkin2.CheckResult;
+import zipkin2.Component;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -49,5 +50,18 @@ public class MySQLStorageTest {
       .datasource(dataSource)
       .autocompleteKeys(asList("http.method"))
       .build();
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test public void toStringContainsOnlySummaryInformation() {
+    DataSource datasource = mock(DataSource.class);
+    when(datasource.toString()).thenReturn("Blamo");
+
+    assertThat(storage(datasource)).hasToString("MySQLStorage{datasource=Blamo}");
   }
 }
