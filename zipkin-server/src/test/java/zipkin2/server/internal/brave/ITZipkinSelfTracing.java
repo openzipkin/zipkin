@@ -29,6 +29,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 import zipkin2.Component;
 import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.QueryRequest;
@@ -37,6 +38,7 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static zipkin2.TestObjects.DAY;
+import static zipkin2.TestObjects.TRACE;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
 @SpringBootTest(
@@ -83,8 +85,7 @@ public class ITZipkinSelfTracing {
     assertThat(getTraces(QueryRequest.newBuilder()
       .annotationQuery(singletonMap("http.path", "/api/v1/spans")))).isNotEmpty();
 
-    // TODO: add local span labeling the storage request
-    //assertThat(getTraces(QueryRequest.newBuilder().spanName("accept-spans"))).isNotEmpty();
+    assertThat(getTraces(QueryRequest.newBuilder().spanName("accept-spans"))).isNotEmpty();
   }
 
   @Test public void postIsTraced_v2() throws Exception {
@@ -95,8 +96,7 @@ public class ITZipkinSelfTracing {
     assertThat(getTraces(QueryRequest.newBuilder()
       .annotationQuery(singletonMap("http.path", "/api/v2/spans")))).isNotEmpty();
 
-    // TODO: add local span labeling the storage request
-    //assertThat(getTraces(QueryRequest.newBuilder().spanName("accept-spans"))).isNotEmpty();
+    assertThat(getTraces(QueryRequest.newBuilder().spanName("accept-spans"))).isNotEmpty();
   }
 
   /**
@@ -116,10 +116,11 @@ public class ITZipkinSelfTracing {
   }
 
   void post(String version) throws IOException {
+    SpanBytesEncoder encoder =
+      "v1".equals(version) ? SpanBytesEncoder.JSON_V1 : SpanBytesEncoder.JSON_V2;
     client.newCall(new Request.Builder()
       .url(url(server, "/api/" + version + "/spans"))
-      .header("x-b3-sampled", "1") // we don't trace POST by default
-      .post(RequestBody.create(null, "[" + "]"))
+      .post(RequestBody.create(null, encoder.encodeList(TRACE)))
       .build())
       .execute();
   }
