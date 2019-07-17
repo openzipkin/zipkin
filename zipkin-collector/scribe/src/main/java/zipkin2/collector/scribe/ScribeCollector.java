@@ -94,6 +94,10 @@ public final class ScribeCollector extends CollectorComponent {
     return CheckResult.OK;
   }
 
+  @Override public final String toString() {
+    return "ScribeCollector{port=" + server.port + ", category=" + server.scribe.category + "}";
+  }
+
   @Override public void close() {
     server.close();
   }

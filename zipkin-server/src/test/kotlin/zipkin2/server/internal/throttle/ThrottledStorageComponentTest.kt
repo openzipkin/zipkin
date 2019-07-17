@@ -45,9 +45,15 @@ class ThrottledStorageComponentTest {
     ThrottledStorageComponent(delegate, registry, 1, 2, queueSize)
   }
 
-  @Test fun niceToString() {
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test fun toStringContainsOnlySummaryInformation() {
     assertThat(ThrottledStorageComponent(delegate, registry, 1, 2, 1))
-      .hasToString("Throttled(InMemoryStorage{traceCount=0})")
+      .hasToString("Throttled{InMemoryStorage{traceCount=0}}")
   }
 
   @Test fun delegatesCheck() {

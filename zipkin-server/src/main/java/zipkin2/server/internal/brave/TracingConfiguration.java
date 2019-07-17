@@ -24,10 +24,10 @@ import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.Span;
@@ -45,25 +45,12 @@ import zipkin2.storage.StorageComponent;
 @EnableConfigurationProperties(SelfTracingProperties.class)
 @ConditionalOnSelfTracing
 public class TracingConfiguration {
-
-  // Note: there's a chicken or egg problem here. TracingStorageComponent wraps StorageComponent
-  // with
-  // Brave. During initialization, if we eagerly reference StorageComponent from within Brave,
-  // BraveTracedStorageComponentEnhancer won't be able to process it. TL;DR; if you take out Lazy
-  // here, self-tracing will not affect the storage component, which reduces its effectiveness.
-  @Bean Sender sender(@Lazy StorageComponent storage) {
-    return new LocalSender(storage);
-  }
-
   /** Configuration for how to buffer spans into messages for Zipkin */
-  @Bean Reporter<Span> reporter(
-      Sender sender,
-      SelfTracingProperties config,
-      CollectorMetrics metrics) {
-    return AsyncReporter.builder(sender)
-        .messageTimeout(config.getMessageTimeout().toNanos(), TimeUnit.NANOSECONDS)
-        .metrics(new ReporterMetricsAdapter(metrics.forTransport("local")))
-        .build();
+  @Bean Reporter<Span> reporter(BeanFactory factory, SelfTracingProperties config) {
+    return AsyncReporter.builder(new LocalSender(factory))
+      .messageTimeout(config.getMessageTimeout().toNanos(), TimeUnit.NANOSECONDS)
+      .metrics(new ReporterMetricsAdapter(factory))
+      .build();
   }
 
   @Bean CurrentTraceContext currentTraceContext() {
@@ -81,8 +68,7 @@ public class TracingConfiguration {
   }
 
   /** Controls aspects of tracing such as the name that shows up in the UI */
-  @Bean Tracing tracing(
-      @Lazy Reporter<Span> reporter, SelfTracingProperties config) {
+  @Bean Tracing tracing(Reporter<Span> reporter, SelfTracingProperties config) {
     final Sampler sampler;
     if (config.getSampleRate() != 1.0) {
       if (config.getSampleRate() < 0.01) {
@@ -96,21 +82,22 @@ public class TracingConfiguration {
       sampler = Sampler.ALWAYS_SAMPLE;
     }
     return Tracing.newBuilder()
-        .localServiceName("zipkin-server")
-        .sampler(sampler)
-        .currentTraceContext(currentTraceContext())
-        .spanReporter(reporter)
-        .build();
+      .localServiceName("zipkin-server")
+      .sampler(sampler)
+      .currentTraceContext(currentTraceContext())
+      .spanReporter(reporter)
+      .build();
   }
 
   /**
    * Defined locally as StorageComponent is a lazy proxy, and we need to avoid eagerly calling it.
    */
   static final class LocalSender extends Sender {
-    private final StorageComponent delegate;
+    final BeanFactory factory;
+    volatile StorageComponent delegate; // volatile to prevent stale reads
 
-    LocalSender(StorageComponent delegate) {
-      this.delegate = delegate;
+    LocalSender(BeanFactory factory) {
+      this.factory = factory;
     }
 
     @Override public Encoding encoding() {
@@ -131,52 +118,78 @@ public class TracingConfiguration {
         Span v2Span = SpanBytesDecoder.PROTO3.decodeOne(encodedSpan);
         spans.add(v2Span);
       }
-      return delegate.spanConsumer().accept(spans);
+      return delegate().spanConsumer().accept(spans);
     }
 
     @Override public CheckResult check() {
-      return delegate.check();
+      return delegate().check();
+    }
+
+    @Override public String toString() {
+      // Avoid using the delegate to avoid eagerly loading the bean during initialization
+      return "StorageComponent";
     }
 
     @Override public void close() {
       // don't close delegate as we didn't open it!
     }
+
+    /** Lazy lookup to avoid proxying */
+    StorageComponent delegate() {
+      StorageComponent result = delegate;
+      if (result != null) return delegate;
+      // synchronization is not needed as redundant calls have no ill effects
+      result = factory.getBean(StorageComponent.class);
+      if (result instanceof TracingStorageComponent) {
+        result = ((TracingStorageComponent) result).delegate;
+      }
+      return delegate = result;
+    }
   }
 
   static final class ReporterMetricsAdapter implements ReporterMetrics {
-    final CollectorMetrics delegate;
+    final BeanFactory factory;
+    volatile CollectorMetrics delegate; // volatile to prevent stale reads
 
-    ReporterMetricsAdapter(CollectorMetrics delegate) {
-      this.delegate = delegate;
+    ReporterMetricsAdapter(BeanFactory factory) {
+      this.factory = factory;
     }
 
     @Override public void incrementMessages() {
-      delegate.incrementMessages();
+      delegate().incrementMessages();
     }
 
     @Override public void incrementMessagesDropped(Throwable throwable) {
-      delegate.incrementMessagesDropped();
+      delegate().incrementMessagesDropped();
     }
 
     @Override public void incrementSpans(int i) {
-      delegate.incrementSpans(i);
+      delegate().incrementSpans(i);
     }
 
     @Override public void incrementSpanBytes(int i) {
-      delegate.incrementBytes(i);
+      delegate().incrementBytes(i);
     }
 
     @Override public void incrementMessageBytes(int i) {
     }
 
     @Override public void incrementSpansDropped(int i) {
-      delegate.incrementMessagesDropped();
+      delegate().incrementMessagesDropped();
     }
 
     @Override public void updateQueuedSpans(int i) {
     }
 
     @Override public void updateQueuedBytes(int i) {
+    }
+
+    /** Lazy lookup to avoid proxying */
+    CollectorMetrics delegate() {
+      CollectorMetrics result = delegate;
+      if (result != null) return delegate;
+      // synchronization is not needed as redundant calls have no ill effects
+      return delegate = factory.getBean(CollectorMetrics.class).forTransport("local");
     }
   }
 }

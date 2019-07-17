@@ -32,6 +32,7 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin2.CheckResult;
+import zipkin2.Component;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -180,5 +181,16 @@ public class ElasticsearchStorageTest {
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
 
     assertThat(CAPTURED_CONTEXTS.take().sessionProtocol().isTls()).isTrue();
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test public void toStringContainsOnlySummaryInformation() {
+    assertThat(storage).hasToString(String.format("ElasticsearchStorage{hosts=[%s], index=zipkin}",
+      server.httpUri("/")));
   }
 }
