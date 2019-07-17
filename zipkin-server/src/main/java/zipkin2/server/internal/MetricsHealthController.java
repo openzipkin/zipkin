@@ -13,15 +13,16 @@
  */
 package zipkin2.server.internal;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
+import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.ProducesJson;
 import io.micrometer.core.instrument.Counter;
@@ -29,11 +30,14 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthEndpoint;
 import org.springframework.boot.actuate.health.HealthStatusHttpMapper;
+import org.springframework.boot.actuate.health.Status;
 
 public class MetricsHealthController {
 
@@ -85,15 +89,45 @@ public class MetricsHealthController {
   // Delegates the health endpoint from the Actuator to the root context path and can be deprecated
   // in future in favour of Actuator endpoints
   @Get("/health")
-  public AggregatedHttpResponse getHealth() throws JsonProcessingException {
-    Health health = healthEndpoint.health();
+  public CompletableFuture<HttpResponse> getHealth(ServiceRequestContext ctx) {
+    CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
+    ctx.setRequestTimeoutHandler(() -> {
+      Map<String, Object> healthJson = new LinkedHashMap<>();
+      healthJson.put("status", Status.DOWN);
+      healthJson.put("zipkin", "Timed out computing health status. "
+        + "This often means your storage backend is unreachable.");
+      try {
+        responseFuture.complete(HttpResponse.of(
+          constructHealthResponse(Status.DOWN, healthJson)));
+      } catch (IOException e) {
+        // Shouldn't happen since we serialize to an array.
+        responseFuture.completeExceptionally(e);
+      }
+    });
 
-    Map<String, Object> healthJson = new LinkedHashMap<>();
-    healthJson.put("status", health.getStatus().getCode());
-    healthJson.put("zipkin", health.getDetails().get("zipkin"));
-    byte[] body = mapper.writer().writeValueAsBytes(healthJson);
+    ctx.blockingTaskExecutor().execute(() -> {
+      Health health = healthEndpoint.health();
 
-    ResponseHeaders headers = ResponseHeaders.builder(statusMapper.mapStatus(health.getStatus()))
+      Map<String, Object> healthJson = new LinkedHashMap<>();
+      healthJson.put("status", health.getStatus().getCode());
+      healthJson.put("zipkin", health.getDetails().get("zipkin"));
+      try {
+        responseFuture.complete(HttpResponse.of(
+          constructHealthResponse(health.getStatus(), healthJson)));
+      } catch (IOException e) {
+        // Shouldn't happen since we serialize to an array.
+        responseFuture.completeExceptionally(e);
+        return;
+      }
+    });
+    return responseFuture;
+  }
+
+  private AggregatedHttpResponse constructHealthResponse(
+    Status status, Map<String, Object> healthJson)
+    throws IOException {
+    byte[] body = mapper.writeValueAsBytes(healthJson);
+    ResponseHeaders headers = ResponseHeaders.builder(statusMapper.mapStatus(status))
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build();
     return AggregatedHttpResponse.of(headers, HttpData.wrap(body));
