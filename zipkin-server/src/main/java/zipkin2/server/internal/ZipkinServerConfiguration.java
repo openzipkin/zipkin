@@ -26,6 +26,7 @@ import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -86,6 +87,11 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       sb.service("/prometheus", new RedirectService("/actuator/prometheus"));
       // Redirects the info endpoint for backward compatibility
       sb.service("/info", new RedirectService("/actuator/info"));
+
+      // It's common for backend requests to have timeouts of the magic number 10s, so we go ahead
+      // and default to a slightly longer timeout on the server to be able to handle these with
+      // better error messages where possible.
+      sb.requestTimeout(Duration.ofSeconds(11));
     };
   }
 
