@@ -23,12 +23,13 @@ import com.linecorp.armeria.common.RequestHeaders;
 import com.squareup.moshi.JsonWriter;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import okio.Buffer;
 import okio.BufferedSink;
-import okio.BufferedSource;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
@@ -127,8 +128,8 @@ public final class BulkCallBuilder {
   enum CheckForErrors implements HttpCall.BodyConverter<Void> {
     INSTANCE;
 
-    @Override public Void convert(BufferedSource b) throws IOException {
-      String content = b.readUtf8();
+    @Override public Void convert(ByteBuffer b) throws IOException {
+      String content = StandardCharsets.UTF_8.decode(b).toString();
       if (content.contains("\"status\":429")) throw new RejectedExecutionException(content);
       if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
       return null;

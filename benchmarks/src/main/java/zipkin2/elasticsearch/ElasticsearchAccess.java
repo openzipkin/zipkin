@@ -15,6 +15,7 @@ package zipkin2.elasticsearch;
 
 import com.squareup.moshi.JsonAdapter;
 import zipkin2.Span;
+import zipkin2.elasticsearch.internal.JsonAdapters;
 
 public class ElasticsearchAccess {
   public static JsonAdapter<Span> jsonSpanAdapter() {

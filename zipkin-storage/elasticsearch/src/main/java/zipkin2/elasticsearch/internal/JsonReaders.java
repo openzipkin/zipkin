@@ -56,7 +56,7 @@ public final class JsonReaders {
 
   @Nullable
   public static JsonParser enterPath(JsonParser parser, String path) throws IOException {
-    if (parser.isExpectedStartObjectToken()) return null;
+    if (!parser.isExpectedStartObjectToken()) return null;
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
       if (value == null) {
@@ -65,9 +65,10 @@ public final class JsonReaders {
       }
       if (parser.getCurrentName().equals(path) && value != JsonToken.VALUE_NULL) {
         return parser;
+      } else {
+        parser.skipChildren();
       }
     }
-    parser.nextToken();
     return null;
   }
 
@@ -87,26 +88,24 @@ public final class JsonReaders {
         throw new IOException("End of input while parsing object.");
       }
       if (parser.getCurrentName().equals(name)) {
-        result.add(value.asString());
+        result.add(parser.getText());
       } else {
-        visitObject(parser, name, result);
+        visitNextOrSkip(parser, name, result);
       }
     }
-    parser.nextToken();
   }
 
   static void visitNextOrSkip(JsonParser parser, String name, Set<String> result)
       throws IOException {
     switch (parser.currentToken()) {
       case START_ARRAY:
-        parser.nextToken();
-        while (parser.currentToken() != JsonToken.END_ARRAY) {
-          if (parser.currentToken() == null) {
+        JsonToken token;
+        while ((token = parser.nextToken()) != JsonToken.END_ARRAY) {
+          if (token == null) {
             throw new IOException("End of input while parsing array.");
           }
           visitObject(parser, name, result);
         }
-        parser.nextToken();
         break;
       case START_OBJECT:
         visitObject(parser, name, result);

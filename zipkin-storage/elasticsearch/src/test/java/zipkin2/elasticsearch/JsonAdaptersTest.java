@@ -14,18 +14,18 @@
 package zipkin2.elasticsearch;
 
 import java.io.IOException;
-import okio.Buffer;
 import org.junit.Test;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.elasticsearch.internal.JsonAdapters;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static zipkin2.TestObjects.CLIENT_SPAN;
-import static zipkin2.elasticsearch.JsonAdapters.SPAN_ADAPTER;
+import static zipkin2.elasticsearch.internal.JsonAdapters.SPAN_PARSER;
 
 public class JsonAdaptersTest {
   @Test
@@ -38,7 +38,7 @@ public class JsonAdaptersTest {
             + "  \"parentId\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    SPAN_PARSER.parse(json);
   }
 
   @Test
@@ -51,7 +51,7 @@ public class JsonAdaptersTest {
             + "  \"timestamp\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    SPAN_PARSER.parse(json);
   }
 
   @Test
@@ -64,7 +64,7 @@ public class JsonAdaptersTest {
             + "  \"duration\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    SPAN_PARSER.parse(json);
   }
 
   @Test
@@ -77,7 +77,7 @@ public class JsonAdaptersTest {
             + "  \"debug\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    SPAN_PARSER.parse(json);
   }
 
   @Test
@@ -96,7 +96,7 @@ public class JsonAdaptersTest {
             + "  ]\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    SPAN_PARSER.parse(json);
   }
 
   @Test
@@ -111,7 +111,7 @@ public class JsonAdaptersTest {
             + "  }"
             + "}";
 
-    Span span = JsonAdapters.SPAN_ADAPTER.fromJson(json);
+    Span span = JsonAdapters.SPAN_PARSER.parse(json);
     assertThat(span.tags()).containsExactly(entry("num", "9223372036854775807"));
   }
 
@@ -127,20 +127,18 @@ public class JsonAdaptersTest {
             + "  }"
             + "}";
 
-    Span span = JsonAdapters.SPAN_ADAPTER.fromJson(json);
+    Span span = JsonAdapters.SPAN_PARSER.parse(json);
     assertThat(span.tags()).containsExactly(entry("num", "1.23456789"));
   }
 
   @Test
   public void span_roundTrip() throws IOException {
-    Buffer bytes = new Buffer();
-    bytes.write(SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN));
-    assertThat(SPAN_ADAPTER.fromJson(bytes)).isEqualTo(CLIENT_SPAN);
+    assertThat(SPAN_PARSER.parse(SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN))).isEqualTo(CLIENT_SPAN);
   }
 
   /**
    * This isn't a test of what we "should" accept as a span, rather that characters that trip-up
-   * json don't fail in SPAN_ADAPTER.
+   * json don't fail in SPAN_PARSER.
    */
   @Test
   public void span_specialCharsInJson() throws IOException {
@@ -161,9 +159,7 @@ public class JsonAdaptersTest {
                 "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
             .build();
 
-    Buffer bytes = new Buffer();
-    bytes.write(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld));
-    assertThat(SPAN_ADAPTER.fromJson(bytes)).isEqualTo(worstSpanInTheWorld);
+    assertThat(SPAN_PARSER.parse(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld))).isEqualTo(worstSpanInTheWorld);
   }
 
   @Test
@@ -179,7 +175,7 @@ public class JsonAdaptersTest {
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+    assertThat(SPAN_PARSER.parse(json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("service").port(65535).build());
   }
 
@@ -195,7 +191,7 @@ public class JsonAdaptersTest {
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+    assertThat(SPAN_PARSER.parse(json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
@@ -207,12 +203,12 @@ public class JsonAdaptersTest {
             + "  \"name\": \"get-traces\",\n"
             + "  \"id\": \"6b221d5bc9e6496c\",\n"
             + "  \"localEndpoint\": {\n"
-            + "    \"serviceName\": NULL,\n"
+            + "    \"serviceName\": null,\n"
             + "    \"port\": 65535\n"
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+    assertThat(SPAN_PARSER.parse(json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
@@ -231,10 +227,10 @@ public class JsonAdaptersTest {
             + "  \"id\": \"6b221d5bc9e6496c\"\n"
             + "}");
 
-    assertThat(JsonAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
+    assertThat(JsonAdapters.SPAN_PARSER.parse(with128BitTraceId))
         .isEqualTo(
-            JsonAdapters.SPAN_ADAPTER
-                .fromJson(withLower64bitsTraceId)
+            JsonAdapters.SPAN_PARSER
+                .parse(withLower64bitsTraceId)
                 .toBuilder()
                 .traceId("48485a3953bb61246b221d5bc9e6496c")
                 .build());
@@ -245,9 +241,7 @@ public class JsonAdaptersTest {
     DependencyLink link =
         DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).build();
 
-    Buffer bytes = new Buffer();
-    bytes.write(DependencyLinkBytesEncoder.JSON_V1.encode(link));
-    assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes)).isEqualTo(link);
+    assertThat(JsonAdapters.DEPENDENCY_LINK_PARSER.parse(DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
   }
 
   @Test
@@ -255,8 +249,6 @@ public class JsonAdaptersTest {
     DependencyLink link =
         DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).errorCount(1).build();
 
-    Buffer bytes = new Buffer();
-    bytes.write(DependencyLinkBytesEncoder.JSON_V1.encode(link));
-    assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes)).isEqualTo(link);
+    assertThat(JsonAdapters.DEPENDENCY_LINK_PARSER.parse(DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
   }
 }

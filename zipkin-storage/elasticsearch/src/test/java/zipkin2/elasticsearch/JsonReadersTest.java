@@ -13,11 +13,11 @@
  */
 package zipkin2.elasticsearch;
 
-import com.squareup.moshi.JsonReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
-import okio.Buffer;
 import org.junit.Test;
+import zipkin2.elasticsearch.internal.JsonAdapters;
 import zipkin2.elasticsearch.internal.JsonReaders;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -28,9 +28,7 @@ public class JsonReadersTest {
   public void enterPath_nested() throws IOException {
     assertThat(
             JsonReaders.enterPath(
-                    JsonReader.of(
-                        new Buffer()
-                            .writeUtf8(
+                    JsonAdapters.jsonParser(
                                 "{\n"
                                     + "  \"name\" : \"Kamal\",\n"
                                     + "  \"cluster_name\" : \"elasticsearch\",\n"
@@ -42,26 +40,25 @@ public class JsonReadersTest {
                                     + "    \"lucene_version\" : \"5.5.2\"\n"
                                     + "  },\n"
                                     + "  \"tagline\" : \"You Know, for Search\"\n"
-                                    + "}")),
+                                    + "}"),
                     "version",
                     "number")
-                .nextString())
+                .getText())
         .isEqualTo("2.4.0");
   }
 
   @Test
   public void enterPath_nullOnNoInput() throws IOException {
-    assertThat(JsonReaders.enterPath(JsonReader.of(new Buffer()), "message")).isNull();
+    assertThat(JsonReaders.enterPath(JsonAdapters.jsonParser(ByteBuffer.allocate(0)), "message"))
+      .isNull();
   }
 
   @Test
   public void collectValuesNamed_emptyWhenNotFound() throws IOException {
     List<String> result =
         JsonReaders.collectValuesNamed(
-            JsonReader.of(
-                new Buffer()
-                    .writeUtf8(
-                        "{\"took\":1,\"timed_out\":false,\"_shards\":{\"total\":0,\"successful\":0,\"failed\":0},\"hits\":{\"total\":0,\"max_score\":0.0,\"hits\":[]}}")),
+            JsonAdapters.jsonParser(
+                        "{\"took\":1,\"timed_out\":false,\"_shards\":{\"total\":0,\"successful\":0,\"failed\":0},\"hits\":{\"total\":0,\"max_score\":0.0,\"hits\":[]}}"),
             "key");
 
     assertThat(result).isEmpty();
@@ -71,7 +68,7 @@ public class JsonReadersTest {
   public void collectValuesNamed_mergesArrays() throws IOException {
     List<String> result =
         JsonReaders.collectValuesNamed(
-            JsonReader.of(new Buffer().writeUtf8(TestResponses.SPAN_NAMES)), "key");
+            JsonAdapters.jsonParser(TestResponses.SPAN_NAMES), "key");
 
     assertThat(result).containsExactly("methodcall", "yak");
   }
@@ -80,7 +77,7 @@ public class JsonReadersTest {
   public void collectValuesNamed_mergesChildren() throws IOException {
     List<String> result =
         JsonReaders.collectValuesNamed(
-            JsonReader.of(new Buffer().writeUtf8(TestResponses.SERVICE_NAMES)), "key");
+            JsonAdapters.jsonParser(TestResponses.SERVICE_NAMES), "key");
 
     assertThat(result).containsExactly("yak", "service");
   }
@@ -89,9 +86,7 @@ public class JsonReadersTest {
   public void collectValuesNamed_nested() throws IOException {
     List<String> result =
         JsonReaders.collectValuesNamed(
-            JsonReader.of(
-                new Buffer()
-                    .writeUtf8(
+            JsonAdapters.jsonParser(
                         "{\n"
                             + "  \"took\": 49,\n"
                             + "  \"timed_out\": false,\n"
@@ -121,7 +116,7 @@ public class JsonReadersTest {
                             + "      ]\n"
                             + "    }\n"
                             + "  }\n"
-                            + "}")),
+                            + "}"),
             "key");
 
     assertThat(result).containsExactly("000000000000007b");

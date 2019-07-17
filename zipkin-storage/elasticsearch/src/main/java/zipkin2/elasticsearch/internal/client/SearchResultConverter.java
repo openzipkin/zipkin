@@ -13,45 +13,43 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.JsonReader;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import zipkin2.elasticsearch.BodyConverters;
-import zipkin2.internal.JsonCodec;
+import zipkin2.elasticsearch.internal.JsonAdapters;
+import zipkin2.elasticsearch.internal.JsonAdapters.ObjectParser;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>> {
-  final JsonAdapter<T> adapter;
+  final ObjectParser<T> adapter;
   final List<T> defaultValue;
 
-  public static <T> SearchResultConverter<T> create(JsonCodec.JsonReaderAdapter<T> adapter) {
+  public static <T> SearchResultConverter<T> create(ObjectParser<T> adapter) {
     return new SearchResultConverter<>(adapter);
   }
 
-  protected SearchResultConverter(JsonAdapter<T> adapter) {
+  protected SearchResultConverter(ObjectParser<T> adapter) {
     this.adapter = adapter;
     this.defaultValue = Collections.emptyList();
   }
 
   @Override public List<T> convert(ByteBuffer content) throws IOException {
-    JsonReader hits = enterPath(BodyConverters.JsonReader.of(content), "hits", "hits");
-    if (hits == null || hits.peek() != JsonReader.Token.BEGIN_ARRAY) return defaultValue;
+    JsonParser hits = enterPath(JsonAdapters.jsonParser(content), "hits", "hits");
+    if (hits == null || !hits.isExpectedStartArrayToken()) return defaultValue;
 
     List<T> result = new ArrayList<>();
-    hits.beginArray();
-    while (hits.hasNext()) {
-      JsonReader source = enterPath(hits, "_source");
+    while (hits.nextToken() != JsonToken.END_ARRAY) {
+      JsonParser source = enterPath(hits, "_source");
       if (source != null) {
-        result.add(adapter.fromJson(source));
+        result.add(adapter.parse(source));
       }
-      hits.endObject();
+      hits.nextToken();
     }
-    hits.endArray();
     return result.isEmpty() ? defaultValue : result;
   }
 }

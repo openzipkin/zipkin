@@ -13,11 +13,12 @@
  */
 package zipkin2.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
-import com.squareup.moshi.JsonReader;
 import java.io.IOException;
-import okio.BufferedSource;
+import java.nio.ByteBuffer;
+import zipkin2.elasticsearch.internal.JsonAdapters;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
@@ -226,10 +227,10 @@ final class VersionSpecificTemplates {
   enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
     INSTANCE;
 
-    @Override public Float convert(BufferedSource content) throws IOException {
-      JsonReader version = enterPath(JsonReader.of(content), "version", "number");
+    @Override public Float convert(ByteBuffer content) throws IOException {
+      JsonParser version = enterPath(JsonAdapters.jsonParser(content), "version", "number");
       if (version == null) throw new IllegalStateException(".version.number not in response");
-      String versionString = version.nextString();
+      String versionString = version.getText();
       return Float.valueOf(versionString.substring(0, 3));
     }
   }
