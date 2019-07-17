@@ -17,6 +17,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.CheckResult;
+import zipkin2.Component;
 import zipkin2.storage.InMemoryStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -47,6 +48,20 @@ public class ScribeCollectorTest {
     try (ScribeCollector first = builder.build().start()) {
       try (ScribeCollector samePort = builder.build().start()) {
       }
+    }
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test public void toStringContainsOnlySummaryInformation() {
+    try (ScribeCollector scribe =
+           ScribeCollector.newBuilder().storage(storage).port(12345).build()) {
+
+      assertThat(scribe).hasToString("ScribeCollector{port=12345, category=zipkin}");
     }
   }
 }

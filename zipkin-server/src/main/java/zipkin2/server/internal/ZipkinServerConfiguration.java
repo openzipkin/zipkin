@@ -37,6 +37,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
+import org.springframework.boot.actuate.health.HealthIndicatorRegistry;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -178,7 +179,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
      * Need this to resolve cyclic instantiation issue with spring.  Mostly, this is for MeterRegistry as really
      * bad things happen if you try to Autowire it (loss of JVM metrics) but also using it for properties just to make
      * sure no cycles exist at all as a result of turning throttling on.
-     * 
+     *
      * <p>Ref: <a href="https://stackoverflow.com/a/19688634">Tracking down cause of Spring's "not eligible for auto-proxying"</a></p>
      */
     private BeanFactory beanFactory;
@@ -188,10 +189,10 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       if (bean instanceof StorageComponent) {
         ZipkinStorageThrottleProperties throttleProperties = beanFactory.getBean(ZipkinStorageThrottleProperties.class);
         return new ThrottledStorageComponent((StorageComponent) bean,
-                                             beanFactory.getBean(MeterRegistry.class),
-                                             throttleProperties.getMinConcurrency(),
-                                             throttleProperties.getMaxConcurrency(),
-                                             throttleProperties.getMaxQueueSize());
+          beanFactory.getBean(MeterRegistry.class),
+          throttleProperties.getMinConcurrency(),
+          throttleProperties.getMaxConcurrency(),
+          throttleProperties.getMaxQueueSize());
       }
       return bean;
     }

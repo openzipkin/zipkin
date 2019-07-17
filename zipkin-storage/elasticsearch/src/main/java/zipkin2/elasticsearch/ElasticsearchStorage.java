@@ -485,6 +485,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return client.build();
   }
 
+  @Override public final String toString() {
+    return "ElasticsearchStorage{hosts=" + hostsSupplier().get()
+      + ", index=" + indexNameFormatter().index() + "}";
+  }
+
   static boolean isIpAddress(String address) {
     return zipkin2.Endpoint.newBuilder().parseIp(address);
   }
