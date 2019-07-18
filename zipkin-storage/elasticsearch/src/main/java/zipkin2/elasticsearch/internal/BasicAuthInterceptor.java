@@ -16,7 +16,6 @@ package zipkin2.elasticsearch.internal;
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
 import com.linecorp.armeria.client.SimpleDecoratingClient;
-import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
@@ -30,7 +29,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.ByteBuffer;
 import java.util.Base64;
-import java.util.concurrent.CompletableFuture;
 import okio.Okio;
 import zipkin2.internal.ReadBuffer;
 
@@ -60,33 +58,32 @@ public final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpReque
   @Override
   public HttpResponse execute(ClientRequestContext ctx, HttpRequest req) throws Exception {
     ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, basicCredentials);
-    CompletableFuture<AggregatedHttpResponse> requestFuture = ctx.makeContextAware(
-      delegate().execute(ctx, req).aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc())
-    );
-    return HttpResponse.from(requestFuture.thenApply(msg -> {
-      HttpData content = msg.content();
-      if (!msg.status().equals(HttpStatus.FORBIDDEN) || content.isEmpty()) {
-        return HttpResponse.of(msg);
-      }
-      try {
-        final ByteBuffer buf;
-        if (content instanceof ByteBufHolder) {
-          buf = ((ByteBufHolder) content).content().nioBuffer();
-        } else {
-          buf = ByteBuffer.wrap(content.array());
+    return HttpResponse.from(delegate().execute(ctx, req)
+      .aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc())
+      .thenApplyAsync(msg -> {
+        HttpData content = msg.content();
+        if (!msg.status().equals(HttpStatus.FORBIDDEN) || content.isEmpty()) {
+          return HttpResponse.of(msg);
         }
         try {
-          JsonReader message = enterPath(JsonReader.of(
-            Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf)))), "message");
-          if (message != null) throw new IllegalStateException(message.nextString());
-        } catch (IOException e) {
-          Exceptions.throwUnsafely(e);
-          throw new UncheckedIOException(e);  // unreachable
+          final ByteBuffer buf;
+          if (content instanceof ByteBufHolder) {
+            buf = ((ByteBufHolder) content).content().nioBuffer();
+          } else {
+            buf = ByteBuffer.wrap(content.array());
+          }
+          try {
+            JsonReader message = enterPath(JsonReader.of(
+              Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf)))), "message");
+            if (message != null) throw new IllegalStateException(message.nextString());
+          } catch (IOException e) {
+            Exceptions.throwUnsafely(e);
+            throw new UncheckedIOException(e);  // unreachable
+          }
+          throw new IllegalStateException(msg.toString());
+        } finally {
+          ReferenceCountUtil.safeRelease(content);
         }
-        throw new IllegalStateException(msg.toString());
-      } finally {
-        ReferenceCountUtil.safeRelease(content);
-      }
-    }));
+      }, ctx.contextAwareExecutor()));
   }
 }
