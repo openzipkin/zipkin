@@ -15,7 +15,7 @@ package zipkin2.server.internal.elasticsearch;
 
 import brave.Tracing;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
-import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.HttpHeaders;
@@ -48,10 +48,10 @@ import zipkin2.storage.StorageComponent;
 public class ZipkinElasticsearchStorageAutoConfiguration {
   static final String QUALIFIER = "zipkinElasticsearchHttp";
 
-  @Bean @Qualifier(QUALIFIER) Consumer<HttpClientBuilder> zipkinElasticsearchHttp(
+  @Bean @Qualifier(QUALIFIER) Consumer<ClientOptionsBuilder> zipkinElasticsearchHttp(
     @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    return new Consumer<HttpClientBuilder>() {
-      @Override public void accept(HttpClientBuilder client) {
+    return new Consumer<ClientOptionsBuilder>() {
+      @Override public void accept(ClientOptionsBuilder client) {
         client.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
       }
 
@@ -76,7 +76,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
 
 
   @Bean @Qualifier(QUALIFIER) @Conditional(HttpLoggingSet.class)
-  Consumer<HttpClientBuilder> zipkinElasticsearchHttpLogging(
+  Consumer<ClientOptionsBuilder> zipkinElasticsearchHttpLogging(
     ZipkinElasticsearchStorageProperties es) {
     LoggingClientBuilder builder = new LoggingClientBuilder()
       .requestLogLevel(LogLevel.INFO)
@@ -95,8 +95,8 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
         break;
     }
 
-    return new Consumer<HttpClientBuilder>() {
-      @Override public void accept(HttpClientBuilder client) {
+    return new Consumer<ClientOptionsBuilder>() {
+      @Override public void accept(ClientOptionsBuilder client) {
         client
           .decorator(builder.newDecorator())
           .decorator(
@@ -112,10 +112,10 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
-  Consumer<HttpClientBuilder> zipkinElasticsearchHttpBasicAuth(
+  Consumer<ClientOptionsBuilder> zipkinElasticsearchHttpBasicAuth(
     ZipkinElasticsearchStorageProperties es) {
-    return new Consumer<HttpClientBuilder>() {
-      @Override public void accept(HttpClientBuilder client) {
+    return new Consumer<ClientOptionsBuilder>() {
+      @Override public void accept(ClientOptionsBuilder client) {
         client.decorator(delegate -> new BasicAuthInterceptor(delegate, es));
       }
 
@@ -127,7 +127,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
 
   @Bean @ConditionalOnMissingBean StorageComponent storage(
     ZipkinElasticsearchStorageProperties elasticsearch,
-    @Qualifier(QUALIFIER) List<Consumer<HttpClientBuilder>> zipkinElasticsearchHttpCustomizers,
+    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> zipkinElasticsearchHttpCustomizers,
     @Qualifier(QUALIFIER) List<Consumer<ClientFactoryBuilder>>
       zipkinElasticsearchClientFactoryCustomizers,
     Optional<HostsSupplier> hostsSupplier,
@@ -152,7 +152,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     return result.build();
   }
 
-  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<HttpClientBuilder>
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<ClientOptionsBuilder>
   elasticsearchTracing(Optional<Tracing> tracing) {
     if (!tracing.isPresent()) {
       return client -> {};
