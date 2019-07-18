@@ -37,6 +37,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.HostsSupplier;
+import zipkin2.elasticsearch.internal.BasicAuthInterceptor;
 import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
@@ -116,7 +117,8 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     ZipkinElasticsearchStorageProperties es) {
     return new Consumer<ClientOptionsBuilder>() {
       @Override public void accept(ClientOptionsBuilder client) {
-        client.decorator(delegate -> new BasicAuthInterceptor(delegate, es));
+        client.decorator(
+          delegate -> BasicAuthInterceptor.create(delegate, es.getUsername(), es.getPassword()));
       }
 
       @Override public String toString() {
