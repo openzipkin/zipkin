@@ -14,17 +14,15 @@
 package zipkin2.elasticsearch.internal;
 
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.squareup.moshi.JsonWriter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.ByteBufUtil;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
 import java.util.Map;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.HashingSink;
-import okio.Okio;
 import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -36,7 +34,7 @@ public abstract class BulkIndexWriter<T> {
   /**
    * Write a complete json document according to index strategy and returns the ID field.
    */
-  public abstract String writeDocument(T input, BufferedSink writer);
+  public abstract String writeDocument(T input, ByteBufOutputStream sink);
 
   public static final BulkIndexWriter<Span> SPAN = new BulkIndexWriter<Span>() {
     @Override public String writeDocument(Span input, ByteBufOutputStream sink) {
@@ -52,10 +50,11 @@ public abstract class BulkIndexWriter<T> {
 
   public static final BulkIndexWriter<Map.Entry<String, String>> AUTOCOMPLETE =
     new BulkIndexWriter<Map.Entry<String, String>>() {
-      @Override public String writeDocument(Map.Entry<String, String> input, BufferedSink sink) {
-        writeAutocompleteEntry(input.getKey(), input.getValue(), JsonWriter.of(sink));
+      @Override public String writeDocument(Map.Entry<String, String> input,
+        ByteBufOutputStream sink) {
+        writeAutocompleteEntry(input.getKey(), input.getValue(), JsonAdapters.jsonGenerator(sink));
         // Id is used to dedupe server side as necessary. Arbitrarily same format as _q value.
-        return input.getKey() + "=" + input.getValue();
+        return input.getKey() + '=' + input.getValue();
       }
     };
 
@@ -78,75 +77,74 @@ public abstract class BulkIndexWriter<T> {
    * @param searchEnabled encodes timestamp_millis and _q when non-empty
    */
   static String write(Span span, boolean searchEnabled, ByteBufOutputStream sink) {
-    ByteBuf buffer = sink.buffer().duplicate();
-    HashingSink hashingSink = HashingSink.md5(sink);
+    int startIndex = sink.buffer().writerIndex();
     try {
       JsonGenerator writer = JsonAdapters.JSON_FACTORY.createGenerator((OutputStream) sink);
       writer.writeStartObject();
       if (searchEnabled) addSearchFields(span, writer);
-      writer.name("traceId").value(span.traceId());
-      if (span.parentId() != null) writer.name("parentId").value(span.parentId());
-      writer.name("id").value(span.id());
-      if (span.kind() != null) writer.name("kind").value(span.kind().toString());
-      if (span.name() != null) writer.name("name").value(span.name());
-      if (span.timestampAsLong() != 0L) writer.name("timestamp").value(span.timestampAsLong());
-      if (span.durationAsLong() != 0L) writer.name("duration").value(span.durationAsLong());
+      writer.writeStringField("traceId", span.traceId());
+      if (span.parentId() != null) writer.writeStringField("parentId", span.parentId());
+      writer.writeStringField("id", span.id());
+      if (span.kind() != null) writer.writeStringField("kind", span.kind().toString());
+      if (span.name() != null) writer.writeStringField("name", span.name());
+      if (span.timestampAsLong() != 0L) {
+        writer.writeNumberField("timestamp", span.timestampAsLong());
+      }
+      if (span.durationAsLong() != 0L) writer.writeNumberField("duration", span.durationAsLong());
       if (span.localEndpoint() != null && !EMPTY_ENDPOINT.equals(span.localEndpoint())) {
-        writer.name("localEndpoint");
+        writer.writeFieldName("localEndpoint");
         write(span.localEndpoint(), writer);
       }
       if (span.remoteEndpoint() != null && !EMPTY_ENDPOINT.equals(span.remoteEndpoint())) {
-        writer.name("remoteEndpoint");
+        writer.writeFieldName("remoteEndpoint");
         write(span.remoteEndpoint(), writer);
       }
       if (!span.annotations().isEmpty()) {
-        writer.name("annotations");
-        writer.beginArray();
+        writer.writeArrayFieldStart("annotations");
         for (int i = 0, length = span.annotations().size(); i < length; ) {
           write(span.annotations().get(i++), writer);
         }
-        writer.endArray();
+        writer.writeEndArray();
       }
       if (!span.tags().isEmpty()) {
-        writer.name("tags");
-        writer.beginObject();
+        writer.writeObjectFieldStart("tags");
         Iterator<Map.Entry<String, String>> tags = span.tags().entrySet().iterator();
         while (tags.hasNext()) write(tags.next(), writer);
-        writer.endObject();
+        writer.writeEndObject();
       }
-      if (Boolean.TRUE.equals(span.debug())) writer.name("debug").value(true);
-      if (Boolean.TRUE.equals(span.shared())) writer.name("shared").value(true);
-      writer.endObject();
+      if (Boolean.TRUE.equals(span.debug())) writer.writeBooleanField("debug", true);
+      if (Boolean.TRUE.equals(span.shared())) writer.writeBooleanField("shared", true);
+      writer.writeEndObject();
       writer.flush();
-      hashingSink.flush();
     } catch (IOException e) {
       throw new AssertionError(e); // No I/O writing to a Buffer.
     }
-    return new Buffer()
-      .writeUtf8(span.traceId()).writeByte('-').writeUtf8(hashingSink.hash().hex())
-      .readUtf8();
+
+    ByteBuf slice = sink.buffer().slice(startIndex, sink.buffer().writerIndex() - startIndex);
+
+    return span.traceId() + '-' + md5(slice);
   }
 
-  static void writeAutocompleteEntry(String key, String value, JsonWriter writer) {
+  static void writeAutocompleteEntry(String key, String value, JsonGenerator writer) {
     try {
-      writer.beginObject();
-      writer.name("tagKey").value(key);
-      writer.name("tagValue").value(value);
-      writer.endObject();
+      writer.writeStartObject();
+      writer.writeStringField("tagKey", key);
+      writer.writeStringField("tagValue", value);
+      writer.writeEndObject();
     } catch (IOException e) {
       throw new AssertionError(e); // No I/O writing to a Buffer.
     }
   }
 
-  static void write(Map.Entry<String, String> tag, JsonWriter writer) throws IOException {
-    writer.name(tag.getKey()).value(tag.getValue());
+  static void write(Map.Entry<String, String> tag, JsonGenerator writer) throws IOException {
+    writer.writeStringField(tag.getKey(), tag.getValue());
   }
 
-  static void write(Annotation annotation, JsonWriter writer) throws IOException {
-    writer.beginObject();
-    writer.name("timestamp").value(annotation.timestamp());
-    writer.name("value").value(annotation.value());
-    writer.endObject();
+  static void write(Annotation annotation, JsonGenerator writer) throws IOException {
+    writer.writeStartObject();
+    writer.writeNumberField("timestamp", annotation.timestamp());
+    writer.writeStringField("value", annotation.value());
+    writer.writeEndObject();
   }
 
   static void write(Endpoint endpoint, JsonGenerator writer) throws IOException {
@@ -177,5 +175,16 @@ public abstract class BulkIndexWriter<T> {
       }
       writer.writeEndArray();
     }
+  }
+
+  static String md5(ByteBuf buf) {
+    final MessageDigest messageDigest;
+    try {
+      messageDigest = MessageDigest.getInstance("MD5");
+    } catch (NoSuchAlgorithmException e) {
+      throw new AssertionError();
+    }
+    messageDigest.update(buf.nioBuffer());
+    return ByteBufUtil.hexDump(messageDigest.digest());
   }
 }

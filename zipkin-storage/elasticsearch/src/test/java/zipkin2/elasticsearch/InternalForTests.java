@@ -13,14 +13,15 @@
  */
 package zipkin2.elasticsearch;
 
-import com.squareup.moshi.JsonWriter;
+import com.fasterxml.jackson.core.JsonGenerator;
+import io.netty.buffer.ByteBufOutputStream;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
-import okio.BufferedSink;
 import zipkin2.DependencyLink;
 import zipkin2.elasticsearch.internal.BulkCallBuilder;
 import zipkin2.elasticsearch.internal.BulkIndexWriter;
+import zipkin2.elasticsearch.internal.JsonAdapters;
 
 /** Package accessor for integration tests */
 public class InternalForTests {
@@ -40,15 +41,15 @@ public class InternalForTests {
 
   static final BulkIndexWriter<DependencyLink> DEPENDENCY_LINK_WRITER =
     new BulkIndexWriter<DependencyLink>() {
-      @Override public String writeDocument(DependencyLink link, BufferedSink sink) {
-        JsonWriter writer = JsonWriter.of(sink);
+      @Override public String writeDocument(DependencyLink link, ByteBufOutputStream sink) {
         try {
-          writer.beginObject();
-          writer.name("parent").value(link.parent());
-          writer.name("child").value(link.child());
-          writer.name("callCount").value(link.callCount());
-          if (link.errorCount() > 0) writer.name("errorCount").value(link.errorCount());
-          writer.endObject();
+          JsonGenerator writer = JsonAdapters.jsonGenerator(sink);
+          writer.writeStartObject();
+          writer.writeStringField("parent", link.parent());
+          writer.writeStringField("child", link.child());
+          writer.writeNumberField("callCount", link.callCount());
+          if (link.errorCount() > 0) writer.writeNumberField("errorCount", link.errorCount());
+          writer.writeEndObject();
         } catch (IOException e) {
           throw new AssertionError(e); // No I/O writing to a Buffer.
         }

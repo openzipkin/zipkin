@@ -14,10 +14,12 @@
 package zipkin2.elasticsearch.internal;
 
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import zipkin2.Annotation;
 import zipkin2.DependencyLink;
@@ -38,7 +40,7 @@ public final class JsonAdapters {
       jsonParser.nextToken();
       return jsonParser;
     } catch (IOException e) {
-      throw new AssertionError("Could not create JSON jsonParser from a buffer.", e);
+      throw new AssertionError("Could not create JsonParser from a buffer.", e);
     }
   }
 
@@ -48,10 +50,17 @@ public final class JsonAdapters {
       jsonParser.nextToken();
       return jsonParser;
     } catch (IOException e) {
-      throw new AssertionError("Could not create JSON jsonParser from a String.", e);
+      throw new AssertionError("Could not create JsonParser from a String.", e);
     }
   }
 
+  public static JsonGenerator jsonGenerator(OutputStream stream) {
+    try {
+      return JSON_FACTORY.createGenerator(stream);
+    } catch (IOException e) {
+      throw new AssertionError("Could not create JSON generator for a memory stream.", e);
+    }
+  }
 
   public interface ObjectParser<T> {
     default T parse(String s) throws IOException {

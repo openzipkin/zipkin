@@ -13,7 +13,12 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.Unpooled;
+import java.nio.charset.StandardCharsets;
 import okio.Buffer;
+import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
@@ -25,18 +30,29 @@ import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 
 public class BulkIndexWriterTest {
-  Buffer buffer = new Buffer();
 
-  @Test public void span_addsDocumentId() {
-    String id = BulkIndexWriter.SPAN.writeDocument(CLIENT_SPAN, buffer);
-    assertThat(id)
-      .isEqualTo(CLIENT_SPAN.traceId() + "-" + buffer.readByteString().md5().hex());
+  ByteBufOutputStream buffer;
+
+  @Before public void setUp() {
+    buffer = new ByteBufOutputStream(Unpooled.buffer());
   }
 
-  @Test public void spanSearchDisabled_addsDocumentId() {
-    String id = BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
+  @Test public void span_addsDocumentId() throws Exception {
+    String id = BulkIndexWriter.SPAN.writeDocument(CLIENT_SPAN, buffer);
+    Buffer okio = new Buffer();
+    okio.write(buffer.buffer().nioBuffer());
+
     assertThat(id)
-      .isEqualTo(CLIENT_SPAN.traceId() + "-" + buffer.readByteString().md5().hex());
+      .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-8cf9a50c5cf8a52404f17c42bcb6bf85");
+  }
+
+  @Test public void spanSearchDisabled_addsDocumentId() throws Exception {
+    String id = BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
+    Buffer okio = new Buffer();
+    okio.write(buffer.buffer().nioBuffer());
+
+    assertThat(id)
+      .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-2b930c7655ec6b99d3d389403c3917fd");
   }
 
   @Test public void spanSearchFields_skipsWhenNoData() {
@@ -51,7 +67,7 @@ public class BulkIndexWriterTest {
 
     BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
-    assertThat(buffer.readUtf8()).startsWith("{\"traceId\":\"");
+    assertThat(buffer.buffer().toString(StandardCharsets.UTF_8)).startsWith("{\"traceId\":\"");
   }
 
   @Test public void spanSearchFields_addsTimestampFieldWhenNoTags() {
@@ -68,7 +84,8 @@ public class BulkIndexWriterTest {
 
     BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
-    assertThat(buffer.readUtf8()).startsWith("{\"timestamp_millis\":1,\"traceId\":");
+    assertThat(buffer.buffer().toString(StandardCharsets.UTF_8))
+      .startsWith("{\"timestamp_millis\":1,\"traceId\":");
   }
 
   @Test public void spanSearchFields_addsQueryFieldForAnnotations() {
@@ -83,7 +100,8 @@ public class BulkIndexWriterTest {
 
     BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
-    assertThat(buffer.readUtf8()).startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
+    assertThat(buffer.buffer().toString(StandardCharsets.UTF_8))
+      .startsWith("{\"_q\":[\"\\\"foo\"],\"traceId");
   }
 
   @Test public void spanSearchFields_addsQueryFieldForTags() {
@@ -97,7 +115,8 @@ public class BulkIndexWriterTest {
 
     BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
-    assertThat(buffer.readUtf8()).startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
+    assertThat(buffer.buffer().toString(StandardCharsets.UTF_8))
+      .startsWith("{\"_q\":[\"\\\"foo\",\"\\\"foo=\\\"bar\"],\"traceId");
   }
 
   @Test public void spanSearchFields_readableByNormalJsonCodec() {
@@ -106,13 +125,14 @@ public class BulkIndexWriterTest {
 
     BulkIndexWriter.SPAN.writeDocument(span, buffer);
 
-    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(buffer.readByteArray()))
+    assertThat(SpanBytesDecoder.JSON_V2.decodeOne(ByteBufUtil.getBytes(buffer.buffer())))
       .isEqualTo(span); // ignores timestamp_millis field
   }
 
   @Test public void spanSearchDisabled_doesntAddQueryFields() {
     BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
 
-    assertThat(buffer.readUtf8()).startsWith("{\"traceId\":\"");
+    assertThat(buffer.buffer().toString(StandardCharsets.UTF_8))
+      .startsWith("{\"traceId\":\"");
   }
 }
