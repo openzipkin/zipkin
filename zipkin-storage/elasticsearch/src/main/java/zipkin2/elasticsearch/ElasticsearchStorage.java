@@ -18,6 +18,7 @@ import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
+import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.HttpClientBuilder;
@@ -105,7 +106,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. This is used
      * by the server and tests to enable detailed logging and tweak timeouts.
      */
-    public abstract Builder clientCustomizer(Consumer<HttpClientBuilder> clientCustomizer);
+    public abstract Builder clientCustomizer(Consumer<ClientOptionsBuilder> clientCustomizer);
 
     /**
      * Customizes the {@link ClientFactoryBuilder} used when connecting to ElasticSearch. This is
@@ -240,7 +241,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     Builder() {}
   }
 
-  abstract Consumer<HttpClientBuilder> clientCustomizer();
+  abstract Consumer<ClientOptionsBuilder> clientCustomizer();
 
   abstract Consumer<ClientFactoryBuilder> clientFactoryCustomizer();
 
@@ -468,6 +469,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       HttpHealthCheckedEndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
         endpointGroup, "/_cluster/health")
         .clientFactory(clientFactory())
+        .withClientOptions(options -> {
+          clientCustomizer().accept(options);
+          return options;
+        })
         .build();
       EndpointGroupRegistry.register(
         "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
@@ -477,11 +482,12 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       clientUrl = hosts.get(0);
     }
 
+    ClientOptionsBuilder options = new ClientOptionsBuilder()
+      .decorator(HttpDecodingClient.newDecorator());
+    clientCustomizer().accept(options);
     HttpClientBuilder client = new HttpClientBuilder(clientUrl)
       .factory(clientFactory())
-      .decorator(HttpDecodingClient.newDecorator());
-
-    clientCustomizer().accept(client);
+      .options(options.build());
 
     return client.build();
   }
