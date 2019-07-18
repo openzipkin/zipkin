@@ -41,11 +41,6 @@
     </dependency>
 
     <dependency>
-      <groupId>com.squareup.okio</groupId>
-      <artifactId>okio</artifactId>
-    </dependency>
-
-    <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
     </dependency>
@@ -53,11 +48,6 @@
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value</artifactId>
       <scope>provided</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.squareup.moshi</groupId>
-      <artifactId>moshi</artifactId>
     </dependency>
 
     <dependency>

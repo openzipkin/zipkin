@@ -19,6 +19,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import zipkin2.Annotation;
@@ -37,6 +38,16 @@ public final class JsonAdapters {
   public static JsonParser jsonParser(ByteBuffer buf) {
     try {
       JsonParser jsonParser = JSON_FACTORY.createParser(new ByteBufferBackedInputStream(buf));
+      jsonParser.nextToken();
+      return jsonParser;
+    } catch (IOException e) {
+      throw new AssertionError("Could not create JsonParser from a buffer.", e);
+    }
+  }
+
+  public static JsonParser jsonParser(InputStream stream) {
+    try {
+      JsonParser jsonParser = JSON_FACTORY.createParser(stream);
       jsonParser.nextToken();
       return jsonParser;
     } catch (IOException e) {
@@ -207,8 +218,7 @@ public final class JsonAdapters {
     long timestamp = 0;
     String value = null;
 
-    JsonToken jsonValue;
-    while ((jsonValue = parser.nextValue()) != JsonToken.END_OBJECT) {
+    while (parser.nextValue() != JsonToken.END_OBJECT) {
       switch (parser.currentName()) {
         case "timestamp":
           timestamp = parser.getLongValue();

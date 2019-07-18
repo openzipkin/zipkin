@@ -13,6 +13,8 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -85,6 +87,22 @@ public final class SearchRequest {
     return this;
   }
 
+  public Integer getSize() {
+    return size;
+  }
+
+  public Boolean get_source() {
+    return _source;
+  }
+
+  public Object getQuery() {
+    return query;
+  }
+
+  public Map<String, Aggregation> getAggs() {
+    return aggs;
+  }
+
   String tag() {
     return aggs != null ? "aggregation" : "search";
   }
@@ -95,10 +113,14 @@ public final class SearchRequest {
   }
 
   static class Term {
+
     final Map<String, String> term;
 
     Term(String field, String value) {
       term = Collections.singletonMap(field, value);
+    }
+    public Map<String, String> getTerm() {
+      return term;
     }
   }
 
@@ -108,6 +130,10 @@ public final class SearchRequest {
     Terms(String field, Collection<String> values) {
       this.terms = Collections.singletonMap(field, values);
     }
+
+    public Map<String, Collection<String>> getTerms() {
+      return terms;
+    }
   }
 
   static class Range {
@@ -115,6 +141,10 @@ public final class SearchRequest {
 
     Range(String field, long from, Long to) {
       range = Collections.singletonMap(field, new Bounds(from, to));
+    }
+
+    public Map<String, Bounds> getRange() {
+      return range;
     }
 
     static class Bounds {
@@ -127,6 +157,24 @@ public final class SearchRequest {
         this.from = from;
         this.to = to;
       }
+
+      public long getFrom() {
+        return from;
+      }
+
+      public Long getTo() {
+        return to;
+      }
+
+      @JsonProperty("include_lower")
+      public boolean isIncludeLower() {
+        return include_lower;
+      }
+
+      @JsonProperty("include_upper")
+      public boolean isIncludeUpper() {
+        return include_upper;
+      }
     }
   }
 
@@ -135,6 +183,10 @@ public final class SearchRequest {
 
     BoolQuery(String op, Object clause) {
       bool = Collections.singletonMap(op, clause);
+    }
+
+    public Map<String, Object> getBool() {
+      return bool;
     }
   }
 }

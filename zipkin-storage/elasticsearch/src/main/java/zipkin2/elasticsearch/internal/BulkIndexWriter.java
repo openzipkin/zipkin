@@ -52,7 +52,11 @@ public abstract class BulkIndexWriter<T> {
     new BulkIndexWriter<Map.Entry<String, String>>() {
       @Override public String writeDocument(Map.Entry<String, String> input,
         ByteBufOutputStream sink) {
-        writeAutocompleteEntry(input.getKey(), input.getValue(), JsonAdapters.jsonGenerator(sink));
+        try (JsonGenerator writer = JsonAdapters.jsonGenerator(sink)) {
+          writeAutocompleteEntry(input.getKey(), input.getValue(), writer);
+        } catch (IOException e) {
+          throw new AssertionError("Couldn't close generator for a memory stream.", e);
+        }
         // Id is used to dedupe server side as necessary. Arbitrarily same format as _q value.
         return input.getKey() + '=' + input.getValue();
       }
@@ -78,8 +82,7 @@ public abstract class BulkIndexWriter<T> {
    */
   static String write(Span span, boolean searchEnabled, ByteBufOutputStream sink) {
     int startIndex = sink.buffer().writerIndex();
-    try {
-      JsonGenerator writer = JsonAdapters.JSON_FACTORY.createGenerator((OutputStream) sink);
+    try (JsonGenerator writer = JsonAdapters.JSON_FACTORY.createGenerator((OutputStream) sink)) {
       writer.writeStartObject();
       if (searchEnabled) addSearchFields(span, writer);
       writer.writeStringField("traceId", span.traceId());
@@ -115,7 +118,6 @@ public abstract class BulkIndexWriter<T> {
       if (Boolean.TRUE.equals(span.debug())) writer.writeBooleanField("debug", true);
       if (Boolean.TRUE.equals(span.shared())) writer.writeBooleanField("shared", true);
       writer.writeEndObject();
-      writer.flush();
     } catch (IOException e) {
       throw new AssertionError(e); // No I/O writing to a Buffer.
     }

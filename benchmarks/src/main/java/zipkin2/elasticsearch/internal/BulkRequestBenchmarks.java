@@ -55,7 +55,7 @@ public class BulkRequestBenchmarks {
     BulkCallBuilder.newIndexEntry(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
 
   @Benchmark public void writeRequest_singleSpan() throws IOException {
-    BulkCallBuilder.write(Okio.buffer(Okio.blackhole()), entry, true);
+    BulkCallBuilder.write(Okio.buffer(Okio.blackhole()), true);
   }
 
   @Benchmark public void buildAndWriteRequest_singleSpan() throws IOException {

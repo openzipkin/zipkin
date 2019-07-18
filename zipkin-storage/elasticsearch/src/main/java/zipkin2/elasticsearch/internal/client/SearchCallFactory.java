@@ -13,33 +13,40 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestHeaders;
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
 import java.util.List;
 import zipkin2.internal.Nullable;
 
 public class SearchCallFactory {
 
+  static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+
   final HttpCall.Factory http;
-  final JsonAdapter<SearchRequest> searchRequest =
-      new Moshi.Builder().build().adapter(SearchRequest.class);
 
   public SearchCallFactory(HttpCall.Factory http) {
     this.http = http;
   }
 
   public <V> HttpCall<V> newCall(SearchRequest request, HttpCall.BodyConverter<V> bodyConverter) {
-    AggregatedHttpRequest httpRequest = AggregatedHttpRequest.of(
-      RequestHeaders.of(
-        HttpMethod.POST, lenientSearch(request.indices, request.type),
-        HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
-      HttpData.ofUtf8(searchRequest.toJson(request)));
+    final AggregatedHttpRequest httpRequest;
+    try {
+      httpRequest = AggregatedHttpRequest.of(
+        RequestHeaders.of(
+          HttpMethod.POST, lenientSearch(request.indices, request.type),
+          HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
+        HttpData.wrap(OBJECT_MAPPER.writeValueAsBytes(request)));
+    } catch (JsonProcessingException e) {
+      throw new AssertionError("Could not serialize SearchRequest to bytes.", e);
+    }
     return http.newCall(httpRequest, bodyConverter);
   }
 

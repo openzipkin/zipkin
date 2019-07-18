@@ -25,26 +25,10 @@ import zipkin2.internal.Nullable;
 public final class JsonReaders {
 
   /**
-   * This saves you from having to define nested types to read a single value
-   *
-   * <p>Instead of defining two types like this, and double-checking null..
+   * Navigates to a field of a JSON-serialized object. For example,
    *
    * <pre>{@code
-   * class Response {
-   *   Message message;
-   * }
-   * class Message {
-   *   String status;
-   * }
-   * JsonAdapter<Response> adapter = moshi.adapter(Response.class);
-   * Message message = adapter.fromJson(body.source());
-   * if (message != null && message.status != null) throw new IllegalStateException(message.status);
-   * }</pre>
-   *
-   * <p>You can advance to the field directly.
-   *
-   * <pre>{@code
-   * JsonReader status = enterPath(JsonReader.of(body.source()), "message", "status");
+   * JsonReader status = enterPath(JsonAdapters.jsonParser(stream), "message", "status");
    * if (status != null) throw new IllegalStateException(status.nextString());
    * }</pre>
    */

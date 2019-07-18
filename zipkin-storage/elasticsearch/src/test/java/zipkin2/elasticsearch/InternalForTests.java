@@ -42,8 +42,7 @@ public class InternalForTests {
   static final BulkIndexWriter<DependencyLink> DEPENDENCY_LINK_WRITER =
     new BulkIndexWriter<DependencyLink>() {
       @Override public String writeDocument(DependencyLink link, ByteBufOutputStream sink) {
-        try {
-          JsonGenerator writer = JsonAdapters.jsonGenerator(sink);
+        try (JsonGenerator writer = JsonAdapters.jsonGenerator(sink)) {
           writer.writeStartObject();
           writer.writeStringField("parent", link.parent());
           writer.writeStringField("child", link.child());

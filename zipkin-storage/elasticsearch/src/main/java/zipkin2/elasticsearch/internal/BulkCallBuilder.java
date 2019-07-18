@@ -84,11 +84,10 @@ public final class BulkCallBuilder {
 
     final HttpData body;
 
-    CompositeByteBuf sink = PooledByteBufAllocator.DEFAULT.compositeHeapBuffer();
+    CompositeByteBuf sink = PooledByteBufAllocator.DEFAULT.compositeHeapBuffer(Integer.MAX_VALUE);
     try {
-      ByteBufOutputStream sinkStream = new ByteBufOutputStream(sink);
       for (IndexEntry<?> entry : entries) {
-        write(sink, sinkStream, entry, shouldAddType);
+        write(sink, entry, shouldAddType);
       }
       body = HttpData.wrap(ByteBufUtil.getBytes(sink));
     } finally {
@@ -103,22 +102,27 @@ public final class BulkCallBuilder {
     return http.newCall(request, CheckForErrors.INSTANCE);
   }
 
-  static void write(CompositeByteBuf sink, ByteBufOutputStream sinkStream, IndexEntry entry,
+  static void write(CompositeByteBuf sink, IndexEntry entry,
     boolean shouldAddType) {
-    // Fuzzily assume a general small span is 500 bytes to reduce resizing while building up the
+    // Fuzzily assume a general small span is 600 bytes to reduce resizing while building up the
     // JSON. Any extra bytes will be released back after serializing all the documents.
-    ByteBuf document = sink.alloc().heapBuffer(500);
-    String id = entry.writer().writeDocument(entry.input(), new ByteBufOutputStream(document));
-    writeIndexMetadata(sinkStream, entry, id, shouldAddType);
-    sink.writeByte('\n');
-    sink.addComponent(true, document);
-    sink.writeByte('\n');
+    ByteBuf document = sink.alloc().heapBuffer(600).writeByte('\n');
+    ByteBuf metadata = sink.alloc().heapBuffer(200);
+    try {
+      String id = entry.writer().writeDocument(entry.input(), new ByteBufOutputStream(document));
+      document.writeByte('\n');
+      writeIndexMetadata(new ByteBufOutputStream(metadata), entry, id, shouldAddType);
+    } catch (Throwable t) {
+      document.release();
+      metadata.release();
+      throw t;
+    }
+    sink.addComponent(true, metadata).addComponent(true, document);
   }
 
   static void writeIndexMetadata(ByteBufOutputStream sink, IndexEntry entry, String id,
     boolean shouldAddType) {
-    JsonGenerator writer = JsonAdapters.jsonGenerator(sink);
-    try {
+    try (JsonGenerator writer = JsonAdapters.jsonGenerator(sink)){
       writer.writeStartObject();
       writer.writeObjectFieldStart("index");
       writer.writeStringField("_index", entry.index());

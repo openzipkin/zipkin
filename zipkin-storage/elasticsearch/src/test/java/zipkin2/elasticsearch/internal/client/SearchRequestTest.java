@@ -13,16 +13,14 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.squareup.moshi.JsonAdapter;
-import com.squareup.moshi.Moshi;
 import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SearchRequestTest {
+
   SearchRequest request = SearchRequest.create(asList("zipkin-2016.11.31"));
-  JsonAdapter<SearchRequest> adapter = new Moshi.Builder().build().adapter(SearchRequest.class);
 
   @Test
   public void defaultSizeIsMaxResultWindow() {
@@ -32,8 +30,8 @@ public class SearchRequestTest {
 
   /** Indices and type affect the request URI, not the json body */
   @Test
-  public void doesntSerializeIndicesOrType() {
-    assertThat(adapter.toJson(request))
+  public void doesntSerializeIndicesOrType() throws Exception {
+    assertThat(SearchCallFactory.OBJECT_MAPPER.writeValueAsString(request))
         .isEqualTo("{\"size\":10000}");
   }
 }

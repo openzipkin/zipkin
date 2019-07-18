@@ -17,7 +17,6 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
 import java.nio.charset.StandardCharsets;
-import okio.Buffer;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Span;
@@ -39,8 +38,6 @@ public class BulkIndexWriterTest {
 
   @Test public void span_addsDocumentId() throws Exception {
     String id = BulkIndexWriter.SPAN.writeDocument(CLIENT_SPAN, buffer);
-    Buffer okio = new Buffer();
-    okio.write(buffer.buffer().nioBuffer());
 
     assertThat(id)
       .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-8cf9a50c5cf8a52404f17c42bcb6bf85");
@@ -48,8 +45,6 @@ public class BulkIndexWriterTest {
 
   @Test public void spanSearchDisabled_addsDocumentId() throws Exception {
     String id = BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
-    Buffer okio = new Buffer();
-    okio.write(buffer.buffer().nioBuffer());
 
     assertThat(id)
       .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-2b930c7655ec6b99d3d389403c3917fd");
