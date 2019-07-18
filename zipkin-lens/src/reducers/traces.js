@@ -15,7 +15,6 @@ import * as types from '../constants/action-types';
 
 const initialState = {
   isLoading: false,
-  isCalculating: false,
   traces: [],
   traceSummaries: [],
   correctedTraceMap: {},
@@ -27,6 +26,9 @@ const traces = (state = initialState, action) => {
       return {
         ...state,
         isLoading: true,
+        traces: [],
+        traceSummaries: [],
+        correctedTraceMap: {},
       };
     case types.TRACES_LOAD_SUCCESS:
       return {
