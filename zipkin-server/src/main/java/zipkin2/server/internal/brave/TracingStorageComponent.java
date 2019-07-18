@@ -46,8 +46,7 @@ public final class TracingStorageComponent extends StorageComponent {
   }
 
   @Override public SpanConsumer spanConsumer() {
-    // prevents accidental write amplification
-    return delegate.spanConsumer();
+    return new TracingSpanConsumer(tracing, delegate.spanConsumer());
   }
 
   @Override public CheckResult check() {
@@ -59,7 +58,7 @@ public final class TracingStorageComponent extends StorageComponent {
   }
 
   @Override public String toString() {
-    return "Traced{" + delegate.toString() + "}";
+    return "Traced{" + delegate + "}";
   }
 
   static final class TracingSpanStore implements SpanStore {
@@ -71,13 +70,11 @@ public final class TracingStorageComponent extends StorageComponent {
       this.delegate = delegate;
     }
 
-    @Override
-    public Call<List<List<Span>>> getTraces(QueryRequest request) {
+    @Override public Call<List<List<Span>>> getTraces(QueryRequest request) {
       return new TracedCall<>(tracer, delegate.getTraces(request), "get-traces");
     }
 
-    @Override
-    public Call<List<Span>> getTrace(String traceId) {
+    @Override public Call<List<Span>> getTrace(String traceId) {
       return new TracedCall<>(tracer, delegate.getTrace(traceId), "get-trace");
     }
 
@@ -89,14 +86,13 @@ public final class TracingStorageComponent extends StorageComponent {
       return new TracedCall<>(tracer, delegate.getSpanNames(serviceName), "get-span-names");
     }
 
-    @Override
-    public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
+    @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
       return new TracedCall<>(
         tracer, delegate.getDependencies(endTs, lookback), "get-dependencies");
     }
 
     @Override public String toString() {
-      return "Traced{" + delegate.toString() + "}";
+      return "Traced{" + delegate + "}";
     }
   }
 
@@ -118,7 +114,25 @@ public final class TracingStorageComponent extends StorageComponent {
     }
 
     @Override public String toString() {
-      return "Traced{" + delegate.toString() + "}";
+      return "Traced{" + delegate + "}";
+    }
+  }
+
+  static final class TracingSpanConsumer implements SpanConsumer {
+    final Tracer tracer;
+    final SpanConsumer delegate;
+
+    TracingSpanConsumer(Tracing tracing, SpanConsumer delegate) {
+      this.tracer = tracing.tracer();
+      this.delegate = delegate;
+    }
+
+    @Override public Call<Void> accept(List<Span> spans) {
+      return new TracedCall<>(tracer, delegate.accept(spans), "accept-spans");
+    }
+
+    @Override public String toString() {
+      return "Traced{" + delegate + "}";
     }
   }
 }

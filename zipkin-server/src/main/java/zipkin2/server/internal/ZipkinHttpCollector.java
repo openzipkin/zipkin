@@ -109,7 +109,7 @@ public class ZipkinHttpCollector {
   HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx, HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
-    req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handle((msg, t) -> {
+    req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handleAsync((msg, t) -> {
       if (t != null) {
         result.onError(t);
         return null;
@@ -163,7 +163,7 @@ public class ZipkinHttpCollector {
       }
 
       return null;
-    });
+    }, ctx.contextAwareExecutor());
 
     return HttpResponse.from(result);
   }
