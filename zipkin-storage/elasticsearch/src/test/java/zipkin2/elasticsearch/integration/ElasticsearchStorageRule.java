@@ -14,7 +14,7 @@
 package zipkin2.elasticsearch.integration;
 
 import com.google.common.io.Closer;
-import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.logging.LogLevel;
 import java.util.Arrays;
@@ -89,7 +89,7 @@ public class ElasticsearchStorageRule extends ExternalResource {
   }
 
   public ElasticsearchStorage.Builder computeStorageBuilder() {
-    Consumer<HttpClientBuilder> customizer =
+    Consumer<ClientOptionsBuilder> customizer =
         Boolean.valueOf(System.getenv("ES_DEBUG"))
           ? client -> client
           .decorator(

@@ -14,8 +14,8 @@
 package zipkin2.elasticsearch;
 
 import com.linecorp.armeria.client.Client;
+import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.ClientRequestContext;
-import com.linecorp.armeria.client.HttpClientBuilder;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
@@ -143,16 +143,16 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
   @Configuration
   static class CustomizerConfiguration {
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<HttpClientBuilder> one() {
+    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<ClientOptionsBuilder> one() {
       return one;
     }
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<HttpClientBuilder> two() {
+    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<ClientOptionsBuilder> two() {
       return two;
     }
 
-    Consumer<HttpClientBuilder> one = client -> client.maxResponseLength(12345L);
-    Consumer<HttpClientBuilder> two =
+    Consumer<ClientOptionsBuilder> one = client -> client.maxResponseLength(12345L);
+    Consumer<ClientOptionsBuilder> two =
       client -> client.addHttpHeader("test", "bar");
   }
 

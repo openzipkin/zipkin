@@ -33,6 +33,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
+import zipkin2.elasticsearch.internal.BasicAuthInterceptor;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -160,6 +161,24 @@ public class ElasticsearchStorageTest {
     MOCK_RESPONSES.add(HEALTH_RESPONSE);
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
+  }
+
+  @Test
+  public void check_usesCustomizer() throws Exception {
+    storage.close();
+    storage = ElasticsearchStorage.newBuilder()
+      // https://github.com/line/armeria/issues/1895
+      .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
+      .clientCustomizer(client -> client.decorator(
+        delegate -> BasicAuthInterceptor.create(delegate, "Aladdin", "OpenSesame")))
+      .hosts(asList(server.httpUri("/")))
+      .build();
+
+    MOCK_RESPONSES.add(HEALTH_RESPONSE);
+
+    assertThat(storage.check()).isEqualTo(CheckResult.OK);
+
+    assertThat(CAPTURED_REQUESTS.take().headers().get("Authorization")).isNotNull();
   }
 
   @Test
