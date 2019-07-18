@@ -13,8 +13,12 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.squareup.moshi.JsonWriter;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Iterator;
 import java.util.Map;
 import okio.Buffer;
@@ -35,13 +39,13 @@ public abstract class BulkIndexWriter<T> {
   public abstract String writeDocument(T input, BufferedSink writer);
 
   public static final BulkIndexWriter<Span> SPAN = new BulkIndexWriter<Span>() {
-    @Override public String writeDocument(Span input, BufferedSink sink) {
+    @Override public String writeDocument(Span input, ByteBufOutputStream sink) {
       return write(input, true, sink);
     }
   };
   public static final BulkIndexWriter<Span>
     SPAN_SEARCH_DISABLED = new BulkIndexWriter<Span>() {
-    @Override public String writeDocument(Span input, BufferedSink sink) {
+    @Override public String writeDocument(Span input, ByteBufOutputStream sink) {
       return write(input, false, sink);
     }
   };
@@ -73,11 +77,12 @@ public abstract class BulkIndexWriter<T> {
    *
    * @param searchEnabled encodes timestamp_millis and _q when non-empty
    */
-  static String write(Span span, boolean searchEnabled, BufferedSink sink) {
+  static String write(Span span, boolean searchEnabled, ByteBufOutputStream sink) {
+    ByteBuf buffer = sink.buffer().duplicate();
     HashingSink hashingSink = HashingSink.md5(sink);
-    JsonWriter writer = JsonWriter.of(Okio.buffer(hashingSink));
     try {
-      writer.beginObject();
+      JsonGenerator writer = JsonAdapters.JSON_FACTORY.createGenerator((OutputStream) sink);
+      writer.writeStartObject();
       if (searchEnabled) addSearchFields(span, writer);
       writer.name("traceId").value(span.traceId());
       if (span.parentId() != null) writer.name("parentId").value(span.parentId());
@@ -144,32 +149,33 @@ public abstract class BulkIndexWriter<T> {
     writer.endObject();
   }
 
-  static void write(Endpoint endpoint, JsonWriter writer) throws IOException {
-    writer.beginObject();
-    if (endpoint.serviceName() != null) writer.name("serviceName").value(endpoint.serviceName());
-    if (endpoint.ipv4() != null) writer.name("ipv4").value(endpoint.ipv4());
-    if (endpoint.ipv6() != null) writer.name("ipv6").value(endpoint.ipv6());
-    if (endpoint.portAsInt() != 0) writer.name("port").value(endpoint.portAsInt());
-    writer.endObject();
+  static void write(Endpoint endpoint, JsonGenerator writer) throws IOException {
+    writer.writeStartObject();
+    if (endpoint.serviceName() != null) {
+      writer.writeStringField("serviceName", endpoint.serviceName());
+    }
+    if (endpoint.ipv4() != null) writer.writeStringField("ipv4", endpoint.ipv4());
+    if (endpoint.ipv6() != null) writer.writeStringField("ipv6", endpoint.ipv6());
+    if (endpoint.portAsInt() != 0) writer.writeNumberField("port", endpoint.portAsInt());
+    writer.writeEndObject();
   }
 
-  static void addSearchFields(Span span, JsonWriter writer) throws IOException {
+  static void addSearchFields(Span span, JsonGenerator writer) throws IOException {
     long timestampMillis = span.timestampAsLong() / 1000L;
-    if (timestampMillis != 0L) writer.name("timestamp_millis").value(timestampMillis);
+    if (timestampMillis != 0L) writer.writeNumberField("timestamp_millis", timestampMillis);
     if (!span.tags().isEmpty() || !span.annotations().isEmpty()) {
-      writer.name("_q");
-      writer.beginArray();
+      writer.writeArrayFieldStart("_q");
       for (Annotation a : span.annotations()) {
         if (a.value().length() > SHORT_STRING_LENGTH) continue;
-        writer.value(a.value());
+        writer.writeString(a.value());
       }
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
         int length = tag.getKey().length() + tag.getValue().length() + 1;
         if (length > SHORT_STRING_LENGTH) continue;
-        writer.value(tag.getKey()); // search is possible by key alone
-        writer.value(tag.getKey() + "=" + tag.getValue());
+        writer.writeString(tag.getKey()); // search is possible by key alone
+        writer.writeString(tag.getKey() + "=" + tag.getValue());
       }
-      writer.endArray();
+      writer.writeEndArray();
     }
   }
 }
