@@ -13,21 +13,19 @@
  */
 package zipkin2.elasticsearch;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
-import zipkin2.elasticsearch.internal.JsonAdapters;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.SearchResultConverter;
 import zipkin2.internal.DependencyLinker;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
 
-public final class BodyConverters {
-  static final JsonFactory JSON_FACTORY = new JsonFactory();
+final class BodyConverters {
 
   static final HttpCall.BodyConverter<Object> NULL =
       new HttpCall.BodyConverter<Object>() {
@@ -40,13 +38,13 @@ public final class BodyConverters {
       new HttpCall.BodyConverter<List<String>>() {
         @Override
         public List<String> convert(ByteBuffer content) throws IOException {
-          return collectValuesNamed(JsonAdapters.jsonParser(content), "key");
+          return collectValuesNamed(JsonSerializers.jsonParser(content), "key");
         }
       };
   static final HttpCall.BodyConverter<List<Span>> SPANS =
-      SearchResultConverter.create(JsonAdapters.SPAN_PARSER);
+      SearchResultConverter.create(JsonSerializers.SPAN_PARSER);
   static final HttpCall.BodyConverter<List<DependencyLink>> DEPENDENCY_LINKS =
-      new SearchResultConverter<DependencyLink>(JsonAdapters.DEPENDENCY_LINK_PARSER) {
+      new SearchResultConverter<DependencyLink>(JsonSerializers.DEPENDENCY_LINK_PARSER) {
         @Override
         public List<DependencyLink> convert(ByteBuffer content) throws IOException {
           List<DependencyLink> result = super.convert(content);

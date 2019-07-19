@@ -72,7 +72,7 @@ public final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpReque
         }
         try (ByteBufInputStream stream = new ByteBufInputStream(buf, true)) {
           try {
-            JsonParser message = enterPath(JsonAdapters.jsonParser(stream), "message");
+            JsonParser message = enterPath(JsonSerializers.jsonParser(stream), "message");
             if (message != null) throw new IllegalStateException(message.getValueAsString());
           } catch (IOException e) {
             Exceptions.throwUnsafely(e);

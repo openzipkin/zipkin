@@ -21,7 +21,7 @@ import java.util.List;
 import zipkin2.DependencyLink;
 import zipkin2.elasticsearch.internal.BulkCallBuilder;
 import zipkin2.elasticsearch.internal.BulkIndexWriter;
-import zipkin2.elasticsearch.internal.JsonAdapters;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 
 /** Package accessor for integration tests */
 public class InternalForTests {
@@ -42,7 +42,7 @@ public class InternalForTests {
   static final BulkIndexWriter<DependencyLink> DEPENDENCY_LINK_WRITER =
     new BulkIndexWriter<DependencyLink>() {
       @Override public String writeDocument(DependencyLink link, ByteBufOutputStream sink) {
-        try (JsonGenerator writer = JsonAdapters.jsonGenerator(sink)) {
+        try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)) {
           writer.writeStartObject();
           writer.writeStringField("parent", link.parent());
           writer.writeStringField("child", link.child());

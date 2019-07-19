@@ -14,20 +14,21 @@
 package zipkin2.elasticsearch;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import org.junit.Test;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.elasticsearch.internal.JsonAdapters;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static zipkin2.TestObjects.CLIENT_SPAN;
-import static zipkin2.elasticsearch.internal.JsonAdapters.SPAN_PARSER;
+import static zipkin2.elasticsearch.internal.JsonSerializers.SPAN_PARSER;
 
-public class JsonAdaptersTest {
+public class JsonSerializersTest {
   @Test
   public void span_ignoreNull_parentId() throws IOException {
     String json =
@@ -38,7 +39,7 @@ public class JsonAdaptersTest {
             + "  \"parentId\": null\n"
             + "}";
 
-    SPAN_PARSER.parse(json);
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -51,7 +52,7 @@ public class JsonAdaptersTest {
             + "  \"timestamp\": null\n"
             + "}";
 
-    SPAN_PARSER.parse(json);
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -64,7 +65,7 @@ public class JsonAdaptersTest {
             + "  \"duration\": null\n"
             + "}";
 
-    SPAN_PARSER.parse(json);
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -77,7 +78,7 @@ public class JsonAdaptersTest {
             + "  \"debug\": null\n"
             + "}";
 
-    SPAN_PARSER.parse(json);
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -96,7 +97,7 @@ public class JsonAdaptersTest {
             + "  ]\n"
             + "}";
 
-    SPAN_PARSER.parse(json);
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -111,7 +112,7 @@ public class JsonAdaptersTest {
             + "  }"
             + "}";
 
-    Span span = JsonAdapters.SPAN_PARSER.parse(json);
+    Span span = parseString(SPAN_PARSER, json);
     assertThat(span.tags()).containsExactly(entry("num", "9223372036854775807"));
   }
 
@@ -127,13 +128,14 @@ public class JsonAdaptersTest {
             + "  }"
             + "}";
 
-    Span span = JsonAdapters.SPAN_PARSER.parse(json);
+    Span span = parseString(SPAN_PARSER, json);
     assertThat(span.tags()).containsExactly(entry("num", "1.23456789"));
   }
 
   @Test
   public void span_roundTrip() throws IOException {
-    assertThat(SPAN_PARSER.parse(SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN))).isEqualTo(CLIENT_SPAN);
+    assertThat(parseBytes(SPAN_PARSER, SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN)))
+      .isEqualTo(CLIENT_SPAN);
   }
 
   /**
@@ -159,7 +161,8 @@ public class JsonAdaptersTest {
                 "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
             .build();
 
-    assertThat(SPAN_PARSER.parse(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld))).isEqualTo(worstSpanInTheWorld);
+    assertThat(parseBytes(SPAN_PARSER, SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld)))
+      .isEqualTo(worstSpanInTheWorld);
   }
 
   @Test
@@ -175,7 +178,7 @@ public class JsonAdaptersTest {
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_PARSER.parse(json).localEndpoint())
+    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("service").port(65535).build());
   }
 
@@ -191,7 +194,7 @@ public class JsonAdaptersTest {
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_PARSER.parse(json).localEndpoint())
+    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
@@ -208,7 +211,7 @@ public class JsonAdaptersTest {
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_PARSER.parse(json).localEndpoint())
+    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
@@ -227,13 +230,12 @@ public class JsonAdaptersTest {
             + "  \"id\": \"6b221d5bc9e6496c\"\n"
             + "}");
 
-    assertThat(JsonAdapters.SPAN_PARSER.parse(with128BitTraceId))
+    assertThat(parseString(SPAN_PARSER, with128BitTraceId))
         .isEqualTo(
-            JsonAdapters.SPAN_PARSER
-                .parse(withLower64bitsTraceId)
-                .toBuilder()
-                .traceId("48485a3953bb61246b221d5bc9e6496c")
-                .build());
+            parseString(JsonSerializers.SPAN_PARSER, withLower64bitsTraceId)
+              .toBuilder()
+              .traceId("48485a3953bb61246b221d5bc9e6496c")
+              .build());
   }
 
   @Test
@@ -241,7 +243,8 @@ public class JsonAdaptersTest {
     DependencyLink link =
         DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).build();
 
-    assertThat(JsonAdapters.DEPENDENCY_LINK_PARSER.parse(DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
+    assertThat(parseBytes(JsonSerializers.DEPENDENCY_LINK_PARSER,
+      DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
   }
 
   @Test
@@ -249,6 +252,23 @@ public class JsonAdaptersTest {
     DependencyLink link =
         DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).errorCount(1).build();
 
-    assertThat(JsonAdapters.DEPENDENCY_LINK_PARSER.parse(DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
+    assertThat(parseBytes(JsonSerializers.DEPENDENCY_LINK_PARSER,
+      DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
+  }
+
+  static <T> T parseString(JsonSerializers.ObjectParser<T> parser, String json) {
+    try {
+      return parser.parse(JsonSerializers.JSON_FACTORY.createParser(json));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  static <T> T parseBytes(JsonSerializers.ObjectParser<T> parser, byte[] json) {
+    try {
+      return parser.parse(JsonSerializers.JSON_FACTORY.createParser(json));
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 }

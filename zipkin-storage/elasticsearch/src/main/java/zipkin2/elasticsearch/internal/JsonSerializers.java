@@ -28,12 +28,12 @@ import zipkin2.Endpoint;
 import zipkin2.Span;
 
 /**
- * Read-only json adapters resurrected from before we switched to Java 6 as storage components can
- * be Java 7+
+ * JSON serialization utilities and parsing code.
  */
-public final class JsonAdapters {
+public final class JsonSerializers {
 
-  static final JsonFactory JSON_FACTORY = new JsonFactory();
+  // Visible for testing
+  public static final JsonFactory JSON_FACTORY = new JsonFactory();
 
   public static JsonParser jsonParser(ByteBuffer buf) {
     try {
@@ -55,16 +55,6 @@ public final class JsonAdapters {
     }
   }
 
-  public static JsonParser jsonParser(String content) {
-    try {
-      JsonParser jsonParser = JSON_FACTORY.createParser(content);
-      jsonParser.nextToken();
-      return jsonParser;
-    } catch (IOException e) {
-      throw new AssertionError("Could not create JsonParser from a String.", e);
-    }
-  }
-
   public static JsonGenerator jsonGenerator(OutputStream stream) {
     try {
       return JSON_FACTORY.createGenerator(stream);
@@ -74,14 +64,6 @@ public final class JsonAdapters {
   }
 
   public interface ObjectParser<T> {
-    default T parse(String s) throws IOException {
-      return parse(jsonParser(s));
-    }
-
-    default T parse(byte[] bytes) throws IOException {
-      return parse(jsonParser(ByteBuffer.wrap(bytes)));
-    }
-
     T parse(JsonParser jsonParser) throws IOException;
   }
 

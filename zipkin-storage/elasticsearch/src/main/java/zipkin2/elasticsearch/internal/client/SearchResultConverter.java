@@ -20,8 +20,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import zipkin2.elasticsearch.internal.JsonAdapters;
-import zipkin2.elasticsearch.internal.JsonAdapters.ObjectParser;
+import zipkin2.elasticsearch.internal.JsonSerializers;
+import zipkin2.elasticsearch.internal.JsonSerializers.ObjectParser;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
@@ -39,7 +39,7 @@ public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>>
   }
 
   @Override public List<T> convert(ByteBuffer content) throws IOException {
-    JsonParser hits = enterPath(JsonAdapters.jsonParser(content), "hits", "hits");
+    JsonParser hits = enterPath(JsonSerializers.jsonParser(content), "hits", "hits");
     if (hits == null || !hits.isExpectedStartArrayToken()) return defaultValue;
 
     List<T> result = new ArrayList<>();

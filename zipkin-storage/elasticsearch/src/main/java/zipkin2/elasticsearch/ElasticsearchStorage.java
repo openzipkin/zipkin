@@ -52,7 +52,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
-import zipkin2.elasticsearch.internal.JsonAdapters;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
@@ -360,7 +360,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     @Override
     public CheckResult convert(ByteBuffer buf) throws IOException {
       ByteBuffer body = buf.duplicate();
-      JsonParser status = enterPath(JsonAdapters.jsonParser(buf), "status");
+      JsonParser status = enterPath(JsonSerializers.jsonParser(buf), "status");
       if (status == null) {
         throw new IllegalStateException("Health status couldn't be read " +
           StandardCharsets.UTF_8.decode(body).toString());

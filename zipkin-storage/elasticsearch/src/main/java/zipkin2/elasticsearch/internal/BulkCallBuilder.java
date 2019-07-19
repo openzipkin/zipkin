@@ -20,6 +20,7 @@ import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
@@ -84,7 +85,9 @@ public final class BulkCallBuilder {
 
     final HttpData body;
 
-    CompositeByteBuf sink = PooledByteBufAllocator.DEFAULT.compositeHeapBuffer(Integer.MAX_VALUE);
+    CompositeByteBuf sink = RequestContext.mapCurrent(
+      RequestContext::alloc, () -> PooledByteBufAllocator.DEFAULT)
+      .compositeHeapBuffer(Integer.MAX_VALUE);
     try {
       for (IndexEntry<?> entry : entries) {
         write(sink, entry, shouldAddType);
@@ -122,7 +125,7 @@ public final class BulkCallBuilder {
 
   static void writeIndexMetadata(ByteBufOutputStream sink, IndexEntry entry, String id,
     boolean shouldAddType) {
-    try (JsonGenerator writer = JsonAdapters.jsonGenerator(sink)){
+    try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)){
       writer.writeStartObject();
       writer.writeObjectFieldStart("index");
       writer.writeStringField("_index", entry.index());

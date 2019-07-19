@@ -18,7 +18,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.ByteBufUtil;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Iterator;
@@ -52,7 +51,7 @@ public abstract class BulkIndexWriter<T> {
     new BulkIndexWriter<Map.Entry<String, String>>() {
       @Override public String writeDocument(Map.Entry<String, String> input,
         ByteBufOutputStream sink) {
-        try (JsonGenerator writer = JsonAdapters.jsonGenerator(sink)) {
+        try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)) {
           writeAutocompleteEntry(input.getKey(), input.getValue(), writer);
         } catch (IOException e) {
           throw new AssertionError("Couldn't close generator for a memory stream.", e);
@@ -82,7 +81,7 @@ public abstract class BulkIndexWriter<T> {
    */
   static String write(Span span, boolean searchEnabled, ByteBufOutputStream sink) {
     int startIndex = sink.buffer().writerIndex();
-    try (JsonGenerator writer = JsonAdapters.JSON_FACTORY.createGenerator((OutputStream) sink)) {
+    try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)) {
       writer.writeStartObject();
       if (searchEnabled) addSearchFields(span, writer);
       writer.writeStringField("traceId", span.traceId());

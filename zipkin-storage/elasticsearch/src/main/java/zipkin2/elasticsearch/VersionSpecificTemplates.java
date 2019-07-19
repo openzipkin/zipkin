@@ -18,7 +18,7 @@ import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import zipkin2.elasticsearch.internal.JsonAdapters;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
@@ -228,7 +228,7 @@ final class VersionSpecificTemplates {
     INSTANCE;
 
     @Override public Float convert(ByteBuffer content) throws IOException {
-      JsonParser version = enterPath(JsonAdapters.jsonParser(content), "version", "number");
+      JsonParser version = enterPath(JsonSerializers.jsonParser(content), "version", "number");
       if (version == null) throw new IllegalStateException(".version.number not in response");
       String versionString = version.getText();
       return Float.valueOf(versionString.substring(0, 3));
