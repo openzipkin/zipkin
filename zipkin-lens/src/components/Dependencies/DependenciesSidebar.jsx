@@ -16,7 +16,7 @@ import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
 
 import ServiceBadge from '../Common/ServiceBadge';
-import { getServiceNameColor } from '../../util/color';
+import { selectServiceColor } from '../../colors';
 
 const propTypes = {
   serviceName: PropTypes.string.isRequired,
@@ -74,8 +74,8 @@ const renderDoughnut = (edges, isTarget) => {
     datasets: [{
       data: edges.map(e => e.metrics.normal + e.metrics.danger),
       backgroundColor: isTarget
-        ? edges.map(e => getServiceNameColor(e.target))
-        : edges.map(e => getServiceNameColor(e.source)),
+        ? edges.map(e => selectServiceColor(e.target))
+        : edges.map(e => selectServiceColor(e.source)),
     }],
   };
   const options = {

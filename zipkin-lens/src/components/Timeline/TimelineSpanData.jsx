@@ -17,7 +17,7 @@ import moment from 'moment';
 import ReactTable from 'react-table';
 
 import ServiceBadge from '../Common/ServiceBadge';
-import { getServiceNameColor } from '../../util/color';
+import { selectServiceColor } from '../../colors';
 import { detailedSpanPropTypes } from '../../prop-types';
 
 const propTypes = {
@@ -47,7 +47,7 @@ const renderData = span => (
     <div
       className="timeline-span-data__title"
       style={{
-        borderColor: getServiceNameColor(span.serviceName),
+        borderColor: selectServiceColor(span.serviceName),
       }}
     >
       {`${span.serviceName}: ${span.spanName}`}
@@ -122,7 +122,7 @@ const TimelineSpanData = ({ span, serviceNameColumnWidth }) => (
         className="timeline-span-data__depth-marker"
         style={{
           left: `${span.depth * 14}px`,
-          background: `${getServiceNameColor(span.serviceName)}`,
+          background: `${selectServiceColor(span.serviceName)}`,
         }}
       />
     </div>

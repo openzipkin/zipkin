@@ -71,3 +71,7 @@ export const selectServiceTheme = (serviceName) => {
   const hash = generateHash(serviceName);
   return allColorThemes[hash % allColors.length];
 };
+
+export const selectServiceColor = serviceName => selectServiceTheme(
+  serviceName,
+).palette.primary.dark;
