@@ -20,10 +20,14 @@ import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.logging.LogLevel;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -47,6 +51,7 @@ import zipkin2.storage.StorageComponent;
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchStorageAutoConfiguration {
+  static final Logger LOG = Logger.getLogger(ElasticsearchStorage.class.getName());
   static final String QUALIFIER = "zipkinElasticsearchHttp";
 
   @Bean @Qualifier(QUALIFIER) Consumer<ClientOptionsBuilder> zipkinElasticsearchHttp(
@@ -127,20 +132,56 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
     };
   }
 
+  @Bean @ConditionalOnMissingBean HostsSupplier hostsSupplier(
+    ZipkinElasticsearchStorageProperties props) {
+    String hosts = Optional.ofNullable(props.getHosts()).orElse("http://localhost:9200");
+    List<String> hostList = new ArrayList<>();
+    for (String host : hosts.split(",", 100)) {
+      if (host.startsWith("http://") || host.startsWith("https://")) {
+        hostList.add(host);
+        continue;
+      }
+      final int port;
+      try {
+        port = new URL("http://" + host).getPort();
+      } catch (MalformedURLException e) {
+        throw new IllegalArgumentException("Malformed elasticsearch host: " + host);
+      }
+      if (port == -1) {
+        host += ":9200";
+      } else if (port == 9300) {
+        LOG.warning(
+          "Native transport no longer supported. Changing " + host + " to http port 9200");
+        host = host.replace(":9300", ":9200");
+      }
+      hostList.add("http://" + host);
+    }
+    return new HostsSupplier() {
+      @Override public List<String> get() {
+        return hostList;
+      }
+
+      @Override public String toString() {
+        return hostList.toString();
+      }
+    };
+  }
+
   @Bean @ConditionalOnMissingBean StorageComponent storage(
     ZipkinElasticsearchStorageProperties elasticsearch,
     @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> zipkinElasticsearchHttpCustomizers,
     @Qualifier(QUALIFIER) List<Consumer<ClientFactoryBuilder>>
       zipkinElasticsearchClientFactoryCustomizers,
-    Optional<HostsSupplier> hostsSupplier,
+    HostsSupplier hostsSupplier,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
     @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
     @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
-    ElasticsearchStorage.Builder result = elasticsearch
+    return elasticsearch
       .toBuilder()
+      .hostsSupplier(hostsSupplier)
       .clientCustomizer(new CompositeCustomizer<>(zipkinElasticsearchHttpCustomizers))
       .clientFactoryCustomizer(
         new CompositeCustomizer<>(zipkinElasticsearchClientFactoryCustomizers))
@@ -149,9 +190,7 @@ public class ZipkinElasticsearchStorageAutoConfiguration {
       .searchEnabled(searchEnabled)
       .autocompleteKeys(autocompleteKeys)
       .autocompleteTtl(autocompleteTtl)
-      .autocompleteCardinality(autocompleteCardinality);
-    hostsSupplier.ifPresent(result::hostsSupplier);
-    return result.build();
+      .autocompleteCardinality(autocompleteCardinality).build();
   }
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<ClientOptionsBuilder>

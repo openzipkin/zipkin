@@ -88,7 +88,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       .clientFactoryCustomizer(unused -> {
       })
       .hosts(Collections.singletonList("http://localhost:9200"))
-      .maxRequests(64)
       .strictTraceId(true)
       .searchEnabled(true)
       .index("zipkin")
@@ -143,15 +142,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      * value is only read once.
      */
     public abstract Builder hostsSupplier(HostsSupplier hosts);
-
-    /**
-     * Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64
-     *
-     * <p>A backlog is not permitted. Once this number of requests are in-flight, future requests
-     * will drop until we are under maxRequests again. This allows the server to remain up during a
-     * traffic surge.
-     */
-    public abstract Builder maxRequests(int maxRequests);
 
     /**
      * Only valid when the destination is Elasticsearch 5.x. Indicates the ingest pipeline used
@@ -249,12 +239,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   public abstract HostsSupplier hostsSupplier();
 
-  @Nullable
-  public abstract String pipeline();
+  @Nullable public abstract String pipeline();
 
   public abstract boolean flushOnWrites();
-
-  public abstract int maxRequests();
 
   public abstract boolean strictTraceId();
 
@@ -529,7 +516,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   @Memoized // hosts resolution might imply a network call, and we might make a new client instance
   public HttpCall.Factory http() {
-    return new HttpCall.Factory(httpClient(), maxRequests());
+    return new HttpCall.Factory(httpClient());
   }
 
   ElasticsearchStorage() {

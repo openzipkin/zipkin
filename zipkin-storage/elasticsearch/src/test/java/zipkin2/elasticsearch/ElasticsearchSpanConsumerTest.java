@@ -31,13 +31,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
-import zipkin2.Callback;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
-import zipkin2.TestObjects;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.internal.Nullable;
 import zipkin2.storage.SpanConsumer;
 
 import static java.util.Arrays.asList;
@@ -193,50 +190,6 @@ public class ElasticsearchSpanConsumerTest {
 
     AggregatedHttpRequest request = CAPTURED_REQUESTS.take();
     assertThat(request.path()).isEqualTo("/_bulk?pipeline=zipkin");
-  }
-
-  @Test
-  public void dropsWhenBacklog() throws Exception {
-    storage.close();
-    storage =
-      ElasticsearchStorage.newBuilder()
-        // https://github.com/line/armeria/issues/1895
-        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
-        .hosts(asList(server.httpUri("/")))
-        .maxRequests(1)
-        .build();
-    ensureIndexTemplate();
-
-    MOCK_RESPONSES.add(AggregatedHttpResponse.of(
-      ResponseHeaders.of(HttpStatus.OK, "delay-one-second", "true")));
-
-    final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
-    Callback<Void> callback =
-      new Callback<Void>() {
-        @Override
-        public void onSuccess(@Nullable Void value) {
-          q.add("success");
-        }
-
-        @Override
-        public void onError(Throwable t) {
-          q.add(t);
-        }
-      };
-    // one request is delayed
-    storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).enqueue(callback);
-
-    // synchronous requests fail on backlog
-    try {
-      storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).execute();
-      failBecauseExceptionWasNotThrown(IllegalStateException.class);
-    } catch (IllegalStateException e) {
-    }
-
-    // asynchronous requests fail on backlog
-    storage.spanConsumer().accept(asList(TestObjects.CLIENT_SPAN)).enqueue(callback);
-
-    assertThat(q.take()).isInstanceOf(IllegalStateException.class);
   }
 
   @Test

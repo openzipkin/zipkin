@@ -41,15 +41,13 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   public static class Factory {
     final HttpClient httpClient;
-    final Semaphore semaphore;
 
-    public Factory(HttpClient httpClient, int maxRequests) {
+    public Factory(HttpClient httpClient) {
       this.httpClient = httpClient;
-      this.semaphore = new Semaphore(maxRequests);
     }
 
     public <V> HttpCall<V> newCall(AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
-      return new HttpCall<>(this, request, bodyConverter);
+      return new HttpCall<>(httpClient, request, bodyConverter);
     }
   }
 
@@ -58,22 +56,10 @@ public final class HttpCall<V> extends Call.Base<V> {
   public final BodyConverter<V> bodyConverter;
 
   final HttpClient httpClient;
-  final Semaphore semaphore;
 
   volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
 
-  HttpCall(Factory factory, AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
-    this(
-      factory.httpClient,
-      request,
-      factory.semaphore,
-      bodyConverter
-    );
-  }
-
-  HttpCall(
-    HttpClient httpClient, AggregatedHttpRequest request, Semaphore semaphore,
-    BodyConverter<V> bodyConverter) {
+  HttpCall(HttpClient httpClient, AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
     this.httpClient = httpClient;
 
     if (request.content() instanceof ByteBufHolder) {
@@ -90,28 +76,16 @@ public final class HttpCall<V> extends Call.Base<V> {
       this.request = request;
     }
 
-    this.semaphore = semaphore;
     this.bodyConverter = bodyConverter;
   }
 
   @Override protected V doExecute() throws IOException {
-    if (!semaphore.tryAcquire()) throw new IllegalStateException("over capacity");
-    final AggregatedHttpResponse response;
-    try {
-      response = sendRequest().join();
-    } finally {
-      semaphore.release();
-    }
+    AggregatedHttpResponse response = sendRequest().join();
     return parseResponse(response, bodyConverter);
   }
 
   @Override protected void doEnqueue(Callback<V> callback) {
-    if (!semaphore.tryAcquire()) {
-      callback.onError(new IllegalStateException("over capacity"));
-      return;
-    }
     sendRequest().handle((response, t) -> {
-      semaphore.release();
       if (t != null) {
         callback.onError(t);
       } else {
@@ -133,7 +107,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<>(httpClient, request, semaphore, bodyConverter);
+    return new HttpCall<>(httpClient, request, bodyConverter);
   }
 
   @Override

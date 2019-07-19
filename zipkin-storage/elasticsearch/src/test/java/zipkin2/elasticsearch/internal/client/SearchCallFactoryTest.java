@@ -22,15 +22,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SearchCallFactoryTest {
 
-  @Mock
-  private HttpClient httpClient;
+  @Mock HttpClient httpClient;
 
-  SearchCallFactory client =
-    new SearchCallFactory(new HttpCall.Factory(httpClient, 0));
+  SearchCallFactory client = new SearchCallFactory(new HttpCall.Factory(httpClient));
 
   /** Declaring queries alphabetically helps simplify amazon signature logic */
-  @Test
-  public void lenientSearchOrdersQueryAlphabetically() {
+  @Test public void lenientSearchOrdersQueryAlphabetically() {
     assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null))
         .endsWith("/_search?allow_no_indices=true&expand_wildcards=open&ignore_unavailable=true");
   }

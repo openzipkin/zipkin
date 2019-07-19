@@ -94,18 +94,6 @@ public class ZipkinElasticsearchStorageAutoConfigurationTest {
     assertThat(es().pipeline()).isEqualTo("zipkin");
   }
 
-  @Test public void configuresMaxRequests() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
-      "zipkin.storage.elasticsearch.max-requests:200")
-      .applyTo(context);
-    Access.registerElasticsearchHttp(context);
-    context.refresh();
-
-    assertThat(es().maxRequests()).isEqualTo(200);
-  }
-
   /** This helps ensure old setups don't break (provided they have http port 9200 open) */
   @Test public void coersesPort9300To9200() {
     TestPropertyValues.of(
