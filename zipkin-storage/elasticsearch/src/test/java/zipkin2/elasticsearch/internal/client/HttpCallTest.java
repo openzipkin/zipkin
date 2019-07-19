@@ -57,11 +57,10 @@ public class HttpCallTest {
   HttpCall.Factory http;
 
   @Before public void setUp() {
-    http = new HttpCall.Factory(HttpClient.of(server.httpUri("/")), Integer.MAX_VALUE);
+    http = new HttpCall.Factory(HttpClient.of(server.httpUri("/")));
   }
 
-  @Test
-  public void propagatesOnDispatcherThreadWhenFatal() throws Exception {
+  @Test public void propagatesOnDispatcherThreadWhenFatal() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
@@ -88,8 +87,7 @@ public class HttpCallTest {
     }
   }
 
-  @Test
-  public void executionException_conversionException() throws Exception {
+  @Test public void executionException_conversionException() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     Call<?> call = http.newCall(REQUEST, b -> {
@@ -104,8 +102,7 @@ public class HttpCallTest {
     }
   }
 
-  @Test
-  public void cloned() throws Exception {
+  @Test public void cloned() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     Call<?> call = http.newCall(REQUEST, b -> null);
@@ -123,8 +120,7 @@ public class HttpCallTest {
     call.clone().execute();
   }
 
-  @Test
-  public void executionException_httpFailure() throws Exception {
+  @Test public void executionException_httpFailure() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
 
     Call<?> call = http.newCall(REQUEST, b -> null);

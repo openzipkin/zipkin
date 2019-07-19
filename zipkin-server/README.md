@@ -162,7 +162,7 @@ These settings can be used to help tune the rate at which Zipkin flushes data to
 
     * `STORAGE_THROTTLE_ENABLED`: Enables throttling
     * `STORAGE_THROTTLE_MIN_CONCURRENCY`: Minimum number of Threads to use for writing to storage.
-    * `STORAGE_THROTTLE_MAX_CONCURRENCY`: Maximum number of Threads to use for writing to storage.  In order to avoid configuration drift, this value may override other, storage-specific values such as Elasticsearch's `ES_MAX_REQUESTS`.
+    * `STORAGE_THROTTLE_MAX_CONCURRENCY`: Maximum number of Threads to use for writing to storage.
     * `STORAGE_THROTTLE_MAX_QUEUE_SIZE`: How many messages to buffer while all Threads are writing data before abandoning a message (0 = no buffering).
 
 As this feature is experimental, it is not recommended to run this in production environments.
@@ -202,8 +202,6 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
     * `ES_PIPELINE`: Indicates the ingest pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
                     Elasticsearch Api. Defaults to 10000 (10 seconds)
-    * `ES_MAX_REQUESTS`: Only valid when the transport is http. Sets maximum in-flight requests from
-                         this process to any Elasticsearch host. Defaults to 64.
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_DATE_SEPARATOR`: The date separator to use when generating daily index names. Defaults to '-'.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas

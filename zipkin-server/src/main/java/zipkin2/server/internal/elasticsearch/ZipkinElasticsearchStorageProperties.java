@@ -14,12 +14,7 @@
 package zipkin2.server.internal.elasticsearch;
 
 import java.io.Serializable;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
@@ -29,49 +24,34 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   private static final long serialVersionUID = 0L;
 
-  /** Indicates the ingest pipeline used before spans are indexed. no default */
+  /** Indicates the ingest pipeline used before spans are indexed. */
   private String pipeline;
-  /** A List of base urls to connect to. Defaults to http://localhost:9300 */
-  private List<String> hosts; // initialize to null to defer default to transport
-  /** The index prefix to use when generating daily index names. Defaults to zipkin. */
-  private String index = "zipkin";
-  /** The date separator used to create the index name. Default to -. */
-  private String dateSeparator = "-";
-  /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 (overriden by throttle settings) */
-  private int maxRequests = 64;
-  /** Overrides maximum in-flight requests to match throttling settings if throttling is enabled. */
-  private Integer throttleMaxConcurrency;
-  /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
-  private int indexShards = 5;
-  /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
-  private int indexReplicas = 1;
+  /** A comma separated list of base urls to connect to. */
+  private String hosts;
+  /** The index prefix to use when generating daily index names. */
+  private String index;
+  /** The date separator used to create the index name. */
+  private String dateSeparator;
+  /** Number of shards (horizontal scaling factor) per index. */
+  private Integer indexShards;
+  /** Number of replicas (redundancy factor) per index. */
+  private Integer indexReplicas;
   /** username used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String username;
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
+  /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
+  private HttpLoggingLevel httpLogging;
+  /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
+  private Integer timeout = 10_000;
+
+
+  private Integer maxRequests; // unused
 
   public enum HttpLoggingLevel {
     BASIC,
     HEADERS,
     BODY
-  }
-  /**
-   * When set, controls the volume of HTTP logging of the Elasticsearch Api. Options are BASIC,
-   * HEADERS, BODY
-   */
-  private HttpLoggingLevel httpLogging;
-  /**
-   * Controls the connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api
-   * requests. Defaults to 10000 (10 seconds)
-   */
-  private int timeout = 10_000;
-
-  ZipkinElasticsearchStorageProperties(
-    @Value("${zipkin.storage.throttle.enabled:false}") boolean throttleEnabled,
-    @Value("${zipkin.storage.throttle.max-concurrency:200}") int throttleMaxConcurrency) {
-    if (throttleEnabled) {
-      this.throttleMaxConcurrency = throttleMaxConcurrency;
-    }
   }
 
   public String getPipeline() {
@@ -79,63 +59,38 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   }
 
   public void setPipeline(String pipeline) {
-    if (pipeline != null && !pipeline.isEmpty()) {
-      this.pipeline = pipeline;
-    }
+    this.pipeline = emptyToNull(pipeline);
   }
 
-  public List<String> getHosts() {
+  public String getHosts() {
     return hosts;
   }
 
-  public void setHosts(List<String> hosts) {
-    if (hosts != null && !hosts.isEmpty()) {
-      List<String> converted = new ArrayList<>();
-      for (String host : hosts) {
-        if (host.startsWith("http://") || host.startsWith("https://")) {
-          converted.add(host);
-          continue;
-        }
-        final int port;
-        try {
-          port = new URL("http://" + host).getPort();
-        } catch (MalformedURLException e) {
-          throw new IllegalArgumentException("Malformed elasticsearch host: " + host);
-        }
-        if (port == -1) {
-          host += ":9200";
-        } else if (port == 9300) {
-          log.warning(
-              "Native transport no longer supported. Changing " + host + " to http port 9200");
-          host = host.replace(":9300", ":9200");
-        }
-        converted.add("http://" + host);
-      }
-      this.hosts = converted;
-    }
+  public void setHosts(String hosts) {
+    this.hosts = emptyToNull(hosts);
   }
 
   public String getIndex() {
     return index;
   }
 
-  public int getMaxRequests() {
+  public Integer getMaxRequests() {
     return maxRequests;
   }
 
-  public void setMaxRequests(int maxRequests) {
+  public void setMaxRequests(Integer maxRequests) {
     this.maxRequests = maxRequests;
   }
 
   public void setIndex(String index) {
-    this.index = index;
+    this.index = emptyToNull(index);
   }
 
-  public int getIndexShards() {
+  public Integer getIndexShards() {
     return indexShards;
   }
 
-  public void setIndexShards(int indexShards) {
+  public void setIndexShards(Integer indexShards) {
     this.indexShards = indexShards;
   }
 
@@ -151,11 +106,11 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.dateSeparator = dateSeparator;
   }
 
-  public int getIndexReplicas() {
+  public Integer getIndexReplicas() {
     return indexReplicas;
   }
 
-  public void setIndexReplicas(int indexReplicas) {
+  public void setIndexReplicas(Integer indexReplicas) {
     this.indexReplicas = indexReplicas;
   }
 
@@ -164,7 +119,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   }
 
   public void setUsername(String username) {
-    this.username = username;
+    this.username = emptyToNull(username);
   }
 
   public String getPassword() {
@@ -172,7 +127,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   }
 
   public void setPassword(String password) {
-    this.password = password;
+    this.password = emptyToNull(password);
   }
 
   public HttpLoggingLevel getHttpLogging() {
@@ -183,23 +138,32 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.httpLogging = httpLogging;
   }
 
-  public int getTimeout() {
+  public Integer getTimeout() {
     return timeout;
   }
 
-  public void setTimeout(int timeout) {
+  public void setTimeout(Integer timeout) {
     this.timeout = timeout;
   }
 
   public ElasticsearchStorage.Builder toBuilder() {
     ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder();
-    if (hosts != null) builder.hosts(hosts);
-    return builder
-        .index(index)
-        .dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0))
-        .pipeline(pipeline)
-        .maxRequests(throttleMaxConcurrency == null ? maxRequests : throttleMaxConcurrency)
-        .indexShards(indexShards)
-        .indexReplicas(indexReplicas);
+    if (index != null) builder.index(index);
+    if (dateSeparator != null) {
+      builder.dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0));
+    }
+    // TODO if (timeout != null) builder.timeout(timeout);
+    if (pipeline != null) builder.pipeline(pipeline);
+    if (indexShards != null) builder.indexShards(indexShards);
+    if (indexReplicas != null) builder.indexReplicas(indexReplicas);
+
+    if (maxRequests != null) {
+      log.warning("ES_MAX_REQUESTS is no longer honored. Use STORAGE_THROTTLE_ENABLED instead");
+    }
+    return builder;
+  }
+
+  private static String emptyToNull(String s) {
+    return "".equals(s) ? null : s;
   }
 }
