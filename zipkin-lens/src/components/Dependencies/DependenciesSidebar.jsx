@@ -15,7 +15,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
 
-import ServiceNameBadge from '../Common/ServiceNameBadge';
+import ServiceBadge from '../Common/ServiceBadge';
 import { getServiceNameColor } from '../../util/color';
 
 const propTypes = {
@@ -39,7 +39,7 @@ const renderEdgeData = (edges, isTarget) => {
   const key = isTarget ? 'target' : 'source';
   return edges.map(edge => (
     <div className="dependencies-sidebar__edge-data">
-      <ServiceNameBadge
+      <ServiceBadge
         serviceName={edge[key]}
       />
       <div className="dependencies-sidebar__count-data-wrapper">
