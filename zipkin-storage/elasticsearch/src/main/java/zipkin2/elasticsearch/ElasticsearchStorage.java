@@ -33,6 +33,7 @@ import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpoin
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.Flags;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.util.AbstractListenable;
 import com.linecorp.armeria.common.util.EventLoopGroups;
 import com.squareup.moshi.JsonReader;
@@ -43,7 +44,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -80,8 +83,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   public static Builder newBuilder() {
     return new $AutoValue_ElasticsearchStorage.Builder()
-      .clientCustomizer(unused -> {})
-      .clientFactoryCustomizer(unused -> {})
+      .clientCustomizer(unused -> {
+      })
+      .clientFactoryCustomizer(unused -> {
+      })
       .hosts(Collections.singletonList("http://localhost:9200"))
       .maxRequests(64)
       .strictTraceId(true)
@@ -120,25 +125,22 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public final Builder hosts(final List<String> hosts) {
       if (hosts == null) throw new NullPointerException("hosts == null");
-      return hostsSupplier(
-          new HostsSupplier() {
-            @Override
-            public List<String> get() {
-              return hosts;
-            }
+      return hostsSupplier(new HostsSupplier() {
+        @Override public List<String> get() {
+          return hosts;
+        }
 
-            @Override
-            public String toString() {
-              return hosts.toString();
-            }
-          });
+        @Override public String toString() {
+          return hosts.toString();
+        }
+      });
     }
 
     /**
      * Like {@link #hosts(List)}, except the value is deferred.
      *
-     * <p>This was added to support dynamic endpoint resolution for Amazon Elasticsearch. This value
-     * is only read once.
+     * <p>This was added to support dynamic endpoint resolution for Amazon Elasticsearch. This
+     * value is only read once.
      */
     public abstract Builder hostsSupplier(HostsSupplier hosts);
 
@@ -237,7 +239,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     abstract IndexNameFormatter.Builder indexNameFormatterBuilder();
 
-    Builder() {}
+    Builder() {
+    }
   }
 
   abstract Consumer<ClientOptionsBuilder> clientCustomizer();
@@ -349,6 +352,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         HttpMethod.GET, "/_cluster/health/" + index);
       return http.newCall(request, ReadStatus.INSTANCE).execute();
     } catch (IOException | RuntimeException e) {
+      if (e instanceof CompletionException) return CheckResult.failed(e.getCause());
       return CheckResult.failed(e);
     }
   }
@@ -467,6 +471,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     if (endpointGroup != null) {
       HttpHealthCheckedEndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
         endpointGroup, "/_cluster/health")
+        .protocol(SessionProtocol.valueOf(urls.get(0).getProtocol().toUpperCase(Locale.ROOT)))
         .clientFactory(clientFactory())
         .withClientOptions(options -> {
           clientCustomizer().accept(options);
@@ -527,5 +532,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return new HttpCall.Factory(httpClient(), maxRequests());
   }
 
-  ElasticsearchStorage() {}
+  ElasticsearchStorage() {
+  }
 }
