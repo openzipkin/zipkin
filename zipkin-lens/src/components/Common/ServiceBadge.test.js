@@ -22,7 +22,7 @@ describe('<ServiceBadge />', () => {
       const wrapper = mount(
         <ServiceBadge serviceName="serviceA" />,
       );
-      const item = wrapper.find('[data-test="unclickable-badge"]').first();
+      const item = wrapper.find('[data-test="badge"]').first();
       expect(item.text()).toBe('serviceA');
     });
 
@@ -30,17 +30,9 @@ describe('<ServiceBadge />', () => {
       const wrapper = mount(
         <ServiceBadge serviceName="serviceA" count={8} />,
       );
-      const item = wrapper.find('[data-test="unclickable-badge"]').first();
+      const item = wrapper.find('[data-test="badge"]').first();
       expect(item.text()).toBe('serviceA (8)');
     });
-  });
-
-  it('should render clickable button when onClick is set', () => {
-    const wrapper = mount(
-      <ServiceBadge serviceName="serviceA" onClick={() => {}} />,
-    );
-    const items = wrapper.find('[data-test="clickable-badge"]');
-    expect(items.hostNodes().length).toBe(1);
   });
 
   it('should render delete button when onDelete is set', () => {

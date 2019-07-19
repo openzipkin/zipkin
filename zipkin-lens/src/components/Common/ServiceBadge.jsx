@@ -74,29 +74,13 @@ const ServiceBadgeImpl = ({
     [count, serviceName],
   );
 
-  if (!onClick) {
-    return (
-      <Box className={classes.root}>
-        <Paper className={classes.paper}>
-          <Box
-            className={classes.buttonBase}
-            component="span"
-            data-test="unclickable-badge"
-          >
-            {label}
-          </Box>
-        </Paper>
-      </Box>
-    );
-  }
-
   return (
     <Box className={classes.root}>
       <Paper className={classes.paper}>
         <Box
-          className={`${classes.buttonBase} ${classes.clickableButton}`}
+          className={`${classes.buttonBase} ${onClick ? classes.clickableButton : ''}`}
           onClick={onClick}
-          data-test="clickable-badge"
+          data-test="badge"
         >
           {label}
         </Box>
