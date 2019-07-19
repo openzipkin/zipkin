@@ -30,6 +30,13 @@ import static zipkin2.TestObjects.TODAY;
 
 public class BulkIndexWriterTest {
 
+  // Our usual test span depends on currentTime for testing span stores with TTL, but we'd prefer
+  // to have a fixed span here to avoid depending on business logic in test assertions.
+  static final Span STABLE_SPAN = CLIENT_SPAN.toBuilder()
+    .timestamp(100)
+    .clearAnnotations()
+    .build();
+
   ByteBufOutputStream buffer;
 
   @Before public void setUp() {
@@ -37,17 +44,17 @@ public class BulkIndexWriterTest {
   }
 
   @Test public void span_addsDocumentId() throws Exception {
-    String id = BulkIndexWriter.SPAN.writeDocument(CLIENT_SPAN, buffer);
+    String id = BulkIndexWriter.SPAN.writeDocument(STABLE_SPAN, buffer);
 
     assertThat(id)
-      .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-8cf9a50c5cf8a52404f17c42bcb6bf85");
+      .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-198140c2a26bfa58fed4a572dfe3d63b");
   }
 
   @Test public void spanSearchDisabled_addsDocumentId() throws Exception {
-    String id = BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(CLIENT_SPAN, buffer);
+    String id = BulkIndexWriter.SPAN_SEARCH_DISABLED.writeDocument(STABLE_SPAN, buffer);
 
     assertThat(id)
-      .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-2b930c7655ec6b99d3d389403c3917fd");
+      .isEqualTo("7180c278b62e8f6a216a2aea45d08fc9-bfe7a3c0d9ee83b1d218bd0f383f006a");
   }
 
   @Test public void spanSearchFields_skipsWhenNoData() {
