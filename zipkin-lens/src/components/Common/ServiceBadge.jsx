@@ -83,12 +83,18 @@ const ServiceBadgeImpl = ({
 
   return (
     <Paper className={classes.root}>
-      <Box className={`${classes.buttonBase} ${classes.clickableButton}`}>
+      <Box
+        className={`${classes.buttonBase} ${classes.clickableButton}`}
+        onClick={onClick}
+      >
         {label}
       </Box>
       {
         onDelete ? (
-          <Box className={`${classes.buttonBase} ${classes.clickableButton}`}>
+          <Box
+            className={`${classes.buttonBase} ${classes.clickableButton}`}
+            onClick={onDelete}
+          >
             <Box component="span" className="fas fa-times" />
           </Box>
         ) : null
