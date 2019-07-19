@@ -28,7 +28,7 @@ public final class JsonReaders {
    * Navigates to a field of a JSON-serialized object. For example,
    *
    * <pre>{@code
-   * JsonReader status = enterPath(JsonAdapters.jsonParser(stream), "message", "status");
+   * JsonParser status = enterPath(JsonAdapters.jsonParser(stream), "message", "status");
    * if (status != null) throw new IllegalStateException(status.nextString());
    * }</pre>
    */

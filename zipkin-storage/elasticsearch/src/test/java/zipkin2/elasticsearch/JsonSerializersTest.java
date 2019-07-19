@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import org.junit.Test;
@@ -258,7 +259,9 @@ public class JsonSerializersTest {
 
   static <T> T parseString(JsonSerializers.ObjectParser<T> parser, String json) {
     try {
-      return parser.parse(JsonSerializers.JSON_FACTORY.createParser(json));
+      JsonParser jsonParser = JsonSerializers.JSON_FACTORY.createParser(json);
+      jsonParser.nextToken();
+      return parser.parse(jsonParser);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }
@@ -266,7 +269,9 @@ public class JsonSerializersTest {
 
   static <T> T parseBytes(JsonSerializers.ObjectParser<T> parser, byte[] json) {
     try {
-      return parser.parse(JsonSerializers.JSON_FACTORY.createParser(json));
+      JsonParser jsonParser = JsonSerializers.JSON_FACTORY.createParser(json);
+      jsonParser.nextToken();
+      return parser.parse(jsonParser);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

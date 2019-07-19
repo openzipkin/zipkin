@@ -121,6 +121,7 @@ public abstract class BulkIndexWriter<T> {
       throw new AssertionError(e); // No I/O writing to a Buffer.
     }
 
+    // get a slice representing the document we just wrote so that we can make a content hash
     ByteBuf slice = sink.buffer().slice(startIndex, sink.buffer().writerIndex() - startIndex);
 
     return span.traceId() + '-' + md5(slice);

@@ -18,8 +18,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.List;
 import org.junit.Test;
-import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.JsonReaders;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -125,7 +125,9 @@ public class JsonReadersTest {
 
   static JsonParser jsonParser(String json) {
     try {
-      return JsonSerializers.JSON_FACTORY.createParser(json);
+      JsonParser parser = JsonSerializers.JSON_FACTORY.createParser(json);
+      parser.nextToken();
+      return parser;
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

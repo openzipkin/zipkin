@@ -85,6 +85,13 @@ public final class BulkCallBuilder {
 
     final HttpData body;
 
+    // While ideally we can use a direct buffer for our request, we can't do so and support the
+    // semantics of our Call so instead construct a normal byte[] with all the serialized documents.
+    // Using a composite buffer means we essentially create a list of documents each serialized into
+    // pooled heap buffers, and then only copy once when consolidating them into an unpooled byte[],
+    // while if we used a normal buffer, we would have more copying in intermediate steps if we need
+    // to resize the buffer (we can only do a best effort estimate of the buffer size and will often
+    // still need to resize).
     CompositeByteBuf sink = RequestContext.mapCurrent(
       RequestContext::alloc, () -> PooledByteBufAllocator.DEFAULT)
       .compositeHeapBuffer(Integer.MAX_VALUE);
@@ -125,7 +132,7 @@ public final class BulkCallBuilder {
 
   static void writeIndexMetadata(ByteBufOutputStream sink, IndexEntry entry, String id,
     boolean shouldAddType) {
-    try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)){
+    try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)) {
       writer.writeStartObject();
       writer.writeObjectFieldStart("index");
       writer.writeStringField("_index", entry.index());

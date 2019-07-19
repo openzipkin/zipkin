@@ -75,7 +75,7 @@ public final class JsonSerializers {
 
   static Span parseSpan(JsonParser parser) throws IOException {
     if (!parser.isExpectedStartObjectToken()) {
-      throw new IOException("Not a valid JSON object, start token: " +
+      throw new IllegalArgumentException("Not a valid JSON object, start token: " +
         parser.currentToken());
     }
 
@@ -151,7 +151,7 @@ public final class JsonSerializers {
 
   static Endpoint parseEndpoint(JsonParser parser) throws IOException {
     if (!parser.isExpectedStartObjectToken()) {
-      throw new IOException("Not a valid JSON object, start token: " +
+      throw new IllegalArgumentException("Not a valid JSON object, start token: " +
         parser.currentToken());
     }
 
@@ -193,7 +193,7 @@ public final class JsonSerializers {
 
   static Annotation parseAnnotation(JsonParser parser) throws IOException {
     if (!parser.isExpectedStartObjectToken()) {
-      throw new IOException("Not a valid JSON object, start token: " +
+      throw new IllegalArgumentException("Not a valid JSON object, start token: " +
         parser.currentToken());
     }
 
@@ -214,7 +214,7 @@ public final class JsonSerializers {
     }
 
     if (timestamp == 0 || value == null) {
-      throw new IllegalStateException("Incomplete annotation at " + parser.currentToken());
+      throw new IllegalArgumentException("Incomplete annotation at " + parser.currentToken());
     }
     return Annotation.create(timestamp, value);
   }
@@ -223,7 +223,7 @@ public final class JsonSerializers {
     new ObjectParser<DependencyLink>() {
       @Override public DependencyLink parse(JsonParser parser) throws IOException {
         if (!parser.isExpectedStartObjectToken()) {
-          throw new IOException("Expected start of dependency link object but was "
+          throw new IllegalArgumentException("Expected start of dependency link object but was "
             + parser.currentToken());
         }
 
