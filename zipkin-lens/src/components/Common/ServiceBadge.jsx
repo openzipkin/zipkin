@@ -67,14 +67,18 @@ const ServiceBadgeImpl = ({
   const classes = useStyles();
 
   const label = useMemo(
-    () => `${serviceName} ${count ? ` (${count})` : ''}`,
+    () => `${serviceName}${count ? ` (${count})` : ''}`,
     [count, serviceName],
   );
 
   if (!onClick) {
     return (
       <Paper className={classes.root}>
-        <Box className={classes.buttonBase} component="span">
+        <Box
+          className={classes.buttonBase}
+          component="span"
+          data-test="unclickable-badge"
+        >
           {label}
         </Box>
       </Paper>
@@ -86,6 +90,7 @@ const ServiceBadgeImpl = ({
       <Box
         className={`${classes.buttonBase} ${classes.clickableButton}`}
         onClick={onClick}
+        data-test="clickable-badge"
       >
         {label}
       </Box>
@@ -94,6 +99,7 @@ const ServiceBadgeImpl = ({
           <Box
             className={`${classes.buttonBase} ${classes.clickableButton}`}
             onClick={onDelete}
+            data-test="delete-button"
           >
             <Box component="span" className="fas fa-times" />
           </Box>
