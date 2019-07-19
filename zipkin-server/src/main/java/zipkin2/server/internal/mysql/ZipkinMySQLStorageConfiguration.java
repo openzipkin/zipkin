@@ -18,7 +18,6 @@ import java.util.concurrent.Executor;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -34,7 +33,7 @@ import zipkin2.storage.mysql.v1.MySQLStorage;
 @EnableConfigurationProperties(ZipkinMySQLStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
 @ConditionalOnMissingBean(StorageComponent.class)
-@Import(TracingZipkinMySQLStorageAutoConfiguration.class)
+@Import(TracingZipkinMySQLStorageConfiguration.class)
 public class ZipkinMySQLStorageConfiguration {
   @Autowired(required = false) ZipkinMySQLStorageProperties mysql;
   @Autowired(required = false) ExecuteListenerProvider mysqlListener;

@@ -19,7 +19,7 @@ import zipkin2.server.internal.activemq.ZipkinActiveMQCollectorConfiguration;
 import zipkin2.server.internal.brave.TracingConfiguration;
 import zipkin2.server.internal.cassandra.ZipkinCassandraStorageConfiguration;
 import zipkin2.server.internal.cassandra3.ZipkinCassandra3StorageConfiguration;
-import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageAutoConfiguration;
+import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration;
 import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 import zipkin2.server.internal.mysql.ZipkinMySQLStorageConfiguration;
 import zipkin2.server.internal.prometheus.ZipkinPrometheusMetricsConfiguration;
@@ -33,7 +33,7 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
   ZipkinUiConfiguration.class,
   ZipkinCassandraStorageConfiguration.class,
   ZipkinCassandra3StorageConfiguration.class,
-  ZipkinElasticsearchStorageAutoConfiguration.class,
+  ZipkinElasticsearchStorageConfiguration.class,
   ZipkinMySQLStorageConfiguration.class,
   ZipkinScribeCollectorConfiguration.class,
   TracingConfiguration.class,
