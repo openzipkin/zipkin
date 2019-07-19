@@ -21,6 +21,9 @@ import { selectServiceTheme } from '../../colors';
 
 const useStyles = makeStyles(theme => ({
   root: {
+    display: 'flex',
+  },
+  paper: {
     overflow: 'hidden',
     display: 'flex',
   },
@@ -73,39 +76,43 @@ const ServiceBadgeImpl = ({
 
   if (!onClick) {
     return (
-      <Paper className={classes.root}>
-        <Box
-          className={classes.buttonBase}
-          component="span"
-          data-test="unclickable-badge"
-        >
-          {label}
-        </Box>
-      </Paper>
+      <Box className={classes.root}>
+        <Paper className={classes.paper}>
+          <Box
+            className={classes.buttonBase}
+            component="span"
+            data-test="unclickable-badge"
+          >
+            {label}
+          </Box>
+        </Paper>
+      </Box>
     );
   }
 
   return (
-    <Paper className={classes.root}>
-      <Box
-        className={`${classes.buttonBase} ${classes.clickableButton}`}
-        onClick={onClick}
-        data-test="clickable-badge"
-      >
-        {label}
-      </Box>
-      {
-        onDelete ? (
-          <Box
-            className={`${classes.buttonBase} ${classes.clickableButton}`}
-            onClick={onDelete}
-            data-test="delete-button"
-          >
-            <Box component="span" className="fas fa-times" />
-          </Box>
-        ) : null
-      }
-    </Paper>
+    <Box className={classes.root}>
+      <Paper className={classes.paper}>
+        <Box
+          className={`${classes.buttonBase} ${classes.clickableButton}`}
+          onClick={onClick}
+          data-test="clickable-badge"
+        >
+          {label}
+        </Box>
+        {
+          onDelete ? (
+            <Box
+              className={`${classes.buttonBase} ${classes.clickableButton}`}
+              onClick={onDelete}
+              data-test="delete-button"
+            >
+              <Box component="span" className="fas fa-times" />
+            </Box>
+          ) : null
+        }
+      </Paper>
+    </Box>
   );
 };
 
