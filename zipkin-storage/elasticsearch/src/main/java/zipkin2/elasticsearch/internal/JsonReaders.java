@@ -44,8 +44,8 @@ public final class JsonReaders {
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
       if (value == null) {
-        // End of input.
-        throw new IOException("End of input while parsing object.");
+        // End of input so ignore.
+        return null;
       }
       if (parser.getCurrentName().equals(path) && value != JsonToken.VALUE_NULL) {
         return parser;
@@ -69,7 +69,8 @@ public final class JsonReaders {
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
       if (value == null) {
-        throw new IOException("End of input while parsing object.");
+        // End of input so ignore.
+        return;
       }
       if (parser.getCurrentName().equals(name)) {
         result.add(parser.getText());
@@ -86,7 +87,8 @@ public final class JsonReaders {
         JsonToken token;
         while ((token = parser.nextToken()) != JsonToken.END_ARRAY) {
           if (token == null) {
-            throw new IOException("End of input while parsing array.");
+            // End of input so ignore.
+            return;
           }
           visitObject(parser, name, result);
         }
