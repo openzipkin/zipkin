@@ -30,6 +30,8 @@ const mapDispatchToProps = dispatch => ({
 const TracePageContainer = connect(
   mapStateToProps,
   mapDispatchToProps,
+  // 3rd argument is called mergeProps.
+  // Please see https://github.com/reduxjs/react-redux/blob/master/docs/api/connect.md#mergeprops-stateprops-dispatchprops-ownprops--object
   (stateProps, dispatchProps, ownProps) => ({
     ...ownProps,
     ...stateProps,
