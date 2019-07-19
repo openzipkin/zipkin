@@ -43,6 +43,7 @@ public class ElasticsearchStorageTest {
 
   static final BlockingQueue<AggregatedHttpRequest> CAPTURED_REQUESTS = new LinkedBlockingQueue<>();
   static final BlockingQueue<ServiceRequestContext> CAPTURED_CONTEXTS = new LinkedBlockingQueue<>();
+  static final BlockingQueue<ServiceRequestContext> CAPTURED_HEALTH_CONTEXTS = new LinkedBlockingQueue<>();
   static final BlockingQueue<AggregatedHttpResponse> MOCK_RESPONSES = new LinkedBlockingQueue<>();
   static final AggregatedHttpResponse SUCCESS_RESPONSE =
     AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
@@ -53,7 +54,10 @@ public class ElasticsearchStorageTest {
       sb.https(0);
       sb.tlsSelfSigned();
 
-      sb.service("/_cluster/health", (ctx, req) -> HttpResponse.of(SUCCESS_RESPONSE));
+      sb.service("/_cluster/health", (ctx, req) -> {
+        CAPTURED_HEALTH_CONTEXTS.add(ctx);
+        return HttpResponse.of(SUCCESS_RESPONSE);
+      });
 
       sb.serviceUnder("/", (ctx, req) -> {
         CAPTURED_CONTEXTS.add(ctx);
@@ -138,11 +142,23 @@ public class ElasticsearchStorageTest {
       + "  \"active_shards_percent_as_number\": 50\n"
       + "}");
 
+  static final AggregatedHttpResponse HEALTH_RESPONSE_UNAUTHORIZED = AggregatedHttpResponse.of(
+    HttpStatus.UNAUTHORIZED,
+    MediaType.JSON_UTF_8,
+    "{\"Message\":\"User: anonymous is not authorized to perform: es:ESHttpGet\"}}");
+
   @Test
   public void check() {
     MOCK_RESPONSES.add(HEALTH_RESPONSE);
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
+  }
+
+  @Test
+  public void check_unauthorized() {
+    MOCK_RESPONSES.add(HEALTH_RESPONSE_UNAUTHORIZED);
+
+    assertThat(storage.check().ok()).isFalse();
   }
 
   @Test
@@ -192,7 +208,8 @@ public class ElasticsearchStorageTest {
           .useHttp2Preface(true)
           .sslContextCustomizer(
             ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)))
-      .hosts(asList(server.httpsUri("/")))
+      // Need localhost, not IP, as single IPs don't use health check groups.
+      .hosts(asList("https://localhost:" + server.httpsPort() + "/"))
       .build();
 
     MOCK_RESPONSES.add(HEALTH_RESPONSE);
@@ -200,6 +217,12 @@ public class ElasticsearchStorageTest {
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
 
     assertThat(CAPTURED_CONTEXTS.take().sessionProtocol().isTls()).isTrue();
+    // Ensure the EndpointGroup check is also SSL
+    assertThat(CAPTURED_HEALTH_CONTEXTS.take().sessionProtocol().isTls()).isTrue();
+
+    MOCK_RESPONSES.add(HEALTH_RESPONSE_UNAUTHORIZED);
+
+    assertThat(storage.check().ok()).isFalse();
   }
 
   /**
