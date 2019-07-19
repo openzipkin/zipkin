@@ -22,6 +22,6 @@ public final class Access {
   public static void registerElasticsearchHttp(AnnotationConfigApplicationContext context) {
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchStorageAutoConfiguration.class);
+      ZipkinElasticsearchStorageConfiguration.class);
   }
 }

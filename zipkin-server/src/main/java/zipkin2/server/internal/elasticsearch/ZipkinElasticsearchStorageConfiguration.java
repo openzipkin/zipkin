@@ -50,7 +50,7 @@ import zipkin2.storage.StorageComponent;
 @EnableConfigurationProperties(ZipkinElasticsearchStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
-public class ZipkinElasticsearchStorageAutoConfiguration {
+public class ZipkinElasticsearchStorageConfiguration {
   static final Logger LOG = Logger.getLogger(ElasticsearchStorage.class.getName());
   static final String QUALIFIER = "zipkinElasticsearchHttp";
 
