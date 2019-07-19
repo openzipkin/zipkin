@@ -27,16 +27,13 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Semaphore;
-import okio.BufferedSource;
-import okio.Okio;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.internal.ReadBuffer;
 
 public final class HttpCall<V> extends Call.Base<V> {
 
   public interface BodyConverter<V> {
-    V convert(BufferedSource content) throws IOException;
+    V convert(ByteBuffer content) throws IOException;
   }
 
   public static class Factory {
@@ -145,7 +142,7 @@ public final class HttpCall<V> extends Call.Base<V> {
         } else {
           buf = ByteBuffer.wrap(content.array());
         }
-        return bodyConverter.convert(Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf))));
+        return bodyConverter.convert(buf);
       } else {
         throw new IllegalStateException(
           "response for " + request.path() + " failed: " + response.contentUtf8());

@@ -13,22 +13,27 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.auto.value.AutoValue;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
-import com.squareup.moshi.JsonWriter;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.ByteBufUtil;
+import io.netty.buffer.CompositeByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
-import okio.Buffer;
-import okio.BufferedSink;
-import okio.BufferedSource;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
@@ -78,12 +83,26 @@ public final class BulkCallBuilder {
     if (pipeline != null) urlBuilder.addParam("pipeline", pipeline);
     if (waitForRefresh) urlBuilder.addParam("refresh", "wait_for");
 
-    Buffer okioBuffer = new Buffer();
-    for (IndexEntry<?> entry : entries) {
-      write(okioBuffer, entry, shouldAddType);
-    }
+    final HttpData body;
 
-    HttpData body = HttpData.wrap(okioBuffer.readByteArray());
+    // While ideally we can use a direct buffer for our request, we can't do so and support the
+    // semantics of our Call so instead construct a normal byte[] with all the serialized documents.
+    // Using a composite buffer means we essentially create a list of documents each serialized into
+    // pooled heap buffers, and then only copy once when consolidating them into an unpooled byte[],
+    // while if we used a normal buffer, we would have more copying in intermediate steps if we need
+    // to resize the buffer (we can only do a best effort estimate of the buffer size and will often
+    // still need to resize).
+    CompositeByteBuf sink = RequestContext.mapCurrent(
+      RequestContext::alloc, () -> PooledByteBufAllocator.DEFAULT)
+      .compositeHeapBuffer(Integer.MAX_VALUE);
+    try {
+      for (IndexEntry<?> entry : entries) {
+        write(sink, entry, shouldAddType);
+      }
+      body = HttpData.wrap(ByteBufUtil.getBytes(sink));
+    } finally {
+      sink.release();
+    }
 
     AggregatedHttpRequest request = AggregatedHttpRequest.of(
       RequestHeaders.of(
@@ -93,32 +112,35 @@ public final class BulkCallBuilder {
     return http.newCall(request, CheckForErrors.INSTANCE);
   }
 
-  static void write(BufferedSink sink, IndexEntry entry, boolean shouldAddType) {
-    Buffer document = new Buffer();
-    String id = entry.writer().writeDocument(entry.input(), document);
-    writeIndexMetadata(sink, entry, id, shouldAddType);
+  static void write(CompositeByteBuf sink, IndexEntry entry,
+    boolean shouldAddType) {
+    // Fuzzily assume a general small span is 600 bytes to reduce resizing while building up the
+    // JSON. Any extra bytes will be released back after serializing all the documents.
+    ByteBuf document = sink.alloc().heapBuffer(600).writeByte('\n');
+    ByteBuf metadata = sink.alloc().heapBuffer(200);
     try {
-      sink.writeByte('\n');
-      sink.write(document, document.size());
-      sink.writeByte('\n');
-    } catch (IOException e) {
-      throw new AssertionError(e); // No I/O writing to a Buffer.
+      String id = entry.writer().writeDocument(entry.input(), new ByteBufOutputStream(document));
+      document.writeByte('\n');
+      writeIndexMetadata(new ByteBufOutputStream(metadata), entry, id, shouldAddType);
+    } catch (Throwable t) {
+      document.release();
+      metadata.release();
+      throw t;
     }
+    sink.addComponent(true, metadata).addComponent(true, document);
   }
 
-  static void writeIndexMetadata(BufferedSink sink, IndexEntry entry, String id,
+  static void writeIndexMetadata(ByteBufOutputStream sink, IndexEntry entry, String id,
     boolean shouldAddType) {
-    JsonWriter jsonWriter = JsonWriter.of(sink);
-    try {
-      jsonWriter.beginObject();
-      jsonWriter.name("index");
-      jsonWriter.beginObject();
-      jsonWriter.name("_index").value(entry.index());
+    try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)) {
+      writer.writeStartObject();
+      writer.writeObjectFieldStart("index");
+      writer.writeStringField("_index", entry.index());
       // the _type parameter is needed for Elasticsearch < 6.x
-      if (shouldAddType) jsonWriter.name("_type").value(entry.typeName());
-      jsonWriter.name("_id").value(id);
-      jsonWriter.endObject();
-      jsonWriter.endObject();
+      if (shouldAddType) writer.writeStringField("_type", entry.typeName());
+      writer.writeStringField("_id", id);
+      writer.writeEndObject();
+      writer.writeEndObject();
     } catch (IOException e) {
       throw new AssertionError(e); // No I/O writing to a Buffer.
     }
@@ -127,8 +149,8 @@ public final class BulkCallBuilder {
   enum CheckForErrors implements HttpCall.BodyConverter<Void> {
     INSTANCE;
 
-    @Override public Void convert(BufferedSource b) throws IOException {
-      String content = b.readUtf8();
+    @Override public Void convert(ByteBuffer b) throws IOException {
+      String content = StandardCharsets.UTF_8.decode(b).toString();
       if (content.contains("\"status\":429")) throw new RejectedExecutionException(content);
       if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
       return null;

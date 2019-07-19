@@ -19,6 +19,7 @@ import java.util.Map;
 
 public class Aggregation {
   transient final String field;
+
   AggTerms terms;
   Map<String, String> min;
   Map<String, Aggregation> aggs;
@@ -44,6 +45,18 @@ public class Aggregation {
     return result;
   }
 
+  public AggTerms getTerms() {
+    return terms;
+  }
+
+  public Map<String, String> getMin() {
+    return min;
+  }
+
+  public Map<String, Aggregation> getAggs() {
+    return aggs;
+  }
+
   static class AggTerms {
     AggTerms(String field, int size) {
       this.field = field;
@@ -57,6 +70,18 @@ public class Aggregation {
     AggTerms order(String agg, String direction) {
       order = Collections.singletonMap(agg, direction);
       return this;
+    }
+
+    public String getField() {
+      return field;
+    }
+
+    public int getSize() {
+      return size;
+    }
+
+    public Map<String, String> getOrder() {
+      return order;
     }
   }
 

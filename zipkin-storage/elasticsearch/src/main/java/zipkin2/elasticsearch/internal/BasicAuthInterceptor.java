@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
 import com.linecorp.armeria.client.SimpleDecoratingClient;
@@ -22,15 +23,13 @@ import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.util.Exceptions;
-import com.squareup.moshi.JsonReader;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.util.ReferenceCountUtil;
+import io.netty.buffer.ByteBufInputStream;
+import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.ByteBuffer;
 import java.util.Base64;
-import okio.Okio;
-import zipkin2.internal.ReadBuffer;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
@@ -65,24 +64,23 @@ public final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpReque
         if (!msg.status().equals(HttpStatus.FORBIDDEN) || content.isEmpty()) {
           return HttpResponse.of(msg);
         }
-        try {
-          final ByteBuffer buf;
-          if (content instanceof ByteBufHolder) {
-            buf = ((ByteBufHolder) content).content().nioBuffer();
-          } else {
-            buf = ByteBuffer.wrap(content.array());
-          }
+        final ByteBuf buf;
+        if (content instanceof ByteBufHolder) {
+          buf = ((ByteBufHolder) content).content();
+        } else {
+          buf = Unpooled.wrappedBuffer(content.array());
+        }
+        try (ByteBufInputStream stream = new ByteBufInputStream(buf, true)) {
           try {
-            JsonReader message = enterPath(JsonReader.of(
-              Okio.buffer(Okio.source(ReadBuffer.wrapUnsafe(buf)))), "message");
-            if (message != null) throw new IllegalStateException(message.nextString());
+            JsonParser message = enterPath(JsonSerializers.jsonParser(stream), "message");
+            if (message != null) throw new IllegalStateException(message.getValueAsString());
           } catch (IOException e) {
             Exceptions.throwUnsafely(e);
             throw new UncheckedIOException(e);  // unreachable
           }
           throw new IllegalStateException(msg.toString());
-        } finally {
-          ReferenceCountUtil.safeRelease(content);
+        } catch (IOException e) {
+          throw new AssertionError("Couldn't close memory stream", e);
         }
       }, ctx.contextAwareExecutor()));
   }

@@ -13,21 +13,23 @@
  */
 package zipkin2.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
-import okio.Buffer;
+import java.io.UncheckedIOException;
 import org.junit.Test;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static zipkin2.TestObjects.CLIENT_SPAN;
-import static zipkin2.elasticsearch.JsonAdapters.SPAN_ADAPTER;
+import static zipkin2.elasticsearch.internal.JsonSerializers.SPAN_PARSER;
 
-public class JsonAdaptersTest {
+public class JsonSerializersTest {
   @Test
   public void span_ignoreNull_parentId() throws IOException {
     String json =
@@ -38,7 +40,7 @@ public class JsonAdaptersTest {
             + "  \"parentId\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -51,7 +53,7 @@ public class JsonAdaptersTest {
             + "  \"timestamp\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -64,7 +66,7 @@ public class JsonAdaptersTest {
             + "  \"duration\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -77,7 +79,7 @@ public class JsonAdaptersTest {
             + "  \"debug\": null\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -96,7 +98,7 @@ public class JsonAdaptersTest {
             + "  ]\n"
             + "}";
 
-    SPAN_ADAPTER.fromJson(new Buffer().writeUtf8(json));
+    parseString(SPAN_PARSER, json);
   }
 
   @Test
@@ -111,7 +113,7 @@ public class JsonAdaptersTest {
             + "  }"
             + "}";
 
-    Span span = JsonAdapters.SPAN_ADAPTER.fromJson(json);
+    Span span = parseString(SPAN_PARSER, json);
     assertThat(span.tags()).containsExactly(entry("num", "9223372036854775807"));
   }
 
@@ -127,20 +129,19 @@ public class JsonAdaptersTest {
             + "  }"
             + "}";
 
-    Span span = JsonAdapters.SPAN_ADAPTER.fromJson(json);
+    Span span = parseString(SPAN_PARSER, json);
     assertThat(span.tags()).containsExactly(entry("num", "1.23456789"));
   }
 
   @Test
   public void span_roundTrip() throws IOException {
-    Buffer bytes = new Buffer();
-    bytes.write(SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN));
-    assertThat(SPAN_ADAPTER.fromJson(bytes)).isEqualTo(CLIENT_SPAN);
+    assertThat(parseBytes(SPAN_PARSER, SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN)))
+      .isEqualTo(CLIENT_SPAN);
   }
 
   /**
    * This isn't a test of what we "should" accept as a span, rather that characters that trip-up
-   * json don't fail in SPAN_ADAPTER.
+   * json don't fail in SPAN_PARSER.
    */
   @Test
   public void span_specialCharsInJson() throws IOException {
@@ -161,9 +162,8 @@ public class JsonAdaptersTest {
                 "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
             .build();
 
-    Buffer bytes = new Buffer();
-    bytes.write(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld));
-    assertThat(SPAN_ADAPTER.fromJson(bytes)).isEqualTo(worstSpanInTheWorld);
+    assertThat(parseBytes(SPAN_PARSER, SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld)))
+      .isEqualTo(worstSpanInTheWorld);
   }
 
   @Test
@@ -179,7 +179,7 @@ public class JsonAdaptersTest {
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("service").port(65535).build());
   }
 
@@ -195,7 +195,7 @@ public class JsonAdaptersTest {
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
@@ -207,12 +207,12 @@ public class JsonAdaptersTest {
             + "  \"name\": \"get-traces\",\n"
             + "  \"id\": \"6b221d5bc9e6496c\",\n"
             + "  \"localEndpoint\": {\n"
-            + "    \"serviceName\": NULL,\n"
+            + "    \"serviceName\": null,\n"
             + "    \"port\": 65535\n"
             + "  }\n"
             + "}";
 
-    assertThat(SPAN_ADAPTER.fromJson(json).localEndpoint())
+    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
         .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
@@ -231,13 +231,12 @@ public class JsonAdaptersTest {
             + "  \"id\": \"6b221d5bc9e6496c\"\n"
             + "}");
 
-    assertThat(JsonAdapters.SPAN_ADAPTER.fromJson(with128BitTraceId))
+    assertThat(parseString(SPAN_PARSER, with128BitTraceId))
         .isEqualTo(
-            JsonAdapters.SPAN_ADAPTER
-                .fromJson(withLower64bitsTraceId)
-                .toBuilder()
-                .traceId("48485a3953bb61246b221d5bc9e6496c")
-                .build());
+            parseString(JsonSerializers.SPAN_PARSER, withLower64bitsTraceId)
+              .toBuilder()
+              .traceId("48485a3953bb61246b221d5bc9e6496c")
+              .build());
   }
 
   @Test
@@ -245,9 +244,8 @@ public class JsonAdaptersTest {
     DependencyLink link =
         DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).build();
 
-    Buffer bytes = new Buffer();
-    bytes.write(DependencyLinkBytesEncoder.JSON_V1.encode(link));
-    assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes)).isEqualTo(link);
+    assertThat(parseBytes(JsonSerializers.DEPENDENCY_LINK_PARSER,
+      DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
   }
 
   @Test
@@ -255,8 +253,27 @@ public class JsonAdaptersTest {
     DependencyLink link =
         DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).errorCount(1).build();
 
-    Buffer bytes = new Buffer();
-    bytes.write(DependencyLinkBytesEncoder.JSON_V1.encode(link));
-    assertThat(JsonAdapters.DEPENDENCY_LINK_ADAPTER.fromJson(bytes)).isEqualTo(link);
+    assertThat(parseBytes(JsonSerializers.DEPENDENCY_LINK_PARSER,
+      DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
+  }
+
+  static <T> T parseString(JsonSerializers.ObjectParser<T> parser, String json) {
+    try {
+      JsonParser jsonParser = JsonSerializers.JSON_FACTORY.createParser(json);
+      jsonParser.nextToken();
+      return parser.parse(jsonParser);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
+  }
+
+  static <T> T parseBytes(JsonSerializers.ObjectParser<T> parser, byte[] json) {
+    try {
+      JsonParser jsonParser = JsonSerializers.JSON_FACTORY.createParser(json);
+      jsonParser.nextToken();
+      return parser.parse(jsonParser);
+    } catch (IOException e) {
+      throw new UncheckedIOException(e);
+    }
   }
 }

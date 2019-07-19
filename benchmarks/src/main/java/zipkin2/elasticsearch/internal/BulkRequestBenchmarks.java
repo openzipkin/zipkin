@@ -14,9 +14,9 @@
 package zipkin2.elasticsearch.internal;
 
 import com.google.common.io.ByteStreams;
+import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import okio.Okio;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -54,22 +54,22 @@ public class BulkRequestBenchmarks {
   final IndexEntry<Span> entry =
     BulkCallBuilder.newIndexEntry(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
 
-  @Benchmark public void writeRequest_singleSpan() throws IOException {
-    BulkCallBuilder.write(Okio.buffer(Okio.blackhole()), entry, true);
+  @Benchmark public void writeRequest_singleSpan() {
+    BulkCallBuilder.write(Unpooled.compositeBuffer(Integer.MAX_VALUE), entry, true);
   }
 
-  @Benchmark public void buildAndWriteRequest_singleSpan() throws IOException {
+  @Benchmark public byte[] buildAndWriteRequest_singleSpan() {
     BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
-    Okio.buffer(Okio.blackhole()).write(builder.build().request.content().array());
+    return builder.build().request.content().array();
   }
 
-  @Benchmark public void buildAndWriteRequest_tenSpans() throws IOException {
+  @Benchmark public byte[] buildAndWriteRequest_tenSpans() {
     BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     for (int i = 0; i < 10; i++) {
       builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     }
-    Okio.buffer(Okio.blackhole()).write(builder.build().request.content().array());
+    return builder.build().request.content().array();
   }
 
   // Convenience main entry-point

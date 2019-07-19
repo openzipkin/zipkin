@@ -13,8 +13,8 @@
  */
 package zipkin2.elasticsearch.internal;
 
-import com.squareup.moshi.JsonReader;
-import java.io.EOFException;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -25,85 +25,79 @@ import zipkin2.internal.Nullable;
 public final class JsonReaders {
 
   /**
-   * This saves you from having to define nested types to read a single value
-   *
-   * <p>Instead of defining two types like this, and double-checking null..
+   * Navigates to a field of a JSON-serialized object. For example,
    *
    * <pre>{@code
-   * class Response {
-   *   Message message;
-   * }
-   * class Message {
-   *   String status;
-   * }
-   * JsonAdapter<Response> adapter = moshi.adapter(Response.class);
-   * Message message = adapter.fromJson(body.source());
-   * if (message != null && message.status != null) throw new IllegalStateException(message.status);
-   * }</pre>
-   *
-   * <p>You can advance to the field directly.
-   *
-   * <pre>{@code
-   * JsonReader status = enterPath(JsonReader.of(body.source()), "message", "status");
+   * JsonParser status = enterPath(JsonAdapters.jsonParser(stream), "message", "status");
    * if (status != null) throw new IllegalStateException(status.nextString());
    * }</pre>
    */
   @Nullable
-  public static JsonReader enterPath(JsonReader reader, String path1, String path2)
+  public static JsonParser enterPath(JsonParser parser, String path1, String path2)
       throws IOException {
-    return enterPath(reader, path1) != null ? enterPath(reader, path2) : null;
+    return enterPath(parser, path1) != null ? enterPath(parser, path2) : null;
   }
 
   @Nullable
-  public static JsonReader enterPath(JsonReader reader, String path) throws IOException {
-    try {
-      if (reader.peek() != JsonReader.Token.BEGIN_OBJECT) return null;
-    } catch (EOFException e) {
-      return null;
-    }
-    reader.beginObject();
-    while (reader.hasNext()) {
-      if (reader.nextName().equals(path) && reader.peek() != JsonReader.Token.NULL) {
-        return reader;
+  public static JsonParser enterPath(JsonParser parser, String path) throws IOException {
+    if (!parser.isExpectedStartObjectToken()) return null;
+    JsonToken value;
+    while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
+      if (value == null) {
+        // End of input so ignore.
+        return null;
+      }
+      if (parser.getCurrentName().equals(path) && value != JsonToken.VALUE_NULL) {
+        return parser;
       } else {
-        reader.skipValue();
+        parser.skipChildren();
       }
     }
-    reader.endObject();
     return null;
   }
 
-  public static List<String> collectValuesNamed(JsonReader reader, String name) throws IOException {
+  public static List<String> collectValuesNamed(JsonParser parser, String name) throws IOException {
     Set<String> result = new LinkedHashSet<>();
-    visitObject(reader, name, result);
+    visitObject(parser, name, result);
     return new ArrayList<>(result);
   }
 
-  static void visitObject(JsonReader reader, String name, Set<String> result) throws IOException {
-    reader.beginObject();
-    while (reader.hasNext()) {
-      if (reader.nextName().equals(name)) {
-        result.add(reader.nextString());
+  static void visitObject(JsonParser parser, String name, Set<String> result) throws IOException {
+    if (!parser.isExpectedStartObjectToken()) {
+      throw new IOException("Expecting object start, got " + parser.currentToken());
+    }
+    JsonToken value;
+    while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
+      if (value == null) {
+        // End of input so ignore.
+        return;
+      }
+      if (parser.getCurrentName().equals(name)) {
+        result.add(parser.getText());
       } else {
-        visitNextOrSkip(reader, name, result);
+        visitNextOrSkip(parser, name, result);
       }
     }
-    reader.endObject();
   }
 
-  static void visitNextOrSkip(JsonReader reader, String name, Set<String> result)
+  static void visitNextOrSkip(JsonParser parser, String name, Set<String> result)
       throws IOException {
-    switch (reader.peek()) {
-      case BEGIN_ARRAY:
-        reader.beginArray();
-        while (reader.hasNext()) visitObject(reader, name, result);
-        reader.endArray();
+    switch (parser.currentToken()) {
+      case START_ARRAY:
+        JsonToken token;
+        while ((token = parser.nextToken()) != JsonToken.END_ARRAY) {
+          if (token == null) {
+            // End of input so ignore.
+            return;
+          }
+          visitObject(parser, name, result);
+        }
         break;
-      case BEGIN_OBJECT:
-        visitObject(reader, name, result);
+      case START_OBJECT:
+        visitObject(parser, name, result);
         break;
       default:
-        reader.skipValue();
+        // Skip current value.
     }
   }
 

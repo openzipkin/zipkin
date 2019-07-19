@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.ClientFactory;
@@ -36,10 +37,11 @@ import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.util.AbstractListenable;
 import com.linecorp.armeria.common.util.EventLoopGroups;
-import com.squareup.moshi.JsonReader;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -51,10 +53,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import okio.Buffer;
-import okio.BufferedSource;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
@@ -348,14 +349,14 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     INSTANCE;
 
     @Override
-    public CheckResult convert(BufferedSource b) throws IOException {
-      b.request(Long.MAX_VALUE); // Buffer the entire body.
-      Buffer body = b.getBuffer();
-      JsonReader status = enterPath(JsonReader.of(body.clone()), "status");
+    public CheckResult convert(ByteBuffer buf) throws IOException {
+      ByteBuffer body = buf.duplicate();
+      JsonParser status = enterPath(JsonSerializers.jsonParser(buf), "status");
       if (status == null) {
-        throw new IllegalStateException("Health status couldn't be read " + body.readUtf8());
+        throw new IllegalStateException("Health status couldn't be read " +
+          StandardCharsets.UTF_8.decode(body).toString());
       }
-      if ("RED".equalsIgnoreCase(status.nextString())) {
+      if ("RED".equalsIgnoreCase(status.getText())) {
         throw new IllegalStateException("Health status is RED");
       }
       return CheckResult.OK;

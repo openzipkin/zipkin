@@ -13,39 +13,40 @@
  */
 package zipkin2.elasticsearch;
 
-import com.squareup.moshi.JsonReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.List;
-import okio.BufferedSource;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
+import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.SearchResultConverter;
 import zipkin2.internal.DependencyLinker;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
 
-public final class BodyConverters {
+final class BodyConverters {
+
   static final HttpCall.BodyConverter<Object> NULL =
       new HttpCall.BodyConverter<Object>() {
         @Override
-        public Object convert(BufferedSource content) {
+        public Object convert(ByteBuffer content) {
           return null;
         }
       };
   static final HttpCall.BodyConverter<List<String>> KEYS =
       new HttpCall.BodyConverter<List<String>>() {
         @Override
-        public List<String> convert(BufferedSource b) throws IOException {
-          return collectValuesNamed(JsonReader.of(b), "key");
+        public List<String> convert(ByteBuffer content) throws IOException {
+          return collectValuesNamed(JsonSerializers.jsonParser(content), "key");
         }
       };
   static final HttpCall.BodyConverter<List<Span>> SPANS =
-      SearchResultConverter.create(JsonAdapters.SPAN_ADAPTER);
+      SearchResultConverter.create(JsonSerializers.SPAN_PARSER);
   static final HttpCall.BodyConverter<List<DependencyLink>> DEPENDENCY_LINKS =
-      new SearchResultConverter<DependencyLink>(JsonAdapters.DEPENDENCY_LINK_ADAPTER) {
+      new SearchResultConverter<DependencyLink>(JsonSerializers.DEPENDENCY_LINK_PARSER) {
         @Override
-        public List<DependencyLink> convert(BufferedSource content) throws IOException {
+        public List<DependencyLink> convert(ByteBuffer content) throws IOException {
           List<DependencyLink> result = super.convert(content);
           return result.isEmpty() ? result : DependencyLinker.merge(result);
         }
