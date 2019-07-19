@@ -47,6 +47,10 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
     </dependency>
+    <dependency>
+      <groupId>com.squareup.moshi</groupId>
+      <artifactId>moshi</artifactId>
+    </dependency>
 
     <dependency>
       <groupId>com.esotericsoftware.kryo</groupId>

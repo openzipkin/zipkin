@@ -14,6 +14,7 @@
 package zipkin2.elasticsearch.internal;
 
 import com.google.common.io.ByteStreams;
+import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import okio.Okio;
@@ -55,7 +56,7 @@ public class BulkRequestBenchmarks {
     BulkCallBuilder.newIndexEntry(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
 
   @Benchmark public void writeRequest_singleSpan() throws IOException {
-    BulkCallBuilder.write(Okio.buffer(Okio.blackhole()), true);
+    BulkCallBuilder.write(Unpooled.compositeBuffer(Integer.MAX_VALUE), entry, true);
   }
 
   @Benchmark public void buildAndWriteRequest_singleSpan() throws IOException {
