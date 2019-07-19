@@ -14,7 +14,7 @@
 import _ from 'lodash';
 import moment from 'moment';
 import { compare } from './span-cleaner';
-import { getErrorType, newSpanRow } from './span-row';
+import { getErrorType, newSpanRow, getServiceName } from './span-row';
 
 // To ensure data doesn't scroll off the screen, we need all timestamps, not just
 // client/server ones.
@@ -264,6 +264,14 @@ function addLayoutDetails(
   } else {
     spanRow.left = 0;
   }
+}
+
+export function rootServiceAndSpanName(root) {
+  const { span } = root.queueRootMostSpans().shift();
+  return {
+    serviceName: getServiceName(span.localEndpoint) || getServiceName(span.remoteEndpoint),
+    spanName: span.name,
+  };
 }
 
 export function detailedTraceSummary(root, logsUrl) {
