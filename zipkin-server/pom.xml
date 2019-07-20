@@ -267,12 +267,6 @@
     </dependency>
     <dependency>
       <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-instrumentation-okhttp3</artifactId>
-      <version>${brave.version}</version>
-      <optional>true</optional>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-context-log4j2</artifactId>
       <version>${brave.version}</version>
       <optional>true</optional>
