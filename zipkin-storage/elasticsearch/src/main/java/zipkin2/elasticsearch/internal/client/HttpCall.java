@@ -26,7 +26,6 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Semaphore;
 import zipkin2.Call;
 import zipkin2.Callback;
 
