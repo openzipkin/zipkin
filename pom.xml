@@ -74,6 +74,7 @@
     <log4j.version>2.12.0</log4j.version>
 
     <junit.version>4.12</junit.version>
+    <junit.jupiter.version>5.5.0</junit.jupiter.version>
     <powermock.version>2.0.2</powermock.version>
     <!-- Up to v2.27.0 of mockito has a conflict https://github.com/mockito/mockito/issues/1606
     java.lang.NoSuchMethodError: net.bytebuddy.dynamic.loading.MultipleParentClassLoader$Builder.appendMostSpecific(Ljava/util/Collection;)Lnet/bytebuddy/dynamic/loading/MultipleParentClassLoader$Builder
@@ -305,6 +306,12 @@
         <groupId>junit</groupId>
         <artifactId>junit</artifactId>
         <version>${junit.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${junit.jupiter.version}</version>
       </dependency>
 
       <dependency>
