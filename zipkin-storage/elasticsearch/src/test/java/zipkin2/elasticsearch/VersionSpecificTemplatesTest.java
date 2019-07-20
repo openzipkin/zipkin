@@ -14,9 +14,11 @@
 package zipkin2.elasticsearch;
 
 import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.atomic.AtomicReference;
@@ -29,6 +31,8 @@ import org.junit.rules.ExpectedException;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.elasticsearch.ElasticsearchStorageTest.HEALTH_RESPONSE;
+import static zipkin2.elasticsearch.ElasticsearchStorageTest.RESPONSE_UNAUTHORIZED;
 
 public class VersionSpecificTemplatesTest {
   static final AggregatedHttpResponse VERSION_RESPONSE_7 = AggregatedHttpResponse.of(
@@ -124,6 +128,24 @@ public class VersionSpecificTemplatesTest {
   }
 
   ElasticsearchStorage storage;
+
+  @Test public void wrongContent() throws Exception {
+    MOCK_RESPONSE.set(AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.OK),
+      HttpData.ofUtf8("you got mail")));
+
+    thrown.expectMessage(".version.number not found in response: you got mail");
+
+    new VersionSpecificTemplates(storage).get();
+  }
+
+  @Test public void unauthorized() throws Exception {
+    MOCK_RESPONSE.set(RESPONSE_UNAUTHORIZED);
+
+    thrown.expectMessage("User: anonymous is not authorized to perform: es:ESHttpGet");
+
+    new VersionSpecificTemplates(storage).get();
+  }
 
   /** Unsupported, but we should test that parsing works */
   @Test public void version2_unsupported() throws Exception {

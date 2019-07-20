@@ -17,11 +17,8 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 import zipkin2.Annotation;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
@@ -32,28 +29,7 @@ import zipkin2.Span;
  */
 public final class JsonSerializers {
 
-  // Visible for testing
   public static final JsonFactory JSON_FACTORY = new JsonFactory();
-
-  public static JsonParser jsonParser(ByteBuffer buf) {
-    try {
-      JsonParser jsonParser = JSON_FACTORY.createParser(new ByteBufferBackedInputStream(buf));
-      jsonParser.nextToken();
-      return jsonParser;
-    } catch (IOException e) {
-      throw new AssertionError("Could not create JsonParser from a buffer.", e);
-    }
-  }
-
-  public static JsonParser jsonParser(InputStream stream) {
-    try {
-      JsonParser jsonParser = JSON_FACTORY.createParser(stream);
-      jsonParser.nextToken();
-      return jsonParser;
-    } catch (IOException e) {
-      throw new AssertionError("Could not create JsonParser from a buffer.", e);
-    }
-  }
 
   public static JsonGenerator jsonGenerator(OutputStream stream) {
     try {

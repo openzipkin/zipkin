@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
@@ -32,22 +33,21 @@ public final class JsonReaders {
    * if (status != null) throw new IllegalStateException(status.nextString());
    * }</pre>
    */
-  @Nullable
-  public static JsonParser enterPath(JsonParser parser, String path1, String path2)
-      throws IOException {
+  @Nullable public static JsonParser enterPath(JsonParser parser, String path1, String path2)
+    throws IOException {
     return enterPath(parser, path1) != null ? enterPath(parser, path2) : null;
   }
 
-  @Nullable
-  public static JsonParser enterPath(JsonParser parser, String path) throws IOException {
-    if (!parser.isExpectedStartObjectToken()) return null;
+  @Nullable public static JsonParser enterPath(JsonParser parser, String path) throws IOException {
+    if (!currentOrNextTokenEquals(parser, JsonToken.START_OBJECT)) return null;
+
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
       if (value == null) {
         // End of input so ignore.
         return null;
       }
-      if (parser.getCurrentName().equals(path) && value != JsonToken.VALUE_NULL) {
+      if (parser.getCurrentName().equalsIgnoreCase(path) && value != JsonToken.VALUE_NULL) {
         return parser;
       } else {
         parser.skipChildren();
@@ -56,15 +56,30 @@ public final class JsonReaders {
     return null;
   }
 
+  static boolean currentOrNextTokenEquals(JsonParser parser, JsonToken expected)
+    throws IOException {
+    try {
+      // The parser may not be at a token, yet. If that's the case advance.
+      if (parser.currentToken() == null) return parser.nextToken() == expected;
+      // If we are still not at the expected token, we could be an another or an empty body.
+      return parser.currentToken() == expected;
+    } catch (JsonParseException e) { // likely not json
+      return false;
+    }
+  }
+
   public static List<String> collectValuesNamed(JsonParser parser, String name) throws IOException {
+    if (!currentOrNextTokenEquals(parser, JsonToken.START_OBJECT)) {
+      throw new IllegalArgumentException("Expecting object start, got " + parser.currentToken());
+    }
     Set<String> result = new LinkedHashSet<>();
     visitObject(parser, name, result);
     return new ArrayList<>(result);
   }
 
   static void visitObject(JsonParser parser, String name, Set<String> result) throws IOException {
-    if (!parser.isExpectedStartObjectToken()) {
-      throw new IOException("Expecting object start, got " + parser.currentToken());
+    if (!currentOrNextTokenEquals(parser, JsonToken.START_OBJECT)) {
+      throw new IllegalArgumentException("Expecting object start, got " + parser.currentToken());
     }
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
@@ -81,7 +96,7 @@ public final class JsonReaders {
   }
 
   static void visitNextOrSkip(JsonParser parser, String name, Set<String> result)
-      throws IOException {
+    throws IOException {
     switch (parser.currentToken()) {
       case START_ARRAY:
         JsonToken token;
@@ -101,5 +116,6 @@ public final class JsonReaders {
     }
   }
 
-  JsonReaders() {}
+  JsonReaders() {
+  }
 }

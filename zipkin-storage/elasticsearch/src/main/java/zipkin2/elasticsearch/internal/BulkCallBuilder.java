@@ -29,8 +29,6 @@ import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
@@ -40,6 +38,18 @@ import zipkin2.elasticsearch.internal.client.HttpCall;
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class BulkCallBuilder {
+  static final HttpCall.BodyConverter<Void> CHECK_FOR_ERRORS = new HttpCall.BodyConverter<Void>() {
+    @Override public Void convert(HttpData data) {
+      String content = data.toStringUtf8();
+      if (content.contains("\"status\":429")) throw new RejectedExecutionException(content);
+      if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
+      return null;
+    }
+
+    @Override public String toString() {
+      return "CheckForErrors";
+    }
+  };
 
   final String tag;
   final boolean shouldAddType;
@@ -109,7 +119,7 @@ public final class BulkCallBuilder {
         HttpMethod.POST, urlBuilder.toString(),
         HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
       body);
-    return http.newCall(request, CheckForErrors.INSTANCE);
+    return http.newCall(request, CHECK_FOR_ERRORS);
   }
 
   static void write(CompositeByteBuf sink, IndexEntry entry,
@@ -143,21 +153,6 @@ public final class BulkCallBuilder {
       writer.writeEndObject();
     } catch (IOException e) {
       throw new AssertionError(e); // No I/O writing to a Buffer.
-    }
-  }
-
-  enum CheckForErrors implements HttpCall.BodyConverter<Void> {
-    INSTANCE;
-
-    @Override public Void convert(ByteBuffer b) throws IOException {
-      String content = StandardCharsets.UTF_8.decode(b).toString();
-      if (content.contains("\"status\":429")) throw new RejectedExecutionException(content);
-      if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
-      return null;
-    }
-
-    @Override public String toString() {
-      return "CheckForErrors";
     }
   }
 }
