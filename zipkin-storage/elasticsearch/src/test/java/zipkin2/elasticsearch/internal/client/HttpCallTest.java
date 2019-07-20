@@ -20,8 +20,10 @@ import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -58,6 +60,15 @@ public class HttpCallTest {
 
   @Before public void setUp() {
     http = new HttpCall.Factory(HttpClient.of(server.httpUri("/")));
+  }
+
+  @Test public void emptyContent() throws Exception {
+    MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
+
+    assertThat(http.newCall(REQUEST, unused -> "not me").execute()).isNull();
+    CompletableCallback<String> future = new CompletableCallback<>();
+    http.newCall(REQUEST, unused -> "not me").enqueue(future);
+    assertThat(future.join()).isNull();
   }
 
   @Test public void propagatesOnDispatcherThreadWhenFatal() throws Exception {
@@ -130,6 +141,18 @@ public class HttpCallTest {
       failBecauseExceptionWasNotThrown(IllegalStateException.class);
     } catch (IllegalStateException expected) {
       assertThat(expected).isInstanceOf(IllegalStateException.class);
+    }
+  }
+
+  // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.
+  static final class CompletableCallback<T> extends CompletableFuture<T> implements Callback<T> {
+
+    @Override public void onSuccess(T value) {
+      complete(value);
+    }
+
+    @Override public void onError(Throwable t) {
+      completeExceptionally(t);
     }
   }
 }

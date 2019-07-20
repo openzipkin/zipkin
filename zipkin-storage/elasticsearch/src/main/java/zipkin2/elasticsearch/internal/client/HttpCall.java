@@ -26,7 +26,6 @@ import io.netty.util.ReferenceCountUtil;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Semaphore;
 import zipkin2.Call;
 import zipkin2.Callback;
 
@@ -86,14 +85,13 @@ public final class HttpCall<V> extends Call.Base<V> {
       if (t != null) {
         callback.onError(t);
       } else {
-        V value = null;
         try {
-          value = parseResponse(response, bodyConverter);
+          V value = parseResponse(response, bodyConverter);
+          callback.onSuccess(value);
         } catch (Throwable t1) {
           propagateIfFatal(t1);
           callback.onError(t1);
         }
-        if (value != null) callback.onSuccess(value);
       }
       return null;
     });
