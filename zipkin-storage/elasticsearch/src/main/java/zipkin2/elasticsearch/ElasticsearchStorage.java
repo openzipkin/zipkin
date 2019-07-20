@@ -312,7 +312,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   @Override
   public CheckResult check() {
     HttpClient client = httpClient();
-    EndpointGroup healthChecked = EndpointGroupRegistry.get("elasticsearch");
+    EndpointGroup healthChecked = EndpointGroupRegistry.get("elasticsearch_healthchecked");
     if (healthChecked instanceof HttpHealthCheckedEndpointGroup) {
       try {
         ((HttpHealthCheckedEndpointGroup) healthChecked).awaitInitialEndpoints(
@@ -457,7 +457,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     final String clientUrl;
     if (endpointGroup != null) {
-      EndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
+      HttpHealthCheckedEndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
         endpointGroup, "/_cluster/health")
         .protocol(SessionProtocol.valueOf(urls.get(0).getProtocol().toUpperCase(Locale.ROOT)))
         .clientFactory(clientFactory())
@@ -465,13 +465,18 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
           clientCustomizer().accept(options);
           return options;
         })
-        .build()
+        .build();
+      EndpointGroup withFallback = healthChecked
         // Even if all the health check requests are failing, we want to go ahead and try to send
         // the request to an endpoint anyways. This will generally only be when the server is
         // starting.
         .orElse(endpointGroup);
       EndpointGroupRegistry.register(
-        "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
+        "elasticsearch", withFallback, EndpointSelectionStrategy.ROUND_ROBIN);
+      // TODO(anuraaga): Remove this after https://github.com/line/armeria/issues/1910 means we
+      // don't need to wait for initial endpoints ourselves.
+      EndpointGroupRegistry.register(
+        "elasticsearch_healthchecked", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
     } else {
       // Just one non-domain URL, can connect directly without enabling load balancing.
