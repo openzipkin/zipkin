@@ -33,6 +33,7 @@ import zipkin2.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 
@@ -42,7 +43,7 @@ public class ElasticsearchSpanStoreTest {
     new AtomicReference<>();
   static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
     new AtomicReference<>();
-  static final AggregatedHttpResponse SUCCESS_RESPONSE =
+  static final AggregatedHttpResponse EMPTY_RESPONSE =
     AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
 
   @ClassRule public static ServerRule server = new ServerRule() {
@@ -75,29 +76,26 @@ public class ElasticsearchSpanStoreTest {
   ElasticsearchStorage storage;
   ElasticsearchSpanStore spanStore;
 
-  @Test
-  public void doesntTruncateTraceIdByDefault() throws Exception {
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+  @Test public void doesntTruncateTraceIdByDefault() throws Exception {
+    MOCK_RESPONSE.set(EMPTY_RESPONSE);
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
     assertThat(CAPTURED_REQUEST.get().contentUtf8())
-        .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
+      .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
   }
 
-  @Test
-  public void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
+  @Test public void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
     storage.close();
     storage = storage.toBuilder().strictTraceId(false).build();
     spanStore = new ElasticsearchSpanStore(storage);
 
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+    MOCK_RESPONSE.set(EMPTY_RESPONSE);
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
     assertThat(CAPTURED_REQUEST.get().contentUtf8()).contains("\"traceId\":\"3041d36dc43227fd\"");
   }
 
-  @Test
-  public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
+  @Test public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(
       HttpStatus.OK, MediaType.JSON_UTF_8, TestResponses.SERVICE_NAMES));
     spanStore.getServiceNames().execute();
@@ -105,8 +103,7 @@ public class ElasticsearchSpanStoreTest {
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }
 
-  @Test
-  public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
+  @Test public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(
       HttpStatus.OK, MediaType.JSON_UTF_8, TestResponses.SPAN_NAMES));
     spanStore.getSpanNames("foo").execute();
@@ -114,23 +111,18 @@ public class ElasticsearchSpanStoreTest {
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }
 
-  @Test
-  public void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
+  @Test public void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
     try (ElasticsearchStorage storage =
-        ElasticsearchStorage.newBuilder()
-            .hosts(this.storage.hostsSupplier().get())
-            .searchEnabled(false)
-            .build()) {
+           ElasticsearchStorage.newBuilder()
+             .hosts(this.storage.hostsSupplier().get())
+             .searchEnabled(false)
+             .build()) {
 
       // skip template check
       ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
 
-      assertThat(
-              spanStore
-                  .getTraces(
-                      QueryRequest.newBuilder().endTs(TODAY).lookback(10000L).limit(10).build())
-                  .execute())
-          .isEmpty();
+      QueryRequest request = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(10).build();
+      assertThat(spanStore.getTraces(request).execute()).isEmpty();
       assertThat(spanStore.getServiceNames().execute()).isEmpty();
       assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
 
@@ -138,16 +130,15 @@ public class ElasticsearchSpanStoreTest {
     }
   }
 
-  private void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {
+  void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {
     long today = TestObjects.midnightUTC(System.currentTimeMillis());
     long yesterday = today - TimeUnit.DAYS.toMillis(1);
 
     // 24 hrs ago always will fall into 2 days (ex. if it is 4:00pm, 24hrs ago is a different day)
-    String indexesToSearch =
-        ""
-            + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, yesterday)
-            + ","
-            + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
+    String indexesToSearch = ""
+      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, yesterday)
+      + ","
+      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
 
     AggregatedHttpRequest request = CAPTURED_REQUEST.get();
     assertThat(request.path()).startsWith("/" + indexesToSearch + "/_search");

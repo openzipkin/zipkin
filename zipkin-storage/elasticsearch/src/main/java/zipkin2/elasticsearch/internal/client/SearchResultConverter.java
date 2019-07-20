@@ -27,7 +27,6 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>> {
   final ObjectParser<T> adapter;
-  final List<T> defaultValue;
 
   public static <T> SearchResultConverter<T> create(ObjectParser<T> adapter) {
     return new SearchResultConverter<>(adapter);
@@ -35,22 +34,17 @@ public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>>
 
   protected SearchResultConverter(ObjectParser<T> adapter) {
     this.adapter = adapter;
-    this.defaultValue = Collections.emptyList();
   }
 
-  // TODO: unit test coverage
   @Override public List<T> convert(HttpData content) throws IOException {
     JsonParser hits = enterPath(JSON_FACTORY.createParser(toInputStream(content)), "hits", "hits");
-    if (hits == null || !hits.isExpectedStartArrayToken()) return defaultValue;
+    if (hits == null || !hits.isExpectedStartArrayToken()) return Collections.emptyList();
 
     List<T> result = new ArrayList<>();
     while (hits.nextToken() != JsonToken.END_ARRAY) {
       JsonParser source = enterPath(hits, "_source");
-      if (source != null) {
-        result.add(adapter.parse(source));
-      }
-      hits.nextToken();
+      if (source != null) result.add(adapter.parse(source));
     }
-    return result.isEmpty() ? defaultValue : result;
+    return result.isEmpty() ? Collections.emptyList() : result;
   }
 }

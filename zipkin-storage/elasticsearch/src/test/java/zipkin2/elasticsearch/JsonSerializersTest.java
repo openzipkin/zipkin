@@ -27,115 +27,116 @@ import zipkin2.elasticsearch.internal.JsonSerializers;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 import static zipkin2.TestObjects.CLIENT_SPAN;
+import static zipkin2.TestObjects.UTF_8;
 import static zipkin2.elasticsearch.internal.JsonSerializers.SPAN_PARSER;
 
 public class JsonSerializersTest {
   @Test
-  public void span_ignoreNull_parentId() throws IOException {
+  public void span_ignoreNull_parentId() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"parentId\": null\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"parentId\": null\n"
+        + "}";
 
-    parseString(SPAN_PARSER, json);
+    parse(SPAN_PARSER, json);
   }
 
   @Test
-  public void span_ignoreNull_timestamp() throws IOException {
+  public void span_ignoreNull_timestamp() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"timestamp\": null\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"timestamp\": null\n"
+        + "}";
 
-    parseString(SPAN_PARSER, json);
+    parse(SPAN_PARSER, json);
   }
 
   @Test
-  public void span_ignoreNull_duration() throws IOException {
+  public void span_ignoreNull_duration() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"duration\": null\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"duration\": null\n"
+        + "}";
 
-    parseString(SPAN_PARSER, json);
+    parse(SPAN_PARSER, json);
   }
 
   @Test
-  public void span_ignoreNull_debug() throws IOException {
+  public void span_ignoreNull_debug() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"debug\": null\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"debug\": null\n"
+        + "}";
 
-    parseString(SPAN_PARSER, json);
+    parse(SPAN_PARSER, json);
   }
 
   @Test
-  public void span_ignoreNull_annotation_endpoint() throws IOException {
+  public void span_ignoreNull_annotation_endpoint() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"annotations\": [\n"
-            + "    {\n"
-            + "      \"timestamp\": 1461750491274000,\n"
-            + "      \"value\": \"cs\",\n"
-            + "      \"endpoint\": null\n"
-            + "    }\n"
-            + "  ]\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"annotations\": [\n"
+        + "    {\n"
+        + "      \"timestamp\": 1461750491274000,\n"
+        + "      \"value\": \"cs\",\n"
+        + "      \"endpoint\": null\n"
+        + "    }\n"
+        + "  ]\n"
+        + "}";
 
-    parseString(SPAN_PARSER, json);
+    parse(SPAN_PARSER, json);
   }
 
   @Test
-  public void span_tag_long_read() throws IOException {
+  public void span_tag_long_read() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"tags\": {"
-            + "      \"num\": 9223372036854775807"
-            + "  }"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"tags\": {"
+        + "      \"num\": 9223372036854775807"
+        + "  }"
+        + "}";
 
-    Span span = parseString(SPAN_PARSER, json);
+    Span span = parse(SPAN_PARSER, json);
     assertThat(span.tags()).containsExactly(entry("num", "9223372036854775807"));
   }
 
   @Test
-  public void span_tag_double_read() throws IOException {
+  public void span_tag_double_read() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"tags\": {"
-            + "      \"num\": 1.23456789"
-            + "  }"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"tags\": {"
+        + "      \"num\": 1.23456789"
+        + "  }"
+        + "}";
 
-    Span span = parseString(SPAN_PARSER, json);
+    Span span = parse(SPAN_PARSER, json);
     assertThat(span.tags()).containsExactly(entry("num", "1.23456789"));
   }
 
   @Test
-  public void span_roundTrip() throws IOException {
-    assertThat(parseBytes(SPAN_PARSER, SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN)))
+  public void span_roundTrip() {
+    assertThat(parse(SPAN_PARSER, new String(SpanBytesEncoder.JSON_V2.encode(CLIENT_SPAN), UTF_8)))
       .isEqualTo(CLIENT_SPAN);
   }
 
@@ -144,130 +145,121 @@ public class JsonSerializersTest {
    * json don't fail in SPAN_PARSER.
    */
   @Test
-  public void span_specialCharsInJson() throws IOException {
+  public void span_specialCharsInJson() {
     // service name is surrounded by control characters
     Endpoint e = Endpoint.newBuilder().serviceName(new String(new char[] {0, 'a', 1})).build();
     Span worstSpanInTheWorld =
-        Span.newBuilder()
-            .traceId("1")
-            .id("1")
-            // name is terrible
-            .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
-            .localEndpoint(e)
-            // annotation value includes some json newline characters
-            .addAnnotation(1L, "\u2028 and \u2029")
-            // binary annotation key includes a quote and value newlines
-            .putTag(
-                "\"foo",
-                "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
-            .build();
+      Span.newBuilder()
+        .traceId("1")
+        .id("1")
+        // name is terrible
+        .name(new String(new char[] {'"', '\\', '\t', '\b', '\n', '\r', '\f'}))
+        .localEndpoint(e)
+        // annotation value includes some json newline characters
+        .addAnnotation(1L, "\u2028 and \u2029")
+        // binary annotation key includes a quote and value newlines
+        .putTag(
+          "\"foo",
+          "Database error: ORA-00942:\u2028 and \u2029 table or view does not exist\n")
+        .build();
 
-    assertThat(parseBytes(SPAN_PARSER, SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld)))
+    assertThat(
+      parse(SPAN_PARSER, new String(SpanBytesEncoder.JSON_V2.encode(worstSpanInTheWorld), UTF_8)))
       .isEqualTo(worstSpanInTheWorld);
   }
 
   @Test
-  public void span_endpointHighPort() throws IOException {
+  public void span_endpointHighPort() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"localEndpoint\": {\n"
-            + "    \"serviceName\": \"service\",\n"
-            + "    \"port\": 65535\n"
-            + "  }\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"localEndpoint\": {\n"
+        + "    \"serviceName\": \"service\",\n"
+        + "    \"port\": 65535\n"
+        + "  }\n"
+        + "}";
 
-    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
-        .isEqualTo(Endpoint.newBuilder().serviceName("service").port(65535).build());
+    assertThat(parse(SPAN_PARSER, json).localEndpoint())
+      .isEqualTo(Endpoint.newBuilder().serviceName("service").port(65535).build());
   }
 
   @Test
-  public void span_noServiceName() throws IOException {
+  public void span_noServiceName() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"localEndpoint\": {\n"
-            + "    \"port\": 65535\n"
-            + "  }\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"localEndpoint\": {\n"
+        + "    \"port\": 65535\n"
+        + "  }\n"
+        + "}";
 
-    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
-        .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
+    assertThat(parse(SPAN_PARSER, json).localEndpoint())
+      .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
   @Test
-  public void span_nullServiceName() throws IOException {
+  public void span_nullServiceName() {
     String json =
-        "{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\",\n"
-            + "  \"localEndpoint\": {\n"
-            + "    \"serviceName\": null,\n"
-            + "    \"port\": 65535\n"
-            + "  }\n"
-            + "}";
+      "{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\",\n"
+        + "  \"localEndpoint\": {\n"
+        + "    \"serviceName\": null,\n"
+        + "    \"port\": 65535\n"
+        + "  }\n"
+        + "}";
 
-    assertThat(parseString(SPAN_PARSER, json).localEndpoint())
-        .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
+    assertThat(parse(SPAN_PARSER, json).localEndpoint())
+      .isEqualTo(Endpoint.newBuilder().serviceName("").port(65535).build());
   }
 
   @Test
   public void span_readsTraceIdHighFromTraceIdField() throws IOException {
     String with128BitTraceId =
-        ("{\n"
-            + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\"\n"
-            + "}");
+      ("{\n"
+        + "  \"traceId\": \"48485a3953bb61246b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}");
     String withLower64bitsTraceId =
-        ("{\n"
-            + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
-            + "  \"name\": \"get-traces\",\n"
-            + "  \"id\": \"6b221d5bc9e6496c\"\n"
-            + "}");
+      ("{\n"
+        + "  \"traceId\": \"6b221d5bc9e6496c\",\n"
+        + "  \"name\": \"get-traces\",\n"
+        + "  \"id\": \"6b221d5bc9e6496c\"\n"
+        + "}");
 
-    assertThat(parseString(SPAN_PARSER, with128BitTraceId))
-        .isEqualTo(
-            parseString(JsonSerializers.SPAN_PARSER, withLower64bitsTraceId)
-              .toBuilder()
-              .traceId("48485a3953bb61246b221d5bc9e6496c")
-              .build());
+    assertThat(parse(SPAN_PARSER, with128BitTraceId))
+      .isEqualTo(
+        parse(JsonSerializers.SPAN_PARSER, withLower64bitsTraceId)
+          .toBuilder()
+          .traceId("48485a3953bb61246b221d5bc9e6496c")
+          .build());
   }
 
   @Test
-  public void dependencyLinkRoundTrip() throws IOException {
+  public void dependencyLinkRoundTrip() {
     DependencyLink link =
-        DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).build();
+      DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).build();
 
-    assertThat(parseBytes(JsonSerializers.DEPENDENCY_LINK_PARSER,
-      DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
+    assertThat(parse(JsonSerializers.DEPENDENCY_LINK_PARSER,
+      new String(DependencyLinkBytesEncoder.JSON_V1.encode(link), UTF_8))).isEqualTo(link);
   }
 
   @Test
-  public void dependencyLinkRoundTrip_withError() throws IOException {
+  public void dependencyLinkRoundTrip_withError() {
     DependencyLink link =
-        DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).errorCount(1).build();
+      DependencyLink.newBuilder().parent("foo").child("bar").callCount(2).errorCount(1).build();
 
-    assertThat(parseBytes(JsonSerializers.DEPENDENCY_LINK_PARSER,
-      DependencyLinkBytesEncoder.JSON_V1.encode(link))).isEqualTo(link);
+    assertThat(parse(JsonSerializers.DEPENDENCY_LINK_PARSER,
+      new String(DependencyLinkBytesEncoder.JSON_V1.encode(link), UTF_8))).isEqualTo(link);
   }
 
-  static <T> T parseString(JsonSerializers.ObjectParser<T> parser, String json) {
-    try {
-      JsonParser jsonParser = JsonSerializers.JSON_FACTORY.createParser(json);
-      jsonParser.nextToken();
-      return parser.parse(jsonParser);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  static <T> T parseBytes(JsonSerializers.ObjectParser<T> parser, byte[] json) {
+  static <T> T parse(JsonSerializers.ObjectParser<T> parser, String json) {
     try {
       JsonParser jsonParser = JsonSerializers.JSON_FACTORY.createParser(json);
       jsonParser.nextToken();
