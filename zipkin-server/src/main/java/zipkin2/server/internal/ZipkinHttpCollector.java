@@ -54,6 +54,7 @@ import zipkin2.storage.StorageComponent;
 
 import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
 import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
+import static zipkin2.Call.propagateIfFatal;
 import static zipkin2.server.internal.BodyIsExceptionMessage.testForUnexpectedFormat;
 
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
@@ -118,8 +119,9 @@ public class ZipkinHttpCollector {
       final HttpData content;
       try {
         content = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
-      } catch (IllegalArgumentException e) {
-        result.onError(e);
+      } catch (Throwable t1) {
+        propagateIfFatal(t1);
+        result.onError(t1);
         return null;
       }
 

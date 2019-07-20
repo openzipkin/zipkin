@@ -282,6 +282,7 @@ public abstract class Call<V> implements Cloneable {
           try {
             (mapped = flatMapper.map(value)).enqueue(callback);
           } catch (Throwable t) {
+            propagateIfFatal(t);
             callback.onError(t);
           }
         }
