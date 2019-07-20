@@ -87,8 +87,7 @@ public final class HttpCall<V> extends Call.Base<V> {
       } else {
         try {
           callback.onSuccess(parseResponse(response, bodyConverter));
-        } catch (Throwable e) {
-          Call.propagateIfFatal(e);
+        } catch (IOException e) {
           callback.onError(e);
         }
       }
