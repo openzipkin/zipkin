@@ -226,7 +226,6 @@ final class VersionSpecificTemplates {
 
   enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
     INSTANCE;
-
     @Override public Float convert(HttpData content) throws IOException {
       String body = content.toStringUtf8();
       JsonParser version = enterPath(JSON_FACTORY.createParser(body), "version", "number");

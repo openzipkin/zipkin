@@ -14,7 +14,6 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
@@ -43,7 +42,6 @@ public final class HttpCall<V> extends Call.Base<V> {
     /** Most convert with {@link HttpData#toStringUtf8()} or {@link #toInputStream(HttpData)} */
     V convert(HttpData content) throws IOException;
 
-    // TODO: once https://github.com/line/armeria/issues/1918 is done, switch back to an interface
     /** Use this when you don't need a string or only need to read the response once. */
     // TODO: once https://github.com/line/armeria/issues/1918 is done, switch back to an interface
     default InputStream toInputStream(HttpData content) {

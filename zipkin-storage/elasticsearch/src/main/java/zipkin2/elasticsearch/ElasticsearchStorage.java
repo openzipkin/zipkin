@@ -509,7 +509,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   ElasticsearchStorage() {
   }
 
-  static final BodyConverter<CheckResult> READ_STATUS = new BodyConverter<CheckResult> (){
+  static final BodyConverter<CheckResult> READ_STATUS = new BodyConverter<CheckResult>() {
     @Override public CheckResult convert(HttpData body) throws IOException {
       String result = body.toStringUtf8();
       JsonParser status = enterPath(JSON_FACTORY.createParser(result), "status");
@@ -522,7 +522,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       return CheckResult.OK;
     }
 
-    @Override  public String toString() {
+    @Override public String toString() {
       return "ReadStatus";
     }
   };

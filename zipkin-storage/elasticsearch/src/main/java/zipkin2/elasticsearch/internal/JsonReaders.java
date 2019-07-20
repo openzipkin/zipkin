@@ -111,7 +111,7 @@ public final class JsonReaders {
         throw new IllegalArgumentException("Expected start object, was " + currentToken);
       }
       return false;
-    } catch (JsonParseException e) { // likely not json
+    } catch (Throwable e) { // likely not json
       if (shouldThrow) throw e;
       return false;
     }

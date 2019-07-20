@@ -27,11 +27,7 @@ import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 final class BodyConverters {
-  static final BodyConverter<Object> NULL = new BodyConverter<Object>() {
-    @Override public Object convert(HttpData content) {
-      return null;
-    }
-  };
+  static final BodyConverter<Object> NULL = content -> null;
   static final BodyConverter<List<String>> KEYS = new BodyConverter<List<String>>() {
     @Override public List<String> convert(HttpData content) throws IOException {
       return collectValuesNamed(JSON_FACTORY.createParser(toInputStream(content)), "key");

@@ -107,10 +107,8 @@ public class HttpCallTest {
   @Test public void executionException_conversionException() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(REQUEST, new HttpCall.BodyConverter<Object>() {
-      @Override public Object convert(HttpData content) {
-        throw new IllegalArgumentException("eeek");
-      }
+    Call<?> call = http.newCall(REQUEST, content -> {
+      throw new IllegalArgumentException("eeek");
     });
 
     try {
@@ -124,11 +122,7 @@ public class HttpCallTest {
   @Test public void cloned() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(REQUEST, new HttpCall.BodyConverter<Object>() {
-      @Override public Object convert(HttpData content) {
-        return null;
-      }
-    });
+    Call<?> call = http.newCall(REQUEST, content -> null);
     call.execute();
 
     try {
