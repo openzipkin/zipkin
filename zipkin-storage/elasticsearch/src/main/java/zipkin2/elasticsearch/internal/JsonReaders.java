@@ -24,7 +24,6 @@ import java.util.Set;
 import zipkin2.internal.Nullable;
 
 public final class JsonReaders {
-
   /**
    * Navigates to a field of a JSON-serialized object. For example,
    *
@@ -39,7 +38,7 @@ public final class JsonReaders {
   }
 
   @Nullable public static JsonParser enterPath(JsonParser parser, String path) throws IOException {
-    if (!currentOrNextTokenEquals(parser, JsonToken.START_OBJECT)) return null;
+    if (!checkStartObject(parser, false)) return null;
 
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
@@ -56,31 +55,15 @@ public final class JsonReaders {
     return null;
   }
 
-  static boolean currentOrNextTokenEquals(JsonParser parser, JsonToken expected)
-    throws IOException {
-    try {
-      // The parser may not be at a token, yet. If that's the case advance.
-      if (parser.currentToken() == null) return parser.nextToken() == expected;
-      // If we are still not at the expected token, we could be an another or an empty body.
-      return parser.currentToken() == expected;
-    } catch (JsonParseException e) { // likely not json
-      return false;
-    }
-  }
-
   public static List<String> collectValuesNamed(JsonParser parser, String name) throws IOException {
-    if (!currentOrNextTokenEquals(parser, JsonToken.START_OBJECT)) {
-      throw new IllegalArgumentException("Expecting object start, got " + parser.currentToken());
-    }
+    checkStartObject(parser, true);
     Set<String> result = new LinkedHashSet<>();
     visitObject(parser, name, result);
     return new ArrayList<>(result);
   }
 
   static void visitObject(JsonParser parser, String name, Set<String> result) throws IOException {
-    if (!currentOrNextTokenEquals(parser, JsonToken.START_OBJECT)) {
-      throw new IllegalArgumentException("Expecting object start, got " + parser.currentToken());
-    }
+    checkStartObject(parser, true);
     JsonToken value;
     while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
       if (value == null) {
@@ -113,6 +96,24 @@ public final class JsonReaders {
         break;
       default:
         // Skip current value.
+    }
+  }
+
+  static boolean checkStartObject(JsonParser parser, boolean shouldThrow) throws IOException {
+    try {
+      JsonToken currentToken = parser.currentToken();
+      // The parser may not be at a token, yet. If that's the case advance.
+      if (currentToken == null) currentToken = parser.nextToken();
+
+      // If we are still not at the expected token, we could be an another or an empty body.
+      if (currentToken == JsonToken.START_OBJECT) return true;
+      if (shouldThrow) {
+        throw new IllegalArgumentException("Expected start object, was " + currentToken);
+      }
+      return false;
+    } catch (JsonParseException e) { // likely not json
+      if (shouldThrow) throw e;
+      return false;
     }
   }
 
