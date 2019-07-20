@@ -457,7 +457,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     final String clientUrl;
     if (endpointGroup != null) {
-      HttpHealthCheckedEndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
+      EndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
         endpointGroup, "/_cluster/health")
         .protocol(SessionProtocol.valueOf(urls.get(0).getProtocol().toUpperCase(Locale.ROOT)))
         .clientFactory(clientFactory())
@@ -465,7 +465,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
           clientCustomizer().accept(options);
           return options;
         })
-        .build();
+        .build()
+        // Even if all the health check requests are failing, we want to go ahead and try to send
+        // the request to an endpoint anyways. This will generally only be when the server is
+        // starting.
+        .orElse(endpointGroup);
       EndpointGroupRegistry.register(
         "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
