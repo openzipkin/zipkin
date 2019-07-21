@@ -43,11 +43,7 @@ public final class JsonSerializers {
     T parse(JsonParser jsonParser) throws IOException;
   }
 
-  public static final ObjectParser<Span> SPAN_PARSER = new ObjectParser<Span>() {
-    @Override public Span parse(JsonParser jsonParser) throws IOException {
-      return parseSpan(jsonParser);
-    }
-  };
+  public static final ObjectParser<Span> SPAN_PARSER = JsonSerializers::parseSpan;
 
   static Span parseSpan(JsonParser parser) throws IOException {
     if (!parser.isExpectedStartObjectToken()) {
