@@ -142,9 +142,9 @@ public class ElasticsearchStorageTest {
       + "  \"active_shards_percent_as_number\": 50\n"
       + "}");
 
-  static final AggregatedHttpResponse HEALTH_RESPONSE_UNAUTHORIZED = AggregatedHttpResponse.of(
+  static final AggregatedHttpResponse RESPONSE_UNAUTHORIZED = AggregatedHttpResponse.of(
     HttpStatus.UNAUTHORIZED,
-    MediaType.JSON_UTF_8,
+    MediaType.JSON_UTF_8, // below is actual message from Amazon
     "{\"Message\":\"User: anonymous is not authorized to perform: es:ESHttpGet\"}}");
 
   @Test
@@ -156,9 +156,12 @@ public class ElasticsearchStorageTest {
 
   @Test
   public void check_unauthorized() {
-    MOCK_RESPONSES.add(HEALTH_RESPONSE_UNAUTHORIZED);
+    MOCK_RESPONSES.add(RESPONSE_UNAUTHORIZED);
 
-    assertThat(storage.check().ok()).isFalse();
+    CheckResult result = storage.check();
+    assertThat(result.ok()).isFalse();
+    assertThat(result.error().getMessage())
+      .isEqualTo("User: anonymous is not authorized to perform: es:ESHttpGet");
   }
 
   @Test
@@ -220,7 +223,7 @@ public class ElasticsearchStorageTest {
     // Ensure the EndpointGroup check is also SSL
     assertThat(CAPTURED_HEALTH_CONTEXTS.take().sessionProtocol().isTls()).isTrue();
 
-    MOCK_RESPONSES.add(HEALTH_RESPONSE_UNAUTHORIZED);
+    MOCK_RESPONSES.add(RESPONSE_UNAUTHORIZED);
 
     assertThat(storage.check().ok()).isFalse();
   }

@@ -26,6 +26,7 @@ import java.util.function.Function;
  * A simple decorator to record raw content strings into HTTP logs. By default, Armeria only logs
  * RPC request / responses, not raw HTTP client content.
  */
+// TODO: unit test coverage
 public class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
 
   public static Function<Client<HttpRequest, HttpResponse>, Client<HttpRequest, HttpResponse>>
