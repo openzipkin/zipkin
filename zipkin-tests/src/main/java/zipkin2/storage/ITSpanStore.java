@@ -154,7 +154,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    * exists, it is known not all backends will be able to cheaply make it pass. In other words, it
    * is optional.
    */
-  @Test void deduplicates() throws IOException {
+  @Test public void deduplicates() throws IOException {
     // simulate a re-processed message
     accept(LOTS_OF_SPANS[0]);
     accept(LOTS_OF_SPANS[0]);
