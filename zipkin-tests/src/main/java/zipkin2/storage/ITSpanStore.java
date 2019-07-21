@@ -24,8 +24,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.Endpoint;
@@ -49,19 +48,9 @@ import static zipkin2.TestObjects.TRACE_STARTTS;
  *
  * <p>Subtypes should create a connection to a real backend, even if that backend is in-process.
  */
-public abstract class ITSpanStore {
+public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<T> {
 
-  /** Should maintain state between multiple calls within a test. */
-  protected abstract StorageComponent storage();
-
-  protected SpanStore store() {
-    return storage().spanStore();
-  }
-
-  /** Clears store between tests. */
-  @Before public abstract void clear() throws Exception;
-
-  @Test public void getTrace_considersBitsAbove64bit() throws IOException {
+  @Test void getTrace_considersBitsAbove64bit() throws IOException {
     // 64-bit trace ID
     Span span1 = Span.newBuilder().traceId(CLIENT_SPAN.traceId().substring(16)).id("1").build();
     // 128-bit trace ID prefixed by above
@@ -77,7 +66,7 @@ public abstract class ITSpanStore {
     }
   }
 
-  @Test public void getTrace_returnsEmptyOnNotFound() throws IOException {
+  @Test void getTrace_returnsEmptyOnNotFound() throws IOException {
     assertThat(store().getTrace(CLIENT_SPAN.traceId()).execute())
       .isEmpty();
 
@@ -91,7 +80,7 @@ public abstract class ITSpanStore {
   }
 
   /** This would only happen when the store layer is bootstrapping, or has been purged. */
-  @Test public void allShouldWorkWhenEmpty() throws IOException {
+  @Test void allShouldWorkWhenEmpty() throws IOException {
     QueryRequest.Builder q = requestBuilder().serviceName("service");
     assertThat(store().getTraces(q.build()).execute()).isEmpty();
     assertThat(store().getTraces(q.remoteServiceName("remotey").build()).execute()).isEmpty();
@@ -101,14 +90,14 @@ public abstract class ITSpanStore {
   }
 
   /** This is unlikely and means instrumentation sends empty spans by mistake. */
-  @Test public void allShouldWorkWhenNoIndexableDataYet() throws IOException {
+  @Test void allShouldWorkWhenNoIndexableDataYet() throws IOException {
     accept(Span.newBuilder().traceId("1").id("1").build());
 
     allShouldWorkWhenEmpty();
   }
 
-  @Test public void consumer_properlyImplementsCallContract_execute() throws IOException {
-    Call<Void> call = storage().spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
+  @Test void consumer_properlyImplementsCallContract_execute() throws IOException {
+    Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
 
     // Ensure the implementation didn't accidentally do I/O at assembly time.
     assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
@@ -127,8 +116,8 @@ public abstract class ITSpanStore {
     call.clone().execute();
   }
 
-  @Test public void consumer_properlyImplementsCallContract_submit() throws Exception {
-    Call<Void> call = storage().spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
+  @Test void consumer_properlyImplementsCallContract_submit() throws Exception {
+    Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
     // Ensure the implementation didn't accidentally do I/O at assembly time.
     assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
 
@@ -165,7 +154,7 @@ public abstract class ITSpanStore {
    * exists, it is known not all backends will be able to cheaply make it pass. In other words, it
    * is optional.
    */
-  @Test public void deduplicates() throws IOException {
+  @Test void deduplicates() throws IOException {
     // simulate a re-processed message
     accept(LOTS_OF_SPANS[0]);
     accept(LOTS_OF_SPANS[0]);
@@ -174,7 +163,7 @@ public abstract class ITSpanStore {
       .containsExactly(LOTS_OF_SPANS[0]);
   }
 
-  @Test public void getTraces_groupsTracesTogether() throws IOException {
+  @Test void getTraces_groupsTracesTogether() throws IOException {
     Span traceASpan1 = Span.newBuilder()
       .traceId("a")
       .id("1")
@@ -192,7 +181,7 @@ public abstract class ITSpanStore {
         asList(traceBSpan1, traceBSpan2));
   }
 
-  @Test public void getTraces_considersBitsAbove64bit() throws IOException {
+  @Test void getTraces_considersBitsAbove64bit() throws IOException {
     // 64-bit trace ID
     Span span1 = Span.newBuilder().traceId(CLIENT_SPAN.traceId().substring(16)).id("1")
       .putTag("foo", "1")
@@ -214,7 +203,7 @@ public abstract class ITSpanStore {
     }
   }
 
-  @Test public void getTraces_filteringMatchesMostRecentTraces() throws Exception {
+  @Test void getTraces_filteringMatchesMostRecentTraces() throws Exception {
     List<Endpoint> endpoints = IntStream.rangeClosed(1, 10)
       .mapToObj(i -> Endpoint.newBuilder().serviceName("service" + i).ip("127.0.0.1").build())
       .collect(Collectors.toList());
@@ -255,7 +244,7 @@ public abstract class ITSpanStore {
       .containsExactly(earlyTraces);
   }
 
-  @Test public void getTraces_serviceNames() throws Exception {
+  @Test void getTraces_serviceNames() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -281,7 +270,7 @@ public abstract class ITSpanStore {
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_serviceNames_mixedTraceIdLength() throws Exception {
+  @Test void getTraces_serviceNames_mixedTraceIdLength() throws Exception {
     // add a trace with the same trace ID truncated to 64 bits, except different service names.
     accept(CLIENT_SPAN.toBuilder()
       .traceId(CLIENT_SPAN.traceId().substring(16))
@@ -292,7 +281,7 @@ public abstract class ITSpanStore {
     getTraces_serviceNames();
   }
 
-  @Test public void getTraces_spanName() throws Exception {
+  @Test void getTraces_spanName() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -318,7 +307,7 @@ public abstract class ITSpanStore {
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_spanName_mixedTraceIdLength() throws Exception {
+  @Test void getTraces_spanName_mixedTraceIdLength() throws Exception {
     // add a trace with the same trace ID truncated to 64 bits, except the span name.
     accept(CLIENT_SPAN.toBuilder()
       .traceId(CLIENT_SPAN.traceId().substring(16))
@@ -328,7 +317,7 @@ public abstract class ITSpanStore {
     getTraces_spanName();
   }
 
-  @Test public void getTraces_tags() throws Exception {
+  @Test void getTraces_tags() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -340,7 +329,7 @@ public abstract class ITSpanStore {
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_minDuration() throws Exception {
+  @Test void getTraces_minDuration() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -353,7 +342,7 @@ public abstract class ITSpanStore {
   }
 
   // pretend we had a late update of only timestamp/duration info
-  @Test public void getTraces_lateDuration() throws Exception {
+  @Test void getTraces_lateDuration() throws Exception {
     Span missingDuration = CLIENT_SPAN.toBuilder().duration(0L).build();
     Span lateDuration = Span.newBuilder()
       .traceId(CLIENT_SPAN.traceId())
@@ -374,7 +363,7 @@ public abstract class ITSpanStore {
       .build()).execute()).flatExtracting(Trace::merge).containsExactly(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_maxDuration() throws Exception {
+  @Test void getTraces_maxDuration() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -393,7 +382,7 @@ public abstract class ITSpanStore {
    *
    * <p>Notably this guards empty tag values work
    */
-  @Test public void readback_minimalErrorSpan() throws Exception {
+  @Test void readback_minimalErrorSpan() throws Exception {
     String serviceName = "isao01";
     Span errorSpan = Span.newBuilder()
       .traceId("dc955a1d4768875d")
@@ -423,7 +412,7 @@ public abstract class ITSpanStore {
   /**
    * While large spans are discouraged, and maybe not indexed, we should be able to read them back.
    */
-  @Test public void readsBackLargeValues() throws IOException {
+  @Test void readsBackLargeValues() throws IOException {
     char[] kilobyteOfText = new char[1024];
     Arrays.fill(kilobyteOfText, 'a');
 
@@ -450,7 +439,7 @@ public abstract class ITSpanStore {
    *   <li>tag with nested dots (can be confused as nested objects)</li>
    * </ul>
    */
-  @Test public void spanWithProblematicData() throws IOException {
+  @Test void spanWithProblematicData() throws IOException {
     String json = "{\"foo\":\"bar\"}";
     Span spanWithProblematicData = CLIENT_SPAN.toBuilder().name(json)
       .putTag("http.path", "/api")
@@ -472,7 +461,7 @@ public abstract class ITSpanStore {
    * Formerly, a bug was present where cassandra didn't index more than bucket count traces per
    * millisecond. This stores a lot of spans to ensure indexes work under high-traffic scenarios.
    */
-  @Test public void getTraces_manyTraces() throws IOException {
+  @Test void getTraces_manyTraces() throws IOException {
     int traceCount = 1000;
     Span span = LOTS_OF_SPANS[0];
     Map.Entry<String, String> tag = span.tags().entrySet().iterator().next();
@@ -501,7 +490,7 @@ public abstract class ITSpanStore {
   }
 
   /** Shows that duration queries go against the root span, not the child */
-  @Test public void getTraces_duration() throws IOException {
+  @Test void getTraces_duration() throws IOException {
     setupDurationData();
 
     QueryRequest.Builder q = requestBuilder().endTs(TODAY).lookback(DAY); // instead of since epoch
@@ -542,7 +531,7 @@ public abstract class ITSpanStore {
    * Spans and traces are meaningless unless they have a timestamp. While unlikely, this could
    * happen if a binary annotation is logged before a timestamped one is.
    */
-  @Test public void getTraces_absentWhenNoTimestamp() throws IOException {
+  @Test void getTraces_absentWhenNoTimestamp() throws IOException {
     // Index the service name but no timestamp of any sort
     accept(Span.newBuilder()
       .traceId(CLIENT_SPAN.traceId())
@@ -592,7 +581,7 @@ public abstract class ITSpanStore {
     ).execute()).isNotEmpty();
   }
 
-  @Test public void getTraces_annotation() throws IOException {
+  @Test void getTraces_annotation() throws IOException {
     accept(CLIENT_SPAN);
 
     // fetch by time based annotation, find trace
@@ -613,7 +602,7 @@ public abstract class ITSpanStore {
     ).execute()).isNotEmpty();
   }
 
-  @Test public void getTraces_multipleAnnotationsBecomeAndFilter() throws IOException {
+  @Test void getTraces_multipleAnnotationsBecomeAndFilter() throws IOException {
     Span foo = Span.newBuilder().traceId("1").name("call1").id(1)
       .timestamp((TODAY + 1) * 1000L)
       .localEndpoint(FRONTEND)
@@ -669,7 +658,7 @@ public abstract class ITSpanStore {
   }
 
   /** This test makes sure that annotation queries pay attention to which host recorded data */
-  @Test public void getTraces_differentiateOnServiceName() throws IOException {
+  @Test void getTraces_differentiateOnServiceName() throws IOException {
     Span trace1 = Span.newBuilder().traceId("1").name("1").id(1)
       .kind(Span.Kind.CLIENT)
       .timestamp((TODAY + 1) * 1000L)
@@ -768,7 +757,7 @@ public abstract class ITSpanStore {
   }
 
   /** limit should apply to traces closest to endTs */
-  @Test public void getTraces_limit() throws IOException {
+  @Test void getTraces_limit() throws IOException {
     Span span1 = Span.newBuilder()
       .traceId("a")
       .id("1")
@@ -785,7 +774,7 @@ public abstract class ITSpanStore {
   }
 
   /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
-  @Test public void getTraces_endTsAndLookback() throws IOException {
+  @Test void getTraces_endTsAndLookback() throws IOException {
     Span span1 = Span.newBuilder()
       .traceId("a")
       .id("1")
@@ -821,7 +810,7 @@ public abstract class ITSpanStore {
   }
 
   // Bugs have happened in the past where trace limit was mistaken for span count.
-  @Test public void traceWithManySpans() throws IOException {
+  @Test void traceWithManySpans() throws IOException {
     Span[] trace = new Span[101];
     trace[0] = Span.newBuilder().traceId("f66529c8cc356aa0").id("93288b4644570496").name("get")
       .timestamp(TODAY * 1000).duration(350 * 1000L)
@@ -845,7 +834,7 @@ public abstract class ITSpanStore {
       .containsExactlyInAnyOrder(trace);
   }
 
-  @Test public void names_goLowercase() throws IOException {
+  @Test void names_goLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(
@@ -861,7 +850,7 @@ public abstract class ITSpanStore {
   }
 
   /** Ensure complete traces are aggregated, even if they complete after endTs */
-  @Test public void getTraces_endTsInsideTheTrace() throws IOException {
+  @Test void getTraces_endTsInsideTheTrace() throws IOException {
     accept(TRACE);
 
     assertThat(sortTraces(store().getTraces(
@@ -870,11 +859,11 @@ public abstract class ITSpanStore {
   }
 
   protected void accept(List<Span> spans) throws IOException {
-    storage().spanConsumer().accept(spans).execute();
+    storage.spanConsumer().accept(spans).execute();
   }
 
   protected void accept(Span... spans) throws IOException {
-    storage().spanConsumer().accept(asList(spans)).execute();
+    storage.spanConsumer().accept(asList(spans)).execute();
   }
 
   void setupDurationData() throws IOException {

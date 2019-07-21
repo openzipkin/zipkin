@@ -14,14 +14,9 @@
 package zipkin2.storage;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.List;
-import org.junit.AssumptionViolatedException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-import zipkin2.CheckResult;
+import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 
@@ -33,32 +28,9 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p>Subtypes should create a connection to a real backend, even if that backend is in-process.
  */
-public abstract class ITAutocompleteTags {
-  protected StorageComponent storage;
+public abstract class ITAutocompleteTags<T extends StorageComponent> extends ITStorage<T> {
 
-  @Before public void before() {
-    storage = storageBuilder().autocompleteKeys(asList("http.host")).build();
-    CheckResult check = storage.check();
-    if (!check.ok()) {
-      throw new AssumptionViolatedException(check.error().getMessage(), check.error());
-    }
-  }
-
-  @After public void after() throws Exception {
-    clear();
-    try {
-      storage.close();
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
-  }
-
-  protected abstract StorageComponent.Builder storageBuilder();
-
-  /** Clears store between tests. */
-  public abstract void clear() throws Exception;
-
-  @Test public void Should_not_store_when_key_not_in_autocompleteTags() throws IOException {
+  @Test void Should_not_store_when_key_not_in_autocompleteTags() throws IOException {
     accept(TestObjects.LOTS_OF_SPANS[0].toBuilder()
       .timestamp(Instant.now().toEpochMilli())
       .putTag("http.method", "GET")
@@ -69,7 +41,7 @@ public abstract class ITAutocompleteTags {
     assertThat(storage.autocompleteTags().getValues("http.method").execute()).isEmpty();
   }
 
-  @Test public void getTagsAndValues() throws IOException {
+  @Test void getTagsAndValues() throws IOException {
     for (int i = 0; i < 2; i++) {
       accept(TestObjects.LOTS_OF_SPANS[i].toBuilder()
         .putTag("http.method", "GET")
