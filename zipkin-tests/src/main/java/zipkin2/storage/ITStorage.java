@@ -3,6 +3,7 @@ package zipkin2.storage;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInstance;
 import zipkin2.CheckResult;
 
@@ -15,6 +16,20 @@ public abstract class ITStorage<T extends StorageComponent> {
   protected T storage;
 
   @BeforeAll void initializeStorage() {
+    if (initializeStoragePerTest()) {
+      return;
+    }
+    doInitializeStorage();
+  }
+
+  @BeforeEach void initializeStorageForTest() {
+    if (!initializeStoragePerTest()) {
+      return;
+    }
+    doInitializeStorage();
+  }
+
+  void doInitializeStorage() {
     // TODO(anuraaga): It wouldn't be difficult to allow storage builders to be parameterized by
     // their storage type.
     @SuppressWarnings("unchecked")
@@ -27,11 +42,25 @@ public abstract class ITStorage<T extends StorageComponent> {
   }
 
   @AfterAll void closeStorage() throws Exception {
+    if (initializeStoragePerTest()) {
+      return;
+    }
+    storage.close();
+  }
+
+  @AfterEach void closeStorageForTest() throws Exception {
+    if (!initializeStoragePerTest()) {
+      return;
+    }
     storage.close();
   }
 
   @AfterEach void clearStorage() throws Exception {
     clear();
+  }
+
+  protected boolean initializeStoragePerTest() {
+    return false;
   }
 
   protected abstract StorageComponent.Builder storageBuilder();

@@ -18,7 +18,7 @@ import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.List;
-import org.junit.rules.TestName;
+import java.util.UUID;
 import zipkin2.DependencyLink;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -38,8 +38,8 @@ class InternalForTests {
     }
   }
 
-  static String keyspace(TestName testName) {
-    String result = testName.getMethodName().toLowerCase();
+  static String randomKeyspace() {
+    String result = "z" + UUID.randomUUID().toString().toLowerCase().replace('-', '_');
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
   }
 

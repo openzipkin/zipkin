@@ -22,15 +22,11 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
@@ -43,35 +39,30 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.storage.cassandra.InternalForTests.dropKeyspace;
-import static zipkin2.storage.cassandra.InternalForTests.keyspace;
+import static zipkin2.storage.cassandra.InternalForTests.randomKeyspace;
 import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 
-@RunWith(Enclosed.class)
-public class ITCassandraStorage {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class ITCassandraStorage {
 
-  static CassandraStorageRule classRule() {
-    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.14.2", "test_cassandra3");
-  }
+  @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
+    "openzipkin/zipkin-cassandra:2.14.2");
 
-  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
-    CassandraStorage storage;
-
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
+  @Nested
+  class ITSpanStore extends zipkin2.storage.ITSpanStore<CassandraStorage> {
+    @Override protected boolean initializeStoragePerTest() {
+      return true;
     }
 
-    @After public void disconnect() {
-      storage.close();
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return backend.computeStorageBuilder().keyspace(randomKeyspace());
     }
 
-    @Override protected StorageComponent storage() {
-      return storage;
+    @Override public void clear() {
+      dropKeyspace(backend.session(), storage.keyspace());
     }
 
-    @Test public void overFetchesToCompensateForDuplicateIndexData() throws IOException {
+    @Test void overFetchesToCompensateForDuplicateIndexData() throws IOException {
       int traceCount = 2000;
 
       List<Span> spans = new ArrayList<>();
@@ -90,7 +81,7 @@ public class ITCassandraStorage {
 
       // Index ends up containing more rows than services * trace count, and cannot be de-duped
       // in a server-side query.
-      int localServiceCount = storage().serviceAndSpanNames().getServiceNames().execute().size();
+      int localServiceCount = storage.serviceAndSpanNames().getServiceNames().execute().size();
       assertThat(storage
         .session()
         .execute("SELECT COUNT(*) from trace_by_service_span")
@@ -106,7 +97,7 @@ public class ITCassandraStorage {
         .hasSize(traceCount);
     }
 
-    @Test public void searchingByAnnotationShouldFilterBeforeLimiting() throws IOException {
+    @Test void searchingByAnnotationShouldFilterBeforeLimiting() throws IOException {
       int queryLimit = 2;
       int nbTraceFetched = queryLimit * storage.indexFetchMultiplier();
 
@@ -143,137 +134,84 @@ public class ITCassandraStorage {
       }
     }
 
-    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
-    }
-
-    @Before @Override public void clear() {
-      dropKeyspace(backend.session(), keyspace(testName));
+    @Override @Test @Disabled("No consumer-side span deduplication") public void deduplicates() {
     }
   }
 
-  public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
-    CassandraStorage storage;
-
-    @Before public void connect() {
-      storage =
-        backend.computeStorageBuilder().keyspace(keyspace(testName)).searchEnabled(false).build();
+  @Nested
+  class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<CassandraStorage> {
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return backend.computeStorageBuilder().keyspace(randomKeyspace()).searchEnabled(false);
     }
 
-    @After public void disconnect() {
-      storage.close();
+    @Override public void clear() {
+      dropKeyspace(backend.session(), storage.keyspace());
     }
 
-    @Test public void doesntCreateIndexes() {
+    @Test void doesntCreateIndexes() {
       KeyspaceMetadata metadata =
-        storage.session().getCluster().getMetadata().getKeyspace(keyspace(testName));
+        storage.session().getCluster().getMetadata().getKeyspace(randomKeyspace());
 
       assertThat(metadata.getTable("trace_by_service_span")).isNull();
       assertThat(metadata.getTable("span_by_service")).isNull();
     }
-
-    @Override protected StorageComponent storage() {
-      return storage;
-    }
-
-    @Before @Override public void clear() {
-      dropKeyspace(backend.session(), keyspace(testName));
-    }
   }
 
-  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
-    CassandraStorage storageBeforeSwitch, storage;
-
-    @Before public void connect() {
-      storageBeforeSwitch =
-        backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
-      storage =
-        backend.computeStorageBuilder().keyspace(keyspace(testName)).strictTraceId(false).build();
-    }
-
-    @After public void disconnect() {
-      storage.close();
-    }
-
-    /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
-    @Test public void getTraces_128BitTraceId() throws IOException {
-      getTraces_128BitTraceId(accept128BitTrace(storageBeforeSwitch));
-    }
-
-    /** Ensures data written before strict trace ID was enabled can be read */
-    @Test public void getTrace_retrievesBy128BitTraceId_afterSwitch() throws IOException {
-      List<Span> trace = accept128BitTrace(storageBeforeSwitch);
-
-      assertThat(store().getTrace(trace.get(0).traceId()).execute())
-        .containsOnlyElementsOf(trace);
-    }
-
-    @Override protected StorageComponent storage() {
-      return storage;
-    }
-
-    @Before @Override public void clear() {
-      dropKeyspace(backend.session(), keyspace(testName));
-    }
-  }
-
-  public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
-    CassandraStorage storage;
-
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
-    }
-
-    @After public void disconnect() {
-      storage.close();
-    }
-
-    @Override protected StorageComponent storage() {
-      return storage;
-    }
-
-    @Before @Override public void clear() {
-      dropKeyspace(backend.session(), keyspace(testName));
-    }
-  }
-
-  public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
+  @Nested
+  class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<CassandraStorage> {
     @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().keyspace(keyspace(testName));
+      return backend.computeStorageBuilder().keyspace(randomKeyspace()).strictTraceId(false);
     }
 
     @Override public void clear() {
-      dropKeyspace(backend.session(), keyspace(testName));
+      dropKeyspace(backend.session(), storage.keyspace());
+    }
+
+    /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
+    // @Test public void getTraces_128BitTraceId() throws IOException {
+    //   getTraces_128BitTraceId(accept128BitTrace(storageBeforeSwitch));
+    // }
+
+    /** Ensures data written before strict trace ID was enabled can be read */
+    // @Test public void getTrace_retrievesBy128BitTraceId_afterSwitch() throws IOException {
+    //   List<Span> trace = accept128BitTrace(storageBeforeSwitch);
+    //
+    //   assertThat(store().getTrace(trace.get(0).traceId()).execute())
+    //     .containsOnlyElementsOf(trace);
+    // }
+  }
+
+  @Nested
+  class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<CassandraStorage> {
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return backend.computeStorageBuilder().keyspace(randomKeyspace());
+    }
+
+    @Override public void clear() {
+      dropKeyspace(backend.session(), storage.keyspace());
     }
   }
 
-  public static class ITDependencies extends zipkin2.storage.ITDependencies {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
-    CassandraStorage storage;
-
-    @Before public void connect() {
-      storage = backend.computeStorageBuilder().keyspace(keyspace(testName)).build();
+  @Nested
+  class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<CassandraStorage> {
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return backend.computeStorageBuilder().keyspace(randomKeyspace())
+        .autocompleteKeys(asList("http.host"));
     }
 
-    @After public void disconnect() {
-      storage.close();
+    @Override public void clear() {
+      dropKeyspace(backend.session(), storage.keyspace());
+    }
+  }
+
+  @Nested
+  class ITDependencies extends zipkin2.storage.ITDependencies<CassandraStorage> {
+    @Override protected StorageComponent.Builder storageBuilder() {
+      return backend.computeStorageBuilder().keyspace(randomKeyspace());
     }
 
-    @Override protected StorageComponent storage() {
-      return storage;
+    @Override public void clear() {
+      dropKeyspace(backend.session(), storage.keyspace());
     }
 
     /**
@@ -284,18 +222,12 @@ public class ITCassandraStorage {
       aggregateLinks(spans).forEach(
         (midnight, links) -> writeDependencyLinks(storage, links, midnight));
     }
-
-    @Before @Override public void clear() {
-      dropKeyspace(backend.session(), keyspace(testName));
-    }
   }
 
-  public static class ITEnsureSchema extends zipkin2.storage.cassandra.ITEnsureSchema {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
+  @Nested
+  class ITEnsureSchema extends zipkin2.storage.cassandra.ITEnsureSchema {
     @Override protected String keyspace() {
-      return InternalForTests.keyspace(testName);
+      return InternalForTests.randomKeyspace();
     }
 
     @Override protected Session session() {
@@ -307,12 +239,10 @@ public class ITCassandraStorage {
     }
   }
 
-  public static class ITSpanConsumer extends zipkin2.storage.cassandra.ITSpanConsumer {
-    @ClassRule public static CassandraStorageRule backend = classRule();
-    @Rule public TestName testName = new TestName();
-
+  @Nested
+  class ITSpanConsumer extends zipkin2.storage.cassandra.ITSpanConsumer {
     @Override protected String keyspace() {
-      return InternalForTests.keyspace(testName);
+      return InternalForTests.randomKeyspace();
     }
 
     @Override CassandraStorage.Builder storageBuilder() {

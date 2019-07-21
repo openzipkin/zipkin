@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
 import org.junit.AssumptionViolatedException;
-import org.junit.rules.ExternalResource;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.rnorth.ducttape.unreliables.Unreliables;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,26 +32,28 @@ import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.traits.LinkableContainer;
 
-public class CassandraStorageRule extends ExternalResource {
-  static final Logger LOGGER = LoggerFactory.getLogger(CassandraStorageRule.class);
+public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
+  static final Logger LOGGER = LoggerFactory.getLogger(CassandraStorageExtension.class);
   static final int CASSANDRA_PORT = 9042;
   final String image;
-  final String keyspace;
   CassandraContainer container;
   Session session;
   Closer closer = Closer.create();
 
-  public CassandraStorageRule(String image, String keyspace) {
+  public CassandraStorageExtension(String image) {
     this.image = image;
-    this.keyspace = keyspace;
   }
 
   public Session session() {
     return session;
   }
 
-  @Override
-  protected void before() throws Throwable {
+  @Override public void beforeAll(ExtensionContext context) throws Exception {
+    if (context.getRequiredTestClass().getEnclosingClass() != null) {
+      // Only run once in outermost scope.
+      return;
+    }
+
     if (!"true".equals(System.getProperty("docker.skip"))) {
       try {
         LOGGER.info("Starting docker image " + image);
@@ -85,12 +89,12 @@ public class CassandraStorageRule extends ExternalResource {
     return session;
   }
 
-  public CassandraStorage.Builder computeStorageBuilder() {
+  CassandraStorage.Builder computeStorageBuilder() {
     InetSocketAddress contactPoint = contactPoint();
     return CassandraStorage.newBuilder()
         .contactPoints(contactPoint.getHostString() + ":" + contactPoint.getPort())
         .ensureSchema(true)
-        .keyspace(keyspace);
+        .keyspace(InternalForTests.randomKeyspace());
   }
 
   InetSocketAddress contactPoint() {
@@ -102,8 +106,14 @@ public class CassandraStorageRule extends ExternalResource {
     }
   }
 
-  @Override
-  protected void after() {
+  @Override public void afterAll(ExtensionContext context) {
+    if (context.getRequiredTestClass().getEnclosingClass() != null) {
+      // Only run once in outermost scope.
+      return;
+    }
+
+    if (container != null) container.stop();
+
     try {
       closer.close();
     } catch (Exception | Error e) {
