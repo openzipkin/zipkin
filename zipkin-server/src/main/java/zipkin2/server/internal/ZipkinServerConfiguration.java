@@ -16,11 +16,7 @@ package zipkin2.server.internal;
 import brave.Tracing;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.RedirectService;
-import com.linecorp.armeria.server.Service;
-import com.linecorp.armeria.server.brave.BraveService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
@@ -28,8 +24,6 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import java.time.Duration;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -72,16 +66,13 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Autowired(required = false)
   MetricsHealthController healthController;
 
-  @Bean ArmeriaServerConfigurator serverConfigurator(Optional<Tracing> tracing) {
+  @Bean ArmeriaServerConfigurator serverConfigurator() {
     return sb -> {
-      Function<Service<HttpRequest, HttpResponse>, ? extends Service<HttpRequest, HttpResponse>>
-        tracingDecorator =
-        tracing.isPresent() ? BraveService.newDecorator(tracing.get()) : Function.identity();
       if (httpQuery != null) {
-        sb.annotatedService(httpQuery, tracingDecorator);
-        sb.annotatedService("/zipkin", httpQuery, tracingDecorator); // For UI.
+        sb.annotatedService(httpQuery);
+        sb.annotatedService("/zipkin", httpQuery); // For UI.
       }
-      if (httpCollector != null) sb.annotatedService(httpCollector, tracingDecorator);
+      if (httpCollector != null) sb.annotatedService(httpCollector);
       if (healthController != null) sb.annotatedService(healthController);
       // Redirects the prometheus scrape endpoint for backward compatibility
       sb.service("/prometheus", new RedirectService("/actuator/prometheus"));
