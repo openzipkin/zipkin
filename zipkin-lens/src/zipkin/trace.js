@@ -267,10 +267,16 @@ function addLayoutDetails(
 }
 
 export function rootServiceAndSpanName(root) {
-  const { span } = root.queueRootMostSpans().shift();
+  const { span } = root;
+  if (span) {
+    return {
+      serviceName: getServiceName(span.localEndpoint) || getServiceName(span.remoteEndpoint),
+      spanName: span.name,
+    };
+  }
   return {
-    serviceName: getServiceName(span.localEndpoint) || getServiceName(span.remoteEndpoint),
-    spanName: span.name,
+    serviceName: 'unknown',
+    spanName: 'unknown',
   };
 }
 
