@@ -154,30 +154,6 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   }
 
   @Configuration
-  static class StorageComponentEagerInitializer implements BeanPostProcessor {
-
-    @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) {
-      return bean;
-    }
-
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof StorageComponent) {
-        // These provide asynchronous APIs, however some storage implementations like Elasticsearch
-        // and Cassandra will run blocking logic in their constructors, which is not allowed for
-        // asynchronous APIs. We go ahead and eagerly initialize them to run the initialization
-        // logic in advance.
-        StorageComponent storage = (StorageComponent) bean;
-        storage.autocompleteTags();
-        storage.spanConsumer();
-        storage.spanStore();
-      }
-      return bean;
-    }
-  }
-
-  @Configuration
   @ConditionalOnSelfTracing
   static class TracingStorageComponentEnhancer implements BeanPostProcessor {
 

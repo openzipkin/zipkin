@@ -158,8 +158,14 @@ public class ZipkinHttpCollector {
           result.onError(new IllegalArgumentException("Empty " + decoder.name() + " message"));
           return null;
         }
-        // UnzippingBytesRequestConverter handles incrementing message and bytes
-        collector.accept(spans, result);
+
+        // collector.accept looks like an async API, but currently some of our storage
+        // implementations run blocking logic during processing of the async method. For now, we
+        // move to the blocking executor.
+        ctx.blockingTaskExecutor().execute(ctx.makeContextAware(() -> {
+          // UnzippingBytesRequestConverter handles incrementing message and bytes
+          collector.accept(spans, result);
+        }));
       } finally {
         ReferenceCountUtil.release(content);
       }
