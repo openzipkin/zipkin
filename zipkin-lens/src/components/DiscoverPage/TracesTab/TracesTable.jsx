@@ -14,44 +14,25 @@
 import React from 'react';
 import { AutoSizer } from 'react-virtualized';
 import Box from '@material-ui/core/Box';
-import Table from '@material-ui/core/Table';
 
 import TracesTableHead from './TracesTableHead';
 import TracesTableBody from './TracesTableBody';
-import TracesTableColGroup from './TracesTableColGroup';
-import { traceSummariesPropTypes } from '../../../prop-types';
 
-const propTypes = {
-  traceSummaries: traceSummariesPropTypes.isRequired,
-};
-
-const TracesTable = ({ traceSummaries }) => {
-  return (
-    <React.Fragment>
-      <Table>
-        <TracesTableColGroup />
-        <TracesTableHead />
-      </Table>
-      <Box height="100%">
-        <AutoSizer>
-          {
-            ({ height, width }) => (
-              <Box width={width} height={height} overflow="auto">
-                <Table>
-                  <TracesTableColGroup />
-                  <TracesTableBody
-                    traceSummaries={traceSummaries}
-                  />
-                </Table>
-              </Box>
-            )
-          }
-        </AutoSizer>
-      </Box>
-    </React.Fragment>
-  );
-};
-
-TracesTable.propTypes = propTypes;
+const TracesTable = () => (
+  <React.Fragment>
+    <TracesTableHead />
+    <Box height="100%">
+      <AutoSizer>
+        {
+          ({ height, width }) => (
+            <Box width={width} height={height} overflow="auto">
+              <TracesTableBody />
+            </Box>
+          )
+        }
+      </AutoSizer>
+    </Box>
+  </React.Fragment>
+);
 
 export default TracesTable;

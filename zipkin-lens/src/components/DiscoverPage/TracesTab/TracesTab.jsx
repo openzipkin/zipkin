@@ -20,7 +20,6 @@ import ServiceFilter from './ServiceFilter';
 
 const TracesTab = () => {
   const traceSummaries = useSelector(state => state.traces.traceSummaries);
-  const correctedTraceMap = useSelector(state => state.traces.correctedTraceMap);
 
   const allServiceNames = useMemo(() => {
     const result = [];
@@ -65,9 +64,7 @@ const TracesTab = () => {
           />
         </Box>
       </Box>
-      <TracesTable
-        traceSummaries={traceSummaries}
-      />
+      <TracesTable />
     </Box>
   );
 };

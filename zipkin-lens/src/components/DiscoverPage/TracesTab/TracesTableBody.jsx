@@ -12,68 +12,115 @@
  * the License.
  */
 import React from 'react';
+import { useSelector } from 'react-redux';
 import moment from 'moment';
+import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
-import TableBody from '@material-ui/core/TableBody';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
+import Grid from '@material-ui/core/Grid';
+import grey from '@material-ui/core/colors/grey';
+import { fade } from '@material-ui/core/styles/colorManipulator';
 
 import ServiceNameBadge from '../../Common/ServiceNameBadge';
-import { traceSummariesPropTypes } from '../../../prop-types';
+import { rootServiceAndSpanName } from '../../../zipkin';
 
-const propTypes = {
-  traceSummaries: traceSummariesPropTypes.isRequired,
-};
+const useStyles = makeStyles(theme => ({
+  root: {
+    width: '100%',
+  },
+  dataRow: {
+    position: 'relative',
+    borderBottom: `1px solid ${grey[200]}`,
+  },
+  bar: {
+    backgroundColor: fade(theme.palette.primary.light, 0.4),
+  },
+  dataCell: {
+    display: 'flex',
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+    paddingTop: '1.2rem',
+    paddingBottom: '1.2rem',
+    zIndex: '1',
+  },
+  badgeRow: {
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+    paddingTop: '0.6rem',
+    paddingBottom: '0.6rem',
+    borderBottom: `1px solid ${grey[300]}`,
+  },
+  serviceName: {
+    color: theme.palette.text.primary,
+    textTransform: 'uppercase',
+    marginRight: '0.6rem',
+  },
+  spanName: {
+    color: theme.palette.text.hint,
+  },
+}));
 
-const TracesTableBody = ({ traceSummaries }) => {
+const TracesTableBody = () => {
+  const classes = useStyles();
+
+  const traceSummaries = useSelector(state => state.traces.traceSummaries);
+  const correctedTraceMap = useSelector(state => state.traces.correctedTraceMap);
+
   return (
-    <TableBody>
+    <Box className={classes.root}>
       {
         traceSummaries.map((traceSummary) => {
           const startTime = moment(traceSummary.timestamp / 1000);
 
+          const correctedTrace = correctedTraceMap[traceSummary.traceId];
+          const { spanName, serviceName } = rootServiceAndSpanName(correctedTrace);
+
           return (
-            <React.Fragment>
-              <TableRow key={traceSummary.traceId}>
-                <TableCell component="th" scope="row">
-                  {traceSummary.traceId}
-                </TableCell>
-                <TableCell>
-                  <Box>
+            <Box>
+              <Grid container spacing={0} className={classes.dataRow}>
+                <Box
+                  position="absolute"
+                  width={`${traceSummary.width}%`}
+                  height="100%"
+                  className={classes.bar}
+                />
+                <Grid item xs={4} className={classes.dataCell}>
+                  <Box className={classes.serviceName}>
+                    {`${serviceName}`}
+                  </Box>
+                  <Box className={classes.spanName}>
+                    {`(${spanName})`}
+                  </Box>
+                </Grid>
+                <Grid item xs={4} className={classes.dataCell}>
+                  <Box mr={2}>
                     {startTime.format('MM/DD HH:mm:ss:SSS')}
                   </Box>
                   <Box>
-                    {startTime.fromNow()}
+                    {`(${startTime.fromNow()})`}
                   </Box>
-                </TableCell>
-                <TableCell>
+                </Grid>
+                <Grid item xs={4} className={classes.dataCell}>
                   {traceSummary.durationStr}
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell colSpan={3}>
-                  <Box display="flex">
-                    {
-                      traceSummary.serviceSummaries.map(serviceSummary => (
-                        <Box key={serviceSummary.serviceName}>
-                          <ServiceNameBadge
-                            serviceName={serviceSummary.serviceName}
-                            count={serviceSummary.spanCount}
-                          />
-                        </Box>
-                      ))
-                    }
-                  </Box>
-                </TableCell>
-              </TableRow>
-            </React.Fragment>
+                </Grid>
+              </Grid>
+              <Box display="flex" flexWrap="wrap" className={classes.badgeRow}>
+                {
+                  traceSummary.serviceSummaries.map(serviceSummary => (
+                    <Box key={serviceSummary.serviceName} mr={0.2} ml={0.2}>
+                      <ServiceNameBadge
+                        serviceName={serviceSummary.serviceName}
+                        count={serviceSummary.spanCount}
+                      />
+                    </Box>
+                  ))
+                }
+              </Box>
+            </Box>
           );
         })
       }
-    </TableBody>
+    </Box>
   );
 };
-
-TracesTableBody.propTypes = propTypes;
 
 export default TracesTableBody;

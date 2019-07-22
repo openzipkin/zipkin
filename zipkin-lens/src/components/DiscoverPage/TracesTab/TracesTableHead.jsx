@@ -13,15 +13,21 @@
  */
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
-import TableHead from '@material-ui/core/TableHead';
-import TableRow from '@material-ui/core/TableRow';
-import TableCell from '@material-ui/core/TableCell';
+import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 
 const useStyles = makeStyles({
   root: {
     backgroundColor: grey[100],
     textTransform: 'uppercase',
+    color: grey[700],
+    borderBottom: `1px solid ${grey[300]}`,
+  },
+  cell: {
+    paddingLeft: '1rem',
+    paddingRight: '1rem',
+    paddingTop: '0.8rem',
+    paddingBottom: '0.8rem',
   },
 });
 
@@ -29,13 +35,17 @@ const TracesTableHead = () => {
   const classes = useStyles();
 
   return (
-    <TableHead className={classes.root}>
-      <TableRow>
-        <TableCell>Trace ID</TableCell>
-        <TableCell>Start Time</TableCell>
-        <TableCell>Duration</TableCell>
-      </TableRow>
-    </TableHead>
+    <Grid container spacing={0} className={classes.root}>
+      <Grid item xs={4} className={classes.cell}>
+        Root
+      </Grid>
+      <Grid item xs={4} className={classes.cell}>
+        Start Time
+      </Grid>
+      <Grid item xs={4} className={classes.cell}>
+        Duration
+      </Grid>
+    </Grid>
   );
 };
 
