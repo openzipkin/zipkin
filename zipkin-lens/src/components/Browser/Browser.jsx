@@ -44,8 +44,14 @@ class Browser extends React.Component {
   }
 
   render() {
-    const { isLoading, traceSummaries, tracesMap } = this.props;
+    const {
+      isLoading,
+      traceSummaries,
+      tracesMap,
+    } = this.props;
+
     const { sortingMethod } = this.state;
+
     return (
       <div className="browser">
         <LoadingOverlay active={isLoading} />

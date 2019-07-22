@@ -22,7 +22,7 @@ const propTypes = {
   isLoading: PropTypes.bool.isRequired,
   traceId: PropTypes.string.isRequired,
   traceSummary: detailedTraceSummaryPropTypes,
-  fetchTrace: PropTypes.func.isRequired,
+  loadTrace: PropTypes.func.isRequired,
 };
 
 const defaultProps = {
@@ -40,9 +40,9 @@ class TracePage extends React.Component {
   }
 
   componentDidMount() {
-    const { fetchTrace, traceId, traceSummary } = this.props;
+    const { loadTrace, traceId, traceSummary } = this.props;
     if (!traceSummary || traceSummary.traceId !== traceId) {
-      fetchTrace(traceId);
+      loadTrace(traceId);
     }
   }
 

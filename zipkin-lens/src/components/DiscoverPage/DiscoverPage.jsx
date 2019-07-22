@@ -40,7 +40,7 @@ import {
 } from './api';
 import { buildQueryParameters } from '../../util/api';
 import { useMount } from '../../hooks';
-import { fetchTraces } from '../../actions/traces-action';
+import { loadTraces } from '../../actions/traces-action';
 import { fetchServices } from '../../actions/services-action';
 import { fetchRemoteServices } from '../../actions/remote-services-action';
 import { fetchSpans } from '../../actions/spans-action';
@@ -98,7 +98,7 @@ const DiscoverPage = ({ history, location }) => {
     ));
     history.push({ pathname: '/zipkin', search: queryParameters });
 
-    dispatch(fetchTraces(buildTracesApiQueryParameters(
+    dispatch(loadTraces(buildTracesApiQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
@@ -237,7 +237,7 @@ const DiscoverPage = ({ history, location }) => {
           || !_.isEmpty(lookbackConditionFromUrl)
           || !!limitConditionFromUrl
         ) {
-          dispatch(fetchTraces(buildTracesApiQueryParameters(
+          dispatch(loadTraces(buildTracesApiQueryParameters(
             conditionsFromUrl,
             lookbackConditionFromUrl,
             limitConditionFromUrl,
