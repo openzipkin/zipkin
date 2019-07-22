@@ -70,6 +70,8 @@ final class ZipkinGrpcCollector {
         CompletableFutureCallback result = new CompletableFutureCallback();
         List<Span> spans = SpanBytesDecoder.PROTO3.decodeList(bytes.nioBuffer());
 
+        // collector.accept might block so need to move off the event loop. We make sure the
+        // callback is context aware to continue the trace.
         ServiceRequestContext.mapCurrent(
           ctx -> ctx.makeContextAware(ctx.blockingTaskExecutor()),
           CommonPools::blockingTaskExecutor).execute(() -> collector.accept(spans, result));

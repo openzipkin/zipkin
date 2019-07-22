@@ -159,7 +159,8 @@ public class ZipkinHttpCollector {
           return null;
         }
 
-        // collector.accept might block so need to move off the event loop
+        // collector.accept might block so need to move off the event loop. We make sure the
+        // callback is context aware to continue the trace.
         ctx.blockingTaskExecutor().execute(ctx.makeContextAware(() -> {
           // UnzippingBytesRequestConverter handles incrementing message and bytes
           collector.accept(spans, result);
