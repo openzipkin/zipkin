@@ -38,7 +38,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.storage.cassandra.InternalForTests.dropKeyspace;
 import static zipkin2.storage.cassandra.InternalForTests.randomKeyspace;
 import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 
@@ -59,7 +58,7 @@ class ITCassandraStorage {
     }
 
     @Override public void clear() {
-      dropKeyspace(backend.session(), storage.keyspace());
+      // Just let the data pile up to prevent warnings and slowness.
     }
 
     @Test void overFetchesToCompensateForDuplicateIndexData() throws IOException {
@@ -140,17 +139,21 @@ class ITCassandraStorage {
 
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<CassandraStorage> {
+    @Override protected boolean initializeStoragePerTest() {
+      return true;
+    }
+
     @Override protected StorageComponent.Builder storageBuilder() {
       return backend.computeStorageBuilder().keyspace(randomKeyspace()).searchEnabled(false);
     }
 
     @Override public void clear() {
-      dropKeyspace(backend.session(), storage.keyspace());
+      // Just let the data pile up to prevent warnings and slowness.
     }
 
     @Test void doesntCreateIndexes() {
       KeyspaceMetadata metadata =
-        storage.session().getCluster().getMetadata().getKeyspace(randomKeyspace());
+        storage.session().getCluster().getMetadata().getKeyspace(storage.keyspace());
 
       assertThat(metadata.getTable("trace_by_service_span")).isNull();
       assertThat(metadata.getTable("span_by_service")).isNull();
@@ -159,12 +162,16 @@ class ITCassandraStorage {
 
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<CassandraStorage> {
+    @Override protected boolean initializeStoragePerTest() {
+      return true;
+    }
+
     @Override protected StorageComponent.Builder storageBuilder() {
       return backend.computeStorageBuilder().keyspace(randomKeyspace()).strictTraceId(false);
     }
 
     @Override public void clear() {
-      dropKeyspace(backend.session(), storage.keyspace());
+      // Just let the data pile up to prevent warnings and slowness.
     }
 
     /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
@@ -183,35 +190,47 @@ class ITCassandraStorage {
 
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<CassandraStorage> {
+    @Override protected boolean initializeStoragePerTest() {
+      return true;
+    }
+
     @Override protected StorageComponent.Builder storageBuilder() {
       return backend.computeStorageBuilder().keyspace(randomKeyspace());
     }
 
     @Override public void clear() {
-      dropKeyspace(backend.session(), storage.keyspace());
+      // Just let the data pile up to prevent warnings and slowness.
     }
   }
 
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<CassandraStorage> {
+    @Override protected boolean initializeStoragePerTest() {
+      return true;
+    }
+
     @Override protected StorageComponent.Builder storageBuilder() {
       return backend.computeStorageBuilder().keyspace(randomKeyspace())
         .autocompleteKeys(asList("http.host"));
     }
 
     @Override public void clear() {
-      dropKeyspace(backend.session(), storage.keyspace());
+      // Just let the data pile up to prevent warnings and slowness.
     }
   }
 
   @Nested
   class ITDependencies extends zipkin2.storage.ITDependencies<CassandraStorage> {
+    @Override protected boolean initializeStoragePerTest() {
+      return true;
+    }
+
     @Override protected StorageComponent.Builder storageBuilder() {
       return backend.computeStorageBuilder().keyspace(randomKeyspace());
     }
 
     @Override public void clear() {
-      dropKeyspace(backend.session(), storage.keyspace());
+      // Just let the data pile up to prevent warnings and slowness.
     }
 
     /**

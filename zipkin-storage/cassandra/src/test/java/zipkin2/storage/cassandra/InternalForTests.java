@@ -17,7 +17,10 @@ import com.datastax.driver.core.LocalDate;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import zipkin2.DependencyLink;
 
@@ -38,8 +41,14 @@ class InternalForTests {
     }
   }
 
+  static Set<String> USED_KEYSPACES = Collections.synchronizedSet(new HashSet<>());
+
   static String randomKeyspace() {
-    String result = "z" + UUID.randomUUID().toString().toLowerCase().replace('-', '_');
+    String result;
+    // Selecting the same UUID should be extremely rare but just in case.
+    do {
+      result = "z" + UUID.randomUUID().toString().toLowerCase().replace('-', '_');
+    } while (!USED_KEYSPACES.add(result));
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
   }
 

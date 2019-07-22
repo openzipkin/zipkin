@@ -21,7 +21,6 @@ import com.google.common.io.Closer;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.TimeUnit;
-import org.junit.AssumptionViolatedException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -32,6 +31,8 @@ import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.traits.LinkableContainer;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
 public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(CassandraStorageExtension.class);
   static final int CASSANDRA_PORT = 9042;
@@ -40,11 +41,11 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
   Session session;
   Closer closer = Closer.create();
 
-  public CassandraStorageExtension(String image) {
+  CassandraStorageExtension(String image) {
     this.image = image;
   }
 
-  public Session session() {
+  Session session() {
     return session;
   }
 
@@ -84,7 +85,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
       session.execute("SELECT now() FROM system.local");
     } catch (RuntimeException e) {
       closer.close();
-      throw new AssumptionViolatedException(e.getMessage(), e);
+      assumeTrue(false, e.getMessage());
     }
     return session;
   }

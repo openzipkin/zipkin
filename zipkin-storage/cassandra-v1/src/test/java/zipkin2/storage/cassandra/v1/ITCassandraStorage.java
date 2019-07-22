@@ -28,9 +28,7 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
 import org.junit.rules.TestName;
-import org.junit.runner.RunWith;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
@@ -45,15 +43,14 @@ import static zipkin2.storage.cassandra.v1.InternalForTests.dropKeyspace;
 import static zipkin2.storage.cassandra.v1.InternalForTests.keyspace;
 import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks;
 
-@RunWith(Enclosed.class)
-public class ITCassandraStorage {
+class ITCassandraStorage {
 
-  static CassandraStorageRule classRule() {
-    return new CassandraStorageRule("openzipkin/zipkin-cassandra:2.14.2", "test_cassandra3");
+  static CassandraStorageExtension classRule() {
+    return new CassandraStorageExtension("openzipkin/zipkin-cassandra:2.14.2", "test_cassandra3");
   }
 
   public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     CassandraStorage storage;
@@ -175,7 +172,7 @@ public class ITCassandraStorage {
   }
 
   public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     CassandraStorage storage;
@@ -199,7 +196,7 @@ public class ITCassandraStorage {
   }
 
   public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     CassandraStorage storage;
@@ -223,7 +220,7 @@ public class ITCassandraStorage {
   }
 
   public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     CassandraStorage storage;
@@ -246,7 +243,7 @@ public class ITCassandraStorage {
   }
 
   public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     @Override protected StorageComponent.Builder storageBuilder() {
@@ -259,7 +256,7 @@ public class ITCassandraStorage {
   }
 
   public static class ITDependencies extends zipkin2.storage.ITDependencies {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     CassandraStorage storage;
@@ -291,7 +288,7 @@ public class ITCassandraStorage {
   }
 
   public static class ITEnsureSchema extends zipkin2.storage.cassandra.v1.ITEnsureSchema {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     @Override protected String keyspace() {
@@ -308,7 +305,7 @@ public class ITCassandraStorage {
   }
 
   public static class ITSpanConsumer extends zipkin2.storage.cassandra.v1.ITSpanConsumer {
-    @ClassRule public static CassandraStorageRule backend = classRule();
+    @ClassRule public static CassandraStorageExtension backend = classRule();
     @Rule public TestName testName = new TestName();
 
     @Override protected String keyspace() {
