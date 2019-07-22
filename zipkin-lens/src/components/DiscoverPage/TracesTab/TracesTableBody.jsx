@@ -11,8 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import PropTypes from 'prop-types';
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { withRouter } from 'react-router';
 import moment from 'moment';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -27,6 +29,12 @@ const useStyles = makeStyles(theme => ({
   root: {
     width: '100%',
   },
+  row: {
+    cursor: 'pointer',
+    '&:hover': {
+      backgroundColor: grey[100],
+    },
+  },
   dataRow: {
     position: 'relative',
     borderBottom: `1px solid ${grey[200]}`,
@@ -40,7 +48,6 @@ const useStyles = makeStyles(theme => ({
     paddingRight: '1rem',
     paddingTop: '1.2rem',
     paddingBottom: '1.2rem',
-    zIndex: '1',
   },
   badgeRow: {
     paddingLeft: '1rem',
@@ -59,7 +66,11 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const TracesTableBody = () => {
+const propTypes = {
+  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
+};
+
+const TracesTableBody = ({ history }) => {
   const classes = useStyles();
 
   const traceSummaries = useSelector(state => state.traces.traceSummaries);
@@ -74,8 +85,12 @@ const TracesTableBody = () => {
           const correctedTrace = correctedTraceMap[traceSummary.traceId];
           const { spanName, serviceName } = rootServiceAndSpanName(correctedTrace);
 
+          const handleClick = () => {
+            history.push(`/zipkin/traces/${traceSummary.traceId}`);
+          };
+
           return (
-            <Box>
+            <Box className={classes.row} onClick={handleClick}>
               <Grid container spacing={0} className={classes.dataRow}>
                 {/* // This is trace duration bar.
                   <Box
@@ -125,4 +140,6 @@ const TracesTableBody = () => {
   );
 };
 
-export default TracesTableBody;
+TracesTableBody.propTypes = propTypes;
+
+export default withRouter(TracesTableBody);
