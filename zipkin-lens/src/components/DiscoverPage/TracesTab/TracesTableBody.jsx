@@ -77,12 +77,14 @@ const TracesTableBody = () => {
           return (
             <Box>
               <Grid container spacing={0} className={classes.dataRow}>
-                <Box
-                  position="absolute"
-                  width={`${traceSummary.width}%`}
-                  height="100%"
-                  className={classes.bar}
-                />
+                {/* // This is trace duration bar.
+                  <Box
+                    position="absolute"
+                    width={`${traceSummary.width}%`}
+                    height="100%"
+                    className={classes.bar}
+                  />
+                */}
                 <Grid item xs={4} className={classes.dataCell}>
                   <Box className={classes.serviceName}>
                     {`${serviceName}`}
