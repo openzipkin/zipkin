@@ -13,7 +13,9 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.common.CommonPools;
 import com.linecorp.armeria.common.grpc.protocol.AbstractUnsafeUnaryGrpcService;
+import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -67,7 +69,11 @@ final class ZipkinGrpcCollector {
       try {
         CompletableFutureCallback result = new CompletableFutureCallback();
         List<Span> spans = SpanBytesDecoder.PROTO3.decodeList(bytes.nioBuffer());
-        collector.accept(spans, result);
+
+        ServiceRequestContext.mapCurrent(
+          ctx -> ctx.makeContextAware(ctx.blockingTaskExecutor()),
+          CommonPools::blockingTaskExecutor).execute(() -> collector.accept(spans, result));
+
         return result;
       } finally {
         bytes.release();

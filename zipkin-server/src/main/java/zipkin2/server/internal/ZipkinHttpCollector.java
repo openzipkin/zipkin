@@ -159,9 +159,7 @@ public class ZipkinHttpCollector {
           return null;
         }
 
-        // collector.accept looks like an async API, but currently some of our storage
-        // implementations run blocking logic during processing of the async method. For now, we
-        // move to the blocking executor.
+        // collector.accept might block so need to move off the event loop
         ctx.blockingTaskExecutor().execute(ctx.makeContextAware(() -> {
           // UnzippingBytesRequestConverter handles incrementing message and bytes
           collector.accept(spans, result);
