@@ -29,7 +29,7 @@ export const buildCommonQueryParameters = (
   conditions,
   lookbackCondition,
   limitCondition,
-  currentTime,
+  currentTime = null,
 ) => {
   const conditionMap = {};
   const tagConditions = [];
@@ -64,8 +64,10 @@ export const buildCommonQueryParameters = (
   if (lookbackCondition.value === 'custom') {
     conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.startTs = lookbackCondition.startTs;
-  } else {
+  } else if (currentTime) {
     conditionMap.endTs = currentTime.valueOf();
+  } else {
+    conditionMap.endTs = lookbackCondition.endTs;
   }
 
   return conditionMap;
@@ -75,7 +77,7 @@ export const buildTracesApiQueryParameters = (
   conditions,
   lookbackCondition,
   limitCondition,
-  currentTime,
+  currentTime = null,
 ) => {
   const conditionMap = {};
   const annotationQueryConditions = [];
@@ -106,8 +108,11 @@ export const buildTracesApiQueryParameters = (
   if (lookbackCondition.value === 'custom') {
     conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
-  } else {
+  } else if (currentTime) {
     conditionMap.endTs = currentTime.valueOf();
+    conditionMap.lookback = lookbackDurations[lookbackCondition.value];
+  } else {
+    conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.lookback = lookbackDurations[lookbackCondition.value];
   }
 
@@ -116,14 +121,17 @@ export const buildTracesApiQueryParameters = (
 
 export const buildDependenciesApiQueryParameters = (
   lookbackCondition,
-  currentTime,
+  currentTime = null,
 ) => {
   const conditionMap = {};
   if (lookbackCondition.value === 'custom') {
     conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
-  } else {
+  } else if (currentTime) {
     conditionMap.endTs = currentTime.valueOf();
+    conditionMap.lookback = lookbackDurations[lookbackCondition.value];
+  } else {
+    conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.lookback = lookbackDurations[lookbackCondition.value];
   }
   return conditionMap;

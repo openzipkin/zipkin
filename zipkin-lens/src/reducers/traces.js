@@ -18,6 +18,7 @@ const initialState = {
   traces: [],
   traceSummaries: [],
   correctedTraceMap: {},
+  lastFetchingParams: {},
 };
 
 const traces = (state = initialState, action) => {
@@ -29,6 +30,7 @@ const traces = (state = initialState, action) => {
         traces: [],
         traceSummaries: [],
         correctedTraceMap: {},
+        lastFetchingParams: {},
       };
     case types.TRACES_LOAD_SUCCESS:
       return {
@@ -37,6 +39,7 @@ const traces = (state = initialState, action) => {
         traces: action.traces,
         traceSummaries: action.traceSummaries,
         correctedTraceMap: action.correctedTraceMap,
+        lastFetchingParams: action.lastFetchingParams,
       };
     case types.TRACES_LOAD_FAILURE:
       return {
@@ -45,14 +48,7 @@ const traces = (state = initialState, action) => {
         traces: [],
         traceSummaries: [],
         correctedTraceMap: {},
-      };
-    case types.TRACES_CLEAR:
-      return {
-        ...state,
-        isLoading: false,
-        traces: [],
-        traceSummaries: [],
-        correctedTraceMap: {},
+        lastFetchingParams: {},
       };
     default:
       return state;

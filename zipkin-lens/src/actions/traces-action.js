@@ -25,11 +25,17 @@ export const loadTracesRequest = () => ({
   type: types.TRACES_LOAD_REQUEST,
 });
 
-export const loadTracesSuccess = (traces, traceSummaries, correctedTraceMap) => ({
+export const loadTracesSuccess = (
+  traces,
+  traceSummaries,
+  correctedTraceMap,
+  lastFetchingParams,
+) => ({
   type: types.TRACES_LOAD_SUCCESS,
   traces,
   traceSummaries,
   correctedTraceMap,
+  lastFetchingParams,
 });
 
 export const loadTracesFailure = () => ({
@@ -70,12 +76,8 @@ export const loadTraces = params => async (dispatch) => {
       correctedTraceMap,
     } = await calculateTraceSummaries(traces, query.serviceName);
 
-    dispatch(loadTracesSuccess(traces, traceSummaries, correctedTraceMap));
+    dispatch(loadTracesSuccess(traces, traceSummaries, correctedTraceMap, params));
   } catch (err) {
     dispatch(loadTracesFailure());
   }
 };
-
-export const clearTraces = () => ({
-  type: types.TRACES_CLEAR,
-});

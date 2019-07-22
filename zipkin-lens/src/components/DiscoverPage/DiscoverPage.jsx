@@ -83,6 +83,7 @@ const DiscoverPage = ({ history, location }) => {
 
   const dispatch = useDispatch();
 
+  const lastFetchingParams = useSelector(state => state.traces.lastFetchingParams);
   const conditions = useSelector(state => state.globalSearch.conditions);
   const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
   const limitCondition = useSelector(state => state.globalSearch.limitCondition);
@@ -225,8 +226,6 @@ const DiscoverPage = ({ history, location }) => {
     }
     dispatch(fetchAutocompleteKeys());
 
-    const currentTime = moment();
-
     // Finally fetch traces-data or dependencies-data according to location.pathname.
     switch (location.pathname) {
       case '/zipkin':
@@ -237,12 +236,14 @@ const DiscoverPage = ({ history, location }) => {
           || !_.isEmpty(lookbackConditionFromUrl)
           || !!limitConditionFromUrl
         ) {
-          dispatch(loadTraces(buildTracesApiQueryParameters(
+          const apiQueryParams = buildTracesApiQueryParameters(
             conditionsFromUrl,
             lookbackConditionFromUrl,
             limitConditionFromUrl,
-            currentTime,
-          )));
+          );
+          if (!_.isEqual(apiQueryParams, lastFetchingParams)) {
+            dispatch(loadTraces(apiQueryParams));
+          }
         }
         break;
       case '/zipkin/dependency':
@@ -250,7 +251,6 @@ const DiscoverPage = ({ history, location }) => {
         if (!_.isEmpty(conditionsFromUrl) || !_.isEmpty(lookbackConditionFromUrl)) {
           dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
             lookbackConditionFromUrl,
-            currentTime,
           )));
         }
         break;
