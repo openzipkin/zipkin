@@ -22,11 +22,15 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
+import org.junit.jupiter.api.parallel.Execution;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.TestObjects;
@@ -52,7 +56,7 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -142,8 +146,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().searchEnabled(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -161,12 +165,24 @@ class ITCassandraStorage {
 
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<CassandraStorage> {
+
+    CassandraStorage storageBeforeSwitch;
+
+    @BeforeEach void initializeStorageBeforeSwitch() {
+      storageBeforeSwitch = backend.computeStorageBuilder().keyspace(storage.keyspace()).build();
+    }
+
+    @AfterEach void closeStorageBeforeSwitch() {
+      storageBeforeSwitch.close();
+      storageBeforeSwitch = null;
+    }
+
     @Override protected boolean initializeStoragePerTest() {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().strictTraceId(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -174,17 +190,17 @@ class ITCassandraStorage {
     }
 
     /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
-    // @Test public void getTraces_128BitTraceId() throws IOException {
-    //   getTraces_128BitTraceId(accept128BitTrace(storageBeforeSwitch));
-    // }
+    @Test public void getTraces_128BitTraceId() throws IOException {
+      getTraces_128BitTraceId(accept128BitTrace(storageBeforeSwitch));
+    }
 
     /** Ensures data written before strict trace ID was enabled can be read */
-    // @Test public void getTrace_retrievesBy128BitTraceId_afterSwitch() throws IOException {
-    //   List<Span> trace = accept128BitTrace(storageBeforeSwitch);
-    //
-    //   assertThat(store().getTrace(trace.get(0).traceId()).execute())
-    //     .containsOnlyElementsOf(trace);
-    // }
+    @Test public void getTrace_retrievesBy128BitTraceId_afterSwitch() throws IOException {
+      List<Span> trace = accept128BitTrace(storageBeforeSwitch);
+
+      assertThat(store().getTrace(trace.get(0).traceId()).execute())
+        .containsOnlyElementsOf(trace);
+    }
   }
 
   @Nested
@@ -193,7 +209,7 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -208,9 +224,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder()
-        .autocompleteKeys(asList("http.host"));
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -224,7 +239,7 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -243,16 +258,16 @@ class ITCassandraStorage {
   }
 
   @Nested
-    class ITEnsureSchema extends zipkin2.storage.cassandra.ITEnsureSchema {
-      @Override protected String keyspace() {
-        return InternalForTests.randomKeyspace();
-      }
+  class ITEnsureSchema extends zipkin2.storage.cassandra.ITEnsureSchema {
+    @Override protected String keyspace() {
+      return InternalForTests.randomKeyspace();
+    }
 
-      @Override protected Session session() {
-        return backend.session;
-      }
+    @Override protected Session session() {
+      return backend.session;
+    }
 
-      @Override protected InetSocketAddress contactPoint() {
+    @Override protected InetSocketAddress contactPoint() {
       return backend.contactPoint();
     }
   }

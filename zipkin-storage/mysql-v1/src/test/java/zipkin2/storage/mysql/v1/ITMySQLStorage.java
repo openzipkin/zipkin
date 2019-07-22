@@ -27,7 +27,6 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.DependencyLink;
 import zipkin2.storage.StorageComponent;
 
-import static java.util.Arrays.asList;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -38,7 +37,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<MySQLStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -52,8 +51,8 @@ class ITMySQLStorage {
 
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<MySQLStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().strictTraceId(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -63,8 +62,8 @@ class ITMySQLStorage {
 
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<MySQLStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().searchEnabled(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -74,7 +73,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITDependenciesPreAggregated extends zipkin2.storage.ITDependencies<MySQLStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -111,7 +110,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<MySQLStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -122,8 +121,8 @@ class ITMySQLStorage {
 
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<MySQLStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().autocompleteKeys(asList("http.host"));
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -133,7 +132,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITDependenciesOnDemand extends zipkin2.storage.ITDependencies<MySQLStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 

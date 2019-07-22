@@ -50,6 +50,10 @@ import static zipkin2.TestObjects.TRACE_STARTTS;
  */
 public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<T> {
 
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    // Defaults are fine.
+  }
+
   @Test void getTrace_considersBitsAbove64bit() throws IOException {
     // 64-bit trace ID
     Span span1 = Span.newBuilder().traceId(CLIENT_SPAN.traceId().substring(16)).id("1").build();

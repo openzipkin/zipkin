@@ -37,6 +37,10 @@ import static zipkin2.storage.ITSpanStore.sortTraces;
  */
 public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends ITStorage<T> {
 
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    storage.strictTraceId(false);
+  }
+
   /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
   @Test void getTraces_128BitTraceId() throws IOException {
     getTraces_128BitTraceId(accept128BitTrace(storage));

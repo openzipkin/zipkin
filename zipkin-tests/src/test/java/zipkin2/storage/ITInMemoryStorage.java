@@ -15,13 +15,11 @@ package zipkin2.storage;
 
 import org.junit.jupiter.api.Nested;
 
-import static java.util.Arrays.asList;
-
 class ITInMemoryStorage {
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<InMemoryStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return InMemoryStorage.newBuilder();
     }
 
@@ -32,8 +30,8 @@ class ITInMemoryStorage {
 
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<InMemoryStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return InMemoryStorage.newBuilder().searchEnabled(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return InMemoryStorage.newBuilder();
     }
 
     @Override public void clear() {
@@ -43,8 +41,8 @@ class ITInMemoryStorage {
 
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<InMemoryStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return InMemoryStorage.newBuilder().strictTraceId(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return InMemoryStorage.newBuilder();
     }
 
     @Override public void clear() {
@@ -54,8 +52,8 @@ class ITInMemoryStorage {
 
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<InMemoryStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return InMemoryStorage.newBuilder().autocompleteKeys(asList("http.host"));
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return InMemoryStorage.newBuilder();
     }
 
     @Override public void clear() {
@@ -65,7 +63,7 @@ class ITInMemoryStorage {
 
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<InMemoryStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return InMemoryStorage.newBuilder();
     }
 
@@ -76,7 +74,7 @@ class ITInMemoryStorage {
 
   @Nested
   class ITDependencies extends zipkin2.storage.ITDependencies<InMemoryStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return InMemoryStorage.newBuilder();
     }
 

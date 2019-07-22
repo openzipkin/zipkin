@@ -30,6 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 public abstract class ITAutocompleteTags<T extends StorageComponent> extends ITStorage<T> {
 
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    storage.autocompleteKeys(asList("http.host"));
+  }
+
   @Test void Should_not_store_when_key_not_in_autocompleteTags() throws IOException {
     accept(TestObjects.LOTS_OF_SPANS[0].toBuilder()
       .timestamp(Instant.now().toEpochMilli())

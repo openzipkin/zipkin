@@ -30,10 +30,12 @@ public abstract class ITStorage<T extends StorageComponent> {
   }
 
   void doInitializeStorage() {
+    StorageComponent.Builder builder = newStorageBuilder();
+    configureStorageForTest(builder);
     // TODO(anuraaga): It wouldn't be difficult to allow storage builders to be parameterized by
     // their storage type.
     @SuppressWarnings("unchecked")
-    T storage = (T) storageBuilder().build();
+    T storage = (T) builder.build();
     this.storage = storage;
 
     CheckResult check = storage.check();
@@ -69,7 +71,15 @@ public abstract class ITStorage<T extends StorageComponent> {
     return false;
   }
 
-  protected abstract StorageComponent.Builder storageBuilder();
+  /**
+   * Returns a new {@link StorageComponent.Builder} for connecting to the backend for the test.
+   */
+  protected abstract StorageComponent.Builder newStorageBuilder();
+
+  /**
+   * Configures a {@link StorageComponent.Builder} with parameters for the test being executed.
+   */
+  protected abstract void configureStorageForTest(StorageComponent.Builder storage);
 
   protected SpanStore store() {
     return storage.spanStore();

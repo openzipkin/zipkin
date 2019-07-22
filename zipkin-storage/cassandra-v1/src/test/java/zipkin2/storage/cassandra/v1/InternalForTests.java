@@ -13,7 +13,6 @@
  */
 package zipkin2.storage.cassandra.v1;
 
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.nio.ByteBuffer;
@@ -25,8 +24,6 @@ import java.util.Set;
 import java.util.UUID;
 import zipkin2.DependencyLink;
 import zipkin2.internal.Dependencies;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class InternalForTests {
 
@@ -50,10 +47,5 @@ class InternalForTests {
       result = "z" + UUID.randomUUID().toString().toLowerCase().replace('-', '_');
     } while (!USED_KEYSPACES.add(result));
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
-  }
-
-  static void dropKeyspace(Session session, String keyspace) {
-    session.execute("DROP KEYSPACE IF EXISTS " + keyspace);
-    assertThat(session.getCluster().getMetadata().getKeyspace(keyspace)).isNull();
   }
 }

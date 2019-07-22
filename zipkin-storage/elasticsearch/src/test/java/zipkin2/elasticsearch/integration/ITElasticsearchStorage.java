@@ -8,15 +8,13 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.InternalForTests;
 import zipkin2.storage.StorageComponent;
 
-import static java.util.Arrays.asList;
-
 abstract class ITElasticsearchStorage {
 
   abstract ElasticsearchStorageExtension backend();
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<ElasticsearchStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend().computeStorageBuilder();
     }
 
@@ -27,8 +25,8 @@ abstract class ITElasticsearchStorage {
 
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<ElasticsearchStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend().computeStorageBuilder().searchEnabled(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend().computeStorageBuilder();
     }
 
     @Override public void clear() throws IOException {
@@ -38,7 +36,7 @@ abstract class ITElasticsearchStorage {
 
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<ElasticsearchStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend().computeStorageBuilder();
     }
 
@@ -49,8 +47,8 @@ abstract class ITElasticsearchStorage {
 
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<ElasticsearchStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend().computeStorageBuilder().autocompleteKeys(asList("http.host"));
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend().computeStorageBuilder();
     }
 
     @Override public void clear() throws IOException {
@@ -60,8 +58,8 @@ abstract class ITElasticsearchStorage {
 
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<ElasticsearchStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend().computeStorageBuilder().strictTraceId(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend().computeStorageBuilder();
     }
 
     @Override public void clear() throws IOException {
@@ -71,7 +69,7 @@ abstract class ITElasticsearchStorage {
 
   @Nested
   class ITDependencies extends zipkin2.storage.ITDependencies<ElasticsearchStorage> {
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend().computeStorageBuilder();
     }
 

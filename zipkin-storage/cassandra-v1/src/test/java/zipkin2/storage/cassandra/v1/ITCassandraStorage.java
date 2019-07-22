@@ -51,7 +51,7 @@ class ITCassandraStorage {
     return true;
   }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -165,8 +165,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().searchEnabled(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -180,8 +180,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().strictTraceId(false);
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -195,7 +195,7 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 
@@ -210,9 +210,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder()
-        .autocompleteKeys(asList("http.host"));
+    @Override protected StorageComponent.Builder newStorageBuilder() {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -226,7 +225,7 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder storageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder() {
       return backend.computeStorageBuilder();
     }
 

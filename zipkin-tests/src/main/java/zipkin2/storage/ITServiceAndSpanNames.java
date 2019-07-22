@@ -33,6 +33,10 @@ import static zipkin2.TestObjects.FRONTEND;
  */
 public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends ITStorage<T> {
 
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    // Defaults are fine.
+  }
+
   @Test void getLocalServiceNames_includesLocalServiceName() throws Exception {
     assertThat(names().getServiceNames().execute())
       .isEmpty();

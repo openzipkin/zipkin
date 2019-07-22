@@ -30,6 +30,10 @@ import static zipkin2.storage.ITSpanStore.requestBuilder;
  */
 public abstract class ITSearchEnabledFalse<T extends StorageComponent> extends ITStorage<T> {
 
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    storage.searchEnabled(false);
+  }
+
   @Test void getTraces_indexDataReturnsNothing() throws Exception {
     accept(CLIENT_SPAN);
 

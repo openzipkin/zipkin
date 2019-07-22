@@ -61,6 +61,10 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     DependencyLink.newBuilder().parent("backend").child("db").callCount(1L).errorCount(1L).build()
   );
 
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    // Defaults are fine.
+  }
+
   /**
    * Override if dependency processing is a separate job: it should complete before returning from
    * this method.
