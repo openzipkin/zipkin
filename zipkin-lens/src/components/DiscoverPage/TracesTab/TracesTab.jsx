@@ -18,26 +18,9 @@ import Box from '@material-ui/core/Box';
 import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
 
-import { treeCorrectedForClockSkew, traceSummary as buildTraceSummary, traceSummaries as buildTraceSummaries } from '../../../zipkin';
-
 const TracesTab = () => {
-  const traces = useSelector(state => state.traces.traces);
-
-  const correctedTraces = useMemo(() => traces.map(treeCorrectedForClockSkew), [traces]);
-
-  const traceSummaries = useMemo(() => buildTraceSummaries(
-    null,
-    correctedTraces.map(buildTraceSummary),
-  ), [correctedTraces]);
-
-  const tracesMap = useMemo(() => {
-    const result = {};
-    correctedTraces.forEach((trace, index) => {
-      const [{ traceId }] = traces[index];
-      result[traceId] = trace;
-    });
-    return result;
-  }, [correctedTraces, traces]);
+  const traceSummaries = useSelector(state => state.traces.traceSummaries);
+  const correctedTraceMap = useSelector(state => state.traces.correctedTraceMap);
 
   const allServiceNames = useMemo(() => {
     const result = [];
