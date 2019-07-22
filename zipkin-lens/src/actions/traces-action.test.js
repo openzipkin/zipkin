@@ -23,15 +23,6 @@ import { traceSummary as buildTraceSummary, traceSummaries as buildTraceSummarie
 const middlewares = [thunk];
 const mockStore = configureMockStore(middlewares);
 
-describe('traces actions', () => {
-  it('should create an action to clear traces', () => {
-    const expectedAction = {
-      type: types.TRACES_CLEAR,
-    };
-    expect(actions.clearTraces()).toEqual(expectedAction);
-  });
-});
-
 describe('traces async actions', () => {
   afterEach(() => {
     fetchMock.restore();
@@ -85,6 +76,10 @@ describe('traces async actions', () => {
         traces: rawTraces,
         correctedTraceMap,
         traceSummaries,
+        lastFetchingParams: {
+          serviceName: 'serviceA',
+          spanName: 'span1',
+        },
       },
     ];
     const store = mockStore({});
