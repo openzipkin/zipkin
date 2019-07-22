@@ -37,14 +37,12 @@ class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(CassandraStorageExtension.class);
   static final int CASSANDRA_PORT = 9042;
   final String image;
-  final String keyspace;
   CassandraContainer container;
   Session session;
   Closer closer = Closer.create();
 
-  CassandraStorageExtension(String image, String keyspace) {
+  CassandraStorageExtension(String image) {
     this.image = image;
-    this.keyspace = keyspace;
   }
 
   Session session() {
@@ -97,7 +95,7 @@ class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
     return CassandraStorage.newBuilder()
         .contactPoints(contactPoint.getHostString() + ":" + contactPoint.getPort())
         .ensureSchema(true)
-        .keyspace(keyspace);
+        .keyspace(InternalForTests.randomKeyspace());
   }
 
   InetSocketAddress contactPoint() {

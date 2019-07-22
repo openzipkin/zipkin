@@ -59,6 +59,12 @@ public abstract class ITStorage<T extends StorageComponent> {
     clear();
   }
 
+  /**
+   * Sets the test to initialise the {@link StorageComponent} before each test rather than the test
+   * class. Generally, tests will run faster if the storage is initialized as infrequently as
+   * possibly while clearing data between runs, but for certain backends like Cassandra, it's
+   * difficult to reliably clear data between runs and tends to be very slow anyways.
+   */
   protected boolean initializeStoragePerTest() {
     return false;
   }

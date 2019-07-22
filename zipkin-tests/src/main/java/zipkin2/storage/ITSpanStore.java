@@ -244,7 +244,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .containsExactly(earlyTraces);
   }
 
-  @Test void getTraces_serviceNames() throws Exception {
+  @Test public void getTraces_serviceNames() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -281,7 +281,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     getTraces_serviceNames();
   }
 
-  @Test void getTraces_spanName() throws Exception {
+  @Test public void getTraces_spanName() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -317,7 +317,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     getTraces_spanName();
   }
 
-  @Test void getTraces_tags() throws Exception {
+  @Test public void getTraces_tags() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -329,7 +329,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test void getTraces_minDuration() throws Exception {
+  @Test public void getTraces_minDuration() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -342,7 +342,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   // pretend we had a late update of only timestamp/duration info
-  @Test void getTraces_lateDuration() throws Exception {
+  @Test public void getTraces_lateDuration() throws Exception {
     Span missingDuration = CLIENT_SPAN.toBuilder().duration(0L).build();
     Span lateDuration = Span.newBuilder()
       .traceId(CLIENT_SPAN.traceId())
@@ -363,7 +363,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build()).execute()).flatExtracting(Trace::merge).containsExactly(CLIENT_SPAN);
   }
 
-  @Test void getTraces_maxDuration() throws Exception {
+  @Test public void getTraces_maxDuration() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -490,7 +490,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** Shows that duration queries go against the root span, not the child */
-  @Test void getTraces_duration() throws IOException {
+  @Test public void getTraces_duration() throws IOException {
     setupDurationData();
 
     QueryRequest.Builder q = requestBuilder().endTs(TODAY).lookback(DAY); // instead of since epoch

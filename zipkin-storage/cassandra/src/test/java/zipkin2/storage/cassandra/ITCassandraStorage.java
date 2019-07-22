@@ -38,7 +38,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.storage.cassandra.InternalForTests.randomKeyspace;
 import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -54,7 +53,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().keyspace(randomKeyspace());
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -144,7 +143,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().keyspace(randomKeyspace()).searchEnabled(false);
+      return backend.computeStorageBuilder().searchEnabled(false);
     }
 
     @Override public void clear() {
@@ -167,7 +166,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().keyspace(randomKeyspace()).strictTraceId(false);
+      return backend.computeStorageBuilder().strictTraceId(false);
     }
 
     @Override public void clear() {
@@ -195,7 +194,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().keyspace(randomKeyspace());
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -210,7 +209,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().keyspace(randomKeyspace())
+      return backend.computeStorageBuilder()
         .autocompleteKeys(asList("http.host"));
     }
 
@@ -226,7 +225,7 @@ class ITCassandraStorage {
     }
 
     @Override protected StorageComponent.Builder storageBuilder() {
-      return backend.computeStorageBuilder().keyspace(randomKeyspace());
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
@@ -244,16 +243,16 @@ class ITCassandraStorage {
   }
 
   @Nested
-  class ITEnsureSchema extends zipkin2.storage.cassandra.ITEnsureSchema {
-    @Override protected String keyspace() {
-      return InternalForTests.randomKeyspace();
-    }
+    class ITEnsureSchema extends zipkin2.storage.cassandra.ITEnsureSchema {
+      @Override protected String keyspace() {
+        return InternalForTests.randomKeyspace();
+      }
 
-    @Override protected Session session() {
-      return backend.session;
-    }
+      @Override protected Session session() {
+        return backend.session;
+      }
 
-    @Override protected InetSocketAddress contactPoint() {
+      @Override protected InetSocketAddress contactPoint() {
       return backend.contactPoint();
     }
   }
