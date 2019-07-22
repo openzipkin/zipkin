@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
 import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.EventExecutor;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -93,6 +94,12 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override protected V doExecute() throws IOException {
+    for (EventExecutor eventLoop : httpClient.factory().eventLoopGroup()) {
+      if (eventLoop.inEventLoop()) {
+        throw new IllegalStateException("Attempting to make a blocking request from an event loop. "
+          + "Either use doEnqueue() or run this in a separate thread.");
+      }
+    }
     AggregatedHttpResponse response = sendRequest().join();
     return parseResponse(response, bodyConverter);
   }

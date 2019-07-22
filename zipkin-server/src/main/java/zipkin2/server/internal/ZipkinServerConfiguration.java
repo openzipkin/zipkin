@@ -38,7 +38,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.actuate.health.HealthAggregator;
-import org.springframework.boot.actuate.health.HealthIndicatorRegistry;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -152,6 +151,30 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
                 || uri.startsWith("/favicon.ico")
                 || uri.startsWith("/prometheus"));
             }));
+  }
+
+  @Configuration
+  static class StorageComponentEagerInitializer implements BeanPostProcessor {
+
+    @Override
+    public Object postProcessBeforeInitialization(Object bean, String beanName) {
+      return bean;
+    }
+
+    @Override
+    public Object postProcessAfterInitialization(Object bean, String beanName) {
+      if (bean instanceof StorageComponent) {
+        // These provide asynchronous APIs, however some storage implementations like Elasticsearch
+        // and Cassandra will run blocking logic in their constructors, which is not allowed for
+        // asynchronous APIs. We go ahead and eagerly initialize them to run the initialization
+        // logic in advance.
+        StorageComponent storage = (StorageComponent) bean;
+        storage.autocompleteTags();
+        storage.spanConsumer();
+        storage.spanStore();
+      }
+      return bean;
+    }
   }
 
   @Configuration

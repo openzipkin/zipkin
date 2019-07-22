@@ -263,6 +263,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public abstract int namesLookback();
 
   @Override
+  @Memoized // Memoized to reduce garbage as this is effectively a singleton.
   public SpanStore spanStore() {
     ensureIndexTemplates();
     return new ElasticsearchSpanStore(this);
@@ -274,12 +275,14 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   @Override
+  @Memoized // Memoized to reduce garbage as this is effectively a singleton.
   public AutocompleteTags autocompleteTags() {
     ensureIndexTemplates();
     return new ElasticsearchAutocompleteTags(this);
   }
 
   @Override
+  @Memoized // Memoized to reduce garbage as this is effectively a singleton.
   public SpanConsumer spanConsumer() {
     ensureIndexTemplates();
     return new ElasticsearchSpanConsumer(this);
