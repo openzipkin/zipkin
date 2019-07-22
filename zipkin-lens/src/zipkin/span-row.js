@@ -284,7 +284,7 @@ function maybePushServiceName(serviceNames, serviceName) {
   }
 }
 
-function getServiceName(endpoint) {
+export function getServiceName(endpoint) {
   return endpoint ? endpoint.serviceName : undefined;
 }
 

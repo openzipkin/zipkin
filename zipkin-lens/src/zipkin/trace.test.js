@@ -17,6 +17,7 @@ import {
   mkDurationStr,
   totalDuration,
   detailedTraceSummary,
+  rootServiceAndSpanName,
 } from './trace';
 import { SpanNode } from './span-node';
 import { clean } from './span-cleaner';
@@ -338,6 +339,36 @@ describe('totalDuration', () => {
       { timestamp: 20, duration: 210 },
     ];
     expect(totalDuration(rootLongest)).toBe(300);
+  });
+});
+
+describe('rootServiceAndSpanName', () => {
+  it('should return serviceName and spanName of the span when the span is not headless', () => {
+    const testTrace = new SpanNode(clean({
+      traceId: '2480ccca8df0fca5',
+      name: 'get',
+      id: '2480ccca8df0fca5',
+      timestamp: 1457186385375000,
+      duration: 333000,
+      localEndpoint: { serviceName: 'zipkin-query', ipv4: '127.0.0.1', port: 9411 },
+      tags: { lc: 'component' },
+    }));
+    expect(rootServiceAndSpanName(testTrace)).toEqual({
+      serviceName: 'zipkin-query',
+      spanName: 'get',
+    });
+  });
+
+  it('should return unknown serviceName and spanName when the span is headless', () => {
+    const headless = new SpanNode(); // headless as there's no root span
+
+    // make a copy of the cleaned http trace as adding a child is a mutation
+    treeCorrectedForClockSkew(httpTrace).children.forEach(child => headless.addChild(child));
+
+    expect(rootServiceAndSpanName(headless)).toEqual({
+      serviceName: 'unknown',
+      spanName: 'unknown',
+    });
   });
 });
 
