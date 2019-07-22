@@ -29,7 +29,7 @@ export const buildCommonQueryParameters = (
   conditions,
   lookbackCondition,
   limitCondition,
-  currentTime = null,
+  currentTs = null,
 ) => {
   const conditionMap = {};
   const tagConditions = [];
@@ -64,8 +64,8 @@ export const buildCommonQueryParameters = (
   if (lookbackCondition.value === 'custom') {
     conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.startTs = lookbackCondition.startTs;
-  } else if (currentTime) {
-    conditionMap.endTs = currentTime.valueOf();
+  } else if (currentTs) {
+    conditionMap.endTs = currentTs;
   } else {
     conditionMap.endTs = lookbackCondition.endTs;
   }
@@ -77,7 +77,7 @@ export const buildTracesApiQueryParameters = (
   conditions,
   lookbackCondition,
   limitCondition,
-  currentTime = null,
+  currentTs = null,
 ) => {
   const conditionMap = {};
   const annotationQueryConditions = [];
@@ -108,8 +108,8 @@ export const buildTracesApiQueryParameters = (
   if (lookbackCondition.value === 'custom') {
     conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
-  } else if (currentTime) {
-    conditionMap.endTs = currentTime.valueOf();
+  } else if (currentTs) {
+    conditionMap.endTs = currentTs;
     conditionMap.lookback = lookbackDurations[lookbackCondition.value];
   } else {
     conditionMap.endTs = lookbackCondition.endTs;
@@ -121,14 +121,14 @@ export const buildTracesApiQueryParameters = (
 
 export const buildDependenciesApiQueryParameters = (
   lookbackCondition,
-  currentTime = null,
+  currentTs = null,
 ) => {
   const conditionMap = {};
   if (lookbackCondition.value === 'custom') {
     conditionMap.endTs = lookbackCondition.endTs;
     conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
-  } else if (currentTime) {
-    conditionMap.endTs = currentTime.valueOf();
+  } else if (currentTs) {
+    conditionMap.endTs = currentTs;
     conditionMap.lookback = lookbackDurations[lookbackCondition.value];
   } else {
     conditionMap.endTs = lookbackCondition.endTs;
@@ -194,6 +194,7 @@ export const extractConditionsFromQueryParameters = (queryParameters) => {
           case '2d':
           case '7d': {
             lookbackCondition.value = conditionValue;
+            lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
             break;
           }
           case 'custom':

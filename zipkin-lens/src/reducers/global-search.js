@@ -58,6 +58,11 @@ const globalSearch = (state = initialState, action) => {
         conditions,
       };
     }
+    case types.GLOBAL_SEARCH_SET_CONDITIONS:
+      return {
+        ...state,
+        conditions: action.conditions,
+      };
     case types.GLOBAL_SEARCH_CHANGE_CONDITION_KEY: {
       const conditions = [...state.conditions];
       const condition = { ...conditions[action.index] };
