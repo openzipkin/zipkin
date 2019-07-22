@@ -45,6 +45,7 @@ const lookbackOptions = [
   { value: 'custom', label: 'Custom' },
 ];
 
+// Create a map like { '1m': '1 Minute', '5m': '5 Minutes', ... }
 const lookbackOptionMap = lookbackOptions.reduce((acc, cur) => {
   acc[cur.value] = cur.label;
   return acc;
@@ -145,14 +146,15 @@ const LookbackCondition = () => {
   const renderMenuItems = (lookbackOption) => {
     if (lookbackOption.value === 'more') {
       return (
-        <MenuItem onClick={handleMoreClick} key={lookbackCondition.value}>
+        <MenuItem onClick={handleMoreClick} key={lookbackOption.value}>
           {lookbackOption.label}
         </MenuItem>
       );
     }
+
     return (
       <MenuItem
-        key={lookbackCondition.value}
+        key={lookbackOption.value}
         onClick={() => {
           setMenuAnchor(null);
           dispatch(setLookbackCondition({
@@ -205,7 +207,7 @@ const LookbackCondition = () => {
         open={Boolean(menuAnchor)}
         onClose={handleMenuClose}
       >
-        { lookbackMenuOptions.map(renderMenuItems) }
+        {lookbackMenuOptions.map(renderMenuItems)}
       </Menu>
       <Dialog open={isModalOpen} onClose={handleModalClose}>
         <DialogTitle>
