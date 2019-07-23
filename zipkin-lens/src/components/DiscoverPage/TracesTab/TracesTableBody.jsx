@@ -24,6 +24,7 @@ import { fade } from '@material-ui/core/styles/colorManipulator';
 
 import ServiceBadge from '../../Common/ServiceBadge';
 import { rootServiceAndSpanName } from '../../../zipkin';
+import { traceSummariesPropTypes } from '../../../prop-types';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -67,13 +68,14 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const propTypes = {
+  traceSummaries: traceSummariesPropTypes.isRequired,
+  onAddFilter: PropTypes.func.isRequired,
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-const TracesTableBody = ({ history }) => {
+const TracesTableBody = ({ traceSummaries, onAddFilter, history }) => {
   const classes = useStyles();
 
-  const traceSummaries = useSelector(state => state.traces.traceSummaries);
   const correctedTraceMap = useSelector(state => state.traces.correctedTraceMap);
 
   return (
@@ -128,6 +130,10 @@ const TracesTableBody = ({ history }) => {
                       <ServiceBadge
                         serviceName={serviceSummary.serviceName}
                         count={serviceSummary.spanCount}
+                        onClick={(event) => {
+                          onAddFilter(serviceSummary.serviceName);
+                          event.stopPropagation();
+                        }}
                       />
                     </Box>
                   ))

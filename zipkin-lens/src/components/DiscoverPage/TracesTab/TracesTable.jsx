@@ -18,7 +18,7 @@ import Box from '@material-ui/core/Box';
 import TracesTableHead from './TracesTableHead';
 import TracesTableBody from './TracesTableBody';
 
-const TracesTable = () => (
+const TracesTable = props => (
   <React.Fragment>
     <TracesTableHead />
     <Box height="100%">
@@ -26,7 +26,7 @@ const TracesTable = () => (
         {
           ({ height, width }) => (
             <Box width={width} height={height} overflow="auto">
-              <TracesTableBody />
+              <TracesTableBody {...props} />
             </Box>
           )
         }

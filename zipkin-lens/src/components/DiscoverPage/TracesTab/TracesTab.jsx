@@ -36,16 +36,29 @@ const TracesTab = () => {
 
   const [filters, setFilters] = useState([]);
 
-  const addFilter = useCallback((filter) => {
-    setFilters([
-      ...filters,
-      filter,
-    ]);
+  const handleAddFilter = useCallback((filter) => {
+    if (!filters.includes(filter)) {
+      setFilters([
+        ...filters,
+        filter,
+      ]);
+    }
   }, [filters]);
 
-  const deleteFilter = useCallback((filter) => {
+  const handleDeleteFilter = useCallback((filter) => {
     setFilters(filters.filter(f => f !== filter));
   }, [filters]);
+
+  const filteredTraceSummaries = useMemo(() => traceSummaries.filter((traceSummary) => {
+    for (let i = 0; i < filters.length; i += 1) {
+      if (!traceSummary.serviceSummaries.find(
+        serviceSummary => serviceSummary.serviceName === filters[i],
+      )) {
+        return false;
+      }
+    }
+    return true;
+  }), [filters, traceSummaries]);
 
   return (
     <Box height="100%" display="flex" flexDirection="column">
@@ -58,13 +71,16 @@ const TracesTab = () => {
         <Box mr={2}>
           <ServiceFilter
             filters={filters}
-            addFilter={addFilter}
-            deleteFilter={deleteFilter}
+            onAddFilter={handleAddFilter}
+            onDeleteFilter={handleDeleteFilter}
             allServiceNames={allServiceNames}
           />
         </Box>
       </Box>
-      <TracesTable />
+      <TracesTable
+        traceSummaries={filteredTraceSummaries}
+        onAddFilter={handleAddFilter}
+      />
     </Box>
   );
 };

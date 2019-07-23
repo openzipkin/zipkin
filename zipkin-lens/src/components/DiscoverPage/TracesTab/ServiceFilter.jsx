@@ -24,8 +24,8 @@ import ServiceBadge from '../../Common/ServiceBadge';
 
 const propTypes = {
   filters: PropTypes.arrayOf(PropTypes.string).isRequired,
-  addFilter: PropTypes.func.isRequired,
-  deleteFilter: PropTypes.func.isRequired,
+  onAddFilter: PropTypes.func.isRequired,
+  onDeleteFilter: PropTypes.func.isRequired,
   allServiceNames: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
@@ -47,8 +47,8 @@ const reactSelectStyles = {
 
 const ServiceFilter = ({
   filters,
-  addFilter,
-  deleteFilter,
+  onAddFilter,
+  onDeleteFilter,
   allServiceNames,
 }) => {
   const classes = useStyles();
@@ -69,9 +69,9 @@ const ServiceFilter = ({
   const handleMenuChange = useCallback(
     (selected) => {
       const filter = selected.value;
-      addFilter(filter);
+      onAddFilter(filter);
     },
-    [addFilter],
+    [onAddFilter],
   );
 
   return (
@@ -110,13 +110,13 @@ const ServiceFilter = ({
         {
           filters.length > 0
             ? (
-              <Box p={1} display="flex" flexWrap="wrap">
+              <Box p={1}>
                 {
                   filters.map(filter => (
-                    <Box m={0.1}>
+                    <Box m={0.3}>
                       <ServiceBadge
                         serviceName={filter}
-                        onClick={() => deleteFilter(filter)}
+                        onDelete={() => onDeleteFilter(filter)}
                       />
                     </Box>
                   ))
