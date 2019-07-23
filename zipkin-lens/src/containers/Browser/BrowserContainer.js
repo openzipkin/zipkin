@@ -14,7 +14,6 @@
 import { connect } from 'react-redux';
 
 import Browser from '../../components/Browser';
-import { clearTraces } from '../../actions/traces-action';
 
 const mapStateToProps = state => ({
   traceSummaries: state.traces.traceSummaries,
@@ -22,13 +21,6 @@ const mapStateToProps = state => ({
   isLoading: state.traces.isLoading,
 });
 
-const mapDispatchToProps = dispatch => ({
-  clearTraces: () => dispatch(clearTraces()),
-});
-
-const BrowserContainer = connect(
-  mapStateToProps,
-  mapDispatchToProps,
-)(Browser);
+const BrowserContainer = connect(mapStateToProps)(Browser);
 
 export default BrowserContainer;

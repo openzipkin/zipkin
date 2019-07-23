@@ -33,7 +33,7 @@ describe('buildCommonQueryParameters', () => {
         value: '1h',
       },
       15,
-      moment(1547098357716),
+      1547098357716,
     );
     expect(queryParameters).toEqual({
       serviceName: 'serviceA',
@@ -61,7 +61,7 @@ describe('buildCommonQueryParameters', () => {
         startTs: 1547098357701,
       },
       15,
-      moment(), // This argument is never used when lookback.value is custom.
+      moment().valueOf(), // This argument is never used when lookback.value is custom.
     );
     expect(queryParameters).toEqual({
       serviceName: 'serviceA',
@@ -76,6 +76,32 @@ describe('buildCommonQueryParameters', () => {
     });
   });
 
+  it('should return right query parameters when the currentTs is not specified', () => {
+    const queryParameters = buildCommonQueryParameters(
+      [
+        { key: 'serviceName', value: 'serviceA' },
+        { key: 'remoteServiceName', value: 'serviceB' },
+        { key: 'spanName', value: 'spanA' },
+        { key: 'minDuration', value: 10 },
+        { key: 'maxDuration', value: 100 },
+      ], {
+        value: '1h',
+        endTs: 1547098357716,
+      },
+      15,
+    );
+    expect(queryParameters).toEqual({
+      serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
+      spanName: 'spanA',
+      minDuration: 10,
+      maxDuration: 100,
+      lookback: '1h',
+      endTs: 1547098357716,
+      limit: 15,
+    });
+  });
+
   it('should return right query parameters with a tags', () => {
     const queryParameters = buildCommonQueryParameters(
       [
@@ -84,7 +110,7 @@ describe('buildCommonQueryParameters', () => {
         value: '1h',
       },
       15,
-      moment(1547098357716),
+      1547098357716,
     );
     expect(queryParameters).toEqual({
       tags: 'key=value',
@@ -104,7 +130,7 @@ describe('buildCommonQueryParameters', () => {
         value: '1h',
       },
       15,
-      moment(1547098357716),
+      1547098357716,
     );
     expect(queryParameters).toEqual({
       tags: 'key1=value1 and key2 and key3=value3',
@@ -128,7 +154,7 @@ describe('buildTracesApiQueryParameters', () => {
         value: '1h',
       },
       15,
-      moment(1547098357716),
+      1547098357716,
     );
     expect(apiQueryParameters).toEqual({
       serviceName: 'serviceA',
@@ -156,7 +182,7 @@ describe('buildTracesApiQueryParameters', () => {
         startTs: 1547098357710, // lookback == 6
       },
       15,
-      moment(), // // This argument is never used when lookback.value is custom.
+      moment().valueOf(), // // This argument is never used when lookback.value is custom.
     );
     expect(apiQueryParameters).toEqual({
       serviceName: 'serviceA',
@@ -166,6 +192,32 @@ describe('buildTracesApiQueryParameters', () => {
       maxDuration: 100,
       endTs: 1547098357716,
       lookback: 6,
+      limit: 15,
+    });
+  });
+
+  it('should return right query parameters when the currentTs is not specified', () => {
+    const apiQueryParameters = buildTracesApiQueryParameters(
+      [
+        { key: 'serviceName', value: 'serviceA' },
+        { key: 'remoteServiceName', value: 'serviceB' },
+        { key: 'spanName', value: 'spanA' },
+        { key: 'minDuration', value: 10 },
+        { key: 'maxDuration', value: 100 },
+      ], {
+        value: '1h',
+        endTs: 1547098357716,
+      },
+      15,
+    );
+    expect(apiQueryParameters).toEqual({
+      serviceName: 'serviceA',
+      remoteServiceName: 'serviceB',
+      spanName: 'spanA',
+      minDuration: 10,
+      maxDuration: 100,
+      endTs: 1547098357716,
+      lookback: 3600000,
       limit: 15,
     });
   });
@@ -180,7 +232,7 @@ describe('buildTracesApiQueryParameters', () => {
         value: '1h',
       },
       15,
-      moment(1547098357716),
+      1547098357716,
     );
     expect(apiQueryParameters).toEqual({
       annotationQuery: 'key1=value1 and key2 and key3=value3',
@@ -197,7 +249,7 @@ describe('buildDependenciesApiQueryParameters', () => {
       {
         value: '1h',
       },
-      moment(1547098357716),
+      1547098357716,
     );
     expect(apiQueryParameters).toEqual({
       endTs: 1547098357716,
@@ -212,11 +264,24 @@ describe('buildDependenciesApiQueryParameters', () => {
         endTs: 1547098357716,
         startTs: 1547098357710, // lookback == 6
       },
-      moment(),
+      moment().valueOf(),
     );
     expect(apiQueryParameters).toEqual({
       endTs: 1547098357716,
       lookback: 6,
+    });
+  });
+
+  it('should return right query parameters when the currentTs is not specified', () => {
+    const apiQueryParameters = buildDependenciesApiQueryParameters(
+      {
+        value: '1h',
+        endTs: 1547098357716,
+      },
+    );
+    expect(apiQueryParameters).toEqual({
+      endTs: 1547098357716,
+      lookback: 3600000,
     });
   });
 });
@@ -275,10 +340,11 @@ describe('extractConditionsFromQueryParameters', () => {
   it('should return the right lookback condition', () => {
     const { lookbackCondition } = extractConditionsFromQueryParameters({
       lookback: '1h',
-      endTs: '1547098357716', // endTs is never used.
+      endTs: '1547098357716',
     });
     expect(lookbackCondition).toEqual({
       value: '1h',
+      endTs: 1547098357716,
     });
   });
 

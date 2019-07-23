@@ -24,7 +24,6 @@ const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
   tracesMap: PropTypes.shape({}).isRequired,
   isLoading: PropTypes.bool.isRequired,
-  clearTraces: PropTypes.func.isRequired,
 };
 
 class Browser extends React.Component {
@@ -32,11 +31,6 @@ class Browser extends React.Component {
     super(props);
     this.state = { sortingMethod: sortingMethods.LONGEST };
     this.handleSortingMethodChange = this.handleSortingMethodChange.bind(this);
-  }
-
-  componentWillUnmount() {
-    const { clearTraces } = this.props;
-    clearTraces();
   }
 
   handleSortingMethodChange(selected) {

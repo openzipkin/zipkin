@@ -21,6 +21,7 @@ describe('traces reducer', () => {
       traces: [],
       traceSummaries: [],
       correctedTraceMap: {},
+      lastQueryParams: {},
     });
   });
 
@@ -34,6 +35,7 @@ describe('traces reducer', () => {
       traces: [],
       traceSummaries: [],
       correctedTraceMap: {},
+      lastQueryParams: {},
     });
   });
 
@@ -54,6 +56,9 @@ describe('traces reducer', () => {
         correctedTraceMap: {
           d050e0d52326cf81: {}, // Omit details
         },
+        lastQueryParams: {
+          serviceName: 'serviceA',
+        },
       }, {
         type: types.TRACES_LOAD_SUCCESS,
         traces: [
@@ -68,6 +73,9 @@ describe('traces reducer', () => {
         }],
         correctedTraceMap: {
           c020e0d52326cf84: {}, // Omit details
+        },
+        lastQueryParams: {
+          serviceName: 'serviceB',
         },
       }),
     ).toEqual({
@@ -84,6 +92,9 @@ describe('traces reducer', () => {
       }],
       correctedTraceMap: {
         c020e0d52326cf84: {},
+      },
+      lastQueryParams: {
+        serviceName: 'serviceB',
       },
     });
   });
@@ -107,6 +118,7 @@ describe('traces reducer', () => {
       traces: [],
       traceSummaries: [],
       correctedTraceMap: {},
+      lastQueryParams: {},
     });
   });
 });

@@ -46,7 +46,7 @@ import { fetchRemoteServices } from '../../actions/remote-services-action';
 import { fetchSpans } from '../../actions/spans-action';
 import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
 import { fetchDependencies } from '../../actions/dependencies-action';
-import { addCondition, setLookbackCondition, setLimitCondition } from '../../actions/global-search-action';
+import { setConditions, setLookbackCondition, setLimitCondition } from '../../actions/global-search-action';
 
 const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
@@ -83,18 +83,19 @@ const DiscoverPage = ({ history, location }) => {
 
   const dispatch = useDispatch();
 
+  const lastQueryParams = useSelector(state => state.traces.lastQueryParams);
   const conditions = useSelector(state => state.globalSearch.conditions);
   const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
   const limitCondition = useSelector(state => state.globalSearch.limitCondition);
 
   const findTraces = useCallback(() => {
-    const currentTime = moment();
+    const currentTs = moment().valueOf();
 
     const queryParameters = buildQueryParameters(buildCommonQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
-      currentTime,
+      currentTs,
     ));
     history.push({ pathname: '/zipkin', search: queryParameters });
 
@@ -102,24 +103,24 @@ const DiscoverPage = ({ history, location }) => {
       conditions,
       lookbackCondition,
       limitCondition,
-      currentTime,
+      currentTs,
     )));
   }, [conditions, lookbackCondition, limitCondition, dispatch, history]);
 
   const findDependencies = useCallback(() => {
-    const currentTime = moment();
+    const currentTs = moment().valueOf();
 
     const queryParameters = buildQueryParameters(buildCommonQueryParameters(
       conditions,
       lookbackCondition,
       limitCondition,
-      currentTime,
+      currentTs,
     ));
     history.push({ pathname: '/zipkin/dependency', search: queryParameters });
 
     dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
       lookbackCondition,
-      currentTime,
+      currentTs,
     )));
   }, [conditions, lookbackCondition, limitCondition, dispatch, history]);
 
@@ -159,7 +160,7 @@ const DiscoverPage = ({ history, location }) => {
           }
           break;
         default:
-          // Do nothing
+        // Do nothing
       }
     } else {
       switch (newTabValue) {
@@ -170,18 +171,18 @@ const DiscoverPage = ({ history, location }) => {
           history.push({ pathname: '/zipkin/dependency' });
           break;
         default:
-          // Do nothing
+        // Do nothing
       }
     }
   }, [
-    findTraces,
-    findDependencies,
-    conditions,
-    lookbackCondition,
-    limitCondition,
-    location.search,
-    history,
-  ]);
+      findTraces,
+      findDependencies,
+      conditions,
+      lookbackCondition,
+      limitCondition,
+      location.search,
+      history,
+    ]);
 
   const handleKeyDown = useCallback((event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
@@ -206,7 +207,7 @@ const DiscoverPage = ({ history, location }) => {
       limitCondition: limitConditionFromUrl,
     } = extractConditionsFromQueryParameters(queryParams);
 
-    conditionsFromUrl.forEach(condition => dispatch(addCondition(condition)));
+    dispatch(setConditions(conditionsFromUrl));
     dispatch(setLookbackCondition({
       value: lookbackConditionFromUrl.value || '1h',
       endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
@@ -225,7 +226,7 @@ const DiscoverPage = ({ history, location }) => {
     }
     dispatch(fetchAutocompleteKeys());
 
-    const currentTime = moment();
+    const currentTs = lookbackConditionFromUrl.endTs || moment().valueOf();
 
     // Finally fetch traces-data or dependencies-data according to location.pathname.
     switch (location.pathname) {
@@ -237,20 +238,24 @@ const DiscoverPage = ({ history, location }) => {
           || !_.isEmpty(lookbackConditionFromUrl)
           || !!limitConditionFromUrl
         ) {
-          dispatch(loadTraces(buildTracesApiQueryParameters(
+          const apiQueryParams = buildTracesApiQueryParameters(
             conditionsFromUrl,
             lookbackConditionFromUrl,
             limitConditionFromUrl,
-            currentTime,
-          )));
+            currentTs,
+          );
+          if (!_.isEqual(apiQueryParams, lastQueryParams)) {
+            dispatch(loadTraces(apiQueryParams));
+          }
         }
         break;
       case '/zipkin/dependency':
         setTabValue(dependenciesTab);
+
         if (!_.isEmpty(conditionsFromUrl) || !_.isEmpty(lookbackConditionFromUrl)) {
           dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
             lookbackConditionFromUrl,
-            currentTime,
+            currentTs,
           )));
         }
         break;
