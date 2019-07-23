@@ -20,7 +20,7 @@ import Button from '@material-ui/core/Button';
 import Popover from '@material-ui/core/Popover';
 import ReactSelect from 'react-select';
 
-import ServiceNameBadge from '../../Common/ServiceNameBadge';
+import ServiceBadge from '../../Common/ServiceBadge';
 
 const propTypes = {
   filters: PropTypes.arrayOf(PropTypes.string).isRequired,
@@ -114,7 +114,7 @@ const ServiceFilter = ({
                 {
                   filters.map(filter => (
                     <Box m={0.1}>
-                      <ServiceNameBadge
+                      <ServiceBadge
                         serviceName={filter}
                         onClick={() => deleteFilter(filter)}
                       />

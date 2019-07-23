@@ -22,7 +22,7 @@ import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 
-import ServiceNameBadge from '../../Common/ServiceNameBadge';
+import ServiceBadge from '../../Common/ServiceBadge';
 import { rootServiceAndSpanName } from '../../../zipkin';
 
 const useStyles = makeStyles(theme => ({
@@ -124,7 +124,7 @@ const TracesTableBody = ({ history }) => {
                 {
                   traceSummary.serviceSummaries.map(serviceSummary => (
                     <Box key={serviceSummary.serviceName} mr={0.2} ml={0.2}>
-                      <ServiceNameBadge
+                      <ServiceBadge
                         serviceName={serviceSummary.serviceName}
                         count={serviceSummary.spanCount}
                       />
