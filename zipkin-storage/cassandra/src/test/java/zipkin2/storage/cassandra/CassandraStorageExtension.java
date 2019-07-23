@@ -114,8 +114,6 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
       return;
     }
 
-    if (container != null) container.stop();
-
     try {
       closer.close();
     } catch (Exception | Error e) {
