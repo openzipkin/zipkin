@@ -39,7 +39,7 @@ const useStyles = makeStyles(theme => ({
     position: 'relative',
     borderBottom: `1px solid ${grey[200]}`,
   },
-  bar: {
+  durationBar: {
     backgroundColor: fade(theme.palette.primary.light, 0.4),
   },
   dataCell: {
@@ -92,14 +92,12 @@ const TracesTableBody = ({ history }) => {
           return (
             <Box className={classes.row} onClick={handleClick}>
               <Grid container spacing={0} className={classes.dataRow}>
-                {/* // This is trace duration bar.
-                  <Box
-                    position="absolute"
-                    width={`${traceSummary.width}%`}
-                    height="100%"
-                    className={classes.bar}
-                  />
-                */}
+                <Box
+                  position="absolute"
+                  width={`${traceSummary.width}%`}
+                  height="100%"
+                  className={classes.durationBar}
+                />
                 <Grid item xs={3} className={classes.dataCell}>
                   <Box className={classes.serviceName}>
                     {`${serviceName}`}
