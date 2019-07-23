@@ -16,7 +16,7 @@ import React from 'react';
 
 import MiniTimelineTimeMarkers from './MiniTimelineTimeMarkers';
 import { getGraphHeight, getGraphLineHeight } from './util';
-import { getServiceNameColor } from '../../util/color';
+import { selectServiceColor } from '../../colors';
 import { detailedSpansPropTypes } from '../../prop-types';
 
 const leftMouseButton = 0;
@@ -133,7 +133,7 @@ class MiniTimelineGraph extends React.Component {
                 height={graphLineHeight}
                 x={`${span.left}%`}
                 y={i * graphLineHeight}
-                fill={getServiceNameColor(span.serviceName)}
+                fill={selectServiceColor(span.serviceName)}
               />
             ))
           }

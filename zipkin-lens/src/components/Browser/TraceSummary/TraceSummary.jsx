@@ -18,7 +18,7 @@ import TraceSummaryBar from './TraceSummaryBar';
 import TraceSummaryUpperBar from './TraceSummaryUpperBar';
 import TraceSummaryButtons from './TraceSummaryButtons';
 import Timeline from '../../Timeline';
-import ServiceNameBadge from '../../Common/ServiceNameBadge';
+import ServiceBadge from '../../Common/ServiceBadge';
 import { detailedTraceSummary } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
 
@@ -83,7 +83,7 @@ class TraceSummary extends React.Component {
             {
               traceSummary.serviceSummaries.map(serviceSummary => (
                 <div key={serviceSummary.serviceName} className="trace-summary__badge-wrapper">
-                  <ServiceNameBadge
+                  <ServiceBadge
                     serviceName={serviceSummary.serviceName}
                     count={serviceSummary.spanCount}
                   />
