@@ -33,7 +33,7 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 class ITMySQLStorage {
 
   @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
-    "openzipkin/zipkin-mysql:2.14.2");
+    "openzipkin/zipkin-mysql:2.15.0");
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<MySQLStorage> {
