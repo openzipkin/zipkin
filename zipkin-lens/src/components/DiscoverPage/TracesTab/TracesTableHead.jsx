@@ -36,13 +36,16 @@ const TracesTableHead = () => {
 
   return (
     <Grid container spacing={0} className={classes.root}>
-      <Grid item xs={4} className={classes.cell}>
+      <Grid item xs={3} className={classes.cell}>
         Root
       </Grid>
-      <Grid item xs={4} className={classes.cell}>
+      <Grid item xs={3} className={classes.cell}>
+        Trace ID
+      </Grid>
+      <Grid item xs={3} className={classes.cell}>
         Start Time
       </Grid>
-      <Grid item xs={4} className={classes.cell}>
+      <Grid item xs={3} className={classes.cell}>
         Duration
       </Grid>
     </Grid>

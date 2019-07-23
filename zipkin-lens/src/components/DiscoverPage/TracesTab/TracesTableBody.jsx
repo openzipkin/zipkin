@@ -100,7 +100,7 @@ const TracesTableBody = ({ history }) => {
                     className={classes.bar}
                   />
                 */}
-                <Grid item xs={4} className={classes.dataCell}>
+                <Grid item xs={3} className={classes.dataCell}>
                   <Box className={classes.serviceName}>
                     {`${serviceName}`}
                   </Box>
@@ -108,7 +108,10 @@ const TracesTableBody = ({ history }) => {
                     {`(${spanName})`}
                   </Box>
                 </Grid>
-                <Grid item xs={4} className={classes.dataCell}>
+                <Grid item xs={3} className={classes.dataCell}>
+                  {traceSummary.traceId}
+                </Grid>
+                <Grid item xs={3} className={classes.dataCell}>
                   <Box mr={2}>
                     {startTime.format('MM/DD HH:mm:ss:SSS')}
                   </Box>
@@ -116,7 +119,7 @@ const TracesTableBody = ({ history }) => {
                     {`(${startTime.fromNow()})`}
                   </Box>
                 </Grid>
-                <Grid item xs={4} className={classes.dataCell}>
+                <Grid item xs={3} className={classes.dataCell}>
                   {traceSummary.durationStr}
                 </Grid>
               </Grid>
