@@ -29,13 +29,13 @@ export const loadTracesSuccess = (
   traces,
   traceSummaries,
   correctedTraceMap,
-  lastFetchingParams,
+  lastQueryParams,
 ) => ({
   type: types.TRACES_LOAD_SUCCESS,
   traces,
   traceSummaries,
   correctedTraceMap,
-  lastFetchingParams,
+  lastQueryParams,
 });
 
 export const loadTracesFailure = () => ({

@@ -83,7 +83,7 @@ const DiscoverPage = ({ history, location }) => {
 
   const dispatch = useDispatch();
 
-  const lastFetchingParams = useSelector(state => state.traces.lastFetchingParams);
+  const lastQueryParams = useSelector(state => state.traces.lastQueryParams);
   const conditions = useSelector(state => state.globalSearch.conditions);
   const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
   const limitCondition = useSelector(state => state.globalSearch.limitCondition);
@@ -160,7 +160,7 @@ const DiscoverPage = ({ history, location }) => {
           }
           break;
         default:
-          // Do nothing
+        // Do nothing
       }
     } else {
       switch (newTabValue) {
@@ -171,18 +171,18 @@ const DiscoverPage = ({ history, location }) => {
           history.push({ pathname: '/zipkin/dependency' });
           break;
         default:
-          // Do nothing
+        // Do nothing
       }
     }
   }, [
-    findTraces,
-    findDependencies,
-    conditions,
-    lookbackCondition,
-    limitCondition,
-    location.search,
-    history,
-  ]);
+      findTraces,
+      findDependencies,
+      conditions,
+      lookbackCondition,
+      limitCondition,
+      location.search,
+      history,
+    ]);
 
   const handleKeyDown = useCallback((event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
@@ -244,7 +244,7 @@ const DiscoverPage = ({ history, location }) => {
             limitConditionFromUrl,
             currentTs,
           );
-          if (!_.isEqual(apiQueryParams, lastFetchingParams)) {
+          if (!_.isEqual(apiQueryParams, lastQueryParams)) {
             dispatch(loadTraces(apiQueryParams));
           }
         }

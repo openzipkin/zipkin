@@ -76,7 +76,7 @@ describe('traces async actions', () => {
         traces: rawTraces,
         correctedTraceMap,
         traceSummaries,
-        lastFetchingParams: {
+        lastQueryParams: {
           serviceName: 'serviceA',
           spanName: 'span1',
         },

@@ -21,7 +21,7 @@ describe('traces reducer', () => {
       traces: [],
       traceSummaries: [],
       correctedTraceMap: {},
-      lastFetchingParams: {},
+      lastQueryParams: {},
     });
   });
 
@@ -35,7 +35,7 @@ describe('traces reducer', () => {
       traces: [],
       traceSummaries: [],
       correctedTraceMap: {},
-      lastFetchingParams: {},
+      lastQueryParams: {},
     });
   });
 
@@ -56,7 +56,7 @@ describe('traces reducer', () => {
         correctedTraceMap: {
           d050e0d52326cf81: {}, // Omit details
         },
-        lastFetchingParams: {
+        lastQueryParams: {
           serviceName: 'serviceA',
         },
       }, {
@@ -74,7 +74,7 @@ describe('traces reducer', () => {
         correctedTraceMap: {
           c020e0d52326cf84: {}, // Omit details
         },
-        lastFetchingParams: {
+        lastQueryParams: {
           serviceName: 'serviceB',
         },
       }),
@@ -93,7 +93,7 @@ describe('traces reducer', () => {
       correctedTraceMap: {
         c020e0d52326cf84: {},
       },
-      lastFetchingParams: {
+      lastQueryParams: {
         serviceName: 'serviceB',
       },
     });
@@ -118,7 +118,7 @@ describe('traces reducer', () => {
       traces: [],
       traceSummaries: [],
       correctedTraceMap: {},
-      lastFetchingParams: {},
+      lastQueryParams: {},
     });
   });
 });
