@@ -48,17 +48,18 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
       public void run() {
         try {
           callback.onSuccess(map(getUninterruptibly(future)));
-        } catch (RuntimeException | Error e) {
-          propagateIfFatal(e);
-          callback.onError(e);
+        } catch (Throwable t) {
+          propagateIfFatal(t);
+          callback.onError(t);
         }
       }
     }
     try {
       (future = newFuture()).addListener(new CallbackListener(), DirectExecutor.INSTANCE);
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      throw e;
+    } catch (Throwable t) {
+      propagateIfFatal(t);
+      callback.onError(t);
+      throw t;
     }
   }
 

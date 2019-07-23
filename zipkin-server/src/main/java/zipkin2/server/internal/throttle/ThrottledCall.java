@@ -142,10 +142,10 @@ final class ThrottledCall<V> extends Call.Base<V> {
         } finally {
           setCurrentThreadName(oldName);
         }
-      } catch (RuntimeException | Error e) {
-        propagateIfFatal(e);
+      } catch (Throwable t) {
+        propagateIfFatal(t);
         limitListener.onIgnore();
-        callback.onError(e);
+        callback.onError(t);
       }
     }
 

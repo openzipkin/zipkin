@@ -15,8 +15,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { Doughnut } from 'react-chartjs-2';
 
-import ServiceNameBadge from '../Common/ServiceNameBadge';
-import { getServiceNameColor } from '../../util/color';
+import ServiceBadge from '../Common/ServiceBadge';
+import { selectServiceColor } from '../../colors';
 
 const propTypes = {
   serviceName: PropTypes.string.isRequired,
@@ -39,7 +39,7 @@ const renderEdgeData = (edges, isTarget) => {
   const key = isTarget ? 'target' : 'source';
   return edges.map(edge => (
     <div className="dependencies-sidebar__edge-data">
-      <ServiceNameBadge
+      <ServiceBadge
         serviceName={edge[key]}
       />
       <div className="dependencies-sidebar__count-data-wrapper">
@@ -74,8 +74,8 @@ const renderDoughnut = (edges, isTarget) => {
     datasets: [{
       data: edges.map(e => e.metrics.normal + e.metrics.danger),
       backgroundColor: isTarget
-        ? edges.map(e => getServiceNameColor(e.target))
-        : edges.map(e => getServiceNameColor(e.source)),
+        ? edges.map(e => selectServiceColor(e.target))
+        : edges.map(e => selectServiceColor(e.source)),
     }],
   };
   const options = {

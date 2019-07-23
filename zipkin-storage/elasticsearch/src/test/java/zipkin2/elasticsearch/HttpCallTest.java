@@ -11,17 +11,24 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch.internal.client;
+package zipkin2.elasticsearch; // to access package-private stuff
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.io.FileNotFoundException;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -33,6 +40,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -60,11 +68,20 @@ public class HttpCallTest {
     http = new HttpCall.Factory(HttpClient.of(server.httpUri("/")));
   }
 
+  @Test public void emptyContent() throws Exception {
+    MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
+
+    assertThat(http.newCall(REQUEST, unused -> "not me").execute()).isNull();
+    CompletableCallback<String> future = new CompletableCallback<>();
+    http.newCall(REQUEST, unused -> "not me").enqueue(future);
+    assertThat(future.join()).isNull();
+  }
+
   @Test public void propagatesOnDispatcherThreadWhenFatal() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
-    http.newCall(REQUEST, b -> {
+    http.newCall(REQUEST, content -> {
       throw new LinkageError();
     }).enqueue(new Callback<Object>() {
       @Override public void onSuccess(@Nullable Object value) {
@@ -90,7 +107,7 @@ public class HttpCallTest {
   @Test public void executionException_conversionException() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(REQUEST, b -> {
+    Call<?> call = http.newCall(REQUEST, content -> {
       throw new IllegalArgumentException("eeek");
     });
 
@@ -105,7 +122,7 @@ public class HttpCallTest {
   @Test public void cloned() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(REQUEST, b -> null);
+    Call<?> call = http.newCall(REQUEST, content -> null);
     call.execute();
 
     try {
@@ -120,16 +137,70 @@ public class HttpCallTest {
     call.clone().execute();
   }
 
-  @Test public void executionException_httpFailure() throws Exception {
+  @Test public void executionException_5xx() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
 
-    Call<?> call = http.newCall(REQUEST, b -> null);
+    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL);
 
     try {
       call.execute();
-      failBecauseExceptionWasNotThrown(IllegalStateException.class);
-    } catch (IllegalStateException expected) {
-      assertThat(expected).isInstanceOf(IllegalStateException.class);
+      failBecauseExceptionWasNotThrown(RuntimeException.class);
+    } catch (RuntimeException expected) {
+      assertThat(expected).hasMessage("response for / failed: 500 Internal Server Error");
+    }
+  }
+
+  @Test public void executionException_404() throws Exception {
+    MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND));
+
+    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL);
+
+    try {
+      call.execute();
+      failBecauseExceptionWasNotThrown(FileNotFoundException.class);
+    } catch (FileNotFoundException expected) {
+      assertThat(expected).hasMessage("/");
+    }
+  }
+
+  @Test public void executionException_message() throws Exception {
+    Map<AggregatedHttpResponse, String> responseToMessage = new LinkedHashMap<>();
+    responseToMessage.put(AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.UNAUTHORIZED),
+      HttpData.ofUtf8("{\"message\":\"rain\"}")
+    ), "rain");
+    responseToMessage.put(AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.FORBIDDEN),
+      HttpData.ofUtf8("{\"Message\":\"snow\"}") // note: case of key is different
+    ), "snow");
+    responseToMessage.put(AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.BAD_GATEWAY),
+      HttpData.ofUtf8("Message: sleet") // note: not json
+    ), "response for / failed: Message: sleet"); // In this case, we give request context
+
+    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL);
+
+    for (Map.Entry<AggregatedHttpResponse, String> entry : responseToMessage.entrySet()) {
+      MOCK_RESPONSE.set(entry.getKey());
+
+      try {
+        call.clone().execute();
+        failBecauseExceptionWasNotThrown(RuntimeException.class);
+      } catch (RuntimeException expected) {
+        assertThat(expected).hasMessage(entry.getValue());
+      }
+    }
+  }
+
+  // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.
+  static final class CompletableCallback<T> extends CompletableFuture<T> implements Callback<T> {
+
+    @Override public void onSuccess(T value) {
+      complete(value);
+    }
+
+    @Override public void onError(Throwable t) {
+      completeExceptionally(t);
     }
   }
 }

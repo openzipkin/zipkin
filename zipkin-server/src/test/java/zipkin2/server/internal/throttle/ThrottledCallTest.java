@@ -237,7 +237,7 @@ public class ThrottledCallTest {
     @Override public void doEnqueue(Callback<Void> callback) {
       try {
         callback.onSuccess(doExecute());
-      } catch (RuntimeException | Error t) {
+      } catch (Throwable t) {
         propagateIfFatal(t);
         callback.onError(t);
       }

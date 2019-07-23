@@ -239,9 +239,9 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     @Override protected void doEnqueue(Callback<Void> callback) {
       try {
         callback.onSuccess(doExecute());
-      } catch (RuntimeException | Error e) {
-        Call.propagateIfFatal(e);
-        callback.onError(e);
+      } catch (Throwable t) {
+        propagateIfFatal(t);
+        callback.onError(t);
       }
     }
 

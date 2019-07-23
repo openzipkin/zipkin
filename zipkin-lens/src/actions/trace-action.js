@@ -13,36 +13,50 @@
  */
 import * as types from '../constants/action-types';
 import * as api from '../constants/api';
+import {
+  treeCorrectedForClockSkew,
+  detailedTraceSummary as buildDetailedTraceSummary,
+} from '../zipkin';
 
-export const fetchTraceRequest = () => ({
-  type: types.FETCH_TRACE_REQUEST,
+export const loadTraceRequest = () => ({
+  type: types.TRACE_LOAD_REQUEST,
 });
 
-export const fetchTraceSuccess = trace => ({
-  type: types.FETCH_TRACE_SUCCESS,
-  trace,
+export const loadTraceSuccess = traceSummary => ({
+  type: types.TRACE_LOAD_SUCCESS,
+  traceSummary,
 });
 
-export const fetchTraceFailure = () => ({
-  type: types.FETCH_TRACE_FAILURE,
+export const loadTraceFailure = () => ({
+  type: types.TRACE_LOAD_FAILURE,
 });
 
-const fetchTraceTimeout = 300;
+const calculateCorrectedTrace = async trace => treeCorrectedForClockSkew(trace);
 
-export const fetchTrace = traceId => async (dispatch) => {
-  dispatch(fetchTraceRequest());
-  try {
-    /* Make the users feel loading time ... */
-    const res = await Promise.all([
-      fetch(`${api.TRACE}/${traceId}`),
-      new Promise(resolve => setTimeout(resolve, fetchTraceTimeout)),
-    ]);
-    if (!res[0].ok) {
-      throw Error(res[0].statusText);
+const calculateDetailedTraceSummary = async correctedTrace => buildDetailedTraceSummary(
+  correctedTrace,
+);
+
+export const loadTrace = (traceId, correctedTraceMap) => async (dispatch) => {
+  dispatch(loadTraceRequest());
+
+  if (correctedTraceMap[traceId]) {
+    const detailedTraceSummary = await calculateDetailedTraceSummary(correctedTraceMap[traceId]);
+    dispatch(loadTraceSuccess(detailedTraceSummary));
+  } else {
+    try {
+      const res = await fetch(`${api.TRACE}/${traceId}`);
+
+      if (!res.ok) {
+        throw Error(res.statusText);
+      }
+      const trace = await res.json();
+      const correctedTrace = await calculateCorrectedTrace(trace);
+      const detailedTraceSummary = await calculateDetailedTraceSummary(correctedTrace);
+
+      dispatch(loadTraceSuccess(detailedTraceSummary));
+    } catch (err) {
+      dispatch(loadTraceFailure());
     }
-    const trace = await res[0].json();
-    dispatch(fetchTraceSuccess(trace));
-  } catch (err) {
-    dispatch(fetchTraceFailure());
   }
 };

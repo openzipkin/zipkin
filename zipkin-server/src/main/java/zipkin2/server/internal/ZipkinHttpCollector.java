@@ -54,6 +54,7 @@ import zipkin2.storage.StorageComponent;
 
 import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
 import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
+import static zipkin2.Call.propagateIfFatal;
 import static zipkin2.server.internal.BodyIsExceptionMessage.testForUnexpectedFormat;
 
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
@@ -118,8 +119,9 @@ public class ZipkinHttpCollector {
       final HttpData content;
       try {
         content = UnzippingBytesRequestConverter.convertRequest(ctx, msg);
-      } catch (IllegalArgumentException e) {
-        result.onError(e);
+      } catch (Throwable t1) {
+        propagateIfFatal(t1);
+        result.onError(t1);
         return null;
       }
 
@@ -156,8 +158,13 @@ public class ZipkinHttpCollector {
           result.onError(new IllegalArgumentException("Empty " + decoder.name() + " message"));
           return null;
         }
-        // UnzippingBytesRequestConverter handles incrementing message and bytes
-        collector.accept(spans, result);
+
+        // collector.accept might block so need to move off the event loop. We make sure the
+        // callback is context aware to continue the trace.
+        ctx.blockingTaskExecutor().execute(ctx.makeContextAware(() -> {
+          // UnzippingBytesRequestConverter handles incrementing message and bytes
+          collector.accept(spans, result);
+        }));
       } finally {
         ReferenceCountUtil.release(content);
       }

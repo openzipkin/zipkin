@@ -15,7 +15,8 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import TimelineSpanData from './TimelineSpanData';
-import { getErrorTypeColor, getServiceNameColor } from '../../util/color';
+import { selectServiceColor } from '../../colors';
+import { getErrorTypeColor } from '../../util/color';
 import { detailedSpanPropTypes } from '../../prop-types';
 
 const propTypes = {
@@ -135,7 +136,7 @@ class TimelineSpan extends React.Component {
           className="timeline-span__depth-marker"
           style={{
             left: `${span.depth * 14}px`,
-            background: `${getServiceNameColor(span.serviceName)}`,
+            background: `${selectServiceColor(span.serviceName)}`,
           }}
         />
         <div

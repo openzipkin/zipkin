@@ -15,16 +15,16 @@ package zipkin2.elasticsearch;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
+import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 /** Returns a version-specific span and dependency index template */
@@ -220,16 +220,18 @@ final class VersionSpecificTemplates {
   }
 
   static float getVersion(HttpCall.Factory callFactory) throws IOException {
-    AggregatedHttpRequest getNode = AggregatedHttpRequest.of(HttpMethod.GET, "/");;
+    AggregatedHttpRequest getNode = AggregatedHttpRequest.of(HttpMethod.GET, "/");
     return callFactory.newCall(getNode, ReadVersionNumber.INSTANCE).execute();
   }
 
   enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
     INSTANCE;
-
-    @Override public Float convert(ByteBuffer content) throws IOException {
-      JsonParser version = enterPath(JsonSerializers.jsonParser(content), "version", "number");
-      if (version == null) throw new IllegalStateException(".version.number not in response");
+    @Override public Float convert(HttpData content) throws IOException {
+      String body = content.toStringUtf8();
+      JsonParser version = enterPath(JSON_FACTORY.createParser(body), "version", "number");
+      if (version == null) {
+        throw new IllegalArgumentException(".version.number not found in response: " + body);
+      }
       String versionString = version.getText();
       return Float.valueOf(versionString.substring(0, 3));
     }

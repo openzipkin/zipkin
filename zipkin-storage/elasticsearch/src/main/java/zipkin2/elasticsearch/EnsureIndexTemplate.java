@@ -19,6 +19,7 @@ import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestHeaders;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import zipkin2.elasticsearch.internal.client.HttpCall.Factory;
 
@@ -34,7 +35,7 @@ final class EnsureIndexTemplate {
     AggregatedHttpRequest getTemplate = AggregatedHttpRequest.of(HttpMethod.GET, templateUrl);
     try {
       callFactory.newCall(getTemplate, BodyConverters.NULL).execute();
-    } catch (IllegalStateException e) { // TODO: handle 404 slightly more nicely
+    } catch (FileNotFoundException e) { // TODO: handle 404 slightly more nicely
       AggregatedHttpRequest updateTemplate = AggregatedHttpRequest.of(
         RequestHeaders.of(
           HttpMethod.PUT, templateUrl, HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),

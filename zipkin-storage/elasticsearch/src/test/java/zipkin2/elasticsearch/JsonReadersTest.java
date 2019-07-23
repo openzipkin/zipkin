@@ -13,123 +13,117 @@
  */
 package zipkin2.elasticsearch;
 
-import com.fasterxml.jackson.core.JsonParser;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.List;
 import org.junit.Test;
 import zipkin2.elasticsearch.internal.JsonReaders;
-import zipkin2.elasticsearch.internal.JsonSerializers;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.elasticsearch.internal.JsonReaders.collectValuesNamed;
+import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 public class JsonReadersTest {
+  @Test public void enterPath_nested() throws IOException {
+    String content = "{\n"
+      + "  \"name\" : \"Kamal\",\n"
+      + "  \"cluster_name\" : \"elasticsearch\",\n"
+      + "  \"version\" : {\n"
+      + "    \"number\" : \"2.4.0\",\n"
+      + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
+      + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
+      + "    \"build_snapshot\" : false,\n"
+      + "    \"lucene_version\" : \"5.5.2\"\n"
+      + "  },\n"
+      + "  \"tagline\" : \"You Know, for Search\"\n"
+      + "}";
 
-  @Test
-  public void enterPath_nested() throws IOException {
     assertThat(
-            JsonReaders.enterPath(
-                    jsonParser(
-                                "{\n"
-                                    + "  \"name\" : \"Kamal\",\n"
-                                    + "  \"cluster_name\" : \"elasticsearch\",\n"
-                                    + "  \"version\" : {\n"
-                                    + "    \"number\" : \"2.4.0\",\n"
-                                    + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
-                                    + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
-                                    + "    \"build_snapshot\" : false,\n"
-                                    + "    \"lucene_version\" : \"5.5.2\"\n"
-                                    + "  },\n"
-                                    + "  \"tagline\" : \"You Know, for Search\"\n"
-                                    + "}"),
-                    "version",
-                    "number")
-                .getText())
-        .isEqualTo("2.4.0");
+      JsonReaders.enterPath(JSON_FACTORY.createParser(content), "version", "number").getText())
+      .isEqualTo("2.4.0");
   }
 
-  @Test
-  public void enterPath_nullOnNoInput() throws IOException {
-    assertThat(JsonReaders.enterPath(jsonParser(""), "message"))
+  @Test public void enterPath_nullOnNoInput() throws IOException {
+    assertThat(JsonReaders.enterPath(JSON_FACTORY.createParser(""), "message"))
       .isNull();
   }
 
-  @Test
-  public void collectValuesNamed_emptyWhenNotFound() throws IOException {
-    List<String> result =
-        JsonReaders.collectValuesNamed(
-            jsonParser(
-                        "{\"took\":1,\"timed_out\":false,\"_shards\":{\"total\":0,\"successful\":0,\"failed\":0},\"hits\":{\"total\":0,\"max_score\":0.0,\"hits\":[]}}"),
-            "key");
-
-    assertThat(result).isEmpty();
+  @Test public void enterPath_nullOnWrongInput() throws IOException {
+    assertThat(JsonReaders.enterPath(JSON_FACTORY.createParser("[]"), "message"))
+      .isNull();
   }
 
-  @Test
-  public void collectValuesNamed_mergesArrays() throws IOException {
+  @Test public void collectValuesNamed_emptyWhenNotFound() throws IOException {
+    String content = "{\n"
+      + "  \"took\": 1,\n"
+      + "  \"timed_out\": false,\n"
+      + "  \"_shards\": {\n"
+      + "    \"total\": 0,\n"
+      + "    \"successful\": 0,\n"
+      + "    \"failed\": 0\n"
+      + "  },\n"
+      + "  \"hits\": {\n"
+      + "    \"total\": 0,\n"
+      + "    \"max_score\": 0,\n"
+      + "    \"hits\": []\n"
+      + "  }\n"
+      + "}";
+
+    assertThat(collectValuesNamed(JSON_FACTORY.createParser(content), "key")).isEmpty();
+  }
+
+  // All elasticsearch results start with an object, not an array.
+  @Test(expected = IllegalArgumentException.class)
+  public void collectValuesNamed_exceptionOnWrongData() throws IOException {
+    assertThat(collectValuesNamed(JSON_FACTORY.createParser("[]"), "key")).isEmpty();
+  }
+
+  @Test public void collectValuesNamed_mergesArrays() throws IOException {
     List<String> result =
-        JsonReaders.collectValuesNamed(
-            jsonParser(TestResponses.SPAN_NAMES), "key");
+      collectValuesNamed(JSON_FACTORY.createParser(TestResponses.SPAN_NAMES), "key");
 
     assertThat(result).containsExactly("methodcall", "yak");
   }
 
-  @Test
-  public void collectValuesNamed_mergesChildren() throws IOException {
+  @Test public void collectValuesNamed_mergesChildren() throws IOException {
     List<String> result =
-        JsonReaders.collectValuesNamed(
-            jsonParser(TestResponses.SERVICE_NAMES), "key");
+      collectValuesNamed(JSON_FACTORY.createParser(TestResponses.SERVICE_NAMES), "key");
 
     assertThat(result).containsExactly("yak", "service");
   }
 
-  @Test
-  public void collectValuesNamed_nested() throws IOException {
-    List<String> result =
-        JsonReaders.collectValuesNamed(
-            jsonParser(
-                        "{\n"
-                            + "  \"took\": 49,\n"
-                            + "  \"timed_out\": false,\n"
-                            + "  \"_shards\": {\n"
-                            + "    \"total\": 5,\n"
-                            + "    \"successful\": 5,\n"
-                            + "    \"failed\": 0\n"
-                            + "  },\n"
-                            + "  \"hits\": {\n"
-                            + "    \"total\": 1,\n"
-                            + "    \"max_score\": 0,\n"
-                            + "    \"hits\": []\n"
-                            + "  },\n"
-                            + "  \"aggregations\": {\n"
-                            + "    \"traceId_agg\": {\n"
-                            + "      \"doc_count_error_upper_bound\": 0,\n"
-                            + "      \"sum_other_doc_count\": 0,\n"
-                            + "      \"buckets\": [\n"
-                            + "        {\n"
-                            + "          \"key\": \"000000000000007b\",\n"
-                            + "          \"doc_count\": 1,\n"
-                            + "          \"timestamps_agg\": {\n"
-                            + "            \"value\": 1474761600001,\n"
-                            + "            \"value_as_string\": \"1474761600001\"\n"
-                            + "          }\n"
-                            + "        }\n"
-                            + "      ]\n"
-                            + "    }\n"
-                            + "  }\n"
-                            + "}"),
-            "key");
+  @Test public void collectValuesNamed_nested() throws IOException {
+    String content = "{\n"
+      + "  \"took\": 49,\n"
+      + "  \"timed_out\": false,\n"
+      + "  \"_shards\": {\n"
+      + "    \"total\": 5,\n"
+      + "    \"successful\": 5,\n"
+      + "    \"failed\": 0\n"
+      + "  },\n"
+      + "  \"hits\": {\n"
+      + "    \"total\": 1,\n"
+      + "    \"max_score\": 0,\n"
+      + "    \"hits\": []\n"
+      + "  },\n"
+      + "  \"aggregations\": {\n"
+      + "    \"traceId_agg\": {\n"
+      + "      \"doc_count_error_upper_bound\": 0,\n"
+      + "      \"sum_other_doc_count\": 0,\n"
+      + "      \"buckets\": [\n"
+      + "        {\n"
+      + "          \"key\": \"000000000000007b\",\n"
+      + "          \"doc_count\": 1,\n"
+      + "          \"timestamps_agg\": {\n"
+      + "            \"value\": 1474761600001,\n"
+      + "            \"value_as_string\": \"1474761600001\"\n"
+      + "          }\n"
+      + "        }\n"
+      + "      ]\n"
+      + "    }\n"
+      + "  }\n"
+      + "}";
 
-    assertThat(result).containsExactly("000000000000007b");
-  }
-
-  static JsonParser jsonParser(String json) {
-    try {
-      JsonParser parser = JsonSerializers.JSON_FACTORY.createParser(json);
-      parser.nextToken();
-      return parser;
-    } catch (IOException e) {
-      throw new UncheckedIOException(e);
-    }
+    assertThat(collectValuesNamed(JSON_FACTORY.createParser(content), "key"))
+      .containsExactly("000000000000007b");
   }
 }

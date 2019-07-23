@@ -33,6 +33,11 @@ export const deleteCondition = index => ({
   index,
 });
 
+export const setConditions = conditions => ({
+  type: types.GLOBAL_SEARCH_SET_CONDITIONS,
+  conditions,
+});
+
 export const changeConditionKey = (index, conditionKey) => ({
   type: types.GLOBAL_SEARCH_CHANGE_CONDITION_KEY,
   index,

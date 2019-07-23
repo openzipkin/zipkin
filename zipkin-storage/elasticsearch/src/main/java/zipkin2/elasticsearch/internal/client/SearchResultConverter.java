@@ -15,19 +15,18 @@ package zipkin2.elasticsearch.internal.client;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.linecorp.armeria.common.HttpData;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.JsonSerializers.ObjectParser;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
+import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>> {
   final ObjectParser<T> adapter;
-  final List<T> defaultValue;
 
   public static <T> SearchResultConverter<T> create(ObjectParser<T> adapter) {
     return new SearchResultConverter<>(adapter);
@@ -35,21 +34,17 @@ public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>>
 
   protected SearchResultConverter(ObjectParser<T> adapter) {
     this.adapter = adapter;
-    this.defaultValue = Collections.emptyList();
   }
 
-  @Override public List<T> convert(ByteBuffer content) throws IOException {
-    JsonParser hits = enterPath(JsonSerializers.jsonParser(content), "hits", "hits");
-    if (hits == null || !hits.isExpectedStartArrayToken()) return defaultValue;
+  @Override public List<T> convert(HttpData content) throws IOException {
+    JsonParser hits = enterPath(JSON_FACTORY.createParser(toInputStream(content)), "hits", "hits");
+    if (hits == null || !hits.isExpectedStartArrayToken()) return Collections.emptyList();
 
     List<T> result = new ArrayList<>();
     while (hits.nextToken() != JsonToken.END_ARRAY) {
       JsonParser source = enterPath(hits, "_source");
-      if (source != null) {
-        result.add(adapter.parse(source));
-      }
-      hits.nextToken();
+      if (source != null) result.add(adapter.parse(source));
     }
-    return result.isEmpty() ? defaultValue : result;
+    return result.isEmpty() ? Collections.emptyList() : result;
   }
 }

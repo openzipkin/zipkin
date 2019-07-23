@@ -16,4 +16,5 @@ export {
   traceSummary,
   traceSummaries,
   detailedTraceSummary,
+  rootServiceAndSpanName,
 } from './trace';

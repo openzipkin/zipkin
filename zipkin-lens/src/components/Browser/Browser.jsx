@@ -24,7 +24,6 @@ const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
   tracesMap: PropTypes.shape({}).isRequired,
   isLoading: PropTypes.bool.isRequired,
-  clearTraces: PropTypes.func.isRequired,
 };
 
 class Browser extends React.Component {
@@ -34,18 +33,19 @@ class Browser extends React.Component {
     this.handleSortingMethodChange = this.handleSortingMethodChange.bind(this);
   }
 
-  componentWillUnmount() {
-    const { clearTraces } = this.props;
-    clearTraces();
-  }
-
   handleSortingMethodChange(selected) {
     this.setState({ sortingMethod: selected.value });
   }
 
   render() {
-    const { isLoading, traceSummaries, tracesMap } = this.props;
+    const {
+      isLoading,
+      traceSummaries,
+      tracesMap,
+    } = this.props;
+
     const { sortingMethod } = this.state;
+
     return (
       <div className="browser">
         <LoadingOverlay active={isLoading} />

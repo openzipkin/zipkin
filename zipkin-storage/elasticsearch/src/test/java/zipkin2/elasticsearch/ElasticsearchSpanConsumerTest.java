@@ -323,8 +323,8 @@ public class ElasticsearchSpanConsumerTest {
     Span s = Span.newBuilder().traceId("1").id("1").timestamp(1).putTag("environment", "A").build();
     try {
       accept(s);
-      failBecauseExceptionWasNotThrown(IOException.class);
-    } catch (IllegalStateException expected) {
+      failBecauseExceptionWasNotThrown(RuntimeException.class);
+    } catch (RuntimeException expected) {
     }
     accept(s);
 

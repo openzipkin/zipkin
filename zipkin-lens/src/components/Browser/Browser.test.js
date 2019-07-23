@@ -23,19 +23,11 @@ describe('<Browser />', () => {
     location: {
       search: '',
     },
-    clearTraces: jest.fn(),
     fetchTraces: () => {},
     traceSummaries: [],
     tracesMap: {},
     isLoading: false,
   };
-
-  it('should clear traces when unmounted', () => {
-    const wrapper = shallow(<Browser {...defaultProps} />);
-    wrapper.unmount();
-    const { clearTraces } = defaultProps;
-    expect(clearTraces.mock.calls.length).toBe(1);
-  });
 
   it('should change state when sorting method is changed', () => {
     const wrapper = shallow(<Browser {...defaultProps} />);

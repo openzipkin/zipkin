@@ -18,84 +18,73 @@ import fetchMock from 'fetch-mock';
 import * as actions from './traces-action';
 import * as types from '../constants/action-types';
 import * as api from '../constants/api';
+import { traceSummary as buildTraceSummary, traceSummaries as buildTraceSummaries, treeCorrectedForClockSkew } from '../zipkin';
 
 const middlewares = [thunk];
 const mockStore = configureMockStore(middlewares);
-
-describe('traces actions', () => {
-  it('should create an action to clear traces', () => {
-    const expectedAction = {
-      type: types.CLEAR_TRACES,
-    };
-    expect(actions.clearTraces()).toEqual(expectedAction);
-  });
-});
 
 describe('traces async actions', () => {
   afterEach(() => {
     fetchMock.restore();
   });
 
-  it('create FETCH_TRACES_SUCCESS when fetching traces has been done', () => {
+  const rawTraces = [
+    [
+      {
+        traceId: 'd050e0d52326cf81',
+        parentId: 'd050e0d52326cf81',
+        id: 'd1ccbada31490783',
+        kind: 'CLIENT',
+        name: 'getInfoByAccessToken',
+        timestamp: 1542337504412859,
+        duration: 8667,
+        localEndpoint: {
+          serviceName: 'serviceA',
+          ipv4: '127.0.0.1',
+        },
+        remoteEndpoint: {
+          serviceName: 'serviceB',
+          ipv4: '127.0.0.2',
+          port: 8080,
+        },
+      },
+    ],
+  ];
+
+  it('create TRACES_LOAD_SUCCESS when fetching traces has been done', () => {
     fetchMock.getOnce(`${api.TRACES}?serviceName=serviceA&spanName=span1`, {
-      body: [
-        [
-          {
-            traceId: 'd050e0d52326cf81',
-            parentId: 'd050e0d52326cf81',
-            id: 'd1ccbada31490783',
-            kind: 'CLIENT',
-            name: 'getInfoByAccessToken',
-            timestamp: 1542337504412859,
-            duration: 8667,
-            localEndpoint: {
-              serviceName: 'serviceA',
-              ipv4: '127.0.0.1',
-            },
-            remoteEndpoint: {
-              serviceName: 'serviceB',
-              ipv4: '127.0.0.2',
-              port: 8080,
-            },
-          },
-        ],
-      ],
+      body: rawTraces,
       headers: {
         'content-type': 'application/json',
       },
     });
 
+    const correctedTraces = rawTraces.map(treeCorrectedForClockSkew);
+    const correctedTraceMap = {};
+    correctedTraces.forEach((trace, index) => {
+      const [{ traceId }] = rawTraces[index];
+      correctedTraceMap[traceId] = trace;
+    });
+    const traceSummaries = buildTraceSummaries(null, correctedTraces.map(buildTraceSummary));
+
     const expectedActions = [
-      { type: types.FETCH_TRACES_REQUEST },
       {
-        type: types.FETCH_TRACES_SUCCESS,
-        traces: [
-          [
-            {
-              traceId: 'd050e0d52326cf81',
-              parentId: 'd050e0d52326cf81',
-              id: 'd1ccbada31490783',
-              kind: 'CLIENT',
-              name: 'getInfoByAccessToken',
-              timestamp: 1542337504412859,
-              duration: 8667,
-              localEndpoint: {
-                serviceName: 'serviceA',
-                ipv4: '127.0.0.1',
-              },
-              remoteEndpoint: {
-                serviceName: 'serviceB',
-                ipv4: '127.0.0.2',
-                port: 8080,
-              },
-            },
-          ],
-        ],
+        type: types.TRACES_LOAD_REQUEST,
+      },
+      {
+        type: types.TRACES_LOAD_SUCCESS,
+        traces: rawTraces,
+        correctedTraceMap,
+        traceSummaries,
+        lastQueryParams: {
+          serviceName: 'serviceA',
+          spanName: 'span1',
+        },
       },
     ];
     const store = mockStore({});
 
-    return store.dispatch(actions.fetchTraces({
+    return store.dispatch(actions.loadTraces({
       serviceName: 'serviceA',
       spanName: 'span1',
     })).then(() => {

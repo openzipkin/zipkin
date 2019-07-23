@@ -33,6 +33,7 @@ import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpoin
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.Flags;
+import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.util.AbstractListenable;
@@ -40,8 +41,6 @@ import com.linecorp.armeria.common.util.EventLoopGroups;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -55,8 +54,8 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
-import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 import zipkin2.storage.AutocompleteTags;
@@ -70,6 +69,7 @@ import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 import static zipkin2.elasticsearch.EnsureIndexTemplate.ensureIndexTemplate;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
+import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
@@ -312,7 +312,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   @Override
   public CheckResult check() {
     HttpClient client = httpClient();
-    EndpointGroup healthChecked = EndpointGroupRegistry.get("elasticsearch");
+    EndpointGroup healthChecked = EndpointGroupRegistry.get("elasticsearch_healthchecked");
     if (healthChecked instanceof HttpHealthCheckedEndpointGroup) {
       try {
         ((HttpHealthCheckedEndpointGroup) healthChecked).awaitInitialEndpoints(
@@ -338,33 +338,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       HttpCall.Factory http = http();
       AggregatedHttpRequest request = AggregatedHttpRequest.of(
         HttpMethod.GET, "/_cluster/health/" + index);
-      return http.newCall(request, ReadStatus.INSTANCE).execute();
+      return http.newCall(request, READ_STATUS).execute();
     } catch (IOException | RuntimeException e) {
       if (e instanceof CompletionException) return CheckResult.failed(e.getCause());
       return CheckResult.failed(e);
-    }
-  }
-
-  enum ReadStatus implements HttpCall.BodyConverter<CheckResult> {
-    INSTANCE;
-
-    @Override
-    public CheckResult convert(ByteBuffer buf) throws IOException {
-      ByteBuffer body = buf.duplicate();
-      JsonParser status = enterPath(JsonSerializers.jsonParser(buf), "status");
-      if (status == null) {
-        throw new IllegalStateException("Health status couldn't be read " +
-          StandardCharsets.UTF_8.decode(body).toString());
-      }
-      if ("RED".equalsIgnoreCase(status.getText())) {
-        throw new IllegalStateException("Health status is RED");
-      }
-      return CheckResult.OK;
-    }
-
-    @Override
-    public String toString() {
-      return "ReadStatus";
     }
   }
 
@@ -466,8 +443,17 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
           return options;
         })
         .build();
+      EndpointGroup withFallback = healthChecked
+        // Even if all the health check requests are failing, we want to go ahead and try to send
+        // the request to an endpoint anyways. This will generally only be when the server is
+        // starting.
+        .orElse(endpointGroup);
       EndpointGroupRegistry.register(
-        "elasticsearch", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
+        "elasticsearch", withFallback, EndpointSelectionStrategy.ROUND_ROBIN);
+      // TODO(anuraaga): Remove this after https://github.com/line/armeria/issues/1910 means we
+      // don't need to wait for initial endpoints ourselves.
+      EndpointGroupRegistry.register(
+        "elasticsearch_healthchecked", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
     } else {
       // Just one non-domain URL, can connect directly without enabling load balancing.
@@ -522,4 +508,22 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   ElasticsearchStorage() {
   }
+
+  static final BodyConverter<CheckResult> READ_STATUS = new BodyConverter<CheckResult>() {
+    @Override public CheckResult convert(HttpData body) throws IOException {
+      String result = body.toStringUtf8();
+      JsonParser status = enterPath(JSON_FACTORY.createParser(result), "status");
+      if (status == null) {
+        throw new IllegalArgumentException("Health status couldn't be read " + result);
+      }
+      if ("RED".equalsIgnoreCase(status.getText())) {
+        return CheckResult.failed(new IllegalStateException("Health status is RED"));
+      }
+      return CheckResult.OK;
+    }
+
+    @Override public String toString() {
+      return "ReadStatus";
+    }
+  };
 }

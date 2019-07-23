@@ -13,26 +13,15 @@
  */
 package zipkin2.elasticsearch.internal;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
 import com.linecorp.armeria.client.SimpleDecoratingClient;
-import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
-import com.linecorp.armeria.common.HttpStatus;
-import com.linecorp.armeria.common.util.Exceptions;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufHolder;
-import io.netty.buffer.ByteBufInputStream;
-import io.netty.buffer.Unpooled;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Base64;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 
 /**
  * Adds basic auth username and password to every request per https://www.elastic.co/guide/en/x-pack/current/how-security-works.html
@@ -57,31 +46,6 @@ public final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpReque
   @Override
   public HttpResponse execute(ClientRequestContext ctx, HttpRequest req) throws Exception {
     ctx.addAdditionalRequestHeader(HttpHeaderNames.AUTHORIZATION, basicCredentials);
-    return HttpResponse.from(delegate().execute(ctx, req)
-      .aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc())
-      .thenApplyAsync(msg -> {
-        HttpData content = msg.content();
-        if (!msg.status().equals(HttpStatus.FORBIDDEN) || content.isEmpty()) {
-          return HttpResponse.of(msg);
-        }
-        final ByteBuf buf;
-        if (content instanceof ByteBufHolder) {
-          buf = ((ByteBufHolder) content).content();
-        } else {
-          buf = Unpooled.wrappedBuffer(content.array());
-        }
-        try (ByteBufInputStream stream = new ByteBufInputStream(buf, true)) {
-          try {
-            JsonParser message = enterPath(JsonSerializers.jsonParser(stream), "message");
-            if (message != null) throw new IllegalStateException(message.getValueAsString());
-          } catch (IOException e) {
-            Exceptions.throwUnsafely(e);
-            throw new UncheckedIOException(e);  // unreachable
-          }
-          throw new IllegalStateException(msg.toString());
-        } catch (IOException e) {
-          throw new AssertionError("Couldn't close memory stream", e);
-        }
-      }, ctx.contextAwareExecutor()));
+    return delegate().execute(ctx, req);
   }
 }
