@@ -76,6 +76,7 @@ class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
       container = null; // try with local connection instead
       session = tryToInitializeSession();
     }
+    closer.register(session);
   }
 
   Session tryToInitializeSession() throws IOException {
