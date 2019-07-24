@@ -11,10 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import PropTypes from 'prop-types';
+import React, { useCallback } from 'react';
 import { makeStyles } from '@material-ui/styles';
+import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
+
+import { sortingMethods } from './sorting';
 
 const useStyles = makeStyles({
   root: {
@@ -31,8 +35,41 @@ const useStyles = makeStyles({
   },
 });
 
-const TracesTableHead = () => {
+const propTypes = {
+  sortingMethod: PropTypes.string.isRequired,
+  onSortingMethodChange: PropTypes.func.isRequired,
+};
+
+const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
   const classes = useStyles();
+
+  const handleStartTimeClick = useCallback(() => {
+    switch (sortingMethod) {
+      case sortingMethods.OLDEST_FIRST:
+        onSortingMethodChange(sortingMethods.NEWEST_FIRST);
+        break;
+      case sortingMethods.NEWEST_FIRST:
+        onSortingMethodChange(sortingMethods.OLDEST_FIRST);
+        break;
+      default:
+        onSortingMethodChange(sortingMethods.NEWEST_FIRST);
+        break;
+    }
+  }, [sortingMethod, onSortingMethodChange]);
+
+  const handleDurationClick = useCallback(() => {
+    switch (sortingMethod) {
+      case sortingMethods.SHORTEST_FIRST:
+        onSortingMethodChange(sortingMethods.LONGEST_FIRST);
+        break;
+      case sortingMethods.LONGEST_FIRST:
+        onSortingMethodChange(sortingMethods.SHORTEST_FIRST);
+        break;
+      default:
+        onSortingMethodChange(sortingMethods.LONGEST_FIRST);
+        break;
+    }
+  }, [sortingMethod, onSortingMethodChange]);
 
   return (
     <Grid container spacing={0} className={classes.root}>
@@ -42,14 +79,22 @@ const TracesTableHead = () => {
       <Grid item xs={3} className={classes.cell}>
         Trace ID
       </Grid>
-      <Grid item xs={3} className={classes.cell}>
+      <Grid item xs={3} className={classes.cell} onClick={handleStartTimeClick}>
         Start Time
+        &nbsp;
+        {sortingMethod === sortingMethods.OLDEST_FIRST && <Box component="span" className="fas fa-arrow-up" />}
+        {sortingMethod === sortingMethods.NEWEST_FIRST && <Box component="span" className="fas fa-arrow-down" />}
       </Grid>
-      <Grid item xs={3} className={classes.cell}>
+      <Grid item xs={3} className={classes.cell} onClick={handleDurationClick}>
         Duration
+        &nbsp;
+        {sortingMethod === sortingMethods.LONGEST_FIRST && <Box component="span" className="fas fa-arrow-up" />}
+        {sortingMethod === sortingMethods.SHORTEST_FIRST && <Box component="span" className="fas fa-arrow-down" />}
       </Grid>
     </Grid>
   );
 };
+
+TracesTableHead.propTypes = propTypes;
 
 export default TracesTableHead;

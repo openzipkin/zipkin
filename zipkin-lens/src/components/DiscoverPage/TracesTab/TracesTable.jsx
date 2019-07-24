@@ -11,22 +11,42 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import PropTypes from 'prop-types';
 import React from 'react';
 import { AutoSizer } from 'react-virtualized';
 import Box from '@material-ui/core/Box';
 
 import TracesTableHead from './TracesTableHead';
 import TracesTableBody from './TracesTableBody';
+import { traceSummariesPropTypes } from '../../../prop-types';
 
-const TracesTable = props => (
+const propTypes = {
+  sortingMethod: PropTypes.string.isRequired,
+  traceSummaries: traceSummariesPropTypes.isRequired,
+  onAddFilter: PropTypes.func.isRequired,
+  onSortingMethodChange: PropTypes.func.isRequired,
+};
+
+const TracesTable = ({
+  sortingMethod,
+  traceSummaries,
+  onAddFilter,
+  onSortingMethodChange,
+}) => (
   <React.Fragment>
-    <TracesTableHead />
+    <TracesTableHead
+      sortingMethod={sortingMethod}
+      onSortingMethodChange={onSortingMethodChange}
+    />
     <Box height="100%">
       <AutoSizer>
         {
           ({ height, width }) => (
             <Box width={width} height={height} overflow="auto">
-              <TracesTableBody {...props} />
+              <TracesTableBody
+                traceSummaries={traceSummaries}
+                onAddFilter={onAddFilter}
+              />
             </Box>
           )
         }
@@ -34,5 +54,7 @@ const TracesTable = props => (
     </Box>
   </React.Fragment>
 );
+
+TracesTable.propTypes = propTypes;
 
 export default TracesTable;

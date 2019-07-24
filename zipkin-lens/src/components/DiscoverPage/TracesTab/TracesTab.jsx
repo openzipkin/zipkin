@@ -15,6 +15,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import Box from '@material-ui/core/Box';
 
+import { sortingMethods, sortTraceSummaries } from './sorting';
 import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
 
@@ -34,6 +35,12 @@ const TracesTab = () => {
     return result;
   }, [traceSummaries]);
 
+  const [sortingMethod, setSortingMethod] = useState(sortingMethods.LONGEST_FIRST);
+
+  const handleSortingMethodChange = useCallback((newSortingMethod) => {
+    setSortingMethod(newSortingMethod);
+  }, []);
+
   const [filters, setFilters] = useState([]);
 
   const handleAddFilter = useCallback((filter) => {
@@ -49,16 +56,19 @@ const TracesTab = () => {
     setFilters(filters.filter(f => f !== filter));
   }, [filters]);
 
-  const filteredTraceSummaries = useMemo(() => traceSummaries.filter((traceSummary) => {
-    for (let i = 0; i < filters.length; i += 1) {
-      if (!traceSummary.serviceSummaries.find(
-        serviceSummary => serviceSummary.serviceName === filters[i],
-      )) {
-        return false;
+  const filteredTraceSummaries = useMemo(() => sortTraceSummaries(
+    traceSummaries.filter((traceSummary) => {
+      for (let i = 0; i < filters.length; i += 1) {
+        if (!traceSummary.serviceSummaries.find(
+          serviceSummary => serviceSummary.serviceName === filters[i],
+        )) {
+          return false;
+        }
       }
-    }
-    return true;
-  }), [filters, traceSummaries]);
+      return true;
+    }),
+    sortingMethod,
+  ), [filters, traceSummaries, sortingMethod]);
 
   return (
     <Box height="100%" display="flex" flexDirection="column">
@@ -78,8 +88,10 @@ const TracesTab = () => {
         </Box>
       </Box>
       <TracesTable
+        sortingMethod={sortingMethod}
         traceSummaries={filteredTraceSummaries}
         onAddFilter={handleAddFilter}
+        onSortingMethodChange={handleSortingMethodChange}
       />
     </Box>
   );
