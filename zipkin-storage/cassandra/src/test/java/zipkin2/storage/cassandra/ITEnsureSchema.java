@@ -16,7 +16,7 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import java.net.InetSocketAddress;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 
@@ -35,14 +35,14 @@ abstract class ITEnsureSchema {
 
   abstract InetSocketAddress contactPoint();
 
-  @Test public void installsKeyspaceWhenMissing() {
+  @Test void installsKeyspaceWhenMissing() {
     Schema.ensureExists(keyspace(), false, session());
 
     KeyspaceMetadata metadata = session().getCluster().getMetadata().getKeyspace(keyspace());
     assertThat(metadata).isNotNull();
   }
 
-  @Test public void installsTablesWhenMissing() {
+  @Test void installsTablesWhenMissing() {
     session().execute("CREATE KEYSPACE " + keyspace()
       + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};");
 
@@ -52,7 +52,7 @@ abstract class ITEnsureSchema {
     assertThat(metadata.getTable("span")).isNotNull();
   }
 
-  @Test public void installsIndexesWhenMissing() {
+  @Test void installsIndexesWhenMissing() {
     session().execute("CREATE KEYSPACE " + keyspace()
       + " WITH replication = {'class': 'SimpleStrategy', 'replication_factor': '1'};");
 
@@ -63,7 +63,7 @@ abstract class ITEnsureSchema {
     assertThat(metadata.getTable("autocomplete_tags")).isNotNull();
   }
 
-  @Test public void upgradesOldSchema_autocomplete() {
+  @Test void upgradesOldSchema_autocomplete() {
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-indexes-original.cql");
 
@@ -74,7 +74,7 @@ abstract class ITEnsureSchema {
     assertThat(Schema.hasUpgrade1_autocompleteTags(metadata)).isTrue();
   }
 
-  @Test public void upgradesOldSchema_remoteService() {
+  @Test void upgradesOldSchema_remoteService() {
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-indexes-original.cql");
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-upgrade-1.cql");
@@ -87,7 +87,7 @@ abstract class ITEnsureSchema {
   }
 
   /** This tests we don't accidentally rely on new indexes such as autocomplete tags */
-  @Test public void worksWithOldSchema() throws Exception {
+  @Test void worksWithOldSchema() throws Exception {
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema.cql");
     Schema.applyCqlFile(keyspace(), session(), "/zipkin2-schema-indexes-original.cql");
 

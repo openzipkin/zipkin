@@ -14,28 +14,33 @@
 package zipkin2.storage.cassandra.v1;
 
 import java.io.IOException;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 import zipkin2.TestObjects;
+import zipkin2.storage.ITStorage;
 import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-abstract class ITSpanConsumer {
-  protected abstract String keyspace();
+abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
 
-  private CassandraStorage storage;
-
-  @Before
-  public void connect() {
-    storage = storageBuilder().autocompleteKeys(asList("environment")).keyspace(keyspace()).build();
+  @Override protected boolean initializeStoragePerTest() {
+    return true;
   }
 
-  @After public void disconnect() {
-    storage.close();
+  @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+    return storageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+  }
+
+  @Override protected void configureStorageForTest(StorageComponent.Builder storage) {
+    storage.autocompleteKeys(asList("environment"));
+  }
+
+  @Override public void clear() {
+    // Just let the data pile up to prevent warnings and slowness.
   }
 
   abstract CassandraStorage.Builder storageBuilder();

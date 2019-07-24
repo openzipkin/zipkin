@@ -13,11 +13,15 @@
  */
 package zipkin2.elasticsearch.integration;
 
-import com.google.common.io.Closer;
-import java.util.Arrays;
-import org.junit.AssumptionViolatedException;
-import org.junit.rules.ExternalResource;
-import org.junit.rules.TestName;
+import com.linecorp.armeria.client.ClientOptionsBuilder;
+import com.linecorp.armeria.client.logging.LoggingClientBuilder;
+import com.linecorp.armeria.common.logging.LogLevel;
+import java.util.Collections;
+import java.util.function.Consumer;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -26,21 +30,24 @@ import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
-public class ElasticsearchStorageRule extends ExternalResource {
-  static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageRule.class);
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+
+class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallback {
+  static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageExtension.class);
   static final int ELASTICSEARCH_PORT = 9200;
   final String image;
-  final String index;
   GenericContainer container;
-  Closer closer = Closer.create();
 
-  public ElasticsearchStorageRule(String image, String index) {
+  ElasticsearchStorageExtension(String image) {
     this.image = image;
-    this.index = index;
   }
 
-  @Override
-  protected void before() {
+  @Override public void beforeAll(ExtensionContext context) {
+    if (context.getRequiredTestClass().getEnclosingClass() != null) {
+      // Only run once in outermost scope.
+      return;
+    }
+
     if (!"true".equals(System.getProperty("docker.skip"))) {
       try {
         LOGGER.info("Starting docker image " + image);
@@ -71,29 +78,43 @@ public class ElasticsearchStorageRule extends ExternalResource {
     }
   }
 
+  @Override public void afterAll(ExtensionContext context) {
+    if (context.getRequiredTestClass().getEnclosingClass() != null) {
+      // Only run once in outermost scope.
+      return;
+    }
+
+   if (container != null) {
+     LOGGER.info("Stopping docker image " + image);
+     container.stop();
+   }
+  }
+
   void tryToInitializeSession() {
-    ElasticsearchStorage result = computeStorageBuilder().build();
-    try {
+    try (ElasticsearchStorage result = computeStorageBuilder().build()) {
       CheckResult check = result.check();
-      if (!check.ok()) {
-        throw new AssumptionViolatedException(check.error().getMessage(), check.error());
-      }
-    } finally {
-      result.close();
+      assumeTrue(check.ok(), () -> "Could not connect to storage, skipping test: "
+        + check.error().getMessage());
     }
   }
 
-  public ElasticsearchStorage.Builder computeStorageBuilder() {
-    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder()
-        .index(index)
+  ElasticsearchStorage.Builder computeStorageBuilder() {
+    Consumer<ClientOptionsBuilder> customizer =
+        Boolean.valueOf(System.getenv("ES_DEBUG"))
+          ? client -> client
+          .decorator(
+            new LoggingClientBuilder()
+              .requestLogLevel(LogLevel.WARN)
+              .successfulResponseLogLevel(LogLevel.WARN)
+              .failureResponseLogLevel(LogLevel.WARN)
+              .newDecorator())
+          .decorator(RawContentLoggingClient.newDecorator())
+          : unused -> {};
+    return ElasticsearchStorage.newBuilder()
+        .clientCustomizer(customizer)
+        .index("zipkin-test")
         .flushOnWrites(true)
-        .hosts(Arrays.asList(baseUrl()));
-
-    if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
-      builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BODY);
-    }
-
-    return builder;
+        .hosts(Collections.singletonList(baseUrl()));
   }
 
   String baseUrl() {
@@ -107,22 +128,15 @@ public class ElasticsearchStorageRule extends ExternalResource {
     }
   }
 
-  @Override
-  protected void after() {
-    try {
-      closer.close();
-    } catch (Exception | Error e) {
-      LOGGER.warn("error closing session " + e.getMessage(), e);
-    } finally {
-      if (container != null) {
-        LOGGER.info("Stopping docker image " + image);
-        container.stop();
-      }
+  static String index(TestInfo testInfo) {
+    String result;
+    if (testInfo.getTestMethod().isPresent()) {
+      result = testInfo.getTestMethod().get().getName();
+    } else {
+      assert testInfo.getTestClass().isPresent();
+      result = testInfo.getTestClass().get().getSimpleName();
     }
-  }
-
-  public static String index(TestName testName) {
-    String result = testName.getMethodName().toLowerCase();
+    result = result.toLowerCase();
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
   }
 }

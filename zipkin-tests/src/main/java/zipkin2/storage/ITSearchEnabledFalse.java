@@ -14,8 +14,7 @@
 package zipkin2.storage;
 
 import java.io.IOException;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 
 import static java.util.Arrays.asList;
@@ -29,23 +28,13 @@ import static zipkin2.storage.ITSpanStore.requestBuilder;
  *
  * <p>Subtypes should create a connection to a real backend, even if that backend is in-process.
  */
-public abstract class ITSearchEnabledFalse {
+public abstract class ITSearchEnabledFalse<T extends StorageComponent> extends ITStorage<T> {
 
-  /** Should maintain state between multiple calls within a test. */
-  protected abstract StorageComponent storage();
-
-  protected SpanStore store() {
-    return storage().spanStore();
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    storage.searchEnabled(false);
   }
 
-  protected ServiceAndSpanNames names() {
-    return storage().serviceAndSpanNames();
-  }
-
-  /** Clears store between tests. */
-  @Before public abstract void clear() throws Exception;
-
-  @Test public void getTraces_indexDataReturnsNothing() throws Exception {
+  @Test void getTraces_indexDataReturnsNothing() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -68,25 +57,25 @@ public abstract class ITSearchEnabledFalse {
       .build()).execute()).isEmpty();
   }
 
-  @Test public void getServiceNames_isEmpty() throws Exception {
+  @Test void getServiceNames_isEmpty() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(names().getServiceNames().execute()).isEmpty();
   }
 
-  @Test public void getRemoteServiceNames_isEmpty() throws Exception {
+  @Test void getRemoteServiceNames_isEmpty() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(names().getRemoteServiceNames(CLIENT_SPAN.localServiceName()).execute()).isEmpty();
   }
 
-  @Test public void getSpanNames_isEmpty() throws Exception {
+  @Test void getSpanNames_isEmpty() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(names().getSpanNames(CLIENT_SPAN.localServiceName()).execute()).isEmpty();
   }
 
   protected void accept(Span... spans) throws IOException {
-    storage().spanConsumer().accept(asList(spans)).execute();
+    storage.spanConsumer().accept(asList(spans)).execute();
   }
 }

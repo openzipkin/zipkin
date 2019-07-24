@@ -13,80 +13,74 @@
  */
 package zipkin2.storage;
 
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.TestInfo;
 
-@RunWith(Enclosed.class)
-public class ITInMemoryStorage {
+class ITInMemoryStorage {
 
-  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
-    InMemoryStorage storage = InMemoryStorage.newBuilder().build();
-
-    @Override protected InMemoryStorage storage() {
-      return storage;
-    }
-
-    @Override public void clear() {
-      // no need.. the test rule does this
-    }
-  }
-
-  public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
-    InMemoryStorage storage = InMemoryStorage.newBuilder().searchEnabled(false).build();
-
-    @Override protected InMemoryStorage storage() {
-      return storage;
-    }
-
-    @Override public void clear() {
-      // no need.. the test rule does this
-    }
-  }
-
-  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
-    InMemoryStorage storage = InMemoryStorage.newBuilder().strictTraceId(false).build();
-
-    @Override protected InMemoryStorage storage() {
-      return storage;
-    }
-
-    @Override public void clear() {
-      // no need.. the test rule does this
-    }
-  }
-
-  public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
-
-    @Override protected StorageComponent.Builder storageBuilder() {
+  @Nested
+  class ITSpanStore extends zipkin2.storage.ITSpanStore<InMemoryStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return InMemoryStorage.newBuilder();
     }
 
     @Override public void clear() {
-      // no need.. the test rule does this
+      storage.clear();
     }
   }
 
-  public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
-    InMemoryStorage storage = InMemoryStorage.newBuilder().build();
-
-    @Override protected InMemoryStorage storage() {
-      return storage;
+  @Nested
+  class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<InMemoryStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return InMemoryStorage.newBuilder();
     }
 
     @Override public void clear() {
-      // no need.. the test rule does this
+      storage.clear();
     }
   }
 
-  public static class ITDependencies extends zipkin2.storage.ITDependencies {
-    InMemoryStorage storage = InMemoryStorage.newBuilder().build();
-
-    @Override protected InMemoryStorage storage() {
-      return storage;
+  @Nested
+  class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<InMemoryStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return InMemoryStorage.newBuilder();
     }
 
     @Override public void clear() {
-      // no need.. the test rule does this
+      storage.clear();
+    }
+  }
+
+  @Nested
+  class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<InMemoryStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return InMemoryStorage.newBuilder();
+    }
+
+    @Override public void clear() {
+      storage.clear();
+    }
+  }
+
+  @Nested
+  class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<InMemoryStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return InMemoryStorage.newBuilder();
+    }
+
+    @Override public void clear() {
+      storage.clear();
+    }
+  }
+
+  @Nested
+  class ITDependencies extends zipkin2.storage.ITDependencies<InMemoryStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return InMemoryStorage.newBuilder();
+    }
+
+    @Override public void clear() {
+      storage.clear();
     }
   }
 }

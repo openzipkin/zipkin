@@ -14,30 +14,33 @@
 package zipkin2.storage.mysql.v1;
 
 import java.sql.SQLException;
-import org.junit.rules.TestRule;
-import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zipkin2.CheckResult;
 
 import static org.junit.Assume.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-public class LazyMySQLStorage implements TestRule {
-  static final Logger LOGGER = LoggerFactory.getLogger(LazyMySQLStorage.class);
+class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
+  static final Logger LOGGER = LoggerFactory.getLogger(MySQLStorageExtension.class);
 
   final String image;
 
   ZipkinMySQLContainer container;
 
-  LazyMySQLStorage(String image) {
+  MySQLStorageExtension(String image) {
     this.image = image;
   }
 
-  MySQLStorage storage;
-  MySQLStorage get() {
-    // tests don't have race conditions as they aren't run multithreaded
-    if (storage != null) return storage;
+  @Override public void beforeAll(ExtensionContext context) {
+    if (context.getRequiredTestClass().getEnclosingClass() != null) {
+      // Only run once in outermost scope.
+      return;
+    }
 
     if (!"true".equals(System.getProperty("docker.skip"))) {
       try {
@@ -51,11 +54,22 @@ public class LazyMySQLStorage implements TestRule {
       LOGGER.info("Skipping startup of docker");
     }
 
-    // TODO call .check()
-    return storage = computeStorageBuilder().build();
+    try (MySQLStorage result = computeStorageBuilder().build()) {
+      CheckResult check = result.check();
+      assumeTrue(check.ok(), () -> "Could not connect to storage, skipping test: "
+        + check.error().getMessage());
+    }
   }
 
-  public MySQLStorage.Builder computeStorageBuilder() {
+  @Override public void afterAll(ExtensionContext context) {
+    if (context.getRequiredTestClass().getEnclosingClass() != null) {
+      // Only run once in outermost scope.
+      return;
+    }
+    if (container != null) container.stop();
+  }
+
+  MySQLStorage.Builder computeStorageBuilder() {
     final MariaDbDataSource dataSource;
 
     try {
@@ -80,28 +94,6 @@ public class LazyMySQLStorage implements TestRule {
     return new MySQLStorage.Builder()
         .datasource(dataSource)
         .executor(Runnable::run);
-  }
-
-  void close() {
-    try {
-      if (storage != null) storage.close();
-    } finally {
-      if (container != null) container.stop();
-    }
-  }
-
-  @Override public Statement apply(Statement base, Description description) {
-    return new Statement() {
-      @Override
-      public void evaluate() throws Throwable {
-        get();
-        try {
-          base.evaluate();
-        } finally {
-          close();
-        }
-      }
-    };
   }
 
   static int envOr(String key, int fallback) {

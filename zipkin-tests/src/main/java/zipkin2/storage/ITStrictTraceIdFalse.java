@@ -17,8 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Span;
 import zipkin2.TestObjects;
 
@@ -36,24 +35,18 @@ import static zipkin2.storage.ITSpanStore.sortTraces;
  *
  * <p>This is a replacement for {@code zipkin.storage.StrictTraceIdFalseTest}.
  */
-public abstract class ITStrictTraceIdFalse {
+public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends ITStorage<T> {
 
-  /** Should maintain state between multiple calls within a test. */
-  protected abstract StorageComponent storage();
-
-  protected SpanStore store() {
-    return storage().spanStore();
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    storage.strictTraceId(false);
   }
-
-  /** Clears store between tests. */
-  @Before public abstract void clear() throws Exception;
 
   /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
-  @Test public void getTraces_128BitTraceId() throws IOException {
-    getTraces_128BitTraceId(accept128BitTrace(storage()));
+  @Test void getTraces_128BitTraceId() throws IOException {
+    getTraces_128BitTraceId(accept128BitTrace(storage));
   }
 
-  @Test public void getTraces_128BitTraceId_mixed() throws IOException {
+  @Test void getTraces_128BitTraceId_mixed() throws IOException {
     getTraces_128BitTraceId(acceptMixedTrace());
   }
 
@@ -74,13 +67,13 @@ public abstract class ITStrictTraceIdFalse {
       .containsExactly(trace);
   }
 
-  @Test public void getTrace_retrievesBy64Or128BitTraceId() throws IOException {
-    List<Span> trace = accept128BitTrace(storage());
+  @Test void getTrace_retrievesBy64Or128BitTraceId() throws IOException {
+    List<Span> trace = accept128BitTrace(storage);
 
     retrievesBy64Or128BitTraceId(trace);
   }
 
-  @Test public void getTrace_retrievesBy64Or128BitTraceId_mixed() throws IOException {
+  @Test void getTrace_retrievesBy64Or128BitTraceId_mixed() throws IOException {
     List<Span> trace = acceptMixedTrace();
 
     retrievesBy64Or128BitTraceId(trace);
@@ -113,7 +106,7 @@ public abstract class ITStrictTraceIdFalse {
   }
 
   void accept(Span... spans) throws IOException {
-    storage().spanConsumer().accept(asList(spans)).execute();
+    storage.spanConsumer().accept(asList(spans)).execute();
   }
 }
 
