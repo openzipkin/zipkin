@@ -108,6 +108,8 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
     if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
       builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BODY);
     }
+
+    return builder;
   }
 
   String baseUrl() {
