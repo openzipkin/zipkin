@@ -16,7 +16,7 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.KeyspaceMetadata;
 import com.datastax.driver.core.Session;
 import java.net.InetSocketAddress;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 

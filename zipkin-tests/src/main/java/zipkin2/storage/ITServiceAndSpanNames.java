@@ -17,8 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
@@ -32,48 +31,42 @@ import static zipkin2.TestObjects.FRONTEND;
  *
  * <p>Subtypes should create a connection to a real backend, even if that backend is in-process.
  */
-public abstract class ITServiceAndSpanNames {
+public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends ITStorage<T> {
 
-  /** Should maintain state between multiple calls within a test. */
-  protected abstract StorageComponent storage();
-
-  protected ServiceAndSpanNames serviceAndSpanNames() {
-    return storage().serviceAndSpanNames();
+  @Override protected final void configureStorageForTest(StorageComponent.Builder storage) {
+    // Defaults are fine.
   }
 
-  /** Clears serviceAndSpanNames between tests. */
-  @Before public abstract void clear() throws Exception;
-
-  @Test public void getLocalServiceNames_includesLocalServiceName() throws Exception {
-    assertThat(serviceAndSpanNames().getServiceNames().execute())
+  @Test void getLocalServiceNames_includesLocalServiceName() throws Exception {
+    assertThat(names().getServiceNames().execute())
       .isEmpty();
 
     accept(CLIENT_SPAN);
 
-    assertThat(serviceAndSpanNames().getServiceNames().execute())
+    assertThat(names().getServiceNames().execute())
       .containsOnly("frontend");
   }
 
-  @Test public void getLocalServiceNames_noServiceName() throws IOException {
+  @Test void getLocalServiceNames_noServiceName() throws IOException {
     accept(Span.newBuilder().traceId("a").id("a").build());
 
-    assertThat(serviceAndSpanNames().getServiceNames().execute()).isEmpty();
+    assertThat(names().getServiceNames().execute()).isEmpty();
   }
 
-  @Test public void getRemoteServiceNames() throws Exception {
-    assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute())
+  @Test void getRemoteServiceNames() throws Exception {
+    assertThat(names().getRemoteServiceNames("frontend").execute())
       .isEmpty();
 
     accept(CLIENT_SPAN);
 
-    assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend" + 1).execute())
+    assertThat(names().getRemoteServiceNames("frontend" + 1).execute())
       .isEmpty();
 
-    assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute())
+    assertThat(names().getRemoteServiceNames("frontend").execute())
       .contains(CLIENT_SPAN.remoteServiceName());
   }
 
-  @Test public void getRemoteServiceNames_allReturned() throws IOException {
+  @Test void getRemoteServiceNames_allReturned() throws IOException {
     // Assure a default store limit isn't hit by assuming if 50 are returned, all are returned
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> {
@@ -86,55 +79,55 @@ public abstract class ITServiceAndSpanNames {
       .collect(Collectors.toList());
     accept(spans);
 
-    assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute())
+    assertThat(names().getRemoteServiceNames("frontend").execute())
       .containsExactlyInAnyOrderElementsOf(spans.stream().map(Span::remoteServiceName)::iterator);
   }
 
   /** Ensures the service name index returns distinct results */
-  @Test public void getRemoteServiceNames_dedupes() throws IOException {
+  @Test void getRemoteServiceNames_dedupes() throws IOException {
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> CLIENT_SPAN.toBuilder().id(i + 1).build())
       .collect(Collectors.toList());
     accept(spans);
 
-    assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute())
+    assertThat(names().getRemoteServiceNames("frontend").execute())
       .containsExactly(CLIENT_SPAN.remoteServiceName());
   }
 
-  @Test public void getRemoteServiceNames_noRemoteServiceName() throws IOException {
+  @Test void getRemoteServiceNames_noRemoteServiceName() throws IOException {
     accept(Span.newBuilder().traceId("a").id("a").localEndpoint(FRONTEND).build());
 
-    assertThat(serviceAndSpanNames().getRemoteServiceNames("frontend").execute()).isEmpty();
+    assertThat(names().getRemoteServiceNames("frontend").execute()).isEmpty();
   }
 
-  @Test public void getRemoteServiceNames_serviceNameGoesLowercase() throws IOException {
+  @Test void getRemoteServiceNames_serviceNameGoesLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
-    assertThat(serviceAndSpanNames().getRemoteServiceNames("FrOnTeNd").execute())
+    assertThat(names().getRemoteServiceNames("FrOnTeNd").execute())
       .containsExactly(CLIENT_SPAN.remoteServiceName());
   }
 
-  @Test public void getSpanNames_doesNotMapNameToRemoteServiceName() throws Exception {
+  @Test void getSpanNames_doesNotMapNameToRemoteServiceName() throws Exception {
     accept(CLIENT_SPAN);
 
-    assertThat(serviceAndSpanNames().getSpanNames(CLIENT_SPAN.remoteServiceName()).execute())
+    assertThat(names().getSpanNames(CLIENT_SPAN.remoteServiceName()).execute())
       .isEmpty();
   }
 
-  @Test public void getSpanNames() throws Exception {
-    assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
+  @Test void getSpanNames() throws Exception {
+    assertThat(names().getSpanNames("frontend").execute())
       .isEmpty();
 
     accept(CLIENT_SPAN);
 
-    assertThat(serviceAndSpanNames().getSpanNames("frontend" + 1).execute())
+    assertThat(names().getSpanNames("frontend" + 1).execute())
       .isEmpty();
 
-    assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
+    assertThat(names().getSpanNames("frontend").execute())
       .contains(CLIENT_SPAN.name());
   }
 
-  @Test public void getSpanNames_allReturned() throws IOException {
+  @Test void getSpanNames_allReturned() throws IOException {
     // Assure a default store limit isn't hit by assuming if 50 are returned, all are returned
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> {
@@ -144,38 +137,38 @@ public abstract class ITServiceAndSpanNames {
       .collect(Collectors.toList());
     accept(spans);
 
-    assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
+    assertThat(names().getSpanNames("frontend").execute())
       .containsExactlyInAnyOrderElementsOf(spans.stream().map(Span::name)::iterator);
   }
 
   /** Ensures the span name index returns distinct results */
-  @Test public void getSpanNames_dedupes() throws IOException {
+  @Test void getSpanNames_dedupes() throws IOException {
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> CLIENT_SPAN.toBuilder().id(i + 1).build())
       .collect(Collectors.toList());
     accept(spans);
 
-    assertThat(serviceAndSpanNames().getSpanNames("frontend").execute())
+    assertThat(names().getSpanNames("frontend").execute())
       .containsExactly(CLIENT_SPAN.name());
   }
 
-  @Test public void getSpanNames_noSpanName() throws IOException {
+  @Test void getSpanNames_noSpanName() throws IOException {
     accept(Span.newBuilder().traceId("a").id("a").localEndpoint(FRONTEND).build());
 
-    assertThat(serviceAndSpanNames().getSpanNames("frontend").execute()).isEmpty();
+    assertThat(names().getSpanNames("frontend").execute()).isEmpty();
   }
 
-  @Test public void getSpanNames_serviceNameGoesLowercase() throws IOException {
+  @Test void getSpanNames_serviceNameGoesLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
-    assertThat(serviceAndSpanNames().getSpanNames("FrOnTeNd").execute()).containsExactly("get");
+    assertThat(names().getSpanNames("FrOnTeNd").execute()).containsExactly("get");
   }
 
   protected void accept(List<Span> spans) throws IOException {
-    storage().spanConsumer().accept(spans).execute();
+    storage.spanConsumer().accept(spans).execute();
   }
 
   protected void accept(Span... spans) throws IOException {
-    storage().spanConsumer().accept(asList(spans)).execute();
+    storage.spanConsumer().accept(asList(spans)).execute();
   }
 }

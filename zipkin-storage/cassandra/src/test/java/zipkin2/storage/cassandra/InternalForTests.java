@@ -14,14 +14,11 @@
 package zipkin2.storage.cassandra;
 
 import com.datastax.driver.core.LocalDate;
-import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.util.List;
-import org.junit.rules.TestName;
+import org.junit.jupiter.api.TestInfo;
 import zipkin2.DependencyLink;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class InternalForTests {
   static void writeDependencyLinks(
@@ -38,13 +35,15 @@ class InternalForTests {
     }
   }
 
-  static String keyspace(TestName testName) {
-    String result = testName.getMethodName().toLowerCase();
+  static String keyspace(TestInfo testInfo) {
+    String result;
+    if (testInfo.getTestMethod().isPresent()) {
+      result = testInfo.getTestMethod().get().getName();
+    } else {
+      assert testInfo.getTestClass().isPresent();
+      result = testInfo.getTestClass().get().getSimpleName();
+    }
+    result = result.toLowerCase();
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
-  }
-
-  static void dropKeyspace(Session session, String keyspace) {
-    session.execute("DROP KEYSPACE IF EXISTS " + keyspace);
-    assertThat(session.getCluster().getMetadata().getKeyspace(keyspace)).isNull();
   }
 }
