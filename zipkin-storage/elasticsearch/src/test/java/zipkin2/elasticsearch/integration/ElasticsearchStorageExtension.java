@@ -103,7 +103,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
     ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder()
       .index("zipkin-test")
       .flushOnWrites(true)
-      .hosts(Arrays.asList(baseUrl()));
+      .hosts(Collections.singletonList(baseUrl()));
 
     if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
       builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BODY);
