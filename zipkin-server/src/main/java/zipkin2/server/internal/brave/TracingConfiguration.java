@@ -15,6 +15,7 @@ package zipkin2.server.internal.brave;
 
 import brave.Tracing;
 import brave.context.log4j2.ThreadContextScopeDecorator;
+import brave.propagation.B3SinglePropagation;
 import brave.propagation.CurrentTraceContext;
 import brave.propagation.ThreadLocalSpan;
 import brave.sampler.BoundarySampler;
@@ -85,6 +86,8 @@ public class TracingConfiguration {
       .localServiceName("zipkin-server")
       .sampler(sampler)
       .currentTraceContext(currentTraceContext())
+      // Reduce the impact on untraced downstream http services such as Elasticsearch
+      .propagationFactory(B3SinglePropagation.FACTORY)
       .spanReporter(reporter)
       .build();
   }
