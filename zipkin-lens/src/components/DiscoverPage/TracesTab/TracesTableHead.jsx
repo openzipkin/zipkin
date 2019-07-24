@@ -19,7 +19,6 @@ import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 
 import { sortingMethods } from './sorting';
-import { theme } from '../../../colors';
 
 const useStyles = makeStyles({
   root: {
