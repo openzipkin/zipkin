@@ -14,7 +14,7 @@
 package zipkin2.storage.cassandra.v1;
 
 import java.io.IOException;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 import zipkin2.TestObjects;
