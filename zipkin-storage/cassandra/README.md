@@ -47,7 +47,7 @@ That said, all integration tests run on pull request via Travis.
 To run a single integration test, use the following syntax:
 
 ```bash
-$ ./mvnw -Dit.test='ITCassandraStorage$SpanStoreTest#getTraces_duration' -pl zipkin-storage/zipkin2_cassandra clean verify
+$ ./mvnw -Dit.test='ITCassandraStorage$ITSpanStore#getTraces_duration' -pl zipkin-storage/cassandra clean verify
 ```
 
 ## Strict trace ID
