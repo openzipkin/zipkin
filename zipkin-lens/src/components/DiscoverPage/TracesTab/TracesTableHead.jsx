@@ -19,6 +19,7 @@ import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 
 import { sortingMethods } from './sorting';
+import { theme } from '../../../colors';
 
 const useStyles = makeStyles({
   root: {
@@ -32,6 +33,9 @@ const useStyles = makeStyles({
     paddingRight: '1rem',
     paddingTop: '0.8rem',
     paddingBottom: '0.8rem',
+  },
+  clickable: {
+    cursor: 'pointer',
   },
 });
 
@@ -79,13 +83,23 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
       <Grid item xs={3} className={classes.cell}>
         Trace ID
       </Grid>
-      <Grid item xs={3} className={classes.cell} onClick={handleStartTimeClick}>
+      <Grid
+        item
+        xs={3}
+        className={`${classes.cell} ${classes.clickable}`}
+        onClick={handleStartTimeClick}
+      >
         Start Time
         &nbsp;
         {sortingMethod === sortingMethods.OLDEST_FIRST && <Box component="span" className="fas fa-arrow-up" />}
         {sortingMethod === sortingMethods.NEWEST_FIRST && <Box component="span" className="fas fa-arrow-down" />}
       </Grid>
-      <Grid item xs={3} className={classes.cell} onClick={handleDurationClick}>
+      <Grid
+        item
+        xs={3}
+        className={`${classes.cell} ${classes.clickable}`}
+        onClick={handleDurationClick}
+      >
         Duration
         &nbsp;
         {sortingMethod === sortingMethods.LONGEST_FIRST && <Box component="span" className="fas fa-arrow-up" />}
