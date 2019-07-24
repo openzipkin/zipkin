@@ -17,6 +17,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import zipkin2.CheckResult;
 
@@ -28,22 +29,22 @@ public abstract class ITStorage<T extends StorageComponent> {
 
   protected T storage;
 
-  @BeforeAll void initializeStorage() {
+  @BeforeAll void initializeStorage(TestInfo testInfo) {
     if (initializeStoragePerTest()) {
       return;
     }
-    doInitializeStorage();
+    doInitializeStorage(testInfo);
   }
 
-  @BeforeEach void initializeStorageForTest() {
+  @BeforeEach void initializeStorageForTest(TestInfo testInfo) {
     if (!initializeStoragePerTest()) {
       return;
     }
-    doInitializeStorage();
+    doInitializeStorage(testInfo);
   }
 
-  void doInitializeStorage() {
-    StorageComponent.Builder builder = newStorageBuilder();
+  void doInitializeStorage(TestInfo testInfo) {
+    StorageComponent.Builder builder = newStorageBuilder(testInfo);
     configureStorageForTest(builder);
     // TODO(anuraaga): It wouldn't be difficult to allow storage builders to be parameterized by
     // their storage type.
@@ -87,7 +88,7 @@ public abstract class ITStorage<T extends StorageComponent> {
   /**
    * Returns a new {@link StorageComponent.Builder} for connecting to the backend for the test.
    */
-  protected abstract StorageComponent.Builder newStorageBuilder();
+  protected abstract StorageComponent.Builder newStorageBuilder(TestInfo testInfo);
 
   /**
    * Configures a {@link StorageComponent.Builder} with parameters for the test being executed.

@@ -22,6 +22,7 @@ import org.jooq.Query;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.DependencyLink;
@@ -37,7 +38,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<MySQLStorage> {
-    @Override protected StorageComponent.Builder newStorageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
     }
 
@@ -51,7 +52,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<MySQLStorage> {
-    @Override protected StorageComponent.Builder newStorageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
     }
 
@@ -62,7 +63,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<MySQLStorage> {
-    @Override protected StorageComponent.Builder newStorageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
     }
 
@@ -73,7 +74,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITDependenciesPreAggregated extends zipkin2.storage.ITDependencies<MySQLStorage> {
-    @Override protected StorageComponent.Builder newStorageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
     }
 
@@ -110,7 +111,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<MySQLStorage> {
-    @Override protected StorageComponent.Builder newStorageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
     }
 
@@ -121,7 +122,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<MySQLStorage> {
-    @Override protected StorageComponent.Builder newStorageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
     }
 
@@ -132,7 +133,7 @@ class ITMySQLStorage {
 
   @Nested
   class ITDependenciesOnDemand extends zipkin2.storage.ITDependencies<MySQLStorage> {
-    @Override protected StorageComponent.Builder newStorageBuilder() {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
       return backend.computeStorageBuilder();
     }
 

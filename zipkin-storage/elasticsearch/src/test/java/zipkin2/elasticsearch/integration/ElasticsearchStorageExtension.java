@@ -17,8 +17,8 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.logging.LogLevel;
 import java.util.Collections;
-import java.util.UUID;
 import java.util.function.Consumer;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -113,7 +113,7 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
           : unused -> {};
     return ElasticsearchStorage.newBuilder()
         .clientCustomizer(customizer)
-        .index(randomIndex())
+        .index("zipkin-test")
         .flushOnWrites(true)
         .hosts(Collections.singletonList(baseUrl()));
   }
@@ -129,8 +129,15 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
     }
   }
 
-  static String randomIndex() {
-    String result = UUID.randomUUID().toString().replace('-', '_');
+  static String index(TestInfo testInfo) {
+    String result;
+    if (testInfo.getTestMethod().isPresent()) {
+      result = testInfo.getTestMethod().get().getName();
+    } else {
+      assert testInfo.getTestClass().isPresent();
+      result = testInfo.getTestClass().get().getSimpleName();
+    }
+    result = result.toLowerCase();
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
   }
 }

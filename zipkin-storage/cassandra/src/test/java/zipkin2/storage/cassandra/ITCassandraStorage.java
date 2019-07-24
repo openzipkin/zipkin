@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Endpoint;
@@ -54,8 +55,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder newStorageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
     @Override public void clear() {
@@ -144,8 +145,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder newStorageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
     @Override public void clear() {
@@ -179,8 +180,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder newStorageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
     @Override public void clear() {
@@ -207,8 +208,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder newStorageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
     @Override public void clear() {
@@ -222,8 +223,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder newStorageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
     @Override public void clear() {
@@ -237,8 +238,8 @@ class ITCassandraStorage {
       return true;
     }
 
-    @Override protected StorageComponent.Builder newStorageBuilder() {
-      return backend.computeStorageBuilder();
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
 
     @Override public void clear() {
@@ -257,8 +258,14 @@ class ITCassandraStorage {
 
   @Nested
   class ITEnsureSchema extends zipkin2.storage.cassandra.ITEnsureSchema {
+    TestInfo testInfo;
+
+    @BeforeEach void setTestInfo(TestInfo testInfo) {
+      this.testInfo = testInfo;
+    }
+
     @Override protected String keyspace() {
-      return InternalForTests.randomKeyspace();
+      return InternalForTests.keyspace(testInfo);
     }
 
     @Override protected Session session() {
@@ -272,12 +279,18 @@ class ITCassandraStorage {
 
   @Nested
   class ITSpanConsumer extends zipkin2.storage.cassandra.ITSpanConsumer {
+    TestInfo testInfo;
+
+    @BeforeEach void setTestInfo(TestInfo testInfo) {
+      this.testInfo = testInfo;
+    }
+
     @Override protected String keyspace() {
-      return InternalForTests.randomKeyspace();
+      return InternalForTests.keyspace(testInfo);
     }
 
     @Override CassandraStorage.Builder storageBuilder() {
-      return backend.computeStorageBuilder();
+      return backend.computeStorageBuilder().keyspace(InternalForTests.keyspace(testInfo));
     }
   }
 

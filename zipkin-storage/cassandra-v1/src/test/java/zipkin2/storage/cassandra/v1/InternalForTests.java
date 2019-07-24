@@ -16,12 +16,9 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import java.nio.ByteBuffer;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import org.junit.jupiter.api.TestInfo;
 import zipkin2.DependencyLink;
 import zipkin2.internal.Dependencies;
 
@@ -38,14 +35,15 @@ class InternalForTests {
     storage.session().execute(statement);
   }
 
-  static Set<String> USED_KEYSPACES = Collections.synchronizedSet(new HashSet<>());
-
-  static String randomKeyspace() {
+  static String keyspace(TestInfo testInfo) {
     String result;
-    // Selecting the same UUID should be extremely rare but just in case.
-    do {
-      result = "z" + UUID.randomUUID().toString().toLowerCase().replace('-', '_');
-    } while (!USED_KEYSPACES.add(result));
+    if (testInfo.getTestMethod().isPresent()) {
+      result = testInfo.getTestMethod().get().getName();
+    } else {
+      assert testInfo.getTestClass().isPresent();
+      result = testInfo.getTestClass().get().getSimpleName();
+    }
+    result = result.toLowerCase();
     return result.length() <= 48 ? result : result.substring(result.length() - 48);
   }
 }

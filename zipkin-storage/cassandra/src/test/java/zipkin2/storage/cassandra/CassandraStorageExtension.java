@@ -96,7 +96,7 @@ public class CassandraStorageExtension implements BeforeAllCallback, AfterAllCal
     return CassandraStorage.newBuilder()
         .contactPoints(contactPoint.getHostString() + ":" + contactPoint.getPort())
         .ensureSchema(true)
-        .keyspace(InternalForTests.randomKeyspace());
+        .keyspace("test_cassandra3");
   }
 
   InetSocketAddress contactPoint() {
