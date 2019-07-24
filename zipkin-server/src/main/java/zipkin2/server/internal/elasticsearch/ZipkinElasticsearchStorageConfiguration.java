@@ -16,17 +16,12 @@ package zipkin2.server.internal.elasticsearch;
 import brave.Tracing;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
-import com.linecorp.armeria.client.brave.BraveClient;
-import com.linecorp.armeria.client.logging.LoggingClientBuilder;
-import com.linecorp.armeria.common.HttpHeaders;
-import com.linecorp.armeria.common.logging.LogLevel;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -42,7 +37,6 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.HostsSupplier;
 import zipkin2.elasticsearch.internal.BasicAuthInterceptor;
-import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
@@ -76,43 +70,6 @@ public class ZipkinElasticsearchStorageConfiguration {
 
       @Override public String toString() {
         return "TimeoutCustomizer{timeout=" + timeout + "ms}";
-      }
-    };
-  }
-
-
-  @Bean @Qualifier(QUALIFIER) @Conditional(HttpLoggingSet.class)
-  Consumer<ClientOptionsBuilder> zipkinElasticsearchHttpLogging(
-    ZipkinElasticsearchStorageProperties es) {
-    LoggingClientBuilder builder = new LoggingClientBuilder()
-      .requestLogLevel(LogLevel.INFO)
-      .successfulResponseLogLevel(LogLevel.INFO);
-
-    switch (es.getHttpLogging()) {
-      case HEADERS:
-        builder.contentSanitizer(unused -> "");
-        break;
-      case BASIC:
-        builder.contentSanitizer(unused -> "");
-        builder.headersSanitizer(unused -> HttpHeaders.of());
-        break;
-      case BODY:
-      default:
-        break;
-    }
-
-    return new Consumer<ClientOptionsBuilder>() {
-      @Override public void accept(ClientOptionsBuilder client) {
-        client
-          .decorator(builder.newDecorator())
-          .decorator(
-            es.getHttpLogging() == ZipkinElasticsearchStorageProperties.HttpLoggingLevel.BODY
-            ? RawContentLoggingClient.newDecorator()
-            : Function.identity());
-      }
-
-      @Override public String toString() {
-        return "LoggingCustomizer{httpLogging=" + es.getHttpLogging() + "}";
       }
     };
   }
@@ -172,6 +129,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> zipkinElasticsearchHttpCustomizers,
     @Qualifier(QUALIFIER) List<Consumer<ClientFactoryBuilder>>
       zipkinElasticsearchClientFactoryCustomizers,
+    @Qualifier(QUALIFIER) Optional<Tracing> tracing,
     HostsSupplier hostsSupplier,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
@@ -179,7 +137,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
-    return elasticsearch
+    ElasticsearchStorage.Builder builder = elasticsearch
       .toBuilder()
       .hostsSupplier(hostsSupplier)
       .clientCustomizer(new CompositeCustomizer<>(zipkinElasticsearchHttpCustomizers))
@@ -190,22 +148,16 @@ public class ZipkinElasticsearchStorageConfiguration {
       .searchEnabled(searchEnabled)
       .autocompleteKeys(autocompleteKeys)
       .autocompleteTtl(autocompleteTtl)
-      .autocompleteCardinality(autocompleteCardinality).build();
+      .autocompleteCardinality(autocompleteCardinality);
+
+    tracing.ifPresent(builder::tracing);
+
+    return builder.build();
   }
 
-  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<ClientOptionsBuilder>
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Tracing
   elasticsearchTracing(Optional<Tracing> tracing) {
-    if (!tracing.isPresent()) {
-      return client -> {};
-    }
-    return client -> client.decorator(BraveClient.newDecorator(tracing.get(), "elasticsearch"));
-  }
-
-  static final class HttpLoggingSet implements Condition {
-    @Override public boolean matches(ConditionContext condition, AnnotatedTypeMetadata ignored) {
-      return !isEmpty(
-        condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.http-logging"));
-    }
+    return tracing.orElse(null);
   }
 
   static final class BasicAuthRequired implements Condition {

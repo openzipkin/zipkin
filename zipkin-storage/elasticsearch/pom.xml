@@ -41,6 +41,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.linecorp.armeria</groupId>
+      <artifactId>armeria-brave</artifactId>
+      <version>${armeria.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>com.google.auto.value</groupId>
       <artifactId>auto-value-annotations</artifactId>
     </dependency>

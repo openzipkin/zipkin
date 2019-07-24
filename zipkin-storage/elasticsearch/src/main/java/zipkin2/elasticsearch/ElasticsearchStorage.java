@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import brave.Tracing;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
@@ -22,6 +23,7 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
@@ -31,11 +33,14 @@ import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
+import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.Flags;
 import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.SessionProtocol;
+import com.linecorp.armeria.common.logging.LogLevel;
 import com.linecorp.armeria.common.util.AbstractListenable;
 import com.linecorp.armeria.common.util.EventLoopGroups;
 import java.io.IOException;
@@ -56,6 +61,7 @@ import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
+import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 import zipkin2.storage.AutocompleteTags;
@@ -73,6 +79,12 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
+
+  public enum HttpLoggingLevel {
+    BASIC,
+    HEADERS,
+    BODY
+  }
 
   /**
    * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
@@ -108,7 +120,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public abstract static class Builder extends StorageComponent.Builder {
     /**
      * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. This is used
-     * by the server and tests to enable detailed logging and tweak timeouts.
+     * by the server and tests to enable detailed logging and tweak timeouts. It is also used by
+     * zipkin-aws to customize authentication of requests.
      */
     public abstract Builder clientCustomizer(Consumer<ClientOptionsBuilder> clientCustomizer);
 
@@ -207,6 +220,22 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public abstract Builder indexReplicas(int indexReplicas);
 
+    /**
+     * Sets the level of logging for HTTP requests made by the Elasticsearch client. If not set,
+     * logging will be disabled.
+     *
+     * <p>This is only for use from tests and ZipkinElasticsearchStorageConfiguration.
+     */
+    public abstract Builder httpLogging(HttpLoggingLevel httpLoggingLevel);
+
+    /**
+     * Sets the {@link Tracing} to use to trace HTTP requests made by the Elasticsearch client. If
+     * not set, tracing will be disabled.
+     *
+     * <p>This is only for use from tests and ZipkinElasticsearchStorageConfiguration.
+     */
+    public abstract Builder tracing(Tracing tracing);
+
     @Override
     public abstract Builder strictTraceId(boolean strictTraceId);
 
@@ -257,6 +286,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   abstract int indexShards();
 
   abstract int indexReplicas();
+
+  @Nullable abstract HttpLoggingLevel httpLogging();
+
+  @Nullable abstract Tracing tracing();
 
   public abstract IndexNameFormatter indexNameFormatter();
 
@@ -462,6 +495,33 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     ClientOptionsBuilder options = new ClientOptionsBuilder()
       .decorator(HttpDecodingClient.newDecorator());
+
+    if (httpLogging() != null) {
+      LoggingClientBuilder loggingBuilder = new LoggingClientBuilder()
+        .requestLogLevel(LogLevel.INFO)
+        .successfulResponseLogLevel(LogLevel.INFO);
+      switch (httpLogging()) {
+        case HEADERS:
+          loggingBuilder.contentSanitizer(unused -> "");
+          break;
+        case BASIC:
+          loggingBuilder.contentSanitizer(unused -> "");
+          loggingBuilder.headersSanitizer(unused -> HttpHeaders.of());
+          break;
+        case BODY:
+        default:
+          break;
+      }
+      options.decorator(loggingBuilder.newDecorator());
+      if (httpLogging() == HttpLoggingLevel.BODY) {
+        options.decorator(RawContentLoggingClient.newDecorator());
+      }
+    }
+
+    if (tracing() != null) {
+      options.decorator(BraveClient.newDecorator(tracing(), "elasticsearch"));
+    }
+
     clientCustomizer().accept(options);
     HttpClientBuilder client = new HttpClientBuilder(clientUrl)
       .factory(clientFactory())

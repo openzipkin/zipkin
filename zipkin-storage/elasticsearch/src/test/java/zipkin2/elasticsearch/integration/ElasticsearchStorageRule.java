@@ -14,11 +14,7 @@
 package zipkin2.elasticsearch.integration;
 
 import com.google.common.io.Closer;
-import com.linecorp.armeria.client.ClientOptionsBuilder;
-import com.linecorp.armeria.client.logging.LoggingClientBuilder;
-import com.linecorp.armeria.common.logging.LogLevel;
 import java.util.Arrays;
-import java.util.function.Consumer;
 import org.junit.AssumptionViolatedException;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TestName;
@@ -29,7 +25,6 @@ import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 
 public class ElasticsearchStorageRule extends ExternalResource {
   static final Logger LOGGER = LoggerFactory.getLogger(ElasticsearchStorageRule.class);
@@ -89,22 +84,16 @@ public class ElasticsearchStorageRule extends ExternalResource {
   }
 
   public ElasticsearchStorage.Builder computeStorageBuilder() {
-    Consumer<ClientOptionsBuilder> customizer =
-        Boolean.valueOf(System.getenv("ES_DEBUG"))
-          ? client -> client
-          .decorator(
-            new LoggingClientBuilder()
-              .requestLogLevel(LogLevel.WARN)
-              .successfulResponseLogLevel(LogLevel.WARN)
-              .failureResponseLogLevel(LogLevel.WARN)
-              .newDecorator())
-          .decorator(RawContentLoggingClient.newDecorator())
-          : unused -> {};
-    return ElasticsearchStorage.newBuilder()
-        .clientCustomizer(customizer)
+    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder()
         .index(index)
         .flushOnWrites(true)
         .hosts(Arrays.asList(baseUrl()));
+
+    if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
+      builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BODY);
+    }
+
+    return builder;
   }
 
   String baseUrl() {
