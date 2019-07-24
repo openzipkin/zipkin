@@ -16,6 +16,7 @@ package zipkin2.elasticsearch.integration;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.logging.LogLevel;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.function.Consumer;
 import org.junit.jupiter.api.TestInfo;
@@ -99,22 +100,14 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
   }
 
   ElasticsearchStorage.Builder computeStorageBuilder() {
-    Consumer<ClientOptionsBuilder> customizer =
-        Boolean.valueOf(System.getenv("ES_DEBUG"))
-          ? client -> client
-          .decorator(
-            new LoggingClientBuilder()
-              .requestLogLevel(LogLevel.WARN)
-              .successfulResponseLogLevel(LogLevel.WARN)
-              .failureResponseLogLevel(LogLevel.WARN)
-              .newDecorator())
-          .decorator(RawContentLoggingClient.newDecorator())
-          : unused -> {};
-    return ElasticsearchStorage.newBuilder()
-        .clientCustomizer(customizer)
-        .index("zipkin-test")
-        .flushOnWrites(true)
-        .hosts(Collections.singletonList(baseUrl()));
+    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder()
+      .index("zipkin-test")
+      .flushOnWrites(true)
+      .hosts(Arrays.asList(baseUrl()));
+
+    if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
+      builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BODY);
+    }
   }
 
   String baseUrl() {
