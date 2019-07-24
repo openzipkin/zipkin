@@ -268,16 +268,6 @@ class ITCassandraStorage {
 
   @Nested
   class ITSpanConsumer extends zipkin2.storage.cassandra.v1.ITSpanConsumer {
-    TestInfo testInfo;
-
-    @BeforeEach void setTestInfo(TestInfo testInfo) {
-      this.testInfo = testInfo;
-    }
-
-    @Override protected String keyspace() {
-      return InternalForTests.keyspace(testInfo);
-    }
-
     @Override CassandraStorage.Builder storageBuilder() {
       return backend.computeStorageBuilder();
     }
