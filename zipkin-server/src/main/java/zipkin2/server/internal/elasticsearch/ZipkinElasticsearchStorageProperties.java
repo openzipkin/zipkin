@@ -156,6 +156,19 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     if (pipeline != null) builder.pipeline(pipeline);
     if (indexShards != null) builder.indexShards(indexShards);
     if (indexReplicas != null) builder.indexReplicas(indexReplicas);
+    if (httpLogging != null) {
+      switch (httpLogging) {
+        case BASIC:
+          builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BASIC);
+          break;
+        case HEADERS:
+          builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.HEADERS);
+          break;
+        case BODY:
+          builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BODY);
+          break;
+      }
+    }
 
     if (maxRequests != null) {
       log.warning("ES_MAX_REQUESTS is no longer honored. Use STORAGE_THROTTLE_ENABLED instead");
