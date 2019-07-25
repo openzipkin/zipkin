@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch;
 
-import brave.Tracing;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
@@ -23,7 +22,6 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.HttpClientBuilder;
-import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
@@ -228,14 +226,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public abstract Builder httpLogging(HttpLoggingLevel httpLoggingLevel);
 
-    /**
-     * Sets the {@link Tracing} to use to trace HTTP requests made by the Elasticsearch client. If
-     * not set, tracing will be disabled.
-     *
-     * <p>This is only for use from tests and ZipkinElasticsearchStorageConfiguration.
-     */
-    public abstract Builder tracing(Tracing tracing);
-
     @Override
     public abstract Builder strictTraceId(boolean strictTraceId);
 
@@ -288,8 +278,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   abstract int indexReplicas();
 
   @Nullable abstract HttpLoggingLevel httpLogging();
-
-  @Nullable abstract Tracing tracing();
 
   public abstract IndexNameFormatter indexNameFormatter();
 
@@ -516,10 +504,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       if (httpLogging() == HttpLoggingLevel.BODY) {
         options.decorator(RawContentLoggingClient.newDecorator());
       }
-    }
-
-    if (tracing() != null) {
-      options.decorator(BraveClient.newDecorator(tracing(), "elasticsearch"));
     }
 
     clientCustomizer().accept(options);

@@ -16,6 +16,7 @@ package zipkin2.server.internal.elasticsearch;
 import brave.Tracing;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
+import com.linecorp.armeria.client.brave.BraveClient;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -129,7 +130,6 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> zipkinElasticsearchHttpCustomizers,
     @Qualifier(QUALIFIER) List<Consumer<ClientFactoryBuilder>>
       zipkinElasticsearchClientFactoryCustomizers,
-    @Qualifier(QUALIFIER) Optional<Tracing> tracing,
     HostsSupplier hostsSupplier,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
@@ -150,14 +150,15 @@ public class ZipkinElasticsearchStorageConfiguration {
       .autocompleteTtl(autocompleteTtl)
       .autocompleteCardinality(autocompleteCardinality);
 
-    tracing.ifPresent(builder::tracing);
-
     return builder.build();
   }
 
-  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Tracing
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<ClientOptionsBuilder>
   elasticsearchTracing(Optional<Tracing> tracing) {
-    return tracing.orElse(null);
+    if (!tracing.isPresent()) {
+      return client -> {};
+    }
+    return client -> client.decorator(BraveClient.newDecorator(tracing.get(), "elasticsearch"));
   }
 
   static final class BasicAuthRequired implements Condition {
