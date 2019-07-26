@@ -36,6 +36,7 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
@@ -148,7 +149,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
     try (SafeCloseable ignored = Clients.withContextCustomizer(ctx ->
-      ctx.logBuilder().requestContent(RpcRequest.of(HttpClient.class, name), request))) {
+      ctx.logBuilder().requestContent(RpcRequest.of(ElasticsearchStorage.class, name), request))) {
       response = httpClient.execute(request);
     }
     CompletableFuture<AggregatedHttpResponse> responseFuture =
