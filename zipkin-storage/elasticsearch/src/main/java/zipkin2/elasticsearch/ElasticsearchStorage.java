@@ -411,9 +411,13 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       })
       .collect(Collectors.toList());
 
+    List<Endpoint> originalEndpoints = new ArrayList<>();
+
     final EndpointGroup endpointGroup;
     if (urls.size() == 1) {
       URL url = urls.get(0);
+      originalEndpoints.add(Endpoint.parse(url.getAuthority()));
+
       if (isIpAddress(url.getHost())) {
         endpointGroup = null;
       } else {
@@ -430,8 +434,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       List<EndpointGroup> endpointGroups = new ArrayList<>();
       List<Endpoint> staticEndpoints = new ArrayList<>();
       for (URL url : urls) {
+        Endpoint endpoint = Endpoint.parse(url.getAuthority());
+        originalEndpoints.add(endpoint);
         if (isIpAddress(url.getHost())) {
-          staticEndpoints.add(Endpoint.parse(url.getAuthority()));
+          staticEndpoints.add(endpoint);
         } else {
           // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
           // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
@@ -468,7 +474,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         // Even if all the health check requests are failing, we want to go ahead and try to send
         // the request to an endpoint anyways. This will generally only be when the server is
         // starting.
-        .orElse(endpointGroup);
+        .orElse(new StaticEndpointGroup(originalEndpoints));
       EndpointGroupRegistry.register(
         "elasticsearch", withFallback, EndpointSelectionStrategy.ROUND_ROBIN);
       // TODO(anuraaga): Remove this after https://github.com/line/armeria/issues/1910 means we
