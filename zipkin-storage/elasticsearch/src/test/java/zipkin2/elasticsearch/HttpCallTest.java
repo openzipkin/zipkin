@@ -45,7 +45,6 @@ import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.elasticsearch.internal.client.HttpCall;
-import zipkin2.elasticsearch.internal.client.NamedRequestClient;
 import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -207,7 +206,6 @@ public class HttpCallTest {
         ctx.log().addListener(log::set, RequestLogAvailability.COMPLETE);
         return client.execute(ctx, req);
       })
-      .decorator(NamedRequestClient.newDecorator())
       .build());
 
     http.newCall(REQUEST, BodyConverters.NULL, "custom-name").execute();

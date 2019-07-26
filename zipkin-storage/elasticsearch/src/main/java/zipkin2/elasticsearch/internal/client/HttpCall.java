@@ -14,6 +14,7 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
@@ -22,6 +23,7 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.RpcRequest;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
@@ -145,7 +147,8 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
-    try (SafeCloseable ignored = NamedRequestClient.withCustomMethodName(name)) {
+    try (SafeCloseable ignored = Clients.withContextCustomizer(ctx ->
+      ctx.logBuilder().requestContent(RpcRequest.of(HttpClient.class, name), request))) {
       response = httpClient.execute(request);
     }
     CompletableFuture<AggregatedHttpResponse> responseFuture =
