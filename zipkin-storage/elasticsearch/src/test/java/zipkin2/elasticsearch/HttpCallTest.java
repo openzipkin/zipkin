@@ -212,7 +212,7 @@ public class HttpCallTest {
 
     http.newCall(REQUEST, BodyConverters.NULL, "custom-name").execute();
 
-    await().untilAsserted(() -> assertThat(log).isNotNull());
+    await().untilAsserted(() -> assertThat(log).doesNotHaveValue(null));
     assertThat(log.get().requestContent()).isInstanceOfSatisfying(RpcRequest.class,
       req -> assertThat(req.method().endsWith("custom-name")));
   }
