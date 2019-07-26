@@ -15,6 +15,9 @@ package zipkin2.server.internal.brave;
 
 import brave.Tracing;
 import brave.context.log4j2.ThreadContextScopeDecorator;
+import brave.http.HttpAdapter;
+import brave.http.HttpSampler;
+import brave.http.HttpTracing;
 import brave.propagation.B3SinglePropagation;
 import brave.propagation.CurrentTraceContext;
 import brave.propagation.ThreadLocalSpan;
@@ -22,6 +25,8 @@ import brave.sampler.BoundarySampler;
 import brave.sampler.RateLimitingSampler;
 import brave.sampler.Sampler;
 import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
+import com.linecorp.armeria.server.brave.BraveService;
+import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -90,6 +95,24 @@ public class TracingConfiguration {
       .propagationFactory(B3SinglePropagation.FACTORY)
       .spanReporter(reporter)
       .build();
+  }
+
+  @Bean HttpTracing httpTracing(Tracing tracing) {
+    return HttpTracing.newBuilder(tracing)
+      // server starts traces for read requests under the path /api
+      .serverSampler(new HttpSampler() {
+        @Override public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
+          String path = adapter.path(request);
+          return path.startsWith("/api") || path.startsWith("/zipkin/api");
+        }
+      })
+      // client doesn't start new traces
+      .clientSampler(HttpSampler.NEVER_SAMPLE)
+      .build();
+  }
+
+  @Bean ArmeriaServerConfigurator tracingConfigurator(HttpTracing tracing) {
+    return server -> server.decorator(BraveService.newDecorator(tracing));
   }
 
   /**

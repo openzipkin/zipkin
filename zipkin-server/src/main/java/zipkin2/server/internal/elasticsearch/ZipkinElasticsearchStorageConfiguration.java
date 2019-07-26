@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import brave.Tracing;
+import brave.http.HttpTracing;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
@@ -154,11 +154,15 @@ public class ZipkinElasticsearchStorageConfiguration {
   }
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<ClientOptionsBuilder>
-  elasticsearchTracing(Optional<Tracing> tracing) {
-    if (!tracing.isPresent()) {
-      return client -> {};
+  elasticsearchTracing(Optional<HttpTracing> maybeHttpTracing) {
+    if (!maybeHttpTracing.isPresent()) {
+      // TODO: is there a special cased empty consumer we can use here? I suspect debug is cluttered
+      // Alternatively, check why we would ever get here if ConditionalOnSelfTracing matches
+      return client -> {
+      };
     }
-    return client -> client.decorator(BraveClient.newDecorator(tracing.get(), "elasticsearch"));
+    HttpTracing httpTracing = maybeHttpTracing.get().clientOf("elasticsearch");
+    return client -> client.decorator(BraveClient.newDecorator(httpTracing));
   }
 
   static final class BasicAuthRequired implements Condition {
