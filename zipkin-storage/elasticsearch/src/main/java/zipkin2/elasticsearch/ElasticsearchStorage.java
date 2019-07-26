@@ -59,7 +59,6 @@ import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
-import zipkin2.elasticsearch.internal.client.NamedRequestClient;
 import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
@@ -483,8 +482,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
 
     ClientOptionsBuilder options = new ClientOptionsBuilder()
-      .decorator(HttpDecodingClient.newDecorator())
-      .decorator(NamedRequestClient.newDecorator());
+      .decorator(HttpDecodingClient.newDecorator());
 
     if (httpLogging() != null) {
       LoggingClientBuilder loggingBuilder = new LoggingClientBuilder()
