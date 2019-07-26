@@ -24,7 +24,6 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
-import com.linecorp.armeria.common.RpcRequest;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
 import com.linecorp.armeria.server.ServerBuilder;
@@ -211,8 +210,8 @@ public class HttpCallTest {
     http.newCall(REQUEST, BodyConverters.NULL, "custom-name").execute();
 
     await().untilAsserted(() -> assertThat(log).doesNotHaveValue(null));
-    assertThat(log.get().requestContent()).isInstanceOfSatisfying(RpcRequest.class,
-      req -> assertThat(req.method().endsWith("custom-name")));
+    assertThat(log.get().context().attr(HttpCall.NAME).get())
+      .isEqualTo("custom-name");
   }
 
   // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.
