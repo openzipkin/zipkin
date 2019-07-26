@@ -55,6 +55,13 @@
       <artifactId>log4j-slf4j-impl</artifactId>
       <scope>test</scope>
     </dependency>
+
+    <dependency>
+      <groupId>org.awaitility</groupId>
+      <artifactId>awaitility</artifactId>
+      <scope>test</scope>
+    </dependency>
+
     <!-- For HttpCallTest -->
     <dependency>
       <groupId>com.google.guava</groupId>

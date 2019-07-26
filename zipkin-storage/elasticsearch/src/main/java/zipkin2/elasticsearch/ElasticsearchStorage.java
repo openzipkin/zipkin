@@ -59,6 +59,7 @@ import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
+import zipkin2.elasticsearch.internal.client.NamedRequestClient;
 import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
@@ -326,7 +327,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   void clear(String index) throws IOException {
     String url = '/' + index;
     AggregatedHttpRequest delete = AggregatedHttpRequest.of(HttpMethod.DELETE, url);
-    http().newCall(delete, BodyConverters.NULL).execute();
+    http().newCall(delete, BodyConverters.NULL, "delete-index").execute();
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
@@ -359,7 +360,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       HttpCall.Factory http = http();
       AggregatedHttpRequest request = AggregatedHttpRequest.of(
         HttpMethod.GET, "/_cluster/health/" + index);
-      return http.newCall(request, READ_STATUS).execute();
+      return http.newCall(request, READ_STATUS, "get-cluster-health").execute();
     } catch (IOException | RuntimeException e) {
       if (e instanceof CompletionException) return CheckResult.failed(e.getCause());
       return CheckResult.failed(e);
@@ -482,7 +483,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
 
     ClientOptionsBuilder options = new ClientOptionsBuilder()
-      .decorator(HttpDecodingClient.newDecorator());
+      .decorator(HttpDecodingClient.newDecorator())
+      .decorator(NamedRequestClient.newDecorator());
 
     if (httpLogging() != null) {
       LoggingClientBuilder loggingBuilder = new LoggingClientBuilder()

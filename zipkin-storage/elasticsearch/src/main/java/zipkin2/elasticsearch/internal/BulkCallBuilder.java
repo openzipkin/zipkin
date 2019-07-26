@@ -119,7 +119,7 @@ public final class BulkCallBuilder {
         HttpMethod.POST, urlBuilder.toString(),
         HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
       body);
-    return http.newCall(request, CHECK_FOR_ERRORS);
+    return http.newCall(request, CHECK_FOR_ERRORS, tag);
   }
 
   static void write(CompositeByteBuf sink, IndexEntry entry,

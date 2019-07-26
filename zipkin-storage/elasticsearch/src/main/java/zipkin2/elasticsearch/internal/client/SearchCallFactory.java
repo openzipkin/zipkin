@@ -47,7 +47,7 @@ public class SearchCallFactory {
     } catch (JsonProcessingException e) {
       throw new AssertionError("Could not serialize SearchRequest to bytes.", e);
     }
-    return http.newCall(httpRequest, bodyConverter);
+    return http.newCall(httpRequest, bodyConverter, request.tag());
   }
 
   /** Matches the behavior of {@code IndicesOptions#lenientExpandOpen()} */
