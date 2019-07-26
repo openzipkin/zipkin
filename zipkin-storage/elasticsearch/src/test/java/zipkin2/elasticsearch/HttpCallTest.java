@@ -15,6 +15,7 @@ package zipkin2.elasticsearch; // to access package-private stuff
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.HttpClientBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -23,6 +24,9 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.common.RpcRequest;
+import com.linecorp.armeria.common.logging.RequestLog;
+import com.linecorp.armeria.common.logging.RequestLogAvailability;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.io.FileNotFoundException;
@@ -45,6 +49,7 @@ import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.awaitility.Awaitility.await;
 
 public class HttpCallTest {
 
@@ -71,9 +76,9 @@ public class HttpCallTest {
   @Test public void emptyContent() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
 
-    assertThat(http.newCall(REQUEST, unused -> "not me").execute()).isNull();
+    assertThat(http.newCall(REQUEST, unused -> "not me", "test").execute()).isNull();
     CompletableCallback<String> future = new CompletableCallback<>();
-    http.newCall(REQUEST, unused -> "not me").enqueue(future);
+    http.newCall(REQUEST, unused -> "not me", "test").enqueue(future);
     assertThat(future.join()).isNull();
   }
 
@@ -83,7 +88,7 @@ public class HttpCallTest {
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
     http.newCall(REQUEST, content -> {
       throw new LinkageError();
-    }).enqueue(new Callback<Object>() {
+    }, "test").enqueue(new Callback<Object>() {
       @Override public void onSuccess(@Nullable Object value) {
         q.add(value);
       }
@@ -109,7 +114,7 @@ public class HttpCallTest {
 
     Call<?> call = http.newCall(REQUEST, content -> {
       throw new IllegalArgumentException("eeek");
-    });
+    }, "test");
 
     try {
       call.execute();
@@ -122,7 +127,7 @@ public class HttpCallTest {
   @Test public void cloned() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(REQUEST, content -> null);
+    Call<?> call = http.newCall(REQUEST, content -> null, "test");
     call.execute();
 
     try {
@@ -140,7 +145,7 @@ public class HttpCallTest {
   @Test public void executionException_5xx() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL);
+    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
 
     try {
       call.execute();
@@ -153,7 +158,7 @@ public class HttpCallTest {
   @Test public void executionException_404() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND));
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL);
+    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
 
     try {
       call.execute();
@@ -178,7 +183,7 @@ public class HttpCallTest {
       HttpData.ofUtf8("Message: sleet") // note: not json
     ), "response for / failed: Message: sleet"); // In this case, we give request context
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL);
+    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
 
     for (Map.Entry<AggregatedHttpResponse, String> entry : responseToMessage.entrySet()) {
       MOCK_RESPONSE.set(entry.getKey());
@@ -190,6 +195,24 @@ public class HttpCallTest {
         assertThat(expected).hasMessage(entry.getValue());
       }
     }
+  }
+
+  @Test public void setsCustomName() throws Exception {
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+
+    AtomicReference<RequestLog> log = new AtomicReference<>();
+    http = new HttpCall.Factory(new HttpClientBuilder(server.httpUri("/"))
+      .decorator((client, ctx, req) -> {
+        ctx.log().addListener(log::set, RequestLogAvailability.COMPLETE);
+        return client.execute(ctx, req);
+      })
+      .build());
+
+    http.newCall(REQUEST, BodyConverters.NULL, "custom-name").execute();
+
+    await().untilAsserted(() -> assertThat(log).doesNotHaveValue(null));
+    assertThat(log.get().requestContent()).isInstanceOfSatisfying(RpcRequest.class,
+      req -> assertThat(req.method().endsWith("custom-name")));
   }
 
   // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.
