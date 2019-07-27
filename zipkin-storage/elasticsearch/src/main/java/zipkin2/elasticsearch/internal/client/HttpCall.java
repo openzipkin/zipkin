@@ -14,6 +14,7 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
@@ -22,9 +23,12 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.RpcRequest;
+import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.buffer.ByteBufInputStream;
+import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
 import java.io.FileNotFoundException;
@@ -33,11 +37,13 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 public final class HttpCall<V> extends Call.Base<V> {
+  public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
     /** Most convert with {@link HttpData#toStringUtf8()} or {@link #toInputStream(HttpData)} */
@@ -61,20 +67,25 @@ public final class HttpCall<V> extends Call.Base<V> {
       this.httpClient = httpClient;
     }
 
-    public <V> HttpCall<V> newCall(AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
-      return new HttpCall<>(httpClient, request, bodyConverter);
+    public <V> HttpCall<V> newCall(
+      AggregatedHttpRequest request, BodyConverter<V> bodyConverter, String name) {
+      return new HttpCall<>(httpClient, request, bodyConverter, name);
     }
   }
 
+  // Visible for benchmarks
   public final AggregatedHttpRequest request;
-  public final BodyConverter<V> bodyConverter;
+  final BodyConverter<V> bodyConverter;
+  final String name;
 
   final HttpClient httpClient;
 
   volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
 
-  HttpCall(HttpClient httpClient, AggregatedHttpRequest request, BodyConverter<V> bodyConverter) {
+  HttpCall(HttpClient httpClient, AggregatedHttpRequest request, BodyConverter<V> bodyConverter,
+    String name) {
     this.httpClient = httpClient;
+    this.name = name;
 
     if (request.content() instanceof ByteBufHolder) {
       // Unfortunately it's not possible to use pooled objects in requests and support clone() after
@@ -130,7 +141,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<>(httpClient, request, bodyConverter);
+    return new HttpCall<>(httpClient, request, bodyConverter, name);
   }
 
   @Override public String toString() {
@@ -138,7 +149,10 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
-    HttpResponse response = httpClient.execute(request);
+    final HttpResponse response;
+    try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(NAME).set(name))) {
+      response = httpClient.execute(request);
+    }
     CompletableFuture<AggregatedHttpResponse> responseFuture =
       RequestContext.mapCurrent(
         ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),

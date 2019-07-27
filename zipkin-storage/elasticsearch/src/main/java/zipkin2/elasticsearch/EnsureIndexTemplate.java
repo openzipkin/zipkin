@@ -34,13 +34,13 @@ final class EnsureIndexTemplate {
     throws IOException {
     AggregatedHttpRequest getTemplate = AggregatedHttpRequest.of(HttpMethod.GET, templateUrl);
     try {
-      callFactory.newCall(getTemplate, BodyConverters.NULL).execute();
+      callFactory.newCall(getTemplate, BodyConverters.NULL, "get-template").execute();
     } catch (FileNotFoundException e) { // TODO: handle 404 slightly more nicely
       AggregatedHttpRequest updateTemplate = AggregatedHttpRequest.of(
         RequestHeaders.of(
           HttpMethod.PUT, templateUrl, HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
         HttpData.ofUtf8(indexTemplate));
-      callFactory.newCall(updateTemplate, BodyConverters.NULL).execute();
+      callFactory.newCall(updateTemplate, BodyConverters.NULL, "update-template").execute();
     }
   }
 }

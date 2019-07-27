@@ -13,6 +13,8 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import brave.CurrentSpanCustomizer;
+import brave.SpanCustomizer;
 import brave.http.HttpTracing;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
@@ -38,6 +40,7 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.HostsSupplier;
 import zipkin2.elasticsearch.internal.BasicAuthInterceptor;
+import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
@@ -161,8 +164,20 @@ public class ZipkinElasticsearchStorageConfiguration {
       return client -> {
       };
     }
+
     HttpTracing httpTracing = maybeHttpTracing.get().clientOf("elasticsearch");
-    return client -> client.decorator(BraveClient.newDecorator(httpTracing));
+    SpanCustomizer spanCustomizer = CurrentSpanCustomizer.create(httpTracing.tracing());
+
+    return client -> {
+      client.decorator((delegate, ctx, req) -> {
+        if (ctx.hasAttr(HttpCall.NAME)) { // override the span name if set
+          spanCustomizer.name(ctx.attr(HttpCall.NAME).get());
+        }
+        return delegate.execute(ctx, req);
+      });
+      // the tracing decorator is added last so that it encloses the attempt to overwrite the name.
+      client.decorator(BraveClient.newDecorator(httpTracing));
+    };
   }
 
   static final class BasicAuthRequired implements Condition {

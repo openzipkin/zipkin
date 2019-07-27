@@ -221,7 +221,7 @@ final class VersionSpecificTemplates {
 
   static float getVersion(HttpCall.Factory callFactory) throws IOException {
     AggregatedHttpRequest getNode = AggregatedHttpRequest.of(HttpMethod.GET, "/");
-    return callFactory.newCall(getNode, ReadVersionNumber.INSTANCE).execute();
+    return callFactory.newCall(getNode, ReadVersionNumber.INSTANCE, "get-node").execute();
   }
 
   enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
