@@ -86,9 +86,12 @@ const ServiceFilterPopover = ({
 
   const handleTextChange = e => setFilterText(e.target.value);
 
-  const filteredServiceNames = useMemo(() => allServiceNames
-    .filter(serviceName => !filters.includes(serviceName)), [allServiceNames, filters])
-    .filter(serviceName => serviceName.includes(filterText));
+  const filteredServiceNames = useMemo(
+    () => allServiceNames
+      .filter(serviceName => !filters.includes(serviceName))
+      .filter(serviceName => serviceName.includes(filterText)),
+    [allServiceNames, filters, filterText],
+  );
 
   return (
     <Popover
@@ -98,7 +101,7 @@ const ServiceFilterPopover = ({
       anchorOrigin={anchorOrigin}
       classes={{ paper: classes.paper }}
     >
-      <Box className={classes.label}>
+      <Box className={classes.label} data-test="label">
         <Typography variant="h5">
           Filter
         </Typography>
@@ -109,12 +112,13 @@ const ServiceFilterPopover = ({
           label="Service Name"
           className={classes.textField}
           onChange={handleTextChange}
+          data-test="text-field"
         />
       </Box>
       {
         filters.length > 0
           ? (
-            <Box className={classes.filters}>
+            <Box className={classes.filters} data-test="filters">
               {
                 filters.map(filter => (
                   <Box className={classes.badgeWrapper} key={filter}>
@@ -129,7 +133,7 @@ const ServiceFilterPopover = ({
       <List className={classes.serviceList}>
         {
           filteredServiceNames.map(serviceName => (
-            <ListItem button onClick={() => onAddFilter(serviceName)}>
+            <ListItem button onClick={() => onAddFilter(serviceName)} key={serviceName}>
               <ListItemText primary={serviceName} />
             </ListItem>
           ))
