@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -22,6 +23,7 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -77,15 +79,14 @@ public class ElasticsearchSpanConsumerTest {
   SpanConsumer spanConsumer;
 
   @Before public void setUp() throws Exception {
-    storage = ElasticsearchStorage.newBuilder()
-      .hosts(asList(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .autocompleteKeys(asList("environment"))
       .build();
 
     ensureIndexTemplate();
   }
 
-  @After public void tearDown() {
+  @After public void tearDown() throws IOException {
     storage.close();
     assertThat(MOCK_RESPONSES).isEmpty();
 
@@ -112,8 +113,7 @@ public class ElasticsearchSpanConsumerTest {
     CAPTURED_REQUESTS.take(); // get tags template
   }
 
-  @Test
-  public void addsTimestamp_millisIntoJson() throws Exception {
+  @Test public void addsTimestamp_millisIntoJson() throws Exception {
     MOCK_RESPONSES.add(SUCCESS_RESPONSE);
 
     Span span =
@@ -125,8 +125,7 @@ public class ElasticsearchSpanConsumerTest {
       .contains("\n{\"timestamp_millis\":" + TODAY + ",\"traceId\":");
   }
 
-  @Test
-  public void writesSpanNaturallyWhenNoTimestamp() throws Exception {
+  @Test public void writesSpanNaturallyWhenNoTimestamp() throws Exception {
     MOCK_RESPONSES.add(SUCCESS_RESPONSE);
 
     Span span = Span.newBuilder().traceId("1").id("1").name("foo").build();
@@ -136,8 +135,7 @@ public class ElasticsearchSpanConsumerTest {
       .contains("\n" + new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8) + "\n");
   }
 
-  @Test
-  public void traceIsSearchableByServerServiceName() throws Exception {
+  @Test public void traceIsSearchableByServerServiceName() throws Exception {
     MOCK_RESPONSES.add(SUCCESS_RESPONSE);
 
     Span clientSpan =
@@ -170,11 +168,9 @@ public class ElasticsearchSpanConsumerTest {
       .contains("{\"timestamp_millis\":1");
   }
 
-  @Test
-  public void addsPipelineId() throws Exception {
+  @Test public void addsPipelineId() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder()
-      .hosts(asList(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .pipeline("zipkin")
       .build();
     ensureIndexTemplate();
@@ -187,8 +183,7 @@ public class ElasticsearchSpanConsumerTest {
     assertThat(request.path()).isEqualTo("/_bulk?pipeline=zipkin");
   }
 
-  @Test
-  public void choosesTypeSpecificIndex() throws Exception {
+  @Test public void choosesTypeSpecificIndex() throws Exception {
     MOCK_RESPONSES.add(SUCCESS_RESPONSE);
 
     Span span =
@@ -212,56 +207,52 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   /** Much simpler template which doesn't write the timestamp_millis field */
-  @Test
-  public void searchDisabled_simplerIndexTemplate() throws Exception {
-    try (ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
-      .hosts(this.storage.hostsSupplier().get())
+  @Test public void searchDisabled_simplerIndexTemplate() throws Exception {
+    storage.close();
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
-      .build()) {
+      .build();
 
-      MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
-        "{\"version\":{\"number\":\"6.0.0\"}}"));
-      MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND)); // get span template
-      MOCK_RESPONSES.add(SUCCESS_RESPONSE); // put span template
-      MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get dependency template
-      MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get tags template
-      storage.ensureIndexTemplates();
-      CAPTURED_REQUESTS.take(); // get version
-      CAPTURED_REQUESTS.take(); // get span template
+    MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
+      "{\"version\":{\"number\":\"6.0.0\"}}"));
+    MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND)); // get span template
+    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // put span template
+    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get dependency template
+    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get tags template
+    storage.ensureIndexTemplates();
+    CAPTURED_REQUESTS.take(); // get version
+    CAPTURED_REQUESTS.take(); // get span template
 
-      assertThat(CAPTURED_REQUESTS.take().contentUtf8()) // put span template
-        .contains(
-          ""
-            + "  \"mappings\": {\n"
-            + "    \"span\": {\n"
-            + "      \"properties\": {\n"
-            + "        \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
-            + "        \"annotations\": { \"enabled\": false },\n"
-            + "        \"tags\": { \"enabled\": false }\n"
-            + "      }\n"
-            + "    }\n"
-            + "  }\n");
-    }
+    assertThat(CAPTURED_REQUESTS.take().contentUtf8()) // put span template
+      .contains(
+        ""
+          + "  \"mappings\": {\n"
+          + "    \"span\": {\n"
+          + "      \"properties\": {\n"
+          + "        \"traceId\": { \"type\": \"keyword\", \"norms\": false },\n"
+          + "        \"annotations\": { \"enabled\": false },\n"
+          + "        \"tags\": { \"enabled\": false }\n"
+          + "      }\n"
+          + "    }\n"
+          + "  }\n");
   }
 
   /** Less overhead as a span json isn't rewritten to include a millis timestamp */
   @Test
   public void searchDisabled_doesntAddTimestampMillis() throws Exception {
-    try (ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
-      .hosts(this.storage.hostsSupplier().get())
+    storage.close();
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
-      .build()) {
+      .build();
+    ensureIndexTemplates(storage);
+    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // for the bulk request
 
-      ensureIndexTemplates(storage);
-      MOCK_RESPONSES.add(SUCCESS_RESPONSE); // for the bulk request
+    Span span =
+      Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
 
-      Span span =
-        Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
+    storage.spanConsumer().accept(asList(span)).execute();
 
-      storage.spanConsumer().accept(asList(span)).execute();
-
-      assertThat(CAPTURED_REQUESTS.take().contentUtf8()).doesNotContain("timestamp_millis");
-    }
+    assertThat(CAPTURED_REQUESTS.take().contentUtf8()).doesNotContain("timestamp_millis");
   }
 
   @Test public void addsAutocompleteValue() throws Exception {

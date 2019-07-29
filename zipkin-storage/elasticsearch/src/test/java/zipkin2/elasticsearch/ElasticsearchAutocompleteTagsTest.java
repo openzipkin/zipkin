@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -21,6 +22,7 @@ import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Before;
@@ -54,13 +56,12 @@ public class ElasticsearchAutocompleteTagsTest {
   ElasticsearchAutocompleteTags tagStore;
 
   @Before public void setUp() {
-    storage = ElasticsearchStorage.newBuilder()
-      .hosts(asList(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .autocompleteKeys(asList("http#host", "http-url", "http.method")).build();
     tagStore = new ElasticsearchAutocompleteTags(storage);
   }
 
-  @After public void tearDown() {
+  @After public void tearDown() throws IOException {
     storage.close();
   }
 

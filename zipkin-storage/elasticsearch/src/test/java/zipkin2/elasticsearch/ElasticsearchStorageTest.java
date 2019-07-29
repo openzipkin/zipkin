@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -23,19 +24,17 @@ import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin2.CheckResult;
 import zipkin2.Component;
-import zipkin2.elasticsearch.internal.BasicAuthInterceptor;
+import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 
@@ -76,11 +75,17 @@ public class ElasticsearchStorageTest {
     }
   };
 
-  @Before public void setUp() {
-    storage = ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
-  }
+  ElasticsearchStorage storage = ElasticsearchStorage.newBuilder(new LazyHttpClient() {
+    @Override public HttpClient get() {
+      return HttpClient.of(server.httpUri("/"));
+    }
 
-  @After public void tearDown() {
+    @Override public String toString() {
+      return server.httpUri("/");
+    }
+  }).build();
+
+  @After public void tearDown() throws IOException {
     storage.close();
 
     assertThat(MOCK_RESPONSES).isEmpty();
@@ -90,10 +95,7 @@ public class ElasticsearchStorageTest {
     CAPTURED_CONTEXTS.clear();
   }
 
-  ElasticsearchStorage storage;
-
-  @Test
-  public void memoizesIndexTemplate() throws Exception {
+  @Test public void memoizesIndexTemplate() throws Exception {
     MOCK_RESPONSES.add(AggregatedHttpResponse.of(
       HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"6.7.0\"}}"));
     MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get span template
@@ -143,73 +145,19 @@ public class ElasticsearchStorageTest {
     MediaType.JSON_UTF_8, // below is actual message from Amazon
     "{\"Message\":\"User: anonymous is not authorized to perform: es:ESHttpGet\"}}");
 
-  @Test
-  public void check() {
+  @Test public void check() {
     MOCK_RESPONSES.add(HEALTH_RESPONSE);
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
   }
 
-  @Test
-  public void check_unauthorized() {
+  @Test public void check_unauthorized() {
     MOCK_RESPONSES.add(RESPONSE_UNAUTHORIZED);
 
     CheckResult result = storage.check();
     assertThat(result.ok()).isFalse();
     assertThat(result.error().getMessage())
       .isEqualTo("User: anonymous is not authorized to perform: es:ESHttpGet");
-  }
-
-  @Test
-  public void check_oneHostDown() {
-    storage.close();
-    storage = ElasticsearchStorage.newBuilder()
-      .clientFactoryCustomizer(factory -> factory.connectTimeoutMillis(100))
-      .hosts(asList("http://1.2.3.4:" + server.httpPort(), server.httpUri("/")))
-      .build();
-
-    MOCK_RESPONSES.add(HEALTH_RESPONSE);
-
-    assertThat(storage.check()).isEqualTo(CheckResult.OK);
-  }
-
-  @Test
-  public void check_usesCustomizer() throws Exception {
-    storage.close();
-    storage = ElasticsearchStorage.newBuilder()
-      .clientCustomizer(client -> client.decorator(
-        delegate -> BasicAuthInterceptor.create(delegate, "Aladdin", "OpenSesame")))
-      .hosts(asList(server.httpUri("/")))
-      .build();
-
-    MOCK_RESPONSES.add(HEALTH_RESPONSE);
-
-    assertThat(storage.check()).isEqualTo(CheckResult.OK);
-
-    assertThat(CAPTURED_REQUESTS.take().headers().get("Authorization")).isNotNull();
-  }
-
-  @Test
-  public void check_ssl() throws Exception {
-    storage.close();
-    storage = ElasticsearchStorage.newBuilder()
-      .clientFactoryCustomizer(factory -> factory.sslContextCustomizer(
-        ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)))
-      // Need localhost, not IP, as single IPs don't use health check groups.
-      .hosts(asList("https://localhost:" + server.httpsPort() + "/"))
-      .build();
-
-    MOCK_RESPONSES.add(HEALTH_RESPONSE);
-
-    assertThat(storage.check()).isEqualTo(CheckResult.OK);
-
-    assertThat(CAPTURED_CONTEXTS.take().sessionProtocol().isTls()).isTrue();
-    // Ensure the EndpointGroup check is also SSL
-    assertThat(CAPTURED_HEALTH_CONTEXTS.take().sessionProtocol().isTls()).isTrue();
-
-    MOCK_RESPONSES.add(RESPONSE_UNAUTHORIZED);
-
-    assertThat(storage.check().ok()).isFalse();
   }
 
   /**
@@ -219,7 +167,8 @@ public class ElasticsearchStorageTest {
    * information.
    */
   @Test public void toStringContainsOnlySummaryInformation() {
-    assertThat(storage).hasToString(String.format("ElasticsearchStorage{hosts=[%s], index=zipkin}",
-      server.httpUri("/")));
+    assertThat(storage).hasToString(
+      String.format("ElasticsearchStorage{httpClient=%s, index=zipkin}",
+        server.httpUri("/")));
   }
 }
