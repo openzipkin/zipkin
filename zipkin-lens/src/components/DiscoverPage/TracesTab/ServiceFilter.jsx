@@ -12,67 +12,23 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useState, useMemo, useCallback } from 'react';
-import { makeStyles } from '@material-ui/styles';
+import React, { useState, useCallback } from 'react';
 import Badge from '@material-ui/core/Badge';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
-import Popover from '@material-ui/core/Popover';
-import ReactSelect from 'react-select';
 
-import ServiceBadge from '../../Common/ServiceBadge';
+import ServiceFilterPopover from './ServiceFilterPopover';
 
 const propTypes = {
   filters: PropTypes.arrayOf(PropTypes.string).isRequired,
-  onAddFilter: PropTypes.func.isRequired,
-  onDeleteFilter: PropTypes.func.isRequired,
-  allServiceNames: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
-const useStyles = makeStyles({
-  popover: {
-    overflow: 'visible',
-    padding: '0.2rem',
-  },
-});
+const ServiceFilter = ({ filters, ...props }) => {
+  const [anchorEl, setAnchorEl] = useState(null);
 
-const reactSelectStyles = {
-  control: base => ({
-    ...base,
-    width: '18rem',
-    cursor: 'pointer',
-    borderRadius: 0,
-  }),
-};
+  const handleButtonClick = useCallback(event => setAnchorEl(event.currentTarget), []);
 
-const ServiceFilter = ({
-  filters,
-  onAddFilter,
-  onDeleteFilter,
-  allServiceNames,
-}) => {
-  const classes = useStyles();
-
-  const [menuAnchor, setMenuAnchor] = useState(null);
-
-  const handleButtonClick = event => setMenuAnchor(event.currentTarget);
-
-  const handleMenuClose = () => setMenuAnchor(null);
-
-  const options = useMemo(() => allServiceNames
-    .filter(serviceName => !filters.includes(serviceName))
-    .map(serviceName => ({
-      value: serviceName,
-      label: serviceName,
-    })), [allServiceNames, filters]);
-
-  const handleMenuChange = useCallback(
-    (selected) => {
-      const filter = selected.value;
-      onAddFilter(filter);
-    },
-    [onAddFilter],
-  );
+  const handleMenuClose = useCallback(() => setAnchorEl(null), []);
 
   return (
     <React.Fragment>
@@ -81,57 +37,19 @@ const ServiceFilter = ({
         badgeContent={`+${filters.length - 1}`}
         invisible={filters.length <= 1}
       >
-        <Button onClick={handleButtonClick}>
+        <Button onClick={handleButtonClick} data-test="button">
           <Box component="span" className="fas fa-filter" />
           &nbsp;
           {`${filters.length === 0 ? 'Filter' : filters[0]}`}
         </Button>
       </Badge>
-      <Popover
-        open={Boolean(menuAnchor)}
-        anchorEl={menuAnchor}
+      <ServiceFilterPopover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
         onClose={handleMenuClose}
-        anchorOrigin={{
-          vertical: 'bottom',
-          horizontal: 'left',
-        }}
-        classes={{
-          paper: classes.popover,
-        }}
-      >
-        <Box
-          p={1}
-          fontSize="1.1rem"
-          borderColor="grey.300"
-          borderBottom={1}
-        >
-          Filters
-        </Box>
-        {
-          filters.length > 0
-            ? (
-              <Box p={1}>
-                {
-                  filters.map(filter => (
-                    <Box m={0.3}>
-                      <ServiceBadge
-                        serviceName={filter}
-                        onDelete={() => onDeleteFilter(filter)}
-                      />
-                    </Box>
-                  ))
-                }
-              </Box>
-            )
-            : null
-        }
-        <ReactSelect
-          value={null}
-          options={options}
-          styles={reactSelectStyles}
-          onChange={handleMenuChange}
-        />
-      </Popover>
+        filters={filters}
+        {...props}
+      />
     </React.Fragment>
   );
 };

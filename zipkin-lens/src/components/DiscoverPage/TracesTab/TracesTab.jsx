@@ -32,7 +32,7 @@ const TracesTab = () => {
         result.push(serviceSummary.serviceName);
       });
     });
-    return result;
+    return Array.from(new Set(result)); // For uniqueness
   }, [traceSummaries]);
 
   const [sortingMethod, setSortingMethod] = useState(sortingMethods.LONGEST_FIRST);
