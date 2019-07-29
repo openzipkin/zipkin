@@ -12,7 +12,7 @@
  * the License.
  */
 import React, { useState, useMemo, useCallback } from 'react';
-import { useSelector } from 'react-redux';
+import { connect } from 'react-redux';
 import Box from '@material-ui/core/Box';
 
 import {
@@ -23,9 +23,13 @@ import {
 } from './util';
 import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
+import { traceSummariesPropTypes } from '../../../prop-types';
 
-const TracesTab = () => {
-  const traceSummaries = useSelector(state => state.traces.traceSummaries);
+const propTypes = {
+  traceSummaries: traceSummariesPropTypes.isRequired,
+};
+
+export const TracesTab = ({ traceSummaries }) => { // Export for testing.
   const allServiceNames = useMemo(() => extractAllServiceNames(traceSummaries), [traceSummaries]);
   const [sortingMethod, setSortingMethod] = useState(sortingMethods.LONGEST_FIRST);
 
@@ -56,10 +60,8 @@ const TracesTab = () => {
   return (
     <Box height="100%" display="flex" flexDirection="column">
       <Box borderBottom={1} borderColor="grey.300" display="flex" justifyContent="space-between" p={1}>
-        <Box display="flex" alignItems="center" fontSize="1.05rem">
-          {traceSummaries.length}
-          &nbsp;
-          Results
+        <Box display="flex" alignItems="center" fontSize="1.05rem" data-test="count-results">
+          {`${traceSummaries.length} Results`}
         </Box>
         <Box mr={2}>
           <ServiceFilter
@@ -80,4 +82,16 @@ const TracesTab = () => {
   );
 };
 
-export default TracesTab;
+TracesTab.propTypes = propTypes;
+
+const mapStateToProps = state => ({
+  traceSummaries: state.traces.traceSummaries,
+});
+
+// React-Redux already provides two hooks API, useSelector and useDispatch.
+// However, I think that using them would make tests more complex, so for now
+// I decided to keep using connect API.
+export default connect(
+  mapStateToProps,
+  null,
+)(TracesTab);
