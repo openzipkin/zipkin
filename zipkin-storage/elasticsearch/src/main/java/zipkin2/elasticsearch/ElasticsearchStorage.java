@@ -51,17 +51,10 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
-
-  public enum HttpLoggingLevel {
-    BASIC,
-    HEADERS,
-    BODY
-  }
-
   public interface LazyHttpClient extends Supplier<HttpClient>, Closeable {
 
     /** If the client has been created, this will close it and any resources used by it. */
-    @Override public default void close() throws IOException {
+    @Override default void close() throws IOException {
     }
 
     /**
@@ -91,7 +84,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
-    abstract Builder lazyHttpClient(LazyHttpClient lazyHttpClient);
 
     /**
      * Only valid when the destination is Elasticsearch 5.x. Indicates the ingest pipeline used
@@ -156,34 +148,24 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public abstract Builder indexReplicas(int indexReplicas);
 
-    /**
-     * Sets the level of logging for HTTP requests made by the Elasticsearch client. If not set,
-     * logging will be disabled.
-     *
-     * <p>This is only for use from tests and ZipkinElasticsearchStorageConfiguration.
-     */
-    public abstract Builder httpLogging(HttpLoggingLevel httpLoggingLevel);
-
-    @Override
-    public abstract Builder strictTraceId(boolean strictTraceId);
-
-    @Override
-    public abstract Builder searchEnabled(boolean searchEnabled);
+    /** {@inheritDoc} */
+    @Override public abstract Builder strictTraceId(boolean strictTraceId);
 
     /** {@inheritDoc} */
-    @Override
-    public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
+    @Override public abstract Builder searchEnabled(boolean searchEnabled);
 
     /** {@inheritDoc} */
-    @Override
-    public abstract Builder autocompleteTtl(int autocompleteTtl);
+    @Override public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
 
     /** {@inheritDoc} */
-    @Override
-    public abstract Builder autocompleteCardinality(int autocompleteCardinality);
+    @Override public abstract Builder autocompleteTtl(int autocompleteTtl);
 
-    @Override
-    public abstract ElasticsearchStorage build();
+    /** {@inheritDoc} */
+    @Override public abstract Builder autocompleteCardinality(int autocompleteCardinality);
+
+    @Override public abstract ElasticsearchStorage build();
+
+    abstract Builder lazyHttpClient(LazyHttpClient lazyHttpClient);
 
     abstract IndexNameFormatter.Builder indexNameFormatterBuilder();
 
@@ -210,8 +192,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   abstract int indexShards();
 
   abstract int indexReplicas();
-
-  @Nullable abstract HttpLoggingLevel httpLogging();
 
   public abstract IndexNameFormatter indexNameFormatter();
 

@@ -16,11 +16,14 @@ package zipkin2.elasticsearch;
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.ClientRequestContext;
+import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.SessionProtocol;
+import java.net.URI;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.junit.After;
@@ -32,7 +35,10 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 import zipkin2.server.internal.elasticsearch.Access;
+import zipkin2.server.internal.elasticsearch.HostsConverter;
+import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,8 +84,9 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get())
-      .containsExactly("http://host1:9200", "http://host2:9200");
+    assertThat(HostsConverter.convert(
+      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
+      .containsExactly(URI.create("http://host1:9200"), URI.create("http://host2:9200"));
   }
 
   @Test public void configuresPipeline() {
@@ -103,7 +110,9 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get()).containsExactly("http://host1:9200");
+    assertThat(HostsConverter.convert(
+      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
+      .containsExactly(URI.create("http://host1:9200"));
   }
 
   @Test public void httpPrefixOptional() {
@@ -114,7 +123,20 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get()).containsExactly("http://host1:9200");
+    assertThat(context.getBean(SessionProtocol.class))
+      .isEqualTo(SessionProtocol.HTTP);
+  }
+
+  @Test public void https() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:https://host1:9201")
+      .applyTo(context);
+    Access.registerElasticsearchHttp(context);
+    context.refresh();
+
+    assertThat(context.getBean(SessionProtocol.class))
+      .isEqualTo(SessionProtocol.HTTPS);
   }
 
   @Test public void defaultsToPort9200() {
@@ -125,17 +147,19 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get()).containsExactly("http://host1:9200");
+    assertThat(HostsConverter.convert(
+      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
+      .containsExactly(URI.create("http://host1:9200"));
   }
 
   @Configuration
   static class CustomizerConfiguration {
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<ClientOptionsBuilder> one() {
+    @Bean @Qualifier("zipkinElasticsearch") public Consumer<ClientOptionsBuilder> one() {
       return one;
     }
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<ClientOptionsBuilder> two() {
+    @Bean @Qualifier("zipkinElasticsearch") public Consumer<ClientOptionsBuilder> two() {
       return two;
     }
 
@@ -146,31 +170,25 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
   /** Ensures we can wire up network interceptors, such as for logging or authentication */
   @Test public void usesInterceptorsQualifiedWith_zipkinElasticsearchHttp() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:host1:9200")
-      .applyTo(context);
+    TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.register(CustomizerConfiguration.class);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
-    assertThat(storage.httpClient().options().maxResponseLength()).isEqualTo(12345L);
-    assertThat(storage.httpClient().options().httpHeaders().get("test")).isEqualTo("bar");
+    HttpClient client = context.getBean(LazyHttpClient.class).get();
+    assertThat(client.options().maxResponseLength()).isEqualTo(12345L);
+    assertThat(client.options().httpHeaders().get("test")).isEqualTo("bar");
   }
 
   @Test public void timeout_defaultsTo10Seconds() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:host1:9200")
-      .applyTo(context);
+    TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClient client = context.getBean(LazyHttpClient.class).get();
     // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
-    assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(10000L);
-    assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(10000L);
+    assertThat(client.options().responseTimeoutMillis()).isEqualTo(10000L);
+    assertThat(client.options().writeTimeoutMillis()).isEqualTo(10000L);
   }
 
   @Test public void timeout_override() {
@@ -183,10 +201,10 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClient client = context.getBean(LazyHttpClient.class).get();
     // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
-    assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(timeout);
-    assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(timeout);
+    assertThat(client.options().responseTimeoutMillis()).isEqualTo(timeout);
+    assertThat(client.options().writeTimeoutMillis()).isEqualTo(timeout);
   }
 
   @Test public void strictTraceId_defaultsToTrue() {
@@ -296,11 +314,11 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClient client = context.getBean(LazyHttpClient.class).get();
 
     Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
-    Client<HttpRequest, HttpResponse> decorated = storage.httpClient().options().decoration()
-      .decorate(HttpRequest.class, HttpResponse.class, delegate);
+    Client<HttpRequest, HttpResponse> decorated =
+      client.options().decoration().decorate(HttpRequest.class, HttpResponse.class, delegate);
 
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
     HttpRequest req = HttpRequest.of(HttpMethod.GET, "/");
@@ -323,10 +341,10 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClient client = context.getBean(LazyHttpClient.class).get();
 
     Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
-    Client<HttpRequest, HttpResponse> decorated = storage.httpClient().options().decoration()
+    Client<HttpRequest, HttpResponse> decorated = client.options().decoration()
       .decorate(HttpRequest.class, HttpResponse.class, delegate);
 
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883

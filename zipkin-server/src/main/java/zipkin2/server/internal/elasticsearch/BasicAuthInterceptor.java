@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch.internal;
+package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
@@ -26,12 +26,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Adds basic auth username and password to every request per https://www.elastic.co/guide/en/x-pack/current/how-security-works.html
  */
-public final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
-
-  public static BasicAuthInterceptor create(
-    Client<HttpRequest, HttpResponse> client, String username, String password) {
-    return new BasicAuthInterceptor(client, username, password);
-  }
+final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
 
   final String basicCredentials;
 

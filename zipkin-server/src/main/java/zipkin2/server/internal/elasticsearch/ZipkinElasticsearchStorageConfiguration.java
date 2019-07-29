@@ -16,16 +16,15 @@ package zipkin2.server.internal.elasticsearch;
 import brave.CurrentSpanCustomizer;
 import brave.SpanCustomizer;
 import brave.http.HttpTracing;
+import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
+import com.linecorp.armeria.client.endpoint.EndpointGroup;
+import com.linecorp.armeria.common.SessionProtocol;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.logging.Logger;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -38,10 +37,10 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.ElasticsearchStorage.HostsSupplier;
-import zipkin2.elasticsearch.internal.BasicAuthInterceptor;
+import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
+import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.HttpLoggingLevel;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
@@ -49,10 +48,24 @@ import zipkin2.storage.StorageComponent;
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "elasticsearch")
 @ConditionalOnMissingBean(StorageComponent.class)
 public class ZipkinElasticsearchStorageConfiguration {
-  static final Logger LOG = Logger.getLogger(ElasticsearchStorage.class.getName());
-  static final String QUALIFIER = "zipkinElasticsearchHttp";
+  static final String QUALIFIER = "zipkinElasticsearch";
 
-  @Bean @Qualifier(QUALIFIER) Consumer<ClientOptionsBuilder> zipkinElasticsearchHttp(
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
+  EndpointGroup zipkinElasticsearchEndpointGroup(ZipkinElasticsearchStorageProperties properties) {
+    return EndpointGroupFactory.create(HostsConverter.convert(properties.getHosts()));
+  }
+
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
+  ClientFactory zipkinElasticsearchClientFactory(
+    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
+    // valid behavior of returning a bad request response, so we can't use the preface.
+    //
+    // TODO: find or raise a bug with Elastic
+    return new ClientFactoryBuilder().useHttp2Preface(false).connectTimeoutMillis(timeout).build();
+  }
+
+  @Bean @Qualifier(QUALIFIER) Consumer<ClientOptionsBuilder> zipkinElasticsearchTimeout(
     @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
     return new Consumer<ClientOptionsBuilder>() {
       @Override public void accept(ClientOptionsBuilder client) {
@@ -65,26 +78,12 @@ public class ZipkinElasticsearchStorageConfiguration {
     };
   }
 
-  @Bean @Qualifier(QUALIFIER) Consumer<ClientFactoryBuilder> zipkinElasticsearchClientFactory(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    return new Consumer<ClientFactoryBuilder>() {
-      @Override public void accept(ClientFactoryBuilder factory) {
-        factory.connectTimeoutMillis(timeout);
-      }
-
-      @Override public String toString() {
-        return "TimeoutCustomizer{timeout=" + timeout + "ms}";
-      }
-    };
-  }
-
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
-  Consumer<ClientOptionsBuilder> zipkinElasticsearchHttpBasicAuth(
-    ZipkinElasticsearchStorageProperties es) {
+  Consumer<ClientOptionsBuilder> zipkinElasticsearchAuth(ZipkinElasticsearchStorageProperties es) {
     return new Consumer<ClientOptionsBuilder>() {
       @Override public void accept(ClientOptionsBuilder client) {
         client.decorator(
-          delegate -> BasicAuthInterceptor.create(delegate, es.getUsername(), es.getPassword()));
+          delegate -> new BasicAuthInterceptor(delegate, es.getUsername(), es.getPassword()));
       }
 
       @Override public String toString() {
@@ -93,47 +92,31 @@ public class ZipkinElasticsearchStorageConfiguration {
     };
   }
 
-  @Bean @ConditionalOnMissingBean HostsSupplier hostsSupplier(
-    ZipkinElasticsearchStorageProperties props) {
-    String hosts = Optional.ofNullable(props.getHosts()).orElse("http://localhost:9200");
-    List<String> hostList = new ArrayList<>();
-    for (String host : hosts.split(",", 100)) {
-      if (host.startsWith("http://") || host.startsWith("https://")) {
-        hostList.add(host);
-        continue;
-      }
-      final int port;
-      try {
-        port = new URL("http://" + host).getPort();
-      } catch (MalformedURLException e) {
-        throw new IllegalArgumentException("Malformed elasticsearch host: " + host);
-      }
-      if (port == -1) {
-        host += ":9200";
-      } else if (port == 9300) {
-        LOG.warning(
-          "Native transport no longer supported. Changing " + host + " to http port 9200");
-        host = host.replace(":9300", ":9200");
-      }
-      hostList.add("http://" + host);
-    }
-    return new HostsSupplier() {
-      @Override public List<String> get() {
-        return hostList;
-      }
+  @Bean @ConditionalOnMissingBean @Qualifier(QUALIFIER)
+  SessionProtocol zipkinElasticsearchProtocol(ZipkinElasticsearchStorageProperties properties) {
+    if (properties.getHosts() == null) return SessionProtocol.HTTP;
+    if (properties.getHosts().contains("https://")) return SessionProtocol.HTTPS;
+    return SessionProtocol.HTTP;
+  }
 
-      @Override public String toString() {
-        return hostList.toString();
-      }
-    };
+  @Bean HttpLoggingLevel zipkinElasticsearchHttpLogging(
+    ZipkinElasticsearchStorageProperties properties) {
+    return properties.getHttpLogging();
+  }
+
+  @Bean @ConditionalOnMissingBean LazyHttpClient httpClient(
+    HttpLoggingLevel loggingLevel,
+    @Qualifier(QUALIFIER) SessionProtocol sessionProtocol,
+    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> clientCustomizers,
+    @Qualifier(QUALIFIER) ClientFactory clientFactory,
+    @Qualifier(QUALIFIER) EndpointGroup endpointGroup) {
+    return new LazyHttpClientImpl(sessionProtocol, endpointGroup, clientCustomizers, clientFactory,
+      loggingLevel);
   }
 
   @Bean @ConditionalOnMissingBean StorageComponent storage(
     ZipkinElasticsearchStorageProperties elasticsearch,
-    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> zipkinElasticsearchHttpCustomizers,
-    @Qualifier(QUALIFIER) List<Consumer<ClientFactoryBuilder>>
-      zipkinElasticsearchClientFactoryCustomizers,
-    HostsSupplier hostsSupplier,
+    LazyHttpClient httpClient,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
     @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
@@ -141,11 +124,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     ElasticsearchStorage.Builder builder = elasticsearch
-      .toBuilder()
-      .hostsSupplier(hostsSupplier)
-      .clientCustomizer(new CompositeCustomizer<>(zipkinElasticsearchHttpCustomizers))
-      .clientFactoryCustomizer(
-        new CompositeCustomizer<>(zipkinElasticsearchClientFactoryCustomizers))
+      .toBuilder(httpClient)
       .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
@@ -187,24 +166,6 @@ public class ZipkinElasticsearchStorageConfiguration {
       String password =
         condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.password");
       return !isEmpty(userName) && !isEmpty(password);
-    }
-  }
-
-  static final class CompositeCustomizer<T> implements Consumer<T> {
-    final List<Consumer<T>> customizers;
-
-    CompositeCustomizer(List<Consumer<T>> customizers) {
-      this.customizers = customizers;
-    }
-
-    @Override public void accept(T target) {
-      for (Consumer<T> customizer : customizers) {
-        customizer.accept(target);
-      }
-    }
-
-    @Override public String toString() {
-      return customizers.toString();
     }
   }
 

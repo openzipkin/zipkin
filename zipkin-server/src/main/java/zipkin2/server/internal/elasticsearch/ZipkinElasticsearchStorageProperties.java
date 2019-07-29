@@ -17,9 +17,21 @@ import java.io.Serializable;
 import java.util.logging.Logger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-class ZipkinElasticsearchStorageProperties implements Serializable { // for Spark jobs
+public class ZipkinElasticsearchStorageProperties implements Serializable { // for Spark jobs
+  /**
+   * Sets the level of logging for HTTP requests made by the Elasticsearch client. If not set or
+   * none, logging will be disabled.
+   */
+  public enum HttpLoggingLevel {
+    NONE,
+    BASIC,
+    HEADERS,
+    BODY
+  }
+
   static final Logger log = Logger.getLogger(ZipkinElasticsearchStorageProperties.class.getName());
 
   private static final long serialVersionUID = 0L;
@@ -27,7 +39,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   /** Indicates the ingest pipeline used before spans are indexed. */
   private String pipeline;
   /** A comma separated list of base urls to connect to. */
-  private String hosts;
+  private String hosts = "http://localhost:9200";
   /** The index prefix to use when generating daily index names. */
   private String index;
   /** The date separator used to create the index name. */
@@ -41,18 +53,11 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
   /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
-  private HttpLoggingLevel httpLogging;
+  private HttpLoggingLevel httpLogging = HttpLoggingLevel.NONE;
   /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
   private Integer timeout = 10_000;
 
-
   private Integer maxRequests; // unused
-
-  public enum HttpLoggingLevel {
-    BASIC,
-    HEADERS,
-    BODY
-  }
 
   public String getPipeline() {
     return pipeline;
@@ -146,29 +151,15 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.timeout = timeout;
   }
 
-  public ElasticsearchStorage.Builder toBuilder() {
-    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder();
+  public ElasticsearchStorage.Builder toBuilder(LazyHttpClient httpClient) {
+    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder(httpClient);
     if (index != null) builder.index(index);
     if (dateSeparator != null) {
       builder.dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0));
     }
-    // TODO if (timeout != null) builder.timeout(timeout);
     if (pipeline != null) builder.pipeline(pipeline);
     if (indexShards != null) builder.indexShards(indexShards);
     if (indexReplicas != null) builder.indexReplicas(indexReplicas);
-    if (httpLogging != null) {
-      switch (httpLogging) {
-        case BASIC:
-          builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BASIC);
-          break;
-        case HEADERS:
-          builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.HEADERS);
-          break;
-        case BODY:
-          builder.httpLogging(ElasticsearchStorage.HttpLoggingLevel.BODY);
-          break;
-      }
-    }
 
     if (maxRequests != null) {
       log.warning("ES_MAX_REQUESTS is no longer honored. Use STORAGE_THROTTLE_ENABLED instead");
