@@ -15,26 +15,18 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { useSelector } from 'react-redux';
 import Box from '@material-ui/core/Box';
 
-import { sortingMethods, sortTraceSummaries } from './sorting';
+import {
+  sortingMethods,
+  sortTraceSummaries,
+  extractAllServiceNames,
+  filterTraceSummaries,
+} from './util';
 import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
 
 const TracesTab = () => {
   const traceSummaries = useSelector(state => state.traces.traceSummaries);
-
-  const allServiceNames = useMemo(() => {
-    const result = [];
-    traceSummaries.forEach((traceSummary) => {
-      if (!traceSummary.serviceSummaries) {
-        return;
-      }
-      traceSummary.serviceSummaries.forEach((serviceSummary) => {
-        result.push(serviceSummary.serviceName);
-      });
-    });
-    return Array.from(new Set(result)); // For uniqueness
-  }, [traceSummaries]);
-
+  const allServiceNames = useMemo(() => extractAllServiceNames(traceSummaries), [traceSummaries]);
   const [sortingMethod, setSortingMethod] = useState(sortingMethods.LONGEST_FIRST);
 
   const handleSortingMethodChange = useCallback((newSortingMethod) => {
@@ -57,16 +49,7 @@ const TracesTab = () => {
   }, [filters]);
 
   const filteredTraceSummaries = useMemo(() => sortTraceSummaries(
-    traceSummaries.filter((traceSummary) => {
-      for (let i = 0; i < filters.length; i += 1) {
-        if (!traceSummary.serviceSummaries.find(
-          serviceSummary => serviceSummary.serviceName === filters[i],
-        )) {
-          return false;
-        }
-      }
-      return true;
-    }),
+    filterTraceSummaries(traceSummaries, filters),
     sortingMethod,
   ), [filters, traceSummaries, sortingMethod]);
 

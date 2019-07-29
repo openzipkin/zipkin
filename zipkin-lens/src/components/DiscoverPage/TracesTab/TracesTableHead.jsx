@@ -18,7 +18,7 @@ import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 
-import { sortingMethods } from './sorting';
+import { sortingMethods } from './util';
 
 const useStyles = makeStyles({
   root: {

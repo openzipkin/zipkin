@@ -35,3 +35,29 @@ export const sortTraceSummaries = (traceSummaries, sortingMethod) => {
     }
   });
 };
+
+export const extractAllServiceNames = (traceSummaries) => {
+  const result = [];
+  traceSummaries.forEach((traceSummary) => {
+    if (!traceSummary.serviceSummaries) {
+      return;
+    }
+    traceSummary.serviceSummaries.forEach((serviceSummary) => {
+      result.push(serviceSummary.serviceName);
+    });
+  });
+  return Array.from(new Set(result)); // For uniqueness
+};
+
+export const filterTraceSummaries = (traceSummaries, filters) => traceSummaries.filter(
+  (traceSummary) => {
+    for (let i = 0; i < filters.length; i += 1) {
+      if (!traceSummary.serviceSummaries.find(
+        serviceSummary => serviceSummary.serviceName === filters[i],
+      )) {
+        return false;
+      }
+    }
+    return true;
+  },
+);
