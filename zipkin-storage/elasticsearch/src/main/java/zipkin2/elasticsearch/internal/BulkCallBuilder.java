@@ -14,6 +14,7 @@
 package zipkin2.elasticsearch.internal;
 
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.google.auto.value.AutoValue;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
@@ -29,20 +30,33 @@ import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
+import zipkin2.elasticsearch.internal.client.HttpCall.InputStreamConverter;
+
+import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class BulkCallBuilder {
-  static final HttpCall.BodyConverter<Void> CHECK_FOR_ERRORS = new HttpCall.BodyConverter<Void>() {
-    @Override public Void convert(HttpData data) {
-      String content = data.toStringUtf8();
-      if (content.contains("\"status\":429")) throw new RejectedExecutionException(content);
-      if (content.contains("\"errors\":true")) throw new IllegalStateException(content);
+  static final InputStreamConverter<Void> CHECK_FOR_ERRORS = new InputStreamConverter<Void>() {
+    @Override public Void convert(InputStream content) {
+      RuntimeException toThrow = null;
+      try {
+        JsonNode tree = OBJECT_MAPPER.readTree(content);
+        Number status = tree.findPath("status").numberValue();
+        if (status != null && status.intValue() == 429) {
+          toThrow = new RejectedExecutionException(tree.toString());
+        } else if (tree.path("/errors").booleanValue()) {
+          toThrow = new RuntimeException(content.toString());
+        }
+      } catch (RuntimeException | IOException possiblyParseException) {
+      }
+      if (toThrow != null) throw toThrow;
       return null;
     }
 
@@ -122,7 +136,7 @@ public final class BulkCallBuilder {
     return http.newCall(request, CHECK_FOR_ERRORS, tag);
   }
 
-  static void write(CompositeByteBuf sink, IndexEntry entry,
+  static <T> void write(CompositeByteBuf sink, IndexEntry<T> entry,
     boolean shouldAddType) {
     // Fuzzily assume a general small span is 600 bytes to reduce resizing while building up the
     // JSON. Any extra bytes will be released back after serializing all the documents.
@@ -140,7 +154,7 @@ public final class BulkCallBuilder {
     sink.addComponent(true, metadata).addComponent(true, document);
   }
 
-  static void writeIndexMetadata(ByteBufOutputStream sink, IndexEntry entry, String id,
+  static <T> void writeIndexMetadata(ByteBufOutputStream sink, IndexEntry<T> entry, String id,
     boolean shouldAddType) {
     try (JsonGenerator writer = JsonSerializers.jsonGenerator(sink)) {
       writer.writeStartObject();

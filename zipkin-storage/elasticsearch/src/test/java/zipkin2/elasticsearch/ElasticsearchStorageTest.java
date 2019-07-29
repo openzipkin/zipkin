@@ -43,7 +43,8 @@ public class ElasticsearchStorageTest {
 
   static final BlockingQueue<AggregatedHttpRequest> CAPTURED_REQUESTS = new LinkedBlockingQueue<>();
   static final BlockingQueue<ServiceRequestContext> CAPTURED_CONTEXTS = new LinkedBlockingQueue<>();
-  static final BlockingQueue<ServiceRequestContext> CAPTURED_HEALTH_CONTEXTS = new LinkedBlockingQueue<>();
+  static final BlockingQueue<ServiceRequestContext> CAPTURED_HEALTH_CONTEXTS =
+    new LinkedBlockingQueue<>();
   static final BlockingQueue<AggregatedHttpResponse> MOCK_RESPONSES = new LinkedBlockingQueue<>();
   static final AggregatedHttpResponse SUCCESS_RESPONSE =
     AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
@@ -76,12 +77,7 @@ public class ElasticsearchStorageTest {
   };
 
   @Before public void setUp() {
-    storage =
-      ElasticsearchStorage.newBuilder()
-        // https://github.com/line/armeria/issues/1895
-        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
-        .hosts(asList(server.httpUri("/")))
-        .build();
+    storage = ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
   }
 
   @After public void tearDown() {
@@ -116,9 +112,9 @@ public class ElasticsearchStorageTest {
     CAPTURED_REQUESTS.take(); // get tags template
 
     assertThat(CAPTURED_REQUESTS.take().path())
-        .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
+      .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
     assertThat(CAPTURED_REQUESTS.take().path())
-        .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
+      .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
   }
 
   static final AggregatedHttpResponse HEALTH_RESPONSE = AggregatedHttpResponse.of(
@@ -167,15 +163,10 @@ public class ElasticsearchStorageTest {
   @Test
   public void check_oneHostDown() {
     storage.close();
-    storage =
-        ElasticsearchStorage.newBuilder()
-          .clientFactoryCustomizer(factory ->
-            factory
-              // https://github.com/line/armeria/issues/1895
-              .useHttp2Preface(true)
-              .connectTimeoutMillis(100))
-          .hosts(asList("http://1.2.3.4:" + server.httpPort(), server.httpUri("/")))
-          .build();
+    storage = ElasticsearchStorage.newBuilder()
+      .clientFactoryCustomizer(factory -> factory.connectTimeoutMillis(100))
+      .hosts(asList("http://1.2.3.4:" + server.httpPort(), server.httpUri("/")))
+      .build();
 
     MOCK_RESPONSES.add(HEALTH_RESPONSE);
 
@@ -186,8 +177,6 @@ public class ElasticsearchStorageTest {
   public void check_usesCustomizer() throws Exception {
     storage.close();
     storage = ElasticsearchStorage.newBuilder()
-      // https://github.com/line/armeria/issues/1895
-      .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
       .clientCustomizer(client -> client.decorator(
         delegate -> BasicAuthInterceptor.create(delegate, "Aladdin", "OpenSesame")))
       .hosts(asList(server.httpUri("/")))
@@ -203,14 +192,9 @@ public class ElasticsearchStorageTest {
   @Test
   public void check_ssl() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage
-      .newBuilder()
-      .clientFactoryCustomizer(factory ->
-        factory
-          // https://github.com/line/armeria/issues/1895
-          .useHttp2Preface(true)
-          .sslContextCustomizer(
-            ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)))
+    storage = ElasticsearchStorage.newBuilder()
+      .clientFactoryCustomizer(factory -> factory.sslContextCustomizer(
+        ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)))
       // Need localhost, not IP, as single IPs don't use health check groups.
       .hosts(asList("https://localhost:" + server.httpsPort() + "/"))
       .build();

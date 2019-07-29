@@ -13,10 +13,12 @@
  */
 package zipkin2.elasticsearch.internal;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.io.OutputStream;
 import zipkin2.Annotation;
@@ -28,7 +30,8 @@ import zipkin2.Span;
  * JSON serialization utilities and parsing code.
  */
 public final class JsonSerializers {
-
+  public static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+    .setSerializationInclusion(JsonInclude.Include.NON_NULL);
   public static final JsonFactory JSON_FACTORY = new JsonFactory();
 
   public static JsonGenerator jsonGenerator(OutputStream stream) {
@@ -191,38 +194,35 @@ public final class JsonSerializers {
     return Annotation.create(timestamp, value);
   }
 
-  public static final ObjectParser<DependencyLink> DEPENDENCY_LINK_PARSER =
-    new ObjectParser<DependencyLink>() {
-      @Override public DependencyLink parse(JsonParser parser) throws IOException {
-        if (!parser.isExpectedStartObjectToken()) {
-          throw new IllegalArgumentException("Expected start of dependency link object but was "
-            + parser.currentToken());
-        }
+  public static final ObjectParser<DependencyLink> DEPENDENCY_LINK_PARSER = parser -> {
+    if (!parser.isExpectedStartObjectToken()) {
+      throw new IllegalArgumentException("Expected start of dependency link object but was "
+        + parser.currentToken());
+    }
 
-        DependencyLink.Builder result = DependencyLink.newBuilder();
-        JsonToken value;
-        while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
-          if (value == null) {
-            throw new IOException("End of input while parsing object.");
-          }
-          switch (parser.currentName()) {
-            case "parent":
-              result.parent(parser.getText());
-              break;
-            case "child":
-              result.child(parser.getText());
-              break;
-            case "callCount":
-              result.callCount(parser.getLongValue());
-              break;
-            case "errorCount":
-              result.errorCount(parser.getLongValue());
-              break;
-            default:
-              // Skip
-          }
-        }
-        return result.build();
+    DependencyLink.Builder result = DependencyLink.newBuilder();
+    JsonToken value;
+    while ((value = parser.nextValue()) != JsonToken.END_OBJECT) {
+      if (value == null) {
+        throw new IOException("End of input while parsing object.");
       }
-    };
+      switch (parser.currentName()) {
+        case "parent":
+          result.parent(parser.getText());
+          break;
+        case "child":
+          result.child(parser.getText());
+          break;
+        case "callCount":
+          result.callCount(parser.getLongValue());
+          break;
+        case "errorCount":
+          result.errorCount(parser.getLongValue());
+          break;
+        default:
+          // Skip
+      }
+    }
+    return result.build();
+  };
 }

@@ -64,12 +64,11 @@ public class Aggregation {
     }
 
     final String field;
-    int size;
+    final int size;
     Map<String, String> order;
 
-    AggTerms order(String agg, String direction) {
+    void order(String agg, String direction) {
       order = Collections.singletonMap(agg, direction);
-      return this;
     }
 
     public String getField() {

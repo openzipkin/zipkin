@@ -33,14 +33,12 @@ import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpoin
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
-import com.linecorp.armeria.common.Flags;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.logging.LogLevel;
 import com.linecorp.armeria.common.util.AbstractListenable;
-import com.linecorp.armeria.common.util.EventLoopGroups;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -387,11 +385,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   @Memoized // a new client factory means new connections
   ClientFactory clientFactory() {
-    ClientFactoryBuilder builder = new ClientFactoryBuilder()
-      // TODO(anuraaga): Remove after https://github.com/line/armeria/pull/1899
-      .workerGroup(EventLoopGroups.newEventLoopGroup(
-        Flags.numCommonWorkers(), "armeria-common-worker", true), true)
-      .useHttp2Preface(false);
+    // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
+    // valid behavior of returning a bad request response, so we can't use the preface.
+    //
+    // TODO: find or raise a bug with Elastic
+    ClientFactoryBuilder builder = new ClientFactoryBuilder().useHttp2Preface(false);
     clientFactoryCustomizer().accept(builder);
     return builder.build();
   }
@@ -477,10 +475,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         .orElse(new StaticEndpointGroup(originalEndpoints));
       EndpointGroupRegistry.register(
         "elasticsearch", withFallback, EndpointSelectionStrategy.ROUND_ROBIN);
-      // TODO(anuraaga): Remove this after https://github.com/line/armeria/issues/1910 means we
-      // don't need to wait for initial endpoints ourselves.
-      EndpointGroupRegistry.register(
-        "elasticsearch_healthchecked", healthChecked, EndpointSelectionStrategy.ROUND_ROBIN);
       clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
     } else {
       // Just one non-domain URL, can connect directly without enabling load balancing.
@@ -561,6 +555,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   static final BodyConverter<CheckResult> READ_STATUS = new BodyConverter<CheckResult>() {
     @Override public CheckResult convert(HttpData body) throws IOException {
+      // The health check is only invoked periodically. Hence, there is less impact to allocating
+      // strings. We retain the string so that it can be logged if the ES response is malformed.
       String result = body.toStringUtf8();
       JsonParser status = enterPath(JSON_FACTORY.createParser(result), "status");
       if (status == null) {

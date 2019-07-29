@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.ArrayList;
 import java.util.Collection;
