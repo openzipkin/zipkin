@@ -22,7 +22,6 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -41,6 +40,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.TODAY;
+import static zipkin2.TestObjects.UTF_8;
 
 public class ElasticsearchSpanConsumerTest {
   static final Endpoint WEB_ENDPOINT = Endpoint.newBuilder().serviceName("web").build();
@@ -78,8 +78,6 @@ public class ElasticsearchSpanConsumerTest {
 
   @Before public void setUp() throws Exception {
     storage = ElasticsearchStorage.newBuilder()
-      // https://github.com/line/armeria/issues/1895
-      .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
       .hosts(asList(server.httpUri("/")))
       .autocompleteKeys(asList("environment"))
       .build();
@@ -135,7 +133,7 @@ public class ElasticsearchSpanConsumerTest {
     accept(Span.newBuilder().traceId("1").id("1").name("foo").build());
 
     assertThat(CAPTURED_REQUESTS.take().contentUtf8())
-      .contains("\n" + new String(SpanBytesEncoder.JSON_V2.encode(span), "UTF-8") + "\n");
+      .contains("\n" + new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8) + "\n");
   }
 
   @Test
@@ -175,13 +173,10 @@ public class ElasticsearchSpanConsumerTest {
   @Test
   public void addsPipelineId() throws Exception {
     storage.close();
-    storage =
-      ElasticsearchStorage.newBuilder()
-        // https://github.com/line/armeria/issues/1895
-        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
-        .hosts(asList(server.httpUri("/")))
-        .pipeline("zipkin")
-        .build();
+    storage = ElasticsearchStorage.newBuilder()
+      .hosts(asList(server.httpUri("/")))
+      .pipeline("zipkin")
+      .build();
     ensureIndexTemplate();
 
     MOCK_RESPONSES.add(SUCCESS_RESPONSE);
@@ -219,13 +214,10 @@ public class ElasticsearchSpanConsumerTest {
   /** Much simpler template which doesn't write the timestamp_millis field */
   @Test
   public void searchDisabled_simplerIndexTemplate() throws Exception {
-    try (ElasticsearchStorage storage =
-           ElasticsearchStorage.newBuilder()
-             // https://github.com/line/armeria/issues/1895
-             .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
-             .hosts(this.storage.hostsSupplier().get())
-             .searchEnabled(false)
-             .build()) {
+    try (ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
+      .hosts(this.storage.hostsSupplier().get())
+      .searchEnabled(false)
+      .build()) {
 
       MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
         "{\"version\":{\"number\":\"6.0.0\"}}"));
@@ -255,13 +247,10 @@ public class ElasticsearchSpanConsumerTest {
   /** Less overhead as a span json isn't rewritten to include a millis timestamp */
   @Test
   public void searchDisabled_doesntAddTimestampMillis() throws Exception {
-    try (ElasticsearchStorage storage =
-           ElasticsearchStorage.newBuilder()
-             // https://github.com/line/armeria/issues/1895
-             .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
-             .hosts(this.storage.hostsSupplier().get())
-             .searchEnabled(false)
-             .build()) {
+    try (ElasticsearchStorage storage = ElasticsearchStorage.newBuilder()
+      .hosts(this.storage.hostsSupplier().get())
+      .searchEnabled(false)
+      .build()) {
 
       ensureIndexTemplates(storage);
       MOCK_RESPONSES.add(SUCCESS_RESPONSE); // for the bulk request

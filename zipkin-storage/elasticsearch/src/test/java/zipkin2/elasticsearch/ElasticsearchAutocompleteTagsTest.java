@@ -55,8 +55,6 @@ public class ElasticsearchAutocompleteTagsTest {
 
   @Before public void setUp() {
     storage = ElasticsearchStorage.newBuilder()
-      // https://github.com/line/armeria/issues/1895
-      .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
       .hosts(asList(server.httpUri("/")))
       .autocompleteKeys(asList("http#host", "http-url", "http.method")).build();
     tagStore = new ElasticsearchAutocompleteTags(storage);

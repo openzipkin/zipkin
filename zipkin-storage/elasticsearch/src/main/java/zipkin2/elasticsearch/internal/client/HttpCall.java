@@ -23,11 +23,9 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
-import com.linecorp.armeria.common.RpcRequest;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.buffer.ByteBufInputStream;
 import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
@@ -37,7 +35,6 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
@@ -46,16 +43,19 @@ public final class HttpCall<V> extends Call.Base<V> {
   public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
-    /** Most convert with {@link HttpData#toStringUtf8()} or {@link #toInputStream(HttpData)} */
+    /** The source is from {@link AggregatedHttpResponse}, so act accordingly. */
     V convert(HttpData content) throws IOException;
+  }
 
-    /** Use this when you don't need a string or only need to read the response once. */
-    // TODO: once https://github.com/line/armeria/issues/1918 is done, switch back to an interface
-    default InputStream toInputStream(HttpData content) {
-      if (content instanceof ByteBufHolder) {
-        return new ByteBufInputStream(((ByteBufHolder) content).content());
-      } else {
-        return content.toInputStream();
+  public interface InputStreamConverter<V> extends BodyConverter<V> {
+    V convert(InputStream content) throws IOException;
+
+    @Override default V convert(HttpData content) throws IOException {
+      try (InputStream stream = content.toInputStream()) {
+        return convert(stream);
+      } finally {
+        // toInputStream creates an additional reference instead of itself releasing content()
+        ReferenceCountUtil.safeRelease(content);
       }
     }
   }

@@ -20,6 +20,7 @@ import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.elasticsearch.internal.JsonSerializers;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
+import zipkin2.elasticsearch.internal.client.HttpCall.InputStreamConverter;
 import zipkin2.elasticsearch.internal.client.SearchResultConverter;
 import zipkin2.internal.DependencyLinker;
 
@@ -28,11 +29,8 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 final class BodyConverters {
   static final BodyConverter<Object> NULL = content -> null;
-  static final BodyConverter<List<String>> KEYS = new BodyConverter<List<String>>() {
-    @Override public List<String> convert(HttpData content) throws IOException {
-      return collectValuesNamed(JSON_FACTORY.createParser(toInputStream(content)), "key");
-    }
-  };
+  static final InputStreamConverter<List<String>> KEYS =
+    content -> collectValuesNamed(JSON_FACTORY.createParser(content), "key");
   static final BodyConverter<List<Span>> SPANS =
     SearchResultConverter.create(JsonSerializers.SPAN_PARSER);
   static final BodyConverter<List<DependencyLink>> DEPENDENCY_LINKS =

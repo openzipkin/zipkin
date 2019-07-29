@@ -13,9 +13,7 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
@@ -25,11 +23,9 @@ import com.linecorp.armeria.common.RequestHeaders;
 import java.util.List;
 import zipkin2.internal.Nullable;
 
+import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
+
 public class SearchCallFactory {
-
-  static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
-    .setSerializationInclusion(JsonInclude.Include.NON_NULL);
-
   final HttpCall.Factory http;
 
   public SearchCallFactory(HttpCall.Factory http) {

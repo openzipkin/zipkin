@@ -13,7 +13,6 @@
  */
 package zipkin2.elasticsearch.internal;
 
-import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
@@ -23,6 +22,10 @@ import java.util.List;
 import java.util.Set;
 import zipkin2.internal.Nullable;
 
+/**
+ * Utilities used here aim to reduce allocation overhead for common requests. It does so by skipping
+ * unrelated fields. This is used for responses which could be large.
+ */
 public final class JsonReaders {
   /**
    * Navigates to a field of a JSON-serialized object. For example,

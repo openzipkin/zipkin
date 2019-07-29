@@ -14,7 +14,6 @@
 package zipkin2.elasticsearch;
 
 import java.util.List;
-import java.util.Locale;
 import zipkin2.Call;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.client.Aggregation;

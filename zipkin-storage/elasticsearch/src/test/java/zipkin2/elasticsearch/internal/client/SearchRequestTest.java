@@ -17,21 +17,20 @@ import org.junit.Test;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 public class SearchRequestTest {
 
   SearchRequest request = SearchRequest.create(asList("zipkin-2016.11.31"));
 
-  @Test
-  public void defaultSizeIsMaxResultWindow() {
+  @Test public void defaultSizeIsMaxResultWindow() {
     assertThat(request.size)
-        .isEqualTo(10000);
+      .isEqualTo(10000);
   }
 
   /** Indices and type affect the request URI, not the json body */
-  @Test
-  public void doesntSerializeIndicesOrType() throws Exception {
-    assertThat(SearchCallFactory.OBJECT_MAPPER.writeValueAsString(request))
-        .isEqualTo("{\"size\":10000}");
+  @Test public void doesntSerializeIndicesOrType() throws Exception {
+    assertThat(OBJECT_MAPPER.writeValueAsString(request))
+      .isEqualTo("{\"size\":10000}");
   }
 }

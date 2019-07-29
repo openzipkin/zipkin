@@ -31,7 +31,6 @@ import org.junit.rules.ExpectedException;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.elasticsearch.ElasticsearchStorageTest.HEALTH_RESPONSE;
 import static zipkin2.elasticsearch.ElasticsearchStorageTest.RESPONSE_UNAUTHORIZED;
 
 public class VersionSpecificTemplatesTest {
@@ -115,12 +114,7 @@ public class VersionSpecificTemplatesTest {
   };
 
   @Before public void setUp() {
-    storage =
-      ElasticsearchStorage.newBuilder()
-        // https://github.com/line/armeria/issues/1895
-        .clientFactoryCustomizer(factory -> factory.useHttp2Preface(true))
-        .hosts(asList(server.httpUri("/")))
-        .build();
+    storage = ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
   }
 
   @After public void tearDown() {
