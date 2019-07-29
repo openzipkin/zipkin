@@ -36,11 +36,13 @@ const ServiceFilter = ({ filters, ...props }) => {
         color="secondary"
         badgeContent={`+${filters.length - 1}`}
         invisible={filters.length <= 1}
+        data-test="badge"
       >
         <Button onClick={handleButtonClick} data-test="button">
           <Box component="span" className="fas fa-filter" />
-          &nbsp;
-          {`${filters.length === 0 ? 'Filter' : filters[0]}`}
+          <Box ml={0.2} data-test="button-text">
+            {`${filters.length === 0 ? 'Filter' : filters[0]}`}
+          </Box>
         </Button>
       </Badge>
       <ServiceFilterPopover
