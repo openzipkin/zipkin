@@ -45,8 +45,8 @@ public class HttpClientFactory implements Function<Endpoint, HttpClient>, Closea
     this.customizers = customizers;
     this.timeout = es.getTimeout();
     HttpLogging httpLogging = es.getHttpLogging();
-    ClientOptionsBuilder options = configureOptionsExceptLogging(new ClientOptionsBuilder()
-      .decorator(HttpDecodingClient.newDecorator()));
+    ClientOptionsBuilder options = new ClientOptionsBuilder()
+      .decorator(HttpDecodingClient.newDecorator());
 
     if (httpLogging != HttpLogging.NONE) {
       LoggingClientBuilder loggingBuilder = new LoggingClientBuilder()
@@ -69,7 +69,7 @@ public class HttpClientFactory implements Function<Endpoint, HttpClient>, Closea
         options.decorator(RawContentLoggingClient::new);
       }
     }
-    this.options = options.build();
+    this.options = configureOptionsExceptLogging(options).build();
   }
 
   @Override public HttpClient apply(Endpoint endpoint) {
