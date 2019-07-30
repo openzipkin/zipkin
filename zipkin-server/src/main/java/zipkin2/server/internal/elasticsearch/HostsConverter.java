@@ -21,10 +21,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
-public class HostsConverter {
+final class HostsConverter {
   static final Logger LOG = Logger.getLogger(ElasticsearchStorage.class.getName());
 
-  public static List<URI> convert(String hosts) {
+  static List<URI> convert(String hosts) {
     if (hosts == null) return Collections.singletonList(URI.create("http://localhost:9200"));
     return Stream.of(hosts.split(",", 100)).map(host -> {
       if (host.startsWith("http://") || host.startsWith("https://")) {

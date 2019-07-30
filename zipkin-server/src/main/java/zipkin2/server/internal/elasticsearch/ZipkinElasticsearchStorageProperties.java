@@ -20,12 +20,12 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
 @ConfigurationProperties("zipkin.storage.elasticsearch")
-public class ZipkinElasticsearchStorageProperties implements Serializable { // for Spark jobs
+class ZipkinElasticsearchStorageProperties implements Serializable { // for Spark jobs
   /**
    * Sets the level of logging for HTTP requests made by the Elasticsearch client. If not set or
    * none, logging will be disabled.
    */
-  public enum HttpLoggingLevel {
+  enum HttpLoggingLevel {
     NONE,
     BASIC,
     HEADERS,

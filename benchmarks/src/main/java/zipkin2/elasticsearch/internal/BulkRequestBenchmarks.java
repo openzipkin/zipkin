@@ -14,7 +14,6 @@
 package zipkin2.elasticsearch.internal;
 
 import com.google.common.io.ByteStreams;
-import com.linecorp.armeria.client.HttpClient;
 import io.netty.buffer.Unpooled;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;

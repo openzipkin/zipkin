@@ -26,7 +26,7 @@ import java.util.concurrent.CompletableFuture;
  * RPC request / responses, not raw HTTP client content.
  */
 // TODO: unit test coverage
-class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
+final class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
 
   RawContentLoggingClient(Client<HttpRequest, HttpResponse> delegate) {
     super(delegate);

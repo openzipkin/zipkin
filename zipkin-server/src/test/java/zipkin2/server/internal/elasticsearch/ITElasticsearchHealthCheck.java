@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static com.linecorp.armeria.common.HttpStatus.OK;
@@ -81,12 +82,30 @@ public class ITElasticsearchHealthCheck {
     CAPTURED_REQUESTS.clear();
   }
 
-  /** blocking a little is ok, but blocking forever is not. */
-  @Test(timeout = 5000L) public void doesntHangWhenAllDown() throws IOException {
+  /**
+   * This blocks for less than the ready timeout of 1 second to prove we defer i/o until first use
+   * of the storage component.
+   */
+  @Test(timeout = 950L) public void defersIOUntilFirstUse() throws IOException {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:https://127.0.0.1:1234,https://127.0.0.1:5678")
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234,127.0.0.1:5678")
+      .applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchStorageConfiguration.class);
+    context.refresh();
+
+    context.getBean(ElasticsearchStorage.class).close();
+  }
+
+  /** blocking a little is ok, but blocking forever is not. */
+  @Test(timeout = 3000L) public void doesntHangWhenAllDown() throws IOException {
+    TestPropertyValues.of(
+      "spring.config.name=zipkin-server",
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234,127.0.0.1:5678")
       .applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
@@ -94,7 +113,10 @@ public class ITElasticsearchHealthCheck {
     context.refresh();
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      assertThat(storage.check().ok()).isFalse();
+      CheckResult result = storage.check();
+      assertThat(result.ok()).isFalse();
+      assertThat(result.error()).hasMessage(
+        "couldn't connect any of [Endpoint{127.0.0.1:1234, weight=1000}, Endpoint{127.0.0.1:5678, weight=1000}]");
     }
   }
 }

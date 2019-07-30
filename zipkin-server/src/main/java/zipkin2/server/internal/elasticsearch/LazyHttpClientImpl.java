@@ -127,11 +127,13 @@ final class LazyHttpClientImpl implements LazyHttpClient {
 
     // Since we aren't holding up server startup, or sitting on the event loop, it is ok to block.
     // The alternative is round-robin, which could be unlucky and hit a bad node first.
+    //
+    // We are blocking a second as this should be enough time for a health check to respond
     try {
-      healthChecked.awaitInitialEndpoints(3, TimeUnit.SECONDS);
+      healthChecked.awaitInitialEndpoints(1, TimeUnit.SECONDS);
     } catch (Exception e) {
       healthChecked.close(); // we'll recreate it the next time around.
-      throw new IllegalStateException("couldn't connect to any hosts in " + endpointGroup, e);
+      throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
     }
 
     EndpointGroupRegistry.register("elasticsearch", healthChecked, ROUND_ROBIN);
