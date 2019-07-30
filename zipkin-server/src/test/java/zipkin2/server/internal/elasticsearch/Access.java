@@ -13,6 +13,8 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import java.net.URI;
+import java.util.List;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 
@@ -23,5 +25,9 @@ public final class Access {
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinElasticsearchStorageConfiguration.class);
+  }
+
+  public static List<URI> convert(String hosts) {
+    return HostsConverter.convert(hosts);
   }
 }

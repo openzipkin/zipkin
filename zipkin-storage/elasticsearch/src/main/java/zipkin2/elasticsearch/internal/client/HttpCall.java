@@ -43,7 +43,10 @@ public final class HttpCall<V> extends Call.Base<V> {
   public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
-    /** The source is from {@link AggregatedHttpResponse}, so act accordingly. */
+    /**
+     * The source is from {@link AggregatedHttpResponse}, so act accordingly. Do not call {@link
+     * ReferenceCountUtil#safeRelease(Object)} because that is done upstream of this.
+     */
     V convert(HttpData content) throws IOException;
   }
 
@@ -53,9 +56,6 @@ public final class HttpCall<V> extends Call.Base<V> {
     @Override default V convert(HttpData content) throws IOException {
       try (InputStream stream = content.toInputStream()) {
         return convert(stream);
-      } finally {
-        // toInputStream creates an additional reference instead of itself releasing content()
-        ReferenceCountUtil.safeRelease(content);
       }
     }
   }

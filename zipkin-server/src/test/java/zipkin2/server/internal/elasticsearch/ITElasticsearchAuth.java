@@ -13,37 +13,58 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import com.linecorp.armeria.client.ClientFactory;
+import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import java.util.concurrent.atomic.AtomicReference;
+import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.LinkedBlockingQueue;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.server.internal.brave.TracingConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.server.internal.elasticsearch.ITElasticsearchHealthCheck.YELLOW_RESPONSE;
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.QUALIFIER;
 
-public class ITElasticsearchSelfTracing {
-
-  static final AtomicReference<AggregatedHttpRequest> CAPTURED_REQUEST = new AtomicReference<>();
+public class ITElasticsearchAuth {
+  static final BlockingQueue<AggregatedHttpRequest> CAPTURED_REQUESTS = new LinkedBlockingQueue<>();
 
   @ClassRule public static ServerRule server = new ServerRule() {
-    @Override protected void configure(ServerBuilder sb) {
-      sb.serviceUnder("/", (ctx, req) -> HttpResponse.from(
-        req.aggregate().thenApply(agg -> {
-          CAPTURED_REQUEST.set(agg);
+    @Override protected void configure(ServerBuilder sb) throws Exception {
+      sb.https(0);
+      sb.tlsSelfSigned();
+
+      sb.serviceUnder("/", (ctx, req) -> {
+        // TODO: revisit in armeria 0.90
+        CompletableFuture<HttpResponse> responseFuture = req.aggregate().thenApply(agg -> {
+          CAPTURED_REQUESTS.add(agg);
           return HttpResponse.of(YELLOW_RESPONSE);
-        })));
+        });
+        return HttpResponse.from(responseFuture);
+      });
     }
   };
+
+  @Configuration static class TlsSelfSignedConfiguration {
+    @Bean @Qualifier(QUALIFIER)
+    ClientFactory zipkinElasticsearchClientFactory() {
+      return new ClientFactoryBuilder().sslContextCustomizer(
+        ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)).build();
+    }
+  }
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
   ElasticsearchStorage storage;
@@ -51,33 +72,29 @@ public class ITElasticsearchSelfTracing {
   @Before public void init() {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
-      "zipkin.self-tracing.enabled=true",
-      "zipkin.self-tracing.message-timeout=1ms",
-      "zipkin.self-tracing.traces-per-second=10",
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:" + server.httpUri("/")).applyTo(context);
+      "zipkin.storage.elasticsearch.username:Aladdin",
+      "zipkin.storage.elasticsearch.password:OpenSesame",
+      "zipkin.storage.elasticsearch.hosts:https://127.0.0.1:" + server.httpsPort())
+      .applyTo(context);
     context.register(
+      TlsSelfSignedConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
-      TracingConfiguration.class,
       ZipkinElasticsearchStorageConfiguration.class);
     context.refresh();
     storage = context.getBean(ElasticsearchStorage.class);
   }
 
   @After public void close() {
-    CAPTURED_REQUEST.set(null);
+    CAPTURED_REQUESTS.clear();
   }
 
-  /**
-   * We currently don't have a nice way to mute outbound propagation in Brave. This just makes sure
-   * we are nicer.
-   */
-  @Test public void healthcheck_usesB3Single() {
+  @Test public void healthcheck_usesAuthAndTls() throws Exception {
     assertThat(storage.check().ok()).isTrue();
 
-    assertThat(CAPTURED_REQUEST.get().headers())
-      .extracting(e -> e.getKey().toString())
-      .contains("b3")
-      .doesNotContain("x-b3-traceid");
+    AggregatedHttpRequest next = CAPTURED_REQUESTS.take();
+    // hard coded for sanity taken from https://en.wikipedia.org/wiki/Basic_access_authentication
+    assertThat(next.headers().get("Authorization"))
+      .isEqualTo("Basic QWxhZGRpbjpPcGVuU2VzYW1l");
   }
 }

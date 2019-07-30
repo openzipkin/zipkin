@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch;
+package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
@@ -21,6 +21,9 @@ import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.SessionProtocol;
+import java.net.URI;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import org.junit.After;
@@ -32,7 +35,7 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin2.server.internal.elasticsearch.Access;
+import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -78,8 +81,9 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get())
-      .containsExactly("http://host1:9200", "http://host2:9200");
+    assertThat(Access.convert(
+      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
+      .containsExactly(URI.create("http://host1:9200"), URI.create("http://host2:9200"));
   }
 
   @Test public void configuresPipeline() {
@@ -103,7 +107,9 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get()).containsExactly("http://host1:9200");
+    assertThat(Access.convert(
+      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
+      .containsExactly(URI.create("http://host1:9200"));
   }
 
   @Test public void httpPrefixOptional() {
@@ -114,7 +120,22 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get()).containsExactly("http://host1:9200");
+    assertThat(context.getBean(SessionProtocol.class))
+      .isEqualTo(SessionProtocol.HTTP);
+  }
+
+  @Test public void https() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:https://localhost")
+      .applyTo(context);
+    Access.registerElasticsearchHttp(context);
+    context.refresh();
+
+    assertThat(context.getBean(SessionProtocol.class))
+      .isEqualTo(SessionProtocol.HTTPS);
+    assertThat(context.getBean(ConfiguredEndpointsSupplier.class).get().endpoints().get(0).port())
+      .isEqualTo(443);
   }
 
   @Test public void defaultsToPort9200() {
@@ -125,17 +146,19 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().hostsSupplier().get()).containsExactly("http://host1:9200");
+    assertThat(Access.convert(
+      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
+      .containsExactly(URI.create("http://host1:9200"));
   }
 
   @Configuration
   static class CustomizerConfiguration {
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<ClientOptionsBuilder> one() {
+    @Bean @Qualifier("zipkinElasticsearch") public Consumer<ClientOptionsBuilder> one() {
       return one;
     }
 
-    @Bean @Qualifier("zipkinElasticsearchHttp") public Consumer<ClientOptionsBuilder> two() {
+    @Bean @Qualifier("zipkinElasticsearch") public Consumer<ClientOptionsBuilder> two() {
       return two;
     }
 
@@ -146,47 +169,41 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
   /** Ensures we can wire up network interceptors, such as for logging or authentication */
   @Test public void usesInterceptorsQualifiedWith_zipkinElasticsearchHttp() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:host1:9200")
-      .applyTo(context);
+    TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.register(CustomizerConfiguration.class);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
-    assertThat(storage.httpClient().options().maxResponseLength()).isEqualTo(12345L);
-    assertThat(storage.httpClient().options().httpHeaders().get("test")).isEqualTo("bar");
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
+    assertThat(factory.options.maxResponseLength()).isEqualTo(12345L);
+    assertThat(factory.options.httpHeaders().get("test")).isEqualTo("bar");
   }
 
   @Test public void timeout_defaultsTo10Seconds() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:host1:9200")
-      .applyTo(context);
+    TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
     // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
-    assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(10000L);
-    assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(10000L);
+    assertThat(factory.options.responseTimeoutMillis()).isEqualTo(10000L);
+    assertThat(factory.options.writeTimeoutMillis()).isEqualTo(10000L);
   }
 
   @Test public void timeout_override() {
     long timeout = 30000L;
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
       "zipkin.storage.elasticsearch.timeout:" + timeout)
       .applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
     // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
-    assertThat(storage.httpClient().options().responseTimeoutMillis()).isEqualTo(timeout);
-    assertThat(storage.httpClient().options().writeTimeoutMillis()).isEqualTo(timeout);
+    assertThat(factory.options.responseTimeoutMillis()).isEqualTo(timeout);
+    assertThat(factory.options.writeTimeoutMillis()).isEqualTo(timeout);
   }
 
   @Test public void strictTraceId_defaultsToTrue() {
@@ -291,16 +308,16 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     throws Exception {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:http://host1:9200")
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234")
       .applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
 
     Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
-    Client<HttpRequest, HttpResponse> decorated = storage.httpClient().options().decoration()
-      .decorate(HttpRequest.class, HttpResponse.class, delegate);
+    Client<HttpRequest, HttpResponse> decorated =
+      factory.options.decoration().decorate(HttpRequest.class, HttpResponse.class, delegate);
 
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
     HttpRequest req = HttpRequest.of(HttpMethod.GET, "/");
@@ -316,17 +333,17 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     throws Exception {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:http://host1:9200",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
       "zipkin.storage.elasticsearch.username:somename",
       "zipkin.storage.elasticsearch.password:pass")
       .applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class);
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
 
     Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
-    Client<HttpRequest, HttpResponse> decorated = storage.httpClient().options().decoration()
+    Client<HttpRequest, HttpResponse> decorated = factory.options.decoration()
       .decorate(HttpRequest.class, HttpResponse.class, delegate);
 
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
@@ -347,7 +364,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().searchEnabled()).isFalse();
+    assertThat(es()).extracting("searchEnabled")
+      .containsExactly(false);
   }
 
   @Test public void autocompleteKeys_list() {
@@ -358,8 +376,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().autocompleteKeys())
-      .containsOnly("environment");
+    assertThat(es()).extracting("autocompleteKeys")
+      .containsExactly(Arrays.asList("environment"));
   }
 
   @Test public void autocompleteTtl() {
@@ -370,8 +388,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().autocompleteTtl())
-      .isEqualTo(60000);
+    assertThat(es()).extracting("autocompleteTtl")
+      .containsExactly(60000);
   }
 
   @Test public void autocompleteCardinality() {
@@ -382,8 +400,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    assertThat(es().autocompleteCardinality())
-      .isEqualTo(5000);
+    assertThat(es()).extracting("autocompleteCardinality")
+      .containsExactly(5000);
   }
 
   ElasticsearchStorage es() {

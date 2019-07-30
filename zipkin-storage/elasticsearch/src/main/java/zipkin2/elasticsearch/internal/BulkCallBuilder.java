@@ -77,7 +77,7 @@ public final class BulkCallBuilder {
   public BulkCallBuilder(ElasticsearchStorage es, float esVersion, String tag) {
     this.tag = tag;
     shouldAddType = esVersion < 7.0f;
-    http = es.http();
+    http = Internal.instance.http(es);
     pipeline = es.pipeline();
     waitForRefresh = es.flushOnWrites();
   }

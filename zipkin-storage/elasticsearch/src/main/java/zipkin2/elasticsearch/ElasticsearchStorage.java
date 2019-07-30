@@ -16,48 +16,25 @@ package zipkin2.elasticsearch;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
-import com.linecorp.armeria.client.ClientFactory;
-import com.linecorp.armeria.client.ClientFactoryBuilder;
-import com.linecorp.armeria.client.ClientOptionsBuilder;
-import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
-import com.linecorp.armeria.client.HttpClientBuilder;
-import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
-import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
-import com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy;
-import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
-import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
-import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
-import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
-import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
-import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.SessionProtocol;
-import com.linecorp.armeria.common.logging.LogLevel;
-import com.linecorp.armeria.common.util.AbstractListenable;
+import java.io.Closeable;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-import java.util.function.Consumer;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
+import zipkin2.elasticsearch.internal.Internal;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
-import zipkin2.elasticsearch.internal.client.RawContentLoggingClient;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 import zipkin2.storage.AutocompleteTags;
@@ -76,27 +53,26 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
 
-  public enum HttpLoggingLevel {
-    BASIC,
-    HEADERS,
-    BODY
-  }
-
   /**
-   * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
-   * Note this value is only read once.
+   * This defers creation of an {@link HttpClient}. This is needed because routinely, I/O occurs in
+   * constructors and this can delay or cause startup to crash. For example, an underlying {@link
+   * EndpointGroup} could be delayed due to DNS, implicit api calls or health checks.
    */
-  public interface HostsSupplier {
-    List<String> get();
+  public interface LazyHttpClient extends Supplier<HttpClient>, Closeable {
+    /**
+     * Lazily creates an instance of the http client configured to the correct elasticsearch host
+     * or cluster. The same value should always be returned.
+     */
+    @Override HttpClient get();
+
+    @Override default void close() {
+    }
   }
 
-  public static Builder newBuilder() {
+  /** The lazy http client supplier will be closed on {@link #close()} */
+  public static Builder newBuilder(LazyHttpClient lazyHttpClient) {
     return new $AutoValue_ElasticsearchStorage.Builder()
-      .clientCustomizer(unused -> {
-      })
-      .clientFactoryCustomizer(unused -> {
-      })
-      .hosts(Collections.singletonList("http://localhost:9200"))
+      .lazyHttpClient(lazyHttpClient)
       .strictTraceId(true)
       .searchEnabled(true)
       .index("zipkin")
@@ -114,44 +90,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   @AutoValue.Builder
   public abstract static class Builder extends StorageComponent.Builder {
-    /**
-     * Customizes the {@link HttpClientBuilder} used when connecting to ElasticSearch. This is used
-     * by the server and tests to enable detailed logging and tweak timeouts. It is also used by
-     * zipkin-aws to customize authentication of requests.
-     */
-    public abstract Builder clientCustomizer(Consumer<ClientOptionsBuilder> clientCustomizer);
-
-    /**
-     * Customizes the {@link ClientFactoryBuilder} used when connecting to ElasticSearch. This is
-     * used by the server and tests to tweak timeouts.
-     */
-    public abstract Builder clientFactoryCustomizer(
-      Consumer<ClientFactoryBuilder> clientFactoryCustomizer);
-
-    /**
-     * A list of elasticsearch nodes to connect to, in http://host:port or https://host:port format.
-     * Defaults to "http://localhost:9200".
-     */
-    public final Builder hosts(final List<String> hosts) {
-      if (hosts == null) throw new NullPointerException("hosts == null");
-      return hostsSupplier(new HostsSupplier() {
-        @Override public List<String> get() {
-          return hosts;
-        }
-
-        @Override public String toString() {
-          return hosts.toString();
-        }
-      });
-    }
-
-    /**
-     * Like {@link #hosts(List)}, except the value is deferred.
-     *
-     * <p>This was added to support dynamic endpoint resolution for Amazon Elasticsearch. This
-     * value is only read once.
-     */
-    public abstract Builder hostsSupplier(HostsSupplier hosts);
 
     /**
      * Only valid when the destination is Elasticsearch 5.x. Indicates the ingest pipeline used
@@ -216,34 +154,24 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
      */
     public abstract Builder indexReplicas(int indexReplicas);
 
-    /**
-     * Sets the level of logging for HTTP requests made by the Elasticsearch client. If not set,
-     * logging will be disabled.
-     *
-     * <p>This is only for use from tests and ZipkinElasticsearchStorageConfiguration.
-     */
-    public abstract Builder httpLogging(HttpLoggingLevel httpLoggingLevel);
-
-    @Override
-    public abstract Builder strictTraceId(boolean strictTraceId);
-
-    @Override
-    public abstract Builder searchEnabled(boolean searchEnabled);
+    /** {@inheritDoc} */
+    @Override public abstract Builder strictTraceId(boolean strictTraceId);
 
     /** {@inheritDoc} */
-    @Override
-    public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
+    @Override public abstract Builder searchEnabled(boolean searchEnabled);
 
     /** {@inheritDoc} */
-    @Override
-    public abstract Builder autocompleteTtl(int autocompleteTtl);
+    @Override public abstract Builder autocompleteKeys(List<String> autocompleteKeys);
 
     /** {@inheritDoc} */
-    @Override
-    public abstract Builder autocompleteCardinality(int autocompleteCardinality);
+    @Override public abstract Builder autocompleteTtl(int autocompleteTtl);
 
-    @Override
-    public abstract ElasticsearchStorage build();
+    /** {@inheritDoc} */
+    @Override public abstract Builder autocompleteCardinality(int autocompleteCardinality);
+
+    @Override public abstract ElasticsearchStorage build();
+
+    abstract Builder lazyHttpClient(LazyHttpClient lazyHttpClient);
 
     abstract IndexNameFormatter.Builder indexNameFormatterBuilder();
 
@@ -251,11 +179,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     }
   }
 
-  abstract Consumer<ClientOptionsBuilder> clientCustomizer();
-
-  abstract Consumer<ClientFactoryBuilder> clientFactoryCustomizer();
-
-  public abstract HostsSupplier hostsSupplier();
+  abstract LazyHttpClient lazyHttpClient();
 
   @Nullable public abstract String pipeline();
 
@@ -275,31 +199,25 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
   abstract int indexReplicas();
 
-  @Nullable abstract HttpLoggingLevel httpLogging();
-
   public abstract IndexNameFormatter indexNameFormatter();
 
   public abstract int namesLookback();
 
-  @Override
-  public SpanStore spanStore() {
+  @Override public SpanStore spanStore() {
     ensureIndexTemplates();
     return new ElasticsearchSpanStore(this);
   }
 
-  @Override
-  public ServiceAndSpanNames serviceAndSpanNames() {
+  @Override public ServiceAndSpanNames serviceAndSpanNames() {
     return (ServiceAndSpanNames) spanStore();
   }
 
-  @Override
-  public AutocompleteTags autocompleteTags() {
+  @Override public AutocompleteTags autocompleteTags() {
     ensureIndexTemplates();
     return new ElasticsearchAutocompleteTags(this);
   }
 
-  @Override
-  public SpanConsumer spanConsumer() {
+  @Override public SpanConsumer spanConsumer() {
     ensureIndexTemplates();
     return new ElasticsearchSpanConsumer(this);
   }
@@ -328,28 +246,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   /** This is blocking so that we can determine if the cluster is healthy or not */
-  @Override
-  public CheckResult check() {
-    HttpClient client = httpClient();
-    EndpointGroup healthChecked = EndpointGroupRegistry.get("elasticsearch_healthchecked");
-    if (healthChecked instanceof HttpHealthCheckedEndpointGroup) {
-      try {
-        ((HttpHealthCheckedEndpointGroup) healthChecked).awaitInitialEndpoints(
-          client.options().responseTimeoutMillis(), TimeUnit.MILLISECONDS);
-      } catch (InterruptedException | TimeoutException e) {
-        return CheckResult.failed(e);
-      }
-    }
+  @Override public CheckResult check() {
     return ensureClusterReady(indexNameFormatter().formatType(SPAN));
-  }
-
-  @Override public void close() {
-    EndpointGroup endpointGroup = EndpointGroupRegistry.get("elasticsearch");
-    if (endpointGroup != null) {
-      endpointGroup.close();
-      EndpointGroupRegistry.unregister("elasticsearch");
-    }
-    clientFactory().close();
   }
 
   CheckResult ensureClusterReady(String index) {
@@ -383,171 +281,25 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return "/_template/" + indexPrefix + type + "_template";
   }
 
-  @Memoized // a new client factory means new connections
-  ClientFactory clientFactory() {
-    // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
-    // valid behavior of returning a bad request response, so we can't use the preface.
-    //
-    // TODO: find or raise a bug with Elastic
-    ClientFactoryBuilder builder = new ClientFactoryBuilder().useHttp2Preface(false);
-    clientFactoryCustomizer().accept(builder);
-    return builder.build();
-  }
-
-  @Memoized // hosts resolution might imply a network call, and we might make a new client instance
-  public HttpClient httpClient() {
-    List<String> hosts = hostsSupplier().get();
-    if (hosts.isEmpty()) throw new IllegalArgumentException("no hosts configured");
-
-    List<URL> urls = hosts.stream()
-      .map(host -> {
-        try {
-          return new URL(host);
-        } catch (MalformedURLException e) {
-          throw new IllegalArgumentException("Invalid host: " + host, e);
-        }
-      })
-      .collect(Collectors.toList());
-
-    List<Endpoint> originalEndpoints = new ArrayList<>();
-
-    final EndpointGroup endpointGroup;
-    if (urls.size() == 1) {
-      URL url = urls.get(0);
-      originalEndpoints.add(Endpoint.parse(url.getAuthority()));
-
-      if (isIpAddress(url.getHost())) {
-        endpointGroup = null;
-      } else {
-        // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint group
-        // to round-robin over them.
-        DnsAddressEndpointGroupBuilder dnsEndpoint =
-          new DnsAddressEndpointGroupBuilder(url.getHost());
-        if (url.getPort() != -1) {
-          dnsEndpoint.port(url.getPort());
-        }
-        endpointGroup = dnsEndpoint.build();
-      }
-    } else {
-      List<EndpointGroup> endpointGroups = new ArrayList<>();
-      List<Endpoint> staticEndpoints = new ArrayList<>();
-      for (URL url : urls) {
-        Endpoint endpoint = Endpoint.parse(url.getAuthority());
-        originalEndpoints.add(endpoint);
-        if (isIpAddress(url.getHost())) {
-          staticEndpoints.add(endpoint);
-        } else {
-          // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
-          // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
-          // with single IPs freely, they'll all get used.
-          endpointGroups.add(url.getPort() == -1
-            ? DnsAddressEndpointGroup.of(url.getHost())
-            : DnsAddressEndpointGroup.of(url.getHost(), url.getPort()));
-        }
-      }
-
-      if (!staticEndpoints.isEmpty()) {
-        endpointGroups.add(new StaticEndpointGroup(staticEndpoints));
-      }
-
-      if (endpointGroups.size() == 1) {
-        endpointGroup = endpointGroups.get(0);
-      } else {
-        endpointGroup = new CompositeEndpointGroup(endpointGroups);
-      }
-    }
-
-    final String clientUrl;
-    if (endpointGroup != null) {
-      HttpHealthCheckedEndpointGroup healthChecked = new HttpHealthCheckedEndpointGroupBuilder(
-        endpointGroup, "/_cluster/health")
-        .protocol(SessionProtocol.valueOf(urls.get(0).getProtocol().toUpperCase(Locale.ROOT)))
-        .clientFactory(clientFactory())
-        .withClientOptions(options -> {
-          clientCustomizer().accept(options);
-          return options;
-        })
-        .build();
-      EndpointGroup withFallback = healthChecked
-        // Even if all the health check requests are failing, we want to go ahead and try to send
-        // the request to an endpoint anyways. This will generally only be when the server is
-        // starting.
-        .orElse(new StaticEndpointGroup(originalEndpoints));
-      EndpointGroupRegistry.register(
-        "elasticsearch", withFallback, EndpointSelectionStrategy.ROUND_ROBIN);
-      clientUrl = urls.get(0).getProtocol() + "://group:elasticsearch" + urls.get(0).getPath();
-    } else {
-      // Just one non-domain URL, can connect directly without enabling load balancing.
-      clientUrl = hosts.get(0);
-    }
-
-    ClientOptionsBuilder options = new ClientOptionsBuilder()
-      .decorator(HttpDecodingClient.newDecorator());
-
-    if (httpLogging() != null) {
-      LoggingClientBuilder loggingBuilder = new LoggingClientBuilder()
-        .requestLogLevel(LogLevel.INFO)
-        .successfulResponseLogLevel(LogLevel.INFO);
-      switch (httpLogging()) {
-        case HEADERS:
-          loggingBuilder.contentSanitizer(unused -> "");
-          break;
-        case BASIC:
-          loggingBuilder.contentSanitizer(unused -> "");
-          loggingBuilder.headersSanitizer(unused -> HttpHeaders.of());
-          break;
-        case BODY:
-        default:
-          break;
-      }
-      options.decorator(loggingBuilder.newDecorator());
-      if (httpLogging() == HttpLoggingLevel.BODY) {
-        options.decorator(RawContentLoggingClient.newDecorator());
-      }
-    }
-
-    clientCustomizer().accept(options);
-    HttpClientBuilder client = new HttpClientBuilder(clientUrl)
-      .factory(clientFactory())
-      .options(options.build());
-
-    return client.build();
-  }
-
   @Override public final String toString() {
-    return "ElasticsearchStorage{hosts=" + hostsSupplier().get()
+    return "ElasticsearchStorage{httpClient=" + lazyHttpClient()
       + ", index=" + indexNameFormatter().index() + "}";
   }
 
-  static boolean isIpAddress(String address) {
-    return zipkin2.Endpoint.newBuilder().parseIp(address);
+  static {
+    Internal.instance = new Internal() {
+      @Override public HttpCall.Factory http(ElasticsearchStorage storage) {
+        return storage.http();
+      }
+    };
   }
 
-  // TODO(anuraaga): Move this upstream - https://github.com/line/armeria/issues/1897
-  static class CompositeEndpointGroup
-    extends AbstractListenable<List<Endpoint>> implements EndpointGroup {
-
-    final List<EndpointGroup> endpointGroups;
-
-    CompositeEndpointGroup(List<EndpointGroup> endpointGroups) {
-      this.endpointGroups = endpointGroups;
-      for (EndpointGroup group : endpointGroups) {
-        group.addListener(unused -> notifyListeners(endpoints()));
-      }
-    }
-
-    @Override public List<Endpoint> endpoints() {
-      List<Endpoint> merged = new ArrayList<>();
-      for (EndpointGroup group : endpointGroups) {
-        merged.addAll(group.endpoints());
-      }
-      return merged;
-    }
+  @Memoized HttpCall.Factory http() {
+    return new HttpCall.Factory(lazyHttpClient().get());
   }
 
-  @Memoized // hosts resolution might imply a network call, and we might make a new client instance
-  public HttpCall.Factory http() {
-    return new HttpCall.Factory(httpClient());
+  @Override public void close() throws IOException {
+    lazyHttpClient().close();
   }
 
   ElasticsearchStorage() {

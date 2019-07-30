@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpResponse;
@@ -21,6 +22,7 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Before;
@@ -29,78 +31,77 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.elasticsearch.ElasticsearchStorageTest.RESPONSE_UNAUTHORIZED;
 
 public class VersionSpecificTemplatesTest {
   static final AggregatedHttpResponse VERSION_RESPONSE_7 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, ""
-    + "{\n"
-    + "  \"name\" : \"zipkin-elasticsearch\",\n"
-    + "  \"cluster_name\" : \"docker-cluster\",\n"
-    + "  \"cluster_uuid\" : \"wByRPgSgTryYl0TZXW4MsA\",\n"
-    + "  \"version\" : {\n"
-    + "    \"number\" : \"7.0.1\",\n"
-    + "    \"build_flavor\" : \"default\",\n"
-    + "    \"build_type\" : \"tar\",\n"
-    + "    \"build_hash\" : \"e4efcb5\",\n"
-    + "    \"build_date\" : \"2019-04-29T12:56:03.145736Z\",\n"
-    + "    \"build_snapshot\" : false,\n"
-    + "    \"lucene_version\" : \"8.0.0\",\n"
-    + "    \"minimum_wire_compatibility_version\" : \"6.7.0\",\n"
-    + "    \"minimum_index_compatibility_version\" : \"6.0.0-beta1\"\n"
-    + "  },\n"
-    + "  \"tagline\" : \"You Know, for Search\"\n"
-    + "}");
+      + "{\n"
+      + "  \"name\" : \"zipkin-elasticsearch\",\n"
+      + "  \"cluster_name\" : \"docker-cluster\",\n"
+      + "  \"cluster_uuid\" : \"wByRPgSgTryYl0TZXW4MsA\",\n"
+      + "  \"version\" : {\n"
+      + "    \"number\" : \"7.0.1\",\n"
+      + "    \"build_flavor\" : \"default\",\n"
+      + "    \"build_type\" : \"tar\",\n"
+      + "    \"build_hash\" : \"e4efcb5\",\n"
+      + "    \"build_date\" : \"2019-04-29T12:56:03.145736Z\",\n"
+      + "    \"build_snapshot\" : false,\n"
+      + "    \"lucene_version\" : \"8.0.0\",\n"
+      + "    \"minimum_wire_compatibility_version\" : \"6.7.0\",\n"
+      + "    \"minimum_index_compatibility_version\" : \"6.0.0-beta1\"\n"
+      + "  },\n"
+      + "  \"tagline\" : \"You Know, for Search\"\n"
+      + "}");
   static final AggregatedHttpResponse VERSION_RESPONSE_6 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, ""
-    + "{\n"
-    + "  \"name\" : \"PV-NhJd\",\n"
-    + "  \"cluster_name\" : \"CollectorDBCluster\",\n"
-    + "  \"cluster_uuid\" : \"UjZaM0fQRC6tkHINCg9y8w\",\n"
-    + "  \"version\" : {\n"
-    + "    \"number\" : \"6.7.0\",\n"
-    + "    \"build_flavor\" : \"oss\",\n"
-    + "    \"build_type\" : \"tar\",\n"
-    + "    \"build_hash\" : \"8453f77\",\n"
-    + "    \"build_date\" : \"2019-03-21T15:32:29.844721Z\",\n"
-    + "    \"build_snapshot\" : false,\n"
-    + "    \"lucene_version\" : \"7.7.0\",\n"
-    + "    \"minimum_wire_compatibility_version\" : \"5.6.0\",\n"
-    + "    \"minimum_index_compatibility_version\" : \"5.0.0\"\n"
-    + "  },\n"
-    + "  \"tagline\" : \"You Know, for Search\"\n"
-    + "}");
+      + "{\n"
+      + "  \"name\" : \"PV-NhJd\",\n"
+      + "  \"cluster_name\" : \"CollectorDBCluster\",\n"
+      + "  \"cluster_uuid\" : \"UjZaM0fQRC6tkHINCg9y8w\",\n"
+      + "  \"version\" : {\n"
+      + "    \"number\" : \"6.7.0\",\n"
+      + "    \"build_flavor\" : \"oss\",\n"
+      + "    \"build_type\" : \"tar\",\n"
+      + "    \"build_hash\" : \"8453f77\",\n"
+      + "    \"build_date\" : \"2019-03-21T15:32:29.844721Z\",\n"
+      + "    \"build_snapshot\" : false,\n"
+      + "    \"lucene_version\" : \"7.7.0\",\n"
+      + "    \"minimum_wire_compatibility_version\" : \"5.6.0\",\n"
+      + "    \"minimum_index_compatibility_version\" : \"5.0.0\"\n"
+      + "  },\n"
+      + "  \"tagline\" : \"You Know, for Search\"\n"
+      + "}");
   static final AggregatedHttpResponse VERSION_RESPONSE_5 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, ""
-    + "{\n"
-    + "  \"name\" : \"vU0g1--\",\n"
-    + "  \"cluster_name\" : \"elasticsearch\",\n"
-    + "  \"cluster_uuid\" : \"Fnm277ITSNyzsy0UCVFN7g\",\n"
-    + "  \"version\" : {\n"
-    + "    \"number\" : \"5.0.0\",\n"
-    + "    \"build_hash\" : \"253032b\",\n"
-    + "    \"build_date\" : \"2016-10-26T04:37:51.531Z\",\n"
-    + "    \"build_snapshot\" : false,\n"
-    + "    \"lucene_version\" : \"6.2.0\"\n"
-    + "  },\n"
-    + "  \"tagline\" : \"You Know, for Search\"\n"
-    + "}");
+      + "{\n"
+      + "  \"name\" : \"vU0g1--\",\n"
+      + "  \"cluster_name\" : \"elasticsearch\",\n"
+      + "  \"cluster_uuid\" : \"Fnm277ITSNyzsy0UCVFN7g\",\n"
+      + "  \"version\" : {\n"
+      + "    \"number\" : \"5.0.0\",\n"
+      + "    \"build_hash\" : \"253032b\",\n"
+      + "    \"build_date\" : \"2016-10-26T04:37:51.531Z\",\n"
+      + "    \"build_snapshot\" : false,\n"
+      + "    \"lucene_version\" : \"6.2.0\"\n"
+      + "  },\n"
+      + "  \"tagline\" : \"You Know, for Search\"\n"
+      + "}");
   static final AggregatedHttpResponse VERSION_RESPONSE_2 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, ""
-    + "{\n"
-    + "  \"name\" : \"Kamal\",\n"
-    + "  \"cluster_name\" : \"elasticsearch\",\n"
-    + "  \"version\" : {\n"
-    + "    \"number\" : \"2.4.0\",\n"
-    + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
-    + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
-    + "    \"build_snapshot\" : false,\n"
-    + "    \"lucene_version\" : \"5.5.2\"\n"
-    + "  },\n"
-    + "  \"tagline\" : \"You Know, for Search\"\n"
-    + "}");
+      + "{\n"
+      + "  \"name\" : \"Kamal\",\n"
+      + "  \"cluster_name\" : \"elasticsearch\",\n"
+      + "  \"version\" : {\n"
+      + "    \"number\" : \"2.4.0\",\n"
+      + "    \"build_hash\" : \"ce9f0c7394dee074091dd1bc4e9469251181fc55\",\n"
+      + "    \"build_timestamp\" : \"2016-08-29T09:14:17Z\",\n"
+      + "    \"build_snapshot\" : false,\n"
+      + "    \"lucene_version\" : \"5.5.2\"\n"
+      + "  },\n"
+      + "  \"tagline\" : \"You Know, for Search\"\n"
+      + "}");
 
   static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
     new AtomicReference<>();
@@ -114,10 +115,10 @@ public class VersionSpecificTemplatesTest {
   };
 
   @Before public void setUp() {
-    storage = ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/"))).build();
   }
 
-  @After public void tearDown() {
+  @After public void tearDown() throws IOException {
     storage.close();
   }
 
@@ -239,7 +240,7 @@ public class VersionSpecificTemplatesTest {
 
   @Test public void searchEnabled_minimalSpanIndexing_6x() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 
@@ -261,7 +262,7 @@ public class VersionSpecificTemplatesTest {
   }
 
   @Test public void searchEnabled_minimalSpanIndexing_7x() throws Exception {
-    storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 
@@ -291,7 +292,7 @@ public class VersionSpecificTemplatesTest {
 
   @Test public void strictTraceId_false_includesAnalysisForMixedLengthTraceId() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder().hosts(storage.hostsSupplier().get())
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .strictTraceId(false)
       .build();
 

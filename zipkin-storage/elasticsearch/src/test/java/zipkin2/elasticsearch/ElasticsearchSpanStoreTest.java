@@ -13,6 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -22,6 +23,7 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
@@ -31,7 +33,6 @@ import org.junit.Test;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
@@ -57,11 +58,11 @@ public class ElasticsearchSpanStoreTest {
   };
 
   @Before public void setUp() {
-    storage = ElasticsearchStorage.newBuilder().hosts(asList(server.httpUri("/"))).build();
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/"))).build();
     spanStore = new ElasticsearchSpanStore(storage);
   }
 
-  @After public void tearDown() {
+  @After public void tearDown() throws IOException {
     storage.close();
 
     MOCK_RESPONSE.set(null);
@@ -107,22 +108,20 @@ public class ElasticsearchSpanStoreTest {
   }
 
   @Test public void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
-    try (ElasticsearchStorage storage =
-           ElasticsearchStorage.newBuilder()
-             .hosts(this.storage.hostsSupplier().get())
-             .searchEnabled(false)
-             .build()) {
+    storage.close();
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
+      .searchEnabled(false)
+      .build();
 
-      // skip template check
-      ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
+    // skip template check
+    ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
 
-      QueryRequest request = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(10).build();
-      assertThat(spanStore.getTraces(request).execute()).isEmpty();
-      assertThat(spanStore.getServiceNames().execute()).isEmpty();
-      assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
+    QueryRequest request = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(10).build();
+    assertThat(spanStore.getTraces(request).execute()).isEmpty();
+    assertThat(spanStore.getServiceNames().execute()).isEmpty();
+    assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
 
-      assertThat(CAPTURED_REQUEST.get()).isNull();
-    }
+    assertThat(CAPTURED_REQUEST.get()).isNull();
   }
 
   void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {

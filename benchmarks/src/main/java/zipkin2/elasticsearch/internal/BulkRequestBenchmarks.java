@@ -47,7 +47,7 @@ import zipkin2.elasticsearch.internal.BulkCallBuilder.IndexEntry;
 public class BulkRequestBenchmarks {
   static final Span CLIENT_SPAN = SpanBytesDecoder.JSON_V2.decodeOne(read("/zipkin2-client.json"));
 
-  final ElasticsearchStorage es = ElasticsearchStorage.newBuilder().build();
+  final ElasticsearchStorage es = ElasticsearchStorage.newBuilder(() -> null).build();
   final long indexTimestamp = CLIENT_SPAN.timestampAsLong() / 1000L;
   final String spanIndex =
     es.indexNameFormatter().formatTypeAndTimestampForInsert("span", '-', indexTimestamp);

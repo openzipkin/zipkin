@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch.internal.client;
+package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
@@ -20,19 +20,13 @@ import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 
 /**
  * A simple decorator to record raw content strings into HTTP logs. By default, Armeria only logs
  * RPC request / responses, not raw HTTP client content.
  */
 // TODO: unit test coverage
-public class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
-
-  public static Function<Client<HttpRequest, HttpResponse>, Client<HttpRequest, HttpResponse>>
-  newDecorator() {
-    return RawContentLoggingClient::new;
-  }
+final class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
 
   RawContentLoggingClient(Client<HttpRequest, HttpResponse> delegate) {
     super(delegate);
