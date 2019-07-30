@@ -22,14 +22,19 @@ import com.linecorp.armeria.common.util.AbstractListenable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
-final class EndpointGroupFactory {
-  static final EndpointGroup DEFAULT = new StaticEndpointGroup(Endpoint.of("localhost", 9200));
+final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
+  final String hosts;
 
-  static EndpointGroup create(List<URI> urls) {
-    if (urls.isEmpty()) return DEFAULT;
-    if (urls.size() == 1) {
-      URI url = urls.get(0);
+  StaticEndpointGroupSupplier(String hosts) {
+    this.hosts = hosts == null || hosts.isEmpty() ? "localhost:9200" : hosts;
+  }
+
+  @Override public EndpointGroup get() {
+    List<URI> initialURLs = HostsConverter.convert(hosts);
+    if (initialURLs.size() == 1) {
+      URI url = initialURLs.get(0);
       String host = url.getHost();
       if (isIpAddress(host) || host.equals("localhost")) {
         return new StaticEndpointGroup(Endpoint.of(host, url.getPort()));
@@ -41,7 +46,7 @@ final class EndpointGroupFactory {
 
     List<EndpointGroup> endpointGroups = new ArrayList<>();
     List<Endpoint> staticEndpoints = new ArrayList<>();
-    for (URI url : urls) {
+    for (URI url : initialURLs) {
       Endpoint endpoint = Endpoint.parse(url.getAuthority());
       if (isIpAddress(url.getHost())) {
         staticEndpoints.add(endpoint);
@@ -83,5 +88,9 @@ final class EndpointGroupFactory {
 
   static boolean isIpAddress(String address) {
     return zipkin2.Endpoint.newBuilder().parseIp(address);
+  }
+
+  @Override public String toString() {
+    return "StaticEndpointGroupSupplier{hosts=" + hosts + "}";
   }
 }

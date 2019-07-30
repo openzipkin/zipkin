@@ -25,7 +25,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
    * Sets the level of logging for HTTP requests made by the Elasticsearch client. If not set or
    * none, logging will be disabled.
    */
-  enum HttpLoggingLevel {
+  enum HttpLogging {
     NONE,
     BASIC,
     HEADERS,
@@ -53,7 +53,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
   /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
-  private HttpLoggingLevel httpLogging = HttpLoggingLevel.NONE;
+  private HttpLogging httpLogging = HttpLogging.NONE;
   /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
   private Integer timeout = 10_000;
 
@@ -135,11 +135,11 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.password = emptyToNull(password);
   }
 
-  public HttpLoggingLevel getHttpLogging() {
+  public HttpLogging getHttpLogging() {
     return httpLogging;
   }
 
-  public void setHttpLogging(HttpLoggingLevel httpLogging) {
+  public void setHttpLogging(HttpLogging httpLogging) {
     this.httpLogging = httpLogging;
   }
 

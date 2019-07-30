@@ -25,6 +25,7 @@ import com.linecorp.armeria.common.SessionProtocol;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -40,7 +41,6 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
-import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.HttpLoggingLevel;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
@@ -50,36 +50,22 @@ import zipkin2.storage.StorageComponent;
 public class ZipkinElasticsearchStorageConfiguration {
   static final String QUALIFIER = "zipkinElasticsearch";
 
+  // Exposed as a bean so that zipkin-aws can override this as sourced from the AWS endpoints api
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
-  EndpointGroup zipkinElasticsearchEndpointGroup(ZipkinElasticsearchStorageProperties properties) {
-    return EndpointGroupFactory.create(HostsConverter.convert(properties.getHosts()));
+  Supplier<EndpointGroup> esInitialEndpoints(ZipkinElasticsearchStorageProperties es) {
+    return new StaticEndpointGroupSupplier(es.getHosts());
   }
 
+  // Exposed as a bean so that zipkin-aws can override this to always be SSL
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
-  ClientFactory zipkinElasticsearchClientFactory(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
-    // valid behavior of returning a bad request response, so we can't use the preface.
-    //
-    // TODO: find or raise a bug with Elastic
-    return new ClientFactoryBuilder().useHttp2Preface(false).connectTimeoutMillis(timeout).build();
-  }
-
-  @Bean @Qualifier(QUALIFIER) Consumer<ClientOptionsBuilder> zipkinElasticsearchTimeout(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    return new Consumer<ClientOptionsBuilder>() {
-      @Override public void accept(ClientOptionsBuilder client) {
-        client.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
-      }
-
-      @Override public String toString() {
-        return "TimeoutCustomizer{timeout=" + timeout + "ms}";
-      }
-    };
+  SessionProtocol esSessionProtocol(ZipkinElasticsearchStorageProperties es) {
+    if (es.getHosts() == null) return SessionProtocol.HTTP;
+    if (es.getHosts().contains("https://")) return SessionProtocol.HTTPS;
+    return SessionProtocol.HTTP;
   }
 
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
-  Consumer<ClientOptionsBuilder> zipkinElasticsearchAuth(ZipkinElasticsearchStorageProperties es) {
+  Consumer<ClientOptionsBuilder> esBasicAuth(ZipkinElasticsearchStorageProperties es) {
     return new Consumer<ClientOptionsBuilder>() {
       @Override public void accept(ClientOptionsBuilder client) {
         client.decorator(
@@ -92,26 +78,27 @@ public class ZipkinElasticsearchStorageConfiguration {
     };
   }
 
-  @Bean @ConditionalOnMissingBean @Qualifier(QUALIFIER)
-  SessionProtocol zipkinElasticsearchProtocol(ZipkinElasticsearchStorageProperties properties) {
-    if (properties.getHosts() == null) return SessionProtocol.HTTP;
-    if (properties.getHosts().contains("https://")) return SessionProtocol.HTTPS;
-    return SessionProtocol.HTTP;
+  // exposed as a bean so that we can test TLS by swapping it out.
+  // TODO: see if we can override the TLS via properties instead as that has less surface area.
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean ClientFactory esClientFactory(
+    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
+    // valid behavior of returning a bad request response, so we can't use the preface.
+    //
+    // TODO: find or raise a bug with Elastic
+    return new ClientFactoryBuilder().useHttp2Preface(false).connectTimeoutMillis(timeout).build();
   }
 
-  @Bean HttpLoggingLevel zipkinElasticsearchHttpLogging(
-    ZipkinElasticsearchStorageProperties properties) {
-    return properties.getHttpLogging();
-  }
-
-  @Bean @ConditionalOnMissingBean LazyHttpClient httpClient(
-    HttpLoggingLevel loggingLevel,
-    @Qualifier(QUALIFIER) SessionProtocol sessionProtocol,
-    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> clientCustomizers,
+  // exposed as a bean so that close is called automatically
+  @Bean LazyHttpClient esHttpClient(
     @Qualifier(QUALIFIER) ClientFactory clientFactory,
-    @Qualifier(QUALIFIER) EndpointGroup endpointGroup) {
-    return new LazyHttpClientImpl(sessionProtocol, endpointGroup, clientCustomizers, clientFactory,
-      loggingLevel);
+    @Qualifier(QUALIFIER) SessionProtocol sessionProtocol,
+    @Qualifier(QUALIFIER) Supplier<EndpointGroup> initialEndpoints,
+    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> clientCustomizers,
+    ZipkinElasticsearchStorageProperties es
+  ) {
+    return new LazyHttpClientImpl(clientFactory, sessionProtocol, initialEndpoints,
+      clientCustomizers, es.getTimeout(), es.getHttpLogging());
   }
 
   @Bean @ConditionalOnMissingBean StorageComponent storage(
@@ -135,8 +122,8 @@ public class ZipkinElasticsearchStorageConfiguration {
     return builder.build();
   }
 
-  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing Consumer<ClientOptionsBuilder>
-  elasticsearchTracing(Optional<HttpTracing> maybeHttpTracing) {
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing
+  Consumer<ClientOptionsBuilder> esTracing(Optional<HttpTracing> maybeHttpTracing) {
     if (!maybeHttpTracing.isPresent()) {
       // TODO: is there a special cased empty consumer we can use here? I suspect debug is cluttered
       // Alternatively, check why we would ever get here if ConditionalOnSelfTracing matches
