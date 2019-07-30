@@ -63,7 +63,7 @@ const useStyles = makeStyles({
     borderBottom: `1px solid ${grey[300]}`,
   },
   serviceName: {
-    textTrasform: 'uppercase',
+    textTransform: 'uppercase',
   },
   subInfo: {
     marginLeft: '0.6rem',
