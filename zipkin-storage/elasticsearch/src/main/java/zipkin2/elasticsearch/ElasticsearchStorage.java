@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
@@ -51,17 +52,22 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
+
+  /**
+   * This defers creation of an {@link HttpClient}. This is needed because routinely, I/O occurs in
+   * constructors and this can delay or cause startup to crash. For example, an underlying {@link
+   * EndpointGroup} could be delayed due to DNS, implicit api calls or health checks.
+   */
   public interface LazyHttpClient extends Supplier<HttpClient>, Closeable {
-
-    /** If the client has been created, this will close it and any resources used by it. */
-    @Override default void close() {
-    }
-
     /**
      * Lazily creates and instance of the http client configured to the correct elasticsearch host
      * or cluster. Note this value is only read once.
      */
     @Override HttpClient get();
+
+    /** If the client has been created, this will close it and any resources used by it. */
+    @Override default void close() {
+    }
   }
 
   /** The lazy http client supplier will be closed on {@link #close()} */
