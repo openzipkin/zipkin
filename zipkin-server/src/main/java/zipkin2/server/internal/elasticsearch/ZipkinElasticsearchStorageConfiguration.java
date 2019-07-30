@@ -38,7 +38,6 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
@@ -64,6 +63,42 @@ public class ZipkinElasticsearchStorageConfiguration {
     return SessionProtocol.HTTP;
   }
 
+  // exposed as a bean so that we can test TLS by swapping it out.
+  // TODO: see if we can override the TLS via properties instead as that has less surface area.
+  @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean ClientFactory esClientFactory(
+    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
+    // valid behavior of returning a bad request response, so we can't use the preface.
+    //
+    // TODO: find or raise a bug with Elastic
+    return new ClientFactoryBuilder().useHttp2Preface(false).connectTimeoutMillis(timeout).build();
+  }
+
+  @Bean @ConditionalOnMissingBean StorageComponent storage(
+    ZipkinElasticsearchStorageProperties es,
+    @Qualifier(QUALIFIER) ClientFactory clientFactory,
+    @Qualifier(QUALIFIER) SessionProtocol sessionProtocol,
+    @Qualifier(QUALIFIER) Supplier<EndpointGroup> initialEndpoints,
+    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> clientCustomizers,
+    @Value("${zipkin.query.lookback:86400000}") int namesLookback,
+    @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
+    @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
+    @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
+    @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
+    @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
+    ElasticsearchStorage.Builder builder = es
+      .toBuilder(new LazyHttpClientImpl(clientFactory, sessionProtocol, initialEndpoints,
+        clientCustomizers, es.getTimeout(), es.getHttpLogging()))
+      .namesLookback(namesLookback)
+      .strictTraceId(strictTraceId)
+      .searchEnabled(searchEnabled)
+      .autocompleteKeys(autocompleteKeys)
+      .autocompleteTtl(autocompleteTtl)
+      .autocompleteCardinality(autocompleteCardinality);
+
+    return builder.build();
+  }
+
   @Bean @Qualifier(QUALIFIER) @Conditional(BasicAuthRequired.class)
   Consumer<ClientOptionsBuilder> esBasicAuth(ZipkinElasticsearchStorageProperties es) {
     return new Consumer<ClientOptionsBuilder>() {
@@ -76,50 +111,6 @@ public class ZipkinElasticsearchStorageConfiguration {
         return "BasicAuthCustomizer{basicCredentials=<redacted>}";
       }
     };
-  }
-
-  // exposed as a bean so that we can test TLS by swapping it out.
-  // TODO: see if we can override the TLS via properties instead as that has less surface area.
-  @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean ClientFactory esClientFactory(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
-    // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
-    // valid behavior of returning a bad request response, so we can't use the preface.
-    //
-    // TODO: find or raise a bug with Elastic
-    return new ClientFactoryBuilder().useHttp2Preface(false).connectTimeoutMillis(timeout).build();
-  }
-
-  // exposed as a bean so that close is called automatically
-  @Bean LazyHttpClient esHttpClient(
-    @Qualifier(QUALIFIER) ClientFactory clientFactory,
-    @Qualifier(QUALIFIER) SessionProtocol sessionProtocol,
-    @Qualifier(QUALIFIER) Supplier<EndpointGroup> initialEndpoints,
-    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> clientCustomizers,
-    ZipkinElasticsearchStorageProperties es
-  ) {
-    return new LazyHttpClientImpl(clientFactory, sessionProtocol, initialEndpoints,
-      clientCustomizers, es.getTimeout(), es.getHttpLogging());
-  }
-
-  @Bean @ConditionalOnMissingBean StorageComponent storage(
-    ZipkinElasticsearchStorageProperties elasticsearch,
-    LazyHttpClient httpClient,
-    @Value("${zipkin.query.lookback:86400000}") int namesLookback,
-    @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
-    @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
-    @Value("${zipkin.storage.autocomplete-keys:}") List<String> autocompleteKeys,
-    @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
-    @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
-    ElasticsearchStorage.Builder builder = elasticsearch
-      .toBuilder(httpClient)
-      .namesLookback(namesLookback)
-      .strictTraceId(strictTraceId)
-      .searchEnabled(searchEnabled)
-      .autocompleteKeys(autocompleteKeys)
-      .autocompleteTtl(autocompleteTtl)
-      .autocompleteCardinality(autocompleteCardinality);
-
-    return builder.build();
   }
 
   @Bean @Qualifier(QUALIFIER) @ConditionalOnSelfTracing

@@ -54,7 +54,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public interface LazyHttpClient extends Supplier<HttpClient>, Closeable {
 
     /** If the client has been created, this will close it and any resources used by it. */
-    @Override default void close() throws IOException {
+    @Override default void close() {
     }
 
     /**
@@ -64,6 +64,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     @Override HttpClient get();
   }
 
+  /** The lazy http client supplier will be closed on {@link #close()} */
   public static Builder newBuilder(LazyHttpClient lazyHttpClient) {
     return new $AutoValue_ElasticsearchStorage.Builder()
       .lazyHttpClient(lazyHttpClient)
