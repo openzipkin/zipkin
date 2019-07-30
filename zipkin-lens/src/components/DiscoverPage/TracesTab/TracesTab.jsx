@@ -24,6 +24,7 @@ import {
 import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
 import { traceSummariesPropTypes } from '../../../prop-types';
+import TracesScatter from './TracesScatter';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
@@ -59,6 +60,9 @@ export const TracesTab = ({ traceSummaries }) => { // Export for testing.
 
   return (
     <Box height="100%" display="flex" flexDirection="column">
+      <Box borderBottom={1} borderColor="grey.300">
+        <TracesScatter traceSummaries={filteredTraceSummaries} />
+      </Box>
       <Box borderBottom={1} borderColor="grey.300" display="flex" justifyContent="space-between" p={1}>
         <Box display="flex" alignItems="center" fontSize="1.05rem" data-test="count-results">
           {`${traceSummaries.length} Results`}
