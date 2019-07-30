@@ -80,6 +80,7 @@
     "react-table": "^6.8.6",
     "react-transition-group": "^2.4.0",
     "react-virtualized": "^9.21.1",
+    "recharts": "^1.6.2",
     "redux": "^4.0.0",
     "redux-thunk": "^2.3.0",
     "regenerator-runtime": "^0.13.2",
