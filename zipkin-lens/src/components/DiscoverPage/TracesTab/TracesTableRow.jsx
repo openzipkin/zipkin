@@ -25,6 +25,7 @@ import { fade } from '@material-ui/core/styles/colorManipulator';
 import ServiceBadge from '../../Common/ServiceBadge';
 import { rootServiceAndSpanName } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
+import { theme } from '../../../colors';
 
 const propTypes = {
   traceSummary: traceSummaryPropTypes.isRequired,
@@ -33,7 +34,7 @@ const propTypes = {
   correctedTraceMap: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles({
   root: {
     cursor: 'pointer',
     '&:hover': {
@@ -68,7 +69,7 @@ const useStyles = makeStyles(theme => ({
     marginLeft: '0.6rem',
     color: theme.palette.text.hint,
   },
-}));
+});
 
 export const TracesTableRowImpl = ({
   traceSummary,
@@ -88,19 +89,20 @@ export const TracesTableRowImpl = ({
   }, [history, traceSummary.traceId]);
 
   return (
-    <Box className={classes.root} onClick={handleClick}>
+    <Box className={classes.root} onClick={handleClick} data-test="root">
       <Grid container spacing={0} className={classes.data}>
         <Box
           position="absolute"
           width={`${traceSummary.width}%`}
           height="100%"
           className={classes.durationBar}
+          data-test="duration-bar"
         />
         <Grid item xs={3} className={classes.dataCell}>
-          <Box className={classes.serviceName}>
+          <Box className={classes.serviceName} data-test="service-name">
             {`${serviceName}`}
           </Box>
-          <Box className={classes.subInfo}>
+          <Box className={classes.subInfo} data-test="span-name">
             {`(${spanName})`}
           </Box>
         </Grid>
