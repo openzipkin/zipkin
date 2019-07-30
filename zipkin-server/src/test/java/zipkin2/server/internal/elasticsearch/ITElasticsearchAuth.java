@@ -16,7 +16,6 @@ package zipkin2.server.internal.elasticsearch;
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
-import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
@@ -36,8 +35,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
-import static com.linecorp.armeria.common.HttpStatus.OK;
-import static com.linecorp.armeria.common.MediaType.JSON;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.fail;
 import static zipkin2.server.internal.elasticsearch.ITElasticsearchHealthCheck.YELLOW_RESPONSE;
@@ -52,13 +49,10 @@ public class ITElasticsearchAuth {
       sb.tlsSelfSigned();
 
       sb.serviceUnder("/", (ctx, req) -> {
-        CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
-        req.aggregate().thenAccept(agg -> {
+        // TODO: revisit in armeria 0.90
+        CompletableFuture<HttpResponse> responseFuture = req.aggregate().thenApply(agg -> {
           CAPTURED_REQUESTS.add(agg);
-          responseFuture.complete(HttpResponse.of(YELLOW_RESPONSE));
-        }).exceptionally(t -> {
-          responseFuture.completeExceptionally(t);
-          return null;
+          return HttpResponse.of(YELLOW_RESPONSE);
         });
         return HttpResponse.from(responseFuture);
       });

@@ -16,13 +16,13 @@ package zipkin2.server.internal.elasticsearch;
 import java.net.URI;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import zipkin2.elasticsearch.ElasticsearchStorage;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 final class HostsConverter {
-  static final Logger LOG = Logger.getLogger(ElasticsearchStorage.class.getName());
+  static final Logger LOGGER = LogManager.getLogger();
 
   static List<URI> convert(String hosts) {
     if (hosts == null) return Collections.singletonList(URI.create("http://localhost:9200"));
@@ -34,8 +34,7 @@ final class HostsConverter {
       if (result.getPort() == -1) {
         return URI.create("http://" + host + ":9200");
       } else if (result.getPort() == 9300) {
-        LOG.warning(
-          "Native transport no longer supported. Changing " + host + " to http port 9200");
+        LOGGER.warn("Native transport no longer supported. Changing {} to http port 9200", host);
         return URI.create("http://" + host.replace(":9300", ":9200"));
       }
       return result;
