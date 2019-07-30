@@ -16,7 +16,6 @@ package zipkin2.server.internal.elasticsearch;
 import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.ClientRequestContext;
-import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
@@ -37,7 +36,6 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -174,9 +172,9 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     context.register(CustomizerConfiguration.class);
     context.refresh();
 
-    HttpClient client = context.getBean(LazyHttpClient.class).get();
-    assertThat(client.options().maxResponseLength()).isEqualTo(12345L);
-    assertThat(client.options().httpHeaders().get("test")).isEqualTo("bar");
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
+    assertThat(factory.options.maxResponseLength()).isEqualTo(12345L);
+    assertThat(factory.options.httpHeaders().get("test")).isEqualTo("bar");
   }
 
   @Test public void timeout_defaultsTo10Seconds() {
@@ -184,10 +182,10 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    HttpClient client = context.getBean(LazyHttpClient.class).get();
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
     // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
-    assertThat(client.options().responseTimeoutMillis()).isEqualTo(10000L);
-    assertThat(client.options().writeTimeoutMillis()).isEqualTo(10000L);
+    assertThat(factory.options.responseTimeoutMillis()).isEqualTo(10000L);
+    assertThat(factory.options.writeTimeoutMillis()).isEqualTo(10000L);
   }
 
   @Test public void timeout_override() {
@@ -200,10 +198,10 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    HttpClient client = context.getBean(LazyHttpClient.class).get();
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
     // TODO(anuraaga): Verify connect timeout after https://github.com/line/armeria/issues/1890
-    assertThat(client.options().responseTimeoutMillis()).isEqualTo(timeout);
-    assertThat(client.options().writeTimeoutMillis()).isEqualTo(timeout);
+    assertThat(factory.options.responseTimeoutMillis()).isEqualTo(timeout);
+    assertThat(factory.options.writeTimeoutMillis()).isEqualTo(timeout);
   }
 
   @Test public void strictTraceId_defaultsToTrue() {
@@ -313,11 +311,11 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    HttpClient client = context.getBean(LazyHttpClient.class).get();
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
 
     Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
     Client<HttpRequest, HttpResponse> decorated =
-      client.options().decoration().decorate(HttpRequest.class, HttpResponse.class, delegate);
+      factory.options.decoration().decorate(HttpRequest.class, HttpResponse.class, delegate);
 
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
     HttpRequest req = HttpRequest.of(HttpMethod.GET, "/");
@@ -340,10 +338,10 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
-    HttpClient client = context.getBean(LazyHttpClient.class).get();
+    HttpClientFactory factory = context.getBean(HttpClientFactory.class);
 
     Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
-    Client<HttpRequest, HttpResponse> decorated = client.options().decoration()
+    Client<HttpRequest, HttpResponse> decorated = factory.options.decoration()
       .decorate(HttpRequest.class, HttpResponse.class, delegate);
 
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883

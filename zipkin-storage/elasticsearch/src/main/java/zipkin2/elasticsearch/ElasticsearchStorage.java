@@ -61,11 +61,10 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   public interface LazyHttpClient extends Supplier<HttpClient>, Closeable {
     /**
      * Lazily creates and instance of the http client configured to the correct elasticsearch host
-     * or cluster. Note this value is only read once.
+     * or cluster. The same value should always be returned.
      */
     @Override HttpClient get();
 
-    /** If the client has been created, this will close it and any resources used by it. */
     @Override default void close() {
     }
   }

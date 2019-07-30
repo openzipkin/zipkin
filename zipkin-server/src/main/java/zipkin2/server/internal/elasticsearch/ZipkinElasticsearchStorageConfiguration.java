@@ -74,12 +74,19 @@ public class ZipkinElasticsearchStorageConfiguration {
     return new ClientFactoryBuilder().useHttp2Preface(false).connectTimeoutMillis(timeout).build();
   }
 
+  @Bean HttpClientFactory esHttpClientFactory(ZipkinElasticsearchStorageProperties es,
+    @Qualifier(QUALIFIER) ClientFactory factory,
+    @Qualifier(QUALIFIER) SessionProtocol protocol,
+    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> options
+  ) {
+    return new HttpClientFactory(es, factory, protocol, options);
+  }
+
   @Bean @ConditionalOnMissingBean StorageComponent storage(
     ZipkinElasticsearchStorageProperties es,
-    @Qualifier(QUALIFIER) ClientFactory clientFactory,
-    @Qualifier(QUALIFIER) SessionProtocol sessionProtocol,
+    HttpClientFactory esHttpClientFactory,
+    @Qualifier(QUALIFIER) SessionProtocol protocol,
     @Qualifier(QUALIFIER) Supplier<EndpointGroup> initialEndpoints,
-    @Qualifier(QUALIFIER) List<Consumer<ClientOptionsBuilder>> clientCustomizers,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
     @Value("${zipkin.storage.strict-trace-id:true}") boolean strictTraceId,
     @Value("${zipkin.storage.search-enabled:true}") boolean searchEnabled,
@@ -87,8 +94,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     ElasticsearchStorage.Builder builder = es
-      .toBuilder(new LazyHttpClientImpl(clientFactory, sessionProtocol, initialEndpoints,
-        clientCustomizers, es.getTimeout(), es.getHttpLogging()))
+      .toBuilder(new LazyHttpClientImpl(esHttpClientFactory, protocol, initialEndpoints))
       .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
