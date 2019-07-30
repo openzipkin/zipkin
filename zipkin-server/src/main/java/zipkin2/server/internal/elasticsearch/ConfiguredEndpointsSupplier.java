@@ -23,14 +23,15 @@ import com.linecorp.armeria.common.util.AbstractListenable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 // TODO: testme
-final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
+final class ConfiguredEndpointsSupplier implements Supplier<EndpointGroup> {
   final String hosts;
   final SessionProtocol sessionProtocol;
 
-  StaticEndpointGroupSupplier(SessionProtocol sessionProtocol, String hosts) {
+  ConfiguredEndpointsSupplier(SessionProtocol sessionProtocol, String hosts) {
     this.hosts = hosts == null || hosts.isEmpty() ? "localhost:9200" : hosts;
     this.sessionProtocol = sessionProtocol;
   }
@@ -46,7 +47,7 @@ final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
       }
       // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint group
       // to round-robin over them.
-      return new DnsAddressEndpointGroupBuilder(host).port(port).build();
+      return resolveDnsAddresses(host, port);
     }
 
     List<EndpointGroup> endpointGroups = new ArrayList<>();
@@ -59,7 +60,7 @@ final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
         // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
         // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
         // with single IPs freely, they'll all get used.
-        endpointGroups.add(DnsAddressEndpointGroup.of(url.getHost(), getPort(url)));
+        endpointGroups.add(resolveDnsAddresses(url.getHost(), getPort(url)));
       }
     }
 
@@ -69,6 +70,17 @@ final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
 
     return endpointGroups.size() == 1 ? endpointGroups.get(0)
       : new CompositeEndpointGroup(endpointGroups);
+  }
+
+  // Rather than result in an empty group. Await DNS resolution as this call is deferred anyway
+  DnsAddressEndpointGroup resolveDnsAddresses(String host, int port) {
+    DnsAddressEndpointGroup result = new DnsAddressEndpointGroupBuilder(host).port(port).build();
+    try {
+      result.awaitInitialEndpoints(1, TimeUnit.SECONDS);
+    } catch (Exception e) {
+      // let it fail later
+    }
+    return result;
   }
 
   int getPort(URI url) {
@@ -102,6 +114,6 @@ final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
   }
 
   @Override public String toString() {
-    return "StaticEndpointGroupSupplier{hosts=" + hosts + "}";
+    return "ConfiguredEndpointsSupplier{hosts=" + hosts + "}";
   }
 }

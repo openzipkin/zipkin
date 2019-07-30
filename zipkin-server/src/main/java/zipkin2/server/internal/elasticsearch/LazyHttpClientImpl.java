@@ -30,15 +30,15 @@ import static com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy.ROU
 final class LazyHttpClientImpl implements LazyHttpClient {
   final HttpClientFactory factory;
   final SessionProtocol protocol;
-  final Supplier<EndpointGroup> initialEndpoints;
+  final Supplier<EndpointGroup> configuredEndpoints;
 
   volatile HttpClient result;
 
   LazyHttpClientImpl(HttpClientFactory factory, SessionProtocol protocol,
-    Supplier<EndpointGroup> initialEndpoints) {
+    Supplier<EndpointGroup> configuredEndpoints) {
     this.factory = factory;
     this.protocol = protocol;
-    this.initialEndpoints = initialEndpoints;
+    this.configuredEndpoints = configuredEndpoints;
   }
 
   @Override public void close() {
@@ -61,7 +61,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   Endpoint getEndpoint() {
-    EndpointGroup endpointGroup = initialEndpoints.get();
+    EndpointGroup endpointGroup = configuredEndpoints.get();
     if (endpointGroup instanceof StaticEndpointGroup && endpointGroup.endpoints().size() == 1) {
       // Just one non-domain URL, can connect directly without enabling load balancing.
       return endpointGroup.endpoints().get(0);
@@ -97,6 +97,6 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   @Override public final String toString() {
-    return initialEndpoints.toString();
+    return configuredEndpoints.toString();
   }
 }

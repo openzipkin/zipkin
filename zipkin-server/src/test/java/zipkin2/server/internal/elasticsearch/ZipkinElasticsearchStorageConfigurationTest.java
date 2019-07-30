@@ -134,7 +134,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     assertThat(context.getBean(SessionProtocol.class))
       .isEqualTo(SessionProtocol.HTTPS);
-    assertThat(context.getBean(StaticEndpointGroupSupplier.class).get().endpoints().get(0).port())
+    assertThat(context.getBean(ConfiguredEndpointsSupplier.class).get().endpoints().get(0).port())
       .isEqualTo(443);
   }
 
