@@ -51,7 +51,14 @@ const TracesScatter = ({ traceSummaries, history }) => {
 
   return (
     <ResponsiveContainer width="100%" height={200}>
-      <ScatterChart margin={{ top: 30, right: 50, bottom: 20 }}>
+      <ScatterChart
+        margin={{
+          top: 30,
+          right: 50,
+          bottom: 20,
+          left: 20,
+        }}
+      >
         <CartesianGrid strokeDasharray="5 3" />
         <Tooltip cursor={{ strokeDasharray: '3 3' }} formatter={tooltipFormatter} />
         <XAxis name="Start Time" type="number" dataKey="timestamp" domain={['auto', 'auto']} tickFormatter={xAxisFormatter} />
