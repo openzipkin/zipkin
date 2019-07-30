@@ -11,4 +11,26 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export { default } from './Browser';
+import React from 'react';
+import Box from '@material-ui/core/Box';
+import { AutoSizer } from 'react-virtualized';
+
+import DependenciesContainer from '../../../containers/Dependencies/DependenciesContainer';
+
+const DependenciesTab = () => (
+  <AutoSizer>
+    {
+      ({ height, width }) => (
+        <Box
+          height={height}
+          width={width}
+          overflow="auto"
+        >
+          <DependenciesContainer />
+        </Box>
+      )
+    }
+  </AutoSizer>
+);
+
+export default DependenciesTab;

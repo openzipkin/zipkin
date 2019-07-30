@@ -18,7 +18,6 @@ import { withRouter } from 'react-router';
 import moment from 'moment';
 import queryString from 'query-string';
 import _ from 'lodash';
-import { AutoSizer } from 'react-virtualized';
 import { makeStyles } from '@material-ui/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Box from '@material-ui/core/Box';
@@ -29,8 +28,8 @@ import Typography from '@material-ui/core/Typography';
 
 import TraceJsonUploader from './TraceJsonUploader';
 import TraceIdSearchInput from './TraceIdSearchInput';
-import TracesTab from '../../containers/Browser/BrowserContainer';
-import DependenciesTab from '../../containers/Dependencies/DependenciesContainer';
+import TracesTab from './TracesTab';
+import DependenciesTab from './DependenciesTab';
 import GlobalSearch from '../GlobalSearch';
 import {
   buildCommonQueryParameters,
@@ -175,14 +174,14 @@ const DiscoverPage = ({ history, location }) => {
       }
     }
   }, [
-      findTraces,
-      findDependencies,
-      conditions,
-      lookbackCondition,
-      limitCondition,
-      location.search,
-      history,
-    ]);
+    findTraces,
+    findDependencies,
+    conditions,
+    lookbackCondition,
+    limitCondition,
+    location.search,
+    history,
+  ]);
 
   const handleKeyDown = useCallback((event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
@@ -293,20 +292,8 @@ const DiscoverPage = ({ history, location }) => {
           </AppBar>
           { /* 2rem is the height of the Appbar. */}
           <Box height="calc(100% - 2rem)">
-            <AutoSizer>
-              {
-                ({ height, width }) => (
-                  <Box
-                    height={height}
-                    width={width}
-                    overflow="auto"
-                  >
-                    {tabValue === tracesTab && <TracesTab />}
-                    {tabValue === dependenciesTab && <DependenciesTab />}
-                  </Box>
-                )
-              }
-            </AutoSizer>
+            {tabValue === tracesTab && <TracesTab />}
+            {tabValue === dependenciesTab && <DependenciesTab />}
           </Box>
         </Box>
       </Paper>

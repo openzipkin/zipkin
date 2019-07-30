@@ -12,33 +12,52 @@
  * the License.
  */
 export const sortingMethods = {
-  LONGEST: 'LONGEST',
-  SHORTEST: 'SHORTEST',
-  NEWEST: 'NEWEST',
-  OLDEST: 'OLDEST',
+  LONGEST_FIRST: 'LONGEST_FIRST',
+  SHORTEST_FIRST: 'SHORTEST_FIRST',
+  NEWEST_FIRST: 'NEWEST_FIRST',
+  OLDEST_FIRST: 'OLDEST_FIRST',
 };
-
-export const sortingMethodOptions = [
-  { value: sortingMethods.LONGEST, label: 'Longest First' },
-  { value: sortingMethods.SHORTEST, label: 'Shortest First' },
-  { value: sortingMethods.NEWEST, label: 'Newest First' },
-  { value: sortingMethods.OLDEST, label: 'Oldest First' },
-];
 
 export const sortTraceSummaries = (traceSummaries, sortingMethod) => {
   const copied = [...traceSummaries];
   return copied.sort((a, b) => {
     switch (sortingMethod) {
-      case sortingMethods.LONGEST:
+      case sortingMethods.LONGEST_FIRST:
         return b.duration - a.duration;
-      case sortingMethods.SHORTEST:
+      case sortingMethods.SHORTEST_FIRST:
         return a.duration - b.duration;
-      case sortingMethods.NEWEST:
+      case sortingMethods.NEWEST_FIRST:
         return b.timestamp - a.timestamp;
-      case sortingMethods.OLDEST:
+      case sortingMethods.OLDEST_FIRST:
         return a.timestamp - b.timestamp;
       default:
         return 0;
     }
   });
 };
+
+export const extractAllServiceNames = (traceSummaries) => {
+  const result = [];
+  traceSummaries.forEach((traceSummary) => {
+    if (!traceSummary.serviceSummaries) {
+      return;
+    }
+    traceSummary.serviceSummaries.forEach((serviceSummary) => {
+      result.push(serviceSummary.serviceName);
+    });
+  });
+  return Array.from(new Set(result)); // For uniqueness
+};
+
+export const filterTraceSummaries = (traceSummaries, filters) => traceSummaries.filter(
+  (traceSummary) => {
+    for (let i = 0; i < filters.length; i += 1) {
+      if (!traceSummary.serviceSummaries.find(
+        serviceSummary => serviceSummary.serviceName === filters[i],
+      )) {
+        return false;
+      }
+    }
+    return true;
+  },
+);
