@@ -174,14 +174,14 @@ const DiscoverPage = ({ history, location }) => {
       }
     }
   }, [
-      findTraces,
-      findDependencies,
-      conditions,
-      lookbackCondition,
-      limitCondition,
-      location.search,
-      history,
-    ]);
+    findTraces,
+    findDependencies,
+    conditions,
+    lookbackCondition,
+    limitCondition,
+    location.search,
+    history,
+  ]);
 
   const handleKeyDown = useCallback((event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {

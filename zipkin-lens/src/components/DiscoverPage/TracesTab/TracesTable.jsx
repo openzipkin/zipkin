@@ -17,7 +17,7 @@ import { AutoSizer } from 'react-virtualized';
 import Box from '@material-ui/core/Box';
 
 import TracesTableHead from './TracesTableHead';
-import TracesTableBody from './TracesTableBody';
+import TracesTableRow from './TracesTableRow';
 import { traceSummariesPropTypes } from '../../../prop-types';
 
 const propTypes = {
@@ -43,10 +43,15 @@ const TracesTable = ({
         {
           ({ height, width }) => (
             <Box width={width} height={height} overflow="auto">
-              <TracesTableBody
-                traceSummaries={traceSummaries}
-                onAddFilter={onAddFilter}
-              />
+              {
+                traceSummaries.map(traceSummary => (
+                  <TracesTableRow
+                    key={traceSummary.traceId}
+                    traceSummary={traceSummary}
+                    onAddFilter={onAddFilter}
+                  />
+                ))
+              }
             </Box>
           )
         }
