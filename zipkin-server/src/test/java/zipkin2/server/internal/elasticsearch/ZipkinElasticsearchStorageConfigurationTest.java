@@ -127,13 +127,15 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   @Test public void https() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:https://host1:9201")
+      "zipkin.storage.elasticsearch.hosts:https://localhost")
       .applyTo(context);
     Access.registerElasticsearchHttp(context);
     context.refresh();
 
     assertThat(context.getBean(SessionProtocol.class))
       .isEqualTo(SessionProtocol.HTTPS);
+    assertThat(context.getBean(StaticEndpointGroupSupplier.class).get().endpoints().get(0).port())
+      .isEqualTo(443);
   }
 
   @Test public void defaultsToPort9200() {

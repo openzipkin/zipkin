@@ -51,8 +51,9 @@ public class ZipkinElasticsearchStorageConfiguration {
 
   // Exposed as a bean so that zipkin-aws can override this as sourced from the AWS endpoints api
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean
-  Supplier<EndpointGroup> esInitialEndpoints(ZipkinElasticsearchStorageProperties es) {
-    return new StaticEndpointGroupSupplier(es.getHosts());
+  Supplier<EndpointGroup> esInitialEndpoints(
+    SessionProtocol esSessionProtocol, ZipkinElasticsearchStorageProperties es) {
+    return new StaticEndpointGroupSupplier(esSessionProtocol, es.getHosts());
   }
 
   // Exposed as a bean so that zipkin-aws can override this to always be SSL

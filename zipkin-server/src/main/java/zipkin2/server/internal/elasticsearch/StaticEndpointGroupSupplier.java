@@ -18,17 +18,21 @@ import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
+import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.util.AbstractListenable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
 
+// TODO: testme
 final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
   final String hosts;
+  final SessionProtocol sessionProtocol;
 
-  StaticEndpointGroupSupplier(String hosts) {
+  StaticEndpointGroupSupplier(SessionProtocol sessionProtocol, String hosts) {
     this.hosts = hosts == null || hosts.isEmpty() ? "localhost:9200" : hosts;
+    this.sessionProtocol = sessionProtocol;
   }
 
   @Override public EndpointGroup get() {
@@ -36,12 +40,13 @@ final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
     if (initialURLs.size() == 1) {
       URI url = initialURLs.get(0);
       String host = url.getHost();
+      int port = getPort(url);
       if (isIpAddress(host) || host.equals("localhost")) {
-        return new StaticEndpointGroup(Endpoint.of(host, url.getPort()));
+        return new StaticEndpointGroup(Endpoint.of(host, port));
       }
       // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint group
       // to round-robin over them.
-      return new DnsAddressEndpointGroupBuilder(host).port(url.getPort()).build();
+      return new DnsAddressEndpointGroupBuilder(host).port(port).build();
     }
 
     List<EndpointGroup> endpointGroups = new ArrayList<>();
@@ -54,7 +59,7 @@ final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
         // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
         // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
         // with single IPs freely, they'll all get used.
-        endpointGroups.add(DnsAddressEndpointGroup.of(url.getHost(), url.getPort()));
+        endpointGroups.add(DnsAddressEndpointGroup.of(url.getHost(), getPort(url)));
       }
     }
 
@@ -64,6 +69,12 @@ final class StaticEndpointGroupSupplier implements Supplier<EndpointGroup> {
 
     return endpointGroups.size() == 1 ? endpointGroups.get(0)
       : new CompositeEndpointGroup(endpointGroups);
+  }
+
+  int getPort(URI url) {
+    int port = url.getPort();
+    if (port == -1) port = sessionProtocol.defaultPort();
+    return port;
   }
 
   // TODO(anuraaga): Move this upstream - https://github.com/line/armeria/issues/1897
