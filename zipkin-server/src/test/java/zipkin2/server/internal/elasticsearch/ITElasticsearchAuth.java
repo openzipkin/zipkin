@@ -36,7 +36,6 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.Assert.fail;
 import static zipkin2.server.internal.elasticsearch.ITElasticsearchHealthCheck.YELLOW_RESPONSE;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.QUALIFIER;
 
@@ -76,9 +75,7 @@ public class ITElasticsearchAuth {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.username:Aladdin",
       "zipkin.storage.elasticsearch.password:OpenSesame",
-      // force health check usage
-      "zipkin.storage.elasticsearch.hosts:https://127.0.0.1:1234,https://127.0.0.1:"
-        + server.httpsPort())
+      "zipkin.storage.elasticsearch.hosts:https://127.0.0.1:" + server.httpsPort())
       .applyTo(context);
     context.register(
       TlsSelfSignedConfiguration.class,
@@ -95,22 +92,9 @@ public class ITElasticsearchAuth {
   @Test public void healthcheck_usesAuthAndTls() throws Exception {
     assertThat(storage.check().ok()).isTrue();
 
-    // This loops to avoid a race condition
-    boolean indexHealth = false, clusterHealth = false;
-    while (!indexHealth || !clusterHealth) {
-      AggregatedHttpRequest next = CAPTURED_REQUESTS.take();
-      // hard coded for sanity taken from https://en.wikipedia.org/wiki/Basic_access_authentication
-      assertThat(next.headers().get("Authorization"))
-        .isEqualTo("Basic QWxhZGRpbjpPcGVuU2VzYW1l");
-
-      String path = next.path();
-      if (path.equals("/_cluster/health")) {
-        clusterHealth = true;
-      } else if (path.equals("/_cluster/health/zipkin*span-*")) {
-        indexHealth = true;
-      } else {
-        fail("unexpected request to " + path);
-      }
-    }
+    AggregatedHttpRequest next = CAPTURED_REQUESTS.take();
+    // hard coded for sanity taken from https://en.wikipedia.org/wiki/Basic_access_authentication
+    assertThat(next.headers().get("Authorization"))
+      .isEqualTo("Basic QWxhZGRpbjpPcGVuU2VzYW1l");
   }
 }

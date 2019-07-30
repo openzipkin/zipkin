@@ -67,6 +67,14 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       return endpointGroup.endpoints().get(0);
     }
 
+    // TODO: why must we do this instead of using direct type references.
+    // The static factory is concerning.
+    EndpointGroupRegistry.register("elasticsearch", endpointGroup, ROUND_ROBIN);
+    return Endpoint.ofGroup("elasticsearch");
+  }
+
+  // Unused code until we can get to a point of stability. This must become optional if we add it.
+  HttpHealthCheckedEndpointGroup decorateHealthCheck(EndpointGroup endpointGroup) {
     HttpHealthCheckedEndpointGroup healthChecked =
       new HttpHealthCheckedEndpointGroupBuilder(endpointGroup, "/_cluster/health")
         .protocol(protocol)
@@ -78,15 +86,14 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     // The alternative is round-robin, which could be unlucky and hit a bad node first.
     //
     // We are blocking a second as this should be enough time for a health check to respond
+    // TODO: I don't know if this is enough time considering amazon and it is really too fragile
     try {
       healthChecked.awaitInitialEndpoints(1, TimeUnit.SECONDS);
     } catch (Exception e) {
       healthChecked.close(); // we'll recreate it the next time around.
       throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
     }
-
-    EndpointGroupRegistry.register("elasticsearch", healthChecked, ROUND_ROBIN);
-    return Endpoint.ofGroup("elasticsearch");
+    return healthChecked;
   }
 
   @Override public final String toString() {

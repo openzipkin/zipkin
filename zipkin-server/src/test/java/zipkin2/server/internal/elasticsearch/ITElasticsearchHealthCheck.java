@@ -115,8 +115,6 @@ public class ITElasticsearchHealthCheck {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isFalse();
-      assertThat(result.error()).hasMessage(
-        "couldn't connect any of [Endpoint{127.0.0.1:1234, weight=1000}, Endpoint{127.0.0.1:5678, weight=1000}]");
     }
   }
 }
