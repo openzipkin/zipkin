@@ -16,6 +16,7 @@ package zipkin2.elasticsearch.internal.client;
 import com.fasterxml.jackson.core.JsonParser;
 import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.UnprocessedRequestException;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -23,6 +24,7 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
@@ -33,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import zipkin2.Call;
 import zipkin2.Callback;
 
@@ -158,6 +161,16 @@ public final class HttpCall<V> extends Call.Base<V> {
         ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
         // This should never be used in practice since the module runs in an Armeria server.
         response::aggregate);
+    responseFuture = responseFuture.exceptionally(t -> {
+      if (t instanceof UnprocessedRequestException) {
+        Throwable cause = t.getCause();
+        Exceptions.clearTrace(cause);
+        throw new RejectedExecutionException("Could not process request.", cause);
+      } else {
+        Exceptions.throwUnsafely(t);
+      }
+      return null;
+    });
     this.responseFuture = responseFuture;
     return responseFuture;
   }
