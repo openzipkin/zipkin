@@ -1,28 +1,12 @@
-/*
- * Copyright 2015-2019 The OpenZipkin Authors
- *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
- * in compliance with the License. You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software distributed under the License
- * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
- * or implied. See the License for the specific language governing permissions and limitations under
- * the License.
- */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.common.AggregatedHttpRequest;
-import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
+import com.linecorp.armeria.server.healthcheck.HealthCheckService;
+import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
-import org.junit.After;
+import java.util.concurrent.TimeUnit;
+import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -31,91 +15,144 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
-import static com.linecorp.armeria.common.HttpStatus.OK;
-import static com.linecorp.armeria.common.MediaType.JSON;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
+import static zipkin2.server.internal.elasticsearch.TestResponses.GREEN_RESPONSE;
 
 public class ITElasticsearchHealthCheck {
 
-  static final AggregatedHttpResponse YELLOW_RESPONSE = AggregatedHttpResponse.of(OK, JSON,
-    "{\n"
-      + "  \"cluster_name\": \"CollectorDBCluster\",\n"
-      + "  \"status\": \"yellow\",\n"
-      + "  \"timed_out\": false,\n"
-      + "  \"number_of_nodes\": 1,\n"
-      + "  \"number_of_data_nodes\": 1,\n"
-      + "  \"active_primary_shards\": 5,\n"
-      + "  \"active_shards\": 5,\n"
-      + "  \"relocating_shards\": 0,\n"
-      + "  \"initializing_shards\": 0,\n"
-      + "  \"unassigned_shards\": 5,\n"
-      + "  \"delayed_unassigned_shards\": 0,\n"
-      + "  \"number_of_pending_tasks\": 0,\n"
-      + "  \"number_of_in_flight_fetch\": 0,\n"
-      + "  \"task_max_waiting_in_queue_millis\": 0,\n"
-      + "  \"active_shards_percent_as_number\": 50\n"
-      + "}\n");
+  static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
-  static final BlockingQueue<AggregatedHttpRequest> CAPTURED_REQUESTS = new LinkedBlockingQueue<>();
+  @ClassRule public static ServerRule server1 = new ServerRule() {
+    @Override protected void configure(ServerBuilder sb) {
+      sb.service("/_cluster/health", HealthCheckService.of(server1Health));
+      sb.serviceUnder("/_cluster/health/", (ctx, req) -> HttpResponse.of(GREEN_RESPONSE));
+    }
+  };
 
-  @ClassRule public static ServerRule server = new ServerRule() {
-    @Override protected void configure(ServerBuilder sb) throws Exception {
-      sb.http(0);
+  static final SettableHealthChecker server2Health = new SettableHealthChecker(true);
 
-      sb.serviceUnder("/", (ctx, req) -> {
-        CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
-        req.aggregate().thenAccept(agg -> {
-          CAPTURED_REQUESTS.add(agg);
-          responseFuture.complete(HttpResponse.of(YELLOW_RESPONSE));
-        }).exceptionally(t -> {
-          responseFuture.completeExceptionally(t);
-          return null;
-        });
-        return HttpResponse.from(responseFuture);
-      });
+  @ClassRule public static ServerRule server2 = new ServerRule() {
+    @Override protected void configure(ServerBuilder sb) {
+      sb.service("/_cluster/health", HealthCheckService.of(server2Health));
+      sb.serviceUnder("/_cluster/health/", (ctx, req) -> HttpResponse.of(GREEN_RESPONSE));
     }
   };
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After public void close() {
-    CAPTURED_REQUESTS.clear();
-  }
+  @Before public void setUp() {
+    server1Health.setHealthy(true);
+    server2Health.setHealthy(true);
 
-  /**
-   * This blocks for less than the timeout of 2 second to prove we defer i/o until first use
-   * of the storage component.
-   */
-  @Test(timeout = 1900L) public void defersIOUntilFirstUse() throws IOException {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.timeout:2000",
-      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234,127.0.0.1:5678")
+      "zipkin.storage.elasticsearch.timeout:200",
+      "zipkin.storage.elasticsearch.health-check.enabled:true",
+      "zipkin.storage.elasticsearch.health-check.interval:100ms",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:" +
+        server1.httpPort() + ",127.0.0.1:" + server2.httpPort())
       .applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinElasticsearchStorageConfiguration.class);
     context.refresh();
-
-    context.getBean(ElasticsearchStorage.class).close();
   }
 
-  /** blocking a little is ok, but blocking forever is not. */
-  @Test(timeout = 3000L) public void doesntHangWhenAllDown() throws IOException {
-    TestPropertyValues.of(
-      "spring.config.name=zipkin-server",
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234,127.0.0.1:5678")
-      .applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchStorageConfiguration.class);
-    context.refresh();
+  @Test public void allHealthy() throws Exception {
+    try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      CheckResult result = storage.check();
+      assertThat(result.ok()).isTrue();
+    }
+  }
+
+  @Test public void oneHealthy() throws Exception {
+    server1Health.setHealthy(false);
+
+    try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      CheckResult result = storage.check();
+      assertThat(result.ok()).isTrue();
+    }
+  }
+
+  @Test public void noneHealthy() throws Exception {
+    server1Health.setHealthy(false);
+    server2Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isFalse();
+    }
+  }
+
+  @Test public void healthyThenNotHealthyThenHealthy() throws Exception {
+    try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      CheckResult result = storage.check();
+      assertThat(result.ok()).isTrue();
+
+      server1Health.setHealthy(false);
+      server2Health.setHealthy(false);
+
+      // Health check interval is 100ms
+      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
+        assertThat(storage.check().ok()).isFalse());
+
+      server1Health.setHealthy(true);
+
+      // Health check interval is 100ms
+      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
+        assertThat(storage.check().ok()).isTrue());
+    }
+  }
+
+  @Test public void notHealthyThenHealthyThenNotHealthy() throws Exception {
+    server1Health.setHealthy(false);
+    server2Health.setHealthy(false);
+
+    try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      CheckResult result = storage.check();
+      assertThat(result.ok()).isFalse();
+
+      server2Health.setHealthy(true);
+
+      // Health check interval is 100ms
+      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
+        assertThat(storage.check().ok()).isTrue());
+
+      server2Health.setHealthy(false);
+
+      // Health check interval is 100ms
+      await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
+        assertThat(storage.check().ok()).isFalse());
+    }
+  }
+
+  @Test public void healthCheckDisabled() throws Exception {
+    AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+
+    TestPropertyValues.of(
+      "spring.config.name=zipkin-server",
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.timeout:200",
+      "zipkin.storage.elasticsearch.health-check.enabled:false",
+      "zipkin.storage.elasticsearch.health-check.interval:100ms",
+      "zipkin.storage.elasticsearch.hosts:127.0.0.1:" +
+        server1.httpPort() + ",127.0.0.1:" + server2.httpPort())
+      .applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinElasticsearchStorageConfiguration.class);
+    context.refresh();
+
+    server1Health.setHealthy(false);
+    server2Health.setHealthy(false);
+
+    try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      CheckResult result = storage.check();
+      // Even though cluster health is false, we ignore that and continue to check index health,
+      // which is correctly returned by our mock server.
+      assertThat(result.ok()).isTrue();
     }
   }
 }

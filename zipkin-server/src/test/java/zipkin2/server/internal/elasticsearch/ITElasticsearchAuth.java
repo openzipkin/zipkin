@@ -36,7 +36,7 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.server.internal.elasticsearch.ITElasticsearchHealthCheck.YELLOW_RESPONSE;
+import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration.QUALIFIER;
 
 public class ITElasticsearchAuth {

@@ -36,7 +36,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   /**
    * Configures the health-checking of endpoints by the Elasticsearch client.
    */
-  static class HealthCheck {
+  public static class HealthCheck {
     /** Indicates health checking is enabled. */
     private boolean enabled = true;
 
@@ -87,7 +87,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   private Integer maxRequests; // unused
 
-  private HealthCheck healthCheck;
+  private HealthCheck healthCheck = new HealthCheck();
 
   public String getPipeline() {
     return pipeline;
