@@ -172,6 +172,8 @@ public final class HttpCall<V> extends Call.Base<V> {
     responseFuture = responseFuture.exceptionally(t -> {
       if (t instanceof UnprocessedRequestException) {
         Throwable cause = t.getCause();
+        // Go ahead and reduce the output in logs since this is usually a configuration or
+        // infrastructure issue and the Armeria stack trace won't help debugging that.
         Exceptions.clearTrace(cause);
         throw new RejectedExecutionException("Rejected execution: " + cause.getMessage(), cause);
       } else {
