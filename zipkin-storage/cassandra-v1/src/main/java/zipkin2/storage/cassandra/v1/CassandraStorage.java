@@ -28,6 +28,7 @@ import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
+import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -369,6 +370,10 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
       }
     }
     return spanConsumer;
+  }
+
+  @Override public boolean isOverCapacity(Throwable e) {
+    return ResultSetFutureCall.isOverCapacity(e);
   }
 
   @Override public final String toString() {

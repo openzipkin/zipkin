@@ -58,6 +58,10 @@ public abstract class ForwardingStorageComponent extends StorageComponent {
     return delegate().check();
   }
 
+  @Override public boolean isOverCapacity(Throwable e) {
+    return delegate().isOverCapacity(e);
+  }
+
   @Override public void close() throws IOException {
     delegate().close();
   }

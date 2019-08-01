@@ -23,7 +23,6 @@ import com.datastax.driver.core.exceptions.QueryConsistencyException;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.RejectedExecutionException;
 import zipkin2.Call;
 import zipkin2.Callback;
 
@@ -79,22 +78,24 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
     return maybeFuture != null && maybeFuture.isCancelled();
   }
 
+  /** @see zipkin2.storage.StorageComponent#isOverCapacity(java.lang.Throwable) */
+  public static boolean isOverCapacity(Throwable e) {
+    return e instanceof QueryConsistencyException ||
+      e instanceof BusyConnectionException ||
+      e instanceof BusyPoolException;
+  }
+
   static ResultSet getUninterruptibly(ListenableFuture<ResultSet> future) {
-    try {
-      if (future instanceof ResultSetFuture) {
-        return ((ResultSetFuture) future).getUninterruptibly();
-      }
-      try { // emulate ResultSetFuture.getUninterruptibly
-        return Uninterruptibles.getUninterruptibly(future);
-      } catch (ExecutionException e) {
-        Throwable cause = e.getCause();
-        if (cause instanceof Error) throw ((Error) cause);
-        if (cause instanceof DriverException) throw ((DriverException) cause).copy();
-        throw new DriverInternalError("Unexpected exception thrown", cause);
-      }
-    } catch (QueryConsistencyException | BusyConnectionException | BusyPoolException e) {
-      // Our throttling function relies on rejected execution when encountering load-specific errors
-      throw new RejectedExecutionException(e.getMessage(), e);
+    if (future instanceof ResultSetFuture) {
+      return ((ResultSetFuture) future).getUninterruptibly();
+    }
+    try { // emulate ResultSetFuture.getUninterruptibly
+      return Uninterruptibles.getUninterruptibly(future);
+    } catch (ExecutionException e) {
+      Throwable cause = e.getCause();
+      if (cause instanceof Error) throw ((Error) cause);
+      if (cause instanceof DriverException) throw ((DriverException) cause).copy();
+      throw new DriverInternalError("Unexpected exception thrown", cause);
     }
   }
 }

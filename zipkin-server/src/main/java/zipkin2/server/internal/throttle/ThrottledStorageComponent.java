@@ -29,6 +29,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.storage.ForwardingStorageComponent;
@@ -61,8 +62,8 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
 
     Limit limit = Gradient2Limit.newBuilder()
       .minLimit(minConcurrency)
-      .initialLimit(
-        minConcurrency) // Limiter will trend towards min until otherwise necessary so may as well start there
+      // Limiter will trend towards min until otherwise necessary so may as well start there
+      .initialLimit(minConcurrency)
       .maxConcurrency(maxConcurrency)
       .queueSize(0)
       .build();
@@ -89,7 +90,7 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
   }
 
   @Override public SpanConsumer spanConsumer() {
-    return new ThrottledSpanConsumer(delegate.spanConsumer(), limiter, executor);
+    return new ThrottledSpanConsumer(this);
   }
 
   @Override public void close() throws IOException {
@@ -102,18 +103,20 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
   }
 
   static final class ThrottledSpanConsumer implements SpanConsumer {
-    final SpanConsumer delegate;
-    final Limiter<Void> limiter;
     final ExecutorService executor;
+    final Limiter<Void> limiter;
+    final Predicate<Throwable> isOverCapacity;
+    final SpanConsumer delegate;
 
-    ThrottledSpanConsumer(SpanConsumer delegate, Limiter<Void> limiter, ExecutorService executor) {
-      this.delegate = delegate;
-      this.limiter = limiter;
-      this.executor = executor;
+    ThrottledSpanConsumer(ThrottledStorageComponent throttledStorage) {
+      this.executor = throttledStorage.executor;
+      this.limiter = throttledStorage.limiter;
+      this.isOverCapacity = throttledStorage::isOverCapacity;
+      this.delegate = throttledStorage.delegate.spanConsumer();
     }
 
     @Override public Call<Void> accept(List<Span> spans) {
-      return new ThrottledCall<>(executor, limiter, delegate.accept(spans));
+      return new ThrottledCall<>(executor, limiter, isOverCapacity, delegate.accept(spans));
     }
 
     @Override public String toString() {

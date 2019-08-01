@@ -21,6 +21,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Predicate;
 import zipkin2.Call;
 import zipkin2.Callback;
 
@@ -39,16 +40,20 @@ import zipkin2.Callback;
 final class ThrottledCall<V> extends Call.Base<V> {
   final ExecutorService executor;
   final Limiter<Void> limiter;
+  final Predicate<Throwable> isOverCapacity;
   final Call<V> delegate;
 
-  ThrottledCall(ExecutorService executor, Limiter<Void> limiter, Call<V> delegate) {
+  ThrottledCall(ExecutorService executor, Limiter<Void> limiter,
+    Predicate<Throwable> isOverCapacity, Call<V> delegate) {
     this.executor = executor;
     this.limiter = limiter;
+    this.isOverCapacity = isOverCapacity;
     this.delegate = delegate;
   }
 
   @Override protected V doExecute() throws IOException {
-    Listener limitListener = limiter.acquire(null).orElseThrow(RejectedExecutionException::new);
+    Listener limitListener = limiter.acquire(null)
+      .orElseThrow(RejectedExecutionException::new); // TODO: make an exception message
 
     try {
       // Make sure we throttle
@@ -66,7 +71,7 @@ final class ThrottledCall<V> extends Call.Base<V> {
       return result;
     } catch (ExecutionException e) {
       Throwable cause = e.getCause();
-      if (cause instanceof RejectedExecutionException) {
+      if (isOverCapacity.test(cause)) {
         // Storage rejected us, throttle back
         limitListener.onDropped();
       } else {
@@ -93,10 +98,11 @@ final class ThrottledCall<V> extends Call.Base<V> {
   }
 
   @Override protected void doEnqueue(Callback<V> callback) {
-    Listener limitListener = limiter.acquire(null).orElseThrow(RejectedExecutionException::new);
+    Listener limitListener = limiter.acquire(null)
+      .orElseThrow(RejectedExecutionException::new); // TODO: make an exception message
 
     try {
-      executor.execute(new QueuedCall<>(delegate, callback, limitListener));
+      executor.execute(new QueuedCall<>(this, callback, limitListener));
     } catch (RuntimeException | Error e) {
       propagateIfFatal(e);
       // Ignoring in all cases here because storage itself isn't saying we need to throttle.  Though, we may still be
@@ -107,7 +113,7 @@ final class ThrottledCall<V> extends Call.Base<V> {
   }
 
   @Override public Call<V> clone() {
-    return new ThrottledCall<>(executor, limiter, delegate.clone());
+    return new ThrottledCall<>(executor, limiter, isOverCapacity, delegate.clone());
   }
 
   @Override public String toString() {
@@ -123,11 +129,13 @@ final class ThrottledCall<V> extends Call.Base<V> {
 
   static final class QueuedCall<V> implements Runnable {
     final Call<V> delegate;
+    final Predicate<Throwable> isOverCapacity;
     final Callback<V> callback;
     final Listener limitListener;
 
-    QueuedCall(Call<V> delegate, Callback<V> callback, Listener limitListener) {
-      this.delegate = delegate;
+    QueuedCall(ThrottledCall<V> throttledCall, Callback<V> callback, Listener limitListener) {
+      this.delegate = throttledCall.delegate;
+      this.isOverCapacity = throttledCall.isOverCapacity;
       this.callback = callback;
       this.limitListener = limitListener;
     }
@@ -150,7 +158,7 @@ final class ThrottledCall<V> extends Call.Base<V> {
     }
 
     void enqueueAndWait() {
-      ThrottledCallback<V> throttleCallback = new ThrottledCallback<>(callback, limitListener);
+      ThrottledCallback<V> throttleCallback = new ThrottledCallback<>(this);
       delegate.enqueue(throttleCallback);
 
       // Need to wait here since the callback call will run asynchronously also.
@@ -164,13 +172,11 @@ final class ThrottledCall<V> extends Call.Base<V> {
   }
 
   static final class ThrottledCallback<V> implements Callback<V> {
-    final Callback<V> delegate;
-    final Listener limitListener;
+    final QueuedCall<V> call;
     final CountDownLatch latch = new CountDownLatch(1);
 
-    ThrottledCallback(Callback<V> delegate, Listener limitListener) {
-      this.delegate = delegate;
-      this.limitListener = limitListener;
+    ThrottledCallback(QueuedCall<V> call) {
+      this.call = call;
     }
 
     void await() {
@@ -178,15 +184,15 @@ final class ThrottledCall<V> extends Call.Base<V> {
         latch.await();
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
-        limitListener.onIgnore();
+        call.limitListener.onIgnore();
         throw new RuntimeException("Interrupted while blocking on a throttled call", e);
       }
     }
 
     @Override public void onSuccess(V value) {
       try {
-        limitListener.onSuccess();
-        delegate.onSuccess(value);
+        call.limitListener.onSuccess();
+        call.callback.onSuccess(value);
       } finally {
         latch.countDown();
       }
@@ -194,20 +200,20 @@ final class ThrottledCall<V> extends Call.Base<V> {
 
     @Override public void onError(Throwable t) {
       try {
-        if (t instanceof RejectedExecutionException) {
-          limitListener.onDropped();
+        if (call.isOverCapacity.test(t)) {
+          call.limitListener.onDropped();
         } else {
-          limitListener.onIgnore();
+          call.limitListener.onIgnore();
         }
 
-        delegate.onError(t);
+        call.callback.onError(t);
       } finally {
         latch.countDown();
       }
     }
 
     @Override public String toString() {
-      return "Throttled(" + delegate + ")";
+      return "Throttled(" + call.delegate + ")";
     }
   }
 }

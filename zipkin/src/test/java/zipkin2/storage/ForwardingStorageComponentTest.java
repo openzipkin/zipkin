@@ -15,6 +15,7 @@ package zipkin2.storage;
 
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.junit.Test;
@@ -65,6 +66,15 @@ public class ForwardingStorageComponentTest {
     assertThat(forwarder.check()).isEqualTo(down);
 
     verify(delegate).check();
+  }
+
+  @Test public void delegatesIsOverCapacity() {
+    Exception wayOver = new RejectedExecutionException();
+    when(delegate.isOverCapacity(wayOver)).thenReturn(true);
+
+    assertThat(forwarder.isOverCapacity(wayOver)).isEqualTo(true);
+
+    verify(delegate).isOverCapacity(wayOver);
   }
 
   @Test public void delegatesClose() throws IOException {

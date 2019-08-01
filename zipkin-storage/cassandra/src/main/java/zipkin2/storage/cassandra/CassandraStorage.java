@@ -16,6 +16,9 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.exceptions.BusyConnectionException;
+import com.datastax.driver.core.exceptions.BusyPoolException;
+import com.datastax.driver.core.exceptions.QueryConsistencyException;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
@@ -30,6 +33,7 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -45,7 +49,6 @@ import zipkin2.storage.StorageComponent;
  */
 @AutoValue
 public abstract class CassandraStorage extends StorageComponent {
-
   // @FunctionalInterface, except safe for lower language levels
   public interface SessionFactory {
     SessionFactory DEFAULT = new DefaultSessionFactory();
@@ -245,6 +248,10 @@ public abstract class CassandraStorage extends StorageComponent {
       return CheckResult.failed(e);
     }
     return CheckResult.OK;
+  }
+
+  @Override public boolean isOverCapacity(Throwable e) {
+    return ResultSetFutureCall.isOverCapacity(e);
   }
 
   @Override public final String toString() {
