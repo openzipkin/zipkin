@@ -15,8 +15,10 @@ package zipkin2.server.internal.elasticsearch;
 
 import java.io.Serializable;
 import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.logging.Logger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
@@ -41,6 +43,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     private boolean enabled = true;
 
     /** The time to wait between sending health check requests. */
+    @DurationUnit(ChronoUnit.MILLIS)
     private Duration interval = Duration.ofSeconds(3);
 
     public boolean isEnabled() {
