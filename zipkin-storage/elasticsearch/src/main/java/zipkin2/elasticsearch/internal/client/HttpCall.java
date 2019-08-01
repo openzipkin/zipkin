@@ -35,6 +35,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.RejectedExecutionException;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -115,7 +116,14 @@ public final class HttpCall<V> extends Call.Base<V> {
           + "Either use doEnqueue() or run this in a separate thread.");
       }
     }
-    AggregatedHttpResponse response = sendRequest().join();
+    final AggregatedHttpResponse response;
+    try {
+      response = sendRequest().join();
+    } catch (CompletionException e) {
+      propagateIfFatal(e);
+      Exceptions.throwUnsafely(e.getCause());
+      return null;  // Unreachable
+    }
     return parseResponse(response, bodyConverter);
   }
 
@@ -165,7 +173,7 @@ public final class HttpCall<V> extends Call.Base<V> {
       if (t instanceof UnprocessedRequestException) {
         Throwable cause = t.getCause();
         Exceptions.clearTrace(cause);
-        throw new RejectedExecutionException("Could not process request.", cause);
+        throw new RejectedExecutionException("Rejected execution: " + cause.getMessage(), cause);
       } else {
         Exceptions.throwUnsafely(t);
       }

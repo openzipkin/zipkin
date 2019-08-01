@@ -16,6 +16,8 @@ package zipkin2.elasticsearch; // to access package-private stuff
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.HttpClientBuilder;
+import com.linecorp.armeria.client.UnprocessedRequestException;
+import com.linecorp.armeria.client.endpoint.EndpointGroupException;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -35,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,6 +50,7 @@ import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.awaitility.Awaitility.await;
 
@@ -212,6 +216,22 @@ public class HttpCallTest {
     await().untilAsserted(() -> assertThat(log).doesNotHaveValue(null));
     assertThat(log.get().context().attr(HttpCall.NAME).get())
       .isEqualTo("custom-name");
+  }
+
+  @Test public void unprocessedRequest() throws Exception {
+    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+
+    AtomicReference<RequestLog> log = new AtomicReference<>();
+    http = new HttpCall.Factory(new HttpClientBuilder(server.httpUri("/"))
+      .decorator((client, ctx, req) -> {
+        throw new UnprocessedRequestException("Could not process request.",
+          new EndpointGroupException("No endpoints"));
+      })
+      .build());
+
+    assertThatThrownBy(() -> http.newCall(REQUEST, BodyConverters.NULL, "test").execute())
+      .isInstanceOf(RejectedExecutionException.class)
+      .hasMessageContaining("No endpoints");
   }
 
   // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.
