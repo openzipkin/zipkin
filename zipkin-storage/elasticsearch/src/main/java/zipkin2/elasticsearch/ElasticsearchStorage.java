@@ -21,6 +21,7 @@ import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
+import io.netty.util.AttributeKey;
 import java.io.Closeable;
 import java.io.IOException;
 import java.util.Collections;
@@ -51,6 +52,21 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
+
+  /**
+   * Use with something like <pre>{@code
+   *
+   * try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(
+   *   ElasticsearchStorage.CUSTOM_HTTP_SPAN_NAME).set("custom-name")) {
+   *   httpClient.execute(request).aggregate().join();
+   * }
+   *
+   * }</pre>
+   *
+   * <p>Only made public for use from zipkin-aws for annotating the domain endpoint request.
+   */
+  public static final AttributeKey<String> CUSTOM_HTTP_SPAN_NAME =
+    AttributeKey.valueOf(ElasticsearchStorage.class, "CUSTOM_HTTP_SPAN_NAME");
 
   /**
    * This defers creation of an {@link HttpClient}. This is needed because routinely, I/O occurs in

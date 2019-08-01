@@ -38,7 +38,6 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
@@ -134,8 +133,8 @@ public class ZipkinElasticsearchStorageConfiguration {
 
     return client -> {
       client.decorator((delegate, ctx, req) -> {
-        if (ctx.hasAttr(HttpCall.NAME)) { // override the span name if set
-          spanCustomizer.name(ctx.attr(HttpCall.NAME).get());
+        if (ctx.hasAttr(ElasticsearchStorage.CUSTOM_HTTP_SPAN_NAME)) { // override the span name if set
+          spanCustomizer.name(ctx.attr(ElasticsearchStorage.CUSTOM_HTTP_SPAN_NAME).get());
         }
         return delegate.execute(ctx, req);
       });

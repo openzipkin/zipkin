@@ -28,7 +28,6 @@ import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
 import java.io.FileNotFoundException;
@@ -39,12 +38,12 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.RejectedExecutionException;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 public final class HttpCall<V> extends Call.Base<V> {
-  public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
     /**
@@ -161,7 +160,8 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
-    try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(NAME).set(name))) {
+    try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(
+      ElasticsearchStorage.CUSTOM_HTTP_SPAN_NAME).set(name))) {
       response = httpClient.execute(request);
     }
     CompletableFuture<AggregatedHttpResponse> responseFuture =
