@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import zipkin2.CheckResult;
@@ -257,7 +256,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         HttpMethod.GET, "/_cluster/health/" + index);
       return http.newCall(request, READ_STATUS, "get-cluster-health").execute();
     } catch (IOException | RuntimeException e) {
-      if (e instanceof CompletionException) return CheckResult.failed(e.getCause());
       return CheckResult.failed(e);
     }
   }
