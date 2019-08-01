@@ -83,14 +83,14 @@ public class ITElasticsearchHealthCheck {
   }
 
   /**
-   * This blocks for less than the timeout of 1 second to prove we defer i/o until first use
+   * This blocks for less than the timeout of 2 second to prove we defer i/o until first use
    * of the storage component.
    */
-  @Test(timeout = 950L) public void defersIOUntilFirstUse() throws IOException {
+  @Test(timeout = 1900L) public void defersIOUntilFirstUse() throws IOException {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.timeout:1000",
+      "zipkin.storage.elasticsearch.timeout:2000",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234,127.0.0.1:5678")
       .applyTo(context);
     context.register(
