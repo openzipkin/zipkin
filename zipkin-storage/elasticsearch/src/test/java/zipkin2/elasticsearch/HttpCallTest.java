@@ -231,7 +231,7 @@ public class HttpCallTest {
 
     assertThatThrownBy(() -> http.newCall(REQUEST, BodyConverters.NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
-      .hasMessageContaining("No endpoints");
+      .hasMessage("Rejected execution: No endpoints");
   }
 
   // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.
