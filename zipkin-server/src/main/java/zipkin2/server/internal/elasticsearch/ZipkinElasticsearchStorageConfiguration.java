@@ -95,7 +95,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     ElasticsearchStorage.Builder builder = es
-      .toBuilder(new LazyHttpClientImpl(esHttpClientFactory, protocol, initialEndpoints))
+      .toBuilder(new LazyHttpClientImpl(esHttpClientFactory, protocol, initialEndpoints, es))
       .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)

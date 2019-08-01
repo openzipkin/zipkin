@@ -29,7 +29,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.server.internal.brave.TracingConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.server.internal.elasticsearch.ITElasticsearchHealthCheck.YELLOW_RESPONSE;
+import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 
 public class ITElasticsearchSelfTracing {
 
