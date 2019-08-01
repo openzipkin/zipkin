@@ -15,11 +15,15 @@ package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.exceptions.BusyConnectionException;
+import com.datastax.driver.core.exceptions.BusyPoolException;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.exceptions.DriverInternalError;
+import com.datastax.driver.core.exceptions.QueryConsistencyException;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.RejectedExecutionException;
 import zipkin2.Call;
 import zipkin2.Callback;
 
@@ -76,16 +80,21 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
   }
 
   static ResultSet getUninterruptibly(ListenableFuture<ResultSet> future) {
-    if (future instanceof ResultSetFuture) {
-      return ((ResultSetFuture) future).getUninterruptibly();
-    }
-    try { // emulate ResultSetFuture.getUninterruptibly
-      return Uninterruptibles.getUninterruptibly(future);
-    } catch (ExecutionException e) {
-      Throwable cause = e.getCause();
-      if (cause instanceof Error) throw ((Error) cause);
-      if (cause instanceof DriverException) throw ((DriverException) cause).copy();
-      throw new DriverInternalError("Unexpected exception thrown", cause);
+    try {
+      if (future instanceof ResultSetFuture) {
+        return ((ResultSetFuture) future).getUninterruptibly();
+      }
+      try { // emulate ResultSetFuture.getUninterruptibly
+        return Uninterruptibles.getUninterruptibly(future);
+      } catch (ExecutionException e) {
+        Throwable cause = e.getCause();
+        if (cause instanceof Error) throw ((Error) cause);
+        if (cause instanceof DriverException) throw ((DriverException) cause).copy();
+        throw new DriverInternalError("Unexpected exception thrown", cause);
+      }
+    } catch (QueryConsistencyException | BusyConnectionException | BusyPoolException e) {
+      // Our throttling function relies on rejected execution when encountering load-specific errors
+      throw new RejectedExecutionException(e.getMessage(), e);
     }
   }
 }
