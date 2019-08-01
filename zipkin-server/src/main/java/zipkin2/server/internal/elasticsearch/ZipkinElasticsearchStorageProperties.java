@@ -14,6 +14,7 @@
 package zipkin2.server.internal.elasticsearch;
 
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.logging.Logger;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import zipkin2.elasticsearch.ElasticsearchStorage;
@@ -30,6 +31,33 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     BASIC,
     HEADERS,
     BODY
+  }
+
+  /**
+   * Configures the health-checking of endpoints by the Elasticsearch client.
+   */
+  static class HealthCheck {
+    /** Indicates health checking is enabled. */
+    private boolean enabled = true;
+
+    /** The time to wait between sending health check requests. */
+    private Duration interval = Duration.ofSeconds(3);
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
+
+    public Duration getInterval() {
+      return interval;
+    }
+
+    public void setInterval(Duration interval) {
+      this.interval = interval;
+    }
   }
 
   static final Logger log = Logger.getLogger(ZipkinElasticsearchStorageProperties.class.getName());
@@ -58,6 +86,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private Integer timeout = 10_000;
 
   private Integer maxRequests; // unused
+
+  private HealthCheck healthCheck;
 
   public String getPipeline() {
     return pipeline;
@@ -149,6 +179,15 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
 
   public void setTimeout(Integer timeout) {
     this.timeout = timeout;
+  }
+
+  public HealthCheck getHealthCheck() {
+    return healthCheck;
+  }
+
+  public void setHealthCheck(
+    HealthCheck healthCheck) {
+    this.healthCheck = healthCheck;
   }
 
   public ElasticsearchStorage.Builder toBuilder(LazyHttpClient httpClient) {
