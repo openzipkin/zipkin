@@ -13,8 +13,6 @@
  */
 package zipkin2.elasticsearch;
 
-import static zipkin2.TestObjects.TRACE;
-
 final class TestResponses {
   static final String SPANS = "{\n"
     + "  \"took\": 4,\n"

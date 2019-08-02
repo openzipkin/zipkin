@@ -13,10 +13,11 @@
  */
 package zipkin2.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
-import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import java.io.IOException;
+import java.util.function.Supplier;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
@@ -225,10 +226,10 @@ final class VersionSpecificTemplates {
   enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
     INSTANCE;
 
-    @Override public Float convert(HttpData content) {
+    @Override public Float convert(JsonParser parser, Supplier<String> contentString) {
       // The version number is read only once per startup. Hence, there is less impact to allocating
       // strings. We retain the string so that it can be logged if the ES response is malformed.
-      String body = content.toStringUtf8();
+      String body = contentString.get();
       String version = null;
       try {
         version = OBJECT_MAPPER.readTree(body).at("/version/number").textValue();

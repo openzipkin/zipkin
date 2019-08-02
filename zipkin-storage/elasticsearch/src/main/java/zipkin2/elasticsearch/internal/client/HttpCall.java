@@ -37,6 +37,7 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Callback;
 
@@ -48,20 +49,10 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   public interface BodyConverter<V> {
     /**
-     * The source is from {@link AggregatedHttpResponse}, so act accordingly. Do not call {@link
-     * ReferenceCountUtil#safeRelease(Object)} because that is done upstream of this.
+     * Prefer using the {@code parser} for request-scoped conversions. Typically, {@code
+     * contentString} is only for an unexpected failure.
      */
-    V convert(HttpData content) throws IOException;
-  }
-
-  public interface InputStreamConverter<V> extends BodyConverter<V> {
-    V convert(InputStream content) throws IOException;
-
-    @Override default V convert(HttpData content) throws IOException {
-      try (InputStream stream = content.toInputStream()) {
-        return convert(stream);
-      }
-    }
+    V convert(JsonParser parser, Supplier<String> contentString) throws IOException;
   }
 
   public static class Factory {
@@ -200,17 +191,23 @@ public final class HttpCall<V> extends Call.Base<V> {
 
     HttpData content = response.content();
     try {
-      if (status.codeClass().equals(HttpStatusClass.SUCCESS)) {
-        return bodyConverter.convert(content);
+      if (status.code() == 404) throw new FileNotFoundException(request.path());
+
+      if (!status.codeClass().equals(HttpStatusClass.SUCCESS)) {
+        bodyConverter = (parser, contentString) -> {
+          parser = enterPath(parser, "message");
+          throw new RuntimeException(parser != null
+            ? parser.getValueAsString()
+            : "response for " + request.path() + " failed: " + contentString.get());
+        };
       }
-      String body = content.toStringUtf8();
-      if (status.code() == 404) {
-        throw new FileNotFoundException(request.path());
-      } else {
-        JsonParser parser = enterPath(JSON_FACTORY.createParser(body), "message");
-        throw new RuntimeException(parser != null
-          ? parser.getValueAsString()
-          : "response for " + request.path() + " failed: " + body);
+
+      try (InputStream stream = content.toInputStream();
+           JsonParser parser = JSON_FACTORY.createParser(stream)
+      ) {
+        return bodyConverter.convert(parser, content::toStringUtf8);
+      } finally {
+        ReferenceCountUtil.safeRelease(content);
       }
     } finally {
       ReferenceCountUtil.safeRelease(content);

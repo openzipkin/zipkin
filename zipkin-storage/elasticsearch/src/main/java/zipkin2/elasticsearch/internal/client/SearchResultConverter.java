@@ -16,16 +16,15 @@ package zipkin2.elasticsearch.internal.client;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
 import zipkin2.elasticsearch.internal.JsonSerializers.ObjectParser;
 
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
-import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
-public class SearchResultConverter<T> implements HttpCall.InputStreamConverter<List<T>> {
+public class SearchResultConverter<T> implements HttpCall.BodyConverter<List<T>> {
   final ObjectParser<T> adapter;
 
   public static <T> SearchResultConverter<T> create(ObjectParser<T> adapter) {
@@ -36,8 +35,9 @@ public class SearchResultConverter<T> implements HttpCall.InputStreamConverter<L
     this.adapter = adapter;
   }
 
-  @Override public List<T> convert(InputStream content) throws IOException {
-    JsonParser hits = enterPath(JSON_FACTORY.createParser(content), "hits", "hits");
+  @Override
+  public List<T> convert(JsonParser parser, Supplier<String> contentString) throws IOException {
+    JsonParser hits = enterPath(parser, "hits", "hits");
     if (hits == null || !hits.isExpectedStartArrayToken()) return Collections.emptyList();
 
     List<T> result = new ArrayList<>();

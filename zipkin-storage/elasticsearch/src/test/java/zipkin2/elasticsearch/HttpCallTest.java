@@ -53,6 +53,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.awaitility.Awaitility.await;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class HttpCallTest {
 
@@ -79,9 +80,10 @@ public class HttpCallTest {
   @Test public void emptyContent() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
 
-    assertThat(http.newCall(REQUEST, unused -> "not me", "test").execute()).isNull();
+    assertThat(http.newCall(REQUEST, (parser, contentString) -> fail(), "test").execute()).isNull();
+
     CompletableCallback<String> future = new CompletableCallback<>();
-    http.newCall(REQUEST, unused -> "not me", "test").enqueue(future);
+    http.newCall(REQUEST, (parser, contentString) -> "hello", "test").enqueue(future);
     assertThat(future.join()).isNull();
   }
 
@@ -89,7 +91,7 @@ public class HttpCallTest {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
-    http.newCall(REQUEST, content -> {
+    http.newCall(REQUEST, (parser, contentString) -> {
       throw new LinkageError();
     }, "test").enqueue(new Callback<Object>() {
       @Override public void onSuccess(@Nullable Object value) {
@@ -115,7 +117,7 @@ public class HttpCallTest {
   @Test public void executionException_conversionException() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(REQUEST, content -> {
+    Call<?> call = http.newCall(REQUEST, (parser, contentString) -> {
       throw new IllegalArgumentException("eeek");
     }, "test");
 
@@ -130,7 +132,7 @@ public class HttpCallTest {
   @Test public void cloned() throws Exception {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    Call<?> call = http.newCall(REQUEST, content -> null, "test");
+    Call<?> call = http.newCall(REQUEST, (parser, contentString) -> null, "test");
     call.execute();
 
     try {
