@@ -164,7 +164,7 @@ public class ZipkinHttpCollector {
         // collector.accept might block so need to move off the event loop. We make sure the
         // callback is context aware to continue the trace.
         Executor executor = ctx.makeContextAware(ctx.blockingTaskExecutor());
-        collector.acceptSpans(nioBuffer, SpanBytesDecoder.PROTO3, result, executor);
+        collector.acceptSpans(nioBuffer, decoder, result, executor);
       } finally {
         ReferenceCountUtil.release(content);
       }
