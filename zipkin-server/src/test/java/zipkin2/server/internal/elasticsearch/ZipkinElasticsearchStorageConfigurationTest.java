@@ -365,7 +365,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     context.refresh();
 
     assertThat(es()).extracting("searchEnabled")
-      .containsExactly(false);
+      .isEqualTo(false);
   }
 
   @Test public void autocompleteKeys_list() {
@@ -377,7 +377,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     context.refresh();
 
     assertThat(es()).extracting("autocompleteKeys")
-      .containsExactly(Arrays.asList("environment"));
+      .isEqualTo(Arrays.asList("environment"));
   }
 
   @Test public void autocompleteTtl() {
@@ -389,7 +389,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     context.refresh();
 
     assertThat(es()).extracting("autocompleteTtl")
-      .containsExactly(60000);
+      .isEqualTo(60000);
   }
 
   @Test public void autocompleteCardinality() {
@@ -401,7 +401,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     context.refresh();
 
     assertThat(es()).extracting("autocompleteCardinality")
-      .containsExactly(5000);
+      .isEqualTo(5000);
   }
 
   ElasticsearchStorage es() {

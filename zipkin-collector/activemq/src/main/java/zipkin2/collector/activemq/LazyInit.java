@@ -13,7 +13,6 @@
  */
 package zipkin2.collector.activemq;
 
-import java.io.IOException;
 import javax.jms.JMSException;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.ActiveMQConnectionFactory;
@@ -54,7 +53,7 @@ final class LazyInit {
     return result;
   }
 
-  void close() throws IOException {
+  void close() {
     ActiveMQSpanConsumer maybe = result;
     if (maybe != null) result.close();
   }

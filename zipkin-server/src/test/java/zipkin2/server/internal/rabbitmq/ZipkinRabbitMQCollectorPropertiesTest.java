@@ -32,7 +32,7 @@ public class ZipkinRabbitMQCollectorPropertiesTest {
 
     assertThat(properties.toBuilder())
       .extracting("connectionFactory")
-      .allSatisfy(object -> {
+      .satisfies(object -> {
         ConnectionFactory connFactory = (ConnectionFactory) object;
         assertThat(connFactory.getHost()).isEqualTo("localhost");
         assertThat(connFactory.getPort()).isEqualTo(5678);

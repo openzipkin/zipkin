@@ -49,12 +49,6 @@
       <optional>true</optional>
     </dependency>
 
-    <dependency>
-      <groupId>com.squareup.okio</groupId>
-      <artifactId>okio</artifactId>
-      <scope>test</scope>
-    </dependency>
-
     <!-- to mock Platform calls -->
     <dependency>
       <groupId>org.powermock</groupId>

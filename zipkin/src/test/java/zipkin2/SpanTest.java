@@ -13,10 +13,11 @@
  */
 package zipkin2;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.UUID;
-import okio.Buffer;
 import org.junit.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -375,15 +376,15 @@ public class SpanTest {
 
   /** Test serializable as used in spark jobs. Careful to include all non-standard fields */
   @Test public void serialization() throws Exception {
-    Buffer buffer = new Buffer();
+    ByteArrayOutputStream buffer = new ByteArrayOutputStream();
 
     Span span = base.toBuilder()
       .addAnnotation(1L, "foo")
       .build();
 
-    new ObjectOutputStream(buffer.outputStream()).writeObject(span);
+    new ObjectOutputStream(buffer).writeObject(span);
 
-    assertThat(new ObjectInputStream(buffer.inputStream()).readObject())
+    assertThat(new ObjectInputStream(new ByteArrayInputStream(buffer.toByteArray())).readObject())
       .isEqualTo(span);
   }
 

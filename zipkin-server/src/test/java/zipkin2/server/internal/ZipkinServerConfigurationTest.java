@@ -134,7 +134,7 @@ public class ZipkinServerConfigurationTest {
     StorageComponent v2Storage = context.getBean(StorageComponent.class);
     assertThat(v2Storage)
       .extracting("searchEnabled")
-      .containsExactly(false);
+      .isEqualTo(false);
   }
 
   @Configuration

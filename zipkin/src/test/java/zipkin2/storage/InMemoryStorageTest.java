@@ -32,7 +32,8 @@ import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.requestBuilder;
 
 public class InMemoryStorageTest {
-  InMemoryStorage storage = InMemoryStorage.newBuilder().autocompleteKeys(asList("http.path")).build();
+  InMemoryStorage storage =
+    InMemoryStorage.newBuilder().autocompleteKeys(asList("http.path")).build();
 
   @Test public void getTraces_filteringMatchesMostRecentTraces() throws IOException {
     List<Endpoint> endpoints = IntStream.rangeClosed(1, 10)
@@ -85,7 +86,7 @@ public class InMemoryStorageTest {
     storage.accept(asList(CLIENT_SPAN.toBuilder().traceId("333").build())).execute();
 
     assertThat(storage).extracting("spansByTraceIdTimeStamp.delegate")
-      .allSatisfy(map -> assertThat((Map) map).hasSize(2));
+      .satisfies(map -> assertThat((Map) map).hasSize(2));
   }
 
   /** It should be safe to run dependency link jobs twice */
@@ -127,26 +128,26 @@ public class InMemoryStorageTest {
     Span span1 = Span.newBuilder().traceId("1").id("1").name("root")
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .putTag("environment", "dev")
-      .putTag("http.method" , "GET")
+      .putTag("http.method", "GET")
       .timestamp(TODAY * 1000)
       .build();
     Span span2 = Span.newBuilder().traceId("1").parentId("1").id("2")
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .putTag("environment", "dev")
-      .putTag("http.method" , "POST")
+      .putTag("http.method", "POST")
       .putTag("http.path", "/users")
       .timestamp(TODAY * 1000)
       .build();
     Span span3 = Span.newBuilder().traceId("2").id("3").name("root")
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .putTag("environment", "dev")
-      .putTag("http.method" , "GET")
+      .putTag("http.method", "GET")
       .timestamp(TODAY * 1000)
       .build();
     Span span4 = Span.newBuilder().traceId("2").parentId("3").id("4")
       .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
       .putTag("environment", "dev")
-      .putTag("http.method" , "POST")
+      .putTag("http.method", "POST")
       .putTag("http.path", "/users")
       .timestamp(TODAY * 1000)
       .build();
