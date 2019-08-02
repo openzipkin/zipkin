@@ -36,9 +36,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -107,7 +106,8 @@ public class ZipkinHttpCollector {
   }
 
   /** This synchronously decodes the message so that users can see data errors. */
-  HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx, HttpRequest req) {
+  HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx,
+    HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
     req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handleAsync((msg, t) -> {
@@ -153,18 +153,10 @@ public class ZipkinHttpCollector {
           return null;
         }
 
-        List<Span> spans = new ArrayList<>();
-        if (!decoder.decodeList(nioBuffer, spans)) {
-          result.onError(new IllegalArgumentException("Empty " + decoder.name() + " message"));
-          return null;
-        }
-
         // collector.accept might block so need to move off the event loop. We make sure the
         // callback is context aware to continue the trace.
-        ctx.blockingTaskExecutor().execute(ctx.makeContextAware(() -> {
-          // UnzippingBytesRequestConverter handles incrementing message and bytes
-          collector.accept(spans, result);
-        }));
+        Executor executor = ctx.makeContextAware(ctx.blockingTaskExecutor());
+        collector.acceptSpans(nioBuffer, decoder, result, executor);
       } finally {
         ReferenceCountUtil.release(content);
       }

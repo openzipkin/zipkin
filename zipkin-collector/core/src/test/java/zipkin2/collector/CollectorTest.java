@@ -15,6 +15,7 @@ package zipkin2.collector;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.junit.After;
@@ -28,7 +29,6 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
-import java.util.concurrent.RejectedExecutionException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -129,7 +129,7 @@ public class CollectorTest {
 
     collector.accept(TRACE, callback);
 
-    verify(callback).onError(error);
+    verify(callback).onSuccess(null); // error is async
     assertThat(messages)
       .containsOnly("Cannot store spans [1, 2, 2, ...] due to RuntimeException(storage disabled)");
     verify(metrics).incrementSpans(4);
@@ -153,20 +153,22 @@ public class CollectorTest {
     Span span2 = CLIENT_SPAN.toBuilder().id("3").build();
     when(collector.idString(span2)).thenReturn("3");
 
-    assertThat(collector.storeSpansCallback(asList(CLIENT_SPAN, span2)))
+    assertThat(collector.new StoreSpans(asList(CLIENT_SPAN, span2)))
       .hasToString("StoreSpans([1, 3])");
   }
 
   @Test
   public void storeSpansCallback_toStringIncludesSpanIds_noMoreThan3() {
-    assertThat(unprefixIdString(collector.storeSpansCallback(TRACE).toString()))
+    assertThat(unprefixIdString(collector.new StoreSpans(TRACE).toString()))
       .hasToString("StoreSpans([1, 1, 2, ...])");
   }
 
   @Test
   public void storeSpansCallback_onErrorWithNullMessage() {
-    Callback<Void> callback = collector.storeSpansCallback(TRACE);
-    callback.onError(new RuntimeException());
+    RuntimeException error = new RuntimeException();
+
+    Callback<Void> callback = collector.new StoreSpans(TRACE);
+    callback.onError(error);
 
     assertThat(messages)
       .containsOnly("Cannot store spans [1, 1, 2, ...] due to RuntimeException()");
@@ -175,8 +177,9 @@ public class CollectorTest {
 
   @Test
   public void storeSpansCallback_onErrorWithMessage() {
-    Callback<Void> callback = collector.storeSpansCallback(TRACE);
-    callback.onError(new IllegalArgumentException("no beer"));
+    IllegalArgumentException error = new IllegalArgumentException("no beer");
+    Callback<Void> callback = collector.new StoreSpans(TRACE);
+    callback.onError(error);
 
     assertThat(messages)
       .containsOnly("Cannot store spans [1, 1, 2, ...] due to IllegalArgumentException(no beer)");
@@ -190,7 +193,8 @@ public class CollectorTest {
 
     verify(callback).onError(error);
     assertThat(messages)
-      .containsOnly("Cannot store spans [1, 1, 2, ...] due to RejectedExecutionException(slow down)");
+      .containsOnly(
+        "Cannot store spans [1, 1, 2, ...] due to RejectedExecutionException(slow down)");
     verify(metrics).incrementSpansDropped(4);
   }
 
