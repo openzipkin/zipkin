@@ -178,6 +178,7 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   <V> V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
     throws IOException {
+    // Handle the case where there is no content, as that means we have no resources to release.
     HttpStatus status = response.status();
     if (response.content().isEmpty()) {
       if (status.codeClass().equals(HttpStatusClass.SUCCESS)) {
@@ -189,26 +190,24 @@ public final class HttpCall<V> extends Call.Base<V> {
       }
     }
 
+    // If this is a client or server error, we look for a json message.
+    if ((status.codeClass().equals(HttpStatusClass.CLIENT_ERROR)
+      || status.codeClass().equals(HttpStatusClass.SERVER_ERROR))) {
+      bodyConverter = (parser, contentString) -> {
+        parser = enterPath(parser, "message");
+        throw new RuntimeException(parser != null
+          ? parser.getValueAsString()
+          : "response for " + request.path() + " failed: " + contentString.get());
+      };
+    }
+
     HttpData content = response.content();
-    try {
+    try (InputStream stream = content.toInputStream();
+         JsonParser parser = JSON_FACTORY.createParser(stream)) {
+
       if (status.code() == 404) throw new FileNotFoundException(request.path());
 
-      if (!status.codeClass().equals(HttpStatusClass.SUCCESS)) {
-        bodyConverter = (parser, contentString) -> {
-          parser = enterPath(parser, "message");
-          throw new RuntimeException(parser != null
-            ? parser.getValueAsString()
-            : "response for " + request.path() + " failed: " + contentString.get());
-        };
-      }
-
-      try (InputStream stream = content.toInputStream();
-           JsonParser parser = JSON_FACTORY.createParser(stream)
-      ) {
-        return bodyConverter.convert(parser, content::toStringUtf8);
-      } finally {
-        ReferenceCountUtil.safeRelease(content);
-      }
+      return bodyConverter.convert(parser, content::toStringUtf8);
     } finally {
       ReferenceCountUtil.safeRelease(content);
     }
