@@ -22,7 +22,6 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Before;
@@ -118,7 +117,7 @@ public class VersionSpecificTemplatesTest {
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/"))).build();
   }
 
-  @After public void tearDown() throws IOException {
+  @After public void tearDown() {
     storage.close();
   }
 

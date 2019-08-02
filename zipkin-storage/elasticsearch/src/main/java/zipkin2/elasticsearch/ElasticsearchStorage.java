@@ -306,8 +306,6 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       throws IOException {
       JsonParser status = enterPath(parser, "status");
       if (status == null) {
-        // The health check is only invoked periodically. Hence, there is less impact to allocating
-        // strings. We retain the string so that it can be logged if the ES response is malformed.
         throw new IllegalArgumentException("Health status couldn't be read " + contentString.get());
       }
       if ("RED".equalsIgnoreCase(status.getText())) {
