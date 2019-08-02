@@ -39,9 +39,9 @@ describe('<App />', () => {
       expect(items.length).toBe(1);
     });
 
-    it('should render 3 routes', () => {
+    it('should render 2 routes', () => {
       const items = wrapper.find(Route);
-      expect(items.length).toBe(3);
+      expect(items.length).toBe(2);
     });
   });
 

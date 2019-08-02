@@ -50,6 +50,10 @@ describe('<MiniTimeline />', () => {
         serviceNameAndSpanCounts: [],
         duration: 10,
         durationStr: '10μs',
+        rootSpan: {
+          serviceName: 'service-A',
+          spanName: 'span-A',
+        },
       },
     };
     let wrapper = shallow(<MiniTimeline {...props} />);
@@ -63,6 +67,10 @@ describe('<MiniTimeline />', () => {
         serviceNameAndSpanCounts: [],
         duration: 10,
         durationStr: '10μs',
+        rootSpan: {
+          serviceName: 'service-A',
+          spanName: 'span-A',
+        },
       },
     };
     wrapper = shallow(<MiniTimeline {...props} />);
@@ -78,6 +86,10 @@ describe('<MiniTimeline />', () => {
         serviceNameAndSpanCounts: [],
         duration: 10,
         durationStr: '10μs',
+        rootSpan: {
+          serviceName: 'service-A',
+          spanName: 'span-A',
+        },
       },
     };
     const wrapper = shallow(<MiniTimeline {...props} />);
