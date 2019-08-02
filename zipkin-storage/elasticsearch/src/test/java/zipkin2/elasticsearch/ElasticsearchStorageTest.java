@@ -14,6 +14,8 @@
 package zipkin2.elasticsearch;
 
 import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.UnprocessedRequestException;
+import com.linecorp.armeria.client.endpoint.EndpointGroupException;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -28,6 +30,7 @@ import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionException;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -158,6 +161,25 @@ public class ElasticsearchStorageTest {
     assertThat(result.ok()).isFalse();
     assertThat(result.error().getMessage())
       .isEqualTo("User: anonymous is not authorized to perform: es:ESHttpGet");
+  }
+
+  @Test public void isOverCapacity() {
+    // top-level
+    assertThat(storage.isOverCapacity(new RejectedExecutionException(
+      "{\"status\":429,\"error\":{\"type\":\"es_rejected_execution_exception\"}}"))).isTrue();
+
+    // wrapped
+    assertThat(storage.isOverCapacity(
+      new UnprocessedRequestException("Could not process request.",
+        new EndpointGroupException("No endpoints")))).isTrue();
+
+    // re-wrapped
+    assertThat(storage.isOverCapacity(
+      new RejectedExecutionException("Rejected execution: No endpoints.",
+        new EndpointGroupException("No endpoints")))).isTrue();
+
+    // not applicable
+    assertThat(storage.isOverCapacity(new IllegalStateException("Rejected execution"))).isFalse();
   }
 
   /**

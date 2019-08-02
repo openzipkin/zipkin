@@ -19,11 +19,9 @@ import com.datastax.driver.core.exceptions.BusyPoolException;
 import com.datastax.driver.core.exceptions.QueryConsistencyException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
 import org.junit.Test;
 import zipkin2.Callback;
 
-import static com.google.common.util.concurrent.Futures.immediateFailedFuture;
 import static com.google.common.util.concurrent.JdkFutureAdapters.listenInPoolThread;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -90,21 +88,15 @@ public class ResultSetFutureCallTest {
   }
 
   // below are load related exceptions which should result in a backoff of storage requests
-  @Test(expected = RejectedExecutionException.class)
-  public void getUninterruptibly_wrapsBusyPoolException() {
+  @Test public void isOverCapacity() {
     InetSocketAddress sa = InetSocketAddress.createUnresolved("host", 9402);
-    ResultSetFutureCall.getUninterruptibly(immediateFailedFuture(new BusyPoolException(sa, 100)));
-  }
 
-  @Test(expected = RejectedExecutionException.class)
-  public void getUninterruptibly_wrapsBusyConnectionException() {
-    InetSocketAddress sa = InetSocketAddress.createUnresolved("host", 9402);
-    ResultSetFutureCall.getUninterruptibly(immediateFailedFuture(new BusyConnectionException(sa)));
-  }
+    assertThat(ResultSetFutureCall.isOverCapacity(new BusyPoolException(sa, 100))).isTrue();
+    assertThat(ResultSetFutureCall.isOverCapacity(new BusyConnectionException(sa))).isTrue();
+    assertThat(ResultSetFutureCall.isOverCapacity(mock(QueryConsistencyException.class))).isTrue();
 
-  @Test(expected = RejectedExecutionException.class)
-  public void getUninterruptibly_wrapsQueryConsistencyException() {
-    ResultSetFutureCall.getUninterruptibly(
-      immediateFailedFuture(mock(QueryConsistencyException.class)));
+    // not applicable
+    assertThat(ResultSetFutureCall.isOverCapacity(
+      new IllegalStateException("Rejected execution"))).isFalse();
   }
 }

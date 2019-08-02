@@ -225,7 +225,6 @@ public class HttpCallTest {
   @Test public void unprocessedRequest() {
     MOCK_RESPONSE.set(SUCCESS_RESPONSE);
 
-    AtomicReference<RequestLog> log = new AtomicReference<>();
     http = new HttpCall.Factory(new HttpClientBuilder(server.httpUri("/"))
       .decorator((client, ctx, req) -> {
         throw new UnprocessedRequestException("Could not process request.",

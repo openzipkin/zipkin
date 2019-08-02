@@ -14,8 +14,10 @@
 package zipkin2.storage;
 
 import java.util.List;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Logger;
 import zipkin2.Call;
+import zipkin2.Callback;
 import zipkin2.Component;
 import zipkin2.Span;
 
@@ -67,6 +69,31 @@ public abstract class StorageComponent extends Component {
   }
 
   public abstract SpanConsumer spanConsumer();
+
+  /**
+   * A storage request failed and was dropped due to a limit, resource unavailability, or a timeout.
+   * Implementations of throttling can use this signal to differentiate between failures, for
+   * example to reduce traffic.
+   *
+   * <p>Callers of this method will submit an exception raised by {@link Call#execute()} or on the
+   * error callback of {@link Call#enqueue(Callback)}.
+   *
+   * <p>By default, this returns true if the input is a {@link RejectedExecutionException}. When
+   * originating exceptions, use this type to indicate a load related failure.
+   *
+   * <p>It is generally preferred to specialize this method to handle relevant exceptions for the
+   * particular storage rather than wrapping them in {@link RejectedExecutionException} at call
+   * sites. Extra wrapping can make errors harder to read, for example, by making it harder to
+   * "google" a solution for a well known error message for the storage client, instead thinking the
+   * error is in Zipkin code itself.
+   *
+   * <h3>See also</h3>
+   * <p>While implementation is flexible, one known use is <a href="https://github.com/Netflix/concurrency-limits">Netflix
+   * concurrency limits</a>
+   */
+  public boolean isOverCapacity(Throwable e) {
+    return e instanceof RejectedExecutionException;
+  }
 
   public static abstract class Builder {
 
@@ -121,8 +148,7 @@ public abstract class StorageComponent extends Component {
      * alternative means such as a logging index.
      *
      * <p>Refer to implementation docs for the impact of this parameter. Operations that use
-     * indexes
-     * should return empty as opposed to throwing an exception.
+     * indexes should return empty as opposed to throwing an exception.
      */
     public abstract Builder searchEnabled(boolean searchEnabled);
 

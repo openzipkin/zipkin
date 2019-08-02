@@ -29,6 +29,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import org.junit.After;
 import org.junit.Test;
 import zipkin2.Call;
@@ -45,6 +46,7 @@ import static org.mockito.Mockito.when;
 public class ThrottledCallTest {
   SettableLimit limit = SettableLimit.startingAt(0);
   SimpleLimiter limiter = SimpleLimiter.newBuilder().limit(limit).build();
+  Predicate<Throwable> isOverCapacity = RejectedExecutionException.class::isInstance;
 
   int numThreads = 1;
   ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -57,7 +59,7 @@ public class ThrottledCallTest {
     Call<Void> delegate = mock(Call.class);
     when(delegate.toString()).thenReturn("StoreSpansCall{}");
 
-    assertThat(new ThrottledCall<>(executor, limiter, delegate))
+    assertThat(new ThrottledCall<Void>(executor, limiter, isOverCapacity, delegate))
       .hasToString("Throttled(StoreSpansCall{})");
   }
 
@@ -116,12 +118,14 @@ public class ThrottledCallTest {
     }
   }
 
-  @Test public void execute_trottlesBack_whenStorageRejects() throws Exception {
+  @Test public void execute_throttlesBack_whenStorageRejects() throws Exception {
     Listener listener = mock(Listener.class);
     FakeCall call = new FakeCall();
     call.overCapacity = true;
 
-    ThrottledCall<Void> throttle = new ThrottledCall<>(executor, mockLimiter(listener), call);
+    ThrottledCall<Void> throttle =
+      new ThrottledCall<>(executor, mockLimiter(listener), isOverCapacity, call);
+
     try {
       throttle.execute();
       assertThat(true).isFalse(); // should raise a RejectedExecutionException
@@ -133,8 +137,9 @@ public class ThrottledCallTest {
   @Test public void execute_ignoresLimit_whenPoolFull() throws Exception {
     Listener listener = mock(Listener.class);
 
-    ThrottledCall<Void> throttle =
-      new ThrottledCall<>(mockExhaustedPool(), mockLimiter(listener), new FakeCall());
+    ThrottledCall<Void> throttle = new ThrottledCall<>(mockExhaustedPool(), mockLimiter(listener),
+      isOverCapacity, new FakeCall());
+
     try {
       throttle.execute();
       assertThat(true).isFalse(); // should raise a RejectedExecutionException
@@ -182,7 +187,9 @@ public class ThrottledCallTest {
     FakeCall call = new FakeCall();
     call.overCapacity = true;
 
-    ThrottledCall<Void> throttle = new ThrottledCall<>(executor, mockLimiter(listener), call);
+    ThrottledCall<Void> throttle = new ThrottledCall<>(executor, mockLimiter(listener),
+      isOverCapacity, call);
+
     CountDownLatch latch = new CountDownLatch(1);
     throttle.enqueue(new Callback<Void>() {
       @Override public void onSuccess(Void val) {
@@ -201,8 +208,8 @@ public class ThrottledCallTest {
   @Test public void enqueue_ignoresLimit_whenPoolFull() {
     Listener listener = mock(Listener.class);
 
-    ThrottledCall<Void> throttle =
-      new ThrottledCall<>(mockExhaustedPool(), mockLimiter(listener), new FakeCall());
+    ThrottledCall<Void> throttle = new ThrottledCall<>(mockExhaustedPool(), mockLimiter(listener),
+      isOverCapacity, new FakeCall());
     try {
       throttle.enqueue(null);
       assertThat(true).isFalse(); // should raise a RejectedExecutionException
@@ -212,7 +219,7 @@ public class ThrottledCallTest {
   }
 
   ThrottledCall<Void> throttle(Call<Void> delegate) {
-    return new ThrottledCall<>(executor, limiter, delegate);
+    return new ThrottledCall<Void>(executor, limiter, isOverCapacity, delegate);
   }
 
   static final class LockedCall extends Call.Base<Void> {
