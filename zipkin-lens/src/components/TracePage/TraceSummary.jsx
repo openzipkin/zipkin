@@ -40,12 +40,14 @@ const TraceSummary = ({ traceSummary }) => {
   return (
     <React.Fragment>
       <TraceSummaryHeader traceSummary={traceSummary} />
-      <MiniTimeline
-        startTs={tsRange.startTs}
-        endTs={tsRange.endTs}
-        traceSummary={traceSummary}
-        onStartAndEndTsChange={handleStartAndEndTsChange}
-      />
+      <Box width="100%" display="flex" justifyContent="center">
+        <MiniTimeline
+          startTs={tsRange.startTs}
+          endTs={tsRange.endTs}
+          traceSummary={traceSummary}
+          onStartAndEndTsChange={handleStartAndEndTsChange}
+        />
+      </Box>
       <Box height="100%" mb={3}>
         {
           /*
