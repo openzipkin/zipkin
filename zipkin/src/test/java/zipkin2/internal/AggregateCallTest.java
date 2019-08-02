@@ -63,7 +63,7 @@ public class AggregateCallTest {
     assertThat(AggregateCall.newVoidCall(asList(call1, call2)))
       .isInstanceOf(AggregateCall.AggregateVoidCall.class)
       .extracting("calls")
-      .containsExactly(asList(call1, call2));
+      .isEqualTo(asList(call1, call2));
   }
 
   @Test public void execute() throws Exception {

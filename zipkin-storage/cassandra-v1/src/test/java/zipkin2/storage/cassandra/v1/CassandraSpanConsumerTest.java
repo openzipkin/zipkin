@@ -15,7 +15,6 @@ package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.ProtocolVersion;
 import com.google.common.cache.CacheBuilderSpec;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import org.assertj.core.api.AbstractListAssert;
@@ -28,6 +27,7 @@ import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.util.introspection.PropertyOrFieldSupport.EXTRACTION;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -126,9 +126,8 @@ public class CassandraSpanConsumerTest {
 
   static AbstractListAssert<?, List<? extends Call<Void>>, Call<Void>, ObjectAssert<Call<Void>>>
   assertEnclosedCalls(Call<Void> call) {
-    return assertThat(call)
-      .extracting("calls")
-      .flatExtracting(calls -> (Collection<Call<Void>>) calls);
+    return
+      assertThat((List<? extends Call<Void>>) EXTRACTION.getValueOf("calls", call));
   }
 
   static CassandraSpanConsumer spanConsumer(CassandraStorage.Builder builder) {

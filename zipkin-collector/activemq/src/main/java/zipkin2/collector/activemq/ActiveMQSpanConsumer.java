@@ -118,7 +118,7 @@ final class ActiveMQSpanConsumer implements TransportListener, MessageListener, 
     collector.acceptSpans(serialized, NOOP);
   }
 
-  @Override public void close() throws IOException {
+  @Override public void close() {
     if (checkResult == CLOSED) return;
     checkResult = CLOSED;
     connection.removeTransportListener(this);
