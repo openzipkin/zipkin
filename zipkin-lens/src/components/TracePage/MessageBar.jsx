@@ -16,6 +16,7 @@ import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import SnackbarContent from '@material-ui/core/SnackbarContent';
+import Zoom from '@material-ui/core/Zoom';
 
 const propTypes = {
   variant: PropTypes.string.isRequired,
@@ -35,15 +36,17 @@ const MessageBar = ({ variant, message }) => {
   const classes = useStyles();
 
   return (
-    <SnackbarContent
-      className={classes[variant]}
-      message={(
-        <Box component="span">
-          <Box component="span" mr={2} className="fas fa-exclamation" />
-          {message}
-        </Box>
-      )}
-    />
+    <Zoom in>
+      <SnackbarContent
+        className={classes[variant]}
+        message={(
+          <Box component="span">
+            <Box component="span" mr={2} className="fas fa-exclamation" />
+            {message}
+          </Box>
+        )}
+      />
+    </Zoom>
   );
 };
 
