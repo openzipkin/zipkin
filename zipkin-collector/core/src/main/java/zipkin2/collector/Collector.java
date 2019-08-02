@@ -110,7 +110,7 @@ public class Collector { // not final for mock
   }
 
   /**
-   * @param executor Returns the executor used to enqueue the storage request.
+   * @param executor the executor used to enqueue the storage request.
    *
    * <p>Calls to get the storage component could be blocking. This ensures requests that block
    * callers (such as http or gRPC) do not add additional load during such events.
