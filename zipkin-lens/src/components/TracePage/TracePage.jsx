@@ -15,6 +15,7 @@ import PropTypes from 'prop-types';
 import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
+import Box from '@material-ui/core/Box';
 import CircularProgress from '@material-ui/core/CircularProgress';
 
 import TraceSummary from './TraceSummary';
@@ -73,7 +74,9 @@ export const TracePageImpl = ({
     return (
       <React.Fragment>
         <TraceSummaryHeader />
-        <CircularProgress />
+        <Box width="100%" display="flex" justifyContent="center">
+          <CircularProgress />
+        </Box>
       </React.Fragment>
     );
   }
