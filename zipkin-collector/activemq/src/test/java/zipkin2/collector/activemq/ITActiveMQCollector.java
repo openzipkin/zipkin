@@ -32,13 +32,12 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TestName;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.CheckResult;
 import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.InMemoryCollectorMetrics;
+import zipkin2.storage.ForwardingStorageComponent;
 import zipkin2.storage.SpanConsumer;
-import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -234,21 +233,13 @@ public class ITActiveMQCollector {
   }
 
   static StorageComponent buildStorage(final SpanConsumer spanConsumer) {
-    return new StorageComponent() {
-      @Override public SpanStore spanStore() {
+    return new ForwardingStorageComponent() {
+      @Override protected StorageComponent delegate() {
         throw new AssertionError();
       }
 
       @Override public SpanConsumer spanConsumer() {
         return spanConsumer;
-      }
-
-      @Override public CheckResult check() {
-        return CheckResult.OK;
-      }
-
-      @Override public void close() {
-        throw new AssertionError();
       }
     };
   }

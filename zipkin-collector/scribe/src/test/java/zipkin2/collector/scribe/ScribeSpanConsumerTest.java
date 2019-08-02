@@ -19,16 +19,15 @@ import org.apache.thrift.async.AsyncMethodCallback;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.CheckResult;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.InMemoryCollectorMetrics;
 import zipkin2.collector.scribe.generated.LogEntry;
 import zipkin2.collector.scribe.generated.ResultCode;
+import zipkin2.storage.ForwardingStorageComponent;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.SpanConsumer;
-import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
@@ -232,25 +231,17 @@ public class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
-  ScribeSpanConsumer newScribeSpanConsumer(String category, SpanConsumer consumer) {
+  ScribeSpanConsumer newScribeSpanConsumer(String category, SpanConsumer spanConsumer) {
     ScribeCollector.Builder builder = ScribeCollector.newBuilder()
       .category(category)
       .metrics(scribeMetrics)
-      .storage(new StorageComponent() {
-        @Override public SpanStore spanStore() {
+      .storage(new ForwardingStorageComponent() {
+        @Override protected StorageComponent delegate() {
           throw new AssertionError();
         }
 
         @Override public SpanConsumer spanConsumer() {
-          return consumer;
-        }
-
-        @Override public CheckResult check() {
-          return CheckResult.OK;
-        }
-
-        @Override public void close() {
-          throw new AssertionError();
+          return spanConsumer;
         }
       });
     return new ScribeSpanConsumer(
