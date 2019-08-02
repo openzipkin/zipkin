@@ -14,6 +14,7 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.UnprocessedRequestException;
@@ -37,31 +38,22 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Callback;
 
-import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
+import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 public final class HttpCall<V> extends Call.Base<V> {
   public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
     /**
-     * The source is from {@link AggregatedHttpResponse}, so act accordingly. Do not call {@link
-     * ReferenceCountUtil#safeRelease(Object)} because that is done upstream of this.
+     * Prefer using the {@code parser} for request-scoped conversions. Typically, {@code
+     * contentString} is only for an unexpected failure.
      */
-    V convert(HttpData content) throws IOException;
-  }
-
-  public interface InputStreamConverter<V> extends BodyConverter<V> {
-    V convert(InputStream content) throws IOException;
-
-    @Override default V convert(HttpData content) throws IOException {
-      try (InputStream stream = content.toInputStream()) {
-        return convert(stream);
-      }
-    }
+    V convert(JsonParser parser, Supplier<String> contentString) throws IOException;
   }
 
   public static class Factory {
@@ -187,6 +179,7 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   <V> V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
     throws IOException {
+    // Handle the case where there is no content, as that means we have no resources to release.
     HttpStatus status = response.status();
     if (response.content().isEmpty()) {
       if (status.codeClass().equals(HttpStatusClass.SUCCESS)) {
@@ -198,20 +191,30 @@ public final class HttpCall<V> extends Call.Base<V> {
       }
     }
 
+    // If this is a client or server error, we look for a json message.
+    if ((status.codeClass().equals(HttpStatusClass.CLIENT_ERROR)
+      || status.codeClass().equals(HttpStatusClass.SERVER_ERROR))) {
+      bodyConverter = (parser, contentString) -> {
+        String message = null;
+        try {
+          JsonNode root = OBJECT_MAPPER.readTree(parser);
+          message = root.findPath("reason").textValue();
+          if (message == null) message = root.at("/message").textValue();
+          if (message == null) message = root.at("/Message").textValue();
+        } catch (RuntimeException | IOException possiblyParseException) {
+        }
+        throw new RuntimeException(message != null ? message
+          : "response for " + request.path() + " failed: " + contentString.get());
+      };
+    }
+
     HttpData content = response.content();
-    try {
-      if (status.codeClass().equals(HttpStatusClass.SUCCESS)) {
-        return bodyConverter.convert(content);
-      }
-      String body = content.toStringUtf8();
-      if (status.code() == 404) {
-        throw new FileNotFoundException(request.path());
-      } else {
-        JsonParser parser = enterPath(JSON_FACTORY.createParser(body), "message");
-        throw new RuntimeException(parser != null
-          ? parser.getValueAsString()
-          : "response for " + request.path() + " failed: " + body);
-      }
+    try (InputStream stream = content.toInputStream();
+         JsonParser parser = JSON_FACTORY.createParser(stream)) {
+
+      if (status.code() == 404) throw new FileNotFoundException(request.path());
+
+      return bodyConverter.convert(parser, content::toStringUtf8);
     } finally {
       ReferenceCountUtil.safeRelease(content);
     }

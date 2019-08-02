@@ -13,11 +13,11 @@
  */
 package zipkin2.elasticsearch; // to access package private stuff
 
-import com.linecorp.armeria.common.HttpData;
 import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import zipkin2.Annotation;
 import zipkin2.Span;
 import zipkin2.TestObjects;
@@ -27,6 +27,7 @@ import zipkin2.elasticsearch.internal.client.SearchResultConverter;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.elasticsearch.TestResponses.SPANS;
+import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 public class SearchResultConverterTest {
   SearchResultConverter<Span> converter = SearchResultConverter.create(JsonSerializers.SPAN_PARSER);
@@ -45,27 +46,29 @@ public class SearchResultConverterTest {
         }
         return builder.build();
       }).collect(Collectors.toList());
-    assertThat(converter.convert(HttpData.ofUtf8(SPANS)))
+    assertThat(converter.convert(JSON_FACTORY.createParser(SPANS), Assertions::fail))
       .containsExactlyElementsOf(stableTrace);
   }
 
   @Test public void convert_noHits() throws IOException {
-    assertThat(converter.convert(HttpData.ofUtf8("{}")))
+    assertThat(converter.convert(JSON_FACTORY.createParser("{}"), Assertions::fail))
       .isEmpty();
   }
 
   @Test public void convert_onlyOneLevelHits() throws IOException {
-    assertThat(converter.convert(HttpData.ofUtf8("{\"hits\":{}}")))
+    assertThat(converter.convert(JSON_FACTORY.createParser("{\"hits\":{}}"), Assertions::fail))
       .isEmpty();
   }
 
   @Test public void convert_hitsHitsButEmpty() throws IOException {
-    assertThat(converter.convert(HttpData.ofUtf8("{\"hits\":{\"hits\":[]}}")))
+    assertThat(
+      converter.convert(JSON_FACTORY.createParser("{\"hits\":{\"hits\":[]}}"), Assertions::fail))
       .isEmpty();
   }
 
   @Test public void convert_hitsHitsButNoSource() throws IOException {
-    assertThat(converter.convert(HttpData.ofUtf8("{\"hits\":{\"hits\":[{}]}}")))
+    assertThat(
+      converter.convert(JSON_FACTORY.createParser("{\"hits\":{\"hits\":[{}]}}"), Assertions::fail))
       .isEmpty();
   }
 }

@@ -19,7 +19,6 @@ import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
-import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import java.io.Closeable;
 import java.io.IOException;
@@ -47,7 +46,6 @@ import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
 import static zipkin2.elasticsearch.EnsureIndexTemplate.ensureIndexTemplate;
 import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
-import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 
 @AutoValue
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
@@ -59,8 +57,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
    */
   public interface LazyHttpClient extends Supplier<HttpClient>, Closeable {
     /**
-     * Lazily creates an instance of the http client configured to the correct elasticsearch host
-     * or cluster. The same value should always be returned.
+     * Lazily creates an instance of the http client configured to the correct elasticsearch host or
+     * cluster. The same value should always be returned.
      */
     @Override HttpClient get();
 
@@ -296,7 +294,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     return new HttpCall.Factory(lazyHttpClient().get());
   }
 
-  @Override public void close() throws IOException {
+  @Override public void close() {
     lazyHttpClient().close();
   }
 
@@ -304,13 +302,11 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   static final BodyConverter<CheckResult> READ_STATUS = new BodyConverter<CheckResult>() {
-    @Override public CheckResult convert(HttpData body) throws IOException {
-      // The health check is only invoked periodically. Hence, there is less impact to allocating
-      // strings. We retain the string so that it can be logged if the ES response is malformed.
-      String result = body.toStringUtf8();
-      JsonParser status = enterPath(JSON_FACTORY.createParser(result), "status");
+    @Override public CheckResult convert(JsonParser parser, Supplier<String> contentString)
+      throws IOException {
+      JsonParser status = enterPath(parser, "status");
       if (status == null) {
-        throw new IllegalArgumentException("Health status couldn't be read " + result);
+        throw new IllegalArgumentException("Health status couldn't be read " + contentString.get());
       }
       if ("RED".equalsIgnoreCase(status.getText())) {
         return CheckResult.failed(new IllegalStateException("Health status is RED"));

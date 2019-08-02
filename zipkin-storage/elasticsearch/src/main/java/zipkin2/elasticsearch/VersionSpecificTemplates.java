@@ -13,16 +13,17 @@
  */
 package zipkin2.elasticsearch;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
-import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
 import java.io.IOException;
+import java.util.function.Supplier;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.DEPENDENCY;
 import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
-import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
+import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 /** Returns a version-specific span and dependency index template */
@@ -225,17 +226,15 @@ final class VersionSpecificTemplates {
   enum ReadVersionNumber implements HttpCall.BodyConverter<Float> {
     INSTANCE;
 
-    @Override public Float convert(HttpData content) {
-      // The version number is read only once per startup. Hence, there is less impact to allocating
-      // strings. We retain the string so that it can be logged if the ES response is malformed.
-      String body = content.toStringUtf8();
+    @Override public Float convert(JsonParser parser, Supplier<String> contentString) {
       String version = null;
       try {
-        version = OBJECT_MAPPER.readTree(body).at("/version/number").textValue();
+        if (enterPath(parser, "version", "number") != null) version = parser.getText();
       } catch (RuntimeException | IOException possiblyParseException) {
       }
       if (version == null) {
-        throw new IllegalArgumentException(".version.number not found in response: " + body);
+        throw new IllegalArgumentException(
+          ".version.number not found in response: " + contentString.get());
       }
       return Float.valueOf(version.substring(0, 3));
     }
