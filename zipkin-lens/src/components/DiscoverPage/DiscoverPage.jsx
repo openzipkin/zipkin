@@ -26,8 +26,8 @@ import Tab from '@material-ui/core/Tab';
 import Tabs from '@material-ui/core/Tabs';
 import Typography from '@material-ui/core/Typography';
 
-import TraceJsonUploader from './TraceJsonUploader';
-import TraceIdSearchInput from './TraceIdSearchInput';
+import TraceJsonUploader from '../Common/TraceJsonUploader';
+import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TracesTab from './TracesTab';
 import DependenciesTab from './DependenciesTab';
 import GlobalSearch from '../GlobalSearch';
