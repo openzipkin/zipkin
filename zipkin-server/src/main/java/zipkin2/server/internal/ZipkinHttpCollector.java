@@ -36,8 +36,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
@@ -152,12 +150,6 @@ public class ZipkinHttpCollector {
         if (unexpectedDecoder != null) {
           result.onError(new IllegalArgumentException(
             "Expected a " + decoder + " encoded list, but received: " + unexpectedDecoder + "\n"));
-          return null;
-        }
-
-        List<Span> spans = new ArrayList<>();
-        if (!decoder.decodeList(nioBuffer, spans)) {
-          result.onError(new IllegalArgumentException("Empty " + decoder.name() + " message"));
           return null;
         }
 
