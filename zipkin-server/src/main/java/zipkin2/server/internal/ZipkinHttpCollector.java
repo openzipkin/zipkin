@@ -39,6 +39,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -107,7 +108,8 @@ public class ZipkinHttpCollector {
   }
 
   /** This synchronously decodes the message so that users can see data errors. */
-  HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx, HttpRequest req) {
+  HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx,
+    HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
     req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handleAsync((msg, t) -> {
@@ -161,10 +163,8 @@ public class ZipkinHttpCollector {
 
         // collector.accept might block so need to move off the event loop. We make sure the
         // callback is context aware to continue the trace.
-        ctx.blockingTaskExecutor().execute(ctx.makeContextAware(() -> {
-          // UnzippingBytesRequestConverter handles incrementing message and bytes
-          collector.accept(spans, result);
-        }));
+        Executor executor = ctx.makeContextAware(ctx.blockingTaskExecutor());
+        collector.acceptSpans(nioBuffer, SpanBytesDecoder.PROTO3, result, executor);
       } finally {
         ReferenceCountUtil.release(content);
       }

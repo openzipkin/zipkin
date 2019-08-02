@@ -13,16 +13,19 @@
  */
 package zipkin2.collector;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.SpanBytesDecoderDetector;
 import zipkin2.codec.BytesDecoder;
+import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.storage.StorageComponent;
 
 import static java.lang.String.format;
@@ -54,9 +57,9 @@ public class Collector { // not final for mock
 
   public static final class Builder {
     final Logger logger;
-    StorageComponent storage = null;
-    CollectorSampler sampler = null;
-    CollectorMetrics metrics = null;
+    StorageComponent storage;
+    CollectorSampler sampler;
+    CollectorMetrics metrics;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -103,6 +106,16 @@ public class Collector { // not final for mock
   }
 
   public void accept(List<Span> spans, Callback<Void> callback) {
+    accept(spans, callback, Runnable::run);
+  }
+
+  /**
+   * @param executor Returns the executor used to enqueue the storage request.
+   *
+   * <p>Calls to get the storage component could be blocking. This ensures requests that block
+   * callers (such as http or gRPC) do not add additional load during such events.
+   */
+  public void accept(List<Span> spans, Callback<Void> callback, Executor executor) {
     if (spans.isEmpty()) {
       callback.onSuccess(null);
       return;
@@ -119,16 +132,21 @@ public class Collector { // not final for mock
     // phase of this process. Here, we create a callback whose sole purpose is classifying later
     // errors on this bundle of spans in the same log category. This allows people to only turn on
     // debug logging in one place.
-    Callback<Void> logOnErrorCallback = storeSpansCallback(sampledSpans);
+    executor.execute(new StoreSpans(sampledSpans));
+    callback.onSuccess(null);
+  }
+
+  /** Like {@link #acceptSpans(byte[], BytesDecoder, Callback)}, except using a byte buffer. */
+  public void acceptSpans(ByteBuffer encoded, SpanBytesDecoder decoder, Callback<Void> callback,
+    Executor executor) {
+    List<Span> spans;
     try {
-      store(sampledSpans, logOnErrorCallback);
-      callback.onSuccess(null); // release the callback given to the collector
+      spans = decoder.decodeList(encoded);
     } catch (RuntimeException | Error e) {
-      // While unexpected, invoking the storage command could raise an error synchronously. When
-      // that's the case, we wouldn't have invoked callback.onSuccess, so we need to handle the
-      // error here.
-      handleStorageError(spans, e, callback);
+      handleDecodeError(e, callback);
+      return;
     }
+    accept(spans, callback, executor);
   }
 
   /**
@@ -195,19 +213,34 @@ public class Collector { // not final for mock
     return sampled;
   }
 
-  Callback<Void> storeSpansCallback(final List<Span> spans) {
-    return new Callback<Void>() {
-      @Override public void onSuccess(Void value) {
-      }
+  class StoreSpans implements Callback<Void>, Runnable {
+    final List<Span> spans;
 
-      @Override public void onError(Throwable t) {
-        handleStorageError(spans, t, NOOP_CALLBACK);
-      }
+    StoreSpans(List<Span> spans) {
+      this.spans = spans;
+    }
 
-      @Override public String toString() {
-        return appendSpanIds(spans, new StringBuilder("StoreSpans(")) + ")";
+    @Override public void run() {
+      try {
+        store(spans, this);
+      } catch (RuntimeException | Error e) {
+        // While unexpected, invoking the storage command could raise an error synchronously. When
+        // that's the case, we wouldn't have invoked callback.onSuccess, so we need to handle the
+        // error here.
+        onError(e);
       }
-    };
+    }
+
+    @Override public void onSuccess(Void value) {
+    }
+
+    @Override public void onError(Throwable t) {
+      handleStorageError(spans, t, NOOP_CALLBACK);
+    }
+
+    @Override public String toString() {
+      return appendSpanIds(spans, new StringBuilder("StoreSpans(")) + ")";
+    }
   }
 
   void handleDecodeError(Throwable e, Callback<Void> callback) {

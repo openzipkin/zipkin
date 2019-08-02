@@ -19,12 +19,11 @@ import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import zipkin2.Callback;
-import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
@@ -68,13 +67,14 @@ final class ZipkinGrpcCollector {
 
       try {
         CompletableFutureCallback result = new CompletableFutureCallback();
-        List<Span> spans = SpanBytesDecoder.PROTO3.decodeList(bytes.nioBuffer());
 
         // collector.accept might block so need to move off the event loop. We make sure the
         // callback is context aware to continue the trace.
-        ServiceRequestContext.mapCurrent(
+        Executor executor = ServiceRequestContext.mapCurrent(
           ctx -> ctx.makeContextAware(ctx.blockingTaskExecutor()),
-          CommonPools::blockingTaskExecutor).execute(() -> collector.accept(spans, result));
+          CommonPools::blockingTaskExecutor);
+
+        collector.acceptSpans(bytes.nioBuffer(), SpanBytesDecoder.PROTO3, result, executor);
 
         return result;
       } finally {
