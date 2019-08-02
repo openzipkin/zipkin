@@ -59,7 +59,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
                   </Typography>
                 </Box>
                 <Box className={classes.spanName}>
-                  <Typography variant="h6">
+                  <Typography variant="h5">
                     {`: ${traceSummary.rootSpan.spanName}`}
                   </Typography>
                 </Box>
