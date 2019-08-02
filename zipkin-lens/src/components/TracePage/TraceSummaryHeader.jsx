@@ -74,10 +74,10 @@ const TraceSummaryHeader = ({ traceSummary }) => {
       </Box>
       <Box
         display="flex"
-        mt={1}
-        mb={1}
+        mt={0.5}
+        mb={0.5}
         alignItems="center"
-        fontSize="1.05rem"
+        fontSize="1rem"
       >
         {
           traceSummary ? (
@@ -88,7 +88,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
               { label: 'Total Spans', value: traceSummary.spans.length },
               { label: 'Trace ID', value: traceSummary.traceId },
             ].map(e => (
-              <Box key={e.label} mr={2} display="flex">
+              <Box key={e.label} mr={1} display="flex">
                 <Box fontWeight="bold" color="grey.600">
                   {`${e.label}:`}
                 </Box>
