@@ -382,7 +382,7 @@ describe('detailedTraceSummary', () => {
 
   it('should derive summary info', () => {
     const {
-      traceId, durationStr, depth, serviceNameAndSpanCounts,
+      traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan,
     } = detailedTraceSummary(cleanedHttpTrace);
 
     expect(traceId).toBe('bb1f0e21882325b8');
@@ -392,6 +392,10 @@ describe('detailedTraceSummary', () => {
       { serviceName: 'backend', spanCount: 1 },
       { serviceName: 'frontend', spanCount: 2 },
     ]);
+    expect(rootSpan).toEqual({
+      serviceName: 'frontend',
+      spanName: 'get /',
+    });
   });
 
   it('should position incomplete spans at the correct offset', () => {
@@ -410,7 +414,7 @@ describe('detailedTraceSummary', () => {
     treeCorrectedForClockSkew(httpTrace).children.forEach(child => headless.addChild(child));
 
     const {
-      traceId, durationStr, depth, serviceNameAndSpanCounts,
+      traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan,
     } = detailedTraceSummary(headless);
 
     expect(traceId).toBe('bb1f0e21882325b8');
@@ -420,6 +424,10 @@ describe('detailedTraceSummary', () => {
       { serviceName: 'backend', spanCount: 1 },
       { serviceName: 'frontend', spanCount: 1 },
     ]);
+    expect(rootSpan).toEqual({
+      serviceName: 'backend',
+      spanName: 'get /api',
+    });
   });
 
   it('should show human-readable annotation name', () => {

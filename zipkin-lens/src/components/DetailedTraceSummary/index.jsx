@@ -42,8 +42,13 @@ class DetailedTraceSummary extends React.Component {
 
     return (
       <div className="detailed-trace-summary__header">
-        <div className="detailed-trace-summary__trace-id">
-          {traceSummary.traceId}
+        <div className="detailed-trace-summary__root-span">
+          <div className="detailed-trace-summary__service-name">
+            {traceSummary.rootSpan.serviceName}
+          </div>
+          <div className="detailed-trace-summary__span-name">
+            {`: ${traceSummary.rootSpan.spanName}`}
+          </div>
         </div>
         <div className="detailed-trace-summary__trace-data-list">
           {

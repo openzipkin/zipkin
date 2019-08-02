@@ -89,6 +89,10 @@ export const detailedTraceSummaryPropTypes = PropTypes.shape({
   serviceNameAndSpanCounts: spanServiceNameSummaries.isRequired,
   duration: PropTypes.number.isRequired,
   durationStr: PropTypes.string.isRequired,
+  rootSpan: PropTypes.shape({
+    serviceName: PropTypes.string.isRequired,
+    spanName: PropTypes.string.isRequired,
+  }).isRequired,
 });
 
 export const globalSearchConditionsPropTypes = PropTypes.arrayOf(PropTypes.shape({

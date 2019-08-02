@@ -24,10 +24,18 @@
   justify-content: space-between;
 }
 
-.detailed-trace-summary__trace-id {
+.detailed-trace-summary__root-span {
   display: flex;
   align-items: center;
   font-size: 24px;
+}
+
+.detailed-trace-summary__service-name {
+  text-transform: uppercase;
+}
+
+.detailed-trace-summary__span-name {
+  color: $gray-2;
 }
 
 .detailed-trace-summary__trace-data-list {

@@ -337,6 +337,18 @@ export function detailedTraceSummary(root, logsUrl) {
     modelview.spans.push(spanRow);
   }
 
+  if (modelview.spans.length >= 0) {
+    modelview.rootSpan = {
+      serviceName: modelview.spans[0].serviceName,
+      spanName: modelview.spans[0].spanName,
+    };
+  } else {
+    modelview.rootSpan = {
+      serviceName: 'unknown',
+      spanName: 'unknown',
+    };
+  }
+
   modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount).sort().map(serviceName => ({
     serviceName, spanCount: serviceNameToCount[serviceName],
   }));
