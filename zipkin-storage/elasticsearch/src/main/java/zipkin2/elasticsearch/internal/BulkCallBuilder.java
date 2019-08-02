@@ -44,18 +44,27 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
 // exposed to re-use for testing writes of dependency links
 public final class BulkCallBuilder {
+  // This mapper is invoked under the assumption that bulk requests return errors even when the http
+  // status is success. The status codes expected to be returned were undocumented as of version 7.2
+  // https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
   static final BodyConverter<Void> CHECK_FOR_ERRORS = new BodyConverter<Void>() {
     @Override public Void convert(JsonParser parser, Supplier<String> contentString) {
       RuntimeException toThrow = null;
       try {
-        JsonNode tree = OBJECT_MAPPER.readTree(parser);
-        Number status = tree.findPath("status").numberValue();
+        JsonNode root = OBJECT_MAPPER.readTree(parser);
+        // only throw when we know it is an error
+        if (!root.at("/errors").booleanValue() && !root.at("/error").isObject()) return null;
+
+        String message = root.findPath("reason").textValue();
+        if (message == null) message = contentString.get();
+        Number status = root.findPath("status").numberValue();
         if (status != null && status.intValue() == 429) {
-          toThrow = new RejectedExecutionException(tree.toString());
-        } else if (tree.path("/errors").booleanValue()) {
-          toThrow = new RuntimeException(contentString.get());
+          toThrow = new RejectedExecutionException(message);
+        } else {
+          toThrow = new RuntimeException(message);
         }
-      } catch (RuntimeException | IOException possiblyParseException) {
+
+      } catch (RuntimeException | IOException possiblyParseException) { // All use of jackson throws
       }
       if (toThrow != null) throw toThrow;
       return null;

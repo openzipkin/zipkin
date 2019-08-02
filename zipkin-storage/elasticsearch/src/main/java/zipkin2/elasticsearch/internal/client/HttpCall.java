@@ -14,6 +14,7 @@
 package zipkin2.elasticsearch.internal.client;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.linecorp.armeria.client.Clients;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.UnprocessedRequestException;
@@ -41,8 +42,8 @@ import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Callback;
 
-import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
+import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 public final class HttpCall<V> extends Call.Base<V> {
   public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
@@ -194,9 +195,15 @@ public final class HttpCall<V> extends Call.Base<V> {
     if ((status.codeClass().equals(HttpStatusClass.CLIENT_ERROR)
       || status.codeClass().equals(HttpStatusClass.SERVER_ERROR))) {
       bodyConverter = (parser, contentString) -> {
-        parser = enterPath(parser, "message");
-        throw new RuntimeException(parser != null
-          ? parser.getValueAsString()
+        String message = null;
+        try {
+          JsonNode root = OBJECT_MAPPER.readTree(parser);
+          message = root.findPath("reason").textValue();
+          if (message == null) message = root.at("/message").textValue();
+          if (message == null) message = root.at("/Message").textValue();
+        } catch (RuntimeException | IOException possiblyParseException) {
+        }
+        throw new RuntimeException(message != null ? message
           : "response for " + request.path() + " failed: " + contentString.get());
       };
     }
