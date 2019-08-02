@@ -132,8 +132,13 @@ public class Collector { // not final for mock
     // phase of this process. Here, we create a callback whose sole purpose is classifying later
     // errors on this bundle of spans in the same log category. This allows people to only turn on
     // debug logging in one place.
-    executor.execute(new StoreSpans(sampledSpans));
-    callback.onSuccess(null);
+    try {
+      executor.execute(new StoreSpans(sampledSpans));
+      callback.onSuccess(null);
+    } catch (Throwable unexpected) { // ensure if a future is supplied we always set value or error
+      callback.onError(unexpected);
+      throw unexpected;
+    }
   }
 
   /** Like {@link #acceptSpans(byte[], BytesDecoder, Callback)}, except using a byte buffer. */
