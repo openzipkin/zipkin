@@ -46,7 +46,11 @@ final class TracedCall<V> extends Call<V> {
   @Override public void enqueue(Callback<V> callback) {
     Span span = tracer.nextSpan().name(name).start();
     try {
-      delegate.enqueue(new SpanFinishingCallback<>(callback, span));
+      if (span.isNoop()) {
+        delegate.enqueue(callback);
+      } else {
+        delegate.enqueue(new SpanFinishingCallback<>(callback, span));
+      }
     } catch (RuntimeException | Error e) {
       span.error(e);
       span.finish();
