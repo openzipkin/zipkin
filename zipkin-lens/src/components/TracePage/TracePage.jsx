@@ -12,15 +12,15 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 import TraceSummary from './TraceSummary';
 import TraceSummaryHeader from './TraceSummaryHeader';
 import MessageBar from './MessageBar';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
-import { useMount } from '../../hooks';
 import { detailedTraceSummary, treeCorrectedForClockSkew } from '../../zipkin';
 import * as traceActionCreators from '../../actions/trace-action';
 
@@ -32,6 +32,7 @@ const propTypes = {
   isLoading: PropTypes.bool,
   isMalformedFile: PropTypes.bool,
   errorMessage: PropTypes.string,
+  correctedTraceMap: PropTypes.shape({}),
 };
 
 const defaultProps = {
@@ -40,6 +41,7 @@ const defaultProps = {
   isLoading: false,
   isMalformedFile: false,
   errorMessage: '',
+  correctedTraceMap: {},
 };
 
 export const TracePageImpl = ({
@@ -50,12 +52,13 @@ export const TracePageImpl = ({
   isLoading,
   isMalformedFile,
   errorMessage,
+  correctedTraceMap,
 }) => {
-  useMount(() => {
+  useEffect(() => {
     if (!isTraceViewerPage) {
-      loadTrace(traceId);
+      loadTrace(traceId, correctedTraceMap);
     }
-  });
+  }, [traceId, isTraceViewerPage, loadTrace, correctedTraceMap]);
 
   if (isTraceViewerPage && isMalformedFile) {
     return (
@@ -70,7 +73,7 @@ export const TracePageImpl = ({
     return (
       <React.Fragment>
         <TraceSummaryHeader />
-        Loading Indicator
+        <CircularProgress />
       </React.Fragment>
     );
   }
@@ -138,13 +141,5 @@ export default withRouter(
   connect(
     mapStateToProps,
     mapDispatchToProps,
-    (stateProps, dispatchProps, ownProps) => ({
-      ...ownProps,
-      ...stateProps,
-      loadTrace: () => {
-        const { correctedTraceMap } = stateProps;
-        dispatchProps.loadTrace(stateProps.traceId, correctedTraceMap);
-      },
-    }),
   )(TracePageImpl),
 );
