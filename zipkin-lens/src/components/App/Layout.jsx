@@ -34,8 +34,6 @@ const Layout = ({ children }) => (
       flexDirection="column"
       height="100vh"
       width="100%"
-      pl={3}
-      pr={3}
       overflow="auto"
     >
       {children}

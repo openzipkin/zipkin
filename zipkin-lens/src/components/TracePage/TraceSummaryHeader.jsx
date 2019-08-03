@@ -41,7 +41,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
   const classes = useStyles();
 
   return (
-    <Box>
+    <Box pl={3} pr={3}>
       <Box
         width="100%"
         display="flex"
