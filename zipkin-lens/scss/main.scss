@@ -31,7 +31,6 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 
 @import 'components/dependencies-sidebar';
 @import 'components/dependencies';
-@import 'components/detailed-trace-summary';
 @import 'components/loading-overlay';
 @import 'components/mini-timeline';
 @import 'components/mini-timeline-graph';
@@ -40,4 +39,3 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import 'components/timeline-header';
 @import 'components/timeline-span';
 @import 'components/timeline-span-data';
-@import 'components/trace-viewer';

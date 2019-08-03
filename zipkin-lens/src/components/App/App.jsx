@@ -20,8 +20,7 @@ import MomentUtils from '@date-io/moment';
 
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
-import TracePageContainer from '../../containers/TracePage/TracePageContainer';
-import TraceViewerContainer from '../../containers/TraceViewer/TraceViewerContainer';
+import TracePage from '../TracePage';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
 import { useMount } from '../../hooks';
@@ -46,13 +45,8 @@ const App = () => {
               />
               <Route
                 exact
-                path="/zipkin/traces/:traceId"
-                component={TracePageContainer}
-              />
-              <Route
-                exact
-                path="/zipkin/traceViewer"
-                component={TraceViewerContainer}
+                path={['/zipkin/traces/:traceId', '/zipkin/traceViewer']}
+                component={TracePage}
               />
             </Layout>
           </BrowserRouter>
