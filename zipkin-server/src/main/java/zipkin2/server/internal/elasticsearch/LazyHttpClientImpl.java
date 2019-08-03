@@ -32,19 +32,17 @@ import static com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy.ROU
 final class LazyHttpClientImpl implements LazyHttpClient {
   final HttpClientFactory factory;
   final SessionProtocol protocol;
-  final Supplier<EndpointGroup> configuredEndpoints;
+  final Supplier<EndpointGroup> initialEndpoints;
   final ZipkinElasticsearchStorageProperties.HealthCheck healthCheck;
   final int timeoutMillis;
 
-  // guarded by this
   volatile HttpClient result;
-  volatile Endpoint endpoint;
 
   LazyHttpClientImpl(HttpClientFactory factory, SessionProtocol protocol,
-    Supplier<EndpointGroup> configuredEndpoints, ZipkinElasticsearchStorageProperties es) {
+    Supplier<EndpointGroup> initialEndpoints, ZipkinElasticsearchStorageProperties es) {
     this.factory = factory;
     this.protocol = protocol;
-    this.configuredEndpoints = configuredEndpoints;
+    this.initialEndpoints = initialEndpoints;
     this.healthCheck = es.getHealthCheck();
     timeoutMillis = es.getTimeout();
   }
@@ -61,8 +59,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     if (result == null) {
       synchronized (this) {
         if (result == null) {
-          endpoint = getEndpoint();
-          result = factory.apply(endpoint);
+          result = factory.apply(getEndpoint());
         }
       }
     }
@@ -70,7 +67,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   Endpoint getEndpoint() {
-    EndpointGroup endpointGroup = configuredEndpoints.get();
+    EndpointGroup endpointGroup = initialEndpoints.get();
     if (endpointGroup instanceof StaticEndpointGroup && endpointGroup.endpoints().size() == 1) {
       // Just one non-domain URL, can connect directly without enabling load balancing.
       return endpointGroup.endpoints().get(0);
@@ -125,7 +122,6 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   @Override public final String toString() {
-    Endpoint realEndpoint = endpoint;
-    return realEndpoint != null ? realEndpoint.toString() : configuredEndpoints.toString();
+    return initialEndpoints.toString();
   }
 }
