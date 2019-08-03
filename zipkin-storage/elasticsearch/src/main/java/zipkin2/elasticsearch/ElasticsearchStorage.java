@@ -64,6 +64,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
 
     @Override default void close() {
     }
+
+    /** This should return the initial endpoints in a single-string without resolving them. */
+    @Override String toString();
   }
 
   /** The lazy http client supplier will be closed on {@link #close()} */
@@ -278,7 +281,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   @Override public final String toString() {
-    return "ElasticsearchStorage{httpClient=" + lazyHttpClient()
+    return "ElasticsearchStorage{initialEndpoints=" + lazyHttpClient()
       + ", index=" + indexNameFormatter().index() + "}";
   }
 

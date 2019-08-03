@@ -36,7 +36,9 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   final ZipkinElasticsearchStorageProperties.HealthCheck healthCheck;
   final int timeoutMillis;
 
+  // guarded by this
   volatile HttpClient result;
+  volatile Endpoint endpoint;
 
   LazyHttpClientImpl(HttpClientFactory factory, SessionProtocol protocol,
     Supplier<EndpointGroup> configuredEndpoints, ZipkinElasticsearchStorageProperties es) {
@@ -59,7 +61,8 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     if (result == null) {
       synchronized (this) {
         if (result == null) {
-          result = factory.apply(getEndpoint());
+          endpoint = getEndpoint();
+          result = factory.apply(endpoint);
         }
       }
     }
@@ -122,6 +125,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   @Override public final String toString() {
-    return configuredEndpoints.toString();
+    Endpoint realEndpoint = endpoint;
+    return realEndpoint != null ? realEndpoint.toString() : configuredEndpoints.toString();
   }
 }

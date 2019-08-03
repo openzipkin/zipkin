@@ -27,11 +27,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 // TODO: testme
-final class ConfiguredEndpointsSupplier implements Supplier<EndpointGroup> {
+final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
   final String hosts;
   final SessionProtocol sessionProtocol;
 
-  ConfiguredEndpointsSupplier(SessionProtocol sessionProtocol, String hosts) {
+  InitialEndpointSupplier(SessionProtocol sessionProtocol, String hosts) {
     this.hosts = hosts == null || hosts.isEmpty() ? "localhost:9200" : hosts;
     this.sessionProtocol = sessionProtocol;
   }
@@ -114,6 +114,6 @@ final class ConfiguredEndpointsSupplier implements Supplier<EndpointGroup> {
   }
 
   @Override public String toString() {
-    return "ConfiguredEndpointsSupplier{hosts=" + hosts + "}";
+    return hosts;
   }
 }
