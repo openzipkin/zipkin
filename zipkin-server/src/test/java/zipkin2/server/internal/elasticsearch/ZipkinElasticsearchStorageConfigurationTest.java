@@ -86,6 +86,18 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .containsExactly(URI.create("http://host1:9200"), URI.create("http://host2:9200"));
   }
 
+  @Test public void decentToString_whenUnresolvedOrUnhealthy() {
+    TestPropertyValues.of(
+      "zipkin.storage.type:elasticsearch",
+      "zipkin.storage.elasticsearch.hosts:http://127.0.0.1:9200,http://127.0.0.1:9201")
+      .applyTo(context);
+    Access.registerElasticsearchHttp(context);
+    context.refresh();
+
+    assertThat(es()).hasToString(
+      "ElasticsearchStorage{initialEndpoints=http://127.0.0.1:9200,http://127.0.0.1:9201, index=zipkin}");
+  }
+
   @Test public void configuresPipeline() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
@@ -134,7 +146,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     assertThat(context.getBean(SessionProtocol.class))
       .isEqualTo(SessionProtocol.HTTPS);
-    assertThat(context.getBean(ConfiguredEndpointsSupplier.class).get().endpoints().get(0).port())
+    assertThat(context.getBean(InitialEndpointSupplier.class).get().endpoints().get(0).port())
       .isEqualTo(443);
   }
 

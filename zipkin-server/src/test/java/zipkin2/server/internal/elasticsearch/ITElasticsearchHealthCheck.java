@@ -73,14 +73,14 @@ public class ITElasticsearchHealthCheck {
     context.refresh();
   }
 
-  @Test public void allHealthy() throws Exception {
+  @Test public void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
   }
 
-  @Test public void oneHealthy() throws Exception {
+  @Test public void oneHealthy() {
     server1Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
@@ -89,17 +89,21 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void noneHealthy() throws Exception {
+  @Test public void noneHealthy() {
     server1Health.setHealthy(false);
     server2Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isFalse();
+      assertThat(result.error()).hasMessage(String.format(
+        "couldn't connect any of [Endpoint{127.0.0.1:%s, weight=1000}, Endpoint{127.0.0.1:%s, weight=1000}]",
+        server1.httpPort(), server2.httpPort()
+      ));
     }
   }
 
-  @Test public void healthyThenNotHealthyThenHealthy() throws Exception {
+  @Test public void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
@@ -119,7 +123,7 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void notHealthyThenHealthyThenNotHealthy() throws Exception {
+  @Test public void notHealthyThenHealthyThenNotHealthy() {
     server1Health.setHealthy(false);
     server2Health.setHealthy(false);
 
@@ -141,7 +145,7 @@ public class ITElasticsearchHealthCheck {
     }
   }
 
-  @Test public void healthCheckDisabled() throws Exception {
+  @Test public void healthCheckDisabled() {
     AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
     TestPropertyValues.of(
