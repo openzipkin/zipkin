@@ -16,8 +16,7 @@ import Box from '@material-ui/core/Box';
 // import { AutoSizer } from 'react-virtualized';
 
 import TraceSummaryHeader from './TraceSummaryHeader';
-import MiniTimeline from '../MiniTimeline';
-import Timeline from '../Timeline';
+import TraceTimeline from './TraceTimeline';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
@@ -40,14 +39,6 @@ const TraceSummary = ({ traceSummary }) => {
   return (
     <React.Fragment>
       <TraceSummaryHeader traceSummary={traceSummary} />
-      <Box width="100%" display="flex" justifyContent="center">
-        <MiniTimeline
-          startTs={tsRange.startTs}
-          endTs={tsRange.endTs}
-          traceSummary={traceSummary}
-          onStartAndEndTsChange={handleStartAndEndTsChange}
-        />
-      </Box>
       <Box height="100%" mb={3}>
         {
           /*
@@ -70,7 +61,7 @@ const TraceSummary = ({ traceSummary }) => {
             </AutoSizer>
           */
         }
-        <Timeline
+        <TraceTimeline
           startTs={tsRange.startTs}
           endTs={tsRange.endTs}
           traceSummary={traceSummary}
