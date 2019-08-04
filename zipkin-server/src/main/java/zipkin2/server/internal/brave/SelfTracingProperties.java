@@ -24,9 +24,9 @@ class SelfTracingProperties {
   /** Whether self-tracing is enabled. Defaults to {@code false}. */
   private boolean enabled = false;
   /**
-   * The percentage of traces retained when self-tracing. If 1.0 (i.e., all traces are sampled),
-   * the value of {@link #getTracesPerSecond()} will be used for sampling traces. Defaults to
-   * {@code 1.0}, sampling all traces.
+   * The percentage of traces retained when self-tracing. If 1.0 (i.e., all traces are sampled), the
+   * value of {@link #getTracesPerSecond()} will be used for sampling traces. Defaults to {@code
+   * 1.0}, sampling all traces.
    */
   private float sampleRate = 1.0f;
   /**
@@ -47,7 +47,6 @@ class SelfTracingProperties {
     this.enabled = enabled;
   }
 
-
   public float getSampleRate() {
     return sampleRate;
   }
@@ -55,7 +54,6 @@ class SelfTracingProperties {
   public void setSampleRate(float sampleRate) {
     this.sampleRate = sampleRate;
   }
-
 
   public int getTracesPerSecond() {
     return tracesPerSecond;
