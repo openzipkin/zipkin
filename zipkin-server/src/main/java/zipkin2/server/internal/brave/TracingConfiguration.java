@@ -73,20 +73,21 @@ public class TracingConfiguration {
     return ThreadLocalSpan.create(tracing.tracer());
   }
 
-  /** Controls aspects of tracing such as the name that shows up in the UI */
-  @Bean Tracing tracing(Reporter<Span> reporter, SelfTracingProperties config) {
-    final Sampler sampler;
+  @Bean Sampler sampler(SelfTracingProperties config) {
     if (config.getSampleRate() != 1.0) {
       if (config.getSampleRate() < 0.01) {
-        sampler = BoundarySampler.create(config.getSampleRate());
+        return BoundarySampler.create(config.getSampleRate());
       } else {
-        sampler = Sampler.create(config.getSampleRate());
+        return Sampler.create(config.getSampleRate());
       }
     } else if (config.getTracesPerSecond() != 0) {
-      sampler = RateLimitingSampler.create(config.getTracesPerSecond());
-    } else {
-      sampler = Sampler.ALWAYS_SAMPLE;
+      return RateLimitingSampler.create(config.getTracesPerSecond());
     }
+    return Sampler.ALWAYS_SAMPLE;
+  }
+
+  /** Controls aspects of tracing such as the name that shows up in the UI */
+  @Bean Tracing tracing(Reporter<Span> reporter, Sampler sampler) {
     return Tracing.newBuilder()
       .localServiceName("zipkin-server")
       .sampler(sampler)
@@ -103,7 +104,10 @@ public class TracingConfiguration {
       .serverSampler(new HttpSampler() {
         @Override public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
           String path = adapter.path(request);
-          return path.startsWith("/api") || path.startsWith("/zipkin/api");
+          if (path.startsWith("/api") || path.startsWith("/zipkin/api")) {
+            return null; // use the global rate limit
+          }
+          return false;
         }
       })
       // client doesn't start new traces

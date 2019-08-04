@@ -106,7 +106,7 @@ public class ITZipkinSelfTracing {
    * information.
    */
   @Test public void toStringContainsOnlySummaryInformation() {
-    assertThat(storage).hasToString("Traced{InMemoryStorage{traceCount=0}}");
+    assertThat(storage).hasToString("Traced{InMemoryStorage{}}");
     assertThat(reporter).hasToString("AsyncReporter{StorageComponent}");
   }
 

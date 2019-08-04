@@ -59,7 +59,7 @@ public class ThrottledStorageComponentTest {
    */
   @Test public void toStringContainsOnlySummaryInformation() {
     assertThat(new ThrottledStorageComponent(delegate, registry, 1, 2, 1))
-      .hasToString("Throttled{InMemoryStorage{traceCount=0}}");
+      .hasToString("Throttled{InMemoryStorage{}}");
   }
 
   @Test public void delegatesCheck() {
