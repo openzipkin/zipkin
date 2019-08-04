@@ -23,9 +23,11 @@ import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpoin
 import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
 import com.linecorp.armeria.client.retry.Backoff;
 import com.linecorp.armeria.common.SessionProtocol;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
+import zipkin2.elasticsearch.internal.client.HttpCall;
 
 import static com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy.ROUND_ROBIN;
 
@@ -35,16 +37,19 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   final Supplier<EndpointGroup> initialEndpoints;
   final ZipkinElasticsearchStorageProperties.HealthCheck healthCheck;
   final int timeoutMillis;
+  final MeterRegistry meterRegistry;
 
   volatile HttpClient result;
 
   LazyHttpClientImpl(HttpClientFactory factory, SessionProtocol protocol,
-    Supplier<EndpointGroup> initialEndpoints, ZipkinElasticsearchStorageProperties es) {
+    Supplier<EndpointGroup> initialEndpoints, ZipkinElasticsearchStorageProperties es,
+    MeterRegistry meterRegistry) {
     this.factory = factory;
     this.protocol = protocol;
     this.initialEndpoints = initialEndpoints;
     this.healthCheck = es.getHealthCheck();
     timeoutMillis = es.getTimeout();
+    this.meterRegistry = meterRegistry;
   }
 
   @Override public void close() {
@@ -103,9 +108,17 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       new HttpHealthCheckedEndpointGroupBuilder(endpointGroup, "/_cluster/health")
         .protocol(protocol)
         .clientFactory(factory.delegate)
-        .withClientOptions(factory::configureOptionsExceptLogging)
+        .withClientOptions(options -> {
+          factory.configureOptionsExceptLogging(options);
+          options.decorator((delegate, ctx, req) -> {
+            ctx.attr(HttpCall.NAME).set("health-check");
+            return delegate.execute(ctx, req);
+          });
+          return options;
+        })
         .retryBackoff(Backoff.fixed(healthCheck.getInterval().toMillis()))
         .build();
+    healthChecked.newMeterBinder("elasticsearch").bindTo(meterRegistry);
 
     // Since we aren't holding up server startup, or sitting on the event loop, it is ok to block.
     // The alternative is round-robin, which could be unlucky and hit a bad node first.
