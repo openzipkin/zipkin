@@ -22,6 +22,8 @@ import { selectServiceColor } from '../../../colors';
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
   index: PropTypes.number.isRequired,
+  offsetX: PropTypes.number.isRequired,
+  width: PropTypes.number.isRequired,
 };
 
 const useStyles = makeStyles({
@@ -30,27 +32,37 @@ const useStyles = makeStyles({
   },
 });
 
-const TraceTimelineRow = ({ span, index }) => {
+const TraceTimelineRow = ({
+  span,
+  index,
+  offsetX,
+  width,
+}) => {
   const classes = useStyles();
 
   const spanRowOffsetY = index * (spanDataRowLineHeight + spanBarRowLineHeight);
   const spanDataRowPosY = spanRowOffsetY + spanDataRowLineHeight * 0.75;
   const spanBarRowPosY = spanRowOffsetY + spanDataRowLineHeight;
 
+  console.log(offsetX);
+
   return (
     <g>
       <text
-        x="5%"
+        x={offsetX + width * 0.05}
         y={`${spanDataRowPosY}rem`}
         className={classes.serviceName}
       >
         {span.serviceName}
       </text>
-      <text x="30%" y={`${spanDataRowPosY}rem`}>
+      <text
+        x={offsetX + width * 0.3}
+        y={`${spanDataRowPosY}rem`}
+      >
         {span.spanName}
       </text>
       <line
-        x1="0"
+        x1={offsetX}
         x2="100%"
         y1={`${spanBarRowPosY + spanBarHeight / 2}rem`}
         y2={`${spanBarRowPosY + spanBarHeight / 2}rem`}
@@ -58,10 +70,12 @@ const TraceTimelineRow = ({ span, index }) => {
         stroke="#999"
       />
       <rect
-        width={`${span.width}%`}
+        width={width * (span.width / 100)}
         height={`${spanBarHeight}rem`}
-        x={`${span.left}%`}
+        x={offsetX + (width * (span.left / 100))}
         y={`${spanBarRowPosY}rem`}
+        rx={2}
+        ry={2}
         fill={selectServiceColor(span.serviceName)}
       />
     </g>

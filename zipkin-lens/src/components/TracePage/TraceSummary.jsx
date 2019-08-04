@@ -11,9 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React, { useState, useCallback } from 'react';
+import React from 'react';
 import Box from '@material-ui/core/Box';
-// import { AutoSizer } from 'react-virtualized';
+import { AutoSizer } from 'react-virtualized';
 
 import TraceSummaryHeader from './TraceSummaryHeader';
 import TraceTimeline from './TraceTimeline';
@@ -24,48 +24,30 @@ const propTypes = {
 };
 
 const TraceSummary = ({ traceSummary }) => {
-  const [tsRange, setTsRange] = useState({
-    startTs: 0,
-    endTs: traceSummary.duration,
-  });
-
-  const handleStartAndEndTsChange = useCallback((startTs, endTs) => {
-    setTsRange({
-      startTs,
-      endTs,
-    });
-  }, []);
-
   return (
     <React.Fragment>
-      <TraceSummaryHeader traceSummary={traceSummary} />
+      <Box boxShadow={3}>
+        <TraceSummaryHeader traceSummary={traceSummary} />
+      </Box>
       <Box height="100%" mb={3}>
         {
-          /*
-            <AutoSizer>
-              {
-                ({ height, width }) => (
-                  <Box
-                    height={height}
+          <AutoSizer>
+            {
+              ({ height, width }) => (
+                <Box
+                  height={height}
+                  width={width}
+                  overflow="auto"
+                >
+                  <TraceTimeline
+                    traceSummary={traceSummary}
                     width={width}
-                    overflow="auto"
-                  >
-                    <Timeline
-                      startTs={tsRange.startTs}
-                      endTs={tsRange.endTs}
-                      traceSummary={traceSummary}
-                    />
-                  </Box>
-                )
-              }
-            </AutoSizer>
-          */
+                  />
+                </Box>
+              )
+            }
+          </AutoSizer>
         }
-        <TraceTimeline
-          startTs={tsRange.startTs}
-          endTs={tsRange.endTs}
-          traceSummary={traceSummary}
-        />
       </Box>
     </React.Fragment>
   );
