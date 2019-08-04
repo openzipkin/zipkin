@@ -22,6 +22,7 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.SessionProtocol;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -86,6 +87,7 @@ public class ZipkinElasticsearchStorageConfiguration {
   @Bean @ConditionalOnMissingBean StorageComponent storage(
     ZipkinElasticsearchStorageProperties es,
     HttpClientFactory esHttpClientFactory,
+    MeterRegistry meterRegistry,
     @Qualifier(QUALIFIER) SessionProtocol protocol,
     @Qualifier(QUALIFIER) Supplier<EndpointGroup> initialEndpoints,
     @Value("${zipkin.query.lookback:86400000}") int namesLookback,
@@ -95,7 +97,8 @@ public class ZipkinElasticsearchStorageConfiguration {
     @Value("${zipkin.storage.autocomplete-ttl:3600000}") int autocompleteTtl,
     @Value("${zipkin.storage.autocomplete-cardinality:20000}") int autocompleteCardinality) {
     ElasticsearchStorage.Builder builder = es
-      .toBuilder(new LazyHttpClientImpl(esHttpClientFactory, protocol, initialEndpoints, es))
+      .toBuilder(new LazyHttpClientImpl(esHttpClientFactory, protocol, initialEndpoints, es,
+        meterRegistry))
       .namesLookback(namesLookback)
       .strictTraceId(strictTraceId)
       .searchEnabled(searchEnabled)
@@ -134,8 +137,9 @@ public class ZipkinElasticsearchStorageConfiguration {
 
     return client -> {
       client.decorator((delegate, ctx, req) -> {
-        if (ctx.hasAttr(HttpCall.NAME)) { // override the span name if set
-          spanCustomizer.name(ctx.attr(HttpCall.NAME).get());
+        String name = ctx.attr(HttpCall.NAME).get();
+        if (name != null) { // override the span name if set
+          spanCustomizer.name(name);
         }
         return delegate.execute(ctx, req);
       });
