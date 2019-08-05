@@ -11,12 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import React, { useState, useCallback } from 'react';
 import Box from '@material-ui/core/Box';
 import { AutoSizer } from 'react-virtualized';
 
 import TraceSummaryHeader from './TraceSummaryHeader';
 import TraceTimeline from './TraceTimeline';
+import SpanDetail from './SpanDetail';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
@@ -24,13 +25,19 @@ const propTypes = {
 };
 
 const TraceSummary = ({ traceSummary }) => {
+  const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
+
+  const handleSpanClick = useCallback(i => setCurrentSpanIndex(i), []);
+
+  const currentSpan = traceSummary.spans[currentSpanIndex];
+
   return (
     <React.Fragment>
-      <Box boxShadow={3}>
+      <Box boxShadow={3} zIndex={1}>
         <TraceSummaryHeader traceSummary={traceSummary} />
       </Box>
-      <Box height="100%" mb={3}>
-        {
+      <Box height="100%" display="flex">
+        <Box height="100%" width="65%">
           <AutoSizer>
             {
               ({ height, width }) => (
@@ -42,12 +49,28 @@ const TraceSummary = ({ traceSummary }) => {
                   <TraceTimeline
                     traceSummary={traceSummary}
                     width={width}
+                    onSpanClick={handleSpanClick}
                   />
                 </Box>
               )
             }
           </AutoSizer>
-        }
+        </Box>
+        <Box height="100%" width="35%">
+          <AutoSizer>
+            {
+              ({ height, width }) => (
+                <Box
+                  height={height}
+                  width={width}
+                  overflow="auto"
+                >
+                  <SpanDetail span={currentSpan} />
+                </Box>
+              )
+            }
+          </AutoSizer>
+        </Box>
       </Box>
     </React.Fragment>
   );
