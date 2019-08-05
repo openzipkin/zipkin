@@ -35,7 +35,7 @@ const TraceTimeline = ({ traceSummary, width, onSpanClick }) => {
     <svg
       version="1.1"
       width={width}
-      height={`${traceTimelineHeight}rem`}
+      height={traceTimelineHeight}
       xmlns="http://www.w3.org/2000/svg"
     >
       {

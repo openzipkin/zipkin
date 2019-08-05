@@ -74,6 +74,14 @@ const TraceTimelineRow = ({
       >
         {span.spanName}
       </text>
+      <line
+        stroke="#bbb"
+        strokeWidth={1}
+        x1={offsetX}
+        x2="100%"
+        y1={spanBarRowPosY + spanBarHeight / 2}
+        y2={spanBarRowPosY + spanBarHeight / 2}
+      />
       <rect
         width={width * (span.width / 100)}
         height={spanBarHeight}

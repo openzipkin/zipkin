@@ -23,9 +23,10 @@ import {
 const TraceTree = ({ spans, depth, width }) => {
   const widthPerDepth = width / (depth + 1);
 
-  const result = [];
-
   const stack = [];
+
+  const linePositions = [];
+  const buttonPositions = [];
 
   for (let i = 0; i < spans.length; i += 1) {
     const currentSpan = spans[i];
@@ -44,17 +45,12 @@ const TraceTree = ({ spans, depth, width }) => {
       const parent = stackTop;
       stack.push({ index: i, depth: currentSpan.depth });
 
-      result.push(
-        <line
-          stroke="#999"
-          strokeWidth={1}
-          strokeDasharray="12 2"
-          x1={parent.depth * widthPerDepth}
-          x2="100%"
-          y1={spanBarRowPosY + spanBarHeight / 2}
-          y2={spanBarRowPosY + spanBarHeight / 2}
-        />,
-      );
+      linePositions.push({
+        x1: parent.depth * widthPerDepth,
+        x2: width,
+        y1: spanBarRowPosY + spanBarHeight / 2,
+        y2: spanBarRowPosY + spanBarHeight / 2,
+      });
       continue;
     }
 
@@ -63,17 +59,12 @@ const TraceTree = ({ spans, depth, width }) => {
       const parent = stack[stack.length - 1];
       stack.push({ index: i, depth: currentSpan.depth });
 
-      result.push(
-        <line
-          stroke="#999"
-          strokeWidth={1}
-          strokeDasharray="12 2"
-          x1={parent.depth * widthPerDepth}
-          x2="100%"
-          y1={spanBarRowPosY + spanBarHeight / 2}
-          y2={spanBarRowPosY + spanBarHeight / 2}
-        />,
-      );
+      linePositions.push({
+        x1: parent.depth * widthPerDepth,
+        x2: width,
+        y1: spanBarRowPosY + spanBarHeight / 2,
+        y2: spanBarRowPosY + spanBarHeight / 2,
+      });
       continue;
     }
 
@@ -88,114 +79,114 @@ const TraceTree = ({ spans, depth, width }) => {
       const parent = stack[stack.length - 1];
       stack.push({ index: i, depth: currentSpan.depth });
 
-      result.push(
-        <line
-          stroke="#999"
-          strokeWidth={1}
-          strokeDasharray="12 2"
-          x1={parent.depth * widthPerDepth}
-          x2="100%"
-          y1={spanBarRowPosY + spanBarHeight / 2}
-          y2={spanBarRowPosY + spanBarHeight / 2}
-        />,
-      );
+      linePositions.push({
+        x1: parent.depth * widthPerDepth,
+        x2: width,
+        y1: spanBarRowPosY + spanBarHeight / 2,
+        y2: spanBarRowPosY + spanBarHeight / 2,
+      });
 
       for (let j = 0; j < popped.length - 1; j += 1) {
-        result.push(
-          <line
-            stroke="#999"
-            strokeWidth={1}
-            x1={popped[j + 1].depth * widthPerDepth}
-            x2={popped[j + 1].depth * widthPerDepth}
-            y1={
-              popped[j].index
-                * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
-            }
-            y2={
-              popped[j + 1].index
-                * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
-            }
-          />,
-        );
+        linePositions.push({
+          x1: popped[j + 1].depth * widthPerDepth,
+          x2: popped[j + 1].depth * widthPerDepth,
+          y1: popped[j].index
+            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15,
+          y2: popped[j + 1].index
+            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15,
+        });
 
-        result.push(
-          <g>
-            <rect
-              rx={2}
-              ry={2}
-              x={
-                popped[j + 1].depth * widthPerDepth
-                  - expandButtonLengthOfSide / 2
-              }
-              y={
-                popped[j + 1].index
-                  * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
-                  - expandButtonLengthOfSide / 2
-              }
-              width={expandButtonLengthOfSide}
-              height={expandButtonLengthOfSide}
-              stroke="#333"
-              strokeWidth={1}
-              fill="#fff"
-            />
-          </g>,
-        );
+        buttonPositions.push({
+          x: popped[j + 1].depth * widthPerDepth
+            - expandButtonLengthOfSide / 2,
+          y: popped[j + 1].index
+            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+            - expandButtonLengthOfSide / 2,
+        });
       }
       continue;
     }
   }
 
-  result.push(
-    <line
-      stroke="#999"
-      strokeWidth={1}
-      strokeDasharray="12 2"
-      x1={widthPerDepth}
-      x2="100%"
-      y1={spanDataRowLineHeight + spanBarHeight / 2}
-      y2={spanDataRowLineHeight + spanBarHeight / 2}
-    />,
-  );
+  linePositions.push({
+    x1: widthPerDepth * 2,
+    x2: width,
+    y1: spanDataRowLineHeight + spanBarHeight / 2,
+    y2: spanDataRowLineHeight + spanBarHeight / 2,
+  });
 
   for (let j = 0; j < stack.length - 1; j += 1) {
-    result.push(
-      <line
-        stroke="#999"
-        strokeWidth={1}
-        x1={stack[j].depth * widthPerDepth}
-        x2={stack[j].depth * widthPerDepth}
-        y1={
-          stack[j].index
-            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
-        }
-        y2={
-          stack[j + 1].index
-            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
-        }
-      />,
-    );
+    linePositions.push({
+      x1: stack[j].depth * widthPerDepth,
+      x2: stack[j].depth * widthPerDepth,
+      y1: stack[j].index
+        * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15,
+      y2: stack[j + 1].index
+        * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15,
+    });
 
-    result.push(
+    buttonPositions.push({
+      x: stack[j].depth * widthPerDepth
+        - expandButtonLengthOfSide / 2,
+      y: stack[j].index
+        * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+        - expandButtonLengthOfSide / 2,
+    });
+  }
+
+  const result = [];
+
+  linePositions.map(({
+    x1,
+    x2,
+    y1,
+    y2,
+  }) => (
+    <line
+      stroke="#bbb"
+      strokeWidth={1}
+      x1={x1}
+      x2={x2}
+      y1={y1}
+      y2={y2}
+    />
+  )).forEach(line => result.push(line));
+
+  buttonPositions.map(({ x, y }) => (
+    <g>
       <rect
         rx={2}
         ry={2}
-        x={
-          stack[j].depth * widthPerDepth
-            - expandButtonLengthOfSide / 2
-        }
-        y={
-          stack[j].index
-            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
-            - expandButtonLengthOfSide / 2
-        }
+        x={x}
+        y={y}
         width={expandButtonLengthOfSide}
         height={expandButtonLengthOfSide}
-        stroke="#333"
+        stroke="#555"
         strokeWidth={1}
         fill="#fff"
-      />,
-    );
-  }
+      />
+      <line
+        x1={x}
+        x2={x + expandButtonLengthOfSide}
+        y1={y + expandButtonLengthOfSide / 2}
+        y2={y + expandButtonLengthOfSide / 2}
+        width={expandButtonLengthOfSide}
+        height={1}
+        stroke="#555"
+        strokeWidth={2}
+      />
+      <line
+        x1={x + expandButtonLengthOfSide / 2}
+        x2={x + expandButtonLengthOfSide / 2}
+        y1={y}
+        y2={y + expandButtonLengthOfSide}
+        width={1}
+        height={expandButtonLengthOfSide}
+        stroke="#555"
+        strokeWidth={2}
+      />
+    </g>
+  )).forEach(button => result.push(button));
 
   return result;
 };
