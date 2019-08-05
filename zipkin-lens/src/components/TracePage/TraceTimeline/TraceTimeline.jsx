@@ -14,6 +14,7 @@
 import PropTypes from 'prop-types';
 import React from 'react';
 
+import TraceTree from './TraceTree';
 import TraceTimelineRow from './TraceTimelineRow';
 import { detailedTraceSummaryPropTypes } from '../../../prop-types';
 import { spanDataRowLineHeight, spanBarRowLineHeight, spanTreeWidthPercent } from './constants';
@@ -36,6 +37,11 @@ const TraceTimeline = ({ traceSummary, width }) => {
       height={`${traceTimelineHeight}rem`}
       xmlns="http://www.w3.org/2000/svg"
     >
+      <TraceTree
+        spans={traceSummary.spans}
+        depth={traceSummary.depth}
+        width={traceTimelineOffsetX}
+      />
       {
         traceSummary.spans.map((span, i) => (
           <TraceTimelineRow

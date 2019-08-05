@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export const spanTreeWidthPercent = 5;
+export const spanTreeWidthPercent = 8;
 export const spanDataRowLineHeight = 2.5; // rem
 export const spanBarHeight = 0.75; // rem
 export const spanBarRowLineHeight = 1.0; // rem
