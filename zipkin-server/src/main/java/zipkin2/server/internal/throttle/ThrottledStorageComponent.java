@@ -61,6 +61,7 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
   final @Nullable Tracing tracing;
   final AbstractLimiter<Void> limiter;
   final ThreadPoolExecutor executor;
+  final LimiterMetrics limiterMetrics;
 
   public ThrottledStorageComponent(StorageComponent delegate, MeterRegistry registry,
     @Nullable Tracing tracing, int minConcurrency, int maxConcurrency, int maxQueueSize) {
@@ -90,6 +91,8 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
     ActuateThrottleMetrics metrics = new ActuateThrottleMetrics(registry);
     metrics.bind(executor);
     metrics.bind(limiter);
+
+    limiterMetrics = new LimiterMetrics(registry);
   }
 
   @Override protected StorageComponent delegate() {
@@ -130,6 +133,7 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
     final SpanConsumer delegate;
     final Executor executor;
     final Limiter<Void> limiter;
+    final LimiterMetrics limiterMetrics;
     final Predicate<Throwable> isOverCapacity;
     @Nullable final Tracer tracer;
 
@@ -137,13 +141,14 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
       this.delegate = throttledStorage.delegate.spanConsumer();
       this.executor = new RequestContextInstrumentedExecutor(throttledStorage.executor);
       this.limiter = throttledStorage.limiter;
+      this.limiterMetrics = throttledStorage.limiterMetrics;
       this.isOverCapacity = throttledStorage::isOverCapacity;
       this.tracer = throttledStorage.tracing != null ? throttledStorage.tracing.tracer() : null;
     }
 
     @Override public Call<Void> accept(List<Span> spans) {
-      Call<Void> result =
-        new ThrottledCall(delegate.accept(spans), executor, limiter, isOverCapacity);
+      Call<Void> result = new ThrottledCall(
+        delegate.accept(spans), executor, limiter, limiterMetrics, isOverCapacity);
 
       // This ensures we don't amplify storage commands by tracing self-traced requests.
       if (tracer != null && !isSpanReporterThread()) {

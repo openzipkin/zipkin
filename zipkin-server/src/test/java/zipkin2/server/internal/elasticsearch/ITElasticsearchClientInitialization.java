@@ -15,7 +15,6 @@ package zipkin2.server.internal.elasticsearch;
 
 import java.io.IOException;
 import org.junit.Test;
-import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.CheckResult;
@@ -28,8 +27,8 @@ public class ITElasticsearchClientInitialization {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
   /**
-   * This blocks for less than the timeout of 2 second to prove we defer i/o until first use
-   * of the storage component.
+   * This blocks for less than the timeout of 2 second to prove we defer i/o until first use of the
+   * storage component.
    */
   @Test(timeout = 1900L) public void defersIOUntilFirstUse() throws IOException {
     TestPropertyValues.of(
@@ -38,9 +37,7 @@ public class ITElasticsearchClientInitialization {
       "zipkin.storage.elasticsearch.timeout:2000",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234,127.0.0.1:5678")
       .applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchStorageConfiguration.class);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     context.getBean(ElasticsearchStorage.class).close();
@@ -54,9 +51,7 @@ public class ITElasticsearchClientInitialization {
       "zipkin.storage.elasticsearch.timeout:1000",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234,127.0.0.1:5678")
       .applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchStorageConfiguration.class);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {

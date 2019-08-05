@@ -42,13 +42,15 @@ final class ThrottledCall extends Call.Base<Void> {
   final Call<Void> delegate;
   final Executor executor;
   final Limiter<Void> limiter;
+  final LimiterMetrics limiterMetrics;
   final Predicate<Throwable> isOverCapacity;
 
   ThrottledCall(Call<Void> delegate, Executor executor, Limiter<Void> limiter,
-    Predicate<Throwable> isOverCapacity) {
+    LimiterMetrics limiterMetrics, Predicate<Throwable> isOverCapacity) {
     this.delegate = delegate;
     this.executor = executor;
     this.limiter = limiter;
+    this.limiterMetrics = limiterMetrics;
     this.isOverCapacity = isOverCapacity;
   }
 
@@ -69,12 +71,15 @@ final class ThrottledCall extends Call.Base<Void> {
       if (t instanceof RuntimeException) throw (RuntimeException) t;
       throw new RuntimeException(t);
     }
-    return null;
+    return null; // Void
   }
 
   @Override protected void doEnqueue(Callback<Void> callback) {
     Listener limiterListener = limiter.acquire(null)
       .orElseThrow(RejectedExecutionException::new); // TODO: make an exception message
+    limiterMetrics.requests.increment();
+    limiterListener = limiterMetrics.wrap(limiterListener);
+
     LimiterReleasingCallback releasingCallback =
       new LimiterReleasingCallback(callback, isOverCapacity, limiterListener);
 
@@ -91,7 +96,7 @@ final class ThrottledCall extends Call.Base<Void> {
   }
 
   @Override public Call<Void> clone() {
-    return new ThrottledCall(delegate.clone(), executor, limiter, isOverCapacity);
+    return new ThrottledCall(delegate.clone(), executor, limiter, limiterMetrics, isOverCapacity);
   }
 
   @Override public String toString() {
@@ -130,7 +135,7 @@ final class ThrottledCall extends Call.Base<Void> {
      * There could be an error enqueuing the call or an interruption during shutdown of the
      * executor. We do not affect the {@link Listener} here because it would be redundant to
      * handling already done in {@link LimiterReleasingCallback}. For example, if shutting down, the
-     * storage layer would also invoke {@link LimiterReleasingCallback#onError(Throwable).
+     * storage layer would also invoke {@link LimiterReleasingCallback#onError(Throwable)}.
      */
     @Override public void run() {
       if (delegate.isCanceled()) return;
@@ -190,7 +195,7 @@ final class ThrottledCall extends Call.Base<Void> {
 
     @Override public void onSuccess(Void value) {
       try {
-        limiterListener.onSuccess();
+        limiterListener.onSuccess(); // NOTE: limiter could block and delay the caller's callback
         delegate.onSuccess(value);
       } finally {
         latch.countDown();
@@ -205,6 +210,7 @@ final class ThrottledCall extends Call.Base<Void> {
           limiterListener.onIgnore();
         }
 
+        // NOTE: the above limiter could block and delay the caller's callback
         delegate.onError(t);
       } finally {
         latch.countDown();

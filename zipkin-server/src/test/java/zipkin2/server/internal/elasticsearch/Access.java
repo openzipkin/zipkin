@@ -17,13 +17,15 @@ import java.net.URI;
 import java.util.List;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import zipkin2.server.internal.NoOpMeterRegistryConfiguration;
 
 /** opens package access for testing */
 public final class Access {
 
-  public static void registerElasticsearchHttp(AnnotationConfigApplicationContext context) {
+  public static void registerElasticsearch(AnnotationConfigApplicationContext context) {
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
+      NoOpMeterRegistryConfiguration.class,
       ZipkinElasticsearchStorageConfiguration.class);
   }
 

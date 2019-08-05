@@ -56,7 +56,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   @Test(expected = NoSuchBeanDefinitionException.class)
   public void doesntProvideStorageComponent_whenStorageTypeNotElasticsearch() {
     TestPropertyValues.of("zipkin.storage.type:cassandra").applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     es();
@@ -67,7 +67,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es()).isNotNull();
@@ -78,7 +78,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200,http://host2:9200")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(Access.convert(
@@ -91,7 +91,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://127.0.0.1:9200,http://127.0.0.1:9201")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es()).hasToString(
@@ -104,7 +104,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.pipeline:zipkin")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es().pipeline()).isEqualTo("zipkin");
@@ -116,7 +116,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:host1:9300")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(Access.convert(
@@ -129,7 +129,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:host1:9200")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(context.getBean(SessionProtocol.class))
@@ -141,7 +141,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:https://localhost")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(context.getBean(SessionProtocol.class))
@@ -155,7 +155,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:host1")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(Access.convert(
@@ -182,7 +182,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   /** Ensures we can wire up network interceptors, such as for logging or authentication */
   @Test public void usesInterceptorsQualifiedWith_zipkinElasticsearchHttp() {
     TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.register(CustomizerConfiguration.class);
     context.refresh();
 
@@ -193,7 +193,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
   @Test public void timeout_defaultsTo10Seconds() {
     TestPropertyValues.of("zipkin.storage.type:elasticsearch").applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
@@ -209,7 +209,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
       "zipkin.storage.elasticsearch.timeout:" + timeout)
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
@@ -223,7 +223,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
     assertThat(es().strictTraceId()).isTrue();
   }
@@ -234,7 +234,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.strict-trace-id:false")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es().strictTraceId()).isFalse();
@@ -245,7 +245,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:http://host1:9200")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -258,7 +258,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.index:zipkin_prod")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -271,7 +271,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.date-separator:.")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -284,7 +284,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.date-separator:")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es().indexNameFormatter().formatTypeAndTimestamp("span", 0))
@@ -298,7 +298,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.storage.elasticsearch.date-separator:blagho")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
 
     context.refresh();
   }
@@ -309,7 +309,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.hosts:http://host1:9200",
       "zipkin.query.lookback:" + TimeUnit.DAYS.toMillis(2))
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es().namesLookback()).isEqualTo((int) TimeUnit.DAYS.toMillis(2));
@@ -322,7 +322,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
@@ -349,7 +349,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.elasticsearch.username:somename",
       "zipkin.storage.elasticsearch.password:pass")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
@@ -373,7 +373,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.search-enabled:false")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es()).extracting("searchEnabled")
@@ -385,7 +385,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-keys:environment")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es()).extracting("autocompleteKeys")
@@ -397,7 +397,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-ttl:60000")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es()).extracting("autocompleteTtl")
@@ -409,7 +409,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.autocomplete-cardinality:5000")
       .applyTo(context);
-    Access.registerElasticsearchHttp(context);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     assertThat(es()).extracting("autocompleteCardinality")

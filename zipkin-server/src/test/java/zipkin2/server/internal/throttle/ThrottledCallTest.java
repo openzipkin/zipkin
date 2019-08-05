@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.throttle;
 
+import com.linecorp.armeria.common.metric.NoopMeterRegistry;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.Limiter.Listener;
 import com.netflix.concurrency.limits.limit.SettableLimit;
@@ -46,6 +47,7 @@ import static org.mockito.Mockito.when;
 public class ThrottledCallTest {
   SettableLimit limit = SettableLimit.startingAt(0);
   SimpleLimiter limiter = SimpleLimiter.newBuilder().limit(limit).build();
+  LimiterMetrics limiterMetrics = new LimiterMetrics(NoopMeterRegistry.get());
   Predicate<Throwable> isOverCapacity = RejectedExecutionException.class::isInstance;
 
   int numThreads = 1;
@@ -59,7 +61,7 @@ public class ThrottledCallTest {
     Call<Void> delegate = mock(Call.class);
     when(delegate.toString()).thenReturn("StoreSpansCall{}");
 
-    assertThat(new ThrottledCall(delegate, executor, limiter, isOverCapacity))
+    assertThat(new ThrottledCall(delegate, executor, limiter, limiterMetrics, isOverCapacity))
       .hasToString("Throttled(StoreSpansCall{})");
   }
 
@@ -124,7 +126,7 @@ public class ThrottledCallTest {
     call.overCapacity = true;
 
     ThrottledCall throttle =
-      new ThrottledCall(call, executor, mockLimiter(listener), isOverCapacity);
+      new ThrottledCall(call, executor, mockLimiter(listener), limiterMetrics, isOverCapacity);
 
     try {
       throttle.execute();
@@ -138,7 +140,7 @@ public class ThrottledCallTest {
     Listener listener = mock(Listener.class);
 
     ThrottledCall throttle = new ThrottledCall(new FakeCall(), mockExhaustedPool(),
-      mockLimiter(listener), isOverCapacity);
+      mockLimiter(listener), limiterMetrics, isOverCapacity);
 
     try {
       throttle.execute();
@@ -188,7 +190,7 @@ public class ThrottledCallTest {
     call.overCapacity = true;
 
     ThrottledCall throttle =
-      new ThrottledCall(call, executor, mockLimiter(listener), isOverCapacity);
+      new ThrottledCall(call, executor, mockLimiter(listener), limiterMetrics, isOverCapacity);
 
     CountDownLatch latch = new CountDownLatch(1);
     throttle.enqueue(new Callback<Void>() {
@@ -210,7 +212,7 @@ public class ThrottledCallTest {
 
     ThrottledCall throttle =
       new ThrottledCall(new FakeCall(), mockExhaustedPool(), mockLimiter(listener),
-        isOverCapacity);
+        limiterMetrics, isOverCapacity);
     try {
       throttle.enqueue(new Callback<Void>() {
         @Override public void onSuccess(Void value) {
@@ -226,7 +228,7 @@ public class ThrottledCallTest {
   }
 
   ThrottledCall throttle(Call<Void> delegate) {
-    return new ThrottledCall(delegate, executor, limiter, isOverCapacity);
+    return new ThrottledCall(delegate, executor, limiter, limiterMetrics, isOverCapacity);
   }
 
   static final class LockedCall extends Call.Base<Void> {

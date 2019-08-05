@@ -22,7 +22,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.elasticsearch.ElasticsearchStorage;
@@ -56,10 +55,8 @@ public class ITElasticsearchSelfTracing {
       "zipkin.self-tracing.traces-per-second=10",
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:" + server.httpUri("/")).applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      TracingConfiguration.class,
-      ZipkinElasticsearchStorageConfiguration.class);
+    Access.registerElasticsearch(context);
+    context.register(TracingConfiguration.class);
     context.refresh();
     storage = context.getBean(ElasticsearchStorage.class);
   }
