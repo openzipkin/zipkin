@@ -16,6 +16,7 @@ package zipkin2.server.internal.throttle;
 import brave.Tracer;
 import brave.Tracing;
 import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.util.SafeCloseable;
 import com.netflix.concurrency.limits.Limit;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.limit.Gradient2Limit;
@@ -125,7 +126,17 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
 
     @Override public void execute(Runnable command) {
       RequestContext rCtx = RequestContext.currentOrNull();
-      delegate.execute(rCtx != null ? rCtx.makeContextAware(command) : command);
+      delegate.execute(rCtx != null ? new Runnable() {
+        @Override public void run() {
+          try (SafeCloseable ignored = rCtx.pushIfAbsent()) {
+            command.run();
+          }
+        }
+
+        @Override public String toString() { // avoid the lambda naming policy
+          return command.toString();
+        }
+      } : command);
     }
   }
 
