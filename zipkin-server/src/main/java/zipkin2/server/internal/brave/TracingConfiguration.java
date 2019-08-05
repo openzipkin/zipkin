@@ -51,9 +51,16 @@ import zipkin2.storage.StorageComponent;
 @EnableConfigurationProperties(SelfTracingProperties.class)
 @ConditionalOnSelfTracing
 public class TracingConfiguration {
+  static volatile Thread reporterThread;
+
+  public static boolean isSpanReporterThread() {
+    return Thread.currentThread() == reporterThread;
+  }
+
   /** Configuration for how to buffer spans into messages for Zipkin */
   @Bean Reporter<Span> reporter(BeanFactory factory, SelfTracingProperties config) {
     return AsyncReporter.builder(new LocalSender(factory))
+      .threadFactory(r -> reporterThread = new Thread(r))
       .messageTimeout(config.getMessageTimeout().toNanos(), TimeUnit.NANOSECONDS)
       .metrics(new ReporterMetricsAdapter(factory))
       .build();

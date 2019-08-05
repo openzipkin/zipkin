@@ -145,6 +145,43 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   }
 
   @Configuration
+  @EnableConfigurationProperties(ZipkinStorageThrottleProperties.class)
+  @ConditionalOnThrottledStorage
+  static class ThrottledStorageComponentEnhancer implements BeanPostProcessor, BeanFactoryAware {
+    @Autowired(required = false)
+    Tracing tracing;
+
+    /**
+     * Need this to resolve cyclic instantiation issue with spring.  Mostly, this is for
+     * MeterRegistry as really bad things happen if you try to Autowire it (loss of JVM metrics) but
+     * also using it for properties just to make sure no cycles exist at all as a result of turning
+     * throttling on.
+     *
+     * <p>Ref: <a href="https://stackoverflow.com/a/19688634">Tracking down cause of Spring's "not
+     * eligible for auto-proxying"</a></p>
+     */
+    private BeanFactory beanFactory;
+
+    @Override public Object postProcessAfterInitialization(Object bean, String beanName) {
+      if (bean instanceof StorageComponent) {
+        ZipkinStorageThrottleProperties throttleProperties =
+          beanFactory.getBean(ZipkinStorageThrottleProperties.class);
+        return new ThrottledStorageComponent((StorageComponent) bean,
+          beanFactory.getBean(MeterRegistry.class),
+          tracing,
+          throttleProperties.getMinConcurrency(),
+          throttleProperties.getMaxConcurrency(),
+          throttleProperties.getMaxQueueSize());
+      }
+      return bean;
+    }
+
+    @Override public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+      this.beanFactory = beanFactory;
+    }
+  }
+
+  @Configuration
   @ConditionalOnSelfTracing
   static class TracingStorageComponentEnhancer implements BeanPostProcessor {
 
@@ -163,39 +200,6 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
         return new TracingStorageComponent(tracing, (StorageComponent) bean);
       }
       return bean;
-    }
-  }
-
-  @Configuration
-  @EnableConfigurationProperties(ZipkinStorageThrottleProperties.class)
-  @ConditionalOnThrottledStorage
-  static class ThrottledStorageComponentEnhancer implements BeanPostProcessor, BeanFactoryAware {
-
-    /**
-     * Need this to resolve cyclic instantiation issue with spring.  Mostly, this is for MeterRegistry as really
-     * bad things happen if you try to Autowire it (loss of JVM metrics) but also using it for properties just to make
-     * sure no cycles exist at all as a result of turning throttling on.
-     *
-     * <p>Ref: <a href="https://stackoverflow.com/a/19688634">Tracking down cause of Spring's "not eligible for auto-proxying"</a></p>
-     */
-    private BeanFactory beanFactory;
-
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (bean instanceof StorageComponent) {
-        ZipkinStorageThrottleProperties throttleProperties = beanFactory.getBean(ZipkinStorageThrottleProperties.class);
-        return new ThrottledStorageComponent((StorageComponent) bean,
-          beanFactory.getBean(MeterRegistry.class),
-          throttleProperties.getMinConcurrency(),
-          throttleProperties.getMaxConcurrency(),
-          throttleProperties.getMaxQueueSize());
-      }
-      return bean;
-    }
-
-    @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-      this.beanFactory = beanFactory;
     }
   }
 

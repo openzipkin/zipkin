@@ -13,6 +13,9 @@
  */
 package zipkin2.server.internal.throttle;
 
+import brave.Tracer;
+import brave.Tracing;
+import com.linecorp.armeria.common.RequestContext;
 import com.netflix.concurrency.limits.Limit;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.limit.Gradient2Limit;
@@ -23,7 +26,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -32,9 +35,13 @@ import java.util.function.Consumer;
 import java.util.function.Predicate;
 import zipkin2.Call;
 import zipkin2.Span;
+import zipkin2.internal.Nullable;
+import zipkin2.server.internal.brave.TracedCall;
 import zipkin2.storage.ForwardingStorageComponent;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
+
+import static zipkin2.server.internal.brave.TracingConfiguration.isSpanReporterThread;
 
 /**
  * Delegating implementation that limits requests to the {@link #spanConsumer()} of another {@link
@@ -51,14 +58,14 @@ import zipkin2.storage.StorageComponent;
  */
 public final class ThrottledStorageComponent extends ForwardingStorageComponent {
   final StorageComponent delegate;
+  final @Nullable Tracing tracing;
   final AbstractLimiter<Void> limiter;
   final ThreadPoolExecutor executor;
 
   public ThrottledStorageComponent(StorageComponent delegate, MeterRegistry registry,
-    int minConcurrency,
-    int maxConcurrency,
-    int maxQueueSize) {
+    @Nullable Tracing tracing, int minConcurrency, int maxConcurrency, int maxQueueSize) {
     this.delegate = Objects.requireNonNull(delegate);
+    this.tracing = tracing;
 
     Limit limit = Gradient2Limit.newBuilder()
       .minLimit(minConcurrency)
@@ -70,12 +77,12 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
     this.limiter = new Builder().limit(limit).build();
 
     // TODO: explain these parameters
-    this.executor = new ThreadPoolExecutor(limit.getLimit(),
+    executor = new ThreadPoolExecutor(limit.getLimit(),
       limit.getLimit(),
       0,
       TimeUnit.DAYS,
       createQueue(maxQueueSize),
-      new ThottledThreadFactory(),
+      new ThrottledThreadFactory(),
       new ThreadPoolExecutor.AbortPolicy());
 
     limit.notifyOnChange(new ThreadPoolExecutorResizer(executor));
@@ -102,21 +109,47 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
     return "Throttled{" + delegate.toString() + "}";
   }
 
+  /**
+   * Lazy accesses the request context as we cannot scope the executor used by storage commands per
+   * request.
+   */
+  static final class RequestContextInstrumentedExecutor implements Executor {
+    final Executor delegate;
+
+    RequestContextInstrumentedExecutor(Executor delegate) {
+      this.delegate = delegate;
+    }
+
+    @Override public void execute(Runnable command) {
+      RequestContext rCtx = RequestContext.currentOrNull();
+      delegate.execute(rCtx != null ? rCtx.makeContextAware(command) : command);
+    }
+  }
+
   static final class ThrottledSpanConsumer implements SpanConsumer {
-    final ExecutorService executor;
+    final SpanConsumer delegate;
+    final Executor executor;
     final Limiter<Void> limiter;
     final Predicate<Throwable> isOverCapacity;
-    final SpanConsumer delegate;
+    @Nullable final Tracer tracer;
 
     ThrottledSpanConsumer(ThrottledStorageComponent throttledStorage) {
-      this.executor = throttledStorage.executor;
+      this.delegate = throttledStorage.delegate.spanConsumer();
+      this.executor = new RequestContextInstrumentedExecutor(throttledStorage.executor);
       this.limiter = throttledStorage.limiter;
       this.isOverCapacity = throttledStorage::isOverCapacity;
-      this.delegate = throttledStorage.delegate.spanConsumer();
+      this.tracer = throttledStorage.tracing != null ? throttledStorage.tracing.tracer() : null;
     }
 
     @Override public Call<Void> accept(List<Span> spans) {
-      return new ThrottledCall<>(executor, limiter, isOverCapacity, delegate.accept(spans));
+      Call<Void> result =
+        new ThrottledCall(delegate.accept(spans), executor, limiter, isOverCapacity);
+
+      // This ensures we don't amplify storage commands by tracing self-traced requests.
+      if (tracer != null && !isSpanReporterThread()) {
+        return new TracedCall<>(tracer, result, "throttled-accept-spans");
+      }
+      return result;
     }
 
     @Override public String toString() {
@@ -135,7 +168,10 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
     return new LinkedBlockingQueue<>(maxSize);
   }
 
-  static final class ThottledThreadFactory implements ThreadFactory {
+  static final class ThrottledThreadFactory implements ThreadFactory {
+    ThrottledThreadFactory() {
+    }
+
     @Override public Thread newThread(Runnable r) {
       Thread thread = new Thread(r);
       thread.setDaemon(true);
