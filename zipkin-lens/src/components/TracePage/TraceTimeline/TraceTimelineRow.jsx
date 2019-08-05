@@ -63,22 +63,22 @@ const TraceTimelineRow = ({
     <g>
       <text
         x={offsetX + width * 0.05}
-        y={`${spanDataRowPosY}rem`}
+        y={spanDataRowPosY}
         className={classes.serviceName}
       >
         {span.serviceName}
       </text>
       <text
         x={offsetX + width * 0.3}
-        y={`${spanDataRowPosY}rem`}
+        y={spanDataRowPosY}
       >
         {span.spanName}
       </text>
       <rect
         width={width * (span.width / 100)}
-        height={`${spanBarHeight}rem`}
+        height={spanBarHeight}
         x={offsetX + (width * (span.left / 100))}
-        y={`${spanBarRowPosY}rem`}
+        y={spanBarRowPosY}
         rx={2}
         ry={2}
         fill={selectServiceColor(span.serviceName)}
@@ -86,9 +86,9 @@ const TraceTimelineRow = ({
       <rect
         className={classes.clickableRect}
         x={0}
-        y={`${spanRowOffsetY}rem`}
+        y={spanRowOffsetY}
         width="100%"
-        height={`${spanDataRowLineHeight + spanBarRowLineHeight}rem`}
+        height={spanDataRowLineHeight + spanBarRowLineHeight}
         onClick={handleClick}
       />
     </g>

@@ -12,6 +12,7 @@
  * the License.
  */
 export const spanTreeWidthPercent = 8;
-export const spanDataRowLineHeight = 2.5; // rem
-export const spanBarHeight = 0.75; // rem
-export const spanBarRowLineHeight = 1.0; // rem
+export const spanDataRowLineHeight = 30; // px
+export const spanBarHeight = 10; // px
+export const spanBarRowLineHeight = 14; // px
+export const expandButtonLengthOfSide = 16; // px

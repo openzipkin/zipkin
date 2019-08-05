@@ -17,6 +17,7 @@ import {
   spanDataRowLineHeight,
   spanBarRowLineHeight,
   spanBarHeight,
+  expandButtonLengthOfSide,
 } from './constants';
 
 const TraceTree = ({ spans, depth, width }) => {
@@ -50,8 +51,8 @@ const TraceTree = ({ spans, depth, width }) => {
           strokeDasharray="12 2"
           x1={parent.depth * widthPerDepth}
           x2="100%"
-          y1={`${spanBarRowPosY + spanBarHeight / 2}rem`}
-          y2={`${spanBarRowPosY + spanBarHeight / 2}rem`}
+          y1={spanBarRowPosY + spanBarHeight / 2}
+          y2={spanBarRowPosY + spanBarHeight / 2}
         />,
       );
       continue;
@@ -69,8 +70,8 @@ const TraceTree = ({ spans, depth, width }) => {
           strokeDasharray="12 2"
           x1={parent.depth * widthPerDepth}
           x2="100%"
-          y1={`${spanBarRowPosY + spanBarHeight / 2}rem`}
-          y2={`${spanBarRowPosY + spanBarHeight / 2}rem`}
+          y1={spanBarRowPosY + spanBarHeight / 2}
+          y2={spanBarRowPosY + spanBarHeight / 2}
         />,
       );
       continue;
@@ -94,8 +95,8 @@ const TraceTree = ({ spans, depth, width }) => {
           strokeDasharray="12 2"
           x1={parent.depth * widthPerDepth}
           x2="100%"
-          y1={`${spanBarRowPosY + spanBarHeight / 2}rem`}
-          y2={`${spanBarRowPosY + spanBarHeight / 2}rem`}
+          y1={spanBarRowPosY + spanBarHeight / 2}
+          y2={spanBarRowPosY + spanBarHeight / 2}
         />,
       );
 
@@ -106,9 +107,38 @@ const TraceTree = ({ spans, depth, width }) => {
             strokeWidth={1}
             x1={popped[j + 1].depth * widthPerDepth}
             x2={popped[j + 1].depth * widthPerDepth}
-            y1={`${popped[j].index * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15}rem`}
-            y2={`${popped[j + 1].index * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15}rem`}
+            y1={
+              popped[j].index
+                * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+            }
+            y2={
+              popped[j + 1].index
+                * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+            }
           />,
+        );
+
+        result.push(
+          <g>
+            <rect
+              rx={2}
+              ry={2}
+              x={
+                popped[j + 1].depth * widthPerDepth
+                  - expandButtonLengthOfSide / 2
+              }
+              y={
+                popped[j + 1].index
+                  * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+                  - expandButtonLengthOfSide / 2
+              }
+              width={expandButtonLengthOfSide}
+              height={expandButtonLengthOfSide}
+              stroke="#333"
+              strokeWidth={1}
+              fill="#fff"
+            />
+          </g>,
         );
       }
       continue;
@@ -122,8 +152,8 @@ const TraceTree = ({ spans, depth, width }) => {
       strokeDasharray="12 2"
       x1={widthPerDepth}
       x2="100%"
-      y1={`${spanDataRowLineHeight + spanBarHeight / 2}rem`}
-      y2={`${spanDataRowLineHeight + spanBarHeight / 2}rem`}
+      y1={spanDataRowLineHeight + spanBarHeight / 2}
+      y2={spanDataRowLineHeight + spanBarHeight / 2}
     />,
   );
 
@@ -134,8 +164,35 @@ const TraceTree = ({ spans, depth, width }) => {
         strokeWidth={1}
         x1={stack[j].depth * widthPerDepth}
         x2={stack[j].depth * widthPerDepth}
-        y1={`${stack[j].index * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15}rem`}
-        y2={`${stack[j + 1].index * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15}rem`}
+        y1={
+          stack[j].index
+            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+        }
+        y2={
+          stack[j + 1].index
+            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+        }
+      />,
+    );
+
+    result.push(
+      <rect
+        rx={2}
+        ry={2}
+        x={
+          stack[j].depth * widthPerDepth
+            - expandButtonLengthOfSide / 2
+        }
+        y={
+          stack[j].index
+            * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+            - expandButtonLengthOfSide / 2
+        }
+        width={expandButtonLengthOfSide}
+        height={expandButtonLengthOfSide}
+        stroke="#333"
+        strokeWidth={1}
+        fill="#fff"
       />,
     );
   }

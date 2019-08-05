@@ -38,11 +38,6 @@ const TraceTimeline = ({ traceSummary, width, onSpanClick }) => {
       height={`${traceTimelineHeight}rem`}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <TraceTree
-        spans={traceSummary.spans}
-        depth={traceSummary.depth}
-        width={traceTimelineOffsetX}
-      />
       {
         traceSummary.spans.map((span, i) => (
           <TraceTimelineRow
@@ -55,6 +50,11 @@ const TraceTimeline = ({ traceSummary, width, onSpanClick }) => {
           />
         ))
       }
+      <TraceTree
+        spans={traceSummary.spans}
+        depth={traceSummary.depth}
+        width={traceTimelineOffsetX}
+      />
     </svg>
   );
 };
