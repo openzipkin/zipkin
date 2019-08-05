@@ -22,9 +22,10 @@ import { spanDataRowLineHeight, spanBarRowLineHeight, spanTreeWidthPercent } fro
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
   width: PropTypes.number.isRequired,
+  onSpanClick: PropTypes.func.isRequired,
 };
 
-const TraceTimeline = ({ traceSummary, width }) => {
+const TraceTimeline = ({ traceSummary, width, onSpanClick }) => {
   const spanCounts = traceSummary.spans.length;
   const traceTimelineHeight = (spanDataRowLineHeight + spanBarRowLineHeight) * spanCounts;
   const traceTimelineOffsetX = width * (spanTreeWidthPercent / 100);
@@ -50,6 +51,7 @@ const TraceTimeline = ({ traceSummary, width }) => {
             index={i}
             offsetX={traceTimelineOffsetX}
             width={traceTimelineWidth}
+            onSpanClick={onSpanClick}
           />
         ))
       }

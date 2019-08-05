@@ -12,8 +12,9 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { makeStyles } from '@material-ui/styles';
+import grey from '@material-ui/core/colors/grey';
 
 import { spanDataRowLineHeight, spanBarRowLineHeight, spanBarHeight } from './constants';
 import { detailedSpanPropTypes } from '../../../prop-types';
@@ -24,11 +25,20 @@ const propTypes = {
   index: PropTypes.number.isRequired,
   offsetX: PropTypes.number.isRequired,
   width: PropTypes.number.isRequired,
+  onSpanClick: PropTypes.func.isRequired,
 };
 
 const useStyles = makeStyles({
   serviceName: {
     textTransform: 'uppercase',
+  },
+  clickableRect: {
+    opacity: 0,
+    fill: grey[500],
+    cursor: 'pointer',
+    '&:hover': {
+      opacity: 0.2,
+    },
   },
 });
 
@@ -37,6 +47,7 @@ const TraceTimelineRow = ({
   index,
   offsetX,
   width,
+  onSpanClick,
 }) => {
   const classes = useStyles();
 
@@ -44,7 +55,9 @@ const TraceTimelineRow = ({
   const spanDataRowPosY = spanRowOffsetY + spanDataRowLineHeight * 0.75;
   const spanBarRowPosY = spanRowOffsetY + spanDataRowLineHeight;
 
-  console.log(offsetX);
+  const handleClick = useCallback(() => {
+    onSpanClick(index);
+  }, [onSpanClick, index]);
 
   return (
     <g>
@@ -69,6 +82,14 @@ const TraceTimelineRow = ({
         rx={2}
         ry={2}
         fill={selectServiceColor(span.serviceName)}
+      />
+      <rect
+        className={classes.clickableRect}
+        x={0}
+        y={`${spanRowOffsetY}rem`}
+        width="100%"
+        height={`${spanDataRowLineHeight + spanBarRowLineHeight}rem`}
+        onClick={handleClick}
       />
     </g>
   );
