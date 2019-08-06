@@ -69,10 +69,16 @@ const TraceTimelineRow = ({
         {span.serviceName}
       </text>
       <text
-        x={offsetX + width * 0.3}
+        x={offsetX + width * 0.35}
         y={spanDataRowPosY}
       >
         {span.spanName}
+      </text>
+      <text
+        x={offsetX + width * 0.8}
+        y={spanDataRowPosY}
+      >
+        {span.durationStr}
       </text>
       <line
         stroke="#bbb"
