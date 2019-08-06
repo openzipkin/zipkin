@@ -236,7 +236,8 @@ final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
   public HttpResponse handleException(RequestContext ctx, HttpRequest req, Throwable cause) {
     ZipkinHttpCollector.metrics.incrementMessagesDropped();
 
-    String message = cause.getMessage() != null ? cause.getMessage() : "";
+    String message = cause.getMessage();
+    if (message == null) message = cause.getClass().getSimpleName();
     if (cause instanceof IllegalArgumentException) {
       return HttpResponse.of(BAD_REQUEST, MediaType.ANY_TEXT_TYPE, message);
     } else {

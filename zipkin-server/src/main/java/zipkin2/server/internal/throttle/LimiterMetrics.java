@@ -40,6 +40,10 @@ final class LimiterMetrics {
         requestsDropped.increment();
         delegate.onDropped();
       }
+
+      @Override public String toString() {
+        return "LimiterMetrics{" + delegate + "}";
+      }
     };
   }
 

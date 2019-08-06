@@ -29,8 +29,6 @@ import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
 
-import static zipkin2.server.internal.brave.TracingConfiguration.isSpanReporterThread;
-
 // public for use in ZipkinServerConfiguration
 public final class TracingStorageComponent extends ForwardingStorageComponent {
   final Tracing tracing;
@@ -167,8 +165,6 @@ public final class TracingStorageComponent extends ForwardingStorageComponent {
     }
 
     @Override public Call<Void> accept(List<Span> spans) {
-      Call<Void> call = delegate.accept(spans);
-      if (isSpanReporterThread()) return call;
       return new TracedCall<>(tracer, delegate.accept(spans), "accept-spans");
     }
 

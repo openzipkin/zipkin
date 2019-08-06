@@ -42,8 +42,6 @@ import zipkin2.storage.ForwardingStorageComponent;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
-import static zipkin2.server.internal.brave.TracingConfiguration.isSpanReporterThread;
-
 /**
  * Delegating implementation that limits requests to the {@link #spanConsumer()} of another {@link
  * StorageComponent}.  The theory here is that this class can be used to:
@@ -161,11 +159,7 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
       Call<Void> result = new ThrottledCall(
         delegate.accept(spans), executor, limiter, limiterMetrics, isOverCapacity);
 
-      // This ensures we don't amplify storage commands by tracing self-traced requests.
-      if (tracer != null && !isSpanReporterThread()) {
-        return new TracedCall<>(tracer, result, "throttled-accept-spans");
-      }
-      return result;
+      return tracer != null ? new TracedCall<>(tracer, result, "throttled-accept-spans") : result;
     }
 
     @Override public String toString() {

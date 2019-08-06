@@ -51,16 +51,9 @@ import zipkin2.storage.StorageComponent;
 @EnableConfigurationProperties(SelfTracingProperties.class)
 @ConditionalOnSelfTracing
 public class TracingConfiguration {
-  static volatile Thread reporterThread;
-
-  public static boolean isSpanReporterThread() {
-    return Thread.currentThread() == reporterThread;
-  }
-
   /** Configuration for how to buffer spans into messages for Zipkin */
   @Bean Reporter<Span> reporter(BeanFactory factory, SelfTracingProperties config) {
     return AsyncReporter.builder(new LocalSender(factory))
-      .threadFactory(r -> reporterThread = new Thread(r))
       .messageTimeout(config.getMessageTimeout().toNanos(), TimeUnit.NANOSECONDS)
       .metrics(new ReporterMetricsAdapter(factory))
       .build();
@@ -80,6 +73,14 @@ public class TracingConfiguration {
     return ThreadLocalSpan.create(tracing.tracer());
   }
 
+  /**
+   * This controls the general rate. In order to not accidentally start traces started from the
+   * tracer itself, this isn't used as {@link Tracing.Builder#sampler(Sampler)}. The impact of this
+   * is that we can't currently start traces from Kafka or Rabbit (until we use a messaging
+   * sampler).
+   *
+   * See https://github.com/openzipkin/brave/pull/914 for the messaging abstraction
+   */
   @Bean Sampler sampler(SelfTracingProperties config) {
     if (config.getSampleRate() != 1.0) {
       if (config.getSampleRate() < 0.01) {
@@ -94,10 +95,10 @@ public class TracingConfiguration {
   }
 
   /** Controls aspects of tracing such as the name that shows up in the UI */
-  @Bean Tracing tracing(Reporter<Span> reporter, Sampler sampler) {
+  @Bean Tracing tracing(Reporter<Span> reporter) {
     return Tracing.newBuilder()
       .localServiceName("zipkin-server")
-      .sampler(sampler)
+      .sampler(Sampler.NEVER_SAMPLE) // don't sample traces at this abstraction
       .currentTraceContext(currentTraceContext())
       // Reduce the impact on untraced downstream http services such as Elasticsearch
       .propagationFactory(B3SinglePropagation.FACTORY)
@@ -105,20 +106,18 @@ public class TracingConfiguration {
       .build();
   }
 
-  @Bean HttpTracing httpTracing(Tracing tracing) {
+  @Bean HttpTracing httpTracing(Tracing tracing, Sampler sampler) {
     return HttpTracing.newBuilder(tracing)
       // server starts traces for read requests under the path /api
       .serverSampler(new HttpSampler() {
         @Override public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
           String path = adapter.path(request);
           if (path.startsWith("/api") || path.startsWith("/zipkin/api")) {
-            return null; // use the global rate limit
+            return sampler.isSampled(0L); // use the global rate limit
           }
           return false;
         }
       })
-      // client doesn't start new traces
-      .clientSampler(HttpSampler.NEVER_SAMPLE)
       .build();
   }
 
