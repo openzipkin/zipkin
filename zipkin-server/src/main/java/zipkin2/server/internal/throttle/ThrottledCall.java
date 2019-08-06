@@ -128,7 +128,8 @@ final class ThrottledCall extends Call.Base<Void> {
     }
 
     /**
-     * This awaits callback completion in order to slow down (throttle) calls.
+     * This waits until completion to ensure the number of executing calls doesn't surpass the
+     * concurrency limit of the executor.
      *
      * <h3>This component does not affect the {@link Listener} directly</h3>
      * There could be an error enqueuing the call or an interruption during shutdown of the
