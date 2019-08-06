@@ -28,11 +28,11 @@ import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,7 +59,7 @@ public class ITElasticsearchAuth {
   };
 
   @Configuration static class TlsSelfSignedConfiguration {
-    @Bean @Qualifier(QUALIFIER)
+    @Bean @Qualifier(QUALIFIER) @Primary
     ClientFactory zipkinElasticsearchClientFactory() {
       return new ClientFactoryBuilder().sslContextCustomizer(
         ssl -> ssl.trustManager(InsecureTrustManagerFactory.INSTANCE)).build();
@@ -77,10 +77,8 @@ public class ITElasticsearchAuth {
       "zipkin.storage.elasticsearch.password:OpenSesame",
       "zipkin.storage.elasticsearch.hosts:https://127.0.0.1:" + server.httpsPort())
       .applyTo(context);
-    context.register(
-      TlsSelfSignedConfiguration.class,
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchStorageConfiguration.class);
+    Access.registerElasticsearch(context);
+    context.register(TlsSelfSignedConfiguration.class);
     context.refresh();
     storage = context.getBean(ElasticsearchStorage.class);
   }

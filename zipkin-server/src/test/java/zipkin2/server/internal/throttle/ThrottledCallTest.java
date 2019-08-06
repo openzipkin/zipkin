@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.throttle;
 
+import com.linecorp.armeria.common.metric.NoopMeterRegistry;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.Limiter.Listener;
 import com.netflix.concurrency.limits.limit.SettableLimit;
@@ -46,6 +47,7 @@ import static org.mockito.Mockito.when;
 public class ThrottledCallTest {
   SettableLimit limit = SettableLimit.startingAt(0);
   SimpleLimiter limiter = SimpleLimiter.newBuilder().limit(limit).build();
+  LimiterMetrics limiterMetrics = new LimiterMetrics(NoopMeterRegistry.get());
   Predicate<Throwable> isOverCapacity = RejectedExecutionException.class::isInstance;
 
   int numThreads = 1;
@@ -59,7 +61,7 @@ public class ThrottledCallTest {
     Call<Void> delegate = mock(Call.class);
     when(delegate.toString()).thenReturn("StoreSpansCall{}");
 
-    assertThat(new ThrottledCall<Void>(executor, limiter, isOverCapacity, delegate))
+    assertThat(new ThrottledCall(delegate, executor, limiter, limiterMetrics, isOverCapacity))
       .hasToString("Throttled(StoreSpansCall{})");
   }
 
@@ -71,7 +73,7 @@ public class ThrottledCallTest {
     Semaphore startLock = new Semaphore(numThreads);
     Semaphore waitLock = new Semaphore(totalTasks);
     Semaphore failLock = new Semaphore(1);
-    ThrottledCall<Void> throttled = throttle(new LockedCall(startLock, waitLock));
+    ThrottledCall throttled = throttle(new LockedCall(startLock, waitLock));
 
     // Step 1: drain appropriate locks
     startLock.drainPermits();
@@ -123,8 +125,8 @@ public class ThrottledCallTest {
     FakeCall call = new FakeCall();
     call.overCapacity = true;
 
-    ThrottledCall<Void> throttle =
-      new ThrottledCall<>(executor, mockLimiter(listener), isOverCapacity, call);
+    ThrottledCall throttle =
+      new ThrottledCall(call, executor, mockLimiter(listener), limiterMetrics, isOverCapacity);
 
     try {
       throttle.execute();
@@ -137,8 +139,8 @@ public class ThrottledCallTest {
   @Test public void execute_ignoresLimit_whenPoolFull() throws Exception {
     Listener listener = mock(Listener.class);
 
-    ThrottledCall<Void> throttle = new ThrottledCall<>(mockExhaustedPool(), mockLimiter(listener),
-      isOverCapacity, new FakeCall());
+    ThrottledCall throttle = new ThrottledCall(new FakeCall(), mockExhaustedPool(),
+      mockLimiter(listener), limiterMetrics, isOverCapacity);
 
     try {
       throttle.execute();
@@ -155,7 +157,7 @@ public class ThrottledCallTest {
 
     Semaphore startLock = new Semaphore(numThreads);
     Semaphore waitLock = new Semaphore(totalTasks);
-    ThrottledCall<Void> throttle = throttle(new LockedCall(startLock, waitLock));
+    ThrottledCall throttle = throttle(new LockedCall(startLock, waitLock));
 
     // Step 1: drain appropriate locks
     startLock.drainPermits();
@@ -187,8 +189,8 @@ public class ThrottledCallTest {
     FakeCall call = new FakeCall();
     call.overCapacity = true;
 
-    ThrottledCall<Void> throttle = new ThrottledCall<>(executor, mockLimiter(listener),
-      isOverCapacity, call);
+    ThrottledCall throttle =
+      new ThrottledCall(call, executor, mockLimiter(listener), limiterMetrics, isOverCapacity);
 
     CountDownLatch latch = new CountDownLatch(1);
     throttle.enqueue(new Callback<Void>() {
@@ -208,18 +210,25 @@ public class ThrottledCallTest {
   @Test public void enqueue_ignoresLimit_whenPoolFull() {
     Listener listener = mock(Listener.class);
 
-    ThrottledCall<Void> throttle = new ThrottledCall<>(mockExhaustedPool(), mockLimiter(listener),
-      isOverCapacity, new FakeCall());
+    ThrottledCall throttle =
+      new ThrottledCall(new FakeCall(), mockExhaustedPool(), mockLimiter(listener),
+        limiterMetrics, isOverCapacity);
     try {
-      throttle.enqueue(null);
+      throttle.enqueue(new Callback<Void>() {
+        @Override public void onSuccess(Void value) {
+        }
+
+        @Override public void onError(Throwable t) {
+        }
+      });
       assertThat(true).isFalse(); // should raise a RejectedExecutionException
     } catch (RejectedExecutionException e) {
       verify(listener).onIgnore();
     }
   }
 
-  ThrottledCall<Void> throttle(Call<Void> delegate) {
-    return new ThrottledCall<Void>(executor, limiter, isOverCapacity, delegate);
+  ThrottledCall throttle(Call<Void> delegate) {
+    return new ThrottledCall(delegate, executor, limiter, limiterMetrics, isOverCapacity);
   }
 
   static final class LockedCall extends Call.Base<Void> {

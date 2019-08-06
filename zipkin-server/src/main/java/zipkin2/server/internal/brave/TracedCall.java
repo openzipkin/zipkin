@@ -20,12 +20,12 @@ import java.io.IOException;
 import zipkin2.Call;
 import zipkin2.Callback;
 
-final class TracedCall<V> extends Call<V> {
+public final class TracedCall<V> extends Call<V> {
   final Tracer tracer;
   final Call<V> delegate;
   final String name;
 
-  TracedCall(Tracer tracer, Call<V> delegate, String name) {
+  public TracedCall(Tracer tracer, Call<V> delegate, String name) {
     this.tracer = tracer;
     this.delegate = delegate;
     this.name = name;

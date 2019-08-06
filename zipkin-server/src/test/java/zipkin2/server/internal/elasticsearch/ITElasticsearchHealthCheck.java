@@ -22,7 +22,6 @@ import java.util.concurrent.TimeUnit;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.CheckResult;
@@ -67,9 +66,7 @@ public class ITElasticsearchHealthCheck {
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:" +
         server1.httpPort() + ",127.0.0.1:" + server2.httpPort())
       .applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchStorageConfiguration.class);
+    Access.registerElasticsearch(context);
     context.refresh();
   }
 
@@ -157,9 +154,7 @@ public class ITElasticsearchHealthCheck {
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:" +
         server1.httpPort() + ",127.0.0.1:" + server2.httpPort())
       .applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinElasticsearchStorageConfiguration.class);
+    Access.registerElasticsearch(context);
     context.refresh();
 
     server1Health.setHealthy(false);
