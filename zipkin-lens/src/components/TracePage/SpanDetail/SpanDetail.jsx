@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import PropTypes from 'prop-types';
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -23,6 +24,7 @@ import SpanTags from './SpanTags';
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
+  minHeight: PropTypes.number.isRequired,
 };
 
 const useStyles = makeStyles(theme => ({
@@ -37,12 +39,13 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const SpanDetail = ({ span }) => {
+const SpanDetail = ({ span, minHeight }) => {
   const classes = useStyles();
 
   return (
     <Box
       width="100%"
+      minHeight={minHeight}
       borderLeft={1}
       borderColor="grey.300"
       className={classes.root}

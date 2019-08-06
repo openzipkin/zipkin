@@ -111,7 +111,7 @@ const TraceSummary = ({ traceSummary }) => {
                   width={width}
                   overflow="auto"
                 >
-                  <SpanDetail span={currentSpan} />
+                  <SpanDetail span={currentSpan} minHeight={height} />
                 </Box>
               )
             }
