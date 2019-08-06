@@ -16,17 +16,27 @@ import React from 'react';
 
 import TraceTree from './TraceTree';
 import TraceTimelineRow from './TraceTimelineRow';
-import { detailedTraceSummaryPropTypes } from '../../../prop-types';
+import { detailedSpansPropTypes } from '../../../prop-types';
 import { spanDataRowLineHeight, spanBarRowLineHeight, spanTreeWidthPercent } from './constants';
 
 const propTypes = {
-  traceSummary: detailedTraceSummaryPropTypes.isRequired,
+  spans: detailedSpansPropTypes.isRequired,
+  depth: PropTypes.number.isRequired,
   width: PropTypes.number.isRequired,
+  closedSpans: PropTypes.shape({}).isRequired,
   onSpanClick: PropTypes.func.isRequired,
+  onSpanToggleButtonClick: PropTypes.func.isRequired,
 };
 
-const TraceTimeline = ({ traceSummary, width, onSpanClick }) => {
-  const spanCounts = traceSummary.spans.length;
+const TraceTimeline = ({
+  spans,
+  depth,
+  width,
+  closedSpans,
+  onSpanClick,
+  onSpanToggleButtonClick,
+}) => {
+  const spanCounts = spans.length;
   const traceTimelineHeight = (spanDataRowLineHeight + spanBarRowLineHeight) * spanCounts;
   const traceTimelineOffsetX = width * (spanTreeWidthPercent / 100);
   const traceTimelineWidth = width * ((100 - spanTreeWidthPercent) / 100);
@@ -39,7 +49,7 @@ const TraceTimeline = ({ traceSummary, width, onSpanClick }) => {
       xmlns="http://www.w3.org/2000/svg"
     >
       {
-        traceSummary.spans.map((span, i) => (
+        spans.map((span, i) => (
           <TraceTimelineRow
             key={span.spanId}
             span={span}
@@ -51,9 +61,11 @@ const TraceTimeline = ({ traceSummary, width, onSpanClick }) => {
         ))
       }
       <TraceTree
-        spans={traceSummary.spans}
-        depth={traceSummary.depth}
+        spans={spans}
+        depth={depth}
         width={traceTimelineOffsetX}
+        closedSpans={closedSpans}
+        onSpanToggleButtonClick={onSpanToggleButtonClick}
       />
     </svg>
   );

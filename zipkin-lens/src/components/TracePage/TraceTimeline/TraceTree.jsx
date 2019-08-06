@@ -12,6 +12,8 @@
  * the License.
  */
 import React from 'react';
+import { makeStyles } from '@material-ui/styles';
+import grey from '@material-ui/core/colors/grey';
 
 import {
   spanDataRowLineHeight,
@@ -20,13 +22,32 @@ import {
   expandButtonLengthOfSide,
 } from './constants';
 
-const TraceTree = ({ spans, depth, width }) => {
+const useStyles = makeStyles({
+  expandButton: {
+    cursor: 'pointer',
+    opacity: 0,
+    backgroundColor: grey[300],
+    '&:hover': {
+      opacity: 0.1,
+    },
+  },
+});
+
+const TraceTree = ({
+  spans,
+  depth,
+  width,
+  closedSpans,
+  onSpanToggleButtonClick,
+}) => {
+  const classes = useStyles();
+
   const widthPerDepth = width / (depth + 1);
 
   const stack = [];
 
   const linePositions = [];
-  const buttonPositions = [];
+  const buttonData = [];
 
   for (let i = 0; i < spans.length; i += 1) {
     const currentSpan = spans[i];
@@ -51,6 +72,17 @@ const TraceTree = ({ spans, depth, width }) => {
         y1: spanBarRowPosY + spanBarHeight / 2,
         y2: spanBarRowPosY + spanBarHeight / 2,
       });
+
+      if (closedSpans[currentSpan.spanId]) {
+        buttonData.push({
+          x: currentSpan.depth * widthPerDepth
+            - expandButtonLengthOfSide / 2,
+          y: i * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+            - expandButtonLengthOfSide / 2,
+          spanId: currentSpan.spanId,
+          isClosed: true,
+        });
+      }
       continue;
     }
 
@@ -65,6 +97,17 @@ const TraceTree = ({ spans, depth, width }) => {
         y1: spanBarRowPosY + spanBarHeight / 2,
         y2: spanBarRowPosY + spanBarHeight / 2,
       });
+
+      if (closedSpans[currentSpan.spanId]) {
+        buttonData.push({
+          x: currentSpan.depth * widthPerDepth
+            - expandButtonLengthOfSide / 2,
+          y: i * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+            - expandButtonLengthOfSide / 2,
+          spanId: currentSpan.spanId,
+          isClosed: true,
+        });
+      }
       continue;
     }
 
@@ -86,6 +129,17 @@ const TraceTree = ({ spans, depth, width }) => {
         y2: spanBarRowPosY + spanBarHeight / 2,
       });
 
+      if (closedSpans[currentSpan.spanId]) {
+        buttonData.push({
+          x: currentSpan.depth * widthPerDepth
+            - expandButtonLengthOfSide / 2,
+          y: i * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
+            - expandButtonLengthOfSide / 2,
+          spanId: currentSpan.spanId,
+          isClosed: true,
+        });
+      }
+
       for (let j = 0; j < popped.length - 1; j += 1) {
         linePositions.push({
           x1: popped[j + 1].depth * widthPerDepth,
@@ -96,12 +150,13 @@ const TraceTree = ({ spans, depth, width }) => {
             * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15,
         });
 
-        buttonPositions.push({
+        buttonData.push({
           x: popped[j + 1].depth * widthPerDepth
             - expandButtonLengthOfSide / 2,
           y: popped[j + 1].index
             * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
             - expandButtonLengthOfSide / 2,
+          spanId: spans[popped[j + 1].index].spanId,
         });
       }
       continue;
@@ -115,6 +170,15 @@ const TraceTree = ({ spans, depth, width }) => {
     y2: spanDataRowLineHeight + spanBarHeight / 2,
   });
 
+  if (closedSpans[spans[0].spanId]) {
+    buttonData.push({
+      x: spans[0].depth * widthPerDepth - expandButtonLengthOfSide / 2,
+      y: spanDataRowLineHeight * 1.15 - expandButtonLengthOfSide / 2,
+      spanId: spans[0].spanId,
+      isClosed: true,
+    });
+  }
+
   for (let j = 0; j < stack.length - 1; j += 1) {
     linePositions.push({
       x1: stack[j].depth * widthPerDepth,
@@ -125,12 +189,13 @@ const TraceTree = ({ spans, depth, width }) => {
         * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15,
     });
 
-    buttonPositions.push({
+    buttonData.push({
       x: stack[j].depth * widthPerDepth
         - expandButtonLengthOfSide / 2,
       y: stack[j].index
         * (spanDataRowLineHeight + spanBarRowLineHeight) + spanDataRowLineHeight * 1.15
         - expandButtonLengthOfSide / 2,
+      spanId: spans[stack[j].index].spanId,
     });
   }
 
@@ -152,7 +217,12 @@ const TraceTree = ({ spans, depth, width }) => {
     />
   )).forEach(line => result.push(line));
 
-  buttonPositions.map(({ x, y }) => (
+  buttonData.map(({
+    x,
+    y,
+    spanId,
+    isClosed,
+  }) => (
     <g>
       <rect
         rx={2}
@@ -175,15 +245,29 @@ const TraceTree = ({ spans, depth, width }) => {
         stroke="#555"
         strokeWidth={2}
       />
-      <line
-        x1={x + expandButtonLengthOfSide / 2}
-        x2={x + expandButtonLengthOfSide / 2}
-        y1={y}
-        y2={y + expandButtonLengthOfSide}
-        width={1}
+      {
+        !isClosed ? (
+          <line
+            x1={x + expandButtonLengthOfSide / 2}
+            x2={x + expandButtonLengthOfSide / 2}
+            y1={y}
+            y2={y + expandButtonLengthOfSide}
+            width={1}
+            height={expandButtonLengthOfSide}
+            stroke="#555"
+            strokeWidth={2}
+          />
+        ) : null
+      }
+      <rect
+        rx={2}
+        ry={2}
+        x={x}
+        y={y}
+        width={expandButtonLengthOfSide}
         height={expandButtonLengthOfSide}
-        stroke="#555"
-        strokeWidth={2}
+        onClick={() => onSpanToggleButtonClick(spanId)}
+        className={classes.expandButton}
       />
     </g>
   )).forEach(button => result.push(button));

@@ -43,7 +43,6 @@ const SpanDetail = ({ span }) => {
   return (
     <Box
       width="100%"
-      height="100%"
       borderLeft={1}
       borderColor="grey.300"
       className={classes.root}
