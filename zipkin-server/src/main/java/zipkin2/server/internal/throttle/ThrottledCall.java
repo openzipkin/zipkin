@@ -21,7 +21,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -64,7 +63,7 @@ final class ThrottledCall extends Call.Base<Void> {
     doEnqueue(awaitableCallback);
     if (!await(awaitableCallback.countDown)) throw new InterruptedIOException();
 
-    Throwable t = awaitableCallback.throwable.get();
+    Throwable t = awaitableCallback.throwable;
     if (t != null) {
       if (t instanceof Error) throw (Error) t;
       if (t instanceof IOException) throw (IOException) t;
@@ -105,14 +104,14 @@ final class ThrottledCall extends Call.Base<Void> {
 
   static final class AwaitableCallback implements Callback<Void> {
     final CountDownLatch countDown = new CountDownLatch(1);
-    final AtomicReference<Throwable> throwable = new AtomicReference<>();
+    Throwable throwable; // thread visibility guaranteed by the countdown latch
 
     @Override public void onSuccess(Void ignored) {
       countDown.countDown();
     }
 
     @Override public void onError(Throwable t) {
-      throwable.set(t);
+      throwable = t;
       countDown.countDown();
     }
   }
