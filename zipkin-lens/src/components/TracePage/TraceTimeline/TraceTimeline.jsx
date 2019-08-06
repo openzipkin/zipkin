@@ -17,7 +17,7 @@ import React from 'react';
 import TraceTree from './TraceTree';
 import TraceTimelineRow from './TraceTimelineRow';
 import { detailedSpansPropTypes } from '../../../prop-types';
-import { spanDataRowLineHeight, spanBarRowLineHeight, spanTreeWidthPercent } from './constants';
+import { spanDataRowLineHeight, spanBarRowLineHeight, spanTreeWidthPercent } from '../constants';
 
 const propTypes = {
   spans: detailedSpansPropTypes.isRequired,

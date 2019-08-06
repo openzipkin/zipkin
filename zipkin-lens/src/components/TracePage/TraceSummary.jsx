@@ -17,6 +17,7 @@ import { AutoSizer } from 'react-virtualized';
 
 import TraceSummaryHeader from './TraceSummaryHeader';
 import TraceTimeline from './TraceTimeline';
+import TraceTimelineHeader from './TraceTimelineHeader';
 import SpanDetail from './SpanDetail';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
@@ -80,27 +81,33 @@ const TraceSummary = ({ traceSummary }) => {
         <TraceSummaryHeader traceSummary={traceSummary} />
       </Box>
       <Box height="100%" display="flex">
-        <Box height="100%" width="65%">
-          <AutoSizer>
-            {
-              ({ height, width }) => (
-                <Box
-                  height={height}
-                  width={width}
-                  overflow="auto"
-                >
-                  <TraceTimeline
-                    spans={filteredSpans}
-                    depth={traceSummary.depth}
+        <Box width="65%" display="flex" flexDirection="column">
+          <TraceTimelineHeader
+            startTs={0}
+            endTs={traceSummary.duration}
+          />
+          <Box height="100%" width="100%">
+            <AutoSizer>
+              {
+                ({ height, width }) => (
+                  <Box
+                    height={height}
                     width={width}
-                    closedSpans={closedSpans}
-                    onSpanClick={handleSpanClick}
-                    onSpanToggleButtonClick={handleSpanToggleButtonClick}
-                  />
-                </Box>
-              )
-            }
-          </AutoSizer>
+                    overflow="auto"
+                  >
+                    <TraceTimeline
+                      spans={filteredSpans}
+                      depth={traceSummary.depth}
+                      width={width}
+                      closedSpans={closedSpans}
+                      onSpanClick={handleSpanClick}
+                      onSpanToggleButtonClick={handleSpanToggleButtonClick}
+                    />
+                  </Box>
+                )
+              }
+            </AutoSizer>
+          </Box>
         </Box>
         <Box height="100%" width="35%">
           <AutoSizer>

@@ -20,7 +20,7 @@ import {
   spanBarRowLineHeight,
   spanBarHeight,
   expandButtonLengthOfSide,
-} from './constants';
+} from '../constants';
 
 const useStyles = makeStyles({
   expandButton: {

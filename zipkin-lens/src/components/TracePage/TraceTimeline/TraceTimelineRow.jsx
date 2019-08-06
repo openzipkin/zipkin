@@ -16,7 +16,7 @@ import React, { useCallback } from 'react';
 import { makeStyles } from '@material-ui/styles';
 import grey from '@material-ui/core/colors/grey';
 
-import { spanDataRowLineHeight, spanBarRowLineHeight, spanBarHeight } from './constants';
+import { spanDataRowLineHeight, spanBarRowLineHeight, spanBarHeight } from '../constants';
 import { detailedSpanPropTypes } from '../../../prop-types';
 import { selectServiceColor } from '../../../colors';
 
