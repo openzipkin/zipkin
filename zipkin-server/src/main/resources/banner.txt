@@ -1,5 +1,5 @@
 ${AnsiColor.RED}
-                           o
+                          oo
                          oooo
                         oooooo
                        oooooooo
