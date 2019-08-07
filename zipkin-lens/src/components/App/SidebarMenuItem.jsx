@@ -12,16 +12,28 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { withRouter } from 'react-router';
+import classNames from 'classnames';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import ListItem from '@material-ui/core/ListItem';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import { theme } from '../../colors';
+const propTypes = {
+  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
+  location: PropTypes.shape({ pathname: PropTypes.string.isRequired }).isRequired,
+  isExternal: PropTypes.bool,
+  title: PropTypes.string.isRequired,
+  links: PropTypes.arrayOf(PropTypes.string).isRequired,
+  logo: PropTypes.string.isRequired,
+};
 
-const useStyles = makeStyles({
+const defaultProps = {
+  isExternal: false,
+};
+
+const useStyles = makeStyles(theme => ({
   item: {
     height: '3.2rem',
     cursor: 'pointer',
@@ -31,56 +43,54 @@ const useStyles = makeStyles({
       color: theme.palette.common.white,
     },
   },
-});
-
-const propTypes = {
-  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
-  location: PropTypes.shape({ pathname: PropTypes.string.isRequired }).isRequired,
-  isExternalLink: PropTypes.bool,
-  title: PropTypes.string.isRequired,
-  urls: PropTypes.arrayOf(PropTypes.string).isRequired,
-  buttonClassName: PropTypes.string.isRequired,
-};
-
-const defaultProps = {
-  isExternalLink: false,
-};
+  'item--selected': {
+    color: theme.palette.common.white,
+    backgroundColor: theme.palette.primary.dark,
+  },
+}));
 
 const SidebarMenuItem = ({
   history,
   location,
-  isExternalLink,
+  isExternal,
   title,
-  urls,
-  buttonClassName,
+  links,
+  logo,
 }) => {
   const classes = useStyles();
 
-  const style = useMemo(() => {
-    if (urls.includes(location.pathname)) {
-      return {
-        color: theme.palette.common.white,
-        backgroundColor: theme.palette.primary.dark,
-      };
-    }
-    return null;
-  }, [location.pathname, urls]);
+  const handleClick = useCallback(() => {
+    history.push(links[0]);
+  }, [history, links]);
 
-  const props = { button: true, style, className: classes.item };
-
-  if (isExternalLink) {
-    props.component = 'a';
-    props.href = urls[0];
-  } else {
-    props.onClick = () => {
-      history.push(urls[0]);
-    };
+  if (isExternal) {
+    return (
+      <Tooltip title={title} placement="right">
+        <ListItem
+          button
+          component="a"
+          href={links[0]}
+          className={classes.item}
+        >
+          <Box component="span" className={logo} />
+        </ListItem>
+      </Tooltip>
+    );
   }
 
   return (
     <Tooltip title={title} placement="right">
-      <ListItem {...props}>
-        <Box component="span" className={buttonClassName} />
+      <ListItem
+        button
+        onClick={handleClick}
+        className={
+          classNames(
+            classes.item,
+            { [classes['item--selected']]: links.includes(location.pathname) },
+          )
+        }
+      >
+        <Box component="span" className={logo} />
       </ListItem>
     </Tooltip>
   );
