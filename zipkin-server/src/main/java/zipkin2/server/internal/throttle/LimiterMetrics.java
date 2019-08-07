@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.throttle;
 
-import com.netflix.concurrency.limits.Limiter.Listener;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import zipkin2.collector.CollectorMetrics;
@@ -21,31 +20,6 @@ import zipkin2.collector.CollectorMetrics;
 /** Follows the same naming convention as {@link CollectorMetrics} */
 final class LimiterMetrics {
   final Counter requests, requestsSucceeded, requestsIgnored, requestsDropped;
-
-  final Listener wrap(Listener delegate) {
-    return new Listener() {
-      @Override public void onSuccess() {
-        // usually we don't add metrics like this,
-        // but for now it is helpful to sanity check acquired vs erred.
-        requestsSucceeded.increment();
-        delegate.onSuccess();
-      }
-
-      @Override public void onIgnore() {
-        requestsIgnored.increment();
-        delegate.onIgnore();
-      }
-
-      @Override public void onDropped() {
-        requestsDropped.increment();
-        delegate.onDropped();
-      }
-
-      @Override public String toString() {
-        return "LimiterMetrics{" + delegate + "}";
-      }
-    };
-  }
 
   LimiterMetrics(MeterRegistry registry) {
     requests = Counter.builder("zipkin_storage.throttle.requests")
