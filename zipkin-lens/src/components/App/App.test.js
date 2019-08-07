@@ -11,54 +11,61 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { shallow } from 'enzyme';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
 import { ThemeProvider } from '@material-ui/styles';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
+import { createMount, createShallow } from '@material-ui/core/test-utils';
 
 import App from './App';
 import Layout from './Layout';
+import DiscoverPage from '../DiscoverPage';
+import TracePage from '../TracePage';
+import { theme } from '../../colors';
 
 describe('<App />', () => {
-  let wrapper;
+  let mount;
+  let shallow;
 
   beforeEach(() => {
-    wrapper = shallow(<App />);
+    mount = createMount({ strict: true });
+    shallow = createShallow();
+  });
+
+  afterEach(() => {
+    mount.cleanUp();
+  });
+
+  it('should update document title', () => {
+    mount(<App />);
+    expect(document.title).toBe('Zipkin');
+  });
+
+  it('should render providers', () => {
+    const wrapper = shallow(<App />);
+    expect(wrapper.find(MuiPickersUtilsProvider).length).toBe(1);
+    expect(wrapper.find(ThemeProvider).length).toBe(1);
+    expect(wrapper.find(ThemeProvider).props().theme).toEqual(theme);
+    expect(wrapper.find(Provider).length).toBe(1);
+  });
+
+  it('should render Router as a parent of Layout', () => {
+    const wrapper = shallow(<App />);
+    expect(wrapper.find(Layout).parent().type()).toEqual(BrowserRouter);
   });
 
   it('should render Layout', () => {
-    const items = wrapper.find(Layout);
-    expect(items.length).toBe(1);
+    const wrapper = shallow(<App />);
+    expect(wrapper.find(Layout).length).toBe(1);
   });
 
-  describe('should render router', () => {
-    it('should render BrowserRouter', () => {
-      const items = wrapper.find(BrowserRouter);
-      expect(items.length).toBe(1);
-    });
-
-    it('should render 2 routes', () => {
-      const items = wrapper.find(Route);
-      expect(items.length).toBe(2);
-    });
-  });
-
-  describe('should render providers', () => {
-    it('should render MuiPickersUtilsProvider', () => {
-      const items = wrapper.find(MuiPickersUtilsProvider);
-      expect(items.length).toBe(1);
-    });
-
-    it('should render ThemeProvider', () => {
-      const items = wrapper.find(ThemeProvider);
-      expect(items.length).toBe(1);
-    });
-
-    it('should render redux Provider', () => {
-      const items = wrapper.find(Provider);
-      expect(items.length).toBe(1);
-    });
+  it('should render Route', () => {
+    const wrapper = shallow(<App />);
+    const routes = wrapper.find(Route);
+    expect(routes.at(0).props().path).toEqual(['/zipkin', '/zipkin/dependency']);
+    expect(routes.at(0).props().component).toEqual(DiscoverPage);
+    expect(routes.at(1).props().path).toEqual(['/zipkin/traces/:traceId', '/zipkin/traceViewer']);
+    expect(routes.at(1).props().component).toEqual(TracePage);
   });
 });
