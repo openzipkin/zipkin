@@ -63,6 +63,7 @@
     "@material-ui/pickers": "^3.1.1",
     "@material-ui/styles": "^4.1.1",
     "chart.js": "^2.7.2",
+    "classnames": "^2.2.6",
     "core-js": "^3.1.4",
     "js-cookie": "^2.2.0",
     "lodash": "^4.17.14",
