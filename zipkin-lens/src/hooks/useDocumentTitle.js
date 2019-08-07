@@ -11,14 +11,12 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import useDocumentTitle from './useDocumentTitle';
-import useEffectOnce from './useEffectOnce';
-import useMount from './useMount';
-import useUnmount from './useUnmount';
+import { useEffect } from 'react';
 
-export {
-  useDocumentTitle,
-  useEffectOnce,
-  useMount,
-  useUnmount,
+const useDocumentTitle = (title) => {
+  useEffect(() => {
+    document.title = title;
+  }, [title]);
 };
+
+export default useDocumentTitle;
