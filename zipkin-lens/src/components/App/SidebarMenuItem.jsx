@@ -15,7 +15,7 @@ import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
 import { withRouter } from 'react-router';
 import classNames from 'classnames';
-import { makeStyles } from '@material-ui/styles';
+import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import ListItem from '@material-ui/core/ListItem';
 import Tooltip from '@material-ui/core/Tooltip';
@@ -27,13 +27,14 @@ const propTypes = {
   title: PropTypes.string.isRequired,
   links: PropTypes.arrayOf(PropTypes.string).isRequired,
   logo: PropTypes.string.isRequired,
+  classes: PropTypes.shape({}).isRequired,
 };
 
 const defaultProps = {
   isExternal: false,
 };
 
-const useStyles = makeStyles(theme => ({
+const style = theme => ({
   item: {
     height: '3.2rem',
     cursor: 'pointer',
@@ -47,39 +48,51 @@ const useStyles = makeStyles(theme => ({
     color: theme.palette.common.white,
     backgroundColor: theme.palette.primary.dark,
   },
-}));
+});
 
-const SidebarMenuItem = ({
+export const SidebarMenuItemImpl = ({
   history,
   location,
   isExternal,
   title,
   links,
   logo,
+  classes,
 }) => {
-  const classes = useStyles();
-
   const handleClick = useCallback(() => {
     history.push(links[0]);
   }, [history, links]);
 
   if (isExternal) {
     return (
-      <Tooltip title={title} placement="right">
+      <Tooltip
+        title={title}
+        placement="right"
+        data-test="tooltip"
+      >
         <ListItem
           button
           component="a"
           href={links[0]}
           className={classes.item}
+          data-test="list-item"
         >
-          <Box component="span" className={logo} />
+          <Box
+            component="span"
+            className={logo}
+            data-test="logo"
+          />
         </ListItem>
       </Tooltip>
     );
   }
 
   return (
-    <Tooltip title={title} placement="right">
+    <Tooltip
+      title={title}
+      placement="right"
+      data-test="tooltip"
+    >
       <ListItem
         button
         onClick={handleClick}
@@ -89,14 +102,21 @@ const SidebarMenuItem = ({
             { [classes['item--selected']]: links.includes(location.pathname) },
           )
         }
+        data-test="list-item"
       >
-        <Box component="span" className={logo} />
+        <Box
+          component="span"
+          className={logo}
+          data-test="logo"
+        />
       </ListItem>
     </Tooltip>
   );
 };
 
-SidebarMenuItem.propTypes = propTypes;
-SidebarMenuItem.defaultProps = defaultProps;
+SidebarMenuItemImpl.propTypes = propTypes;
+SidebarMenuItemImpl.defaultProps = defaultProps;
 
-export default withRouter(SidebarMenuItem);
+export default withRouter(
+  withStyles(style)(SidebarMenuItemImpl),
+);
