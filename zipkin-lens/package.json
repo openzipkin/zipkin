@@ -23,6 +23,7 @@
     "@babel/preset-env": "^7.5.4",
     "@babel/preset-react": "^7.0.0",
     "@fortawesome/fontawesome-free": "^5.4.1",
+    "@testing-library/react": "^8.0.8",
     "babel-core": "^7.0.0-bridge.0",
     "babel-jest": "^24.8.0",
     "babel-loader": "^8.0.6",
