@@ -54,11 +54,11 @@ const Sidebar = () => {
         <Box display="flex" justifyContent="center" width="100%">
           <Logo className={classes.logo} />
         </Box>
-        <List data-test="internal-links">
+        <List data-testid="internal-links">
           <SidebarMenuItem title="Discover Page" links={['/zipkin', '/zipkin/dependency']} logo="fas fa-search" />
         </List>
       </Box>
-      <List data-test="external-links">
+      <List data-testid="external-links">
         <SidebarMenuItem isExternal title="Zipkin Home" links={['https://zipkin.io/']} logo="fas fa-home" />
         <SidebarMenuItem isExternal title="Repository" links={['https://github.com/openzipkin/zipkin']} logo="fab fa-github" />
         <SidebarMenuItem isExternal title="Twitter" links={['https://twitter.com/zipkinproject']} logo="fab fa-twitter" />
