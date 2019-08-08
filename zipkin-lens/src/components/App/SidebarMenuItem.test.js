@@ -12,9 +12,7 @@
  * the License.
  */
 import React from 'react';
-import Box from '@material-ui/core/Box';
-import ListItem from '@material-ui/core/ListItem';
-import Tooltip from '@material-ui/core/Tooltip';
+import { render, fireEvent } from '@testing-library/react';
 import { createMount, createShallow } from '@material-ui/core/test-utils';
 
 import { SidebarMenuItemImpl } from './SidebarMenuItem';
@@ -45,14 +43,14 @@ describe('<SidebarMenuItem />', () => {
 
     it('should render Tooltip', () => {
       const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
-      const tooltip = wrapper.find('[data-test="tooltip"]');
+      const tooltip = wrapper.find('[data-testid="tooltip"]');
       expect(tooltip.length).toBe(1);
       expect(tooltip.props().title).toBe('External Link');
     });
 
     it('should render ListItem', () => {
       const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
-      const listItem = wrapper.find('[data-test="list-item"]');
+      const listItem = wrapper.find('[data-testid="list-item"]');
       expect(listItem.length).toBe(1);
       expect(listItem.props().button).toBe(true);
       expect(listItem.props().component).toBe('a');
@@ -61,7 +59,7 @@ describe('<SidebarMenuItem />', () => {
 
     it('should render Logo', () => {
       const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
-      const logo = wrapper.find('[data-test="logo"]');
+      const logo = wrapper.find('[data-testid="logo"]');
       expect(logo.length).toBe(1);
       expect(logo.props().component).toBe('span');
       expect(logo.props().className).toBe('fab fa-home');
@@ -85,14 +83,14 @@ describe('<SidebarMenuItem />', () => {
 
     it('should render Tooltip', () => {
       const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
-      const tooltip = wrapper.find('[data-test="tooltip"]');
+      const tooltip = wrapper.find('[data-testid="tooltip"]');
       expect(tooltip.length).toBe(1);
       expect(tooltip.props().title).toBe('Internal Link');
     });
 
     it('should render ListItem', () => {
       const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
-      const listItem = wrapper.find('[data-test="list-item"]');
+      const listItem = wrapper.find('[data-testid="list-item"]');
       expect(listItem.length).toBe(1);
       expect(listItem.props().button).toBe(true);
       expect(listItem.props().onClick).toBeTruthy();
@@ -100,14 +98,17 @@ describe('<SidebarMenuItem />', () => {
 
     it('should render Logo', () => {
       const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
-      const logo = wrapper.find('[data-test="logo"]');
+      const logo = wrapper.find('[data-testid="logo"]');
       expect(logo.length).toBe(1);
       expect(logo.props().component).toBe('span');
       expect(logo.props().className).toBe('fab fa-home');
     });
 
     it('should call history.push when ListItem is clicked', () => {
-
+      const { getByTestId } = render(<SidebarMenuItemImpl {...props} />);
+      fireEvent.click(getByTestId('list-item'));
+      expect(props.history.push.mock.calls.length).toBe(1);
+      expect(props.history.push.mock.calls[0][0]).toBe('/zipkin');
     });
   });
 });

@@ -42,6 +42,7 @@ const style = theme => ({
     color: theme.palette.grey[400],
     '&:hover': {
       color: theme.palette.common.white,
+      backgroundColor: theme.palette.primary.dark,
     },
   },
   'item--selected': {
@@ -68,19 +69,19 @@ export const SidebarMenuItemImpl = ({
       <Tooltip
         title={title}
         placement="right"
-        data-test="tooltip"
+        data-testid="tooltip"
       >
         <ListItem
           button
           component="a"
           href={links[0]}
           className={classes.item}
-          data-test="list-item"
+          data-testid="list-item"
         >
           <Box
             component="span"
             className={logo}
-            data-test="logo"
+            data-testid="logo"
           />
         </ListItem>
       </Tooltip>
@@ -91,7 +92,7 @@ export const SidebarMenuItemImpl = ({
     <Tooltip
       title={title}
       placement="right"
-      data-test="tooltip"
+      data-testid="tooltip"
     >
       <ListItem
         button
@@ -102,12 +103,12 @@ export const SidebarMenuItemImpl = ({
             { [classes['item--selected']]: links.includes(location.pathname) },
           )
         }
-        data-test="list-item"
+        data-testid="list-item"
       >
         <Box
           component="span"
           className={logo}
-          data-test="logo"
+          data-testid="logo"
         />
       </ListItem>
     </Tooltip>
