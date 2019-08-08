@@ -22,27 +22,31 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import org.junit.After;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
+import zipkin2.reporter.AwaitableCallback;
 
+import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static zipkin2.server.internal.throttle.ThrottledCall.NOOP_CALLBACK;
+import static zipkin2.server.internal.throttle.ThrottledCall.STORAGE_THROTTLE_MAX_CONCURRENCY;
+import static zipkin2.server.internal.throttle.ThrottledStorageComponent.STORAGE_THROTTLE_MAX_QUEUE_SIZE;
 
 public class ThrottledCallTest {
   SettableLimit limit = SettableLimit.startingAt(0);
@@ -172,19 +176,12 @@ public class ThrottledCallTest {
     // Step 3: make sure the threads actually started
     startLock.acquire(numThreads);
 
-    try {
-      // Step 4: submit something beyond our limits and make sure it fails
-      throttle.clone().enqueue(callback);
-
-      assertThat(true).isFalse(); // should raise a RejectedExecutionException
-    } catch (RejectedExecutionException e) {
-    } finally {
-      waitLock.release(totalTasks);
-      startLock.release(totalTasks);
-    }
+    // Step 4: submit something beyond our limits and make sure it fails
+    assertThatThrownBy(() -> throttle.clone().enqueue(callback))
+      .isEqualTo(STORAGE_THROTTLE_MAX_CONCURRENCY);
   }
 
-  @Test public void enqueue_throttlesBack_whenStorageRejects() throws Exception {
+  @Test public void enqueue_throttlesBack_whenStorageRejects() {
     Listener listener = mock(Listener.class);
     FakeCall call = new FakeCall();
     call.overCapacity = true;
@@ -192,39 +189,24 @@ public class ThrottledCallTest {
     ThrottledCall throttle =
       new ThrottledCall(call, executor, mockLimiter(listener), limiterMetrics, isOverCapacity);
 
-    CountDownLatch latch = new CountDownLatch(1);
-    throttle.enqueue(new Callback<Void>() {
-      @Override public void onSuccess(Void val) {
-        latch.countDown();
-      }
+    AwaitableCallback callback = new AwaitableCallback();
+    throttle.enqueue(callback);
 
-      @Override public void onError(Throwable t) {
-        latch.countDown();
-      }
-    });
+    assertThatThrownBy(callback::await).isEqualTo(OVER_CAPACITY);
 
-    latch.await(1, TimeUnit.MINUTES);
     verify(listener).onDropped();
   }
 
   @Test public void enqueue_ignoresLimit_whenPoolFull() {
     Listener listener = mock(Listener.class);
 
-    ThrottledCall throttle =
-      new ThrottledCall(new FakeCall(), mockExhaustedPool(), mockLimiter(listener),
-        limiterMetrics, isOverCapacity);
-    try {
-      throttle.enqueue(new Callback<Void>() {
-        @Override public void onSuccess(Void value) {
-        }
+    ThrottledCall throttle = new ThrottledCall(new FakeCall(), mockExhaustedPool(),
+      mockLimiter(listener), limiterMetrics, isOverCapacity);
 
-        @Override public void onError(Throwable t) {
-        }
-      });
-      assertThat(true).isFalse(); // should raise a RejectedExecutionException
-    } catch (RejectedExecutionException e) {
-      verify(listener).onIgnore();
-    }
+    assertThatThrownBy(() -> throttle.enqueue(NOOP_CALLBACK))
+      .isEqualTo(STORAGE_THROTTLE_MAX_QUEUE_SIZE);
+
+    verify(listener).onIgnore();
   }
 
   ThrottledCall throttle(Call<Void> delegate) {
@@ -266,8 +248,8 @@ public class ThrottledCallTest {
 
   ExecutorService mockExhaustedPool() {
     ExecutorService mock = mock(ExecutorService.class);
-    doThrow(RejectedExecutionException.class).when(mock).execute(any());
-    doThrow(RejectedExecutionException.class).when(mock).submit(any(Callable.class));
+    doThrow(STORAGE_THROTTLE_MAX_QUEUE_SIZE).when(mock).execute(any());
+    doThrow(STORAGE_THROTTLE_MAX_QUEUE_SIZE).when(mock).submit(any(Callable.class));
     return mock;
   }
 
@@ -277,17 +259,18 @@ public class ThrottledCallTest {
     return mock;
   }
 
+  static final Exception OVER_CAPACITY = clearTrace(new RejectedExecutionException("overCapacity"));
+
   static final class FakeCall extends Call.Base<Void> {
     boolean overCapacity = false;
 
     @Override public Void doExecute() {
-      if (overCapacity) throw new RejectedExecutionException();
-      return null;
+      throw new AssertionError("throttling never uses execute");
     }
 
     @Override public void doEnqueue(Callback<Void> callback) {
       if (overCapacity) {
-        callback.onError(new RejectedExecutionException());
+        callback.onError(OVER_CAPACITY);
       } else {
         callback.onSuccess(null);
       }

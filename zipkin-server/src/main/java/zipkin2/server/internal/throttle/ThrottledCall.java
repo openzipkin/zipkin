@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.throttle;
 
+import com.linecorp.armeria.common.util.Exceptions;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.Limiter.Listener;
 import java.io.IOException;
@@ -24,6 +25,8 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Predicate;
 import zipkin2.Call;
 import zipkin2.Callback;
+
+import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
 
 /**
  * {@link Call} implementation that is backed by an {@link ExecutorService}. The ExecutorService
@@ -38,6 +41,14 @@ import zipkin2.Callback;
  * @see ThrottledStorageComponent
  */
 final class ThrottledCall extends Call.Base<Void> {
+  /**
+   * <p>This reduces allocations when concurrency reached by always returning the same instance.
+   * This is only thrown in one location, and a stack trace starting from static initialization
+   * isn't useful. Hence, we {@link Exceptions#clearTrace clear the trace}.
+   */
+  static final RejectedExecutionException STORAGE_THROTTLE_MAX_CONCURRENCY =
+    clearTrace(new RejectedExecutionException("STORAGE_THROTTLE_MAX_CONCURRENCY reached"));
+
   static final Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
     @Override public void onSuccess(Void value) {
     }
@@ -86,8 +97,8 @@ final class ThrottledCall extends Call.Base<Void> {
 
   // When handling enqueue, we don't block the calling thread. Any exception goes to the callback.
   @Override protected void doEnqueue(Callback<Void> callback) {
-    Listener limiterListener = limiter.acquire(null)
-      .orElseThrow(RejectedExecutionException::new); // TODO: make an exception message
+    Listener limiterListener =
+      limiter.acquire(null).orElseThrow(() -> STORAGE_THROTTLE_MAX_CONCURRENCY);
 
     limiterMetrics.requests.increment();
     EnqueueAndAwait enqueueAndAwait = new EnqueueAndAwait(callback, limiterListener);
