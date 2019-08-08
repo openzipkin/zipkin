@@ -42,8 +42,6 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import zipkin2.Call;
 import zipkin2.Callback;
 
-import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
-
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
 @Fork(3)
@@ -71,7 +69,7 @@ public class ThrottledCallBenchmarks {
     fakeCallExecutor.shutdown();
   }
 
-  @Benchmark public Void execute() throws IOException {
+  @Benchmark public Object execute() throws IOException {
     return call.clone().execute();
   }
 
@@ -88,14 +86,10 @@ public class ThrottledCallBenchmarks {
 
   @Benchmark public void execute_throttled() throws IOException {
     call.limiter.acquire(null); // capacity is 1, so this will overdo it.
-    try {
-      call.clone().execute();
-    } catch (RejectedExecutionException e) {
-      assert e == ThrottledCall.STORAGE_THROTTLE_MAX_CONCURRENCY;
-    }
+    call.clone().execute();
   }
 
-  static final Exception OVER_CAPACITY = clearTrace(new RejectedExecutionException("overCapacity"));
+  static final RejectedExecutionException OVER_CAPACITY = new RejectedExecutionException();
 
   static final class FakeCall extends Call.Base<Void> {
     final Executor executor;
@@ -105,8 +99,9 @@ public class ThrottledCallBenchmarks {
       this.executor = executor;
     }
 
-    @Override public Void doExecute() {
-      throw new AssertionError("throttling never uses execute");
+    @Override public Void doExecute() throws IOException {
+      if (overCapacity) throw OVER_CAPACITY;
+      return null;
     }
 
     @Override public void doEnqueue(Callback<Void> callback) {
