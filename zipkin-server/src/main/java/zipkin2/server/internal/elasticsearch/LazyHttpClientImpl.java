@@ -19,8 +19,7 @@ import com.linecorp.armeria.client.endpoint.DynamicEndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
-import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
-import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
+import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.retry.Backoff;
 import com.linecorp.armeria.common.SessionProtocol;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -103,9 +102,9 @@ final class LazyHttpClientImpl implements LazyHttpClient {
 
   // Enables health-checking of an endpoint group, so we only send requests to endpoints that are
   // up.
-  HttpHealthCheckedEndpointGroup decorateHealthCheck(EndpointGroup endpointGroup) {
-    HttpHealthCheckedEndpointGroup healthChecked =
-      new HttpHealthCheckedEndpointGroupBuilder(endpointGroup, "/_cluster/health")
+  HealthCheckedEndpointGroup decorateHealthCheck(EndpointGroup endpointGroup) {
+    HealthCheckedEndpointGroup healthChecked =
+      HealthCheckedEndpointGroup.builder(endpointGroup, "/_cluster/health")
         .protocol(protocol)
         .clientFactory(factory.delegate)
         .withClientOptions(options -> {
