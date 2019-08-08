@@ -46,11 +46,9 @@ const Sidebar = () => {
 
   return (
     <Drawer
-      variant="permanent"
       open
-      classes={{
-        paper: classes.paper,
-      }}
+      variant="permanent"
+      classes={{ paper: classes.paper }}
     >
       <Box>
         <Box display="flex" justifyContent="center" width="100%">
