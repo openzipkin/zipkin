@@ -25,6 +25,8 @@ import java.util.function.Predicate;
 import zipkin2.Call;
 import zipkin2.Callback;
 
+import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
+
 /**
  * {@link Call} implementation that is backed by an {@link ExecutorService}. The ExecutorService
  * serves two purposes:
@@ -38,6 +40,13 @@ import zipkin2.Callback;
  * @see ThrottledStorageComponent
  */
 final class ThrottledCall extends Call.Base<Void> {
+  /**
+   * Rather than flooding when concurrency reached, return the same instance. The path to this is
+   * unimportant, so we clear the trace.
+   */
+  static final RejectedExecutionException STORAGE_THROTTLE_MAX_CONCURRENCY =
+    clearTrace(new RejectedExecutionException("STORAGE_THROTTLE_MAX_CONCURRENCY reached"));
+
   static final Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
     @Override public void onSuccess(Void value) {
     }
@@ -86,8 +95,8 @@ final class ThrottledCall extends Call.Base<Void> {
 
   // When handling enqueue, we don't block the calling thread. Any exception goes to the callback.
   @Override protected void doEnqueue(Callback<Void> callback) {
-    Listener limiterListener = limiter.acquire(null)
-      .orElseThrow(RejectedExecutionException::new); // TODO: make an exception message
+    Listener limiterListener =
+      limiter.acquire(null).orElseThrow(() -> STORAGE_THROTTLE_MAX_CONCURRENCY);
 
     limiterMetrics.requests.increment();
     EnqueueAndAwait enqueueAndAwait = new EnqueueAndAwait(callback, limiterListener);
