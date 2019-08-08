@@ -20,7 +20,6 @@ import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
-import com.linecorp.armeria.client.retry.Backoff;
 import com.linecorp.armeria.common.SessionProtocol;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.TimeUnit;
@@ -115,7 +114,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
           });
           return options;
         })
-        .retryBackoff(Backoff.fixed(healthCheck.getInterval().toMillis()))
+        .retryInterval(healthCheck.getInterval())
         .build();
     healthChecked.newMeterBinder("elasticsearch").bindTo(meterRegistry);
 
