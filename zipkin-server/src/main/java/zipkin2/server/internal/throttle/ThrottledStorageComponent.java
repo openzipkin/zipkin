@@ -60,8 +60,8 @@ import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
  */
 public final class ThrottledStorageComponent extends ForwardingStorageComponent {
   /**
-   * Rather than flooding when queue size reached, return the same instance. The path to this is
-   * unimportant, so we clear the trace.
+   * See {@link ThrottledCall#STORAGE_THROTTLE_MAX_CONCURRENCY} if unfamiliar with clearing trace on
+   * exceptions only thrown from one spot.
    */
   static final RejectedExecutionException STORAGE_THROTTLE_MAX_QUEUE_SIZE =
     clearTrace(new RejectedExecutionException("STORAGE_THROTTLE_MAX_QUEUE_SIZE reached"));

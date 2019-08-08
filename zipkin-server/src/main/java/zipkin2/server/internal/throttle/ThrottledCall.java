@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.throttle;
 
+import com.linecorp.armeria.common.util.Exceptions;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.Limiter.Listener;
 import java.io.IOException;
@@ -41,8 +42,9 @@ import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
  */
 final class ThrottledCall extends Call.Base<Void> {
   /**
-   * Rather than flooding when concurrency reached, return the same instance. The path to this is
-   * unimportant, so we clear the trace.
+   * <p>This reduces allocations when concurrency reached by always returning the same instance.
+   * This is only thrown in one location, and a stack trace starting from static initialization
+   * isn't useful. Hence, we {@link Exceptions#clearTrace clear the trace}.
    */
   static final RejectedExecutionException STORAGE_THROTTLE_MAX_CONCURRENCY =
     clearTrace(new RejectedExecutionException("STORAGE_THROTTLE_MAX_CONCURRENCY reached"));
