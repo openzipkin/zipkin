@@ -13,21 +13,15 @@
  */
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react';
-import { createMount, createShallow } from '@material-ui/core/test-utils';
+import { createShallow } from '@material-ui/core/test-utils';
 
 import { SidebarMenuItemImpl } from './SidebarMenuItem';
 
 describe('<SidebarMenuItem />', () => {
-  let mount;
   let shallow;
 
   beforeEach(() => {
-    mount = createMount({ strict: true });
     shallow = createShallow();
-  });
-
-  afterEach(() => {
-    mount.cleanUp();
   });
 
   describe('should render an external link item', () => {
