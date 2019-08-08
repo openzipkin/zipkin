@@ -34,18 +34,6 @@
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
 
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.linecorp.armeria</groupId>
-        <artifactId>armeria-bom</artifactId>
-        <version>${armeria.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
-
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -62,20 +50,24 @@
 
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>com.github.line.armeria</groupId>
       <artifactId>armeria-spring-boot-autoconfigure</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>com.github.line.armeria</groupId>
       <artifactId>armeria-spring-boot-actuator-starter</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>com.github.line.armeria</groupId>
       <artifactId>armeria-brave</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>com.github.line.armeria</groupId>
       <artifactId>armeria-grpc-protocol</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
 
     <!-- zipkin requires exporting /health endpoint -->
@@ -279,8 +271,9 @@
     </dependency>
 
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>com.github.line.armeria</groupId>
       <artifactId>armeria-testing-junit4</artifactId>
+      <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
 
