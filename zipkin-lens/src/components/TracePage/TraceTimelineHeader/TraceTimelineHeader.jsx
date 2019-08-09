@@ -23,6 +23,8 @@ import TimeMarker from './TimeMarker';
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
+  isMiniMapOpen: PropTypes.bool.isRequired,
+  onMiniMapToggleButtonClick: PropTypes.func.isRequired,
 };
 
 const useStyles = makeStyles({
@@ -37,7 +39,12 @@ const useStyles = makeStyles({
   },
 });
 
-const TraceTimelineHeader = ({ startTs, endTs }) => {
+const TraceTimelineHeader = ({
+  startTs,
+  endTs,
+  isMiniMapOpen,
+  onMiniMapToggleButtonClick,
+}) => {
   const classes = useStyles();
 
   return (
@@ -67,8 +74,8 @@ const TraceTimelineHeader = ({ startTs, endTs }) => {
           </ButtonGroup>
         </Box>
         <ButtonGroup variant="contained">
-          <Button>
-            Show Minimap
+          <Button onClick={onMiniMapToggleButtonClick}>
+            {isMiniMapOpen ? 'Hide MiniMap' : 'Show MiniMap'}
           </Button>
           <Button>
             Re-root

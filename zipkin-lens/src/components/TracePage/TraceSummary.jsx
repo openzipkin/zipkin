@@ -20,6 +20,7 @@ import TraceTimeline from './TraceTimeline';
 import TraceTimelineHeader from './TraceTimelineHeader';
 import SpanDetail from './SpanDetail';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
+import TraceMiniMap from './TraceMiniMap';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
@@ -74,6 +75,11 @@ const TraceSummary = ({ traceSummary }) => {
     });
   }, [closedSpans, traceSummary.spans]);
 
+  const [isMiniMapOpen, setIsMiniMapOpen] = useState(false);
+
+  const handleMiniMapToggleButtonClick = useCallback(() => {
+    setIsMiniMapOpen(!isMiniMapOpen);
+  }, [isMiniMapOpen, setIsMiniMapOpen]);
 
   return (
     <React.Fragment>
@@ -82,9 +88,21 @@ const TraceSummary = ({ traceSummary }) => {
       </Box>
       <Box height="100%" display="flex">
         <Box width="65%" display="flex" flexDirection="column">
+          {
+            isMiniMapOpen ? (
+              <TraceMiniMap
+                startTs={0}
+                endTs={traceSummary.duration}
+                spans={traceSummary.spans}
+                duration={traceSummary.duration}
+              />
+            ) : null
+          }
           <TraceTimelineHeader
             startTs={0}
             endTs={traceSummary.duration}
+            isMiniMapOpen={isMiniMapOpen}
+            onMiniMapToggleButtonClick={handleMiniMapToggleButtonClick}
           />
           <Box height="100%" width="100%">
             <AutoSizer>
