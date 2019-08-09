@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch; // to access package-private stuff
+package zipkin2.elasticsearch.internal.client; // to access package-private stuff
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.linecorp.armeria.client.HttpClient;
@@ -30,6 +30,10 @@ import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import com.linecorp.armeria.unsafe.ByteBufHttpData;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
+import io.netty.util.ReferenceCounted;
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,7 +50,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,8 +57,10 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
+import static zipkin2.TestObjects.UTF_8;
 
 public class HttpCallTest {
+  static final HttpCall.BodyConverter<Object> NULL = (parser, contentString) -> null;
 
   private static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
     new AtomicReference<>();
@@ -150,7 +155,7 @@ public class HttpCallTest {
   @Test public void executionException_5xx() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
+    Call<?> call = http.newCall(REQUEST, NULL, "test");
 
     try {
       call.execute();
@@ -163,7 +168,7 @@ public class HttpCallTest {
   @Test public void executionException_404() throws Exception {
     MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND));
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
+    Call<?> call = http.newCall(REQUEST, NULL, "test");
 
     try {
       call.execute();
@@ -171,6 +176,23 @@ public class HttpCallTest {
     } catch (FileNotFoundException expected) {
       assertThat(expected).hasMessage("/");
     }
+  }
+
+  @Test public void releasesAllReferencesToByteBuf() {
+    // Force this to be a ref-counted response
+    byte[] message = "{\"Message\":\"error\"}".getBytes(UTF_8);
+    ByteBuf encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(message.length);
+    encodedBuf.writeBytes(message);
+    AggregatedHttpResponse response = AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.FORBIDDEN),
+      new ByteBufHttpData(encodedBuf, true)
+    );
+
+    HttpCall<?> call = http.newCall(REQUEST, NULL, "test");
+
+    // Invoke the parser directly because using the fake server will not result in ref-counted
+    assertThatThrownBy(() -> call.parseResponse(response, NULL)).hasMessage("error");
+    assertThat(encodedBuf.refCnt()).isEqualTo(0);
   }
 
   // For simplicity, we also parse messages from AWS Elasticsearch, as it prevents copy/paste.
@@ -189,7 +211,7 @@ public class HttpCallTest {
       HttpData.ofUtf8("Message: sleet") // note: not json
     ), "response for / failed: Message: sleet"); // In this case, we give request context
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
+    Call<?> call = http.newCall(REQUEST, NULL, "test");
 
     for (Map.Entry<AggregatedHttpResponse, String> entry : responseToMessage.entrySet()) {
       MOCK_RESPONSE.set(entry.getKey());
@@ -214,7 +236,7 @@ public class HttpCallTest {
       })
       .build());
 
-    http.newCall(REQUEST, BodyConverters.NULL, "custom-name").execute();
+    http.newCall(REQUEST, NULL, "custom-name").execute();
 
     await().untilAsserted(() -> assertThat(log).doesNotHaveValue(null));
     assertThat(log.get().context().attr(HttpCall.NAME).get())
@@ -231,7 +253,7 @@ public class HttpCallTest {
       })
       .build());
 
-    assertThatThrownBy(() -> http.newCall(REQUEST, BodyConverters.NULL, "test").execute())
+    assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
       .hasMessage("Rejected execution: No endpoints");
   }
@@ -243,7 +265,7 @@ public class HttpCallTest {
       AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.BAD_REQUEST), HttpData.ofUtf8(body))
     );
 
-    assertThatThrownBy(() -> http.newCall(REQUEST, BodyConverters.NULL, "test").execute())
+    assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RuntimeException.class)
       .hasMessage(
         "Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead.");
