@@ -14,6 +14,7 @@
 package zipkin2.elasticsearch;
 
 import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.ResponseTimeoutException;
 import com.linecorp.armeria.client.UnprocessedRequestException;
 import com.linecorp.armeria.client.endpoint.EndpointGroupException;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
@@ -26,7 +27,6 @@ import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -88,7 +88,7 @@ public class ElasticsearchStorageTest {
     }
   }).build();
 
-  @After public void tearDown() throws IOException {
+  @After public void tearDown() {
     storage.close();
 
     assertThat(MOCK_RESPONSES).isEmpty();
@@ -163,15 +163,17 @@ public class ElasticsearchStorageTest {
       .isEqualTo("User: anonymous is not authorized to perform: es:ESHttpGet");
   }
 
+  /**
+   * See {@link HttpCallTest#unprocessedRequest()} which shows {@link UnprocessedRequestException}
+   * are re-wrapped as {@link RejectedExecutionException}.
+   */
   @Test public void isOverCapacity() {
+    // timeout
+    assertThat(storage.isOverCapacity(ResponseTimeoutException.get())).isTrue();
+
     // top-level
     assertThat(storage.isOverCapacity(new RejectedExecutionException(
       "{\"status\":429,\"error\":{\"type\":\"es_rejected_execution_exception\"}}"))).isTrue();
-
-    // wrapped
-    assertThat(storage.isOverCapacity(
-      new UnprocessedRequestException("Could not process request.",
-        new EndpointGroupException("No endpoints")))).isTrue();
 
     // re-wrapped
     assertThat(storage.isOverCapacity(
@@ -190,7 +192,7 @@ public class ElasticsearchStorageTest {
    */
   @Test public void toStringContainsOnlySummaryInformation() {
     assertThat(storage).hasToString(
-      String.format("ElasticsearchStorage{httpClient=%s, index=zipkin}",
+      String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}",
         server.httpUri("/")));
   }
 }
