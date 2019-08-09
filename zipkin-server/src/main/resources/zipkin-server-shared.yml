@@ -217,8 +217,6 @@ logging:
   level:
     # Silence Invalid method name: '__can__finagle__trace__v3__'
     com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
-    # Silence 'Did you forget to use RequestContext' when self-tracing https://github.com/line/armeria/issues/1964
-    com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext: 'OFF'
 #     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)
