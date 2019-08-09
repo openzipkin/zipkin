@@ -173,18 +173,17 @@ public class HttpCallTest {
     }
   }
 
-  // TODO: note what actually returns top-level "message" because Elasticsearch usually doesn't
-  // In other words, find actual json
+  // For simplicity, we also parse messages from AWS Elasticsearch, as it prevents copy/paste.
   @Test public void executionException_message() throws Exception {
     Map<AggregatedHttpResponse, String> responseToMessage = new LinkedHashMap<>();
     responseToMessage.put(AggregatedHttpResponse.of(
-      ResponseHeaders.of(HttpStatus.UNAUTHORIZED),
-      HttpData.ofUtf8("{\"message\":\"rain\"}")
-    ), "rain");
-    responseToMessage.put(AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.FORBIDDEN),
-      HttpData.ofUtf8("{\"Message\":\"snow\"}") // note: case of key is different
-    ), "snow");
+      HttpData.ofUtf8(
+        "{\"Message\":\"User: anonymous is not authorized to perform: es:ESHttpGet\"}")
+    ), "User: anonymous is not authorized to perform: es:ESHttpGet");
+    responseToMessage.put(AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.FORBIDDEN)
+    ), "response for / failed: 403 Forbidden");
     responseToMessage.put(AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.BAD_GATEWAY),
       HttpData.ofUtf8("Message: sleet") // note: not json

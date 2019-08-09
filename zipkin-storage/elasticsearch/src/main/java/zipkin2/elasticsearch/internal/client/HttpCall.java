@@ -187,7 +187,8 @@ public final class HttpCall<V> extends Call.Base<V> {
       } else if (status.code() == 404) {
         throw new FileNotFoundException(request.path());
       } else {
-        throw new RuntimeException("response failed: " + response);
+        throw new RuntimeException(
+          "response for " + request.path() + " failed: " + response.status());
       }
     }
 
@@ -199,7 +200,6 @@ public final class HttpCall<V> extends Call.Base<V> {
         try {
           JsonNode root = OBJECT_MAPPER.readTree(parser);
           message = root.findPath("reason").textValue();
-          if (message == null) message = root.at("/message").textValue();
           if (message == null) message = root.at("/Message").textValue();
         } catch (RuntimeException | IOException possiblyParseException) {
         }
