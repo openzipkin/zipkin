@@ -15,8 +15,8 @@ package zipkin2.server.internal.throttle;
 
 import brave.Tracer;
 import brave.Tracing;
-import com.linecorp.armeria.common.RequestContext;
-import com.linecorp.armeria.common.util.SafeCloseable;
+import brave.propagation.CurrentTraceContext;
+import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
 import com.netflix.concurrency.limits.Limit;
 import com.netflix.concurrency.limits.Limiter;
 import com.netflix.concurrency.limits.limit.Gradient2Limit;
@@ -67,7 +67,8 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
     clearTrace(new RejectedExecutionException("STORAGE_THROTTLE_MAX_QUEUE_SIZE reached"));
 
   final StorageComponent delegate;
-  final @Nullable Tracing tracing;
+  final @Nullable Tracer tracer;
+  final @Nullable CurrentTraceContext currentTraceContext;
   final AbstractLimiter<Void> limiter;
   final ThreadPoolExecutor executor;
   final LimiterMetrics limiterMetrics;
@@ -75,7 +76,8 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
   public ThrottledStorageComponent(StorageComponent delegate, MeterRegistry registry,
     @Nullable Tracing tracing, int minConcurrency, int maxConcurrency, int maxQueueSize) {
     this.delegate = Objects.requireNonNull(delegate);
-    this.tracing = tracing;
+    this.tracer = tracing != null ? tracing.tracer() : null;
+    this.currentTraceContext = tracing != null ? tracing.currentTraceContext() : null;
 
     Limit limit = Gradient2Limit.newBuilder()
       .minLimit(minConcurrency)
@@ -93,8 +95,21 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
       limit.getLimit(),
       0,
       TimeUnit.DAYS,
-      createQueue(maxQueueSize), //
-      new NamedThreadFactory("zipkin-throttle-pool"),
+      createQueue(maxQueueSize),
+      new NamedThreadFactory("zipkin-throttle-pool") {
+        @Override public Thread newThread(Runnable runnable) {
+          return super.newThread(new Runnable() {
+            @Override public void run() {
+              RequestContextCurrentTraceContext.setCurrentThreadNotRequestThread(true);
+              runnable.run();
+            }
+
+            @Override public String toString() {
+              return runnable.toString();
+            }
+          });
+        }
+      },
       (r, e) -> {
         throw STORAGE_THROTTLE_MAX_QUEUE_SIZE;
       });
@@ -124,33 +139,6 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
     return "Throttled{" + delegate.toString() + "}";
   }
 
-  /**
-   * Lazy accesses the request context as we cannot scope the executor used by storage commands per
-   * request.
-   */
-  static final class RequestContextInstrumentedExecutor implements Executor {
-    final Executor delegate;
-
-    RequestContextInstrumentedExecutor(Executor delegate) {
-      this.delegate = delegate;
-    }
-
-    @Override public void execute(Runnable command) {
-      RequestContext rCtx = RequestContext.currentOrNull();
-      delegate.execute(rCtx != null ? new Runnable() {
-        @Override public void run() {
-          try (SafeCloseable ignored = rCtx.pushIfAbsent()) {
-            command.run();
-          }
-        }
-
-        @Override public String toString() { // avoid the lambda naming policy
-          return command.toString();
-        }
-      } : command);
-    }
-  }
-
   static final class ThrottledSpanConsumer implements SpanConsumer {
     final SpanConsumer delegate;
     final Executor executor;
@@ -161,11 +149,13 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
 
     ThrottledSpanConsumer(ThrottledStorageComponent throttledStorage) {
       this.delegate = throttledStorage.delegate.spanConsumer();
-      this.executor = new RequestContextInstrumentedExecutor(throttledStorage.executor);
+      this.executor = throttledStorage.currentTraceContext != null
+        ? throttledStorage.currentTraceContext.executor(throttledStorage.executor)
+        : throttledStorage.executor;
       this.limiter = throttledStorage.limiter;
       this.limiterMetrics = throttledStorage.limiterMetrics;
       this.isOverCapacity = throttledStorage::isOverCapacity;
-      this.tracer = throttledStorage.tracing != null ? throttledStorage.tracing.tracer() : null;
+      this.tracer = throttledStorage.tracer;
     }
 
     @Override public Call<Void> accept(List<Span> spans) {
