@@ -41,7 +41,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.line.armeria</groupId>
+      <groupId>com.github.trustin.armeria</groupId>
       <artifactId>armeria-thrift</artifactId>
       <version>${armeria.version}</version>
     </dependency>
@@ -54,7 +54,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.line.armeria</groupId>
+      <groupId>com.github.trustin.armeria</groupId>
       <artifactId>armeria-testing-junit4</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>

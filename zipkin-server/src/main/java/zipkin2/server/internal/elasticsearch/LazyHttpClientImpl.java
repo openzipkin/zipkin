@@ -83,8 +83,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
         //
         // We are blocking up to the connection timeout which should be enough time for any DNS
         // resolution that hasn't happened yet to finish.
-        ((DynamicEndpointGroup) endpointGroup)
-          .awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
+        endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
       } catch (Exception e) {
         // We'll try again next time around.
         throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
@@ -105,6 +104,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     HealthCheckedEndpointGroup healthChecked =
       HealthCheckedEndpointGroup.builder(endpointGroup, "/_cluster/health")
         .protocol(protocol)
+        .useGet(true)
         .clientFactory(factory.delegate)
         .withClientOptions(options -> {
           factory.configureOptionsExceptLogging(options);

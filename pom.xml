@@ -55,7 +55,7 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <armeria.version>master-SNAPSHOT</armeria.version>
+    <armeria.version>no_long_polling_on_stop-SNAPSHOT</armeria.version>
     <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
     <guava.version>28.0-jre</guava.version>
 
@@ -172,12 +172,12 @@
       </dependency>
 
       <dependency>
-        <groupId>com.github.line.armeria</groupId>
+        <groupId>com.github.trustin.armeria</groupId>
         <artifactId>armeria-spring-boot-autoconfigure</artifactId>
         <version>${armeria.version}</version>
         <exclusions>
           <exclusion>
-            <groupId>com.github.line.armeria</groupId>
+            <groupId>com.github.trustin.armeria</groupId>
             <artifactId>armeria-logback</artifactId>
           </exclusion>
           <exclusion>
@@ -188,7 +188,7 @@
       </dependency>
 
       <dependency>
-        <groupId>com.github.line.armeria</groupId>
+        <groupId>com.github.trustin.armeria</groupId>
         <artifactId>armeria-tomcat</artifactId>
         <version>${armeria.version}</version>
       </dependency>
