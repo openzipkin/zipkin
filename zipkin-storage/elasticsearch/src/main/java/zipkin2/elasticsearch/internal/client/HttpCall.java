@@ -216,6 +216,8 @@ public final class HttpCall<V> extends Call.Base<V> {
 
       return bodyConverter.convert(parser, content::toStringUtf8);
     } finally {
+      // toInputStream creates an additional reference instead of itself releasing content()
+      ReferenceCountUtil.safeRelease(content);
       ReferenceCountUtil.safeRelease(content);
     }
   }
