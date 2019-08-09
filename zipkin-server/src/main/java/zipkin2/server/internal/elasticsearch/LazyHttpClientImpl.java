@@ -20,7 +20,9 @@ import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
+import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.SessionProtocol;
+import com.linecorp.armeria.common.metric.MeterIdPrefixFunction;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -108,6 +110,8 @@ final class LazyHttpClientImpl implements LazyHttpClient {
         .clientFactory(factory.delegate)
         .withClientOptions(options -> {
           factory.configureOptionsExceptLogging(options);
+          options.decorator(MetricCollectingClient.newDecorator(
+            MeterIdPrefixFunction.ofDefault("elasticsearch-healthcheck")));
           options.decorator((delegate, ctx, req) -> {
             ctx.attr(HttpCall.NAME).set("health-check");
             return delegate.execute(ctx, req);
