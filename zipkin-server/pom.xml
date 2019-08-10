@@ -50,22 +50,22 @@
 
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
-      <groupId>com.github.trustin.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-spring-boot-autoconfigure</artifactId>
       <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.trustin.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-spring-boot-actuator-starter</artifactId>
       <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.trustin.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-brave</artifactId>
       <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.github.trustin.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-grpc-protocol</artifactId>
       <version>${armeria.version}</version>
     </dependency>
@@ -278,7 +278,7 @@
     </dependency>
 
     <dependency>
-      <groupId>com.github.trustin.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-testing-junit4</artifactId>
       <version>${armeria.version}</version>
       <scope>test</scope>

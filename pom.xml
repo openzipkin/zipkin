@@ -33,13 +33,6 @@
     <module>zipkin-server</module>
   </modules>
 
-  <repositories>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
-
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.build.resourceEncoding>UTF-8</project.build.resourceEncoding>
@@ -55,7 +48,9 @@
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <armeria.version>no_long_polling_on_stop-SNAPSHOT</armeria.version>
+    <!-- This allows you to test feature branches with jitpack -->
+    <armeria.groupId>com.linecorp.armeria</armeria.groupId>
+    <armeria.version>0.90.0</armeria.version>
     <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
     <guava.version>28.0-jre</guava.version>
 
@@ -172,12 +167,12 @@
       </dependency>
 
       <dependency>
-        <groupId>com.github.trustin.armeria</groupId>
+        <groupId>${armeria.groupId}</groupId>
         <artifactId>armeria-spring-boot-autoconfigure</artifactId>
         <version>${armeria.version}</version>
         <exclusions>
           <exclusion>
-            <groupId>com.github.trustin.armeria</groupId>
+            <groupId>${armeria.groupId}</groupId>
             <artifactId>armeria-logback</artifactId>
           </exclusion>
           <exclusion>
@@ -188,7 +183,7 @@
       </dependency>
 
       <dependency>
-        <groupId>com.github.trustin.armeria</groupId>
+        <groupId>${armeria.groupId}</groupId>
         <artifactId>armeria-tomcat</artifactId>
         <version>${armeria.version}</version>
       </dependency>
