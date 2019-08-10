@@ -19,10 +19,10 @@ import com.linecorp.armeria.client.endpoint.DynamicEndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
-import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroup;
-import com.linecorp.armeria.client.endpoint.healthcheck.HttpHealthCheckedEndpointGroupBuilder;
-import com.linecorp.armeria.client.retry.Backoff;
+import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
+import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.SessionProtocol;
+import com.linecorp.armeria.common.metric.MeterIdPrefixFunction;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
@@ -85,8 +85,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
         //
         // We are blocking up to the connection timeout which should be enough time for any DNS
         // resolution that hasn't happened yet to finish.
-        ((DynamicEndpointGroup) endpointGroup)
-          .awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
+        endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
       } catch (Exception e) {
         // We'll try again next time around.
         throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
@@ -103,20 +102,23 @@ final class LazyHttpClientImpl implements LazyHttpClient {
 
   // Enables health-checking of an endpoint group, so we only send requests to endpoints that are
   // up.
-  HttpHealthCheckedEndpointGroup decorateHealthCheck(EndpointGroup endpointGroup) {
-    HttpHealthCheckedEndpointGroup healthChecked =
-      new HttpHealthCheckedEndpointGroupBuilder(endpointGroup, "/_cluster/health")
+  HealthCheckedEndpointGroup decorateHealthCheck(EndpointGroup endpointGroup) {
+    HealthCheckedEndpointGroup healthChecked =
+      HealthCheckedEndpointGroup.builder(endpointGroup, "/_cluster/health")
         .protocol(protocol)
+        .useGet(true)
         .clientFactory(factory.delegate)
         .withClientOptions(options -> {
           factory.configureOptionsExceptLogging(options);
+          options.decorator(MetricCollectingClient.newDecorator(
+            MeterIdPrefixFunction.ofDefault("elasticsearch-healthcheck")));
           options.decorator((delegate, ctx, req) -> {
             ctx.attr(HttpCall.NAME).set("health-check");
             return delegate.execute(ctx, req);
           });
           return options;
         })
-        .retryBackoff(Backoff.fixed(healthCheck.getInterval().toMillis()))
+        .retryInterval(healthCheck.getInterval())
         .build();
     healthChecked.newMeterBinder("elasticsearch").bindTo(meterRegistry);
 

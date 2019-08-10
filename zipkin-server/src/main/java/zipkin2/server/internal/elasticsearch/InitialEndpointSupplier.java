@@ -20,10 +20,14 @@ import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.util.AbstractListenable;
+import com.linecorp.armeria.common.util.Exceptions;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Supplier;
 
 // TODO: testme
@@ -93,19 +97,65 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
   static class CompositeEndpointGroup extends AbstractListenable<List<Endpoint>>
     implements EndpointGroup {
 
+    static final AtomicIntegerFieldUpdater<CompositeEndpointGroup> dirtyUpdater =
+      AtomicIntegerFieldUpdater.newUpdater(CompositeEndpointGroup.class, "dirty");
+
     final List<EndpointGroup> endpointGroups;
+    final CompletableFuture<List<Endpoint>> initialEndpointsFuture;
+
+    volatile List<Endpoint> merged = Collections.emptyList();
+    volatile int dirty;
 
     CompositeEndpointGroup(List<EndpointGroup> endpointGroups) {
       this.endpointGroups = endpointGroups;
       for (EndpointGroup group : endpointGroups) {
         group.addListener(unused -> notifyListeners(endpoints()));
       }
+
+      initialEndpointsFuture = CompletableFuture.anyOf(
+        endpointGroups.stream()
+          .map(EndpointGroup::initialEndpointsFuture)
+          .toArray(CompletableFuture[]::new))
+        .thenApply(unused -> endpoints());
     }
 
     @Override public List<Endpoint> endpoints() {
-      List<Endpoint> merged = new ArrayList<>();
-      for (EndpointGroup group : endpointGroups) merged.addAll(group.endpoints());
-      return merged;
+      if (dirty == 0) {
+        return merged;
+      }
+
+      if (!dirtyUpdater.compareAndSet(this, 1, 0)) {
+        // Another thread might be updating merged at this time, but endpoint groups are allowed to take a
+        // little bit of time to reflect updates.
+        return merged;
+      }
+
+      List<Endpoint> newEndpoints = new ArrayList<>();
+      for (EndpointGroup endpointGroup : endpointGroups) {
+        newEndpoints.addAll(endpointGroup.endpoints());
+      }
+
+      return merged = Collections.unmodifiableList(newEndpoints);
+    }
+
+    @Override public CompletableFuture<List<Endpoint>> initialEndpointsFuture() {
+      return initialEndpointsFuture;
+    }
+
+    @Override public void close() {
+      Throwable t = null;
+      for (EndpointGroup endpointGroup : endpointGroups) {
+        try {
+          endpointGroup.close();
+        } catch (Throwable thrown) {
+          if (t == null) {
+            t = thrown;
+          }
+        }
+      }
+      if (t != null) {
+        Exceptions.throwUnsafely(t);
+      }
     }
   }
 

@@ -68,12 +68,16 @@ public class ZipkinElasticsearchStorageConfiguration {
   // exposed as a bean so that we can test TLS by swapping it out.
   // TODO: see if we can override the TLS via properties instead as that has less surface area.
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean ClientFactory esClientFactory(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout) {
+    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout,
+    MeterRegistry meterRegistry) {
     // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
     // valid behavior of returning a bad request response, so we can't use the preface.
-    //
-    // TODO: find or raise a bug with Elastic
-    return new ClientFactoryBuilder().useHttp2Preface(false).connectTimeoutMillis(timeout).build();
+    return new ClientFactoryBuilder()
+      // TODO: find or raise a bug with Elastic
+      .useHttp2Preface(false)
+      .connectTimeoutMillis(timeout)
+      .meterRegistry(meterRegistry)
+      .build();
   }
 
   @Bean HttpClientFactory esHttpClientFactory(ZipkinElasticsearchStorageProperties es,
