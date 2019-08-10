@@ -192,27 +192,14 @@ final class ThrottledCall extends Call.Base<Void> {
     }
   }
 
-  /**
-   * Returns true if not interrupted.
-   *
-   * @see zipkin2.reporter.AwaitableCallback for tested code with the same await loop behavior.
-   */
+  /** Returns true if uninterrupted waiting for the latch */
   static boolean await(CountDownLatch latch) {
-    boolean interrupted = false;
     try {
-      while (true) {
-        try {
-          latch.await();
-          return true;
-        } catch (InterruptedException e) {
-          interrupted = true;
-        }
-      }
-    } finally {
-      if (interrupted) {
-        Thread.currentThread().interrupt();
-        return false;
-      }
+      latch.await();
+      return true;
+    } catch (InterruptedException e) {
+      Thread.currentThread().interrupt();
+      return false;
     }
   }
 }

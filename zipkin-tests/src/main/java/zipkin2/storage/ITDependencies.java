@@ -644,7 +644,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
 
     List<Span> trace = asList(
       Span.newBuilder().traceId("10").id("10").name("receive")
-        .timestamp((TODAY) * 1000)
+        .timestamp(TODAY * 1000)
         .kind(Kind.SERVER)
         .localEndpoint(BACKEND)
         .remoteEndpoint(kafka)

@@ -38,7 +38,7 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
 
     abstract String span_name();
 
-    abstract byte[] span();
+    abstract ByteBuffer span();
   }
 
   static class Factory {
@@ -51,36 +51,36 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
       this.session = session;
       this.timestampCodec = new TimestampCodec(session);
       Insert insertQuery =
-          QueryBuilder.insertInto("traces")
-              .value("trace_id", QueryBuilder.bindMarker("trace_id"))
-              .value("ts", QueryBuilder.bindMarker("ts"))
-              .value("span_name", QueryBuilder.bindMarker("span_name"))
-              .value("span", QueryBuilder.bindMarker("span"));
+        QueryBuilder.insertInto("traces")
+          .value("trace_id", QueryBuilder.bindMarker("trace_id"))
+          .value("ts", QueryBuilder.bindMarker("ts"))
+          .value("span_name", QueryBuilder.bindMarker("span_name"))
+          .value("span", QueryBuilder.bindMarker("span"));
       if (spanTtl > 0) insertQuery.using(QueryBuilder.ttl(spanTtl));
 
       this.dateTieredCompactionStrategy =
-          metadata.compactionClass.contains("DateTieredCompactionStrategy");
+        metadata.compactionClass.contains("DateTieredCompactionStrategy");
       this.preparedStatement = session.prepare(insertQuery);
     }
 
-    Input newInput(V1Span v1, byte[] v1Bytes, long ts_micro) {
+    Input newInput(V1Span v1, ByteBuffer v1Bytes, long ts_micro) {
       String span_name =
-          String.format(
-              "%s%d_%d_%d",
-              v1.traceIdHigh() == 0 ? "" : v1.traceIdHigh() + "_",
-              v1.id(),
-              v1.annotations().hashCode(),
-              v1.binaryAnnotations().hashCode());
+        String.format(
+          "%s%d_%d_%d",
+          v1.traceIdHigh() == 0 ? "" : v1.traceIdHigh() + "_",
+          v1.id(),
+          v1.annotations().hashCode(),
+          v1.binaryAnnotations().hashCode());
 
       // If we couldn't guess the timestamp, that probably means that there was a missing timestamp.
       if (0L == ts_micro && dateTieredCompactionStrategy) {
         LOG.warn(
-            "Span {} in trace {} had no timestamp. "
-                + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
-                + "{}.traces",
-            span_name,
-            v1.traceId(),
-            session.getLoggedKeyspace());
+          "Span {} in trace {} had no timestamp. "
+            + "If this happens a lot consider switching back to SizeTieredCompactionStrategy for "
+            + "{}.traces",
+          span_name,
+          v1.traceId(),
+          session.getLoggedKeyspace());
       }
 
       return new AutoValue_InsertTrace_Input(v1.traceId(), ts_micro, span_name, v1Bytes);
@@ -102,13 +102,13 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
   @Override
   protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(
-        factory
-            .preparedStatement
-            .bind()
-            .setLong("trace_id", input.trace_id())
-            .setBytesUnsafe("ts", factory.timestampCodec.serialize(input.ts()))
-            .setString("span_name", input.span_name())
-            .setBytes("span", ByteBuffer.wrap(input.span())));
+      factory
+        .preparedStatement
+        .bind()
+        .setLong("trace_id", input.trace_id())
+        .setBytesUnsafe("ts", factory.timestampCodec.serialize(input.ts()))
+        .setString("span_name", input.span_name())
+        .setBytes("span", input.span()));
   }
 
   @Override public Void map(ResultSet input) {

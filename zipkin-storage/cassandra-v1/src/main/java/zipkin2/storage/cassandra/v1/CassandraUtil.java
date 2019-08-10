@@ -43,16 +43,16 @@ import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 final class CassandraUtil {
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
-  static final List<String> CORE_ANNOTATIONS =
-      ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
+  static final ImmutableList<String> CORE_ANNOTATIONS =
+    ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
 
   private static final ThreadLocal<CharsetEncoder> UTF8_ENCODER =
-      new ThreadLocal<CharsetEncoder>() {
-        @Override
-        protected CharsetEncoder initialValue() {
-          return UTF_8.newEncoder();
-        }
-      };
+    new ThreadLocal<CharsetEncoder>() {
+      @Override
+      protected CharsetEncoder initialValue() {
+        return UTF_8.newEncoder();
+      }
+    };
 
   static ByteBuffer toByteBuffer(String string) {
     try {
@@ -75,7 +75,7 @@ final class CassandraUtil {
   static Set<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
     String localServiceName = span.localServiceName();
-    if (localServiceName == null) return Collections.emptySet();
+    if (localServiceName == null) return annotationKeys;
     for (Annotation a : span.annotations()) {
       if (a.value().length() > SHORT_STRING_LENGTH) continue;
 
@@ -124,9 +124,9 @@ final class CassandraUtil {
     SortedMap<BigInteger, Long> sorted = new TreeMap<>(Collections.reverseOrder());
     for (Pair pair : set) {
       BigInteger uncollided =
-          BigInteger.valueOf(pair.right)
-              .multiply(OFFSET)
-              .add(BigInteger.valueOf(RAND.nextInt() & Integer.MAX_VALUE));
+        BigInteger.valueOf(pair.right)
+          .multiply(OFFSET)
+          .add(BigInteger.valueOf(RAND.nextInt() & Integer.MAX_VALUE));
       sorted.put(uncollided, pair.left);
     }
     return new LinkedHashSet<>(sorted.values());

@@ -44,7 +44,7 @@
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
-          <nodeVersion>v10.16.0</nodeVersion>
+          <nodeVersion>v10.16.2</nodeVersion>
         </configuration>
         <executions>
           <execution>

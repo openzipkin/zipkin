@@ -36,14 +36,13 @@ import zipkin2.storage.StorageComponent;
 
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
 public final class RabbitMQCollector extends CollectorComponent {
-  static final Callback<Void> NOOP =
-      new Callback<Void>() {
-        @Override
-        public void onSuccess(Void value) {}
+  static final Callback<Void> NOOP = new Callback<Void>() {
+    @Override public void onSuccess(Void value) {
+    }
 
-        @Override
-        public void onError(Throwable t) {}
-      };
+    @Override public void onError(Throwable t) {
+    }
+  };
 
   public static Builder builder() {
     return new Builder();
@@ -177,15 +176,16 @@ public final class RabbitMQCollector extends CollectorComponent {
       Connection connection;
       try {
         connection =
-            (builder.addresses == null)
-                ? builder.connectionFactory.newConnection()
-                : builder.connectionFactory.newConnection(builder.addresses);
+          (builder.addresses == null)
+            ? builder.connectionFactory.newConnection()
+            : builder.connectionFactory.newConnection(builder.addresses);
         declareQueueIfMissing(connection);
       } catch (IOException e) {
         throw new UncheckedIOException(
           "Unable to establish connection to RabbitMQ server: " + e.getMessage(), e);
       } catch (TimeoutException e) {
-        throw new RuntimeException("Timeout establishing connection to RabbitMQ server: " + e.getMessage(), e);
+        throw new RuntimeException(
+          "Timeout establishing connection to RabbitMQ server: " + e.getMessage(), e);
       }
       Collector collector = builder.delegate.build();
       CollectorMetrics metrics = builder.metrics;
@@ -212,7 +212,9 @@ public final class RabbitMQCollector extends CollectorComponent {
         channel.queueDeclarePassive(builder.queue);
         channel.close();
       } catch (IOException maybeQueueDoesNotExist) {
-        if (maybeQueueDoesNotExist.getCause() != null && maybeQueueDoesNotExist.getCause().getMessage().contains("NOT_FOUND")) {
+        if (maybeQueueDoesNotExist.getCause() != null && maybeQueueDoesNotExist.getCause()
+          .getMessage()
+          .contains("NOT_FOUND")) {
           channel = connection.createChannel();
           channel.queueDeclare(builder.queue, true, false, false, null);
           channel.close();
@@ -251,7 +253,7 @@ public final class RabbitMQCollector extends CollectorComponent {
   static Address[] convertAddresses(List<String> addresses) {
     Address[] addressArray = new Address[addresses.size()];
     for (int i = 0; i < addresses.size(); i++) {
-      String[] splitAddress = addresses.get(i).split(":");
+      String[] splitAddress = addresses.get(i).split(":", 100);
       String host = splitAddress[0];
       Integer port = null;
       try {

@@ -145,7 +145,7 @@ final class Schema {
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
     try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
-      for (String cmd : CharStreams.toString(reader).split(";")) {
+      for (String cmd : CharStreams.toString(reader).split(";", 100)) {
         cmd = cmd.trim().replace(" zipkin", " " + keyspace);
         if (!cmd.isEmpty()) {
           session.execute(cmd);

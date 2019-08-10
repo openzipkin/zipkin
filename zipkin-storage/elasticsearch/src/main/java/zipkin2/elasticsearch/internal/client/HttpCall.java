@@ -119,6 +119,9 @@ public final class HttpCall<V> extends Call.Base<V> {
     return parseResponse(response, bodyConverter);
   }
 
+  @SuppressWarnings("FutureReturnValueIgnored")
+  // TODO: errorprone wants us to check this future before returning, but what would be a sensible
+  // check? Say it is somehow canceled, would we take action? Would callback.onError() be redundant?
   @Override protected void doEnqueue(Callback<V> callback) {
     sendRequest().handle((response, t) -> {
       if (t != null) {
@@ -177,7 +180,7 @@ public final class HttpCall<V> extends Call.Base<V> {
     return responseFuture;
   }
 
-  <V> V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
+  V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
     throws IOException {
     // Handle the case where there is no content, as that means we have no resources to release.
     HttpStatus status = response.status();

@@ -24,7 +24,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.ImmutableSetMultimap.Builder;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,16 +58,16 @@ final class Indexer {
   @Nullable private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
 
   Indexer(
-      Session session,
-      int indexTtl,
-      @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
-      IndexSupport index) {
+    Session session,
+    int indexTtl,
+    @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
+    IndexSupport index) {
     this.index = index;
     Insert insert =
-        index.declarePartitionKey(
-            QueryBuilder.insertInto(index.table())
-                .value("ts", QueryBuilder.bindMarker("ts"))
-                .value("trace_id", QueryBuilder.bindMarker("trace_id")));
+      index.declarePartitionKey(
+        QueryBuilder.insertInto(index.table())
+          .value("ts", QueryBuilder.bindMarker("ts"))
+          .value("trace_id", QueryBuilder.bindMarker("trace_id")));
     if (indexTtl > 0) insert.using(QueryBuilder.ttl(indexTtl));
     this.prepared = session.prepare(insert);
     this.session = session;
@@ -100,10 +99,10 @@ final class Indexer {
     @Override
     protected ResultSetFuture newFuture() {
       BoundStatement bound =
-          prepared
-              .bind()
-              .setLong("trace_id", input.trace_id())
-              .setBytesUnsafe("ts", timestampCodec.serialize(input.ts()));
+        prepared
+          .bind()
+          .setLong("trace_id", input.trace_id())
+          .setBytesUnsafe("ts", timestampCodec.serialize(input.ts()));
 
       index.bindPartitionKey(bound, input.partitionKey());
 
@@ -127,12 +126,12 @@ final class Indexer {
 
   void index(Span span, List<Call<Void>> calls) {
     // First parse each span into partition keys used to support query requests
-    Builder<PartitionKeyToTraceId, Long> parsed = ImmutableSetMultimap.builder();
+    ImmutableSetMultimap.Builder<PartitionKeyToTraceId, Long> parsed =
+      ImmutableSetMultimap.builder();
     long timestamp = span.timestampAsLong();
     if (timestamp == 0L) return;
     for (String partitionKey : index.partitionKeys(span)) {
-      parsed.put(
-        new PartitionKeyToTraceId(index.table(), partitionKey, span.traceId()),
+      parsed.put(new PartitionKeyToTraceId(index.table(), partitionKey, span.traceId()),
         1000 * (timestamp / 1000)); // index precision is millis
     }
 
@@ -165,8 +164,8 @@ final class Indexer {
 
   @VisibleForTesting
   static ImmutableSetMultimap<PartitionKeyToTraceId, Long> entriesThatIncreaseGap(
-      ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
-      ImmutableSetMultimap<PartitionKeyToTraceId, Long> updates) {
+    ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
+    ImmutableSetMultimap<PartitionKeyToTraceId, Long> updates) {
     ImmutableSet.Builder<PartitionKeyToTraceId> toUpdate = ImmutableSet.builder();
 
     // Enter a loop that affects shared state when an update widens the time interval for a key.
@@ -202,13 +201,16 @@ final class Indexer {
     // When the loop completes, we'll know one of our updates widened the interval of a trace, if
     // it is the first or last timestamp. By ignoring those between an existing interval, we can
     // end up with less Cassandra writes.
-    Builder<PartitionKeyToTraceId, Long> result = ImmutableSetMultimap.builder();
+    ImmutableSetMultimap.Builder<PartitionKeyToTraceId, Long> result =
+      ImmutableSetMultimap.builder();
     for (PartitionKeyToTraceId needsUpdate : toUpdate.build()) {
       Pair firstLast = sharedState.get(needsUpdate);
-      if (updates.containsEntry(needsUpdate, firstLast.left))
+      if (updates.containsEntry(needsUpdate, firstLast.left)) {
         result.put(needsUpdate, firstLast.left);
-      if (updates.containsEntry(needsUpdate, firstLast.right))
+      }
+      if (updates.containsEntry(needsUpdate, firstLast.right)) {
         result.put(needsUpdate, firstLast.right);
+      }
     }
     return result.build();
   }
@@ -231,9 +233,9 @@ final class Indexer {
     private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
 
     public Factory(
-        Session session,
-        int indexTtl,
-        @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState) {
+      Session session,
+      int indexTtl,
+      @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState) {
       this.session = session;
       this.indexTtl = indexTtl;
       this.sharedState = sharedState;

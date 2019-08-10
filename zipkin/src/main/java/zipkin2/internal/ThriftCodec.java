@@ -102,7 +102,7 @@ public final class ThriftCodec {
   }
 
   static int readListLength(ReadBuffer buffer) {
-    byte ignoredType = buffer.readByte();
+    buffer.readByte(); // we ignore the type
     return buffer.readInt();
   }
 
@@ -180,7 +180,6 @@ public final class ThriftCodec {
   }
 
   static void writeLengthPrefixed(WriteBuffer buffer, String utf8) {
-    int ignoredLength = WriteBuffer.utf8SizeInBytes(utf8);
     writeInt(buffer, WriteBuffer.utf8SizeInBytes(utf8));
     buffer.writeUtf8(utf8);
   }

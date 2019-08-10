@@ -16,6 +16,7 @@ package zipkin2.storage.cassandra.v1;
 import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilderSpec;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -99,7 +100,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
       long ts_micro = v2.timestampAsLong();
       if (ts_micro == 0L) ts_micro = guessTimestamp(v2);
 
-      insertTraces.add(insertTrace.newInput(span, encoder.write(v2), ts_micro));
+      insertTraces.add(insertTrace.newInput(span, ByteBuffer.wrap(encoder.write(v2)), ts_micro));
 
       if (!searchEnabled) continue;
 

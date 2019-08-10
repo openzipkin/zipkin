@@ -15,7 +15,6 @@ package zipkin2.internal;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -166,7 +165,6 @@ public abstract class AggregateCall<I, O> extends Call.Base<O> {
 
   protected final List<Call<I>> cloneCalls() {
     int length = calls.size();
-    if (length == 1) return Collections.singletonList(calls.get(0).clone());
     List<Call<I>> result = new ArrayList<>(length);
     for (int i = 0; i < length; i++) {
       result.add(calls.get(i).clone());

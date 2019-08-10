@@ -61,7 +61,7 @@ final class VersionSpecificTemplates {
       + "    \"index.requests.cache.enable\": true";
     // There is no explicit documentation of index.mapper.dynamic being removed in v7, but it was.
     if (version >= 7.0f) return result + "\n";
-    return result + (",\n    \"index.mapper.dynamic\": false\n");
+    return result + ",\n    \"index.mapper.dynamic\": false\n";
   }
 
   /** Templatized due to version differences. Only fields used in search are declared */

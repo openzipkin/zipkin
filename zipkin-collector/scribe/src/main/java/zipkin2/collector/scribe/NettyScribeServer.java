@@ -25,7 +25,6 @@ import java.net.InetSocketAddress;
 import static zipkin2.Call.propagateIfFatal;
 
 final class NettyScribeServer {
-
   final int port;
   final ScribeSpanConsumer scribe;
 
@@ -61,6 +60,7 @@ final class NettyScribeServer {
 
   void close() {
     if (channel == null) return;
+    // TODO: chain these futures, and probably block a bit
     channel.close();
     bossGroup.shutdownGracefully();
   }

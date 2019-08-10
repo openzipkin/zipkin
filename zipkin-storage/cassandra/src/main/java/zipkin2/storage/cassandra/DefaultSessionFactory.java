@@ -124,7 +124,7 @@ final class DefaultSessionFactory implements CassandraStorage.SessionFactory {
 
   static List<InetSocketAddress> parseContactPoints(CassandraStorage cassandra) {
     List<InetSocketAddress> result = new ArrayList<>();
-    for (String contactPoint : cassandra.contactPoints().split(",")) {
+    for (String contactPoint : cassandra.contactPoints().split(",", 100)) {
       HostAndPort parsed = HostAndPort.fromString(contactPoint, 9042);
       result.add(new InetSocketAddress(parsed.getHost(), parsed.getPort()));
     }
