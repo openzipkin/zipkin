@@ -25,7 +25,7 @@ describe('<Layout />', () => {
     shallow = createShallow();
   });
 
-  it('should render CssBaseline', () => {
+  it('should render CssBaseline to use Material UI\'s base styles', () => {
     const wrapper = shallow(
       <Layout>
         <div className="child-0" />
