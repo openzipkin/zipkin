@@ -94,21 +94,11 @@ public abstract class IndexNameFormatter {
     public final IndexNameFormatter build() {
       char separator = dateSeparator();
       String format = separator == 0 ? "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator);
-
-      return dateFormat(
-        new ThreadLocal<SimpleDateFormat>() {
-          @Override
-          protected SimpleDateFormat initialValue() {
-            SimpleDateFormat result = new SimpleDateFormat(format);
-            result.setTimeZone(UTC);
-            return result;
-          }
-
-          @Override public String toString() {
-            return format;
-          }
-        })
-        .autoBuild();
+      return dateFormat(ThreadLocal.withInitial(() -> {
+        SimpleDateFormat result = new SimpleDateFormat(format);
+        result.setTimeZone(UTC);
+        return result;
+      })).autoBuild();
     }
 
     abstract IndexNameFormatter autoBuild();

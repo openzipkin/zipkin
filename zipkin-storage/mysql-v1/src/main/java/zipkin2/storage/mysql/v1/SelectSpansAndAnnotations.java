@@ -36,10 +36,10 @@ import zipkin2.v1.V1BinaryAnnotation;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V1SpanConverter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.groupingBy;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.row;
-import static zipkin2.storage.mysql.v1.MySQLSpanConsumer.UTF_8;
 import static zipkin2.storage.mysql.v1.Schema.maybeGet;
 import static zipkin2.storage.mysql.v1.SelectAnnotationServiceNames.localServiceNameCondition;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
@@ -155,9 +155,9 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     if (type == null) return;
     if (type == -1) {
       span.addAnnotation(
-          a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
-          a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-          endpoint);
+        a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
+        a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
+        endpoint);
     } else {
       switch (type) {
         case V1BinaryAnnotation.TYPE_STRING:
