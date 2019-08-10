@@ -17,6 +17,7 @@ import { BrowserRouter, Route } from 'react-router-dom';
 import { ThemeProvider } from '@material-ui/styles';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import { createMount, createShallow } from '@material-ui/core/test-utils';
+import MomentUtils from '@date-io/moment';
 
 import App from './App';
 import Layout from './Layout';
@@ -37,34 +38,48 @@ describe('<App />', () => {
     mount.cleanUp();
   });
 
-  it('should update document title', () => {
+  it('should update document title when mounted', () => {
+    // Since it is not possible to verify that document.title has
+    // been changed using shallow rendering, use mount.
     mount(<App />);
     expect(document.title).toBe('Zipkin');
   });
 
-  it('should render providers', () => {
+  it('should provide React Context for MuiPickers', () => {
     const wrapper = shallow(<App />);
     expect(wrapper.find(MuiPickersUtilsProvider).length).toBe(1);
+    expect(wrapper.find(MuiPickersUtilsProvider).props().utils).toEqual(MomentUtils);
+  });
+
+  it('should provide only one theme', () => {
+    const wrapper = shallow(<App />);
     expect(wrapper.find(ThemeProvider).length).toBe(1);
     expect(wrapper.find(ThemeProvider).props().theme).toEqual(theme);
+  });
+
+  it('should provide redux store', () => {
+    const wrapper = shallow(<App />);
     expect(wrapper.find(Provider).length).toBe(1);
   });
 
-  it('should render Router as a parent of Layout', () => {
+  it('should share Layout among all page components', () => {
     const wrapper = shallow(<App />);
-    expect(wrapper.find(Layout).parent().type()).toEqual(BrowserRouter);
+    const layout = wrapper.find(Layout);
+    expect(layout.length).toBe(1);
+    // In order to share Layout, the Route components must be defined under Layout.
+    expect(layout.find(Route).length).toBe(2);
+    // Since the Layout component is wrapped with withRouter, it needs to be defined
+    // under BrowserRouter.
+    expect(layout.parent().type()).toEqual(BrowserRouter);
   });
 
-  it('should render Layout', () => {
-    const wrapper = shallow(<App />);
-    expect(wrapper.find(Layout).length).toBe(1);
-  });
-
-  it('should render Route', () => {
+  it('should render 2 Route', () => {
     const wrapper = shallow(<App />);
     const routes = wrapper.find(Route);
+    // Check routes that use a single trace as input.
     expect(routes.at(0).props().path).toEqual(['/zipkin', '/zipkin/dependency']);
     expect(routes.at(0).props().component).toEqual(DiscoverPage);
+    // Check routes that use a single trace as input.
     expect(routes.at(1).props().path).toEqual(['/zipkin/traces/:traceId', '/zipkin/traceViewer']);
     expect(routes.at(1).props().component).toEqual(TracePage);
   });
