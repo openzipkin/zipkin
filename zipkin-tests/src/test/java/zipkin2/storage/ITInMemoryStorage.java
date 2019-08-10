@@ -25,7 +25,7 @@ class ITInMemoryStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -36,7 +36,7 @@ class ITInMemoryStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -47,7 +47,7 @@ class ITInMemoryStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -58,7 +58,7 @@ class ITInMemoryStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -69,7 +69,7 @@ class ITInMemoryStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -80,7 +80,7 @@ class ITInMemoryStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 }

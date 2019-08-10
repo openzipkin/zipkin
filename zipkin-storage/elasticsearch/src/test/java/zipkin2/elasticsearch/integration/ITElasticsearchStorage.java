@@ -35,7 +35,7 @@ abstract class ITElasticsearchStorage {
     }
 
     @Override public void clear() throws IOException {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -46,7 +46,7 @@ abstract class ITElasticsearchStorage {
     }
 
     @Override public void clear() throws IOException {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -57,7 +57,7 @@ abstract class ITElasticsearchStorage {
     }
 
     @Override public void clear() throws IOException {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -68,7 +68,7 @@ abstract class ITElasticsearchStorage {
     }
 
     @Override public void clear() throws IOException {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -79,7 +79,7 @@ abstract class ITElasticsearchStorage {
     }
 
     @Override public void clear() throws IOException {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -96,11 +96,11 @@ abstract class ITElasticsearchStorage {
     @Override protected void processDependencies(List<Span> spans) {
       aggregateLinks(spans).forEach(
         (midnight, links) -> InternalForTests.writeDependencyLinks(
-          storage, links, midnight));
+          storage(), links, midnight));
     }
 
     @Override public void clear() throws IOException {
-      storage.clear();
+      storage().clear();
     }
   }
 

@@ -165,10 +165,10 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
   }
 
   protected void accept(List<Span> spans) throws IOException {
-    storage.spanConsumer().accept(spans).execute();
+    spanConsumer().accept(spans).execute();
   }
 
   protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
+    spanConsumer().accept(asList(spans)).execute();
   }
 }

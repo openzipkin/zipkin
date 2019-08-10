@@ -82,8 +82,8 @@ class ITCassandraStorage {
 
       // Index ends up containing more rows than services * trace count, and cannot be de-duped
       // in a server-side query.
-      int localServiceCount = storage.serviceAndSpanNames().getServiceNames().execute().size();
-      assertThat(storage
+      int localServiceCount = names().getServiceNames().execute().size();
+      assertThat(storage()
         .session()
         .execute("SELECT COUNT(*) from trace_by_service_span")
         .one()
@@ -100,7 +100,7 @@ class ITCassandraStorage {
 
     @Test void searchingByAnnotationShouldFilterBeforeLimiting() throws IOException {
       int queryLimit = 2;
-      int nbTraceFetched = queryLimit * storage.indexFetchMultiplier();
+      int nbTraceFetched = queryLimit * storage().indexFetchMultiplier();
 
       for (int i = 0; i < nbTraceFetched; i++) {
         accept(TestObjects.LOTS_OF_SPANS[i++].toBuilder().timestamp((TODAY - i) * 1000L).build());
@@ -131,7 +131,7 @@ class ITCassandraStorage {
       for (List<Span> nextChunk : Lists.partition(asList(spans), 100)) {
         super.accept(nextChunk.toArray(new Span[0]));
         // Now, block until writes complete, notably so we can read them.
-        blockWhileInFlight(storage);
+        blockWhileInFlight(storage());
       }
     }
 
@@ -155,7 +155,7 @@ class ITCassandraStorage {
 
     @Test void doesntCreateIndexes() {
       KeyspaceMetadata metadata =
-        storage.session().getCluster().getMetadata().getKeyspace(storage.keyspace());
+        storage().session().getCluster().getMetadata().getKeyspace(storage().keyspace());
 
       assertThat(metadata.getTable("trace_by_service_span")).isNull();
       assertThat(metadata.getTable("span_by_service")).isNull();
@@ -168,7 +168,7 @@ class ITCassandraStorage {
     CassandraStorage storageBeforeSwitch;
 
     @BeforeEach void initializeStorageBeforeSwitch() {
-      storageBeforeSwitch = backend.computeStorageBuilder().keyspace(storage.keyspace()).build();
+      storageBeforeSwitch = backend.computeStorageBuilder().keyspace(storage().keyspace()).build();
     }
 
     @AfterEach void closeStorageBeforeSwitch() {
@@ -250,9 +250,9 @@ class ITCassandraStorage {
      * The current implementation does not include dependency aggregation. It includes retrieval of
      * pre-aggregated links, usually made via zipkin-dependencies
      */
-    @Override protected void processDependencies(List<Span> spans) throws Exception {
+    @Override protected void processDependencies(List<Span> spans) {
       aggregateLinks(spans).forEach(
-        (midnight, links) -> writeDependencyLinks(storage, links, midnight));
+        (midnight, links) -> writeDependencyLinks(storage(), links, midnight));
     }
   }
 

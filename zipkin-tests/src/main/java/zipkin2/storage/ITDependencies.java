@@ -70,7 +70,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * this method.
    */
   protected void processDependencies(List<Span> spans) throws Exception {
-    storage.spanConsumer().accept(spans).execute();
+    spanConsumer().accept(spans).execute();
   }
 
   /**

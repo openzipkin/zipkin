@@ -51,10 +51,10 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
    * indexing of such annotations dramatically reduces the load on cassandra and size of indexes.
    */
   @Test public void doesntIndexCoreOrNonStringAnnotations() throws IOException {
-    accept(storage.spanConsumer(), TestObjects.CLIENT_SPAN);
+    accept(spanConsumer(), TestObjects.CLIENT_SPAN);
 
     assertThat(
-      storage.session()
+      storage().session()
         .execute("SELECT blobastext(annotation) from annotations_index")
         .all())
       .extracting(r -> r.getString(0))
@@ -82,19 +82,20 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
           .parentId(trace[0].id())
           .id(i + 1)
           .name(String.valueOf(i + 1))
-          .timestamp(trace[0].timestampAsLong() + i * 1000) // child span timestamps happen 1 ms later
+          .timestamp(
+            trace[0].timestampAsLong() + i * 1000) // child span timestamps happen 1 ms later
           .addAnnotation(trace[0].annotations().get(0).timestamp() + i * 1000, "bar")
           .build();
     }
 
-    accept(storage.spanConsumer(), trace);
+    accept(spanConsumer(), trace);
     assertThat(rowCount(Tables.ANNOTATIONS_INDEX)).isEqualTo(5L);
     assertThat(rowCount(Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX)).isEqualTo(1L);
     assertThat(rowCount(Tables.SERVICE_NAME_INDEX)).isEqualTo(1L);
     assertThat(rowCount(Tables.SERVICE_SPAN_NAME_INDEX)).isEqualTo(1L);
 
     // redundant store doesn't change the indexes
-    accept(storage.spanConsumer(), trace);
+    accept(spanConsumer(), trace);
     assertThat(rowCount(Tables.ANNOTATIONS_INDEX)).isEqualTo(5L);
     assertThat(rowCount(Tables.SERVICE_REMOTE_SERVICE_NAME_INDEX)).isEqualTo(1L);
     assertThat(rowCount(Tables.SERVICE_NAME_INDEX)).isEqualTo(1L);
@@ -104,11 +105,11 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   void accept(SpanConsumer consumer, Span... spans) throws IOException {
     consumer.accept(asList(spans)).execute();
     // Now, block until writes complete, notably so we can read them.
-    ITCassandraStorage.blockWhileInFlight(storage);
+    ITCassandraStorage.blockWhileInFlight(storage());
   }
 
   long rowCount(String table) {
-    return storage.session()
+    return storage().session()
       .execute("SELECT COUNT(*) from " + table)
       .one()
       .getLong(0);
@@ -135,14 +136,14 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
         .name("1")
         .putTag("environment", "dev")
         .putTag("a", "b")
-        .timestamp(trace[0].timestampAsLong()  * 1000) // child span timestamps happen 1 ms later
+        .timestamp(trace[0].timestampAsLong() * 1000) // child span timestamps happen 1 ms later
         .addAnnotation(trace[0].annotations().get(0).timestamp() + 1000, "bar")
         .build();
-    accept(storage.spanConsumer(), trace);
+    accept(spanConsumer(), trace);
 
     assertThat(rowCount(Tables.AUTOCOMPLETE_TAGS))
       .isGreaterThanOrEqualTo(1L);
 
-    assertThat(getTagValue(storage, "environment")).isEqualTo("dev");
+    assertThat(getTagValue(storage(), "environment")).isEqualTo("dev");
   }
 }

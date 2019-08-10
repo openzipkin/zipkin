@@ -43,7 +43,7 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
 
   /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
   @Test void getTraces_128BitTraceId() throws IOException {
-    getTraces_128BitTraceId(accept128BitTrace(storage));
+    getTraces_128BitTraceId(accept128BitTrace(storage()));
   }
 
   @Test void getTraces_128BitTraceId_mixed() throws IOException {
@@ -68,7 +68,7 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
   }
 
   @Test void getTrace_retrievesBy64Or128BitTraceId() throws IOException {
-    List<Span> trace = accept128BitTrace(storage);
+    List<Span> trace = accept128BitTrace(storage());
 
     retrievesBy64Or128BitTraceId(trace);
   }
@@ -106,7 +106,7 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
   }
 
   void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
+    spanConsumer().accept(asList(spans)).execute();
   }
 }
 

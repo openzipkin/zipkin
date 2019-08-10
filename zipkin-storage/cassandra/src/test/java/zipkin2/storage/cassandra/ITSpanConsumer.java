@@ -48,15 +48,15 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
   abstract CassandraStorage.Builder storageBuilder();
 
   /**
-   * {@link Span#duration} == 0 is likely to be a mistake, and coerces to null. It is not helpful to
-   * index rows who have no duration.
+   * {@link Span#duration()} == 0 is likely to be a mistake, and coerces to null. It is not helpful
+   * to index rows who have no duration.
    */
   @Test public void doesntIndexSpansMissingDuration() throws IOException {
     Span span = Span.newBuilder().traceId("1").id("1").name("get").duration(0L).build();
 
-    accept(storage.spanConsumer(), span);
+    accept(spanConsumer(), span);
 
-    assertThat(rowCountForTraceByServiceSpan(storage)).isZero();
+    assertThat(rowCountForTraceByServiceSpan(storage())).isZero();
   }
 
   /**
@@ -80,20 +80,19 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .duration(10L)
       .build());
 
-    accept(storage.spanConsumer(), trace);
-    assertThat(rowCountForTraceByServiceSpan(storage))
+    accept(spanConsumer(), trace);
+    assertThat(rowCountForTraceByServiceSpan(storage()))
       .isGreaterThanOrEqualTo(4L);
-    assertThat(rowCountForTraceByServiceSpan(storage))
+    assertThat(rowCountForTraceByServiceSpan(storage()))
       .isGreaterThanOrEqualTo(4L);
 
     // sanity check base case
-    accept(storage.toBuilder().strictTraceId(false).build().spanConsumer(), trace);
+    accept(storage().toBuilder().strictTraceId(false).build().spanConsumer(), trace);
 
-    assertThat(rowCountForTraceByServiceSpan(storage))
+    assertThat(rowCountForTraceByServiceSpan(storage()))
       .isGreaterThanOrEqualTo(120L); // TODO: magic number
-    assertThat(rowCountForTraceByServiceSpan(storage))
+    assertThat(rowCountForTraceByServiceSpan(storage()))
       .isGreaterThanOrEqualTo(120L);
-
   }
 
   @Test
@@ -115,13 +114,12 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .duration(10L)
       .build());
 
-    accept(storage.spanConsumer(), trace);
+    accept(spanConsumer(), trace);
 
-    assertThat(rowCountForTags(storage))
+    assertThat(rowCountForTags(storage()))
       .isEqualTo(1L); // Since tag {a,b} are not in the whitelist
 
-    assertThat(getTagValue(storage, "environment")).isEqualTo("dev");
-
+    assertThat(getTagValue(storage(), "environment")).isEqualTo("dev");
   }
 
   void accept(SpanConsumer consumer, Span... spans) throws IOException {
@@ -143,6 +141,7 @@ abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
       .one()
       .getLong(0);
   }
+
   static String getTagValue(CassandraStorage storage, String key) {
     return storage
       .session()

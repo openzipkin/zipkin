@@ -43,7 +43,7 @@ class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
 
     @Override @Test @Disabled("No consumer-side span deduplication") public void deduplicates() {
@@ -57,7 +57,7 @@ class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -68,7 +68,7 @@ class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -79,7 +79,7 @@ class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
 
     /**
@@ -87,8 +87,8 @@ class ITMySQLStorage {
      * pre-aggregated links, usually made via zipkin-dependencies
      */
     @Override protected void processDependencies(List<zipkin2.Span> spans) throws Exception {
-      try (Connection conn = storage.datasource.getConnection()) {
-        DSLContext context = storage.context.get(conn);
+      try (Connection conn = storage().datasource.getConnection()) {
+        DSLContext context = storage().context.get(conn);
 
         // batch insert the rows at timestamp midnight
         List<Query> inserts = new ArrayList<>();
@@ -116,7 +116,7 @@ class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -127,7 +127,7 @@ class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 
@@ -138,7 +138,7 @@ class ITMySQLStorage {
     }
 
     @Override public void clear() {
-      storage.clear();
+      storage().clear();
     }
   }
 }

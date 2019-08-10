@@ -101,7 +101,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   @Test void consumer_properlyImplementsCallContract_execute() throws IOException {
-    Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
+    Call<Void> call = spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
 
     // Ensure the implementation didn't accidentally do I/O at assembly time.
     assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
@@ -121,7 +121,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   @Test void consumer_properlyImplementsCallContract_submit() throws Exception {
-    Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
+    Call<Void> call = spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
     // Ensure the implementation didn't accidentally do I/O at assembly time.
     assertThat(store().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
 
@@ -863,11 +863,11 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   protected void accept(List<Span> spans) throws IOException {
-    storage.spanConsumer().accept(spans).execute();
+    spanConsumer().accept(spans).execute();
   }
 
   protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
+    spanConsumer().accept(asList(spans)).execute();
   }
 
   void setupDurationData() throws IOException {

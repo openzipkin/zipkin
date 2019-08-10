@@ -27,7 +27,15 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class ITStorage<T extends StorageComponent> {
 
-  protected T storage;
+  protected T storage() {
+    assumeTrue(check.ok(), () -> check.error().getMessage());
+    return storage;
+  }
+
+  /** Don't ever use directly. Use {@link #storage()} instead */
+  private T storage;
+  /** Caches failues so that when docker is down or skipped, skipping doesn't take so long. */
+  private CheckResult check;
 
   @BeforeAll void initializeStorage(TestInfo testInfo) {
     if (initializeStoragePerTest()) {
@@ -44,15 +52,23 @@ public abstract class ITStorage<T extends StorageComponent> {
   }
 
   void doInitializeStorage(TestInfo testInfo) {
-    StorageComponent.Builder builder = newStorageBuilder(testInfo);
-    configureStorageForTest(builder);
-    // TODO(anuraaga): It wouldn't be difficult to allow storage builders to be parameterized by
-    // their storage type.
-    @SuppressWarnings("unchecked")
-    T storage = (T) builder.build();
-    this.storage = storage;
+    // don't burn resources attempting storage initialization when it already failed
+    if (check != null) return;
 
-    CheckResult check = storage.check();
+    try {
+      StorageComponent.Builder builder = newStorageBuilder(testInfo);
+      configureStorageForTest(builder);
+      // TODO(anuraaga): It wouldn't be difficult to allow storage builders to be parameterized by
+      // their storage type.
+      @SuppressWarnings("unchecked")
+      T storage = (T) builder.build();
+      this.storage = storage;
+    } catch (RuntimeException | Error e) {
+      check = CheckResult.failed(e);
+      return;
+    }
+
+    check = storage.check();
     assumeTrue(check.ok(), () -> "Could not connect to storage, skipping test: "
       + check.error().getMessage());
   }
@@ -61,14 +77,14 @@ public abstract class ITStorage<T extends StorageComponent> {
     if (initializeStoragePerTest()) {
       return;
     }
-    storage.close();
+    if (storage != null) storage.close();
   }
 
   @AfterEach void closeStorageForTest() throws Exception {
     if (!initializeStoragePerTest()) {
       return;
     }
-    storage.close();
+    if (storage != null) storage.close();
   }
 
   @AfterEach void clearStorage() throws Exception {
@@ -96,11 +112,15 @@ public abstract class ITStorage<T extends StorageComponent> {
   protected abstract void configureStorageForTest(StorageComponent.Builder storage);
 
   protected SpanStore store() {
-    return storage.spanStore();
+    return storage().spanStore();
+  }
+
+  protected SpanConsumer spanConsumer() {
+    return storage().spanConsumer();
   }
 
   protected ServiceAndSpanNames names() {
-    return storage.serviceAndSpanNames();
+    return storage().serviceAndSpanNames();
   }
 
   /** Clears store between tests. */

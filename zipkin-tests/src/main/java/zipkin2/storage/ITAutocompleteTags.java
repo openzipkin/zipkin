@@ -40,9 +40,9 @@ public abstract class ITAutocompleteTags<T extends StorageComponent> extends ITS
       .putTag("http.method", "GET")
       .build());
 
-    assertThat(storage.autocompleteTags().getKeys().execute()).doesNotContain("http.method");
+    assertThat(storage().autocompleteTags().getKeys().execute()).doesNotContain("http.method");
 
-    assertThat(storage.autocompleteTags().getValues("http.method").execute()).isEmpty();
+    assertThat(storage().autocompleteTags().getValues("http.method").execute()).isEmpty();
   }
 
   @Test void getTagsAndValues() throws IOException {
@@ -53,14 +53,14 @@ public abstract class ITAutocompleteTags<T extends StorageComponent> extends ITS
         .build());
     }
 
-    assertThat(storage.autocompleteTags().getKeys().execute())
+    assertThat(storage().autocompleteTags().getKeys().execute())
       .containsOnlyOnce("http.host");
 
-    assertThat(storage.autocompleteTags().getValues("http.host").execute())
+    assertThat(storage().autocompleteTags().getValues("http.host").execute())
       .containsOnlyOnce("host1");
   }
 
   protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
+    spanConsumer().accept(asList(spans)).execute();
   }
 }

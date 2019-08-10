@@ -76,6 +76,6 @@ public abstract class ITSearchEnabledFalse<T extends StorageComponent> extends I
   }
 
   protected void accept(Span... spans) throws IOException {
-    storage.spanConsumer().accept(asList(spans)).execute();
+    spanConsumer().accept(asList(spans)).execute();
   }
 }

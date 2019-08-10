@@ -20,10 +20,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.mariadb.jdbc.MariaDbDataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin2.CheckResult;
 
 import static org.junit.Assume.assumeTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
   static final Logger LOGGER = LoggerFactory.getLogger(MySQLStorageExtension.class);
@@ -47,17 +45,11 @@ class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
         container = new ZipkinMySQLContainer(image);
         container.start();
         LOGGER.info("Starting docker image " + container.getDockerImageName());
-      } catch (Exception e) {
-        LOGGER.warn("Couldn't start docker image " + container.getDockerImageName(), e);
+      } catch (RuntimeException e) {
+        LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
       }
     } else {
       LOGGER.info("Skipping startup of docker");
-    }
-
-    try (MySQLStorage result = computeStorageBuilder().build()) {
-      CheckResult check = result.check();
-      assumeTrue(check.ok(), () -> "Could not connect to storage, skipping test: "
-        + check.error().getMessage());
     }
   }
 
@@ -79,7 +71,8 @@ class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
         dataSource = new MariaDbDataSource();
 
         dataSource.setUser(System.getenv("MYSQL_USER"));
-        assumeTrue("Minimally, the environment variable MYSQL_USER must be set", dataSource.getUser() != null);
+        assumeTrue("Minimally, the environment variable MYSQL_USER must be set",
+          dataSource.getUser() != null);
 
         dataSource.setServerName(envOr("MYSQL_HOST", "localhost"));
         dataSource.setPort(envOr("MYSQL_TCP_PORT", 3306));
@@ -92,8 +85,8 @@ class MySQLStorageExtension implements BeforeAllCallback, AfterAllCallback {
     }
 
     return new MySQLStorage.Builder()
-        .datasource(dataSource)
-        .executor(Runnable::run);
+      .datasource(dataSource)
+      .executor(Runnable::run);
   }
 
   static int envOr(String key, int fallback) {
