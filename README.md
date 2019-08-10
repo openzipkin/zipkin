@@ -176,7 +176,7 @@ The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to q
 from its UI. It can also run collectors, such as RabbitMQ or Kafka.
 
 To run the server from the currently checked out source, enter the
-following. JDK 8 is required.
+following. JDK 11 is required to compile the source.
 ```bash
 # Build the server and also make its dependencies
 $ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
