@@ -106,14 +106,14 @@ class ZipkinCassandra3StorageProperties implements Serializable { // for Spark j
 
   public CassandraStorage.Builder toBuilder() {
     return CassandraStorage.newBuilder()
-      .keyspace(keyspace)
-      .contactPoints(contactPoints)
-      .localDc(localDc)
-      .maxConnections(maxConnections)
-      .ensureSchema(ensureSchema)
-      .useSsl(useSsl)
-      .username(username)
-      .password(password)
-      .indexFetchMultiplier(indexFetchMultiplier);
+        .keyspace(keyspace)
+        .contactPoints(contactPoints)
+        .localDc(localDc)
+        .maxConnections(maxConnections)
+        .ensureSchema(ensureSchema)
+        .useSsl(useSsl)
+        .username(username)
+        .password(password)
+        .indexFetchMultiplier(indexFetchMultiplier);
   }
 }

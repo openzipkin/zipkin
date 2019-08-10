@@ -212,9 +212,8 @@ public final class RabbitMQCollector extends CollectorComponent {
         channel.queueDeclarePassive(builder.queue);
         channel.close();
       } catch (IOException maybeQueueDoesNotExist) {
-        if (maybeQueueDoesNotExist.getCause() != null && maybeQueueDoesNotExist.getCause()
-          .getMessage()
-          .contains("NOT_FOUND")) {
+        Throwable cause = maybeQueueDoesNotExist.getCause();
+        if (cause != null && cause.getMessage().contains("NOT_FOUND")) {
           channel = connection.createChannel();
           channel.queueDeclare(builder.queue, true, false, false, null);
           channel.close();

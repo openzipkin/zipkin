@@ -114,15 +114,15 @@ public abstract class IndexNameFormatter {
   public List<String> formatTypeAndRange(@Nullable String type, long beginMillis, long endMillis) {
     GregorianCalendar current = midnightUTC(beginMillis);
     GregorianCalendar end = midnightUTC(endMillis);
-    String prefix = prefix(type);
 
-    List<String> result = new ArrayList<>();
+    String prefix = prefix(type);
+    List<String> indices = new ArrayList<>();
     while (current.compareTo(end) <= 0) {
       if (current.get(Calendar.MONTH) == 0 && current.get(Calendar.DAY_OF_MONTH) == 1) {
         // attempt to compress a year
         current.set(Calendar.DAY_OF_YEAR, current.getActualMaximum(Calendar.DAY_OF_YEAR));
         if (current.compareTo(end) <= 0) {
-          result.add(format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
+          indices.add(format("%s-%s%c*", prefix, current.get(Calendar.YEAR), dateSeparator()));
           current.add(Calendar.DAY_OF_MONTH, 1); // rollover to next year
           continue;
         } else {
@@ -132,13 +132,13 @@ public abstract class IndexNameFormatter {
         // attempt to compress a month
         current.set(Calendar.DAY_OF_MONTH, current.getActualMaximum(Calendar.DAY_OF_MONTH));
         if (current.compareTo(end) <= 0) {
-          result.add(formatIndexPattern("%s-%s%c%02d%c*", current, prefix));
+          indices.add(formatIndexPattern("%s-%s%c%02d%c*", current, prefix));
           current.add(Calendar.DAY_OF_MONTH, 1); // rollover to next month
           continue;
         }
         current.set(Calendar.DAY_OF_MONTH, 9); // try to compress days 0-9
         if (current.compareTo(end) <= 0) {
-          result.add(formatIndexPattern("%s-%s%c%02d%c0*", current, prefix));
+          indices.add(formatIndexPattern("%s-%s%c%02d%c0*", current, prefix));
           current.add(Calendar.DAY_OF_MONTH, 1); // rollover to day 10
           continue;
         }
@@ -146,7 +146,7 @@ public abstract class IndexNameFormatter {
       } else if (current.get(Calendar.DAY_OF_MONTH) == 10) {
         current.set(Calendar.DAY_OF_MONTH, 19); // try to compress days 10-19
         if (current.compareTo(end) <= 0) {
-          result.add(formatIndexPattern("%s-%s%c%02d%c1*", current, prefix));
+          indices.add(formatIndexPattern("%s-%s%c%02d%c1*", current, prefix));
           current.add(Calendar.DAY_OF_MONTH, 1); // rollover to day 20
           continue;
         }
@@ -154,16 +154,16 @@ public abstract class IndexNameFormatter {
       } else if (current.get(Calendar.DAY_OF_MONTH) == 20) {
         current.set(Calendar.DAY_OF_MONTH, 29); // try to compress days 20-29
         if (current.compareTo(end) <= 0) {
-          result.add(formatIndexPattern("%s-%s%c%02d%c2*", current, prefix));
+          indices.add(formatIndexPattern("%s-%s%c%02d%c2*", current, prefix));
           current.add(Calendar.DAY_OF_MONTH, 1); // rollover to day 30
           continue;
         }
         current.set(Calendar.DAY_OF_MONTH, 20); // set back to day 20
       }
-      result.add(formatTypeAndTimestamp(type, current.getTimeInMillis()));
+      indices.add(formatTypeAndTimestamp(type, current.getTimeInMillis()));
       current.add(Calendar.DAY_OF_MONTH, 1);
     }
-    return result;
+    return indices;
   }
 
   String formatIndexPattern(String format, GregorianCalendar current, String prefix) {

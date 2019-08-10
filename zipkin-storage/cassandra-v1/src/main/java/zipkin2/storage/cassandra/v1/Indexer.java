@@ -58,16 +58,16 @@ final class Indexer {
   @Nullable private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
 
   Indexer(
-    Session session,
-    int indexTtl,
-    @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
-    IndexSupport index) {
+      Session session,
+      int indexTtl,
+      @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
+      IndexSupport index) {
     this.index = index;
     Insert insert =
-      index.declarePartitionKey(
-        QueryBuilder.insertInto(index.table())
-          .value("ts", QueryBuilder.bindMarker("ts"))
-          .value("trace_id", QueryBuilder.bindMarker("trace_id")));
+        index.declarePartitionKey(
+            QueryBuilder.insertInto(index.table())
+                .value("ts", QueryBuilder.bindMarker("ts"))
+                .value("trace_id", QueryBuilder.bindMarker("trace_id")));
     if (indexTtl > 0) insert.using(QueryBuilder.ttl(indexTtl));
     this.prepared = session.prepare(insert);
     this.session = session;
@@ -99,10 +99,10 @@ final class Indexer {
     @Override
     protected ResultSetFuture newFuture() {
       BoundStatement bound =
-        prepared
-          .bind()
-          .setLong("trace_id", input.trace_id())
-          .setBytesUnsafe("ts", timestampCodec.serialize(input.ts()));
+          prepared
+              .bind()
+              .setLong("trace_id", input.trace_id())
+              .setBytesUnsafe("ts", timestampCodec.serialize(input.ts()));
 
       index.bindPartitionKey(bound, input.partitionKey());
 
@@ -164,8 +164,8 @@ final class Indexer {
 
   @VisibleForTesting
   static ImmutableSetMultimap<PartitionKeyToTraceId, Long> entriesThatIncreaseGap(
-    ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
-    ImmutableSetMultimap<PartitionKeyToTraceId, Long> updates) {
+      ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState,
+      ImmutableSetMultimap<PartitionKeyToTraceId, Long> updates) {
     ImmutableSet.Builder<PartitionKeyToTraceId> toUpdate = ImmutableSet.builder();
 
     // Enter a loop that affects shared state when an update widens the time interval for a key.
@@ -233,9 +233,9 @@ final class Indexer {
     private final ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState;
 
     public Factory(
-      Session session,
-      int indexTtl,
-      @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState) {
+        Session session,
+        int indexTtl,
+        @Nullable ConcurrentMap<PartitionKeyToTraceId, Pair> sharedState) {
       this.session = session;
       this.indexTtl = indexTtl;
       this.sharedState = sharedState;

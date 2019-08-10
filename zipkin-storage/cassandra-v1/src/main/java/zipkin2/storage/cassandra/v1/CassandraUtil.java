@@ -117,9 +117,9 @@ final class CassandraUtil {
     SortedMap<BigInteger, Long> sorted = new TreeMap<>(Collections.reverseOrder());
     for (Pair pair : set) {
       BigInteger uncollided =
-        BigInteger.valueOf(pair.right)
-          .multiply(OFFSET)
-          .add(BigInteger.valueOf(RAND.nextInt() & Integer.MAX_VALUE));
+          BigInteger.valueOf(pair.right)
+              .multiply(OFFSET)
+              .add(BigInteger.valueOf(RAND.nextInt() & Integer.MAX_VALUE));
       sorted.put(uncollided, pair.left);
     }
     return new LinkedHashSet<>(sorted.values());

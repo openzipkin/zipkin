@@ -155,9 +155,9 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     if (type == null) return;
     if (type == -1) {
       span.addAnnotation(
-        a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
-        a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-        endpoint);
+          a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
+          a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
+          endpoint);
     } else {
       switch (type) {
         case V1BinaryAnnotation.TYPE_STRING:
