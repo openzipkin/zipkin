@@ -73,13 +73,12 @@ public class MetricsHealthController {
       if (!name.startsWith("zipkin_collector")) continue;
       String transport = meter.getId().getTag("transport");
       if (transport == null) continue;
+
       Meter.Type type = meter.getId().getType();
       if (type == Meter.Type.COUNTER) {
-        metricsJson.put("counter." + name + "." + transport,
-          ((Counter) meter).count());
+        metricsJson.put("counter." + name + "." + transport, ((Counter) meter).count());
       } else if (type == Meter.Type.GAUGE) {
-        metricsJson.put("gauge." + name + "." + transport,
-          ((Gauge) meter).value());
+        metricsJson.put("gauge." + name + "." + transport, ((Gauge) meter).value());
       } // We only use counters and gauges
     }
     return metricsJson;
