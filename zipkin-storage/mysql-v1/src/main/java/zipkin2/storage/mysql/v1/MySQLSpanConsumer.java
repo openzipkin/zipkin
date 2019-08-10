@@ -14,7 +14,6 @@
 package zipkin2.storage.mysql.v1;
 
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -35,11 +34,11 @@ import zipkin2.v1.V1BinaryAnnotation;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinSpans.ZIPKIN_SPANS;
 
 final class MySQLSpanConsumer implements SpanConsumer {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
   static final byte[] ONE = {1};
 
   final DataSourceCall.Factory dataSourceCallFactory;

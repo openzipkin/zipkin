@@ -106,6 +106,9 @@ public class ZipkinHttpCollector {
   }
 
   /** This synchronously decodes the message so that users can see data errors. */
+  @SuppressWarnings("FutureReturnValueIgnored")
+  // TODO: errorprone wants us to check this future before returning, but what would be a sensible
+  // check? Say it is somehow canceled, would we take action? Would callback.onError() be redundant?
   HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx,
     HttpRequest req) {
     CompletableCallback result = new CompletableCallback();

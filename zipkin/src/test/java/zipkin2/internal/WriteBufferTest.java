@@ -18,8 +18,8 @@ import java.nio.ByteOrder;
 import java.util.Arrays;
 import org.junit.Test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.TestObjects.UTF_8;
 
 public class WriteBufferTest {
   // Adapted from http://stackoverflow.com/questions/8511490/calculating-length-in-utf-8-of-java-string-without-actually-encoding-it

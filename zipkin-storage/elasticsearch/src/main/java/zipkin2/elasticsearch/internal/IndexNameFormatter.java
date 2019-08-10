@@ -18,7 +18,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -95,21 +94,11 @@ public abstract class IndexNameFormatter {
     public final IndexNameFormatter build() {
       char separator = dateSeparator();
       String format = separator == 0 ? "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator);
-
-      return dateFormat(
-              new ThreadLocal<SimpleDateFormat>() {
-                @Override
-                protected SimpleDateFormat initialValue() {
-                  SimpleDateFormat result = new SimpleDateFormat(format);
-                  result.setTimeZone(UTC);
-                  return result;
-                }
-
-                @Override public String toString() {
-                  return format;
-                }
-              })
-          .autoBuild();
+      return dateFormat(ThreadLocal.withInitial(() -> {
+        SimpleDateFormat result = new SimpleDateFormat(format);
+        result.setTimeZone(UTC);
+        return result;
+      })).autoBuild();
     }
 
     abstract IndexNameFormatter autoBuild();
@@ -125,9 +114,6 @@ public abstract class IndexNameFormatter {
   public List<String> formatTypeAndRange(@Nullable String type, long beginMillis, long endMillis) {
     GregorianCalendar current = midnightUTC(beginMillis);
     GregorianCalendar end = midnightUTC(endMillis);
-    if (current.equals(end)) {
-      return Collections.singletonList(formatTypeAndTimestamp(type, current.getTimeInMillis()));
-    }
 
     String prefix = prefix(type);
     List<String> indices = new ArrayList<>();

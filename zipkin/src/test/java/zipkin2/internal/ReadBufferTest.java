@@ -17,9 +17,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import org.junit.Test;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
-import static zipkin2.TestObjects.UTF_8;
 
 public class ReadBufferTest {
   @Test public void byteBuffer_limited() {
@@ -29,6 +29,7 @@ public class ReadBufferTest {
     assertThat(readBuffer.readUtf8(readBuffer.available()))
       .isEqualTo("love");
   }
+
   @Test public void byteBuffer_arrayOffset() {
     ByteBuffer buf = ByteBuffer.wrap("glove".getBytes(UTF_8), 1, 4);
     ReadBuffer readBuffer = ReadBuffer.wrapUnsafe(buf.slice());

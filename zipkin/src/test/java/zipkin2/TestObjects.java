@@ -13,7 +13,6 @@
  */
 package zipkin2;
 
-import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
@@ -25,7 +24,6 @@ import static java.util.Arrays.asList;
 
 // re-declared in zipkin-tests to avoid having to move most tests out of this module
 public final class TestObjects {
-  public static final Charset UTF_8 = Charset.forName("UTF-8");
   /** Notably, the cassandra implementation has day granularity */
   public static final long DAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 

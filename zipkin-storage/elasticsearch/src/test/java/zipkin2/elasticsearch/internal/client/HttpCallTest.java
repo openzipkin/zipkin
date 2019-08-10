@@ -33,7 +33,6 @@ import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import com.linecorp.armeria.unsafe.ByteBufHttpData;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
-import io.netty.util.ReferenceCounted;
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -188,7 +187,7 @@ public class HttpCallTest {
       new ByteBufHttpData(encodedBuf, true)
     );
 
-    HttpCall<?> call = http.newCall(REQUEST, NULL, "test");
+    HttpCall<Object> call = http.newCall(REQUEST, NULL, "test");
 
     // Invoke the parser directly because using the fake server will not result in ref-counted
     assertThatThrownBy(() -> call.parseResponse(response, NULL)).hasMessage("error");

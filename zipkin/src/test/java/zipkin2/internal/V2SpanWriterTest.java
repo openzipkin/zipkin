@@ -19,10 +19,10 @@ import org.junit.rules.ExpectedException;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.TestObjects.UTF_8;
 
 public class V2SpanWriterTest {
   V2SpanWriter writer = new V2SpanWriter();

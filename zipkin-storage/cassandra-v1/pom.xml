@@ -29,8 +29,8 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <!-- error-prone doesn't like generated code -->
-    <errorprone.args>-XepDisableWarningsInGeneratedCode</errorprone.args>
+    <!-- error-prone doesn't like generated code and it wants you to depend on guava! -->
+    <errorprone.args>-XepDisableWarningsInGeneratedCode -Xep:AutoValueImmutableFields:OFF</errorprone.args>
   </properties>
 
   <dependencies>

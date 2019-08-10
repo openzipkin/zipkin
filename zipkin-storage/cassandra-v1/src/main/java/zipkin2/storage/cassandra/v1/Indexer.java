@@ -24,7 +24,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.common.collect.ImmutableSetMultimap.Builder;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -127,12 +126,12 @@ final class Indexer {
 
   void index(Span span, List<Call<Void>> calls) {
     // First parse each span into partition keys used to support query requests
-    Builder<PartitionKeyToTraceId, Long> parsed = ImmutableSetMultimap.builder();
+    ImmutableSetMultimap.Builder<PartitionKeyToTraceId, Long> parsed =
+      ImmutableSetMultimap.builder();
     long timestamp = span.timestampAsLong();
     if (timestamp == 0L) return;
     for (String partitionKey : index.partitionKeys(span)) {
-      parsed.put(
-        new PartitionKeyToTraceId(index.table(), partitionKey, span.traceId()),
+      parsed.put(new PartitionKeyToTraceId(index.table(), partitionKey, span.traceId()),
         1000 * (timestamp / 1000)); // index precision is millis
     }
 
@@ -202,13 +201,16 @@ final class Indexer {
     // When the loop completes, we'll know one of our updates widened the interval of a trace, if
     // it is the first or last timestamp. By ignoring those between an existing interval, we can
     // end up with less Cassandra writes.
-    Builder<PartitionKeyToTraceId, Long> result = ImmutableSetMultimap.builder();
+    ImmutableSetMultimap.Builder<PartitionKeyToTraceId, Long> result =
+      ImmutableSetMultimap.builder();
     for (PartitionKeyToTraceId needsUpdate : toUpdate.build()) {
       Pair firstLast = sharedState.get(needsUpdate);
-      if (updates.containsEntry(needsUpdate, firstLast.left))
+      if (updates.containsEntry(needsUpdate, firstLast.left)) {
         result.put(needsUpdate, firstLast.left);
-      if (updates.containsEntry(needsUpdate, firstLast.right))
+      }
+      if (updates.containsEntry(needsUpdate, firstLast.right)) {
         result.put(needsUpdate, firstLast.right);
+      }
     }
     return result.build();
   }

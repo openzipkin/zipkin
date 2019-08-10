@@ -18,8 +18,8 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -41,18 +41,11 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 final class CassandraUtil {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
-
-  static final List<String> CORE_ANNOTATIONS =
-      ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
+  static final ImmutableList<String> CORE_ANNOTATIONS =
+    ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
 
   private static final ThreadLocal<CharsetEncoder> UTF8_ENCODER =
-      new ThreadLocal<CharsetEncoder>() {
-        @Override
-        protected CharsetEncoder initialValue() {
-          return UTF_8.newEncoder();
-        }
-      };
+    ThreadLocal.withInitial(StandardCharsets.UTF_8::newEncoder);
 
   static ByteBuffer toByteBuffer(String string) {
     try {
@@ -75,7 +68,7 @@ final class CassandraUtil {
   static Set<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
     String localServiceName = span.localServiceName();
-    if (localServiceName == null) return Collections.emptySet();
+    if (localServiceName == null) return annotationKeys;
     for (Annotation a : span.annotations()) {
       if (a.value().length() > SHORT_STRING_LENGTH) continue;
 

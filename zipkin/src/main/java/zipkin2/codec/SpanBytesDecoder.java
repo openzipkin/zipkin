@@ -16,7 +16,6 @@ package zipkin2.codec;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import zipkin2.Span;
 import zipkin2.internal.JsonCodec;
@@ -69,11 +68,11 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public List<Span> decodeList(byte[] spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
 
     @Override public List<Span> decodeList(ByteBuffer spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
   },
   /** Corresponds to the Zipkin v1 thrift format */
@@ -103,11 +102,11 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public List<Span> decodeList(byte[] spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
 
     @Override public List<Span> decodeList(ByteBuffer spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
   },
   /** Corresponds to the Zipkin v2 json format */
@@ -137,11 +136,11 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public List<Span> decodeList(byte[] spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
 
     @Override public List<Span> decodeList(ByteBuffer spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
   },
   PROTO3 {
@@ -170,11 +169,11 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
     }
 
     @Override public List<Span> decodeList(byte[] spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
 
     @Override public List<Span> decodeList(ByteBuffer spans) {
-      return decodeList(this, spans);
+      return doDecodeList(this, spans);
     }
   };
 
@@ -199,15 +198,15 @@ public enum SpanBytesDecoder implements BytesDecoder<Span> {
    */
   @Nullable public abstract Span decodeOne(ByteBuffer span);
 
-  static List<Span> decodeList(SpanBytesDecoder decoder, byte[] spans) {
+  static List<Span> doDecodeList(SpanBytesDecoder decoder, byte[] spans) {
     List<Span> out = new ArrayList<>();
-    if (!decoder.decodeList(spans, out)) return Collections.emptyList();
+    decoder.decodeList(spans, out);
     return out;
   }
 
-  static List<Span> decodeList(SpanBytesDecoder decoder, ByteBuffer spans) {
+  static List<Span> doDecodeList(SpanBytesDecoder decoder, ByteBuffer spans) {
     List<Span> out = new ArrayList<>();
-    if (!decoder.decodeList(spans, out)) return Collections.emptyList();
+    decoder.decodeList(spans, out);
     return out;
   }
 }

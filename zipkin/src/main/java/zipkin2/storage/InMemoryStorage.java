@@ -362,7 +362,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
         result.add(traceIdTimestamp.lowTraceId);
       }
     }
-    return result;
+    return Collections.unmodifiableSet(result);
   }
 
   @Override
