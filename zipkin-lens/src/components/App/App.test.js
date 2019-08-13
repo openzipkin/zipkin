@@ -45,7 +45,7 @@ describe('<App />', () => {
     expect(document.title).toBe('Zipkin');
   });
 
-  it('should provide React Context for MuiPickers', () => {
+  it('should provide React Context for time range selection', () => {
     const wrapper = shallow(<App />);
     expect(wrapper.find(MuiPickersUtilsProvider).length).toBe(1);
     expect(wrapper.find(MuiPickersUtilsProvider).props().utils).toEqual(MomentUtils);
@@ -76,7 +76,7 @@ describe('<App />', () => {
   it('should render 2 Route', () => {
     const wrapper = shallow(<App />);
     const routes = wrapper.find(Route);
-    // Check routes that use a single trace as input.
+    // Check routes that use the same global search bar.
     expect(routes.at(0).props().path).toEqual(['/zipkin', '/zipkin/dependency']);
     expect(routes.at(0).props().component).toEqual(DiscoverPage);
     // Check routes that use a single trace as input.
