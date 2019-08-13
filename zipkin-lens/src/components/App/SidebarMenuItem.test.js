@@ -98,7 +98,7 @@ describe('<SidebarMenuItem />', () => {
       expect(logo.props().className).toBe('fab fa-home');
     });
 
-    it('should call history.push when ListItem is clicked', () => {
+    it('should jump to the specified URL using history.push when ListItem is clicked', () => {
       const { getByTestId } = render(<SidebarMenuItemImpl {...props} />);
       fireEvent.click(getByTestId('list-item'));
       expect(props.history.push.mock.calls.length).toBe(1);

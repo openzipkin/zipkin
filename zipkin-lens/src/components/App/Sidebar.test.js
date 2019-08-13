@@ -39,12 +39,14 @@ describe('<Sidebar />', () => {
   it('should render internal links', () => {
     const wrapper = shallow(<Sidebar />);
     const list = wrapper.find('[data-testid="internal-links"]');
+    // Only discover page is the internal link.
     expect(list.find(SidebarMenuItem).length).toBe(1);
   });
 
   it('should render external links', () => {
     const wrapper = shallow(<Sidebar />);
     const list = wrapper.find('[data-testid="external-links"]');
+    // External links are zipkin home page, github repository, twitter, and gitter.
     expect(list.find(SidebarMenuItem).length).toBe(4);
   });
 });
