@@ -11,63 +11,42 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { shallow } from 'enzyme';
 import React from 'react';
 import Drawer from '@material-ui/core/Drawer';
+import { createShallow } from '@material-ui/core/test-utils';
 
 import Sidebar from './Sidebar';
 import Logo from '../../img/zipkin-sm-logo.svg';
+import SidebarMenuItem from './SidebarMenuItem';
 
 describe('<Sidebar />', () => {
-  let wrapper;
+  let shallow;
 
   beforeEach(() => {
-    wrapper = shallow(<Sidebar />);
+    shallow = createShallow();
   });
 
   it('should render Drawer', () => {
-    const items = wrapper.find(Drawer);
-    expect(items.length).toBe(1);
+    const wrapper = shallow(<Sidebar />);
+    expect(wrapper.find(Drawer).length).toBe(1);
   });
 
   it('should render Logo', () => {
-    const items = wrapper.find(Logo);
-    expect(items.length).toBe(1);
+    const wrapper = shallow(<Sidebar />);
+    expect(wrapper.find(Logo).length).toBe(1);
   });
 
-  describe('should render internal links', () => {
-    let internalLinks;
-
-    beforeEach(() => {
-      internalLinks = wrapper.find('[data-test="internal-links"]');
-    });
-
-    it('should render 1 links', () => {
-      expect(internalLinks.children().length).toBe(1);
-    });
-
-    it('should not pass isExternalLink', () => {
-      internalLinks.forEach((internalLink) => {
-        expect(internalLink.props().isExternalLink).toBeUndefined();
-      });
-    });
+  it('should render internal links', () => {
+    const wrapper = shallow(<Sidebar />);
+    const list = wrapper.find('[data-testid="internal-links"]');
+    // Only discover page is the internal link (links routed in JavaScript).
+    expect(list.find(SidebarMenuItem).length).toBe(1);
   });
 
-  describe('should render external links', () => {
-    let externalLinks;
-
-    beforeEach(() => {
-      externalLinks = wrapper.find('[data-test="external-links"]');
-
-      it('should render 4 links', () => {
-        expect(externalLinks.children().length).toBe(4);
-      });
-
-      it('should pass isExternalLink', () => {
-        externalLinks.forEach((externalLink) => {
-          expect(externalLink.props().isExternalLink).toBe(true);
-        });
-      });
-    });
+  it('should render external links', () => {
+    const wrapper = shallow(<Sidebar />);
+    const list = wrapper.find('[data-testid="external-links"]');
+    // External links are zipkin home page, github repository, twitter, and gitter.
+    expect(list.find(SidebarMenuItem).length).toBe(4);
   });
 });

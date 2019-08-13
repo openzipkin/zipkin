@@ -23,15 +23,10 @@ import DiscoverPage from '../DiscoverPage';
 import TracePage from '../TracePage';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
-import { useMount } from '../../hooks';
-
-const applicationTitle = 'Zipkin';
+import { useDocumentTitle } from '../../hooks';
 
 const App = () => {
-  useMount(() => {
-    document.title = applicationTitle;
-  });
-
+  useDocumentTitle('Zipkin');
   return (
     <MuiPickersUtilsProvider utils={MomentUtils}>
       <ThemeProvider theme={theme}>

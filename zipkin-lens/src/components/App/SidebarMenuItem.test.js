@@ -11,128 +11,98 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { shallow } from 'enzyme';
 import React from 'react';
-import Box from '@material-ui/core/Box';
-import ListItem from '@material-ui/core/ListItem';
-import Tooltip from '@material-ui/core/Tooltip';
+import { render, fireEvent } from '@testing-library/react';
+import { createShallow } from '@material-ui/core/test-utils';
 
-import SidebarMenuItem from './SidebarMenuItem';
-import { theme } from '../../colors';
+import { SidebarMenuItemImpl } from './SidebarMenuItem';
 
 describe('<SidebarMenuItem />', () => {
-  describe('should render components', () => {
-    let wrapper;
+  let shallow;
 
-    beforeEach(() => {
-      wrapper = shallow(
-        <SidebarMenuItem.WrappedComponent
-          history={{ push: () => {} }}
-          location={{ pathname: '/zipkin' }}
-          isExternalLink
-          title="Title"
-          urls={['http://example.com']}
-          buttonClassName="fas fa-search"
-        />,
-      );
-    });
+  beforeEach(() => {
+    shallow = createShallow();
+  });
+
+  describe('should render an external link item', () => {
+    const props = {
+      history: { push: jest.fn() },
+      location: { pathname: '/zipkin' },
+      isExternal: true,
+      title: 'External Link',
+      links: ['http://example.com'],
+      logo: 'fab fa-home',
+      classes: {},
+    };
 
     it('should render Tooltip', () => {
-      const items = wrapper.find(Tooltip);
-      expect(items.length).toBe(1);
-      expect(items.at(0).props().title).toBe('Title');
+      const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
+      const tooltip = wrapper.find('[data-testid="tooltip"]');
+      expect(tooltip.length).toBe(1);
+      expect(tooltip.props().title).toBe('External Link');
     });
 
     it('should render ListItem', () => {
-      const items = wrapper.find(ListItem);
-      expect(items.length).toBe(1);
+      const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
+      const listItem = wrapper.find('[data-testid="list-item"]');
+      expect(listItem.length).toBe(1);
+      expect(listItem.props().button).toBe(true);
+      expect(listItem.props().component).toBe('a');
+      expect(listItem.props().href).toBe('http://example.com');
     });
 
-    it('should render Box', () => {
-      const items = wrapper.find(Box);
-      expect(items.length).toBe(1);
-      expect(items.at(0).props().className).toBe('fas fa-search');
-    });
-  });
-
-  describe('should render internal links', () => {
-    let pushMock;
-    let commonProps;
-
-    beforeEach(() => {
-      pushMock = jest.fn();
-
-      commonProps = {
-        history: { push: pushMock },
-        title: 'Some Page',
-        urls: ['/zipkin/somePage'],
-        buttonClassName: 'fas fa-search',
-      };
-    });
-
-    it('should be lighter when the current location equals to the first url', () => {
-      const wrapper = shallow(
-        <SidebarMenuItem.WrappedComponent
-          {...commonProps}
-          location={{ pathname: '/zipkin/somePage' }}
-        />,
-      );
-      expect(wrapper.find(ListItem).props().style).toEqual({
-        color: theme.palette.common.white,
-        backgroundColor: theme.palette.primary.dark,
-      });
-    });
-
-    it('should be darker when the current location does not equal to the first url', () => {
-      const wrapper = shallow(
-        <SidebarMenuItem.WrappedComponent
-          {...commonProps}
-          location={{ pathname: '/zipkin/otherPage' }}
-        />,
-      );
-      expect(wrapper.find(ListItem).props().style).toBeNull();
-    });
-
-    it('should push when clicked', () => {
-      const wrapper = shallow(
-        <SidebarMenuItem.WrappedComponent
-          {...commonProps}
-          location={{ pathname: '/zipkin/somePage' }}
-        />,
-      );
-      wrapper.find(ListItem).simulate('click');
-      expect(pushMock.mock.calls.length).toBe(1);
+    it('should render Logo', () => {
+      const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
+      const logo = wrapper.find('[data-testid="logo"]');
+      expect(logo.length).toBe(1);
+      expect(logo.props().component).toBe('span');
+      expect(logo.props().className).toBe('fab fa-home');
     });
   });
 
-  describe('should render external links', () => {
-    let pushMock;
-    let commonProps;
+  describe('should render an internal link item', () => {
+    let props;
 
     beforeEach(() => {
-      pushMock = jest.fn();
-
-      commonProps = {
-        history: { push: pushMock },
-        location: { pathname: '/zipkin/somePage' },
-        isExternalLink: true,
-        title: 'Some Page',
-        urls: ['https://example.com'],
-        buttonClassName: 'fas fa-search',
+      props = {
+        history: { push: jest.fn() },
+        location: { pathname: '/zipkin/dependency' },
+        isExternal: false,
+        title: 'Internal Link',
+        links: ['/zipkin', '/zipkin/dependency'],
+        logo: 'fab fa-home',
+        classes: {},
       };
     });
 
-    it('should pass some props', () => {
-      const wrapper = shallow(<SidebarMenuItem.WrappedComponent {...commonProps} />);
-      const items = wrapper.find(ListItem);
-      expect(items.props().component).toBe('a');
-      expect(items.props().href).toBe('https://example.com');
+    it('should render Tooltip', () => {
+      const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
+      const tooltip = wrapper.find('[data-testid="tooltip"]');
+      expect(tooltip.length).toBe(1);
+      expect(tooltip.props().title).toBe('Internal Link');
     });
 
-    it('should not call push when clicked', () => {
-      const wrapper = shallow(<SidebarMenuItem.WrappedComponent {...commonProps} />);
-      wrapper.find(ListItem).simulate('click');
-      expect(pushMock.mock.calls.length).toBe(0);
+    it('should render ListItem', () => {
+      const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
+      const listItem = wrapper.find('[data-testid="list-item"]');
+      expect(listItem.length).toBe(1);
+      expect(listItem.props().button).toBe(true);
+      expect(listItem.props().onClick).toBeTruthy();
+    });
+
+    it('should render Logo', () => {
+      const wrapper = shallow(<SidebarMenuItemImpl {...props} />);
+      const logo = wrapper.find('[data-testid="logo"]');
+      expect(logo.length).toBe(1);
+      expect(logo.props().component).toBe('span');
+      expect(logo.props().className).toBe('fab fa-home');
+    });
+
+    it('should jump to the specified URL using history.push when ListItem is clicked', () => {
+      const { getByTestId } = render(<SidebarMenuItemImpl {...props} />);
+      fireEvent.click(getByTestId('list-item'));
+      expect(props.history.push.mock.calls.length).toBe(1);
+      expect(props.history.push.mock.calls[0][0]).toBe('/zipkin');
     });
   });
 });
