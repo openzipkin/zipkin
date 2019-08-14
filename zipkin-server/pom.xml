@@ -257,13 +257,6 @@
       <artifactId>brave</artifactId>
       <optional>true</optional>
     </dependency>
-    <!--TODO: remove on next Brave update -->
-    <dependency>
-      <groupId>io.zipkin.reporter2</groupId>
-      <artifactId>zipkin-reporter</artifactId>
-      <version>2.10.1</version>
-      <optional>true</optional>
-    </dependency>
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-context-log4j2</artifactId>
