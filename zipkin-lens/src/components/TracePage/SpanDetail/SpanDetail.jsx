@@ -12,16 +12,15 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useState, useCallback, useEffect } from 'react';
+import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import grey from '@material-ui/core/colors/grey';
 
-import SpanAnnotation from './SpanAnnotation';
-import SpanAnnotationGraph from './SpanAnnotationGraph';
 import SpanTags from './SpanTags';
 import { detailedSpanPropTypes } from '../../../prop-types';
+import SpanAnnotations from './SpanAnnotations';
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
@@ -42,19 +41,6 @@ const useStyles = makeStyles(theme => ({
 
 const SpanDetail = ({ span, minHeight }) => {
   const classes = useStyles();
-
-  const [annotationValue, setAnnotationValue] = useState();
-
-  const handleAnnotationClick = useCallback((value) => {
-    setAnnotationValue(value);
-  }, []);
-
-  useEffect(() => {
-    // Refresh selected annotation when the different span is selected.
-    setAnnotationValue(null);
-  }, [span.spanId]);
-
-  const selectedAnnotation = span.annotations.find(a => a.value === annotationValue);
 
   return (
     <Box
@@ -77,21 +63,7 @@ const SpanDetail = ({ span, minHeight }) => {
           <Box fontWeight="bold" fontSize="1.4rem">
             Annotations
           </Box>
-          <SpanAnnotationGraph
-            duration={span.duration}
-            startTs={span.timestamp}
-            serviceName={span.serviceName}
-            annotations={span.annotations}
-            onAnnotationClick={handleAnnotationClick}
-            selectedAnnotationValue={annotationValue}
-          />
-          {
-            selectedAnnotation ? (
-              <Box mt={1}>
-                <SpanAnnotation annotation={selectedAnnotation} />
-              </Box>
-            ) : null
-          }
+          <SpanAnnotations span={span} />
         </Box>
         <Box
           pt={1}
