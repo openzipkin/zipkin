@@ -67,20 +67,20 @@ const SpanAnnotations = ({ span }) => {
         /* eslint no-nested-ternary: 0 */
         areAllAnnotationsOpened ? (
           span.annotations.map(annotation => (
-            <Box mt={1} key={annotation.value}>
+            <Box mt={1} key={annotation.value} data-testid="span-annotations--annotation">
               <SpanAnnotation annotation={annotation} />
             </Box>
           ))
         ) : (
           selectedAnnotation ? (
-            <Box mt={1}>
+            <Box mt={1} data-testid="span-annotations--annotation">
               <SpanAnnotation annotation={selectedAnnotation} />
             </Box>
           ) : null
         )
       }
       <Box width="100%" display="flex" justifyContent="flex-end" mt={2}>
-        <Button variant="contained" onClick={handleToggleButtonClick}>
+        <Button variant="contained" onClick={handleToggleButtonClick} data-testid="span-annotations--toggle-button">
           {
             areAllAnnotationsOpened ? 'hide annotations' : 'show all annotations'
           }

@@ -156,6 +156,7 @@ const SpanAnnotationGraph = ({
                 )
               }
               onClick={() => onAnnotationClick(annotation.value)}
+              data-testid="span-annotation-graph--circle"
             />
           );
         })
