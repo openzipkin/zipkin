@@ -49,7 +49,7 @@ const SpanTags = ({ tags, classes }) => (
       <TableBody>
         {
           tags.map(tag => (
-            <TableRow key={tag.key}>
+            <TableRow key={tag.key} data-testid="span-tags--table-row">
               <TableCell className={classes.cell}>
                 <Box className={classes.key}>
                   {tag.key}
