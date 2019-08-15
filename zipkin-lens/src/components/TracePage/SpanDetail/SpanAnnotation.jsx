@@ -43,7 +43,7 @@ const SpanAnnotation = ({ annotation, classes }) => (
     </Box>
     <Paper>
       <Table>
-        <TableBody>
+        <TableBody data-testid="table-body">
           {
             [
               {
@@ -61,10 +61,10 @@ const SpanAnnotation = ({ annotation, classes }) => (
               { label: 'Address', value: annotation.endpoint },
             ].map(e => (
               <TableRow key={e.label}>
-                <TableCell className={classes.cell}>
+                <TableCell className={classes.cell} data-testid="label">
                   {e.label}
                 </TableCell>
-                <TableCell className={classes.cell}>
+                <TableCell className={classes.cell} data-testid="value">
                   {e.value}
                 </TableCell>
               </TableRow>
