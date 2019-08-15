@@ -13,21 +13,22 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { makeStyles } from '@material-ui/styles';
+import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import grey from '@material-ui/core/colors/grey';
 
 import SpanTags from './SpanTags';
-import { detailedSpanPropTypes } from '../../../prop-types';
 import SpanAnnotations from './SpanAnnotations';
+import { detailedSpanPropTypes } from '../../../prop-types';
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
   minHeight: PropTypes.number.isRequired,
+  classes: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const style = theme => ({
   root: {
     backgroundColor: grey[100],
   },
@@ -37,50 +38,41 @@ const useStyles = makeStyles(theme => ({
   spanName: {
     color: theme.palette.text.hint,
   },
-}));
+});
 
-const SpanDetail = ({ span, minHeight }) => {
-  const classes = useStyles();
-
-  return (
-    <Box
-      width="100%"
-      minHeight={minHeight}
-      borderLeft={1}
-      borderColor="grey.300"
-      className={classes.root}
-    >
-      <Box>
-        <Box pt={2} pl={2} pr={2} pb={1.5} borderBottom={1} borderColor="grey.300">
-          <Typography variant="h5" className={classes.serviceName}>
-            {span.serviceName}
-          </Typography>
-          <Typography variant="h6" className={classes.spanName}>
-            {span.spanName}
-          </Typography>
+const SpanDetail = ({ span, minHeight, classes }) => (
+  <Box
+    width="100%"
+    minHeight={minHeight}
+    borderLeft={1}
+    borderColor="grey.300"
+    className={classes.root}
+  >
+    <Box>
+      <Box pt={2} pl={2} pr={2} pb={1.5} borderBottom={1} borderColor="grey.300">
+        <Typography variant="h5" className={classes.serviceName}>
+          {span.serviceName}
+        </Typography>
+        <Typography variant="h6" className={classes.spanName}>
+          {span.spanName}
+        </Typography>
+      </Box>
+      <Box pt={1} pl={2} pr={2} pb={1.5}>
+        <Box fontWeight="bold" fontSize="1.4rem">
+          Annotations
         </Box>
-        <Box pt={1} pl={2} pr={2} pb={1.5}>
-          <Box fontWeight="bold" fontSize="1.4rem">
-            Annotations
-          </Box>
-          <SpanAnnotations span={span} />
+        <SpanAnnotations span={span} />
+      </Box>
+      <Box pt={1} pl={2} pr={2} pb={1.5}>
+        <Box fontWeight="bold" fontSize="1.4rem" mb={0.5}>
+          Tags
         </Box>
-        <Box
-          pt={1}
-          pl={2}
-          pr={2}
-          pb={1.5}
-        >
-          <Box fontWeight="bold" fontSize="1.4rem" mb={0.5}>
-            Tags
-          </Box>
-          <SpanTags tags={span.tags} />
-        </Box>
+        <SpanTags tags={span.tags} />
       </Box>
     </Box>
-  );
-};
+  </Box>
+);
 
 SpanDetail.propTypes = propTypes;
 
-export default SpanDetail;
+export default withStyles(style)(SpanDetail);
