@@ -23,8 +23,6 @@ import TimeMarker from './TimeMarker';
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
-  isMiniMapOpen: PropTypes.bool.isRequired,
-  onMiniMapToggleButtonClick: PropTypes.func.isRequired,
 };
 
 const useStyles = makeStyles({
@@ -39,12 +37,7 @@ const useStyles = makeStyles({
   },
 });
 
-const TraceTimelineHeader = ({
-  startTs,
-  endTs,
-  isMiniMapOpen,
-  onMiniMapToggleButtonClick,
-}) => {
+const TraceTimelineHeader = ({ startTs, endTs }) => {
   const classes = useStyles();
 
   return (
@@ -55,33 +48,13 @@ const TraceTimelineHeader = ({
         mt={1}
         mr={1}
         ml={1}
-        justifyContent="space-between"
       >
-        <Box>
-          <ButtonGroup>
-            <Button className={classes.textButton}>
-              <Box component="span" className="fas fa-angle-up" />
-            </Button>
-            <Button className={classes.textButton}>
-              <Box component="span" className="fas fa-angle-right" />
-            </Button>
-            <Button className={classes.textButton}>
-              <Box component="span" className="fas fa-angle-down" />
-            </Button>
-            <Button className={classes.textButton}>
-              <Box component="span" className="fas fa-angle-left" />
-            </Button>
-          </ButtonGroup>
-        </Box>
-        <ButtonGroup variant="contained">
-          <Button onClick={onMiniMapToggleButtonClick}>
-            {isMiniMapOpen ? 'Hide MiniMap' : 'Show MiniMap'}
+        <ButtonGroup>
+          <Button className={classes.textButton}>
+            <Box component="span" className="fas fa-angle-up" />
           </Button>
-          <Button>
-            Re-root
-          </Button>
-          <Button>
-            Reset root
+          <Button className={classes.textButton}>
+            <Box component="span" className="fas fa-angle-down" />
           </Button>
         </ButtonGroup>
       </Box>
