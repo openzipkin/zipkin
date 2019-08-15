@@ -12,15 +12,16 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import grey from '@material-ui/core/colors/grey';
 
 import SpanAnnotation from './SpanAnnotation';
-import { detailedSpanPropTypes } from '../../../prop-types';
+import SpanAnnotationGraph from './SpanAnnotationGraph';
 import SpanTags from './SpanTags';
+import { detailedSpanPropTypes } from '../../../prop-types';
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
@@ -42,6 +43,19 @@ const useStyles = makeStyles(theme => ({
 const SpanDetail = ({ span, minHeight }) => {
   const classes = useStyles();
 
+  const [annotationValue, setAnnotationValue] = useState();
+
+  const handleAnnotationClick = useCallback((value) => {
+    setAnnotationValue(value);
+  }, []);
+
+  useEffect(() => {
+    // Refresh selected annotation when the different span is selected.
+    setAnnotationValue(null);
+  }, [span.spanId]);
+
+  const selectedAnnotation = span.annotations.find(a => a.value === annotationValue);
+
   return (
     <Box
       width="100%"
@@ -51,14 +65,7 @@ const SpanDetail = ({ span, minHeight }) => {
       className={classes.root}
     >
       <Box>
-        <Box
-          pt={2}
-          pl={2}
-          pr={2}
-          pb={1.5}
-          borderBottom={1}
-          borderColor="grey.300"
-        >
+        <Box pt={2} pl={2} pr={2} pb={1.5} borderBottom={1} borderColor="grey.300">
           <Typography variant="h5" className={classes.serviceName}>
             {span.serviceName}
           </Typography>
@@ -66,21 +73,24 @@ const SpanDetail = ({ span, minHeight }) => {
             {span.spanName}
           </Typography>
         </Box>
-        <Box
-          pt={1}
-          pl={2}
-          pr={2}
-          pb={1.5}
-        >
+        <Box pt={1} pl={2} pr={2} pb={1.5}>
           <Box fontWeight="bold" fontSize="1.4rem">
             Annotations
           </Box>
+          <SpanAnnotationGraph
+            duration={span.duration}
+            startTs={span.timestamp}
+            serviceName={span.serviceName}
+            annotations={span.annotations}
+            onAnnotationClick={handleAnnotationClick}
+            selectedAnnotationValue={annotationValue}
+          />
           {
-            span.annotations.map(annotation => (
-              <Box mt={1} key={annotation.value}>
-                <SpanAnnotation key={annotation.value} annotation={annotation} />
+            selectedAnnotation ? (
+              <Box mt={1}>
+                <SpanAnnotation annotation={selectedAnnotation} />
               </Box>
-            ))
+            ) : null
           }
         </Box>
         <Box
