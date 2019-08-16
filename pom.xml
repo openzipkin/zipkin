@@ -50,7 +50,7 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>0.90.1</armeria.version>
+    <armeria.version>0.90.2</armeria.version>
     <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
     <guava.version>28.0-jre</guava.version>
 
