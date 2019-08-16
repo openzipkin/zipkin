@@ -62,9 +62,6 @@ const TraceTree = ({
   for (let i = 0; i < spans.length; i += 1) {
     const currentSpan = spans[i];
 
-    // const spanRowOffsetY = i * (spanDataRowLineHeight + spanBarRowLineHeight);
-    // const spanBarRowPosY = spanRowOffsetY + spanDataRowLineHeight;
-
     if (stack.length === 0) {
       stack.push({ index: i, depth: currentSpan.depth });
       continue;
