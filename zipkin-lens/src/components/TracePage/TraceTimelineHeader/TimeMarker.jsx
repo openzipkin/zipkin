@@ -59,6 +59,7 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
         position="absolute"
         className={classNames({ [classes.marker]: portion < 1 })}
         style={{ left: `${portion * 100}%` }}
+        data-testid="time-marker--marker"
       >
         <Box
           component="span"
@@ -69,6 +70,7 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
               { [classes['label--last']]: portion >= 1 },
             )
           }
+          data-testid="time-marker--label"
         >
           {formatDuration(label)}
         </Box>
