@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { makeStyles } from '@material-ui/styles';
+import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 
 import { spanTreeWidthPercent } from '../constants';
@@ -22,9 +22,10 @@ import { formatDuration } from '../../../util/timestamp';
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
+  classes: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles({
+const style = {
   marker: {
     height: '100%',
     width: '1px',
@@ -42,13 +43,11 @@ const useStyles = makeStyles({
     right: '2px',
     position: 'absolute',
   },
-});
+};
 
 const numTimeMarkers = 4;
 
-const TimeMarker = ({ startTs, endTs }) => {
-  const classes = useStyles();
-
+const TimeMarker = ({ startTs, endTs, classes }) => {
   const timeMarkers = [];
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
@@ -95,4 +94,4 @@ const TimeMarker = ({ startTs, endTs }) => {
 
 TimeMarker.propTypes = propTypes;
 
-export default TimeMarker;
+export default withStyles(style)(TimeMarker);

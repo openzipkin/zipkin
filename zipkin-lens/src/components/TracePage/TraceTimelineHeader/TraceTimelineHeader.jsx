@@ -13,22 +13,23 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { makeStyles } from '@material-ui/styles';
+import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
-import grey from '@material-ui/core/colors/grey';
+
 import TimeMarker from './TimeMarker';
 
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
+  classes: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles({
+const style = theme => ({
   root: {
-    borderBottom: `1px solid ${grey[300]}`,
-    backgroundColor: grey[100],
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
+    backgroundColor: theme.palette.grey[100],
   },
   textButton: {
     fontSize: '1.2rem',
@@ -37,32 +38,28 @@ const useStyles = makeStyles({
   },
 });
 
-const TraceTimelineHeader = ({ startTs, endTs }) => {
-  const classes = useStyles();
-
-  return (
-    <Box className={classes.root}>
-      <Box
-        display="flex"
-        alignItems="center"
-        mt={1}
-        mr={1}
-        ml={1}
-      >
-        <ButtonGroup>
-          <Button className={classes.textButton}>
-            <Box component="span" className="fas fa-angle-up" />
-          </Button>
-          <Button className={classes.textButton}>
-            <Box component="span" className="fas fa-angle-down" />
-          </Button>
-        </ButtonGroup>
-      </Box>
-      <TimeMarker startTs={startTs} endTs={endTs} />
+const TraceTimelineHeader = ({ startTs, endTs, classes }) => (
+  <Box className={classes.root}>
+    <Box
+      display="flex"
+      alignItems="center"
+      mt={1}
+      mr={1}
+      ml={1}
+    >
+      <ButtonGroup>
+        <Button className={classes.textButton}>
+          <Box component="span" className="fas fa-angle-up" />
+        </Button>
+        <Button className={classes.textButton}>
+          <Box component="span" className="fas fa-angle-down" />
+        </Button>
+      </ButtonGroup>
     </Box>
-  );
-};
+    <TimeMarker startTs={startTs} endTs={endTs} />
+  </Box>
+);
 
 TraceTimelineHeader.propTypes = propTypes;
 
-export default TraceTimelineHeader;
+export default withStyles(style)(TraceTimelineHeader);
