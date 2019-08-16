@@ -17,7 +17,7 @@ import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import classNames from 'classnames';
 
-import { spanTreeWidthPercent } from '../constants';
+import { spanTreeWidthPercent } from '../sizing';
 import { formatDuration } from '../../../util/timestamp';
 
 const propTypes = {

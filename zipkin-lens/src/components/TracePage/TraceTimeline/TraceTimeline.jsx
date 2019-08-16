@@ -17,12 +17,11 @@ import React from 'react';
 import TraceTree from './TraceTree';
 import TraceTimelineRow from './TraceTimelineRow';
 import { detailedSpansPropTypes } from '../../../prop-types';
-import { spanDataRowLineHeight, spanBarRowLineHeight, spanTreeWidthPercent } from '../constants';
+import { timelineHeight } from '../sizing';
 
 const propTypes = {
   spans: detailedSpansPropTypes.isRequired,
   depth: PropTypes.number.isRequired,
-  width: PropTypes.number.isRequired,
   closedSpans: PropTypes.shape({}).isRequired,
   onSpanClick: PropTypes.func.isRequired,
   onSpanToggleButtonClick: PropTypes.func.isRequired,
@@ -31,45 +30,34 @@ const propTypes = {
 const TraceTimeline = ({
   spans,
   depth,
-  width,
   closedSpans,
   onSpanClick,
   onSpanToggleButtonClick,
-}) => {
-  const spanCounts = spans.length;
-  const traceTimelineHeight = (spanDataRowLineHeight + spanBarRowLineHeight) * spanCounts;
-  const traceTimelineOffsetX = width * (spanTreeWidthPercent / 100);
-  const traceTimelineWidth = width * ((100 - spanTreeWidthPercent) / 100);
-
-  return (
-    <svg
-      version="1.1"
-      width={width}
-      height={traceTimelineHeight}
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      {
-        spans.map((span, i) => (
-          <TraceTimelineRow
-            key={span.spanId}
-            span={span}
-            index={i}
-            offsetX={traceTimelineOffsetX}
-            width={traceTimelineWidth}
-            onSpanClick={onSpanClick}
-          />
-        ))
-      }
-      <TraceTree
-        spans={spans}
-        depth={depth}
-        width={traceTimelineOffsetX}
-        closedSpans={closedSpans}
-        onSpanToggleButtonClick={onSpanToggleButtonClick}
-      />
-    </svg>
-  );
-};
+}) => (
+  <svg
+    version="1.1"
+    xmlns="http://www.w3.org/2000/svg"
+    width="100%"
+    height={`${timelineHeight(spans.length)}px`}
+  >
+    {
+      spans.map((span, i) => (
+        <TraceTimelineRow
+          key={span.spanId}
+          span={span}
+          index={i}
+          onSpanClick={onSpanClick}
+        />
+      ))
+    }
+    <TraceTree
+      spans={spans}
+      depth={depth}
+      closedSpans={closedSpans}
+      onSpanToggleButtonClick={onSpanToggleButtonClick}
+    />
+  </svg>
+);
 
 TraceTimeline.propTypes = propTypes;
 

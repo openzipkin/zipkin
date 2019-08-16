@@ -94,7 +94,6 @@ const TraceSummary = ({ traceSummary }) => {
                     <TraceTimeline
                       spans={filteredSpans}
                       depth={traceSummary.depth}
-                      width={width}
                       closedSpans={closedSpans}
                       onSpanClick={handleSpanClick}
                       onSpanToggleButtonClick={handleSpanToggleButtonClick}

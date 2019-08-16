@@ -12,103 +12,94 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
-import { makeStyles } from '@material-ui/styles';
-import grey from '@material-ui/core/colors/grey';
+import React from 'react';
+import { withStyles } from '@material-ui/styles';
 
-import { spanDataRowLineHeight, spanBarRowLineHeight, spanBarHeight } from '../constants';
+import {
+  spanDataRowPosY,
+  spanBarLinePosY,
+  spanOffsetY,
+  spanBarRowPosY,
+  serviceNamePosXPercent,
+  spanNamePosXPercent,
+  durationPosXPercent,
+  timelineOffsetXPercent,
+  spanBarHeight,
+  spanHeight,
+  spanBarWidthPercent,
+  spanBarPosXPercent,
+} from '../sizing';
 import { detailedSpanPropTypes } from '../../../prop-types';
 import { selectServiceColor } from '../../../colors';
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
   index: PropTypes.number.isRequired,
-  offsetX: PropTypes.number.isRequired,
-  width: PropTypes.number.isRequired,
   onSpanClick: PropTypes.func.isRequired,
+  classes: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles({
+const style = theme => ({
   serviceName: {
     textTransform: 'uppercase',
   },
-  clickableRect: {
+  button: {
     opacity: 0,
-    fill: grey[500],
+    fill: theme.palette.grey[500],
     cursor: 'pointer',
     '&:hover': {
       opacity: 0.2,
     },
+  },
+  barLine: {
+    stroke: theme.palette.grey[500],
+    strokeWidth: '1px',
   },
 });
 
 const TraceTimelineRow = ({
   span,
   index,
-  offsetX,
-  width,
   onSpanClick,
-}) => {
-  const classes = useStyles();
-
-  const spanRowOffsetY = index * (spanDataRowLineHeight + spanBarRowLineHeight);
-  const spanDataRowPosY = spanRowOffsetY + spanDataRowLineHeight * 0.75;
-  const spanBarRowPosY = spanRowOffsetY + spanDataRowLineHeight;
-
-  const handleClick = useCallback(() => {
-    onSpanClick(index);
-  }, [onSpanClick, index]);
-
-  return (
-    <g>
-      <text
-        x={offsetX + width * 0.05}
-        y={spanDataRowPosY}
-        className={classes.serviceName}
-      >
-        {span.serviceName}
-      </text>
-      <text
-        x={offsetX + width * 0.35}
-        y={spanDataRowPosY}
-      >
-        {span.spanName}
-      </text>
-      <text
-        x={offsetX + width * 0.8}
-        y={spanDataRowPosY}
-      >
-        {span.durationStr}
-      </text>
-      <line
-        stroke="#bbb"
-        strokeWidth={1}
-        x1={offsetX}
-        x2="100%"
-        y1={spanBarRowPosY + spanBarHeight / 2}
-        y2={spanBarRowPosY + spanBarHeight / 2}
-      />
-      <rect
-        width={width * (span.width / 100)}
-        height={spanBarHeight}
-        x={offsetX + (width * (span.left / 100))}
-        y={spanBarRowPosY}
-        rx={2}
-        ry={2}
-        fill={selectServiceColor(span.serviceName)}
-      />
-      <rect
-        className={classes.clickableRect}
-        x={0}
-        y={spanRowOffsetY}
-        width="100%"
-        height={spanDataRowLineHeight + spanBarRowLineHeight}
-        onClick={handleClick}
-      />
-    </g>
-  );
-};
+  classes,
+}) => (
+  <g>
+    <text x={`${serviceNamePosXPercent}%`} y={spanDataRowPosY(index)} className={classes.serviceName}>
+      {span.serviceName}
+    </text>
+    <text x={`${spanNamePosXPercent}%`} y={spanDataRowPosY(index)}>
+      {span.spanName}
+    </text>
+    <text x={`${durationPosXPercent}%`} y={spanDataRowPosY(index)}>
+      {span.durationStr}
+    </text>
+    <line
+      x1={`${timelineOffsetXPercent}%`}
+      x2="100%"
+      y1={spanBarLinePosY(index)}
+      y2={spanBarLinePosY(index)}
+      className={classes.barLine}
+    />
+    <rect
+      width={`${spanBarWidthPercent(span.width)}%`}
+      height={spanBarHeight}
+      x={`${spanBarPosXPercent(span.left)}%`}
+      y={spanBarRowPosY(index)}
+      rx={2}
+      ry={2}
+      fill={selectServiceColor(span.serviceName)}
+    />
+    <rect
+      className={classes.button}
+      x={0}
+      y={spanOffsetY(index)}
+      width="100%"
+      height={spanHeight}
+      onClick={() => onSpanClick(index)}
+    />
+  </g>
+);
 
 TraceTimelineRow.propTypes = propTypes;
 
-export default TraceTimelineRow;
+export default withStyles(style)(TraceTimelineRow);
