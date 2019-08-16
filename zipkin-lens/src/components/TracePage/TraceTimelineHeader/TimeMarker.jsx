@@ -15,6 +15,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
+import classNames from 'classnames';
 
 import { spanTreeWidthPercent } from '../constants';
 import { formatDuration } from '../../../util/timestamp';
@@ -25,25 +26,23 @@ const propTypes = {
   classes: PropTypes.shape({}).isRequired,
 };
 
-const style = {
+const style = theme => ({
   marker: {
     height: '100%',
     width: '1px',
-    backgroundColor: '#999',
+    backgroundColor: theme.palette.grey[500],
     position: 'absolute',
   },
   label: {
     fontSize: '0.8rem',
-    left: '2px',
+    left: '4px',
     position: 'absolute',
   },
-  lastLabel: {
-    fontSize: '0.8rem',
+  'label--last': {
     left: 'initial',
-    right: '2px',
-    position: 'absolute',
+    right: '4px',
   },
-};
+});
 
 const numTimeMarkers = 4;
 
@@ -58,17 +57,18 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
       <Box
         key={portion}
         position="absolute"
-        className={
-          portion < 1 ? classes.marker : ''
-        }
-        style={{
-          left: `${portion * 100}%`,
-        }}
+        className={classNames({ [classes.marker]: portion < 1 })}
+        style={{ left: `${portion * 100}%` }}
       >
         <Box
           component="span"
           position="absolute"
-          className={portion < 1 ? classes.label : classes.lastLabel}
+          className={
+            classNames(
+              classes.label,
+              { [classes['label--last']]: portion >= 1 },
+            )
+          }
         >
           {formatDuration(label)}
         </Box>
@@ -76,10 +76,7 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
     );
   }
   return (
-    <Box
-      display="flex"
-      justifyContent="flex-end"
-    >
+    <Box display="flex" justifyContent="flex-end">
       <Box
         mt={1}
         height={15}
