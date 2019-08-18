@@ -217,6 +217,10 @@ logging:
   level:
     # Silence Invalid method name: '__can__finagle__trace__v3__'
     com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
+
+    # Silence ResponseTimeoutException in the Armeria framework since we log it anyways in HTTP
+    # logging when enabled. https://github.com/line/armeria/issues/2000
+    com.linecorp.armeria.client.HttpResponseDecoder: 'OFF'
 #     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)
