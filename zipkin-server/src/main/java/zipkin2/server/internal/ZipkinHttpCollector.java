@@ -113,7 +113,7 @@ public class ZipkinHttpCollector {
     HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
-    req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handleAsync((msg, t) -> {
+    req.aggregateWithPooledObjects(ctx.contextAwareEventLoop(), ctx.alloc()).handle((msg, t) -> {
       if (t != null) {
         result.onError(t);
         return null;
@@ -165,7 +165,7 @@ public class ZipkinHttpCollector {
       }
 
       return null;
-    }, ctx.contextAwareExecutor());
+    });
 
     return HttpResponse.from(result);
   }
