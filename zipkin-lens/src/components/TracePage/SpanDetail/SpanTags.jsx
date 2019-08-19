@@ -20,23 +20,21 @@ import TableBody from '@material-ui/core/TableBody';
 import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
-import grey from '@material-ui/core/colors/grey';
 
 import { spanTagsPropTypes } from '../../../prop-types';
 
-const style = {
+const style = theme => ({
   cell: {
+    // Default padding-top and padding-bottom are 14px, but this is
+    // a bit too large so change the value to 8px.
     paddingTop: '8px',
     paddingBottom: '8px',
   },
   key: {
-    color: grey[500],
-    fontWeight: 'bold',
+    color: theme.palette.grey[500],
+    fontWeight: theme.typography.fontWeightBold,
   },
-  value: {
-    fontSize: '1.05rem',
-  },
-};
+});
 
 const propTypes = {
   tags: spanTagsPropTypes.isRequired,
@@ -54,7 +52,7 @@ const SpanTags = ({ tags, classes }) => (
                 <Box className={classes.key}>
                   {tag.key}
                 </Box>
-                <Box className={classes.value}>
+                <Box fontSize="1.05rem">
                   {tag.value}
                 </Box>
               </TableCell>

@@ -28,9 +28,11 @@ const SpanAnnotations = ({ span }) => {
   const [areAllAnnotationsOpened, setAreAllAnnotationsOpened] = useState(false);
 
   const handleAnnotationClick = useCallback((value) => {
+    // If all annotations are already expanded, close them.
     if (areAllAnnotationsOpened) {
       setAreAllAnnotationsOpened(false);
     }
+    // If the same annotation is selected, close it. (toggle)
     if (value === annotationValue) {
       setAnnotationValue(null);
     } else {
@@ -47,6 +49,7 @@ const SpanAnnotations = ({ span }) => {
   const selectedAnnotation = span.annotations.find(a => a.value === annotationValue);
 
   const handleToggleButtonClick = useCallback(() => {
+    // When expanding all annotations, if any annotation is already selected, clear it.
     if (!areAllAnnotationsOpened) {
       setAnnotationValue(null);
     }
@@ -81,9 +84,7 @@ const SpanAnnotations = ({ span }) => {
       }
       <Box width="100%" display="flex" justifyContent="flex-end" mt={2}>
         <Button variant="contained" onClick={handleToggleButtonClick} data-testid="span-annotations--toggle-button">
-          {
-            areAllAnnotationsOpened ? 'hide annotations' : 'show all annotations'
-          }
+          {areAllAnnotationsOpened ? 'hide annotations' : 'show all annotations'}
         </Button>
       </Box>
     </React.Fragment>

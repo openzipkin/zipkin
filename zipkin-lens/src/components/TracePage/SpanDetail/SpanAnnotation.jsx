@@ -31,6 +31,8 @@ const propTypes = {
 
 const style = {
   cell: {
+    // Default padding-top and padding-bottom are 14px, but this is
+    // a bit too large so change the value to 8px.
     paddingTop: '8px',
     paddingBottom: '8px',
   },
