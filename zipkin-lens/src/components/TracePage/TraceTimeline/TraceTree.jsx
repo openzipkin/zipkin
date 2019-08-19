@@ -205,6 +205,7 @@ const TraceTree = ({
     y2,
   }) => (
     <line
+      key={`${x1}-${x2}-${y1}-${y2}`}
       x1={x1}
       x2={x2}
       y1={y1}
@@ -219,7 +220,7 @@ const TraceTree = ({
     spanId,
     isClosed,
   }) => (
-    <g transform={spanToggleButtonTranslate}>
+    <g key={`${x}-${y}`} transform={spanToggleButtonTranslate}>
       <rect
         rx={2}
         ry={2}
