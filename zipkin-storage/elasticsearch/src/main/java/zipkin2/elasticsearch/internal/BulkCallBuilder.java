@@ -17,17 +17,18 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.auto.value.AutoValue;
-import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpRequestWriter;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
+import com.linecorp.armeria.common.util.Exceptions;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.ByteBufOutputStream;
-import io.netty.buffer.ByteBufUtil;
-import io.netty.buffer.CompositeByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.IOException;
@@ -39,6 +40,7 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.elasticsearch.internal.client.HttpCall.BodyConverter;
 
+import static zipkin2.Call.propagateIfFatal;
 import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html
@@ -117,51 +119,83 @@ public final class BulkCallBuilder {
     if (pipeline != null) urlBuilder.addParam("pipeline", pipeline);
     if (waitForRefresh) urlBuilder.addParam("refresh", "wait_for");
 
-    final HttpData body;
+    ByteBufAllocator alloc = RequestContext.mapCurrent(
+      RequestContext::alloc, () -> PooledByteBufAllocator.DEFAULT);
 
-    // While ideally we can use a direct buffer for our request, we can't do so and support the
-    // semantics of our Call so instead construct a normal byte[] with all the serialized documents.
-    // Using a composite buffer means we essentially create a list of documents each serialized into
-    // pooled heap buffers, and then only copy once when consolidating them into an unpooled byte[],
-    // while if we used a normal buffer, we would have more copying in intermediate steps if we need
-    // to resize the buffer (we can only do a best effort estimate of the buffer size and will often
-    // still need to resize).
-    CompositeByteBuf sink = RequestContext.mapCurrent(
-      RequestContext::alloc, () -> PooledByteBufAllocator.DEFAULT)
-      .compositeHeapBuffer(Integer.MAX_VALUE);
-    try {
-      for (IndexEntry<?> entry : entries) {
-        write(sink, entry, shouldAddType);
-      }
-      body = HttpData.wrap(ByteBufUtil.getBytes(sink));
-    } finally {
-      sink.release();
-    }
-
-    AggregatedHttpRequest request = AggregatedHttpRequest.of(
+    HttpCall.RequestSupplier request = new BulkRequestSupplier(
+      entries,
+      shouldAddType,
       RequestHeaders.of(
         HttpMethod.POST, urlBuilder.toString(),
         HttpHeaderNames.CONTENT_TYPE, MediaType.JSON_UTF_8),
-      body);
+      alloc);
     return http.newCall(request, CHECK_FOR_ERRORS, tag);
   }
 
-  static <T> void write(CompositeByteBuf sink, IndexEntry<T> entry,
+  static class BulkRequestSupplier implements HttpCall.RequestSupplier {
+    final List<IndexEntry<?>> entries;
+    final boolean shouldAddType;
+    final RequestHeaders headers;
+    final ByteBufAllocator alloc;
+
+    final HttpRequestWriter request;
+
+    BulkRequestSupplier(List<IndexEntry<?>> entries, boolean shouldAddType,
+      RequestHeaders headers, ByteBufAllocator alloc) {
+      this.entries = entries;
+      this.shouldAddType = shouldAddType;
+      this.headers = headers;
+      this.alloc = alloc;
+      request = HttpRequest.streaming(headers);
+    }
+
+    @Override public HttpRequest create() {
+      return request;
+    }
+
+    @Override public String path() {
+      return request.path();
+    }
+
+    @Override public HttpCall.RequestSupplier clone() {
+      return new BulkRequestSupplier(entries, shouldAddType, headers, alloc);
+    }
+
+    @Override public void fill() {
+      for (IndexEntry<?> entry : entries) {
+        ByteBuf payload = serialize(alloc, entry, shouldAddType);
+        if (!request.tryWrite(HttpData.wrap(payload))) {
+          // Request was aborted, don't need to serialize anymore.
+          return;
+        }
+      }
+      request.close();
+    }
+  }
+
+  static <T> ByteBuf serialize(ByteBufAllocator alloc, IndexEntry<T> entry,
     boolean shouldAddType) {
     // Fuzzily assume a general small span is 600 bytes to reduce resizing while building up the
-    // JSON. Any extra bytes will be released back after serializing all the documents.
-    ByteBuf document = sink.alloc().heapBuffer(600).writeByte('\n');
-    ByteBuf metadata = sink.alloc().heapBuffer(200);
+    // JSON. Any extra bytes will be released back after serializing the document.
+    ByteBuf document = alloc.heapBuffer(600);
+    ByteBuf metadata = alloc.heapBuffer(200);
     try {
       String id = entry.writer().writeDocument(entry.input(), new ByteBufOutputStream(document));
-      document.writeByte('\n');
       writeIndexMetadata(new ByteBufOutputStream(metadata), entry, id, shouldAddType);
-    } catch (Throwable t) {
+
+      ByteBuf payload = alloc.ioBuffer(document.readableBytes() + metadata.readableBytes() + 2);
+      try {
+        payload.writeBytes(metadata).writeByte('\n').writeBytes(document).writeByte('\n');
+      } catch (Throwable t) {
+        payload.release();
+        propagateIfFatal(t);
+        Exceptions.throwUnsafely(t);
+      }
+      return payload;
+    } finally {
       document.release();
       metadata.release();
-      throw t;
     }
-    sink.addComponent(true, metadata).addComponent(true, document);
   }
 
   static <T> void writeIndexMetadata(ByteBufOutputStream sink, IndexEntry<T> entry, String id,

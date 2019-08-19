@@ -21,6 +21,7 @@ import com.linecorp.armeria.client.UnprocessedRequestException;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
@@ -56,6 +57,60 @@ public final class HttpCall<V> extends Call.Base<V> {
     V convert(JsonParser parser, Supplier<String> contentString) throws IOException;
   }
 
+  public interface RequestSupplier {
+    /**
+     * Creates a new {@link HttpRequest} to send. If this {@link HttpRequest} is not closed, it
+     * must be closed in {@link #fill()}.
+     */
+    HttpRequest create();
+
+    String path();
+
+    RequestSupplier clone();
+
+    /**
+     * Fills the payload of the {@link HttpRequest} supplied by {@link #create()}. This is called
+     * immediately after beginning execution of the request.
+     */
+    default void fill() {
+      // By default, we assume create does everything needed.
+    }
+  }
+
+  static class AggregatedRequestSupplier implements RequestSupplier {
+
+    final AggregatedHttpRequest request;
+
+    AggregatedRequestSupplier(AggregatedHttpRequest request) {
+      if (request.content() instanceof ByteBufHolder) {
+        // Unfortunately it's not possible to use pooled objects in requests and support clone()
+        // after sending the request.
+        ByteBuf buf = ((ByteBufHolder) request.content()).content();
+        try {
+          this.request = AggregatedHttpRequest.of(
+            request.headers(), HttpData.copyOf(buf), request.trailers());
+        } finally {
+          buf.release();
+        }
+      } else {
+        this.request = request;
+      }
+    }
+
+    @Override public HttpRequest create() {
+      return HttpRequest.of(request);
+    }
+
+    @Override public String path() {
+      return request.path();
+    }
+
+    @Override public RequestSupplier clone() {
+      // AggregatedHttpRequest is immutable, so no need to copy it.
+      return this;
+    }
+  }
+
   public static class Factory {
     final HttpClient httpClient;
 
@@ -65,12 +120,18 @@ public final class HttpCall<V> extends Call.Base<V> {
 
     public <V> HttpCall<V> newCall(
       AggregatedHttpRequest request, BodyConverter<V> bodyConverter, String name) {
+      return new HttpCall<>(
+        httpClient, new AggregatedRequestSupplier(request), bodyConverter, name);
+    }
+
+    public <V> HttpCall<V> newCall(
+      RequestSupplier request, BodyConverter<V> bodyConverter, String name) {
       return new HttpCall<>(httpClient, request, bodyConverter, name);
     }
   }
 
   // Visible for benchmarks
-  public final AggregatedHttpRequest request;
+  public final RequestSupplier request;
   final BodyConverter<V> bodyConverter;
   final String name;
 
@@ -78,24 +139,11 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
 
-  HttpCall(HttpClient httpClient, AggregatedHttpRequest request, BodyConverter<V> bodyConverter,
+  HttpCall(HttpClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
     String name) {
     this.httpClient = httpClient;
     this.name = name;
-
-    if (request.content() instanceof ByteBufHolder) {
-      // Unfortunately it's not possible to use pooled objects in requests and support clone() after
-      // sending the request.
-      ByteBuf buf = ((ByteBufHolder) request.content()).content();
-      try {
-        this.request = AggregatedHttpRequest.of(
-          request.headers(), HttpData.copyOf(buf), request.trailers());
-      } finally {
-        buf.release();
-      }
-    } else {
-      this.request = request;
-    }
+    this.request = request;
 
     this.bodyConverter = bodyConverter;
   }
@@ -147,7 +195,7 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<>(httpClient, request, bodyConverter, name);
+    return new HttpCall<>(httpClient, request.clone(), bodyConverter, name);
   }
 
   @Override public String toString() {
@@ -157,7 +205,9 @@ public final class HttpCall<V> extends Call.Base<V> {
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
     try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(NAME).set(name))) {
-      response = httpClient.execute(request);
+      HttpRequest httpRequest = request.create();
+      response = httpClient.execute(httpRequest);
+      request.fill();
     }
     CompletableFuture<AggregatedHttpResponse> responseFuture =
       RequestContext.mapCurrent(
