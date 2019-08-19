@@ -13,7 +13,6 @@
  */
 import React from 'react';
 import { withStyles } from '@material-ui/styles';
-import grey from '@material-ui/core/colors/grey';
 
 import {
   spanBarLinePosY,
@@ -31,7 +30,7 @@ const style = theme => ({
   spanToggleButton: {
     cursor: 'pointer',
     opacity: 0,
-    backgroundColor: grey[300],
+    backgroundColor: theme.palette.grey[300],
     '&:hover': {
       opacity: 0.1,
     },
