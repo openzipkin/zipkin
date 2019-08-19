@@ -16,7 +16,6 @@ import React from 'react';
 import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
-import grey from '@material-ui/core/colors/grey';
 
 import SpanTags from './SpanTags';
 import SpanAnnotations from './SpanAnnotations';
@@ -30,7 +29,12 @@ const propTypes = {
 
 const style = theme => ({
   root: {
-    backgroundColor: grey[100],
+    width: '100%',
+    borderLeft: `1px solid ${theme.palette.grey[300]}`,
+    backgroundColor: theme.palette.grey[100],
+  },
+  names: {
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
   },
   serviceName: {
     textTransform: 'uppercase',
@@ -41,34 +45,26 @@ const style = theme => ({
 });
 
 const SpanDetail = ({ span, minHeight, classes }) => (
-  <Box
-    width="100%"
-    minHeight={minHeight}
-    borderLeft={1}
-    borderColor="grey.300"
-    className={classes.root}
-  >
-    <Box>
-      <Box pt={2} pl={2} pr={2} pb={1.5} borderBottom={1} borderColor="grey.300">
-        <Typography variant="h5" className={classes.serviceName}>
-          {span.serviceName}
-        </Typography>
-        <Typography variant="h6" className={classes.spanName}>
-          {span.spanName}
-        </Typography>
+  <Box minHeight={minHeight} className={classes.root}>
+    <Box pt={2} pl={2} pb={1.5} pr={2} className={classes.names}>
+      <Typography variant="h5" className={classes.serviceName}>
+        {span.serviceName}
+      </Typography>
+      <Typography variant="h6" className={classes.spanName}>
+        {span.spanName}
+      </Typography>
+    </Box>
+    <Box pt={1} pl={2} pr={2} pb={1.5}>
+      <Box fontWeight="bold" fontSize="1.4rem">
+        Annotations
       </Box>
-      <Box pt={1} pl={2} pr={2} pb={1.5}>
-        <Box fontWeight="bold" fontSize="1.4rem">
-          Annotations
-        </Box>
-        <SpanAnnotations span={span} />
+      <SpanAnnotations span={span} />
+    </Box>
+    <Box pt={1} pl={2} pr={2} pb={1.5}>
+      <Box fontWeight="bold" fontSize="1.4rem" mb={0.5}>
+        Tags
       </Box>
-      <Box pt={1} pl={2} pr={2} pb={1.5}>
-        <Box fontWeight="bold" fontSize="1.4rem" mb={0.5}>
-          Tags
-        </Box>
-        <SpanTags tags={span.tags} />
-      </Box>
+      <SpanTags tags={span.tags} />
     </Box>
   </Box>
 );
