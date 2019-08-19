@@ -59,8 +59,6 @@ const SpanAnnotations = ({ span }) => {
   return (
     <React.Fragment>
       <SpanAnnotationGraph
-        duration={span.duration}
-        startTs={span.timestamp}
         serviceName={span.serviceName}
         annotations={span.annotations}
         onAnnotationClick={handleAnnotationClick}
