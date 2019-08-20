@@ -157,6 +157,10 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
         Exceptions.throwUnsafely(t);
       }
     }
+
+    @Override public String toString() {
+      return "Composite{" + endpointGroups + "}";
+    }
   }
 
   static boolean isIpAddress(String address) {
