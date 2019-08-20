@@ -100,7 +100,7 @@ is for testing, for example starting a server on your laptop without any
 database needed.
 
 ### Cassandra
-The [Cassandra](zipkin-storage/cassandra) component uses Cassandra
+The [Cassandra](zipkin-server#cassandra-storage) component uses Cassandra
 3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.
 
 This is the second generation of our Cassandra schema. It stores spans
@@ -111,7 +111,7 @@ implemented indexes to make querying larger data more performant.
 Note: This store requires a [job to aggregate](https://github.com/openzipkin/zipkin-dependencies) dependency links.
 
 ### Elasticsearch
-The [Elasticsearch](zipkin-storage/elasticsearch) component uses
+The [Elasticsearch](zipkin-server#elasticsearch-storage) component uses
 Elasticsearch 5+ features, but is tested against Elasticsearch 6-7.x.
 
 It stores spans as Zipkin v2 json so that integration with other tools is
