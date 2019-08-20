@@ -163,8 +163,7 @@ public final class BulkCallBuilder {
 
     @Override public void fill() {
       for (IndexEntry<?> entry : entries) {
-        ByteBuf payload = serialize(alloc, entry, shouldAddType);
-        if (!request.tryWrite(HttpData.wrap(payload))) {
+        if (!request.tryWrite(() -> HttpData.wrap(serialize(alloc, entry, shouldAddType)))) {
           // Request was aborted, don't need to serialize anymore.
           return;
         }
