@@ -155,7 +155,23 @@ Defaults to true
 * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
 * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 * `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint; Tag keys should be comma separated e.g. "instance_id,user_id,env"
-* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr)
+* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr) 
+
+### In-Memory Storage
+Zipkin's In-Memory Storage is the default storage component that is used when no other storage type is configured. By default it stores a maximum of 500000 spans. Oldest traces (and their spans) will be purged first when this limit is exceeded. 
+
+Memory wise, a safe estimate is to count with 1K of memory per span (assuming 2 annotations + 1 binary annotation), plus 100 MB for a safety buffer. These numbers are by no means fixed, you'll need to verify in your own environment and increase memory (-Xmx) if needed.
+
+Example usage:
+```bash
+$ java -jar zipkin.jar
+```
+You can override the maximum number of spans stored using the `--max-spans` application parameter:
+```bash
+$ java -Xmx1500m -jar zipkin.jar --max-spans=1000000
+```
+
+Note this storage component was primarily developed for testing and as a means to get Zipkin server up and running quickly without external dependencies. It is not viable for high work loads.  
 
 ### Throttled Storage (Experimental)
 These settings can be used to help tune the rate at which Zipkin flushes data to another, underlying `StorageComponent` (such as Elasticsearch):
