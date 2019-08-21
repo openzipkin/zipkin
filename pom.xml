@@ -100,6 +100,7 @@
     <maven-failsafe-plugin.version>3.0.0-M3</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
     <git-commit-id.version>3.0.0</git-commit-id.version>
+    <jackson-databind.version>2.9.9.3</jackson-databind.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -384,6 +385,13 @@
         <groupId>com.squareup.wire</groupId>
         <artifactId>wire-runtime</artifactId>
         <version>${wire.version}</version>
+      </dependency>
+
+      <!-- Forcibly bump Jackson Databind version to avoid CVE-2019-14379 -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson-databind.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
