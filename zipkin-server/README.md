@@ -158,9 +158,7 @@ Defaults to true
 * `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr) 
 
 ### In-Memory Storage
-Zipkin's In-Memory Storage is the default storage component that is used when no other storage type is configured. By default it stores a maximum of 500000 spans. Oldest traces (and their spans) will be purged first when this limit is exceeded. 
-
-Memory wise, a safe estimate is to count with 1K of memory per span (assuming 2 annotations + 1 binary annotation), plus 100 MB for a safety buffer. These numbers are by no means fixed, you'll need to verify in your own environment and increase memory (-Xmx) if needed.
+Zipkin's In-Memory Storage is the default storage component that is used when no other storage type is configured. By default it stores a maximum of 500000 spans. Oldest traces (and their spans) will be purged first when this limit is exceeded. If you encounter out-of-memory errors, increase the heap size (-Xmx).
 
 Example usage:
 ```bash
@@ -168,7 +166,7 @@ $ java -jar zipkin.jar
 ```
 You can override the maximum number of spans stored using the `--max-spans` application parameter:
 ```bash
-$ java -Xmx1500m -jar zipkin.jar --max-spans=1000000
+$ java -Xmx1G -jar zipkin.jar --max-spans=1000000
 ```
 
 Note this storage component was primarily developed for testing and as a means to get Zipkin server up and running quickly without external dependencies. It is not viable for high work loads.  
