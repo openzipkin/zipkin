@@ -104,12 +104,15 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
     final CompletableFuture<List<Endpoint>> initialEndpointsFuture;
 
     volatile List<Endpoint> merged = Collections.emptyList();
-    volatile int dirty;
+    volatile int dirty = 1;
 
     CompositeEndpointGroup(List<EndpointGroup> endpointGroups) {
       this.endpointGroups = endpointGroups;
       for (EndpointGroup group : endpointGroups) {
-        group.addListener(unused -> notifyListeners(endpoints()));
+        group.addListener(unused -> {
+          dirtyUpdater.set(this, 1);
+          notifyListeners(endpoints());
+        });
       }
 
       initialEndpointsFuture = CompletableFuture.anyOf(
