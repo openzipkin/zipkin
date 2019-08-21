@@ -58,7 +58,7 @@
     <wire.version>3.0.0-alpha01</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
-    <brave.version>5.6.10</brave.version>
+    <brave.version>5.6.11</brave.version>
     <cassandra-driver-core.version>3.7.2</cassandra-driver-core.version>
     <okhttp.version>3.14.2</okhttp.version>
     <jooq.version>3.11.11</jooq.version>
