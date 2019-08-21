@@ -59,8 +59,8 @@ public class ZipkinKafkaCollectorConfigurationTest {
     context.getBean(KafkaCollector.class);
   }
 
-  @Test public void providesCollectorComponent_whenBootstrapServersSet() {
-    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9091")
+  @Test public void providesCollectorComponent_whenKafkaIsEnabled() {
+    TestPropertyValues.of("zipkin.collector.kafka.enabled=true")
       .applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,

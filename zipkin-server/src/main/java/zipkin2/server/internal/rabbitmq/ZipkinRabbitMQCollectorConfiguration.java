@@ -16,13 +16,10 @@ package zipkin2.server.internal.rabbitmq;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Condition;
-import org.springframework.context.annotation.ConditionContext;
-import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.rabbitmq.RabbitMQCollector;
@@ -30,7 +27,7 @@ import zipkin2.storage.StorageComponent;
 
 /** Auto-configuration for {@link RabbitMQCollector}. */
 @Configuration
-@Conditional(ZipkinRabbitMQCollectorConfiguration.RabbitMQAddressesOrUriSet.class)
+@ConditionalOnProperty(name = "zipkin.collector.rabbitmq.enabled", havingValue = "true")
 @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
 public class ZipkinRabbitMQCollectorConfiguration {
 
@@ -42,29 +39,5 @@ public class ZipkinRabbitMQCollectorConfiguration {
       StorageComponent storage)
       throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
-  }
-
-  /**
-   * This condition passes when {@link ZipkinRabbitMQCollectorProperties#getAddresses()} or {@link
-   * ZipkinRabbitMQCollectorProperties#getUri()} is set to a non-empty value.
-   *
-   * <p>This is here because the yaml defaults this property to empty like this, and Spring Boot
-   * doesn't have an option to treat empty properties as unset.
-   *
-   * <pre>{@code
-   * addresses: ${RABBIT_ADDRESSES:}
-   * uri: ${RABBIT_URI:}
-   * }</pre>
-   */
-  static final class RabbitMQAddressesOrUriSet implements Condition {
-    @Override
-    public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
-      return !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.addresses"))
-          || !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.uri"));
-    }
-
-    private static boolean isEmpty(String s) {
-      return s == null || s.isEmpty();
-    }
   }
 }

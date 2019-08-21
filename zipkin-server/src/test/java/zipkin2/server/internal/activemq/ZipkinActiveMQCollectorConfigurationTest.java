@@ -49,19 +49,9 @@ public class ZipkinActiveMQCollectorConfigurationTest {
     context.getBean(ActiveMQCollector.class);
   }
 
-  @Test public void doesNotProvideCollectorComponent_whenUrlIsEmptyString() {
-    TestPropertyValues.of("zipkin.collector.activemq.uri:").applyTo(context);
-    context.register(
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinActiveMQCollectorConfiguration.class,
-      InMemoryConfiguration.class);
-    context.refresh();
-
-    thrown.expect(NoSuchBeanDefinitionException.class);
-    context.getBean(ActiveMQCollector.class);
-  }
-
   @Test public void providesCollectorComponent_whenUrlSet() {
+    TestPropertyValues.of("zipkin.collector.activemq.enabled=true")
+      .applyTo(context);
     TestPropertyValues.of("zipkin.collector.activemq.url=vm://localhost")
       .applyTo(context);
     context.register(

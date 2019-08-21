@@ -67,6 +67,7 @@ public class ZipkinRabbitMQCollectorConfigurationTest {
 
   @Test public void providesCollectorComponent_whenAddressesSet() {
     context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of("zipkin.collector.rabbitmq.enabled=true").applyTo(context);
     TestPropertyValues.of("zipkin.collector.rabbitmq.addresses=localhost:1234").applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
