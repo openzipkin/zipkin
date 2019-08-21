@@ -55,7 +55,8 @@ const Sidebar = () => {
           <Logo className={classes.logo} />
         </Box>
         <List data-testid="internal-links">
-          <SidebarMenuItem title="Discover Page" links={['/zipkin', '/zipkin/dependency']} logo="fas fa-search" />
+          <SidebarMenuItem title="Discover Page" links={['/zipkin']} logo="fas fa-search" />
+          <SidebarMenuItem title="Dependencies Page" links={['/zipkin/dependency']} logo="fas fa-project-diagram" />
         </List>
       </Box>
       <List data-testid="external-links">
