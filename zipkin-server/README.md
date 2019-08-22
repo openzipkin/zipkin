@@ -302,12 +302,12 @@ Environment Variable | Property | Description
 
 
 ### ActiveMQ Collector
-The [ActiveMQ Collector](../zipkin-collector/activemq) is enabled when `ACTIVEMQ_URL` is set to a v5.x broker. The following
-settings apply in this case.
+The [ActiveMQ Collector](../zipkin-collector/activemq) is enabled when `ACTIVEMQ_URL` is set to a v5.x broker and 
+`COLLECTOR_ACTIVEMQ_ENABLED` is true. The following settings apply in this case.
 
 Environment Variable | Property | Description
 --- | --- | ---
-`COLLECTOR_ACTIVEMQ_ENABLED` | `true` enables the ActiveMQ collector. Defaults to `false`.
+`COLLECTOR_ACTIVEMQ_ENABLED` | `zipkin.collector.activemq.enabled` | `true` enables the ActiveMQ collector. Defaults to `false`.
 `ACTIVEMQ_URL` | `zipkin.collector.activemq.url` | [Connection URL](https://activemq.apache.org/uri-protocols) to the ActiveMQ broker, ex. `tcp://localhost:61616` or `failover:(tcp://localhost:61616,tcp://remotehost:61616)`
 `ACTIVEMQ_QUEUE` | `zipkin.collector.activemq.queue` | Queue from which to collect span messages. Defaults to `zipkin`
 `ACTIVEMQ_CLIENT_ID_PREFIX` | `zipkin.collector.activemq.client-id-prefix` | Client ID prefix for queue consumers. Defaults to `zipkin`
@@ -324,12 +324,12 @@ $ COLLECTOR_ACTIVEMQ_ENABLED=true \
 
 ### Kafka Collector
 The Kafka collector is enabled when `KAFKA_BOOTSTRAP_SERVERS` is set to
-a v0.10+ server. The following settings apply in this case. Some settings
+a v0.10+ server and `COLLECTOR_KAFKA_ENABLED` is true. The following settings apply in this case. Some settings
 correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apache.org/documentation/#newconsumerconfigs).
 
 Variable | New Consumer Config | Description
 --- | --- | ---
-`COLLECTOR_KAFKA_ENABLED` | `true` enables the Kafka collector. Defaults to `false`.
+`COLLECTOR_KAFKA_ENABLED` | N\A | `true` enables the Kafka collector. Defaults to `false`.
 `KAFKA_BOOTSTRAP_SERVERS` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
 `KAFKA_GROUP_ID` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
 `KAFKA_TOPIC` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
@@ -400,7 +400,8 @@ $ java -Dzipkin.collector.kafka.enabled=true \
 ```
 
 ### RabbitMQ collector
-The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set.
+The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set
+and `COLLECTOR_RABBIT_ENABLED` is true.
 
 Example usage:
 
