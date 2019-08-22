@@ -280,7 +280,10 @@ class HttpCallTest {
 
     http.newCall(supplier, NULL, "test").execute();
 
-    assertThat(server.takeRequest().request().contentUtf8()).isEqualTo("hello world");
+    AggregatedHttpRequest request = server.takeRequest().request();
+    assertThat(request.method()).isEqualTo(HttpMethod.POST);
+    assertThat(request.path()).isEqualTo("/");
+    assertThat(request.contentUtf8()).isEqualTo("hello world");
   }
 
   // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.
