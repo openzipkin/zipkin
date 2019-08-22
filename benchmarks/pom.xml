@@ -32,6 +32,7 @@
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
     <jmh.version>1.21</jmh.version>
+    <zipkin.sender.okhttp3.version>2.10.2</zipkin.sender.okhttp3.version>
 
     <unpack-proto.directory>${project.build.directory}/main/proto</unpack-proto.directory>
   </properties>
@@ -95,6 +96,15 @@
     <dependency>
       <groupId>io.zipkin.proto3</groupId>
       <artifactId>zipkin-proto3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.reporter2</groupId>
+      <artifactId>zipkin-sender-okhttp3</artifactId>
+      <version>${zipkin.sender.okhttp3.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.testcontainers</groupId>
+      <artifactId>testcontainers</artifactId>
     </dependency>
 
     <dependency>
