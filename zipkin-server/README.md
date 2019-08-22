@@ -329,7 +329,7 @@ correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apac
 
 Variable | New Consumer Config | Description
 --- | --- | ---
-`COLLECTOR_KAFKA_ENABLED` | N\A | `true` enables the Kafka collector. Defaults to `false`.
+`COLLECTOR_KAFKA_ENABLED` | N/A | `true` enables the Kafka collector. Defaults to `false`.
 `KAFKA_BOOTSTRAP_SERVERS` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
 `KAFKA_GROUP_ID` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
 `KAFKA_TOPIC` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
