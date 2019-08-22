@@ -14,7 +14,10 @@
 package zipkin2.elasticsearch.internal;
 
 import com.google.common.io.ByteStreams;
-import io.netty.buffer.Unpooled;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpRequestWriter;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.Benchmark;
@@ -36,6 +39,7 @@ import zipkin2.codec.CodecBenchmarks;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.BulkCallBuilder.IndexEntry;
+import zipkin2.elasticsearch.internal.client.HttpCall;
 
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
@@ -54,22 +58,28 @@ public class BulkRequestBenchmarks {
   final IndexEntry<Span> entry =
     BulkCallBuilder.newIndexEntry(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
 
-  @Benchmark public void writeRequest_singleSpan() {
-    BulkCallBuilder.write(Unpooled.compositeBuffer(Integer.MAX_VALUE), entry, true);
+  @Benchmark public ByteBuf writeRequest_singleSpan() {
+    return BulkCallBuilder.serialize(PooledByteBufAllocator.DEFAULT, entry, true);
   }
 
-  @Benchmark public byte[] buildAndWriteRequest_singleSpan() {
+  @Benchmark public HttpRequest buildAndWriteRequest_singleSpan() {
     BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
-    return builder.build().request.content().array();
+    HttpCall.RequestSupplier supplier =  builder.build().request;
+    HttpRequestWriter request = HttpRequest.streaming(supplier.headers());
+    supplier.writeBody(request::tryWrite);
+    return request;
   }
 
-  @Benchmark public byte[] buildAndWriteRequest_tenSpans() {
+  @Benchmark public HttpRequest buildAndWriteRequest_tenSpans() {
     BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     for (int i = 0; i < 10; i++) {
       builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     }
-    return builder.build().request.content().array();
+    HttpCall.RequestSupplier supplier =  builder.build().request;
+    HttpRequestWriter request = HttpRequest.streaming(supplier.headers());
+    supplier.writeBody(request::tryWrite);
+    return request;
   }
 
   // Convenience main entry-point

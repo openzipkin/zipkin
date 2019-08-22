@@ -21,10 +21,14 @@ import com.linecorp.armeria.client.UnprocessedRequestException;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpRequestWriter;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.HttpStatusClass;
 import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
@@ -56,6 +60,65 @@ public final class HttpCall<V> extends Call.Base<V> {
     V convert(JsonParser parser, Supplier<String> contentString) throws IOException;
   }
 
+  /**
+   * A request stream which can have {@link HttpData} of the request body written to it.
+   */
+  public interface RequestStream {
+    /**
+     * Writes the {@link HttpData} to the stream. Returns {@code false} if the stream has been
+     * aborted (e.g., the request timed out while writing), or {@code true} otherwise.
+     */
+    boolean tryWrite(HttpData obj);
+  }
+
+  /**
+   * A supplier of {@linkplain HttpHeaders headers} and {@linkplain HttpData body} of a request
+   * to Elasticsearch.
+   */
+  public interface RequestSupplier {
+    /**
+     * Returns the {@linkplain HttpHeaders headers} for this request.
+     */
+    RequestHeaders headers();
+
+    /**
+     * Writes the body of this request into the {@link RequestStream}.
+     * {@link RequestStream#tryWrite(HttpData)} can be called any number of times to publish any
+     * number of payload objects. It can be useful to split up a large payload into smaller chunks
+     * instead of buffering everything as one payload.
+     */
+    void writeBody(RequestStream requestStream);
+  }
+
+  static class AggregatedRequestSupplier implements RequestSupplier {
+
+    final AggregatedHttpRequest request;
+
+    AggregatedRequestSupplier(AggregatedHttpRequest request) {
+      if (request.content() instanceof ByteBufHolder) {
+        // Unfortunately it's not possible to use pooled objects in requests and support clone()
+        // after sending the request.
+        ByteBuf buf = ((ByteBufHolder) request.content()).content();
+        try {
+          this.request = AggregatedHttpRequest.of(
+            request.headers(), HttpData.copyOf(buf), request.trailers());
+        } finally {
+          buf.release();
+        }
+      } else {
+        this.request = request;
+      }
+    }
+
+    @Override public RequestHeaders headers() {
+      return request.headers();
+    }
+
+    @Override public void writeBody(RequestStream requestStream) {
+      requestStream.tryWrite(request.content());
+    }
+  }
+
   public static class Factory {
     final HttpClient httpClient;
 
@@ -65,12 +128,18 @@ public final class HttpCall<V> extends Call.Base<V> {
 
     public <V> HttpCall<V> newCall(
       AggregatedHttpRequest request, BodyConverter<V> bodyConverter, String name) {
+      return new HttpCall<>(
+        httpClient, new AggregatedRequestSupplier(request), bodyConverter, name);
+    }
+
+    public <V> HttpCall<V> newCall(
+      RequestSupplier request, BodyConverter<V> bodyConverter, String name) {
       return new HttpCall<>(httpClient, request, bodyConverter, name);
     }
   }
 
   // Visible for benchmarks
-  public final AggregatedHttpRequest request;
+  public final RequestSupplier request;
   final BodyConverter<V> bodyConverter;
   final String name;
 
@@ -78,24 +147,11 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
 
-  HttpCall(HttpClient httpClient, AggregatedHttpRequest request, BodyConverter<V> bodyConverter,
+  HttpCall(HttpClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
     String name) {
     this.httpClient = httpClient;
     this.name = name;
-
-    if (request.content() instanceof ByteBufHolder) {
-      // Unfortunately it's not possible to use pooled objects in requests and support clone() after
-      // sending the request.
-      ByteBuf buf = ((ByteBufHolder) request.content()).content();
-      try {
-        this.request = AggregatedHttpRequest.of(
-          request.headers(), HttpData.copyOf(buf), request.trailers());
-      } finally {
-        buf.release();
-      }
-    } else {
-      this.request = request;
-    }
+    this.request = request;
 
     this.bodyConverter = bodyConverter;
   }
@@ -157,7 +213,10 @@ public final class HttpCall<V> extends Call.Base<V> {
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
     try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(NAME).set(name))) {
-      response = httpClient.execute(request);
+      HttpRequestWriter httpRequest = HttpRequest.streaming(request.headers());
+      response = httpClient.execute(httpRequest);
+      request.writeBody(httpRequest::tryWrite);
+      httpRequest.close();
     }
     CompletableFuture<AggregatedHttpResponse> responseFuture =
       RequestContext.mapCurrent(
@@ -188,10 +247,10 @@ public final class HttpCall<V> extends Call.Base<V> {
       if (status.codeClass().equals(HttpStatusClass.SUCCESS)) {
         return null;
       } else if (status.code() == 404) {
-        throw new FileNotFoundException(request.path());
+        throw new FileNotFoundException(request.headers().path());
       } else {
         throw new RuntimeException(
-          "response for " + request.path() + " failed: " + response.status());
+          "response for " + request.headers().path() + " failed: " + response.status());
       }
     }
 
@@ -207,7 +266,7 @@ public final class HttpCall<V> extends Call.Base<V> {
         } catch (RuntimeException | IOException possiblyParseException) {
         }
         throw new RuntimeException(message != null ? message
-          : "response for " + request.path() + " failed: " + contentString.get());
+          : "response for " + request.headers().path() + " failed: " + contentString.get());
       };
     }
 
@@ -215,7 +274,7 @@ public final class HttpCall<V> extends Call.Base<V> {
     try (InputStream stream = content.toInputStream();
          JsonParser parser = JSON_FACTORY.createParser(stream)) {
 
-      if (status.code() == 404) throw new FileNotFoundException(request.path());
+      if (status.code() == 404) throw new FileNotFoundException(request.headers().path());
 
       return bodyConverter.convert(parser, content::toStringUtf8);
     } finally {
