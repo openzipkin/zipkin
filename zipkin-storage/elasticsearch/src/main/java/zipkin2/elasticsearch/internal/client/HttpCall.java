@@ -42,7 +42,6 @@ import java.io.InputStream;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Callback;
@@ -83,10 +82,10 @@ public final class HttpCall<V> extends Call.Base<V> {
     RequestHeaders headers();
 
     /**
-     * Writes the body of this request into the {@code requestStream}.
-     * {@link Consumer#accept(Object)} can be called any number of times to publish any number of
-     * payload objects. It can be useful to split up a large payload into smaller chunks instead
-     * of buffering everything as one payload.
+     * Writes the body of this request into the {@link RequestStream}.
+     * {@link RequestStream#tryWrite(HttpData)} can be called any number of times to publish any
+     * number of payload objects. It can be useful to split up a large payload into smaller chunks
+     * instead of buffering everything as one payload.
      */
     void writeBody(RequestStream requestStream);
   }
