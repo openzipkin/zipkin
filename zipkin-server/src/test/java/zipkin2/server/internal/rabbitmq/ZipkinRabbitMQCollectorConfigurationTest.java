@@ -67,8 +67,7 @@ public class ZipkinRabbitMQCollectorConfigurationTest {
 
   @Test public void providesCollectorComponent_whenAddressesSet() {
     context = new AnnotationConfigApplicationContext();
-    TestPropertyValues.of("zipkin.collector.rabbitmq.enabled=true").applyTo(context);
-    TestPropertyValues.of("zipkin.collector.rabbitmq.addresses=localhost:1234").applyTo(context);
+    TestPropertyValues.of("zipkin.collector.rabbitmq.addresses:localhost:1234").applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       ZipkinRabbitMQCollectorConfiguration.class,
@@ -81,5 +80,19 @@ public class ZipkinRabbitMQCollectorConfigurationTest {
       assertThat(e.getCause()).hasMessage(
         "Unable to establish connection to RabbitMQ server: Connection refused (Connection refused)");
     }
+  }
+
+  @Test public void doesNotProvidesCollectorComponent_whenAddressesSetAndDisabled() {
+    context = new AnnotationConfigApplicationContext();
+    TestPropertyValues.of("zipkin.collector.rabbitmq.addresses:localhost:1234").applyTo(context);
+    TestPropertyValues.of("zipkin.collector.rabbitmq.enabled:false").applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinRabbitMQCollectorConfiguration.class,
+      InMemoryConfiguration.class);
+    context.refresh();
+
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(RabbitMQCollector.class);
   }
 }

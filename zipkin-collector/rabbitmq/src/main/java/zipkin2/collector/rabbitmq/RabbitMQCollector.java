@@ -34,7 +34,9 @@ import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
 
-/** This collector consumes encoded binary messages from a RabbitMQ queue. */
+/**
+ * This collector consumes encoded binary messages from a RabbitMQ queue.
+ */
 public final class RabbitMQCollector extends CollectorComponent {
   static final Callback<Void> NOOP = new Callback<Void>() {
     @Override public void onSuccess(Void value) {
@@ -48,7 +50,9 @@ public final class RabbitMQCollector extends CollectorComponent {
     return new Builder();
   }
 
-  /** Configuration including defaults needed to consume spans from a RabbitMQ queue. */
+  /**
+   * Configuration including defaults needed to consume spans from a RabbitMQ queue.
+   */
   public static final class Builder extends CollectorComponent.Builder {
     Collector.Builder delegate = Collector.newBuilder(RabbitMQCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
@@ -93,7 +97,9 @@ public final class RabbitMQCollector extends CollectorComponent {
       return this;
     }
 
-    /** Queue zipkin spans will be consumed from. Defaults to "zipkin-spans". */
+    /**
+     * Queue zipkin spans will be consumed from. Defaults to "zipkin-spans".
+     */
     public Builder queue(String queue) {
       if (queue == null) throw new NullPointerException("queue == null");
       this.queue = queue;
@@ -144,7 +150,9 @@ public final class RabbitMQCollector extends CollectorComponent {
       + "}";
   }
 
-  /** Lazy creates a connection and a queue before starting consumers */
+  /**
+   * Lazy creates a connection and a queue before starting consumers
+   */
   static final class LazyInit {
     final Builder builder;
     final AtomicReference<CheckResult> failure = new AtomicReference<>();

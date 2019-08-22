@@ -59,8 +59,8 @@ public class ZipkinKafkaCollectorConfigurationTest {
     context.getBean(KafkaCollector.class);
   }
 
-  @Test public void providesCollectorComponent_whenKafkaIsEnabled() {
-    TestPropertyValues.of("zipkin.collector.kafka.enabled=true")
+  @Test public void providesCollectorComponent_whenBootstrapServersSet() {
+    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
       .applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
@@ -69,5 +69,19 @@ public class ZipkinKafkaCollectorConfigurationTest {
     context.refresh();
 
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
+  }
+
+  @Test public void doesNotProvidesCollectorComponent_whenBootstrapServersSetAndDisabled() {
+    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
+      .applyTo(context);
+    TestPropertyValues.of("zipkin.collector.kafka.enabled:false").applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinKafkaCollectorConfiguration.class,
+      InMemoryConfiguration.class);
+    context.refresh();
+
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(KafkaCollector.class);
   }
 }

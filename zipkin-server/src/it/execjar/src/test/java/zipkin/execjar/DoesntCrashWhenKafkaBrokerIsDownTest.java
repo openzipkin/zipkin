@@ -26,7 +26,6 @@ public class DoesntCrashWhenKafkaBrokerIsDownTest {
 
   @Rule
   public ExecJarRule zipkin = new ExecJarRule()
-    .putEnvironment("COLLECTOR_KAFKA_ENABLED", "true")
     .putEnvironment("KAFKA_BOOTSTRAP_SERVERS", "idontexist");
 
   @Test

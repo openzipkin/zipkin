@@ -302,12 +302,11 @@ Environment Variable | Property | Description
 
 
 ### ActiveMQ Collector
-The [ActiveMQ Collector](../zipkin-collector/activemq) is enabled when `ACTIVEMQ_URL` is set to a v5.x broker and 
-`COLLECTOR_ACTIVEMQ_ENABLED` is true. The following settings apply in this case.
+The [ActiveMQ Collector](../zipkin-collector/activemq) is enabled when `ACTIVEMQ_URL` is set to a v5.x broker. The following settings apply in this case.
 
 Environment Variable | Property | Description
 --- | --- | ---
-`COLLECTOR_ACTIVEMQ_ENABLED` | `zipkin.collector.activemq.enabled` | `true` enables the ActiveMQ collector. Defaults to `false`.
+`COLLECTOR_ACTIVEMQ_ENABLED` | `zipkin.collector.activemq.enabled` | `false` disables the ActiveMQ collector. Defaults to `true`.
 `ACTIVEMQ_URL` | `zipkin.collector.activemq.url` | [Connection URL](https://activemq.apache.org/uri-protocols) to the ActiveMQ broker, ex. `tcp://localhost:61616` or `failover:(tcp://localhost:61616,tcp://remotehost:61616)`
 `ACTIVEMQ_QUEUE` | `zipkin.collector.activemq.queue` | Queue from which to collect span messages. Defaults to `zipkin`
 `ACTIVEMQ_CLIENT_ID_PREFIX` | `zipkin.collector.activemq.client-id-prefix` | Client ID prefix for queue consumers. Defaults to `zipkin`
@@ -318,18 +317,17 @@ Environment Variable | Property | Description
 Example usage:
 
 ```bash 
-$ COLLECTOR_ACTIVEMQ_ENABLED=true \
-    ACTIVEMQ_URL=tcp://localhost:61616 java -jar zipkin.jar
+$ ACTIVEMQ_URL=tcp://localhost:61616 java -jar zipkin.jar
 ```
 
 ### Kafka Collector
 The Kafka collector is enabled when `KAFKA_BOOTSTRAP_SERVERS` is set to
-a v0.10+ server and `COLLECTOR_KAFKA_ENABLED` is true. The following settings apply in this case. Some settings
+a v0.10+ server. The following settings apply in this case. Some settings
 correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apache.org/documentation/#newconsumerconfigs).
 
 Variable | New Consumer Config | Description
 --- | --- | ---
-`COLLECTOR_KAFKA_ENABLED` | N/A | `true` enables the Kafka collector. Defaults to `false`.
+`COLLECTOR_KAFKA_ENABLED` | N/A | `false` disables the Kafka collector. Defaults to `true`.
 `KAFKA_BOOTSTRAP_SERVERS` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
 `KAFKA_GROUP_ID` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
 `KAFKA_TOPIC` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
@@ -338,8 +336,7 @@ Variable | New Consumer Config | Description
 Example usage:
 
 ```bash
-$ COLLECTOR_KAFKA_ENABLED=true \
-    KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
     java -jar zipkin.jar
 ```
 
@@ -354,8 +351,7 @@ For example, to override `auto.offset.reset`, you can set a system property name
 `zipkin.collector.kafka.overrides.auto.offset.reset`:
 
 ```bash
-$ COLLECTOR_KAFKA_ENABLED=true \
-    KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
     java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
 ```
 
@@ -364,7 +360,6 @@ $ COLLECTOR_KAFKA_ENABLED=true \
 Example targeting Kafka running in Docker:
 
 ```bash
-$ export COLLECTOR_KAFKA_ENABLED=true
 $ export KAFKA_BOOTSTRAP_SERVERS=$(docker-machine ip `docker-machine active`)
 # Run Kafka in the background
 $ docker run -d -p 9092:9092 \
@@ -378,35 +373,31 @@ $ java -jar zipkin.jar
 Multiple bootstrap servers:
 
 ```bash
-$ COLLECTOR_KAFKA_ENABLED=true \
-    KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 \
+$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 \
     java -jar zipkin.jar
 ```
 
 Alternate topic name(s):
 
 ```bash
-$ COLLECTOR_KAFKA_ENABLED=true \
-    KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
     java -Dzipkin.collector.kafka.topic=zapkin,zipken -jar zipkin.jar
 ```
 
 Specifying bootstrap servers as a system property, instead of an environment variable:
 
 ```bash
-$ java -Dzipkin.collector.kafka.enabled=true \
-    -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 \
+$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 \
     -jar zipkin.jar
 ```
 
 ### RabbitMQ collector
-The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set
-and `COLLECTOR_RABBIT_ENABLED` is true.
+The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set.
 
 Example usage:
 
 ```bash
-$ COLLECTOR_RABBIT_ENABLED=true RABBIT_ADDRESSES=localhost java -jar zipkin.jar
+$ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```
 
 ### gRPC Collector (Experimental)
