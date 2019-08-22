@@ -67,7 +67,7 @@ public class BulkRequestBenchmarks {
     builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     HttpCall.RequestSupplier supplier =  builder.build().request;
     HttpRequestWriter request = HttpRequest.streaming(supplier.headers());
-    supplier.writeBody(request::write);
+    supplier.writeBody(request::tryWrite);
     return request;
   }
 
@@ -78,7 +78,7 @@ public class BulkRequestBenchmarks {
     }
     HttpCall.RequestSupplier supplier =  builder.build().request;
     HttpRequestWriter request = HttpRequest.streaming(supplier.headers());
-    supplier.writeBody(request::write);
+    supplier.writeBody(request::tryWrite);
     return request;
   }
 
