@@ -15,6 +15,7 @@ package zipkin2.elasticsearch.internal;
 
 import com.google.common.io.ByteStreams;
 import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpRequestWriter;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.IOException;
@@ -65,8 +66,8 @@ public class BulkRequestBenchmarks {
     BulkCallBuilder builder = new BulkCallBuilder(es, 6.7f, "index-span");
     builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     HttpCall.RequestSupplier supplier =  builder.build().request;
-    HttpRequest request = supplier.create();
-    supplier.fill();
+    HttpRequestWriter request = HttpRequest.streaming(supplier.headers());
+    supplier.writeBody(request::write);
     return request;
   }
 
@@ -76,8 +77,8 @@ public class BulkRequestBenchmarks {
       builder.index(spanIndex, "span", CLIENT_SPAN, BulkIndexWriter.SPAN);
     }
     HttpCall.RequestSupplier supplier =  builder.build().request;
-    HttpRequest request = supplier.create();
-    supplier.fill();
+    HttpRequestWriter request = HttpRequest.streaming(supplier.headers());
+    supplier.writeBody(request::write);
     return request;
   }
 

@@ -20,8 +20,6 @@ import com.google.auto.value.AutoValue;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpRequestWriter;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.RequestHeaders;
@@ -138,37 +136,25 @@ public final class BulkCallBuilder {
     final RequestHeaders headers;
     final ByteBufAllocator alloc;
 
-    final HttpRequestWriter request;
-
     BulkRequestSupplier(List<IndexEntry<?>> entries, boolean shouldAddType,
       RequestHeaders headers, ByteBufAllocator alloc) {
       this.entries = entries;
       this.shouldAddType = shouldAddType;
       this.headers = headers;
       this.alloc = alloc;
-      request = HttpRequest.streaming(headers);
     }
 
-    @Override public HttpRequest create() {
-      return request;
+    @Override public RequestHeaders headers() {
+      return headers;
     }
 
-    @Override public String path() {
-      return request.path();
-    }
-
-    @Override public HttpCall.RequestSupplier clone() {
-      return new BulkRequestSupplier(entries, shouldAddType, headers, alloc);
-    }
-
-    @Override public void fill() {
+    @Override public void writeBody(HttpCall.RequestStream requestStream) {
       for (IndexEntry<?> entry : entries) {
-        if (!request.tryWrite(() -> HttpData.wrap(serialize(alloc, entry, shouldAddType)))) {
-          // Request was aborted, don't need to serialize anymore.
+        if (!requestStream.tryWrite(HttpData.wrap(serialize(alloc, entry, shouldAddType)))) {
+          // Stream aborted, no need to serialize anymore.
           return;
         }
       }
-      request.close();
     }
   }
 
