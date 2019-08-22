@@ -288,10 +288,10 @@ The HTTP collector supports the following configuration:
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.http.enabled` | `HTTP_COLLECTOR_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
+`zipkin.collector.http.enabled` | `COLLECTOR_HTTP_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
 
 ### Scribe (Legacy) Collector
-A collector supporting Scribe is enabled when `SCRIBE_ENABLED=true`. New
+A collector supporting Scribe is enabled when `COLLECTOR_SCRIBE_ENABLED=true`. New
 sites are discouraged from using this collector as Scribe is an archived
 technology.
 
@@ -307,6 +307,7 @@ settings apply in this case.
 
 Environment Variable | Property | Description
 --- | --- | ---
+`COLLECTOR_ACTIVEMQ_ENABLED` | `true` enables the ActiveMQ collector. Defaults to `false`.
 `ACTIVEMQ_URL` | `zipkin.collector.activemq.url` | [Connection URL](https://activemq.apache.org/uri-protocols) to the ActiveMQ broker, ex. `tcp://localhost:61616` or `failover:(tcp://localhost:61616,tcp://remotehost:61616)`
 `ACTIVEMQ_QUEUE` | `zipkin.collector.activemq.queue` | Queue from which to collect span messages. Defaults to `zipkin`
 `ACTIVEMQ_CLIENT_ID_PREFIX` | `zipkin.collector.activemq.client-id-prefix` | Client ID prefix for queue consumers. Defaults to `zipkin`
@@ -316,8 +317,9 @@ Environment Variable | Property | Description
 
 Example usage:
 
-```bash
-$ ACTIVEMQ_URL=tcp://localhost:61616 java -jar zipkin.jar
+```bash 
+$ COLLECTOR_ACTIVEMQ_ENABLED=true \
+    ACTIVEMQ_URL=tcp://localhost:61616 java -jar zipkin.jar
 ```
 
 ### Kafka Collector
@@ -327,6 +329,7 @@ correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apac
 
 Variable | New Consumer Config | Description
 --- | --- | ---
+`COLLECTOR_KAFKA_ENABLED` | `true` enables the Kafka collector. Defaults to `false`.
 `KAFKA_BOOTSTRAP_SERVERS` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
 `KAFKA_GROUP_ID` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
 `KAFKA_TOPIC` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
@@ -335,7 +338,9 @@ Variable | New Consumer Config | Description
 Example usage:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -jar zipkin.jar
+$ COLLECTOR_KAFKA_ENABLED=true \
+    KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+    java -jar zipkin.jar
 ```
 
 #### Other Kafka consumer properties
@@ -349,7 +354,9 @@ For example, to override `auto.offset.reset`, you can set a system property name
 `zipkin.collector.kafka.overrides.auto.offset.reset`:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+$ COLLECTOR_KAFKA_ENABLED=true \
+    KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+    java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
 ```
 
 #### Detailed examples
@@ -357,6 +364,7 @@ $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides
 Example targeting Kafka running in Docker:
 
 ```bash
+$ export COLLECTOR_KAFKA_ENABLED=true
 $ export KAFKA_BOOTSTRAP_SERVERS=$(docker-machine ip `docker-machine active`)
 # Run Kafka in the background
 $ docker run -d -p 9092:9092 \
@@ -370,20 +378,25 @@ $ java -jar zipkin.jar
 Multiple bootstrap servers:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 java -jar zipkin.jar
+$ COLLECTOR_KAFKA_ENABLED=true \
+    KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 \
+    java -jar zipkin.jar
 ```
 
 Alternate topic name(s):
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+$ COLLECTOR_KAFKA_ENABLED=true \
+    KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
     java -Dzipkin.collector.kafka.topic=zapkin,zipken -jar zipkin.jar
 ```
 
 Specifying bootstrap servers as a system property, instead of an environment variable:
 
 ```bash
-$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 -jar zipkin.jar
+$ java -Dzipkin.collector.kafka.enabled=true \
+    -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 \
+    -jar zipkin.jar
 ```
 
 ### RabbitMQ collector
@@ -392,7 +405,7 @@ The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the 
 Example usage:
 
 ```bash
-$ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
+$ COLLECTOR_RABBIT_ENABLED=true RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```
 
 ### gRPC Collector (Experimental)
@@ -403,7 +416,7 @@ You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED
 Example usage:
 
 ```bash
-COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
+$ COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
 ```
 
 As this service is experimental, it is not recommended to run this in production environments.
