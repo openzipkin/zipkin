@@ -13,16 +13,65 @@
  */
 package zipkin2.server.internal.activemq;
 
+import java.io.UncheckedIOException;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.springframework.beans.factory.BeanCreationException;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.test.util.TestPropertyValues;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import zipkin2.collector.activemq.ActiveMQCollector;
+import zipkin2.collector.kafka.KafkaCollector;
+import zipkin2.server.internal.InMemoryConfiguration;
+import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 
 public class ZipkinActiveMQCollectorPropertiesTest {
+
+  @Rule public ExpectedException thrown = ExpectedException.none();
+
+  AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+
   /** This prevents an empty ACTIVEMQ_URL variable from being mistaken as a real one */
   @Test public void ignoresEmptyURL() {
     ZipkinActiveMQCollectorProperties properties = new ZipkinActiveMQCollectorProperties();
     properties.setUrl("");
 
     assertThat(properties.getUrl()).isNull();
+  }
+
+  @Test public void providesCollectorComponent_whenUrlSet() {
+    TestPropertyValues.of("zipkin.collector.activemq.url:tcp://localhost:61616")
+      .applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinActiveMQCollectorConfiguration.class,
+      InMemoryConfiguration.class);
+
+    try {
+      context.refresh();
+      failBecauseExceptionWasNotThrown(BeanCreationException.class);
+    } catch (BeanCreationException e) {
+      assertThat(e.getCause()).hasMessage(
+        "Unable to establish connection to ActiveMQ broker: Connection refused (Connection refused)");
+    }
+  }
+
+  @Test public void doesNotProvidesCollectorComponent_whenUrlSetAndDisabled() {
+    TestPropertyValues.of("zipkin.collector.activemq.url:tcp://localhost:61616")
+      .applyTo(context);
+    TestPropertyValues.of("zipkin.collector.activemq.enabled:false").applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinActiveMQCollectorConfiguration.class,
+      InMemoryConfiguration.class);
+    context.refresh();
+
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(ActiveMQCollector.class);
   }
 }

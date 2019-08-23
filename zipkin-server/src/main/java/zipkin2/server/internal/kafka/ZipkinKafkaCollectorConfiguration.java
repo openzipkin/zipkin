@@ -30,8 +30,8 @@ import zipkin2.storage.StorageComponent;
  * sampling policy.
  */
 @Configuration
-@EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 @Conditional(ZipkinKafkaCollectorConfiguration.KafkaBootstrapServersSet.class)
+@EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 public class ZipkinKafkaCollectorConfiguration { // makes simple type name unique for /actuator/conditions
 
   @Bean(initMethod = "start")
@@ -42,7 +42,6 @@ public class ZipkinKafkaCollectorConfiguration { // makes simple type name uniqu
       StorageComponent storage) {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
   }
-
   /**
    * This condition passes when {@link ZipkinKafkaCollectorProperties#getBootstrapServers()} is set
    * to non-empty.
@@ -58,11 +57,16 @@ public class ZipkinKafkaCollectorConfiguration { // makes simple type name uniqu
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
       return !isEmpty(
-          context.getEnvironment().getProperty("zipkin.collector.kafka.bootstrap-servers"));
+        context.getEnvironment().getProperty("zipkin.collector.kafka.bootstrap-servers")) &&
+        notFalse(context.getEnvironment().getProperty("zipkin.collector.kafka.enabled"));
     }
 
     private static boolean isEmpty(String s) {
       return s == null || s.isEmpty();
+    }
+
+    private static boolean notFalse(String s){
+      return s == null || !s.equals("false");
     }
   }
 }
