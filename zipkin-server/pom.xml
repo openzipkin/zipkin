@@ -34,13 +34,6 @@
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
@@ -105,11 +98,10 @@
 
     <!-- Static content for the Classic UI -->
     <dependency>
-      <groupId>com.github.openzipkin</groupId>
-      <artifactId>zipkin-classic</artifactId>
-      <version>15-minutes-of-fame-SNAPSHOT</version>
+      <groupId>io.zipkin.java</groupId>
+      <artifactId>zipkin-ui</artifactId>
+      <version>2.12.11</version>
     </dependency>
-
     <!-- Static content for the Lens UI -->
     <dependency>
       <groupId>${project.groupId}</groupId>
