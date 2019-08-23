@@ -35,6 +35,63 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     BODY
   }
 
+  public static class Ssl {
+    private String keyStore = emptyToNull(System.getProperty("javax.net.ssl.keyStore"));
+    private String keyStorePassword = emptyToNull(System.getProperty("javax.net.ssl.keyStorePassword"));
+    private String keyStoreType = emptyToNull(System.getProperty("javax.net.ssl.keyStoreType"));
+    private String trustStore = emptyToNull(System.getProperty("javax.net.ssl.trustStore"));
+    private String trustStorePassword = emptyToNull(System.getProperty("javax.net.ssl.trustStorePassword"));
+    private String trustStoreType = emptyToNull(System.getProperty("javax.net.ssl.trustStoreType"));
+
+    public String getKeyStore() {
+      return keyStore;
+    }
+
+    public void setKeyStore(String keyStore) {
+      this.keyStore = keyStore;
+    }
+
+    public String getKeyStorePassword() {
+      return keyStorePassword;
+    }
+
+    public void setKeyStorePassword(String keyStorePassword) {
+      this.keyStorePassword = keyStorePassword;
+    }
+
+    public String getKeyStoreType() {
+      return keyStoreType;
+    }
+
+    public void setKeyStoreType(String keyStoreType) {
+      this.keyStoreType = keyStoreType;
+    }
+
+    public String getTrustStore() {
+      return trustStore;
+    }
+
+    public void setTrustStore(String trustStore) {
+      this.trustStore = trustStore;
+    }
+
+    public String getTrustStorePassword() {
+      return trustStorePassword;
+    }
+
+    public void setTrustStorePassword(String trustStorePassword) {
+      this.trustStorePassword = trustStorePassword;
+    }
+
+    public String getTrustStoreType() {
+      return trustStoreType;
+    }
+
+    public void setTrustStoreType(String trustStoreType) {
+      this.trustStoreType = trustStoreType;
+    }
+  }
+
   /**
    * Configures the health-checking of endpoints by the Elasticsearch client.
    */
@@ -87,6 +144,8 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   private HttpLogging httpLogging = HttpLogging.NONE;
   /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
   private Integer timeout = 10_000;
+  /** Overrides ssl configuration relating to the Elasticsearch client connection. */
+  private Ssl ssl = new Ssl();
 
   private Integer maxRequests; // unused
 
@@ -191,6 +250,14 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   public void setHealthCheck(
     HealthCheck healthCheck) {
     this.healthCheck = healthCheck;
+  }
+
+  public Ssl getSsl() {
+    return ssl;
+  }
+
+  public void setSsl(Ssl ssl) {
+    this.ssl = ssl;
   }
 
   public ElasticsearchStorage.Builder toBuilder(LazyHttpClient httpClient) {

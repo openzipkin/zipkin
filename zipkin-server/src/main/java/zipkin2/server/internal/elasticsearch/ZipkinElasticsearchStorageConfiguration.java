@@ -27,6 +27,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.TrustManagerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -42,6 +44,8 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
+
+import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
 @Configuration
 @EnableConfigurationProperties(ZipkinElasticsearchStorageProperties.class)
@@ -68,14 +72,19 @@ public class ZipkinElasticsearchStorageConfiguration {
   // exposed as a bean so that we can test TLS by swapping it out.
   // TODO: see if we can override the TLS via properties instead as that has less surface area.
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean ClientFactory esClientFactory(
-    @Value("${zipkin.storage.elasticsearch.timeout:10000}") int timeout,
-    MeterRegistry meterRegistry) {
+    ZipkinElasticsearchStorageProperties es,
+    MeterRegistry meterRegistry) throws Exception {
+    ClientFactoryBuilder builder = new ClientFactoryBuilder();
+
+    // Allow use of a custom KeyStore or TrustStore when connecting to Elasticsearch
+    Ssl ssl = es.getSsl();
+    if (ssl.getKeyStore() != null || ssl.getTrustStore() != null) configureSsl(builder, ssl);
+
     // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the more
-    // valid behavior of returning a bad request response, so we can't use the preface.
-    return new ClientFactoryBuilder()
-      // TODO: find or raise a bug with Elastic
-      .useHttp2Preface(false)
-      .connectTimeoutMillis(timeout)
+    // valid behavior of returning a bad request response, so we can't use the preface.\
+    // TODO: find or raise a bug with Elastic
+    return builder.useHttp2Preface(false)
+      .connectTimeoutMillis(es.getTimeout())
       .meterRegistry(meterRegistry)
       .build();
   }
@@ -160,6 +169,16 @@ public class ZipkinElasticsearchStorageConfiguration {
         condition.getEnvironment().getProperty("zipkin.storage.elasticsearch.password");
       return !isEmpty(userName) && !isEmpty(password);
     }
+  }
+
+  static ClientFactoryBuilder configureSsl(ClientFactoryBuilder builder, Ssl ssl) throws Exception {
+    final KeyManagerFactory keyManagerFactory = SslUtil.getKeyManagerFactory(ssl);
+    final TrustManagerFactory trustManagerFactory = SslUtil.getTrustManagerFactory(ssl);
+
+    return builder.sslContextCustomizer(sslContextBuilder -> {
+      sslContextBuilder.keyManager(keyManagerFactory);
+      sslContextBuilder.trustManager(trustManagerFactory);
+    });
   }
 
   private static boolean isEmpty(String s) {
