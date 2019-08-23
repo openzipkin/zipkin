@@ -157,8 +157,8 @@ zipkin:
     # The value here becomes a label in the top-right corner
     environment:
     # Default duration to look back when finding traces.
-    # Affects the "Start time" element in the UI. 1 hour in millis
-    default-lookback: 3600000
+    # Affects the "Start time" element in the UI. 15 minutes in millis
+    default-lookback: 900000
     # When false, disables the "find a trace" screen
     search-enabled: ${SEARCH_ENABLED:true}
     # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)

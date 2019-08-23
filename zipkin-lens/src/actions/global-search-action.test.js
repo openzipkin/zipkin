@@ -17,7 +17,7 @@ import * as types from '../constants/action-types';
 describe('global search actions', () => {
   it('should create an action to set the lookback condition', () => {
     const lookbackCondition = {
-      value: '1h',
+      value: '15m',
       endTs: 1,
       startTs: 1,
     };
