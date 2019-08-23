@@ -316,7 +316,7 @@ Environment Variable | Property | Description
 
 Example usage:
 
-```bash 
+```bash
 $ ACTIVEMQ_URL=tcp://localhost:61616 java -jar zipkin.jar
 ```
 

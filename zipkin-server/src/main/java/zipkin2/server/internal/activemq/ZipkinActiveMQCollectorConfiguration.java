@@ -25,9 +25,7 @@ import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.activemq.ActiveMQCollector;
 import zipkin2.storage.StorageComponent;
 
-/**
- * Auto-configuration for {@link ActiveMQCollector}.
- */
+/** Auto-configuration for {@link ActiveMQCollector}. */
 @Configuration
 @EnableConfigurationProperties(ZipkinActiveMQCollectorProperties.class)
 @Conditional(ZipkinActiveMQCollectorConfiguration.ActiveMQUrlSet.class)

@@ -50,8 +50,6 @@ public class ZipkinActiveMQCollectorConfigurationTest {
   }
 
   @Test public void providesCollectorComponent_whenUrlSet() {
-    TestPropertyValues.of("zipkin.collector.activemq.enabled=true")
-      .applyTo(context);
     TestPropertyValues.of("zipkin.collector.activemq.url=vm://localhost")
       .applyTo(context);
     context.register(
