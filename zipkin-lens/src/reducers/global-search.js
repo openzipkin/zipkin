@@ -19,7 +19,7 @@ import { retrieveDefaultConditionValue } from '../components/GlobalSearch/util';
 const initialState = {
   conditions: [],
   lookbackCondition: {
-    value: '1h',
+    value: '15m', // TODO: read this from config.json defaultLookback
   },
   limitCondition: 10,
 };

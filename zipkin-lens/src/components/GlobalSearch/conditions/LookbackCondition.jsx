@@ -51,7 +51,7 @@ const lookbackOptionMap = lookbackOptions.reduce((acc, cur) => {
   return acc;
 }, {});
 
-const lookbackMenuOptions = ['1h', '2h', '6h', '12h'].map(value => ({
+const lookbackMenuOptions = ['5m', '15m', '1h', '2h', '6h', '12h'].map(value => ({
   value,
   label: lookbackOptionMap[value],
 })).concat([{

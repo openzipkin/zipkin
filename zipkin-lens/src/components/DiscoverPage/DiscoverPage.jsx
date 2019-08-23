@@ -210,7 +210,7 @@ const DiscoverPage = ({ history, location }) => {
     dispatch(setLookbackCondition({
       value: lookbackConditionFromUrl.value || '1h',
       endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
-      startTs: lookbackConditionFromUrl.startTs || moment().subtract(1, 'hours').valueOf(),
+      startTs: lookbackConditionFromUrl.startTs || moment().subtract(15, 'minutes').valueOf(),
     }));
     dispatch(setLimitCondition(limitConditionFromUrl || 10));
 
