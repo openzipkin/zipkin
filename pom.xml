@@ -310,6 +310,12 @@
         <version>${junit.jupiter.version}</version>
       </dependency>
 
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+
       <!--
       Current versions of JUnit5 provide the above junit-jupiter artifact for convenience but we may
       still have transitive dependencies on these older artifacts and have to make sure they're all

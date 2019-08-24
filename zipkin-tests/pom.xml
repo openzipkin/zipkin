@@ -45,9 +45,11 @@
       <artifactId>gson</artifactId>
     </dependency>
 
+    <!-- This prevents us from interfering with JUnit 4 runtimes.
+         See https://github.com/openzipkin/zipkin-gcp/issues/130 -->
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
