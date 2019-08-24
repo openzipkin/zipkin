@@ -22,6 +22,32 @@ import org.springframework.boot.convert.DurationUnit;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
+/**
+ * Settings for Elasticsearch client connection
+ * <pre>{@code
+ * zipkin.storage.elasticsearch:
+ *   hosts: localhost:9200
+ *   pipeline: my_pipeline
+ *   timeout: 10000
+ *   index: zipkin
+ *   date-separator: -
+ *   index-shards: 5
+ *   index-replicas: 1
+ *   username: username
+ *   password: password
+ *   http-logging: HEADERS
+ *   ssl:
+ *     key-store: keystore.p12
+ *     key-store-password: changeme
+ *     key-store-type: PKCS12
+ *     trust-store: truststore.p12
+ *     trust-store-password: changeme
+ *     trust-store-type: PKCS12
+ *   health-check:
+ *     enabled: true
+ *     interval: 3s
+ * }</pre>
+ */
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 class ZipkinElasticsearchStorageProperties implements Serializable { // for Spark jobs
   /**
