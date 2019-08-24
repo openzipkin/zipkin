@@ -15,6 +15,7 @@ package zipkin2.server.internal.brave;
 
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -38,17 +39,21 @@ import static java.util.Collections.singletonMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
 import static zipkin2.TestObjects.DAY;
-import static zipkin2.TestObjects.TRACE;
+import static zipkin2.TestObjects.TODAY;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
+/**
+ * This class is flaky for as yet unknown reasons. For example, in Travis, sometimes assertions fail
+ * due to incomplete traces. Hence, it includes more assertion customization than normal.
+ */
 @SpringBootTest(
   classes = ZipkinServer.class,
   webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
   properties = {
     "spring.config.name=zipkin-server",
     "zipkin.self-tracing.enabled=true",
-    "zipkin.self-tracing.message-timeout=1ms",
-    "zipkin.self-tracing.traces-per-second=10"
+    "zipkin.self-tracing.message-timeout=100ms",
+    "zipkin.self-tracing.traces-per-second=100"
   })
 @RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {
@@ -67,36 +72,36 @@ public class ITZipkinSelfTracing {
   }
 
   @Test public void getIsTraced_v2() throws Exception {
-    assertThat(get("v2").body().string()).isEqualTo("[]");
+    assertThat(getServices("v2").body().string()).isEqualTo("[]");
 
-    awaitSpans();
+    List<List<Span>> traces = awaitSpans(2);
 
-    assertThat(getTraces(QueryRequest.newBuilder()
-      .annotationQuery(singletonMap("http.path", "/api/v2/services")))).isNotEmpty();
+    assertQueryReturnsResults(QueryRequest.newBuilder()
+      .annotationQuery(singletonMap("http.path", "/api/v2/services")), traces);
 
-    assertThat(getTraces(QueryRequest.newBuilder().spanName("get-service-names"))).isNotEmpty();
+    assertQueryReturnsResults(QueryRequest.newBuilder().spanName("get-service-names"), traces);
   }
 
   @Test public void postIsTraced_v1() throws Exception {
-    post("v1");
+    postSpan("v1");
 
-    awaitSpans();
+    List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
 
-    assertThat(getTraces(QueryRequest.newBuilder()
-      .annotationQuery(singletonMap("http.path", "/api/v1/spans")))).isNotEmpty();
+    assertQueryReturnsResults(QueryRequest.newBuilder()
+      .annotationQuery(singletonMap("http.path", "/api/v1/spans")), traces);
 
-    assertThat(getTraces(QueryRequest.newBuilder().spanName("accept-spans"))).isNotEmpty();
+    assertQueryReturnsResults(QueryRequest.newBuilder().spanName("accept-spans"), traces);
   }
 
   @Test public void postIsTraced_v2() throws Exception {
-    post("v2");
+    postSpan("v2");
 
-    awaitSpans();
+    List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
 
-    assertThat(getTraces(QueryRequest.newBuilder()
-      .annotationQuery(singletonMap("http.path", "/api/v2/spans")))).isNotEmpty();
+    assertQueryReturnsResults(QueryRequest.newBuilder()
+      .annotationQuery(singletonMap("http.path", "/api/v2/spans")), traces);
 
-    assertThat(getTraces(QueryRequest.newBuilder().spanName("accept-spans"))).isNotEmpty();
+    assertQueryReturnsResults(QueryRequest.newBuilder().spanName("accept-spans"), traces);
   }
 
   /**
@@ -110,31 +115,58 @@ public class ITZipkinSelfTracing {
     assertThat(reporter).hasToString("AsyncReporter{StorageComponent}");
   }
 
-  void awaitSpans() {
-    await().untilAsserted(// wait for spans
-      () -> assertThat(inMemoryStorage().acceptedSpanCount()).isGreaterThanOrEqualTo(1));
+  List<List<Span>> awaitSpans(int count) {
+    await().untilAsserted(() -> { // wait for spans
+      List<List<Span>> traces = inMemoryStorage().getTraces();
+      long received = traces.stream().flatMap(List::stream).count();
+      assertThat(inMemoryStorage().acceptedSpanCount())
+        .withFailMessage("Wanted %s spans: got %s. Current traces: %s", count, received, traces)
+        .isGreaterThanOrEqualTo(count);
+    });
+    return inMemoryStorage().getTraces();
   }
 
-  void post(String version) throws IOException {
+  void assertQueryReturnsResults(QueryRequest.Builder builder, List<List<Span>> traces)
+    throws IOException {
+    QueryRequest query = builder.endTs(System.currentTimeMillis()).lookback(DAY).limit(2).build();
+    assertThat(inMemoryStorage().getTraces(query).execute())
+      .withFailMessage("Expected results from %s. Current traces: %s", query, traces)
+      .isNotEmpty();
+  }
+
+  /**
+   * This POSTs a single span. Afterwards, we expect this trace in storage, and also the self-trace
+   * of POSTing it.
+   */
+  void postSpan(String version) throws IOException {
     SpanBytesEncoder encoder =
       "v1".equals(version) ? SpanBytesEncoder.JSON_V1 : SpanBytesEncoder.JSON_V2;
-    client.newCall(new Request.Builder()
+
+    List<Span> testTrace = Collections.singletonList(
+      Span.newBuilder().timestamp(TODAY).traceId("1").id("2").name("test-trace").build()
+    );
+
+    Response response = client.newCall(new Request.Builder()
       .url(url(server, "/api/" + version + "/spans"))
-      .post(RequestBody.create(null, encoder.encodeList(TRACE)))
+      .post(RequestBody.create(null, encoder.encodeList(testTrace)))
       .build())
       .execute();
+    assertSuccessful(response);
   }
 
-  List<List<Span>> getTraces(QueryRequest.Builder request) throws IOException {
-    return inMemoryStorage().getTraces(
-      request.endTs(System.currentTimeMillis()).lookback(DAY).limit(2).build()
-    ).execute();
-  }
-
-  Response get(String version) throws IOException {
-    return client.newCall(new Request.Builder()
+  Response getServices(String version) throws IOException {
+    Response response = client.newCall(new Request.Builder()
       .url(url(server, "/api/" + version + "/services"))
       .build())
       .execute();
+    assertSuccessful(response);
+    return response;
+  }
+
+  static void assertSuccessful(Response response) throws IOException {
+    assertThat(response.isSuccessful())
+      .withFailMessage("unsuccessful %s: %s", response.request(),
+        response.peekBody(Long.MAX_VALUE).string())
+      .isTrue();
   }
 }
