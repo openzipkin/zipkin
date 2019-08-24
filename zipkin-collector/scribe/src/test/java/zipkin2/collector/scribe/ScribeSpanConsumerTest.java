@@ -153,7 +153,7 @@ public class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
-  @Test public void consumerExceptionBeforeCallbackSetsFutureException() {
+  @Test public void consumerExceptionBeforeCallbackDoesntSetFutureException() {
     consumer = (input) -> {
       throw new NullPointerException("endpoint was null");
     };
@@ -166,7 +166,9 @@ public class ScribeSpanConsumerTest {
 
     CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
     scribe.Log(asList(entry), callback);
-    assertThat(callback.error).hasMessage("endpoint was null");
+
+    // Storage related exceptions are not propagated to the caller. Only marshalling ones are.
+    assertThat(callback.error).isNull();
 
     assertThat(scribeMetrics.messages()).isEqualTo(1);
     assertThat(scribeMetrics.messagesDropped()).isZero();
