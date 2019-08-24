@@ -236,6 +236,17 @@ class HttpCallTest {
       .isEqualTo("custom-name");
   }
 
+  @Test void wrongScheme() {
+    server.enqueue(SUCCESS_RESPONSE);
+
+    http = new HttpCall.Factory(new HttpClientBuilder("https://localhost:" + server.httpPort())
+      .build());
+
+    assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
+      .isInstanceOf(RejectedExecutionException.class)
+      .hasMessage("ClosedSessionException");
+  }
+
   @Test void unprocessedRequest() {
     server.enqueue(SUCCESS_RESPONSE);
 
@@ -248,7 +259,7 @@ class HttpCallTest {
 
     assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
-      .hasMessage("Rejected execution: No endpoints");
+      .hasMessage("No endpoints");
   }
 
   @Test void throwsRuntimeExceptionAsReasonWhenPresent() {

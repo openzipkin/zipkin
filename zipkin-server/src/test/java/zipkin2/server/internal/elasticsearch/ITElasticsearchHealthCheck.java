@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import com.linecorp.armeria.common.ClosedSessionException;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
@@ -57,14 +58,17 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(true);
     server2Health.setHealthy(true);
 
+    initWithHosts("127.0.0.1:" + server1.httpPort() + ",127.0.0.1:" + server2.httpPort());
+  }
+
+  private void initWithHosts(String hosts) {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.timeout:200",
       "zipkin.storage.elasticsearch.health-check.enabled:true",
       "zipkin.storage.elasticsearch.health-check.interval:100ms",
-      "zipkin.storage.elasticsearch.hosts:127.0.0.1:" +
-        server1.httpPort() + ",127.0.0.1:" + server2.httpPort())
+      "zipkin.storage.elasticsearch.hosts:" + hosts)
       .applyTo(context);
     Access.registerElasticsearch(context);
     context.refresh();
@@ -83,6 +87,19 @@ public class ITElasticsearchHealthCheck {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
+    }
+  }
+
+  @Test public void wrongScheme() {
+    context.close();
+    context = new AnnotationConfigApplicationContext();
+    initWithHosts("https://localhost:" + server1.httpPort());
+
+    try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      CheckResult result = storage.check();
+      assertThat(result.ok()).isFalse();
+      // Test this is not wrapped in a rejection exception, as health check is not throttled
+      assertThat(result.error()).isInstanceOf(ClosedSessionException.class);
     }
   }
 

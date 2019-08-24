@@ -45,7 +45,7 @@ public class ZipkinActiveMQCollectorPropertiesTest {
   }
 
   @Test public void providesCollectorComponent_whenUrlSet() {
-    TestPropertyValues.of("zipkin.collector.activemq.url:tcp://localhost:61616")
+    TestPropertyValues.of("zipkin.collector.activemq.url:tcp://localhost:61611") // wrong port
       .applyTo(context);
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
