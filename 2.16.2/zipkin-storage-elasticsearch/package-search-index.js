@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"zipkin2.elasticsearch"},{"l":"zipkin2.elasticsearch.internal"},{"l":"zipkin2.elasticsearch.internal.client"}]
