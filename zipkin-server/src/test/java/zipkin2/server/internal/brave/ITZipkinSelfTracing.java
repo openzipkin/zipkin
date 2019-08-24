@@ -22,6 +22,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,7 +83,8 @@ public class ITZipkinSelfTracing {
     assertQueryReturnsResults(QueryRequest.newBuilder().spanName("get-service-names"), traces);
   }
 
-  @Test public void postIsTraced_v1() throws Exception {
+  @Test @Ignore("https://github.com/openzipkin/zipkin/issues/2781")
+  public void postIsTraced_v1() throws Exception {
     postSpan("v1");
 
     List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
@@ -93,7 +95,8 @@ public class ITZipkinSelfTracing {
     assertQueryReturnsResults(QueryRequest.newBuilder().spanName("accept-spans"), traces);
   }
 
-  @Test public void postIsTraced_v2() throws Exception {
+  @Test @Ignore("https://github.com/openzipkin/zipkin/issues/2781")
+  public void postIsTraced_v2() throws Exception {
     postSpan("v2");
 
     List<List<Span>> traces = awaitSpans(3); // test span + POST + accept-spans
