@@ -245,6 +245,29 @@ To log Elasticsearch api requests:
 $ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
 ```
 
+#### Using a custom Key Store or Trust Store (SSL)
+If your Elasticsearch endpoint customized SSL configuration (for example self-signed) certificates,
+you can use any of the following [subset of JSSE properties](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#T6) to connect.
+
+ * javax.net.ssl.keyStore
+ * javax.net.ssl.keyStorePassword
+ * javax.net.ssl.keyStoreType
+ * javax.net.ssl.trustStore
+ * javax.net.ssl.trustStorePassword
+ * javax.net.ssl.trustStoreType
+
+Usage example:
+```bash
+$ JAVA_OPTS='-Djavax.net.ssl.keyStore=keystore.p12 -Djavax.net.ssl.keyStorePassword=keypassword -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.trustStore=truststore.p12 -Djavax.net.ssl.trustStorePassword=trustpassword -Djavax.net.ssl.trustStoreType=PKCS12'
+$ STORAGE_TYPE=elasticsearch java $JAVA_OPTS -jar zipkin.jar
+```
+
+Under the scenes, these map to properties prefixed `zipkin.storage.elasticsearch.ssl.`, which affect
+the Armeria client used to connect to Elasticsearch.
+
+The above properties allow the most common SSL setup to work out of box. If you need more
+customization, please make a comment in [this issue](https://github.com/openzipkin/zipkin/issues/2774).
+
 ### Legacy (v1) storage components
 The following components are no longer encouraged, but exist to help aid
 transition to supported ones. These are indicated as "v1" as they use
