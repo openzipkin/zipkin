@@ -1,4 +1,4 @@
-package zipkin2;
+package zipkin2.it;
 
 import brave.Tracing;
 import com.linecorp.armeria.client.HttpClient;
@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import zipkin.server.ZipkinServer;
+import zipkin2.Span;
 import zipkin2.reporter.AsyncReporter;
 import zipkin2.reporter.Sender;
 import zipkin2.reporter.okhttp3.OkHttpSender;
