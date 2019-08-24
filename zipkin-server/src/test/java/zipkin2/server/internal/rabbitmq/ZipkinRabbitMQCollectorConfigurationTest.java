@@ -77,8 +77,8 @@ public class ZipkinRabbitMQCollectorConfigurationTest {
       context.refresh();
       failBecauseExceptionWasNotThrown(BeanCreationException.class);
     } catch (BeanCreationException e) {
-      assertThat(e.getCause()).hasMessage(
-        "Unable to establish connection to RabbitMQ server: Connection refused (Connection refused)");
+      assertThat(e.getCause()).hasMessageContaining(
+        "Unable to establish connection to RabbitMQ server: Connection refused");
     }
   }
 
