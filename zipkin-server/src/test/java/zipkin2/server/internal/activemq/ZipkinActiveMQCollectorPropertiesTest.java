@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.activemq;
 
-import java.io.UncheckedIOException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -23,9 +22,7 @@ import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoCon
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.collector.activemq.ActiveMQCollector;
-import zipkin2.collector.kafka.KafkaCollector;
 import zipkin2.server.internal.InMemoryConfiguration;
-import zipkin2.server.internal.kafka.ZipkinKafkaCollectorConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
@@ -56,8 +53,8 @@ public class ZipkinActiveMQCollectorPropertiesTest {
       context.refresh();
       failBecauseExceptionWasNotThrown(BeanCreationException.class);
     } catch (BeanCreationException e) {
-      assertThat(e.getCause()).hasMessage(
-        "Unable to establish connection to ActiveMQ broker: Connection refused (Connection refused)");
+      assertThat(e.getCause()).hasMessageContaining(
+        "Unable to establish connection to ActiveMQ broker: Connection refused");
     }
   }
 
