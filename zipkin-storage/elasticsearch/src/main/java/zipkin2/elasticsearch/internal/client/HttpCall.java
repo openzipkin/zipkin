@@ -229,7 +229,10 @@ public final class HttpCall<V> extends Call.Base<V> {
         // Go ahead and reduce the output in logs since this is usually a configuration or
         // infrastructure issue and the Armeria stack trace won't help debugging that.
         Exceptions.clearTrace(cause);
-        throw new RejectedExecutionException("Rejected execution: " + cause.getMessage(), cause);
+
+        String message = cause.getMessage();
+        if (message == null) message = cause.getClass().getSimpleName();
+        throw new RejectedExecutionException(message, cause);
       } else {
         Exceptions.throwUnsafely(t);
       }

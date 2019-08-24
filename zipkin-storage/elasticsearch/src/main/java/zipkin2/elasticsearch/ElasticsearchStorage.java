@@ -269,7 +269,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         HttpMethod.GET, "/_cluster/health/" + index);
       return http.newCall(request, READ_STATUS, "get-cluster-health").execute();
     } catch (IOException | RuntimeException e) {
-      return CheckResult.failed(e);
+      // Unwrap the marker exception as the health check is not relevant for the throttle component,
+      // and wrapping interferes with humans intended to read this message.
+      return CheckResult.failed(e instanceof RejectedExecutionException ? e.getCause() : e);
     }
   }
 
