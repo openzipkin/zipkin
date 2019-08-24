@@ -147,6 +147,9 @@ public class ZipkinHttpCollector {
         } catch (IllegalArgumentException e) {
           result.onError(new IllegalArgumentException("Expected a " + decoder + " encoded list\n"));
           return null;
+        } catch (Throwable t1) {
+          result.onError(t1);
+          return null;
         }
 
         SpanBytesDecoder unexpectedDecoder = testForUnexpectedFormat(decoder, nioBuffer);
@@ -159,7 +162,12 @@ public class ZipkinHttpCollector {
         // collector.accept might block so need to move off the event loop. We make sure the
         // callback is context aware to continue the trace.
         Executor executor = ctx.makeContextAware(ctx.blockingTaskExecutor());
-        collector.acceptSpans(nioBuffer, decoder, result, executor);
+        try {
+          collector.acceptSpans(nioBuffer, decoder, result, executor);
+        } catch (Throwable t1) {
+          result.onError(t1);
+          return null;
+        }
       } finally {
         ReferenceCountUtil.release(content);
       }
