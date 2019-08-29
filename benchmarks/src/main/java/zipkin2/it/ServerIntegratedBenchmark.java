@@ -17,24 +17,29 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Closer;
 import com.linecorp.armeria.client.HttpClient;
 import io.netty.handler.codec.http.QueryStringEncoder;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.testcontainers.Testcontainers;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
 import org.testcontainers.utility.MountableFile;
-import zipkin.server.ZipkinServer;
 
 class ServerIntegratedBenchmark {
 
@@ -68,7 +73,6 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(9200)
       .waitingFor(new HttpWaitStrategy().forPath("/_cluster/health"));
     startContainer(elasticsearch);
-
     runBenchmark(elasticsearch);
   }
 
@@ -112,24 +116,15 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(8081)
       .waitingFor(new HttpWaitStrategy().forPath("/actuator/health"));
 
-    if (RELEASED_ZIPKIN_VERSION == null) {
-      Testcontainers.exposeHostPorts(9411);
-      String zipkinArg = "-Dspring.zipkin.baseUrl=http://host.testcontainers.internal:9411";
-      backend.withEnv("JAVA_OPTS", zipkinArg);
-      frontend.withEnv("JAVA_OPTS", zipkinArg);
-    }
-
     startContainer(backend);
     startContainer(frontend);
 
-    String prometheusResource = RELEASED_ZIPKIN_VERSION == null
-      ? "prometheus-local.yml" : "prometheus-container.yml";
     GenericContainer<?> prometheus = new GenericContainer<>("prom/prometheus")
       .withNetwork(Network.SHARED)
       .withNetworkAliases("prometheus")
       .withExposedPorts(9090)
       .withCopyFileToContainer(
-        MountableFile.forClasspathResource(prometheusResource), "/etc/prometheus/prometheus.yml");
+        MountableFile.forClasspathResource("prometheus.yml"), "/etc/prometheus/prometheus.yml");
     startContainer(prometheus);
 
     GenericContainer<?> grafana = new GenericContainer<>("grafana/grafana")
@@ -203,19 +198,12 @@ class ServerIntegratedBenchmark {
     }
   }
 
-  GenericContainer<?> startZipkin(@Nullable GenericContainer<?> storage) {
+  GenericContainer<?> startZipkin(@Nullable GenericContainer<?> storage) throws Exception {
     Map<String, Object> properties = new HashMap<>();
     if (storage != null) {
       String name = storage.getLabels().get("name");
-      final String host;
-      final int port;
-      if (RELEASED_ZIPKIN_VERSION == null) {
-        host = storage.getContainerIpAddress();
-        port = storage.getFirstMappedPort();
-      } else {
-        host = name;
-        port = storage.getExposedPorts().get(0);
-      }
+      String host = name;
+      int port = storage.getExposedPorts().get(0);
       String address = host + ":" + port;
 
       properties.put("zipkin.storage.type", name);
@@ -237,29 +225,54 @@ class ServerIntegratedBenchmark {
             ". Update startZipkin to map it to properties.");
       }
     }
+    String propertiesJvmArg = properties.entrySet().stream()
+      .map(entry -> "-D" + entry.getKey() + "=" + entry.getValue())
+      .collect(Collectors.joining(" "));
 
+    final GenericContainer<?> zipkin;
     if (RELEASED_ZIPKIN_VERSION == null) {
-      closer.register(
-        ZipkinServer.createApp().registerShutdownHook(false).run(
-          properties.entrySet().stream()
-            .map(entry -> "--" + entry.getKey() + "=" + entry.getValue())
-            .toArray(String[]::new)));
-      return null;
-    } else {
-      GenericContainer<?> zipkin =
-        new GenericContainer<>("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION)
-          .withNetwork(Network.SHARED)
-          .withNetworkAliases("zipkin")
-          .withExposedPorts(9411)
-          .waitingFor(new HttpWaitStrategy().forPath("/actuator/health"));
-      if (!properties.isEmpty()) {
-        zipkin.withEnv("JAVA_OPTS", properties.entrySet().stream()
-          .map(entry -> "-D" + entry.getKey() + "=" + entry.getValue())
-          .collect(Collectors.joining(" ")));
+      zipkin = new GenericContainer<>("gcr.io/distroless/java:11-debug");
+      List<String> classpath = new ArrayList<>();
+      for (String item : System.getProperty("java.class.path").split(File.pathSeparator)) {
+        Path path = Paths.get(item);
+        final String containerPath;
+        if (Files.isDirectory(path)) {
+          Path root = path.getParent();
+          while (root != null) {
+            try (Stream<Path> f = Files.list(root)) {
+              if (f.anyMatch(p -> p.getFileName().toString().equals("mvnw"))) {
+                break;
+              }
+            }
+            root = root.getParent();
+          }
+          containerPath = root.relativize(path).toString().replace('\\', '/');
+        } else {
+          containerPath = path.getFileName().toString();
+        }
+        // Test containers currently doesn't support copying in a path with subdirectories that
+        // need to be created, so we mangle directory structure into a single directory with
+        // hyphens.
+        String classPathItem = "/classpath-" + containerPath.replace('/', '-');
+        zipkin.withCopyFileToContainer(MountableFile.forHostPath(item), classPathItem);
+        classpath.add(classPathItem);
       }
-      startContainer(zipkin);
-      return zipkin;
+      zipkin.withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("java"));
+      zipkin.withEnv("JAVA_TOOL_OPTIONS", propertiesJvmArg);
+      zipkin.setCommand("-cp", String.join(":", classpath), "zipkin.server.ZipkinServer");
+    } else {
+      zipkin =
+        new GenericContainer<>("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION)
+          .withEnv("JAVA_OPTS", propertiesJvmArg);
     }
+
+    zipkin
+      .withNetwork(Network.SHARED)
+      .withNetworkAliases("zipkin")
+      .withExposedPorts(9411)
+      .waitingFor(new HttpWaitStrategy().forPath("/actuator/health"));
+    startContainer(zipkin);
+    return zipkin;
   }
 
   void startContainer(GenericContainer<?> container) {
