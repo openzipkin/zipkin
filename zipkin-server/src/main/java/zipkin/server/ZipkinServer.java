@@ -27,9 +27,17 @@ public class ZipkinServer {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
   }
 
+  /**
+   * Initializes a {@link SpringApplicationBuilder} with defaults for zipkin-server. Only used by
+   * benchmarks.
+   */
+  public static SpringApplicationBuilder createApp() {
+    return new SpringApplicationBuilder(ZipkinServer.class)
+      .listeners(new RegisterZipkinHealthIndicators())
+      .properties("spring.config.name=zipkin-server");
+  }
+
   public static void main(String[] args) {
-    new SpringApplicationBuilder(ZipkinServer.class)
-        .listeners(new RegisterZipkinHealthIndicators())
-        .properties("spring.config.name=zipkin-server").run(args);
+    createApp().run(args);
   }
 }
