@@ -641,12 +641,14 @@
           </mapping>
           <excludes>
             <exclude>.travis.yml</exclude>
+            <exclude>.dockerignore</exclude>
             <exclude>.editorconfig</exclude>
             <exclude>.gitattributes</exclude>
             <exclude>.gitignore</exclude>
             <exclude>.mvn/**</exclude>
             <exclude>mvnw*</exclude>
             <exclude>etc/header.txt</exclude>
+            <exclude>docker/**/*_profile</exclude>
             <exclude>**/.idea/**</exclude>
             <exclude>**/node_modules/**</exclude>
             <exclude>**/.babelrc</exclude>
