@@ -151,7 +151,7 @@ class ServerIntegratedBenchmark {
       .withCommand("-t4 -c128 -d100s http://frontend:8081 --latency");
     startContainer(wrk);
 
-    LOGGER.info("Benchmark started.");
+    System.out.println("Benchmark started.");
     if (zipkin != null) {
       printContainerMapping(zipkin);
     }
@@ -170,33 +170,34 @@ class ServerIntegratedBenchmark {
     // Wait for prometheus to do a final scrape.
     Thread.sleep(5000);
 
-    LOGGER.info("Benchmark complete, wrk output:\n{}", wrk.getLogs());
+    System.out.println("Benchmark complete, wrk output:");
+    System.out.println(wrk.getLogs().replace("\n\n", "\n"));
 
     HttpClient prometheusClient = HttpClient.of(
       "h1c://" + prometheus.getContainerIpAddress() + ":" + prometheus.getFirstMappedPort());
 
-    LOGGER.info("Messages received: {}", prometheusValue(
-      prometheusClient, "sum(zipkin_collector_messages_total)"));
-    LOGGER.info("Spans received: {}", prometheusValue(
-      prometheusClient, "sum(zipkin_collector_spans_total)"));
-    LOGGER.info("Spans dropped: {}", prometheusValue(
-      prometheusClient, "sum(zipkin_collector_spans_dropped_total)"));
+    System.out.println(String.format("Messages received: %s", prometheusValue(
+      prometheusClient, "sum(zipkin_collector_messages_total)")));
+    System.out.println(String.format("Spans received: %s", prometheusValue(
+      prometheusClient, "sum(zipkin_collector_spans_total)")));
+    System.out.println(String.format("Spans dropped: %s", prometheusValue(
+      prometheusClient, "sum(zipkin_collector_spans_dropped_total)")));
 
-    LOGGER.info("Memory quantiles:");
+    System.out.println("Memory quantiles:");
     printQuartiles(prometheusClient, "jvm_memory_used_bytes{area=\"heap\"}");
     printQuartiles(prometheusClient, "jvm_memory_used_bytes{area=\"nonheap\"}");
 
-    LOGGER.info("Total GC time (s): {}",
-      prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_sum)"));
-    LOGGER.info("Number of GCs: {}",
-      prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_count)"));
+    System.out.println(String.format("Total GC time (s): %s",
+      prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_sum)")));
+    System.out.println(String.format("Number of GCs: %s",
+      prometheusValue(prometheusClient, "sum(jvm_gc_pause_seconds_count)")));
 
-    LOGGER.info("POST Spans latency (s)");
+    System.out.println("POST Spans latency (s)");
     printHistogram(prometheusClient, "http_server_requests_seconds_bucket{"
       + "method=\"POST\",status=\"202\",uri=\"/api/v2/spans\"}");
 
     if (WAIT_AFTER_BENCHMARK) {
-      LOGGER.info("Keeping containers running until explicit termination. "
+      System.out.println("Keeping containers running until explicit termination. "
         + "Feel free to poke around in grafana.");
       Thread.sleep(Long.MAX_VALUE);
     }
@@ -267,20 +268,20 @@ class ServerIntegratedBenchmark {
   }
 
   static void printContainerMapping(GenericContainer<?> container) {
-    LOGGER.info(
-      "Container {} ports exposed at {}",
+    System.out.println(String.format(
+      "Container %s ports exposed at %s",
       container.getDockerImageName(),
       container.getExposedPorts().stream()
         .map(port -> new AbstractMap.SimpleImmutableEntry<>(
           port,
           "http://" + container.getContainerIpAddress() + ":" + container.getMappedPort(port)))
-        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
   }
 
   static void printQuartiles(HttpClient prometheus, String metric) throws Exception {
     for (double quantile : Arrays.asList(0.0, 0.25, 0.5, 0.75, 1.0)) {
       String value = prometheusValue(prometheus, "quantile(" + quantile + ", " + metric + ")");
-      LOGGER.info("{}[{}] = {}", metric, quantile, value);
+      System.out.println(String.format("%s[%s] = %s", metric, quantile, value));
     }
   }
 
@@ -288,7 +289,7 @@ class ServerIntegratedBenchmark {
     for (double quantile : Arrays.asList(0.5, 0.9, 0.99)) {
       String value =
         prometheusValue(prometheus, "histogram_quantile(" + quantile + ", " + metric + ")");
-      LOGGER.info("{}[{}] = {}", metric, quantile, value);
+      System.out.println(String.format("%s[%s] = %s", metric, quantile, value));
     }
   }
 
