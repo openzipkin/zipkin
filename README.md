@@ -94,7 +94,7 @@ storage.close();
 ```
 
 ### In-Memory
-The [InMemoryStorage](zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It
+The [InMemoryStorage](zipkin-server#in-memory-storage) component is packaged in zipkin's core library. It
 is neither persistent, nor viable for realistic work loads. Its purpose
 is for testing, for example starting a server on your laptop without any
 database needed.
