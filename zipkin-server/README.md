@@ -125,7 +125,7 @@ When the UI loads, it reads default configuration from the `/config.json` endpoi
 Attribute | Property | Description
 --- | --- | ---
 environment | zipkin.ui.environment | The value here becomes a label in the top-right corner. Not required.
-defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 3600000 (1 hour in millis).
+defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 900000 (15 minutes in millis).
 searchEnabled | zipkin.ui.search-enabled | If the Find Traces screen is enabled. Defaults to true.
 queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
@@ -155,7 +155,21 @@ Defaults to true
 * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
 * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 * `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint; Tag keys should be comma separated e.g. "instance_id,user_id,env"
-* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr)
+* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr) 
+
+### In-Memory Storage
+Zipkin's In-Memory Storage is the default storage component that is used when no other storage type is configured. By default it stores a maximum of 500000 spans. Oldest traces (and their spans) will be purged first when this limit is exceeded. If you encounter out-of-memory errors, increase the heap size (-Xmx).
+
+Example usage:
+```bash
+$ java -jar zipkin.jar
+```
+You can override the maximum number of spans stored using the `--max-spans` application parameter:
+```bash
+$ java -Xmx1G -jar zipkin.jar --max-spans=1000000
+```
+
+Note this storage component was primarily developed for testing and as a means to get Zipkin server up and running quickly without external dependencies. It is not viable for high work loads.  
 
 ### Throttled Storage (Experimental)
 These settings can be used to help tune the rate at which Zipkin flushes data to another, underlying `StorageComponent` (such as Elasticsearch):
@@ -231,6 +245,29 @@ To log Elasticsearch api requests:
 $ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
 ```
 
+#### Using a custom Key Store or Trust Store (SSL)
+If your Elasticsearch endpoint customized SSL configuration (for example self-signed) certificates,
+you can use any of the following [subset of JSSE properties](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#T6) to connect.
+
+ * javax.net.ssl.keyStore
+ * javax.net.ssl.keyStorePassword
+ * javax.net.ssl.keyStoreType
+ * javax.net.ssl.trustStore
+ * javax.net.ssl.trustStorePassword
+ * javax.net.ssl.trustStoreType
+
+Usage example:
+```bash
+$ JAVA_OPTS='-Djavax.net.ssl.keyStore=keystore.p12 -Djavax.net.ssl.keyStorePassword=keypassword -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.trustStore=truststore.p12 -Djavax.net.ssl.trustStorePassword=trustpassword -Djavax.net.ssl.trustStoreType=PKCS12'
+$ STORAGE_TYPE=elasticsearch java $JAVA_OPTS -jar zipkin.jar
+```
+
+Under the scenes, these map to properties prefixed `zipkin.storage.elasticsearch.ssl.`, which affect
+the Armeria client used to connect to Elasticsearch.
+
+The above properties allow the most common SSL setup to work out of box. If you need more
+customization, please make a comment in [this issue](https://github.com/openzipkin/zipkin/issues/2774).
+
 ### Legacy (v1) storage components
 The following components are no longer encouraged, but exist to help aid
 transition to supported ones. These are indicated as "v1" as they use
@@ -288,10 +325,10 @@ The HTTP collector supports the following configuration:
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.http.enabled` | `HTTP_COLLECTOR_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
+`zipkin.collector.http.enabled` | `COLLECTOR_HTTP_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
 
 ### Scribe (Legacy) Collector
-A collector supporting Scribe is enabled when `SCRIBE_ENABLED=true`. New
+A collector supporting Scribe is enabled when `COLLECTOR_SCRIBE_ENABLED=true`. New
 sites are discouraged from using this collector as Scribe is an archived
 technology.
 
@@ -302,11 +339,11 @@ Environment Variable | Property | Description
 
 
 ### ActiveMQ Collector
-The [ActiveMQ Collector](../zipkin-collector/activemq) is enabled when `ACTIVEMQ_URL` is set to a v5.x broker. The following
-settings apply in this case.
+The [ActiveMQ Collector](../zipkin-collector/activemq) is enabled when `ACTIVEMQ_URL` is set to a v5.x broker. The following settings apply in this case.
 
 Environment Variable | Property | Description
 --- | --- | ---
+`COLLECTOR_ACTIVEMQ_ENABLED` | `zipkin.collector.activemq.enabled` | `false` disables the ActiveMQ collector. Defaults to `true`.
 `ACTIVEMQ_URL` | `zipkin.collector.activemq.url` | [Connection URL](https://activemq.apache.org/uri-protocols) to the ActiveMQ broker, ex. `tcp://localhost:61616` or `failover:(tcp://localhost:61616,tcp://remotehost:61616)`
 `ACTIVEMQ_QUEUE` | `zipkin.collector.activemq.queue` | Queue from which to collect span messages. Defaults to `zipkin`
 `ACTIVEMQ_CLIENT_ID_PREFIX` | `zipkin.collector.activemq.client-id-prefix` | Client ID prefix for queue consumers. Defaults to `zipkin`
@@ -327,6 +364,7 @@ correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apac
 
 Variable | New Consumer Config | Description
 --- | --- | ---
+`COLLECTOR_KAFKA_ENABLED` | N/A | `false` disables the Kafka collector. Defaults to `true`.
 `KAFKA_BOOTSTRAP_SERVERS` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
 `KAFKA_GROUP_ID` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
 `KAFKA_TOPIC` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
@@ -335,7 +373,8 @@ Variable | New Consumer Config | Description
 Example usage:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+    java -jar zipkin.jar
 ```
 
 #### Other Kafka consumer properties
@@ -349,7 +388,8 @@ For example, to override `auto.offset.reset`, you can set a system property name
 `zipkin.collector.kafka.overrides.auto.offset.reset`:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+    java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
 ```
 
 #### Detailed examples
@@ -370,7 +410,8 @@ $ java -jar zipkin.jar
 Multiple bootstrap servers:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 java -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 \
+    java -jar zipkin.jar
 ```
 
 Alternate topic name(s):
@@ -383,7 +424,8 @@ $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
 Specifying bootstrap servers as a system property, instead of an environment variable:
 
 ```bash
-$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 -jar zipkin.jar
+$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 \
+    -jar zipkin.jar
 ```
 
 ### RabbitMQ collector
@@ -403,7 +445,7 @@ You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED
 Example usage:
 
 ```bash
-COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
+$ COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
 ```
 
 As this service is experimental, it is not recommended to run this in production environments.

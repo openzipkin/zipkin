@@ -27,8 +27,8 @@ import zipkin2.storage.StorageComponent;
 
 /** Auto-configuration for {@link ActiveMQCollector}. */
 @Configuration
-@Conditional(ZipkinActiveMQCollectorConfiguration.ActiveMQUrlSet.class)
 @EnableConfigurationProperties(ZipkinActiveMQCollectorProperties.class)
+@Conditional(ZipkinActiveMQCollectorConfiguration.ActiveMQUrlSet.class)
 public class ZipkinActiveMQCollectorConfiguration {
 
   @Bean(initMethod = "start")
@@ -54,11 +54,16 @@ public class ZipkinActiveMQCollectorConfiguration {
   static final class ActiveMQUrlSet implements Condition {
     @Override public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
       return !isEmpty(
-        context.getEnvironment().getProperty("zipkin.collector.activemq.url"));
+        context.getEnvironment().getProperty("zipkin.collector.activemq.url")) &&
+        notFalse(context.getEnvironment().getProperty("zipkin.collector.activemq.enabled"));
     }
 
     private static boolean isEmpty(String s) {
       return s == null || s.isEmpty();
+    }
+
+    private static boolean notFalse(String s){
+      return s == null || !s.equals("false");
     }
   }
 }

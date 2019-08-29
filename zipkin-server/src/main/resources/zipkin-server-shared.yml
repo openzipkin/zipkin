@@ -14,6 +14,7 @@ zipkin:
     # percentage to traces to retain
     sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}
     activemq:
+      enabled: ${COLLECTOR_ACTIVEMQ_ENABLED:true}
       # ActiveMQ broker url. Ex. tcp://localhost:61616 or failover:(tcp://localhost:61616,tcp://remotehost:61616)
       url: ${ACTIVEMQ_URL:}
       # Queue from which to collect span messages.
@@ -26,11 +27,12 @@ zipkin:
       password: ${ACTIVEMQ_PASSWORD:}
     http:
       # Set to false to disable creation of spans via HTTP collector API
-      enabled: ${HTTP_COLLECTOR_ENABLED:true}
+      enabled: ${COLLECTOR_HTTP_ENABLED:${HTTP_COLLECTOR_ENABLED:true}}
     grpc:
       # Set to true to enable the GRPC collector
       enabled: ${COLLECTOR_GRPC_ENABLED:false}
     kafka:
+      enabled: ${COLLECTOR_KAFKA_ENABLED:true}
       # Kafka bootstrap broker list, comma-separated host:port values. Setting this activates the
       # Kafka 0.10+ collector.
       bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
@@ -41,6 +43,7 @@ zipkin:
       # Count of consumer threads consuming the topic
       streams: ${KAFKA_STREAMS:1}
     rabbitmq:
+      enabled: ${COLLECTOR_RABBITMQ_ENABLED:true}
       # RabbitMQ server address list (comma-separated list of host:port)
       addresses: ${RABBIT_ADDRESSES:}
       concurrency: ${RABBIT_CONCURRENCY:1}
@@ -53,7 +56,7 @@ zipkin:
       useSsl: ${RABBIT_USE_SSL:false}
       uri: ${RABBIT_URI:}
     scribe:
-      enabled: ${SCRIBE_ENABLED:false}
+      enabled: ${COLLECTOR_SCRIBE_ENABLED:${SCRIBE_ENABLED:false}}
       category: ${SCRIBE_CATEGORY:zipkin}
       port: ${COLLECTOR_PORT:9410}
   query:
@@ -79,9 +82,6 @@ zipkin:
       max-queue-size: ${STORAGE_THROTTLE_MAX_QUEUE_SIZE:1000}
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
-      # A safe estimate is 1K of memory per span (each span with 2 annotations + 1 binary annotation), plus
-      # 100 MB for a safety buffer.  You'll need to verify in your own environment.
-      # Experimentally, it works with: max-spans of 500000 with JRE argument -Xmx600m.
       max-spans: 500000
     cassandra:
       # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
@@ -157,8 +157,8 @@ zipkin:
     # The value here becomes a label in the top-right corner
     environment:
     # Default duration to look back when finding traces.
-    # Affects the "Start time" element in the UI. 1 hour in millis
-    default-lookback: 3600000
+    # Affects the "Start time" element in the UI. 15 minutes in millis
+    default-lookback: 900000
     # When false, disables the "find a trace" screen
     search-enabled: ${SEARCH_ENABLED:true}
     # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)
