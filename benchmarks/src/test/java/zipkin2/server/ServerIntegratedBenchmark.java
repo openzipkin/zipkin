@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.it;
+package zipkin2.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Closer;
@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -40,6 +41,21 @@ import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.MountableFile;
 
+/**
+ * This benchmark runs zipkin-server, storage backends, an example application, prometheus, grafana,
+ * and wrk using docker to generate a performance report.
+ *
+ * <p>Currently there are two environment variable knobs
+ *
+ * <ul>
+ *   <li>ZIPKIN_VERSION - specify to a released zipkin server. If unspecified, will use the current code.</li>
+ *   <li>
+ *     ZIPKIN_BENCHMARK_WAIT - set to true to have the benchmark wait until user manually terminates at the end.
+ *     Useful to manually inspect prometheus / grafana.
+ *   </li>
+ * </ul>
+ */
+@Disabled  // Run manually
 class ServerIntegratedBenchmark {
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();

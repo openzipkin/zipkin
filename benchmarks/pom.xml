@@ -83,8 +83,31 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-storage-elasticsearch</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.squareup.wire</groupId>
+      <artifactId>wire-runtime</artifactId>
+      <version>${wire.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>io.zipkin.proto3</groupId>
+      <artifactId>zipkin-proto3</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
+      <artifactId>zipkin-tests</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- zipkin-server optional dependencies for running ServerIntegratedBenchmark -->
+    <dependency>
+      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-cassandra</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
       <exclusions>
         <exclusion>
           <groupId>io.netty</groupId>
@@ -96,7 +119,7 @@
       <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-cassandra-v1</artifactId>
       <version>${project.version}</version>
-      <optional>true</optional>
+      <scope>test</scope>
       <exclusions>
         <exclusion>
           <groupId>com.datastax.cassandra</groupId>
@@ -109,7 +132,7 @@
       <artifactId>cassandra-driver-core</artifactId>
       <version>${cassandra-driver-core.version}</version>
       <classifier>shaded</classifier>
-      <optional>true</optional>
+      <scope>test</scope>
       <exclusions>
         <exclusion>
           <groupId>io.netty</groupId>
@@ -121,7 +144,7 @@
       <groupId>com.datastax.cassandra</groupId>
       <artifactId>cassandra-driver-mapping</artifactId>
       <version>${cassandra-driver-core.version}</version>
-      <optional>true</optional>
+      <scope>test</scope>
       <exclusions>
         <exclusion>
           <groupId>com.datastax.cassandra</groupId>
@@ -131,49 +154,23 @@
     </dependency>
     <dependency>
       <groupId>${project.groupId}.zipkin2</groupId>
-      <artifactId>zipkin-storage-elasticsearch</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-storage-mysql-v1</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.mariadb.jdbc</groupId>
       <artifactId>mariadb-java-client</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>com.zaxxer</groupId>
       <artifactId>HikariCP</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.squareup.wire</groupId>
-      <artifactId>wire-runtime</artifactId>
-      <version>${wire.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>io.zipkin.proto3</groupId>
-      <artifactId>zipkin-proto3</artifactId>
+      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>testcontainers</artifactId>
-    </dependency>
-    <!-- Needed by testcontainers even though we don't use junit4 here -->
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>${project.groupId}.zipkin2</groupId>
-      <artifactId>zipkin-tests</artifactId>
-      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
