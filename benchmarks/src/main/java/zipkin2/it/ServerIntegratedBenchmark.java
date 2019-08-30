@@ -33,17 +33,14 @@ import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
+import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.utility.MountableFile;
 
 class ServerIntegratedBenchmark {
-
-  static final Logger LOGGER = LoggerFactory.getLogger(ServerIntegratedBenchmark.class);
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
@@ -73,21 +70,26 @@ class ServerIntegratedBenchmark {
       .withLabel("storageType", "elasticsearch")
       .withExposedPorts(9200)
       .waitingFor(new HttpWaitStrategy().forPath("/_cluster/health"));
-    startContainer(elasticsearch);
+
     runBenchmark(elasticsearch);
   }
 
   @Test void cassandra() throws Exception {
-    GenericContainer<?> cassandra = new GenericContainer<>("openzipkin/zipkin-cassandra")
+    runBenchmark(createCassandra("cassandra"));
+  }
+
+  @Test void cassandra3() throws Exception {
+    runBenchmark(createCassandra("cassandra3"));
+  }
+
+  private static GenericContainer<?> createCassandra(String storageType) {
+    return new GenericContainer<>("openzipkin/zipkin-cassandra")
       .withNetwork(Network.SHARED)
       .withNetworkAliases("cassandra")
       .withLabel("name", "cassandra")
-      .withLabel("storageType", "cassandra3")
+      .withLabel("storageType", storageType)
       .withExposedPorts(9042)
-      .waitingFor(new LogMessageWaitStrategy().withRegEx(".*Starting listening for CQL clients.*"));
-    startContainer(cassandra);
-
-    runBenchmark(cassandra);
+      .waitingFor(Wait.forLogMessage(".*Starting listening for CQL clients.*", 1));
   }
 
   @Test void mysql() throws Exception {
@@ -97,30 +99,26 @@ class ServerIntegratedBenchmark {
       .withLabel("name", "mysql")
       .withLabel("storageType", "mysql")
       .withExposedPorts(3306);
-    startContainer(mysql);
 
     runBenchmark(mysql);
   }
 
   void runBenchmark(@Nullable GenericContainer<?> storage) throws Exception {
-    GenericContainer<?> zipkin = startZipkin(storage);
+    GenericContainer<?> zipkin = createZipkinContainer(storage);
 
     GenericContainer<?> backend = new GenericContainer<>("openzipkin/example-sleuth-webmvc")
       .withNetwork(Network.SHARED)
       .withNetworkAliases("backend")
       .withCommand("backend")
       .withExposedPorts(9000)
-      .waitingFor(new HttpWaitStrategy().forPath("/actuator/health"));
+      .waitingFor(Wait.forHttp("/actuator/health"));
 
     GenericContainer<?> frontend = new GenericContainer<>("openzipkin/example-sleuth-webmvc")
       .withNetwork(Network.SHARED)
       .withNetworkAliases("frontend")
       .withCommand("frontend")
       .withExposedPorts(8081)
-      .waitingFor(new HttpWaitStrategy().forPath("/actuator/health"));
-
-    startContainer(backend);
-    startContainer(frontend);
+      .waitingFor(Wait.forHttp("/actuator/health"));
 
     GenericContainer<?> prometheus = new GenericContainer<>("prom/prometheus")
       .withNetwork(Network.SHARED)
@@ -128,7 +126,6 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(9090)
       .withCopyFileToContainer(
         MountableFile.forClasspathResource("prometheus.yml"), "/etc/prometheus/prometheus.yml");
-    startContainer(prometheus);
 
     GenericContainer<?> grafana = new GenericContainer<>("grafana/grafana")
       .withNetwork(Network.SHARED)
@@ -136,18 +133,24 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(3000)
       .withEnv("GF_AUTH_ANONYMOUS_ENABLED", "true")
       .withEnv("GF_AUTH_ANONYMOUS_ORG_ROLE", "Admin");
-    startContainer(grafana);
 
-    startContainer(new GenericContainer<>("appropriate/curl")
+    GenericContainer<?> grafanaDashboards = new GenericContainer<>("appropriate/curl")
       .withNetwork(Network.SHARED)
       .withCommand("/create.sh")
       .withCopyFileToContainer(
-        MountableFile.forClasspathResource("create-datasource-and-dashboard.sh"), "/create.sh"));
+        MountableFile.forClasspathResource("create-datasource-and-dashboard.sh"), "/create.sh");
 
     GenericContainer<?> wrk = new GenericContainer<>("skandyla/wrk")
       .withNetwork(Network.SHARED)
       .withCommand("-t4 -c128 -d100s http://frontend:8081 --latency");
-    startContainer(wrk);
+
+    grafanaDashboards.dependsOn(grafana);
+    wrk.dependsOn(frontend, backend, prometheus, grafana, zipkin);
+    if (storage != null) {
+      wrk.dependsOn(storage);
+    }
+
+    Startables.deepStart(Stream.of(wrk));
 
     System.out.println("Benchmark started.");
     if (zipkin != null) {
@@ -201,7 +204,7 @@ class ServerIntegratedBenchmark {
     }
   }
 
-  GenericContainer<?> startZipkin(@Nullable GenericContainer<?> storage) throws Exception {
+  GenericContainer<?> createZipkinContainer(@Nullable GenericContainer<?> storage) throws Exception {
     Map<String, String> env = new HashMap<>();
     if (storage != null) {
       String name = storage.getLabels().get("name");
@@ -270,7 +273,6 @@ class ServerIntegratedBenchmark {
       .withExposedPorts(9411)
       .withEnv(env)
       .waitingFor(new HttpWaitStrategy().forPath("/health"));
-    startContainer(zipkin);
     return zipkin;
   }
 
