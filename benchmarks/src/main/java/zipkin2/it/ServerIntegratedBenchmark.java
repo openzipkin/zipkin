@@ -70,6 +70,7 @@ class ServerIntegratedBenchmark {
       .withNetwork(Network.SHARED)
       .withNetworkAliases("elasticsearch")
       .withLabel("name", "elasticsearch")
+      .withLabel("storageType", "elasticsearch")
       .withExposedPorts(9200)
       .waitingFor(new HttpWaitStrategy().forPath("/_cluster/health"));
     startContainer(elasticsearch);
@@ -79,8 +80,9 @@ class ServerIntegratedBenchmark {
   @Test void cassandra() throws Exception {
     GenericContainer<?> cassandra = new GenericContainer<>("openzipkin/zipkin-cassandra")
       .withNetwork(Network.SHARED)
-      .withNetworkAliases("cassandra3")
-      .withLabel("name", "cassandra3")
+      .withNetworkAliases("cassandra")
+      .withLabel("name", "cassandra")
+      .withLabel("storageType", "cassandra3")
       .withExposedPorts(9042)
       .waitingFor(new LogMessageWaitStrategy().withRegEx(".*Starting listening for CQL clients.*"));
     startContainer(cassandra);
@@ -93,6 +95,7 @@ class ServerIntegratedBenchmark {
       .withNetwork(Network.SHARED)
       .withNetworkAliases("mysql")
       .withLabel("name", "mysql")
+      .withLabel("storageType", "mysql")
       .withExposedPorts(3306);
     startContainer(mysql);
 
@@ -199,35 +202,33 @@ class ServerIntegratedBenchmark {
   }
 
   GenericContainer<?> startZipkin(@Nullable GenericContainer<?> storage) throws Exception {
-    Map<String, Object> properties = new HashMap<>();
+    Map<String, String> env = new HashMap<>();
     if (storage != null) {
       String name = storage.getLabels().get("name");
       String host = name;
       int port = storage.getExposedPorts().get(0);
       String address = host + ":" + port;
 
-      properties.put("zipkin.storage.type", name);
+      env.put("STORAGE_TYPE", storage.getLabels().get("storageType"));
       switch (name) {
         case "elasticsearch":
-          properties.put("zipkin.storage.elasticsearch.hosts", "http://" + address);
+          env.put("ES_HOSTS", "http://" + address);
           break;
+        case "cassandra":
         case "cassandra3":
-          properties.put("zipkin.storage.cassandra3.contact-points", address);
+          env.put("CASSANDRA_CONTACT_POINTS", address);
           break;
         case "mysql":
-          properties.put("zipkin.storage.mysql.host", host);
-          properties.put("zipkin.storage.mysql.port", port);
-          properties.put("zipkin.storage.mysql.username", "zipkin");
-          properties.put("zipkin.storage.mysql.password", "zipkin");
+          env.put("MYSQL_HOST", host);
+          env.put("MYSQL_TCP_PORT", Integer.toString(port));
+          env.put("MYSQL_USER", "zipkin");
+          env.put("MYSQL_PAS", "zipkin");
           break;
         default:
           throw new IllegalArgumentException("Unknown storage " + name +
             ". Update startZipkin to map it to properties.");
       }
     }
-    String propertiesJvmArg = properties.entrySet().stream()
-      .map(entry -> "-D" + entry.getKey() + "=" + entry.getValue())
-      .collect(Collectors.joining(" "));
 
     final GenericContainer<?> zipkin;
     if (RELEASED_ZIPKIN_VERSION == null) {
@@ -258,19 +259,17 @@ class ServerIntegratedBenchmark {
         classpath.add(classPathItem);
       }
       zipkin.withCreateContainerCmdModifier(cmd -> cmd.withEntrypoint("java"));
-      zipkin.withEnv("JAVA_TOOL_OPTIONS", propertiesJvmArg);
       zipkin.setCommand("-cp", String.join(":", classpath), "zipkin.server.ZipkinServer");
     } else {
-      zipkin =
-        new GenericContainer<>("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION)
-          .withEnv("JAVA_OPTS", propertiesJvmArg);
+      zipkin = new GenericContainer<>("openzipkin/zipkin:" + RELEASED_ZIPKIN_VERSION);
     }
 
     zipkin
       .withNetwork(Network.SHARED)
       .withNetworkAliases("zipkin")
       .withExposedPorts(9411)
-      .waitingFor(new HttpWaitStrategy().forPath("/actuator/health"));
+      .withEnv(env)
+      .waitingFor(new HttpWaitStrategy().forPath("/health"));
     startContainer(zipkin);
     return zipkin;
   }
