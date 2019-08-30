@@ -57,6 +57,10 @@ import org.testcontainers.utility.MountableFile;
  *     Useful to manually inspect prometheus / grafana.
  *   </li>
  * </ul>
+ *
+ * <p>Note to Windows laptop users: you will probably need to restart the Docker daemon before a
+ * session of benchmarks. Docker containers seem to have time get out of sync when a computer sleeps
+ * until you restart the daemon - this causes Prometheus metrics to not scrape properly.
  */
 @Disabled  // Run manually
 class ServerIntegratedBenchmark {
