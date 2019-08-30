@@ -145,12 +145,12 @@ class ServerIntegratedBenchmark {
       .withCommand("-t4 -c128 -d100s http://frontend:8081 --latency");
 
     grafanaDashboards.dependsOn(grafana);
-    wrk.dependsOn(frontend, backend, prometheus, grafana, zipkin);
+    wrk.dependsOn(frontend, backend, prometheus, grafanaDashboards, zipkin);
     if (storage != null) {
       wrk.dependsOn(storage);
     }
 
-    Startables.deepStart(Stream.of(wrk));
+    Startables.deepStart(Stream.of(wrk)).join();
 
     System.out.println("Benchmark started.");
     if (zipkin != null) {
