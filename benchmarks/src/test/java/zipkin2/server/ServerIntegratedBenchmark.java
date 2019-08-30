@@ -48,7 +48,10 @@ import org.testcontainers.utility.MountableFile;
  * <p>Currently there are two environment variable knobs
  *
  * <ul>
- *   <li>ZIPKIN_VERSION - specify to a released zipkin server. If unspecified, will use the current code.</li>
+ *   <li>
+ *     ZIPKIN_VERSION - specify to a released zipkin server. If unspecified, will use the current code,
+ *     i.e., the code currently displayed in your IDE.
+ *   </li>
  *   <li>
  *     ZIPKIN_BENCHMARK_WAIT - set to true to have the benchmark wait until user manually terminates at the end.
  *     Useful to manually inspect prometheus / grafana.
@@ -241,7 +244,7 @@ class ServerIntegratedBenchmark {
           env.put("MYSQL_HOST", host);
           env.put("MYSQL_TCP_PORT", Integer.toString(port));
           env.put("MYSQL_USER", "zipkin");
-          env.put("MYSQL_PAS", "zipkin");
+          env.put("MYSQL_PASS", "zipkin");
           break;
         default:
           throw new IllegalArgumentException("Unknown storage " + name +
