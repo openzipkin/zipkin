@@ -18,12 +18,15 @@ import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
+import com.linecorp.armeria.server.metric.PrometheusExpositionService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
+import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -66,7 +69,8 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Autowired(required = false)
   MetricsHealthController healthController;
 
-  @Bean ArmeriaServerConfigurator serverConfigurator() {
+  @Bean ArmeriaServerConfigurator serverConfigurator(
+    Optional<CollectorRegistry> prometheusRegistry) {
     return sb -> {
       if (httpQuery != null) {
         sb.annotatedService(httpQuery);
@@ -74,8 +78,11 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       }
       if (httpCollector != null) sb.annotatedService(httpCollector);
       if (healthController != null) sb.annotatedService(healthController);
-      // Redirects the prometheus scrape endpoint for backward compatibility
-      sb.service("/prometheus", new RedirectService("/actuator/prometheus"));
+      prometheusRegistry.ifPresent(registry -> {
+        PrometheusExpositionService prometheusService = new PrometheusExpositionService(registry);
+        sb.service("/actuator/prometheus", prometheusService);
+        sb.service("/prometheus", prometheusService);
+      });
       // Redirects the info endpoint for backward compatibility
       sb.service("/info", new RedirectService("/actuator/info"));
 
