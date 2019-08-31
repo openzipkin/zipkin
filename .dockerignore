@@ -1,0 +1,13 @@
+**/\.*
+!.git
+!**/.eslintrc
+
+**/target
+**/node_modules
+**/*.iml
+
+*.md
+
+**/Dockerfile
+travis
+mvnw*
