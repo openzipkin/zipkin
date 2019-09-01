@@ -1,0 +1,18 @@
+# Try to include as little as possible except pom files to reduce cache key updates.
+# https://github.com/moby/moby/issues/30018 would make this simpler.
+
+**/.*
+**/*.md
+**/node_modules
+**/src
+**/target
+docker/
+mvnw*
+LICENSE
+
+!src/etc/header.txt
+
+zipkin-lens/**
+!zipkin-lens/pom.xml
+!zipkin-lens/package.json
+!zipkin-lens/package-lock.json
