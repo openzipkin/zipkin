@@ -17,21 +17,16 @@ import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
-import com.linecorp.armeria.server.ServerBuilder;
-import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
 import java.io.IOException;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 import zipkin2.Span.Kind;
@@ -44,41 +39,19 @@ import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.UTF_8;
 
-public class ElasticsearchSpanConsumerTest {
+class ElasticsearchSpanConsumerTest {
   static final Endpoint WEB_ENDPOINT = Endpoint.newBuilder().serviceName("web").build();
   static final Endpoint APP_ENDPOINT = Endpoint.newBuilder().serviceName("app").build();
 
-  final BlockingQueue<AggregatedHttpRequest> CAPTURED_REQUESTS = new LinkedBlockingQueue<>();
-  final BlockingQueue<AggregatedHttpResponse> MOCK_RESPONSES = new LinkedBlockingQueue<>();
   final AggregatedHttpResponse SUCCESS_RESPONSE =
     AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
 
-  @Rule public ServerRule server = new ServerRule() {
-    @Override protected void configure(ServerBuilder sb) throws Exception {
-      sb.serviceUnder("/", (ctx, req) -> {
-        CompletableFuture<HttpResponse> responseFuture = new CompletableFuture<>();
-        req.aggregate().thenAccept(agg -> {
-          CAPTURED_REQUESTS.add(agg);
-          AggregatedHttpResponse response = MOCK_RESPONSES.remove();
-          if (response.headers().contains("delay-one-second")) {
-            ctx.eventLoop().schedule(() -> responseFuture.complete(HttpResponse.of(response)),
-              1, TimeUnit.SECONDS);
-          } else {
-            responseFuture.complete(HttpResponse.of(response));
-          }
-        }).exceptionally(t -> {
-          responseFuture.completeExceptionally(t);
-          return null;
-        });
-        return HttpResponse.from(responseFuture);
-      });
-    }
-  };
+  @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
   ElasticsearchStorage storage;
   SpanConsumer spanConsumer;
 
-  @Before public void setUp() throws Exception {
+  @BeforeEach void setUp() throws Exception {
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .autocompleteKeys(asList("environment"))
       .build();
@@ -86,12 +59,8 @@ public class ElasticsearchSpanConsumerTest {
     ensureIndexTemplate();
   }
 
-  @After public void tearDown() throws IOException {
+  @AfterEach void tearDown() throws IOException {
     storage.close();
-    assertThat(MOCK_RESPONSES).isEmpty();
-
-    // Tests don't have to extract every request.
-    CAPTURED_REQUESTS.clear();
   }
 
   void ensureIndexTemplate() throws Exception {
@@ -101,42 +70,42 @@ public class ElasticsearchSpanConsumerTest {
   }
 
   private void ensureIndexTemplates(ElasticsearchStorage storage) throws InterruptedException {
-    MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
       "{\"version\":{\"number\":\"6.0.0\"}}"));
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get span template
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get dependency template
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get tags template
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get tags template
     storage.ensureIndexTemplates();
-    CAPTURED_REQUESTS.take(); // get version
-    CAPTURED_REQUESTS.take(); // get span template
-    CAPTURED_REQUESTS.take(); // get dependency template
-    CAPTURED_REQUESTS.take(); // get tags template
+    server.takeRequest(); // get version
+    server.takeRequest(); // get span template
+    server.takeRequest(); // get dependency template
+    server.takeRequest(); // get tags template
   }
 
-  @Test public void addsTimestamp_millisIntoJson() throws Exception {
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void addsTimestamp_millisIntoJson() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     Span span =
       Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
 
     accept(span);
 
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
+    assertThat(server.takeRequest().request().contentUtf8())
       .contains("\n{\"timestamp_millis\":" + TODAY + ",\"traceId\":");
   }
 
-  @Test public void writesSpanNaturallyWhenNoTimestamp() throws Exception {
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void writesSpanNaturallyWhenNoTimestamp() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     Span span = Span.newBuilder().traceId("1").id("1").name("foo").build();
     accept(Span.newBuilder().traceId("1").id("1").name("foo").build());
 
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
+    assertThat(server.takeRequest().request().contentUtf8())
       .contains("\n" + new String(SpanBytesEncoder.JSON_V2.encode(span), UTF_8) + "\n");
   }
 
-  @Test public void traceIsSearchableByServerServiceName() throws Exception {
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void traceIsSearchableByServerServiceName() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     Span clientSpan =
       Span.newBuilder()
@@ -163,28 +132,28 @@ public class ElasticsearchSpanConsumerTest {
     accept(serverSpan, clientSpan);
 
     // make sure that both timestamps are in the index
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
+    assertThat(server.takeRequest().request().contentUtf8())
       .contains("{\"timestamp_millis\":2")
       .contains("{\"timestamp_millis\":1");
   }
 
-  @Test public void addsPipelineId() throws Exception {
+  @Test void addsPipelineId() throws Exception {
     storage.close();
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .pipeline("zipkin")
       .build();
     ensureIndexTemplate();
 
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+    server.enqueue(SUCCESS_RESPONSE);
 
     accept(Span.newBuilder().traceId("1").id("1").name("foo").build());
 
-    AggregatedHttpRequest request = CAPTURED_REQUESTS.take();
+    AggregatedHttpRequest request = server.takeRequest().request();
     assertThat(request.path()).isEqualTo("/_bulk?pipeline=zipkin");
   }
 
-  @Test public void choosesTypeSpecificIndex() throws Exception {
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void choosesTypeSpecificIndex() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     Span span =
       Span.newBuilder()
@@ -202,28 +171,28 @@ public class ElasticsearchSpanConsumerTest {
     accept(span);
 
     // index timestamp is the server timestamp, not current time!
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
+    assertThat(server.takeRequest().request().contentUtf8())
       .startsWith("{\"index\":{\"_index\":\"zipkin:span-1971-01-01\",\"_type\":\"span\"");
   }
 
   /** Much simpler template which doesn't write the timestamp_millis field */
-  @Test public void searchDisabled_simplerIndexTemplate() throws Exception {
+  @Test void searchDisabled_simplerIndexTemplate() throws Exception {
     storage.close();
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 
-    MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.JSON_UTF_8,
       "{\"version\":{\"number\":\"6.0.0\"}}"));
-    MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND)); // get span template
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // put span template
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get dependency template
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // get tags template
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND)); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // put span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get tags template
     storage.ensureIndexTemplates();
-    CAPTURED_REQUESTS.take(); // get version
-    CAPTURED_REQUESTS.take(); // get span template
+    server.takeRequest(); // get version
+    server.takeRequest(); // get span template
 
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8()) // put span template
+    assertThat(server.takeRequest().request().contentUtf8()) // put span template
       .contains(
         ""
           + "  \"mappings\": {\n"
@@ -239,66 +208,66 @@ public class ElasticsearchSpanConsumerTest {
 
   /** Less overhead as a span json isn't rewritten to include a millis timestamp */
   @Test
-  public void searchDisabled_doesntAddTimestampMillis() throws Exception {
+  void searchDisabled_doesntAddTimestampMillis() throws Exception {
     storage.close();
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
     ensureIndexTemplates(storage);
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE); // for the bulk request
+    server.enqueue(SUCCESS_RESPONSE); // for the bulk request
 
     Span span =
       Span.newBuilder().traceId("20").id("20").name("get").timestamp(TODAY * 1000).build();
 
     storage.spanConsumer().accept(asList(span)).execute();
 
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8()).doesNotContain("timestamp_millis");
+    assertThat(server.takeRequest().request().contentUtf8()).doesNotContain("timestamp_millis");
   }
 
-  @Test public void addsAutocompleteValue() throws Exception {
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void addsAutocompleteValue() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     accept(Span.newBuilder().traceId("1").id("1").timestamp(1).putTag("environment", "A").build());
 
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
+    assertThat(server.takeRequest().request().contentUtf8())
       .endsWith(""
         + "{\"index\":{\"_index\":\"zipkin:autocomplete-1970-01-01\",\"_type\":\"autocomplete\",\"_id\":\"environment=A\"}}\n"
         + "{\"tagKey\":\"environment\",\"tagValue\":\"A\"}\n");
   }
 
-  @Test public void addsAutocompleteValue_suppressesWhenSameDay() throws Exception {
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void addsAutocompleteValue_suppressesWhenSameDay() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
+    server.enqueue(SUCCESS_RESPONSE);
 
     Span s = Span.newBuilder().traceId("1").id("1").timestamp(1).putTag("environment", "A").build();
     accept(s);
     accept(s.toBuilder().id(2).build());
 
-    CAPTURED_REQUESTS.take(); // skip first
+    server.takeRequest(); // skip first
     // the tag is in the same date range as the other, so it should not write the tag again
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
+    assertThat(server.takeRequest().request().contentUtf8())
       .doesNotContain("autocomplete");
   }
 
-  @Test public void addsAutocompleteValue_differentDays() throws Exception {
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void addsAutocompleteValue_differentDays() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
+    server.enqueue(SUCCESS_RESPONSE);
 
     Span s = Span.newBuilder().traceId("1").id("1").timestamp(1).putTag("environment", "A").build();
     accept(s);
     accept(s.toBuilder().id(2).timestamp(1 + TimeUnit.DAYS.toMicros(1)).build());
 
-    CAPTURED_REQUESTS.take(); // skip first
+    server.takeRequest(); // skip first
     // different day == different context
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
+    assertThat(server.takeRequest().request().contentUtf8())
       .endsWith(""
         + "{\"index\":{\"_index\":\"zipkin:autocomplete-1970-01-02\",\"_type\":\"autocomplete\",\"_id\":\"environment=A\"}}\n"
         + "{\"tagKey\":\"environment\",\"tagValue\":\"A\"}\n");
   }
 
-  @Test public void addsAutocompleteValue_revertsSuppressionOnFailure() throws Exception {
-    MOCK_RESPONSES.add(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
-    MOCK_RESPONSES.add(SUCCESS_RESPONSE);
+  @Test void addsAutocompleteValue_revertsSuppressionOnFailure() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
+    server.enqueue(SUCCESS_RESPONSE);
 
     Span s = Span.newBuilder().traceId("1").id("1").timestamp(1).putTag("environment", "A").build();
     try {
@@ -309,8 +278,8 @@ public class ElasticsearchSpanConsumerTest {
     accept(s);
 
     // We only cache when there was no error.. the second request should be same as the first
-    assertThat(CAPTURED_REQUESTS.take().contentUtf8())
-      .isEqualTo(CAPTURED_REQUESTS.take().contentUtf8());
+    assertThat(server.takeRequest().request().contentUtf8())
+      .isEqualTo(server.takeRequest().request().contentUtf8());
   }
 
   void accept(Span... spans) throws Exception {
