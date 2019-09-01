@@ -102,12 +102,6 @@
       <artifactId>zipkin-ui</artifactId>
       <version>2.12.11</version>
     </dependency>
-    <!-- Static content for the Lens UI -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-lens</artifactId>
-      <version>${project.version}</version>
-    </dependency>
     <dependency>
       <!-- HTML library for injecting configurable <base> tag -->
       <groupId>org.jsoup</groupId>
@@ -312,6 +306,22 @@
 
   <profiles>
     <profile>
+      <id>include-lens</id>
+      <activation>
+        <property>
+          <name>!skipLens</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- Static content for the Lens UI -->
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>zipkin-lens</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>integration</id>
       <activation>
         <property>
@@ -407,6 +417,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <failOnNoGitDirectory>false</failOnNoGitDirectory>
+        </configuration>
       </plugin>
 
       <plugin>

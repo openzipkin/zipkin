@@ -16,7 +16,7 @@ FROM maven:3-jdk-11-slim
 
 COPY . /code/
 
-# We build the project so all its dependencies get downloaded. There doesn't seem to be a good way
-# of only downloading dependencies without building too or we get unresolved dependency failures for
-# the local modules, but since we don't copy any code in the compilation itself is fast.
-RUN cd /code && mvn -B package -DskipTests=true && cd / && rm -rf /code
+RUN cd /code && \
+    mvn -B package -Dlicense.skip=true -DskipTests=true -DskipLens=true && \
+    mvn -B generate-resources -pl zipkin-lens -Dlicense.skip=true -DskipTests=true && \
+    cd / && rm -rf /code
