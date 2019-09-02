@@ -16,24 +16,20 @@ package zipkin2.elasticsearch;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
-import com.linecorp.armeria.server.ServerBuilder;
-import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import java.util.concurrent.atomic.AtomicReference;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.ExpectedException;
+import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static zipkin2.elasticsearch.ElasticsearchStorageTest.RESPONSE_UNAUTHORIZED;
 
-public class VersionSpecificTemplatesTest {
+class VersionSpecificTemplatesTest {
   static final AggregatedHttpResponse VERSION_RESPONSE_7 = AggregatedHttpResponse.of(
     HttpStatus.OK, MediaType.JSON_UTF_8, ""
       + "{\n"
@@ -102,56 +98,44 @@ public class VersionSpecificTemplatesTest {
       + "  \"tagline\" : \"You Know, for Search\"\n"
       + "}");
 
-  static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
-    new AtomicReference<>();
+  @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
-  @Rule public ExpectedException thrown = ExpectedException.none();
-
-  @ClassRule public static ServerRule server = new ServerRule() {
-    @Override protected void configure(ServerBuilder sb) {
-      sb.serviceUnder("/", (ctx, req) -> HttpResponse.of(MOCK_RESPONSE.get()));
-    }
-  };
-
-  @Before public void setUp() {
+  @BeforeEach void setUp() {
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/"))).build();
   }
 
-  @After public void tearDown() {
+  @AfterEach void tearDown() {
     storage.close();
   }
 
   ElasticsearchStorage storage;
 
-  @Test public void wrongContent() throws Exception {
-    MOCK_RESPONSE.set(AggregatedHttpResponse.of(
+  @Test void wrongContent() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.OK),
       HttpData.ofUtf8("you got mail")));
 
-    thrown.expectMessage(".version.number not found in response: you got mail");
-
-    new VersionSpecificTemplates(storage).get();
+    assertThatThrownBy(() -> new VersionSpecificTemplates(storage).get())
+      .hasMessage(".version.number not found in response: you got mail");
   }
 
-  @Test public void unauthorized() throws Exception {
-    MOCK_RESPONSE.set(RESPONSE_UNAUTHORIZED);
+  @Test void unauthorized() throws Exception {
+    server.enqueue(RESPONSE_UNAUTHORIZED);
 
-    thrown.expectMessage("User: anonymous is not authorized to perform: es:ESHttpGet");
-
-    new VersionSpecificTemplates(storage).get();
+    assertThatThrownBy(() -> new VersionSpecificTemplates(storage).get())
+      .hasMessage("User: anonymous is not authorized to perform: es:ESHttpGet");
   }
 
   /** Unsupported, but we should test that parsing works */
-  @Test public void version2_unsupported() throws Exception {
-    MOCK_RESPONSE.set(VERSION_RESPONSE_2);
+  @Test void version2_unsupported() throws Exception {
+    server.enqueue(VERSION_RESPONSE_2);
 
-    thrown.expectMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
-
-    new VersionSpecificTemplates(storage).get();
+    assertThatThrownBy(() -> new VersionSpecificTemplates(storage).get())
+      .hasMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
   }
 
-  @Test public void version5() throws Exception {
-    MOCK_RESPONSE.set(VERSION_RESPONSE_5);
+  @Test void version5() throws Exception {
+    server.enqueue(VERSION_RESPONSE_5);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -166,8 +150,8 @@ public class VersionSpecificTemplatesTest {
       .contains("\"index.mapper.dynamic\": false");
   }
 
-  @Test public void version6() throws Exception {
-    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
+  @Test void version6() throws Exception {
+    server.enqueue(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -179,8 +163,8 @@ public class VersionSpecificTemplatesTest {
       .contains("\"index.mapper.dynamic\": false");
   }
 
-  @Test public void version6_wrapsPropertiesWithType() throws Exception {
-    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
+  @Test void version6_wrapsPropertiesWithType() throws Exception {
+    server.enqueue(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -203,8 +187,8 @@ public class VersionSpecificTemplatesTest {
       + "  }");
   }
 
-  @Test public void version7() throws Exception {
-    MOCK_RESPONSE.set(VERSION_RESPONSE_7);
+  @Test void version7() throws Exception {
+    server.enqueue(VERSION_RESPONSE_7);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -217,8 +201,8 @@ public class VersionSpecificTemplatesTest {
       .doesNotContain("\"index.mapper.dynamic\": false");
   }
 
-  @Test public void version7_doesntWrapPropertiesWithType() throws Exception {
-    MOCK_RESPONSE.set(VERSION_RESPONSE_7);
+  @Test void version7_doesntWrapPropertiesWithType() throws Exception {
+    server.enqueue(VERSION_RESPONSE_7);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -237,13 +221,13 @@ public class VersionSpecificTemplatesTest {
       + "  }");
   }
 
-  @Test public void searchEnabled_minimalSpanIndexing_6x() throws Exception {
+  @Test void searchEnabled_minimalSpanIndexing_6x() throws Exception {
     storage.close();
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 
-    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
+    server.enqueue(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -260,12 +244,12 @@ public class VersionSpecificTemplatesTest {
         + "  }");
   }
 
-  @Test public void searchEnabled_minimalSpanIndexing_7x() throws Exception {
+  @Test void searchEnabled_minimalSpanIndexing_7x() throws Exception {
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 
-    MOCK_RESPONSE.set(VERSION_RESPONSE_7);
+    server.enqueue(VERSION_RESPONSE_7);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
@@ -281,21 +265,21 @@ public class VersionSpecificTemplatesTest {
         + "  }");
   }
 
-  @Test public void strictTraceId_doesNotIncludeAnalysisSection() throws Exception {
-    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
+  @Test void strictTraceId_doesNotIncludeAnalysisSection() throws Exception {
+    server.enqueue(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 
     assertThat(template.span()).doesNotContain("analysis");
   }
 
-  @Test public void strictTraceId_false_includesAnalysisForMixedLengthTraceId() throws Exception {
+  @Test void strictTraceId_false_includesAnalysisForMixedLengthTraceId() throws Exception {
     storage.close();
     storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
       .strictTraceId(false)
       .build();
 
-    MOCK_RESPONSE.set(VERSION_RESPONSE_6);
+    server.enqueue(VERSION_RESPONSE_6);
 
     IndexTemplates template = new VersionSpecificTemplates(storage).get();
 

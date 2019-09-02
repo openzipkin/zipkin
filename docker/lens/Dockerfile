@@ -12,7 +12,7 @@
 # the License.
 #
 
-FROM maven:3-jdk-11-slim
+FROM openzipkin/zipkin-builder
 
 COPY . /code
 RUN cd /code && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-lens -am

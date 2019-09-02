@@ -25,7 +25,6 @@
   <modules>
     <module>zipkin</module>
     <module>zipkin-tests</module>
-    <module>zipkin-lens</module>
     <module>zipkin-junit</module>
     <module>benchmarks</module>
     <module>zipkin-storage</module>
@@ -641,7 +640,7 @@
           </mapping>
           <excludes>
             <exclude>.travis.yml</exclude>
-            <exclude>.dockerignore</exclude>
+            <exclude>**/*.dockerignore</exclude>
             <exclude>.editorconfig</exclude>
             <exclude>.gitattributes</exclude>
             <exclude>.gitignore</exclude>
@@ -649,6 +648,7 @@
             <exclude>mvnw*</exclude>
             <exclude>etc/header.txt</exclude>
             <exclude>docker/**/*_profile</exclude>
+            <exclude>hooks/**</exclude>
             <exclude>**/nginx.conf</exclude>
             <exclude>**/.idea/**</exclude>
             <exclude>**/node_modules/**</exclude>
@@ -736,6 +736,17 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>include-lens</id>
+      <activation>
+        <property>
+          <name>!skipLens</name>
+        </property>
+      </activation>
+      <modules>
+        <module>zipkin-lens</module>
+      </modules>
+    </profile>
     <profile>
       <id>error-prone-9+</id>
       <activation>

@@ -9,5 +9,6 @@
 *.md
 
 **/Dockerfile
-travis
+hooks/**
+travis/**
 mvnw*
