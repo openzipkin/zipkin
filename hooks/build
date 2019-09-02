@@ -1,0 +1,14 @@
+#!/bin/bash
+
+case "$DOCKER_REPO" in
+  openzipkin/zipkin-builder)
+    # Remove after Docker Hub updates to Docker 19.03 to include
+    # https://github.com/moby/moby/issues/12886#issuecomment-480575928
+    cp docker/builder/Dockerfile.dockerignore .dockerignore
+  ;;
+
+  *)
+  ;;
+esac
+
+docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
