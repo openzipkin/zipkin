@@ -649,6 +649,7 @@
             <exclude>etc/header.txt</exclude>
             <exclude>docker/**/*_profile</exclude>
             <exclude>hooks/**</exclude>
+            <exclude>**/nginx.conf</exclude>
             <exclude>**/.idea/**</exclude>
             <exclude>**/node_modules/**</exclude>
             <exclude>**/.babelrc</exclude>
