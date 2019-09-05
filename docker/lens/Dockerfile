@@ -24,8 +24,8 @@ COPY --from=0 /code/zipkin-lens/target/classes/zipkin-lens /var/www/html/zipkin
 RUN mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 
 # Setup services
-COPY docker/ui/nginx.conf /etc/nginx/conf.d/zipkin.conf.template
-COPY docker/ui/run.sh /usr/local/bin/nginx.sh
+COPY docker/lens/nginx.conf /etc/nginx/conf.d/zipkin.conf.template
+COPY docker/lens/run.sh /usr/local/bin/nginx.sh
 
 EXPOSE 80
 
