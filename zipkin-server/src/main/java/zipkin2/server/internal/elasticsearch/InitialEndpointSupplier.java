@@ -15,68 +15,64 @@ package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
-import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
 import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
 import com.linecorp.armeria.common.SessionProtocol;
-import com.linecorp.armeria.common.util.AbstractListenable;
-import com.linecorp.armeria.common.util.Exceptions;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.function.Supplier;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import zipkin2.internal.Nullable;
 
-// TODO: testme
 final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
+  static final Logger LOGGER = LogManager.getLogger();
+
   final String hosts;
   final SessionProtocol sessionProtocol;
 
-  InitialEndpointSupplier(SessionProtocol sessionProtocol, String hosts) {
-    this.hosts = hosts == null || hosts.isEmpty() ? "localhost:9200" : hosts;
+  InitialEndpointSupplier(SessionProtocol sessionProtocol, @Nullable String hosts) {
+    if (sessionProtocol == null) throw new NullPointerException("sessionProtocol == null");
     this.sessionProtocol = sessionProtocol;
+    this.hosts =
+      hosts == null || hosts.isEmpty() ? sessionProtocol.uriText() + "://localhost:9200" : hosts;
   }
 
   @Override public EndpointGroup get() {
-    List<URI> initialURLs = HostsConverter.convert(hosts);
-    if (initialURLs.size() == 1) {
-      URI url = initialURLs.get(0);
+    List<EndpointGroup> endpointGroups = new ArrayList<>();
+    for (String hostText : hosts.split(",", 100)) {
+      URI url;
+      if (hostText.startsWith("http://") || hostText.startsWith("https://")) {
+        url = URI.create(hostText);
+      } else {
+        url = URI.create(sessionProtocol.uriText() + "://" + hostText);
+      }
+
       String host = url.getHost();
       int port = getPort(url);
-      if (isIpAddress(host) || host.equals("localhost")) {
-        return new StaticEndpointGroup(Endpoint.of(host, port));
-      }
-      // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint group
-      // to round-robin over them.
-      return resolveDnsAddresses(host, port);
-    }
 
-    List<EndpointGroup> endpointGroups = new ArrayList<>();
-    List<Endpoint> staticEndpoints = new ArrayList<>();
-    for (URI url : initialURLs) {
-      Endpoint endpoint = Endpoint.parse(url.getAuthority());
-      if (isIpAddress(url.getHost())) {
-        staticEndpoints.add(endpoint);
+      if (port == 9300) {
+        LOGGER.warn("Native transport no longer supported. Changing {} to http port 9200", host);
+        port = 9200;
+      }
+
+      if (isIpAddress(host) || host.equals("localhost")) {
+        endpointGroups.add(EndpointGroup.of(Endpoint.of(host, port)));
       } else {
         // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
         // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
         // with single IPs freely, they'll all get used.
-        endpointGroups.add(resolveDnsAddresses(url.getHost(), getPort(url)));
+        endpointGroups.add(resolveDnsAddresses(host, port));
       }
     }
 
-    if (!staticEndpoints.isEmpty()) {
-      endpointGroups.add(new StaticEndpointGroup(staticEndpoints));
-    }
-
-    return endpointGroups.size() == 1 ? endpointGroups.get(0)
-      : new CompositeEndpointGroup(endpointGroups);
+    return EndpointGroup.of(endpointGroups);
   }
 
   // Rather than result in an empty group. Await DNS resolution as this call is deferred anyway
+  // TODO: delete the await when https://github.com/line/armeria/issues/2071 is complete
   DnsAddressEndpointGroup resolveDnsAddresses(String host, int port) {
     DnsAddressEndpointGroup result = new DnsAddressEndpointGroupBuilder(host).port(port).build();
     try {
@@ -91,79 +87,6 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
     int port = url.getPort();
     if (port == -1) port = sessionProtocol.defaultPort();
     return port;
-  }
-
-  // TODO(anuraaga): Move this upstream - https://github.com/line/armeria/issues/1897
-  static class CompositeEndpointGroup extends AbstractListenable<List<Endpoint>>
-    implements EndpointGroup {
-
-    static final AtomicIntegerFieldUpdater<CompositeEndpointGroup> dirtyUpdater =
-      AtomicIntegerFieldUpdater.newUpdater(CompositeEndpointGroup.class, "dirty");
-
-    final List<EndpointGroup> endpointGroups;
-    final CompletableFuture<List<Endpoint>> initialEndpointsFuture;
-
-    volatile List<Endpoint> merged = Collections.emptyList();
-    volatile int dirty = 1;
-
-    CompositeEndpointGroup(List<EndpointGroup> endpointGroups) {
-      this.endpointGroups = endpointGroups;
-      for (EndpointGroup group : endpointGroups) {
-        group.addListener(unused -> {
-          dirtyUpdater.set(this, 1);
-          notifyListeners(endpoints());
-        });
-      }
-
-      initialEndpointsFuture = CompletableFuture.anyOf(
-        endpointGroups.stream()
-          .map(EndpointGroup::initialEndpointsFuture)
-          .toArray(CompletableFuture[]::new))
-        .thenApply(unused -> endpoints());
-    }
-
-    @Override public List<Endpoint> endpoints() {
-      if (dirty == 0) {
-        return merged;
-      }
-
-      if (!dirtyUpdater.compareAndSet(this, 1, 0)) {
-        // Another thread might be updating merged at this time, but endpoint groups are allowed to take a
-        // little bit of time to reflect updates.
-        return merged;
-      }
-
-      List<Endpoint> newEndpoints = new ArrayList<>();
-      for (EndpointGroup endpointGroup : endpointGroups) {
-        newEndpoints.addAll(endpointGroup.endpoints());
-      }
-
-      return merged = Collections.unmodifiableList(newEndpoints);
-    }
-
-    @Override public CompletableFuture<List<Endpoint>> initialEndpointsFuture() {
-      return initialEndpointsFuture;
-    }
-
-    @Override public void close() {
-      Throwable t = null;
-      for (EndpointGroup endpointGroup : endpointGroups) {
-        try {
-          endpointGroup.close();
-        } catch (Throwable thrown) {
-          if (t == null) {
-            t = thrown;
-          }
-        }
-      }
-      if (t != null) {
-        Exceptions.throwUnsafely(t);
-      }
-    }
-
-    @Override public String toString() {
-      return "Composite{" + endpointGroups + "}";
-    }
   }
 
   static boolean isIpAddress(String address) {

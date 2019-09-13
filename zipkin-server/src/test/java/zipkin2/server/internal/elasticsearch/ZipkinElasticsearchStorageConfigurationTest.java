@@ -22,7 +22,6 @@ import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.SessionProtocol;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -81,9 +80,8 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Access.registerElasticsearch(context);
     context.refresh();
 
-    assertThat(Access.convert(
-      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
-      .containsExactly(URI.create("http://host1:9200"), URI.create("http://host2:9200"));
+    assertThat(context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts())
+      .isEqualTo("http://host1:9200,http://host2:9200");
   }
 
   @Test public void decentToString_whenUnresolvedOrUnhealthy() {
@@ -110,20 +108,6 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     assertThat(es().pipeline()).isEqualTo("zipkin");
   }
 
-  /** This helps ensure old setups don't break (provided they have http port 9200 open) */
-  @Test public void coersesPort9300To9200() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:host1:9300")
-      .applyTo(context);
-    Access.registerElasticsearch(context);
-    context.refresh();
-
-    assertThat(Access.convert(
-      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
-      .containsExactly(URI.create("http://host1:9200"));
-  }
-
   @Test public void httpPrefixOptional() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
@@ -148,19 +132,6 @@ public class ZipkinElasticsearchStorageConfigurationTest {
       .isEqualTo(SessionProtocol.HTTPS);
     assertThat(context.getBean(InitialEndpointSupplier.class).get().endpoints().get(0).port())
       .isEqualTo(443);
-  }
-
-  @Test public void defaultsToPort9200() {
-    TestPropertyValues.of(
-      "zipkin.storage.type:elasticsearch",
-      "zipkin.storage.elasticsearch.hosts:host1")
-      .applyTo(context);
-    Access.registerElasticsearch(context);
-    context.refresh();
-
-    assertThat(Access.convert(
-      context.getBean(ZipkinElasticsearchStorageProperties.class).getHosts()))
-      .containsExactly(URI.create("http://host1:9200"));
   }
 
   @Configuration

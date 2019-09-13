@@ -15,8 +15,6 @@ package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.spring.Ssl;
-import java.net.URI;
-import java.util.List;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.server.internal.NoOpMeterRegistryConfiguration;
@@ -44,9 +42,5 @@ public final class Access {
     } catch (Exception e) {
       throw new AssertionError(e);
     }
-  }
-
-  public static List<URI> convert(String hosts) {
-    return HostsConverter.convert(hosts);
   }
 }

@@ -18,7 +18,6 @@ import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.endpoint.DynamicEndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
-import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.SessionProtocol;
@@ -73,11 +72,11 @@ final class LazyHttpClientImpl implements LazyHttpClient {
 
   Endpoint getEndpoint() {
     EndpointGroup endpointGroup = initialEndpoints.get();
-    if (endpointGroup instanceof StaticEndpointGroup && endpointGroup.endpoints().size() == 1) {
-      // Just one non-domain URL, can connect directly without enabling load balancing.
-      return endpointGroup.endpoints().get(0);
-    }
+    if (endpointGroup instanceof Endpoint) return (Endpoint) endpointGroup;
 
+    // https://github.com/line/armeria/issues/2071 Composite endpoint groups don't extend dynamic
+    // once this is done, we can delete special-cased code in InitialEndpointSupplier about DNS, as
+    // when endpointGroup.isStatic() is false, we'd here.
     if (endpointGroup instanceof DynamicEndpointGroup) {
       try {
         // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
