@@ -41,7 +41,7 @@ class InitialEndpointSupplierTest {
       .isEqualTo(Endpoint.of("1.2.3.4", 443));
   }
 
-  @Test void parsesListOfHosts() {
+  @Test void parsesListOfLocalhosts() {
     String hostList = "localhost:9201,localhost:9202";
     assertThat(new InitialEndpointSupplier(HTTP, hostList).get().endpoints())
       .containsExactly(Endpoint.of("localhost", 9201), Endpoint.of("localhost", 9202))
