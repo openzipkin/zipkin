@@ -70,32 +70,37 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   Endpoint getEndpoint() {
-    EndpointGroup rawEndpointGroup = initialEndpoints.get();
+    EndpointGroup initial = initialEndpoints.get();
     // Only health-check when there are alternative endpoints. There aren't when instanceof Endpoint
-    if (rawEndpointGroup instanceof Endpoint) return (Endpoint) rawEndpointGroup;
+    if (initial instanceof Endpoint) return (Endpoint) initial;
 
-    EndpointGroup endpointGroup = rawEndpointGroup;
-    if (healthCheck.isEnabled()) endpointGroup = decorateHealthCheck(rawEndpointGroup);
+    // Wrap the result when health checking is enabled.
+    EndpointGroup result = initial;
+    if (healthCheck.isEnabled()) result = decorateHealthCheck(initial);
 
+    boolean empty = true;
+    Exception thrown = null;
     try {
       // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
       // block. The alternative is round-robin, which could be unlucky and hit a bad node first.
       //
       // We are blocking up to the connection timeout which should be enough time for any DNS
       // resolution that hasn't happened yet to finish.
-      //
-      // TODO: When using health checks, if all hosts fail the health check, this will throw TOE
-      // See https://github.com/line/armeria/issues/2075
-      endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
+      empty = result.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS).isEmpty();
     } catch (Exception e) {
-      endpointGroup.close(); // no-op when not health checked
-      // We'll try again next time around.
-      throw new IllegalStateException("couldn't connect any of " + rawEndpointGroup.endpoints(), e);
+      thrown = e;
+    }
+
+    // If health-checking is enabled, we can end up with no endpoints after waiting
+    // TODO: test this results in no cause following https://github.com/line/armeria/pull/2074
+    if (empty) {
+      result.close(); // no-op when not health checked
+      throw new IllegalStateException("couldn't connect any of " + initial.endpoints(), thrown);
     }
 
     // Currently, there's no alternative to static registries when using Endpoint.ofGroup
     // https://github.com/line/armeria/issues/1084
-    EndpointGroupRegistry.register("elasticsearch", endpointGroup, ROUND_ROBIN);
+    EndpointGroupRegistry.register("elasticsearch", result, ROUND_ROBIN);
     return Endpoint.ofGroup("elasticsearch");
   }
 
