@@ -15,7 +15,6 @@ package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
-import com.linecorp.armeria.client.endpoint.DynamicEndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
@@ -72,23 +71,19 @@ final class LazyHttpClientImpl implements LazyHttpClient {
 
   Endpoint getEndpoint() {
     EndpointGroup endpointGroup = initialEndpoints.get();
+    // don't decorate single endpoints
     if (endpointGroup instanceof Endpoint) return (Endpoint) endpointGroup;
 
-    // https://github.com/line/armeria/issues/2071 Composite endpoint groups don't extend dynamic
-    // once this is done, we can delete special-cased code in InitialEndpointSupplier about DNS, as
-    // when endpointGroup.isStatic() is false, we'd here.
-    if (endpointGroup instanceof DynamicEndpointGroup) {
-      try {
-        // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
-        // block. The alternative is round-robin, which could be unlucky and hit a bad node first.
-        //
-        // We are blocking up to the connection timeout which should be enough time for any DNS
-        // resolution that hasn't happened yet to finish.
-        endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
-      } catch (Exception e) {
-        // We'll try again next time around.
-        throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
-      }
+    try {
+      // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
+      // block. The alternative is round-robin, which could be unlucky and hit a bad node first.
+      //
+      // We are blocking up to the connection timeout which should be enough time for any DNS
+      // resolution that hasn't happened yet to finish.
+      endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
+    } catch (Exception e) {
+      // We'll try again next time around.
+      throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
     }
 
     if (healthCheck.isEnabled()) endpointGroup = decorateHealthCheck(endpointGroup);
