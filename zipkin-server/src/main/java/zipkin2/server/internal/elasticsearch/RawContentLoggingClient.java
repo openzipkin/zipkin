@@ -25,6 +25,7 @@ import java.util.concurrent.CompletableFuture;
  * A simple decorator to record raw content strings into HTTP logs. By default, Armeria only logs
  * RPC request / responses, not raw HTTP client content.
  */
+// TODO: move upstream https://github.com/line/armeria/issues/1997
 // TODO: unit test coverage
 final class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
 

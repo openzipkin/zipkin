@@ -112,6 +112,8 @@
                 <deprecated>false</deprecated>
                 <records>false</records>
                 <pojos>false</pojos>
+                <!-- Prevents Intellij from conflating source level with api level -->
+                <generatedAnnotationType>JAVAX_ANNOTATION_GENERATED</generatedAnnotationType>
               </generate>
               <database>
                 <name>org.jooq.meta.mysql.MySQLDatabase</name>

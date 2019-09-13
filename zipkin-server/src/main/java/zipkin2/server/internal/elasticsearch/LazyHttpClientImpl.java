@@ -73,6 +73,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
 
   Endpoint getEndpoint() {
     EndpointGroup endpointGroup = initialEndpoints.get();
+    // https://github.com/line/armeria/issues/2071 about relying on a check for a deprecated type
     if (endpointGroup instanceof StaticEndpointGroup && endpointGroup.endpoints().size() == 1) {
       // Just one non-domain URL, can connect directly without enabling load balancing.
       return endpointGroup.endpoints().get(0);
