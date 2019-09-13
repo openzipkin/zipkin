@@ -88,6 +88,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       // See https://github.com/line/armeria/issues/2075
       endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
     } catch (Exception e) {
+      endpointGroup.close(); // no-op when not health checked
       // We'll try again next time around.
       throw new IllegalStateException("couldn't connect any of " + rawEndpointGroup.endpoints(), e);
     }
