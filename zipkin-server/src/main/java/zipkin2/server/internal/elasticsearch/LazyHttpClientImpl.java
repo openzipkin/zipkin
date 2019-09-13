@@ -70,9 +70,12 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   Endpoint getEndpoint() {
-    EndpointGroup endpointGroup = initialEndpoints.get();
-    // don't decorate single endpoints
-    if (endpointGroup instanceof Endpoint) return (Endpoint) endpointGroup;
+    EndpointGroup rawEndpointGroup = initialEndpoints.get();
+    // Only health-check when there are alternative endpoints. There aren't when instanceof Endpoint
+    if (rawEndpointGroup instanceof Endpoint) return (Endpoint) rawEndpointGroup;
+
+    EndpointGroup endpointGroup = rawEndpointGroup;
+    if (healthCheck.isEnabled()) endpointGroup = decorateHealthCheck(rawEndpointGroup);
 
     try {
       // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
@@ -83,13 +86,11 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
     } catch (Exception e) {
       // We'll try again next time around.
-      throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
+      throw new IllegalStateException("couldn't connect any of " + rawEndpointGroup.endpoints(), e);
     }
 
-    if (healthCheck.isEnabled()) endpointGroup = decorateHealthCheck(endpointGroup);
-
-    // TODO: why must we do this instead of using direct type references.
-    // The static factory is concerning. https://github.com/line/armeria/issues/1084
+    // Currently, there's no alternative to static registries when using Endpoint.ofGroup
+    // https://github.com/line/armeria/issues/1084
     EndpointGroupRegistry.register("elasticsearch", endpointGroup, ROUND_ROBIN);
     return Endpoint.ofGroup("elasticsearch");
   }
@@ -115,18 +116,6 @@ final class LazyHttpClientImpl implements LazyHttpClient {
         .retryInterval(healthCheck.getInterval())
         .build();
     healthChecked.newMeterBinder("elasticsearch").bindTo(meterRegistry);
-
-    // Since we aren't holding up server startup, or sitting on the event loop, it is ok to block.
-    // The alternative is round-robin, which could be unlucky and hit a bad node first.
-    //
-    // We are blocking up to the connection timeout which should be enough time for a health check
-    // to respond.
-    try {
-      healthChecked.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
-    } catch (Exception e) {
-      healthChecked.close(); // we'll recreate it the next time around.
-      throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
-    }
     return healthChecked;
   }
 
