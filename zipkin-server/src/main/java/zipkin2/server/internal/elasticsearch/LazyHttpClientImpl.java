@@ -75,6 +75,8 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     if (endpointGroup instanceof Endpoint) return (Endpoint) endpointGroup;
 
     // https://github.com/line/armeria/issues/2071 Composite endpoint groups don't extend dynamic
+    // once this is done, we can delete special-cased code in InitialEndpointSupplier about DNS, as
+    // when endpointGroup.isStatic() is false, we'd here.
     if (endpointGroup instanceof DynamicEndpointGroup) {
       try {
         // Since we aren't holding up server startup, or sitting on the event loop, it is ok to

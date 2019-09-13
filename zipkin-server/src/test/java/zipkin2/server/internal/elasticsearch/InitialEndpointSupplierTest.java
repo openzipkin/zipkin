@@ -47,6 +47,4 @@ class InitialEndpointSupplierTest {
       .containsExactly(Endpoint.of("localhost", 9201), Endpoint.of("localhost", 9202))
       .containsExactlyElementsOf(new InitialEndpointSupplier(HTTPS, hostList).get().endpoints());
   }
-
-  // TODO: Test DNS without relying on well-known names because build servers or offline laptops
 }

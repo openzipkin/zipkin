@@ -72,6 +72,7 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
   }
 
   // Rather than result in an empty group. Await DNS resolution as this call is deferred anyway
+  // TODO: delete the await when https://github.com/line/armeria/issues/2071 is complete
   DnsAddressEndpointGroup resolveDnsAddresses(String host, int port) {
     DnsAddressEndpointGroup result = new DnsAddressEndpointGroupBuilder(host).port(port).build();
     try {
