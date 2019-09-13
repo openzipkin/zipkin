@@ -83,6 +83,9 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       //
       // We are blocking up to the connection timeout which should be enough time for any DNS
       // resolution that hasn't happened yet to finish.
+      //
+      // TODO: When using health checks, if all hosts fail the health check, this will throw TOE
+      // See https://github.com/line/armeria/issues/2075
       endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
     } catch (Exception e) {
       // We'll try again next time around.
