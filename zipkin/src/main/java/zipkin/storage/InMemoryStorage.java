@@ -20,7 +20,10 @@ import static zipkin.storage.StorageAdapters.blockingToAsync;
 
 /**
  * Test storage component that keeps all spans in memory, accepting them on the calling thread.
+ *
+ * @deprecated use {@link zipkin2.storage.InMemoryStorage}
  */
+@Deprecated
 public final class InMemoryStorage implements StorageComponent {
 
   public static Builder builder() {

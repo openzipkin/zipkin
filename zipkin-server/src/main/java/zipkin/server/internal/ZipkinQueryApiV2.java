@@ -103,7 +103,10 @@ public class ZipkinQueryApiV2 {
       @Nullable @RequestParam(value = "maxDuration", required = false) Long maxDuration,
       @Nullable @RequestParam(value = "endTs", required = false) Long endTs,
       @Nullable @RequestParam(value = "lookback", required = false) Long lookback,
-      @RequestParam(value = "limit", defaultValue = "10") int limit)
+      @RequestParam(value = "limit", defaultValue = "10") int limit,
+      @Nullable @RequestParam(value = "parentService", required = false) String parentServiceName,
+      @Nullable @RequestParam(value = "childService", required = false) String childServiceName,
+      @RequestParam(value = "fetchErrors", required = false) boolean fetchErrors)
       throws IOException {
     QueryRequest queryRequest =
         QueryRequest.newBuilder()
@@ -115,6 +118,9 @@ public class ZipkinQueryApiV2 {
             .endTs(endTs != null ? endTs : System.currentTimeMillis())
             .lookback(lookback != null ? lookback : defaultLookback)
             .limit(limit)
+            .parentServiceName(parentServiceName)
+            .childServiceName(childServiceName)
+            .fetchErrors(fetchErrors)
             .build();
 
     List<List<Span>> traces = storage.spanStore().getTraces(queryRequest).execute();

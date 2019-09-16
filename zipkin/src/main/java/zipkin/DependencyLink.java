@@ -21,6 +21,10 @@ import java.util.Locale;
 import static zipkin.internal.Util.UTF_8;
 import static zipkin.internal.Util.checkNotNull;
 
+/**
+ * @deprecated use {@link zipkin2.DependencyLink}
+ */
+@Deprecated
 public final class DependencyLink implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
@@ -108,9 +112,9 @@ public final class DependencyLink implements Serializable { // for Spark jobs
     if (o instanceof DependencyLink) {
       DependencyLink that = (DependencyLink) o;
       return (this.parent.equals(that.parent))
-          && (this.child.equals(that.child))
-          && (this.callCount == that.callCount)
-          && (this.errorCount == that.errorCount);
+        && (this.child.equals(that.child))
+        && (this.callCount == that.callCount)
+        && (this.errorCount == that.errorCount);
     }
     return false;
   }

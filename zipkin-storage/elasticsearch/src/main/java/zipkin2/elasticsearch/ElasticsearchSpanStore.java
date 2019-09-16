@@ -13,8 +13,11 @@
  */
 package zipkin2.elasticsearch;
 
-import java.util.*;
-
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;

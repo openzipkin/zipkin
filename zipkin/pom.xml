@@ -20,11 +20,11 @@
   <parent>
     <groupId>io.zipkin.java</groupId>
     <artifactId>parent</artifactId>
-    <version>2.9.5-SNAPSHOT</version>
+    <version>2.10.1-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin</artifactId>
-  <name>Zipkin</name>
+  <name>Zipkin Core Library (Deprecated)</name>
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>

@@ -36,7 +36,10 @@ import static zipkin.internal.Util.checkNotNull;
  * Constants#SERVER_ADDR}, the endpoint indicates the source or destination of an RPC. This
  * exception allows zipkin to display network context of uninstrumented services, or clients such as
  * web browsers.
+ *
+ * @deprecated use {@link zipkin2.Endpoint}
  */
+@Deprecated
 public final class Endpoint implements Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 

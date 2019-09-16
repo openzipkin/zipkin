@@ -31,7 +31,10 @@ import static zipkin.internal.Util.checkArgument;
  * <p>While idempotent, this implementation's sample rate won't exactly match the input rate because
  * trace ids are not perfectly distributed across 64bits. For example, tests have shown an error
  * rate of 3% when 100K trace ids are {@link java.util.Random#nextLong random}.
+ *
+ * @deprecated use {@code zipkin2.collector.CollectorSampler} from io.zipkin.zipkin2:zipkin-collector
  */
+@Deprecated
 public abstract class CollectorSampler {
   public static final CollectorSampler ALWAYS_SAMPLE = CollectorSampler.create(1.0f);
 

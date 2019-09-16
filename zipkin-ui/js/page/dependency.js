@@ -25,6 +25,7 @@ const DependencyPageComponent = component(function DependencyPage() {
     DependencyData.attachTo('#dependency-container');
     DependencyGraphUI.attachTo('#dependency-container', {config: this.attr.config});
     ServiceDataModal.attachTo('#service-data-modal-container');
+    ServiceDataModal.attachTo('#filterForm');
     TimeStampUI.attachTo('#end-ts');
     TimeStampUI.attachTo('#start-ts');
     GoToDependencyUI.attachTo('#dependency-query-form');

@@ -2,7 +2,7 @@
 zipkin-server is a [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) application, packaged as an executable jar. You need JRE 8+ to start zipkin-server.
 
 Span storage and collectors are configurable. By default, storage is
-in-memory, the http collector (POST /api/v1/spans endpoint) is enabled,
+in-memory, the http collector (POST /api/v2/spans endpoint) is enabled,
 and the server listens on port 9411.
 
 ## Quick-start
@@ -34,7 +34,7 @@ HTTP api via data conversion. This means you can still accept legacy data on new
 
 ### CORS (Cross-origin Resource Sharing)
 
-By default, all endpoints under `/api/v1` are configured to **allow** cross-origin requests.
+By default, all endpoints under `/api/v2` are configured to **allow** cross-origin requests.
 
 This can be changed by modifying the YAML configuration file (`zipkin.query.allowed-origins`) or by setting an environment variable.
 

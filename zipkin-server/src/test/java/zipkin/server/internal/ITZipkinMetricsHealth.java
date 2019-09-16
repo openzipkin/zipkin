@@ -32,15 +32,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.junit4.SpringRunner;
-import zipkin.Codec;
-import zipkin.Span;
 import zipkin.server.ZipkinServer;
+import zipkin2.Span;
+import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.storage.InMemoryStorage;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.annotation.DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD;
-import static zipkin.TestObjects.LOTS_OF_SPANS;
+import static zipkin2.TestObjects.LOTS_OF_SPANS;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
@@ -120,15 +120,15 @@ public class ITZipkinMetricsHealth {
 
   @Test public void apiTemplate_prometheus() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0]);
-    byte[] body = Codec.JSON.writeSpans(spans);
-    post("/api/v1/spans", body);
+    byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
+    post("/api/v2/spans", body);
 
-    assertThat(get("/api/v1/trace/" + LOTS_OF_SPANS[0].traceIdString()).isSuccessful())
+    assertThat(get("/api/v2/trace/" + LOTS_OF_SPANS[0].traceId()).isSuccessful())
       .isTrue();
 
     assertThat(scrape())
-      .contains("uri=\"/api/v1/trace/{traceId}\"")
-      .doesNotContain(LOTS_OF_SPANS[0].traceIdString());
+      .contains("uri=\"/api/v2/trace/{traceId}\"")
+      .doesNotContain(LOTS_OF_SPANS[0].traceId());
   }
 
   @Test public void forwardedRoute_prometheus() throws Exception {
@@ -148,17 +148,17 @@ public class ITZipkinMetricsHealth {
   /** Makes sure the prometheus filter doesn't count twice */
   @Test public void writeSpans_updatesPrometheusMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
-    byte[] body = Codec.JSON.writeSpans(spans);
+    byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
 
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", body);
+    post("/api/v2/spans", body);
+    post("/api/v2/spans", body);
 
     double messagesCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
     // Get the http count from the registry and it should match the summation previous count
     // and count of calls below
     long httpCount = registry
       .find("http.server.requests")
-      .tag("uri", "/api/v1/spans")
+      .tag("uri", "/api/v2/spans")
       .timer()
       .count();
 
@@ -167,19 +167,19 @@ public class ITZipkinMetricsHealth {
       .doesNotContain("zipkin_collector_spans_total " + messagesCount)
       .contains("zipkin_collector_spans_total{transport=\"http\",} " + messagesCount)
       .contains(
-        "http_server_requests_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v1/spans\",} "
+        "http_server_requests_seconds_count{method=\"POST\",status=\"202\",uri=\"/api/v2/spans\",} "
           + httpCount);
   }
 
   @Test public void writeSpans_updatesMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
-    byte[] body = Codec.JSON.writeSpans(spans);
+    byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
     double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();
     double bytesCount = registry.counter("zipkin_collector.bytes", "transport", "http").count();
     double spansCount = registry.counter("zipkin_collector.spans", "transport", "http").count();
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", body);
+    post("/api/v2/spans", body);
+    post("/api/v2/spans", body);
 
     String json = getAsString("/metrics");
 
@@ -201,7 +201,7 @@ public class ITZipkinMetricsHealth {
       registry.counter("zipkin_collector.messages", "transport", "http").count();
     Double messagesDroppedCount =
       registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
-    post("/api/v1/spans", body);
+    post("/api/v2/spans", body);
 
     String json = getAsString("/metrics");
 
@@ -222,10 +222,10 @@ public class ITZipkinMetricsHealth {
   @Test public void writesSpans_readMetricsFormat() throws Exception {
     byte[] span = {'z', 'i', 'p', 'k', 'i', 'n'};
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
-    byte[] body = Codec.JSON.writeSpans(spans);
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", body);
-    post("/api/v1/spans", span);
+    byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);
+    post("/api/v2/spans", body);
+    post("/api/v2/spans", body);
+    post("/api/v2/spans", span);
     Thread.sleep(1500);
 
     String metrics = getAsString("/metrics");

@@ -19,7 +19,10 @@ import zipkin.internal.ThriftCodec;
 
 /**
  * Methods make an attempt to perform codec operations, failing to null.
+ *
+ * @deprecated use {@link zipkin2.codec.SpanBytesEncoder} and {@link zipkin2.codec.SpanBytesDecoder}
  */
+@Deprecated
 public interface Codec extends SpanDecoder {
 
   JsonCodec JSON = new JsonCodec();

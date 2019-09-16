@@ -34,6 +34,7 @@ package zipkin;
  * storing private data! The takeaway isn't never store cookies, as there are valid cases for this.
  * The takeaway is to be conscious about what's you are storing.
  */
+@Deprecated
 public final class TraceKeys {
 
   /**

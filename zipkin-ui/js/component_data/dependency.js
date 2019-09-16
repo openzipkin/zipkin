@@ -1,13 +1,14 @@
 import {component} from 'flightjs';
 import moment from 'moment';
 import $ from 'jquery';
+import {traceSummary, traceSummariesToMustache} from '../component_ui/traceSummary';
 
 export default component(function dependency() {
   let services = {};
   let dependencies = {};
 
   this.getDependency = function(endTs, lookback) {
-    let url = `api/v1/dependencies?endTs=${endTs}`;
+    let url = `api/v2/dependencies?endTs=${endTs}`;
     if (lookback) {
       url += `&lookback=${lookback}`;
     }
@@ -28,18 +29,34 @@ export default component(function dependency() {
     });
   };
 
+  this.filterDependency = function(parent, child, endTs, lookback, limit, error, serviceName) {
+    const apiURL = `api/v2/traces?parentService=${parent}&childService=${child}&lookback=
+    ${lookback}&endTs=${endTs}&limit=${limit}&error=${error}`;
+    $.ajax(apiURL, {
+      type: 'GET',
+      dataType: 'json'
+    }).done(traces => {
+      const traceView = {
+        traces: traceSummariesToMustache('all', traces.map(traceSummary)),
+        apiURL,
+        rawResponse: traces,
+        serviceName
+      };
+      this.trigger('filterLinkDataRecieved', traceView);
+    }).fail(e => {
+      this.trigger('defaultPageModelView', {traces: 'No traces to show', error: e});
+    });
+  };
+
   this.buildServiceData = function(links) {
     services = {};
     dependencies = {};
     links.forEach(link => {
       const {parent, child} = link;
-
       dependencies[parent] = dependencies[parent] || {};
       dependencies[parent][child] = link;
-
       services[parent] = services[parent] || {serviceName: parent, uses: [], usedBy: []};
       services[child] = services[child] || {serviceName: child, uses: [], usedBy: []};
-
       services[parent].uses.push(child);
       services[child].usedBy.push(parent);
     });
@@ -61,7 +78,6 @@ export default component(function dependency() {
         this.trigger(document, 'parentChildDataReceived', data);
       });
     });
-
     const endTs = document.getElementById('endTs').value || moment().valueOf();
     const startTs = document.getElementById('startTs').value;
     let lookback;
@@ -69,6 +85,11 @@ export default component(function dependency() {
       lookback = endTs - startTs;
     }
     this.getDependency(endTs, lookback);
+    this.on(document, 'filterLinkDataRequested',
+    function(event, {parentService, childService, limit, error, serviceName}) {
+      this.filterDependency(parentService, childService, endTs,
+        lookback, limit, error, serviceName);
+    });
   });
 
   this.getServiceData = function(serviceName, callback) {

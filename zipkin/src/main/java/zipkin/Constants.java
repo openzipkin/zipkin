@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.List;
 import zipkin.storage.QueryRequest;
 
+@Deprecated
 public final class Constants {
 
   /**

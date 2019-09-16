@@ -21,7 +21,9 @@ import zipkin.Span;
  * free to provide other interfaces, but the ones declared here must be supported.
  *
  * @see InMemoryStorage
+ * @deprecated use {@link zipkin2.storage.StorageComponent}
  */
+@Deprecated
 public interface StorageComponent extends Component {
 
   SpanStore spanStore();

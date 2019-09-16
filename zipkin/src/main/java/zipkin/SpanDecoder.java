@@ -18,7 +18,12 @@ import zipkin.internal.DetectingSpanDecoder;
 import zipkin.internal.JsonCodec;
 import zipkin.internal.ThriftCodec;
 
-/** Decodes spans from serialized bytes. */
+/**
+ * Decodes spans from serialized bytes.
+ *
+ * @deprecated use {@link zipkin2.codec.SpanBytesDecoder}
+ */
+@Deprecated
 public interface SpanDecoder {
   SpanDecoder JSON_DECODER = new JsonCodec();
   SpanDecoder THRIFT_DECODER = new ThriftCodec();

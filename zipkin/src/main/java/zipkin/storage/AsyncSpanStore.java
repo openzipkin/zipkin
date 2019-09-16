@@ -26,7 +26,9 @@ import zipkin.internal.Nullable;
  * user-level abstractions such as futures or observables.
  *
  * @see SpanStore
+ * @deprecated use {@link zipkin2.storage.SpanStore}
  */
+@Deprecated
 public interface AsyncSpanStore {
 
   /**

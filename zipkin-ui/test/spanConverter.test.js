@@ -325,33 +325,13 @@ describe('SPAN v2 -> v1 Conversion', () => {
       timestamp: 1472470996199000,
       duration: 207000,
       annotations: [
-        {
-          value: 'sr',
-          timestamp: 1472470996199000,
-          endpoint: backend
-        },
-        {
-          value: 'ss',
-          timestamp: 1472470996406000,
-          endpoint: backend
-        }
+        {timestamp: 1472470996199000, value: 'sr', endpoint: backend},
+        {timestamp: 1472470996406000, value: 'ss', endpoint: backend}
       ],
       binaryAnnotations: [
-        {
-          key: 'http.path',
-          value: '/api',
-          endpoint: backend
-        },
-        {
-          key: 'finagle.version',
-          value: '6.45.0',
-          endpoint: backend
-        },
-        {
-          key: 'ca',
-          value: true,
-          endpoint: frontend
-        }
+        {key: 'http.path', value: '/api', endpoint: backend},
+        {key: 'finagle.version', value: '6.45.0', endpoint: backend},
+        {key: 'ca', value: true, endpoint: frontend}
       ]
     };
 
@@ -1056,6 +1036,14 @@ describe('SPAN v1 merge by ID', () => {
         traceId: '22222222222222222',
         parentId: 'a',
         id: 'a', // self-referencing
+      },
+      {
+        traceId: '22222222222222222',
+        parentId: 'a',
+        id: 'b',
+        timestamp: 10,
+        duration: 0, // zero duration should be scrubbed
+        binaryAnnotations: [{key: 'lc', value: ''}]
       }
     ]);
 
@@ -1075,6 +1063,15 @@ describe('SPAN v1 merge by ID', () => {
         duration: ss.timestamp - sr.timestamp,
         annotations: [sr, ss],
         binaryAnnotations: []
+      },
+      {
+        traceId: '00000000000000022222222222222222',
+        parentId: '000000000000000a',
+        id: '000000000000000b',
+        name: '',
+        timestamp: 10,
+        annotations: [],
+        binaryAnnotations: [{key: 'lc', value: ''}]
       }
     ]);
   });

@@ -51,7 +51,10 @@ import zipkin.storage.Callback;
  * </li>
  * </ul>
  * </pre>
+ *
+ * @deprecated use {@code zipkin2.collector.CollectorMetrics} from io.zipkin.zipkin2:zipkin-collector
  */
+@Deprecated
 public interface CollectorMetrics {
 
   /**

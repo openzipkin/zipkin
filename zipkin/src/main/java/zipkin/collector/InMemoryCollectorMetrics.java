@@ -18,6 +18,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static zipkin.internal.Util.checkNotNull;
 
+/**
+ * @deprecated use {@code zipkin2.collector.InMemoryCollectorMetrics} from io.zipkin.zipkin2:zipkin-collector
+ */
+@Deprecated
 public final class InMemoryCollectorMetrics implements CollectorMetrics {
 
   private final ConcurrentHashMap<String, AtomicInteger> metrics;
@@ -100,7 +104,7 @@ public final class InMemoryCollectorMetrics implements CollectorMetrics {
       AtomicInteger metric = metrics.get(key);
       if (metric == null) {
         metric = metrics.putIfAbsent(key, new AtomicInteger(quantity));
-        if (metric == null) return; // won race creating the entry 
+        if (metric == null) return; // won race creating the entry
       }
 
       while (true) {

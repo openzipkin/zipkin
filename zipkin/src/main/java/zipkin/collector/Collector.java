@@ -37,7 +37,10 @@ import static zipkin.internal.Util.checkNotNull;
  * <p>Callbacks passed do not propagate to the storage layer. They only return success or failures
  * before storage is attempted. This ensures that calling threads are disconnected from storage
  * threads.
+ *
+ * @deprecated use {@code zipkin2.collector.Collector} from io.zipkin.zipkin2:zipkin-collector
  */
+@Deprecated
 public class Collector
   extends zipkin.internal.Collector<SpanDecoder, zipkin.Span> { // not final for mock
 

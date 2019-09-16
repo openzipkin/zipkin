@@ -19,6 +19,10 @@ import zipkin.Endpoint;
 import zipkin.Span;
 import zipkin.internal.Nullable;
 
+/**
+ * @deprecated use {@link zipkin2.storage.SpanStore}
+ */
+@Deprecated
 public interface SpanStore {
 
   /**

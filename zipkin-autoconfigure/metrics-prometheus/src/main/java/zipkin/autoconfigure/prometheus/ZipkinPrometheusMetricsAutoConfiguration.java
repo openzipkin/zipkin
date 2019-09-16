@@ -34,7 +34,6 @@ import org.springframework.util.StringUtils;
   // from io.micrometer.spring.web.servlet.WebMvcTags
   private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
   private static final Tag URI_REDIRECTION = Tag.of("uri", "REDIRECTION");
-  private static final Tag URI_TRACE_V1 = Tag.of("uri", "/api/v1/trace/{traceId}");
   private static final Tag URI_TRACE_V2 = Tag.of("uri", "/api/v2/trace/{traceId}");
   // single-page app requests are forwarded to index: ZipkinUiAutoConfiguration.forwardUiEndpoints
   private static final Tag URI_CROSSROADS = Tag.of("uri", "/zipkin/index.html");
@@ -120,7 +119,6 @@ import org.springframework.util.StringUtils;
         }
       }
       // handle templated routes instead of exploding on trace ID cardinality
-      if (uri.startsWith("/api/v1/trace/")) return URI_TRACE_V1;
       if (uri.startsWith("/api/v2/trace/")) return URI_TRACE_V2;
       return Tag.of("uri", uri);
     }

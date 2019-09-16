@@ -25,7 +25,10 @@ import static zipkin.internal.Util.equal;
  * Associates an event that explains latency with a timestamp.
  *
  * <p>Unlike log statements, annotations are often codes: Ex. {@link Constants#SERVER_RECV "sr"}.
+ *
+ * @deprecated use {@link zipkin2.Annotation}
  */
+@Deprecated
 public final class Annotation implements Comparable<Annotation>, Serializable { // for Spark jobs
   private static final long serialVersionUID = 0L;
 
