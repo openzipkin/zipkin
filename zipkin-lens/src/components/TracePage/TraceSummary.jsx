@@ -32,18 +32,11 @@ const TraceSummary = ({ traceSummary }) => {
   const handleSpanClick = useCallback(i => setCurrentSpanIndex(i), []);
 
   const handleSpanToggleButtonClick = useCallback((spanId) => {
-    if (closedSpans[spanId]) {
-      setClosedSpans({
-        ...closedSpans,
-        [spanId]: undefined,
-      });
-      return;
-    }
-    setClosedSpans({
-      ...closedSpans,
-      [spanId]: true,
-    });
-  }, [closedSpans]);
+    setClosedSpans(oldSpans => ({
+      ...oldSpans,
+      [spanId]: oldSpans[spanId] ? undefined : true,
+    }));
+  }, []);
 
   const currentSpan = traceSummary.spans[currentSpanIndex];
 
