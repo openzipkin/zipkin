@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.15.1-SNAPSHOT</version>
+    <version>2.16.3-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-server</artifactId>
@@ -30,21 +30,9 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <maven-invoker-plugin.version>3.2.0</maven-invoker-plugin.version>
+    <maven-invoker-plugin.version>3.2.1</maven-invoker-plugin.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
-
-  <dependencyManagement>
-    <dependencies>
-      <dependency>
-        <groupId>com.linecorp.armeria</groupId>
-        <artifactId>armeria-bom</artifactId>
-        <version>${armeria.version}</version>
-        <type>pom</type>
-        <scope>import</scope>
-      </dependency>
-    </dependencies>
-  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -62,20 +50,24 @@
 
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-spring-boot-autoconfigure</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-spring-boot-actuator-starter</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-brave</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-grpc-protocol</artifactId>
+      <version>${armeria.version}</version>
     </dependency>
 
     <!-- zipkin requires exporting /health endpoint -->
@@ -108,13 +100,7 @@
     <dependency>
       <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-ui</artifactId>
-      <version>2.12.10</version>
-    </dependency>
-    <!-- Static content for the Lens UI -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-lens</artifactId>
-      <version>${project.version}</version>
+      <version>2.12.11</version>
     </dependency>
     <dependency>
       <!-- HTML library for injecting configurable <base> tag -->
@@ -279,8 +265,15 @@
     </dependency>
 
     <dependency>
-      <groupId>com.linecorp.armeria</groupId>
+      <groupId>${armeria.groupId}</groupId>
+      <artifactId>armeria-testing-junit</artifactId>
+      <version>${armeria.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-testing-junit4</artifactId>
+      <version>${armeria.version}</version>
       <scope>test</scope>
     </dependency>
 
@@ -318,6 +311,22 @@
   </dependencies>
 
   <profiles>
+    <profile>
+      <id>include-lens</id>
+      <activation>
+        <property>
+          <name>!skipLens</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- Static content for the Lens UI -->
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>zipkin-lens</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>integration</id>
       <activation>
@@ -414,6 +423,9 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <failOnNoGitDirectory>false</failOnNoGitDirectory>
+        </configuration>
       </plugin>
 
       <plugin>

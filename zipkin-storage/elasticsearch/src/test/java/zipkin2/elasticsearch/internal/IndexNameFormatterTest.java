@@ -31,6 +31,14 @@ public class IndexNameFormatterTest {
   }
 
   @Test
+  public void indexNameForTimestampRange_sameTime() throws ParseException {
+    long start = iso8601.parse("2016-11-01T01:01:01Z").getTime();
+
+    assertThat(formatter.formatTypeAndRange("span", start, start))
+      .containsExactly("zipkin*span-2016-11-01");
+  }
+
+  @Test
   public void indexNameForTimestampRange_sameDay() throws ParseException {
     long start = iso8601.parse("2016-11-01T01:01:01Z").getTime();
     long end = iso8601.parse("2016-11-01T23:59:59Z").getTime();

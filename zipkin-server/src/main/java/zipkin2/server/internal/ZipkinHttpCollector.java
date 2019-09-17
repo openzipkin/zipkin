@@ -106,11 +106,14 @@ public class ZipkinHttpCollector {
   }
 
   /** This synchronously decodes the message so that users can see data errors. */
+  @SuppressWarnings("FutureReturnValueIgnored")
+  // TODO: errorprone wants us to check this future before returning, but what would be a sensible
+  // check? Say it is somehow canceled, would we take action? Would callback.onError() be redundant?
   HttpResponse validateAndStoreSpans(SpanBytesDecoder decoder, ServiceRequestContext ctx,
     HttpRequest req) {
     CompletableCallback result = new CompletableCallback();
 
-    req.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()).handleAsync((msg, t) -> {
+    req.aggregateWithPooledObjects(ctx.contextAwareEventLoop(), ctx.alloc()).handle((msg, t) -> {
       if (t != null) {
         result.onError(t);
         return null;
@@ -144,6 +147,9 @@ public class ZipkinHttpCollector {
         } catch (IllegalArgumentException e) {
           result.onError(new IllegalArgumentException("Expected a " + decoder + " encoded list\n"));
           return null;
+        } catch (Throwable t1) {
+          result.onError(t1);
+          return null;
         }
 
         SpanBytesDecoder unexpectedDecoder = testForUnexpectedFormat(decoder, nioBuffer);
@@ -156,13 +162,18 @@ public class ZipkinHttpCollector {
         // collector.accept might block so need to move off the event loop. We make sure the
         // callback is context aware to continue the trace.
         Executor executor = ctx.makeContextAware(ctx.blockingTaskExecutor());
-        collector.acceptSpans(nioBuffer, decoder, result, executor);
+        try {
+          collector.acceptSpans(nioBuffer, decoder, result, executor);
+        } catch (Throwable t1) {
+          result.onError(t1);
+          return null;
+        }
       } finally {
         ReferenceCountUtil.release(content);
       }
 
       return null;
-    }, ctx.contextAwareExecutor());
+    });
 
     return HttpResponse.from(result);
   }

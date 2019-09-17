@@ -47,8 +47,8 @@ public abstract class CollectorComponent extends Component {
     public abstract Builder metrics(CollectorMetrics metrics);
 
     /**
-     * {@link CollectorSampler#isSampled(long, boolean) samples spans} to reduce load on the storage
-     * system. Defaults to always sample.
+     * {@link CollectorSampler#isSampled(String, boolean) samples spans} to reduce load on the
+     * storage system. Defaults to always sample.
      */
     public abstract Builder sampler(CollectorSampler sampler);
 

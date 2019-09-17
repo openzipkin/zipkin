@@ -13,15 +13,11 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.common.AggregatedHttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
-import com.linecorp.armeria.server.ServerBuilder;
-import com.linecorp.armeria.testing.junit4.server.ServerRule;
-import java.util.concurrent.atomic.AtomicReference;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.elasticsearch.ElasticsearchStorage;
@@ -30,24 +26,14 @@ import zipkin2.server.internal.brave.TracingConfiguration;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
 
-public class ITElasticsearchSelfTracing {
+class ITElasticsearchSelfTracing {
 
-  static final AtomicReference<AggregatedHttpRequest> CAPTURED_REQUEST = new AtomicReference<>();
-
-  @ClassRule public static ServerRule server = new ServerRule() {
-    @Override protected void configure(ServerBuilder sb) {
-      sb.serviceUnder("/", (ctx, req) -> HttpResponse.from(
-        req.aggregate().thenApply(agg -> {
-          CAPTURED_REQUEST.set(agg);
-          return HttpResponse.of(YELLOW_RESPONSE);
-        })));
-    }
-  };
+  @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
   ElasticsearchStorage storage;
 
-  @Before public void init() {
+  @BeforeEach void init() {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.self-tracing.enabled=true",
@@ -61,18 +47,19 @@ public class ITElasticsearchSelfTracing {
     storage = context.getBean(ElasticsearchStorage.class);
   }
 
-  @After public void close() {
-    CAPTURED_REQUEST.set(null);
+  @AfterEach void close() {
+    storage.close();
   }
 
   /**
    * We currently don't have a nice way to mute outbound propagation in Brave. This just makes sure
    * we are nicer.
    */
-  @Test public void healthcheck_usesB3Single() {
+  @Test void healthcheck_usesB3Single() {
+    server.enqueue(YELLOW_RESPONSE);
     assertThat(storage.check().ok()).isTrue();
 
-    assertThat(CAPTURED_REQUEST.get().headers())
+    assertThat(server.takeRequest().request().headers())
       .extracting(e -> e.getKey().toString())
       .contains("b3")
       .doesNotContain("x-b3-traceid");

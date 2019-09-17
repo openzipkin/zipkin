@@ -38,7 +38,7 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
 
     abstract String span_name();
 
-    abstract byte[] span();
+    abstract ByteBuffer span();
   }
 
   static class Factory {
@@ -63,7 +63,7 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
       this.preparedStatement = session.prepare(insertQuery);
     }
 
-    Input newInput(V1Span v1, byte[] v1Bytes, long ts_micro) {
+    Input newInput(V1Span v1, ByteBuffer v1Bytes, long ts_micro) {
       String span_name =
           String.format(
               "%s%d_%d_%d",
@@ -108,7 +108,7 @@ final class InsertTrace extends ResultSetFutureCall<Void> {
             .setLong("trace_id", input.trace_id())
             .setBytesUnsafe("ts", factory.timestampCodec.serialize(input.ts()))
             .setString("span_name", input.span_name())
-            .setBytes("span", ByteBuffer.wrap(input.span())));
+            .setBytes("span", input.span()));
   }
 
   @Override public Void map(ResultSet input) {

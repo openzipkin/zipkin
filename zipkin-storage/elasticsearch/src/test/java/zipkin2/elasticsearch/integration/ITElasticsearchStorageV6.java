@@ -20,7 +20,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 class ITElasticsearchStorageV6 extends ITElasticsearchStorage {
 
   @RegisterExtension ElasticsearchStorageExtension backend = new ElasticsearchStorageExtension(
-    "openzipkin/zipkin-elasticsearch6:2.15.0");
+    "openzipkin/zipkin-elasticsearch6:2.16.2");
 
   @Override ElasticsearchStorageExtension backend() {
     return backend;

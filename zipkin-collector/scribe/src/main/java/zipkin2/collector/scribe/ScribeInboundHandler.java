@@ -41,6 +41,9 @@ import org.slf4j.LoggerFactory;
 
 import static zipkin2.Call.propagateIfFatal;
 
+@SuppressWarnings("FutureReturnValueIgnored")
+// TODO: errorprone wants us to check futures before returning, but what would be a sensible check?
+// Say it is somehow canceled, would we take action? Would callback.onError() be redundant?
 final class ScribeInboundHandler extends ChannelInboundHandlerAdapter {
 
   static final Logger logger = LoggerFactory.getLogger(ScribeInboundHandler.class);

@@ -37,7 +37,7 @@ import zipkin2.Endpoint;
 import static com.google.common.base.Preconditions.checkState;
 
 final class Schema {
-  private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
+  static final Logger LOG = LoggerFactory.getLogger(Schema.class);
   static final Charset UTF_8 = Charset.forName("UTF-8");
 
   static final String TABLE_SPAN = "span";
@@ -54,7 +54,7 @@ final class Schema {
   static final String UPGRADE_1 = "/zipkin2-schema-upgrade-1.cql";
   static final String UPGRADE_2 = "/zipkin2-schema-upgrade-2.cql";
 
-  private Schema() {
+  Schema() {
   }
 
   static Metadata readMetadata(Session session) {
@@ -161,7 +161,7 @@ final class Schema {
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
     try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
-      for (String cmd : CharStreams.toString(reader).split(";")) {
+      for (String cmd : CharStreams.toString(reader).split(";", 100)) {
         cmd = cmd.trim().replace(" " + DEFAULT_KEYSPACE, " " + keyspace);
         if (!cmd.isEmpty()) {
           session.execute(cmd);
@@ -174,12 +174,12 @@ final class Schema {
 
   @UDT(name = "endpoint")
   static final class EndpointUDT implements Serializable { // for Spark jobs
-    private static final long serialVersionUID = 0L;
+    static final long serialVersionUID = 0L;
 
-    private String service;
-    private InetAddress ipv4;
-    private InetAddress ipv6;
-    private int port;
+    String service;
+    InetAddress ipv4;
+    InetAddress ipv6;
+    int port;
 
     EndpointUDT() {
       this.service = null;
@@ -233,14 +233,23 @@ final class Schema {
       builder.parseIp(ipv6);
       return builder.build();
     }
+
+    @Override public String toString() {
+      return "EndpointUDT{"
+        + "service=" + service + ", "
+        + "ipv4=" + ipv4 + ", "
+        + "ipv6=" + ipv6 + ", "
+        + "port=" + port
+        + "}";
+    }
   }
 
   @UDT(name = "annotation")
   static final class AnnotationUDT implements Serializable { // for Spark jobs
-    private static final long serialVersionUID = 0L;
+    static final long serialVersionUID = 0L;
 
-    private long ts;
-    private String v;
+    long ts;
+    String v;
 
     AnnotationUDT() {
       this.ts = 0;
@@ -270,6 +279,10 @@ final class Schema {
 
     Annotation toAnnotation() {
       return Annotation.create(ts, v);
+    }
+
+    @Override public String toString() {
+      return "AnnotationUDT{SpanBytesDecoderts=" + ts + ", v=" + v + "}";
     }
   }
 }

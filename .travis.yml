@@ -14,9 +14,7 @@ cache:
 
 language: java
 
-jdk:
-  # needs to be JDK 1.8 as long as we start Kafka 0.8
-  - oraclejdk8
+jdk: openjdk11
 
 services:
   - docker

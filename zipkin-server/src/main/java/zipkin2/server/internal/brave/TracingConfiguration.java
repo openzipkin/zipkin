@@ -54,6 +54,16 @@ public class TracingConfiguration {
   /** Configuration for how to buffer spans into messages for Zipkin */
   @Bean Reporter<Span> reporter(BeanFactory factory, SelfTracingProperties config) {
     return AsyncReporter.builder(new LocalSender(factory))
+      .threadFactory((runnable) -> new Thread(new Runnable() {
+        @Override public void run() {
+          RequestContextCurrentTraceContext.setCurrentThreadNotRequestThread(true);
+          runnable.run();
+        }
+
+        @Override public String toString() {
+          return runnable.toString();
+        }
+      }))
       .messageTimeout(config.getMessageTimeout().toNanos(), TimeUnit.NANOSECONDS)
       .metrics(new ReporterMetricsAdapter(factory))
       .build();

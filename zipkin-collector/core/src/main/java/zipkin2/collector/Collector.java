@@ -15,7 +15,6 @@ package zipkin2.collector;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
@@ -193,7 +192,7 @@ public class Collector { // not final for mock
 
   List<Span> decodeList(BytesDecoder<Span> decoder, byte[] serialized) {
     List<Span> out = new ArrayList<>();
-    if (!decoder.decodeList(serialized, out)) return Collections.emptyList();
+    decoder.decodeList(serialized, out);
     return out;
   }
 

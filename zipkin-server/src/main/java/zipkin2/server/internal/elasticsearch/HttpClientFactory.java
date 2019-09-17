@@ -20,9 +20,11 @@ import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
+import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.logging.LogLevel;
+import com.linecorp.armeria.common.metric.MeterIdPrefixFunction;
 import java.io.Closeable;
 import java.util.List;
 import java.util.function.Consumer;
@@ -46,6 +48,8 @@ public class HttpClientFactory implements Function<Endpoint, HttpClient>, Closea
     this.timeout = es.getTimeout();
     HttpLogging httpLogging = es.getHttpLogging();
     ClientOptionsBuilder options = new ClientOptionsBuilder()
+      .decorator(MetricCollectingClient.newDecorator(
+        MeterIdPrefixFunction.ofDefault("elasticsearch")))
       .decorator(HttpDecodingClient.newDecorator());
 
     if (httpLogging != HttpLogging.NONE) {

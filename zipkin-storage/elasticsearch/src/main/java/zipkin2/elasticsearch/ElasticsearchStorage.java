@@ -17,6 +17,7 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.ResponseTimeoutException;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
@@ -26,6 +27,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import zipkin2.CheckResult;
@@ -245,6 +247,16 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
     http().newCall(delete, BodyConverters.NULL, "delete-index").execute();
   }
 
+  /**
+   * Internal code and api responses coerce to {@link RejectedExecutionException} when work is
+   * rejected. We also classify {@link ResponseTimeoutException} as a capacity related exception
+   * eventhough capacity is not the only reason (timeout could also result from a misconfiguration
+   * or a network problem).
+   */
+  @Override public boolean isOverCapacity(Throwable e) {
+    return e instanceof RejectedExecutionException || e instanceof ResponseTimeoutException;
+  }
+
   /** This is blocking so that we can determine if the cluster is healthy or not */
   @Override public CheckResult check() {
     return ensureClusterReady(indexNameFormatter().formatType(SPAN));
@@ -257,7 +269,9 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
         HttpMethod.GET, "/_cluster/health/" + index);
       return http.newCall(request, READ_STATUS, "get-cluster-health").execute();
     } catch (IOException | RuntimeException e) {
-      return CheckResult.failed(e);
+      // Unwrap the marker exception as the health check is not relevant for the throttle component,
+      // and wrapping interferes with humans intended to read this message.
+      return CheckResult.failed(e instanceof RejectedExecutionException ? e.getCause() : e);
     }
   }
 

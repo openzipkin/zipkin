@@ -73,8 +73,7 @@ Note: The above is just an example, most likely you'll want to use an existing t
 
 ## Storage Component
 Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
-dependency links. This is used by the server and those making custom
-servers, collectors, or span reporters. For this reason, storage
+dependency links. This is used by the server and those making collectors, or span reporters. For this reason, storage
 components have minimal dependencies, but most require Java 8+
 
 Ex.
@@ -94,13 +93,13 @@ storage.close();
 ```
 
 ### In-Memory
-The [InMemoryStorage](zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It
+The [InMemoryStorage](zipkin-server#in-memory-storage) component is packaged in zipkin's core library. It
 is neither persistent, nor viable for realistic work loads. Its purpose
 is for testing, for example starting a server on your laptop without any
 database needed.
 
 ### Cassandra
-The [Cassandra](zipkin-storage/cassandra) component uses Cassandra
+The [Cassandra](zipkin-server#cassandra-storage) component uses Cassandra
 3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.
 
 This is the second generation of our Cassandra schema. It stores spans
@@ -111,7 +110,7 @@ implemented indexes to make querying larger data more performant.
 Note: This store requires a [job to aggregate](https://github.com/openzipkin/zipkin-dependencies) dependency links.
 
 ### Elasticsearch
-The [Elasticsearch](zipkin-storage/elasticsearch) component uses
+The [Elasticsearch](zipkin-server#elasticsearch-storage) component uses
 Elasticsearch 5+ features, but is tested against Elasticsearch 6-7.x.
 
 It stores spans as Zipkin v2 json so that integration with other tools is
@@ -176,7 +175,7 @@ The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to q
 from its UI. It can also run collectors, such as RabbitMQ or Kafka.
 
 To run the server from the currently checked out source, enter the
-following. JDK 8 is required.
+following. JDK 11 is required to compile the source.
 ```bash
 # Build the server and also make its dependencies
 $ ./mvnw -DskipTests --also-make -pl zipkin-server clean install

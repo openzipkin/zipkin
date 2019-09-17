@@ -13,7 +13,7 @@
  */
 package zipkin2.internal;
 
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import zipkin2.Call;
 import zipkin2.Span;
@@ -32,12 +32,14 @@ public final class FilterTraces implements Call.Mapper<List<List<Span>>, List<Li
   }
 
   @Override public List<List<Span>> map(List<List<Span>> input) {
-    Iterator<List<Span>> i = input.iterator();
-    while (i.hasNext()) { // Not using removeIf as that's java 8+
-      List<Span> next = i.next();
-      if (!request.test(next)) i.remove();
+    int length = input.size();
+    if (length == 0) return input;
+    ArrayList<List<Span>> result = new ArrayList<>(length);
+    for (int i = 0; i < length; i++) {
+      List<Span> next = input.get(i);
+      if (request.test(next)) result.add(next);
     }
-    return input;
+    return result;
   }
 
   @Override public String toString() {

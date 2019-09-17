@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.elasticsearch; // to access package-private stuff
+package zipkin2.elasticsearch.internal.client; // to access package-private stuff
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
 import com.linecorp.armeria.client.HttpClient;
@@ -22,14 +22,16 @@ import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
-import com.linecorp.armeria.server.ServerBuilder;
-import com.linecorp.armeria.testing.junit4.server.ServerRule;
+import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
+import com.linecorp.armeria.unsafe.ByteBufHttpData;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.PooledByteBufAllocator;
 import java.io.FileNotFoundException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -41,12 +43,11 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.Call;
 import zipkin2.Callback;
-import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.internal.Nullable;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -54,41 +55,38 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.awaitility.Awaitility.await;
 import static org.junit.jupiter.api.Assertions.fail;
+import static zipkin2.TestObjects.UTF_8;
 
-public class HttpCallTest {
+class HttpCallTest {
+  static final HttpCall.BodyConverter<Object> NULL = (parser, contentString) -> null;
 
-  private static final AtomicReference<AggregatedHttpResponse> MOCK_RESPONSE =
-    new AtomicReference<>();
   private static final AggregatedHttpResponse SUCCESS_RESPONSE =
     AggregatedHttpResponse.of(HttpStatus.OK);
 
-  @ClassRule public static ServerRule server = new ServerRule() {
-    @Override protected void configure(ServerBuilder sb) {
-      sb.service("/", ((ctx, req) -> HttpResponse.of(MOCK_RESPONSE.get())));
-    }
-  };
+  @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
   private static final AggregatedHttpRequest REQUEST =
     AggregatedHttpRequest.of(HttpMethod.GET, "/");
 
   HttpCall.Factory http;
 
-  @Before public void setUp() {
+  @BeforeEach void setUp() {
     http = new HttpCall.Factory(HttpClient.of(server.httpUri("/")));
   }
 
-  @Test public void emptyContent() throws Exception {
-    MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
+  @Test void emptyContent() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
 
     assertThat(http.newCall(REQUEST, (parser, contentString) -> fail(), "test").execute()).isNull();
 
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.OK, MediaType.PLAIN_TEXT_UTF_8, ""));
     CompletableCallback<String> future = new CompletableCallback<>();
     http.newCall(REQUEST, (parser, contentString) -> "hello", "test").enqueue(future);
     assertThat(future.join()).isNull();
   }
 
-  @Test public void propagatesOnDispatcherThreadWhenFatal() throws Exception {
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+  @Test void propagatesOnDispatcherThreadWhenFatal() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     final LinkedBlockingQueue<Object> q = new LinkedBlockingQueue<>();
     http.newCall(REQUEST, (parser, contentString) -> {
@@ -114,8 +112,8 @@ public class HttpCallTest {
     }
   }
 
-  @Test public void executionException_conversionException() throws Exception {
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+  @Test void executionException_conversionException() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     Call<?> call = http.newCall(REQUEST, (parser, contentString) -> {
       throw new IllegalArgumentException("eeek");
@@ -129,8 +127,8 @@ public class HttpCallTest {
     }
   }
 
-  @Test public void cloned() throws Exception {
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+  @Test void cloned() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     Call<?> call = http.newCall(REQUEST, (parser, contentString) -> null, "test");
     call.execute();
@@ -142,15 +140,15 @@ public class HttpCallTest {
       assertThat(expected).isInstanceOf(IllegalStateException.class);
     }
 
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+    server.enqueue(SUCCESS_RESPONSE);
 
     call.clone().execute();
   }
 
-  @Test public void executionException_5xx() throws Exception {
-    MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
+  @Test void executionException_5xx() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.INTERNAL_SERVER_ERROR));
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
+    Call<?> call = http.newCall(REQUEST, NULL, "test");
 
     try {
       call.execute();
@@ -160,10 +158,10 @@ public class HttpCallTest {
     }
   }
 
-  @Test public void executionException_404() throws Exception {
-    MOCK_RESPONSE.set(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND));
+  @Test void executionException_404() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(HttpStatus.NOT_FOUND));
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
+    Call<?> call = http.newCall(REQUEST, NULL, "test");
 
     try {
       call.execute();
@@ -173,27 +171,43 @@ public class HttpCallTest {
     }
   }
 
-  // TODO: note what actually returns top-level "message" because Elasticsearch usually doesn't
-  // In other words, find actual json
-  @Test public void executionException_message() throws Exception {
+  @Test void releasesAllReferencesToByteBuf() {
+    // Force this to be a ref-counted response
+    byte[] message = "{\"Message\":\"error\"}".getBytes(UTF_8);
+    ByteBuf encodedBuf = PooledByteBufAllocator.DEFAULT.buffer(message.length);
+    encodedBuf.writeBytes(message);
+    AggregatedHttpResponse response = AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.FORBIDDEN),
+      new ByteBufHttpData(encodedBuf, true)
+    );
+
+    HttpCall<Object> call = http.newCall(REQUEST, NULL, "test");
+
+    // Invoke the parser directly because using the fake server will not result in ref-counted
+    assertThatThrownBy(() -> call.parseResponse(response, NULL)).hasMessage("error");
+    assertThat(encodedBuf.refCnt()).isEqualTo(0);
+  }
+
+  // For simplicity, we also parse messages from AWS Elasticsearch, as it prevents copy/paste.
+  @Test void executionException_message() throws Exception {
     Map<AggregatedHttpResponse, String> responseToMessage = new LinkedHashMap<>();
     responseToMessage.put(AggregatedHttpResponse.of(
-      ResponseHeaders.of(HttpStatus.UNAUTHORIZED),
-      HttpData.ofUtf8("{\"message\":\"rain\"}")
-    ), "rain");
-    responseToMessage.put(AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.FORBIDDEN),
-      HttpData.ofUtf8("{\"Message\":\"snow\"}") // note: case of key is different
-    ), "snow");
+      HttpData.ofUtf8(
+        "{\"Message\":\"User: anonymous is not authorized to perform: es:ESHttpGet\"}")
+    ), "User: anonymous is not authorized to perform: es:ESHttpGet");
+    responseToMessage.put(AggregatedHttpResponse.of(
+      ResponseHeaders.of(HttpStatus.FORBIDDEN)
+    ), "response for / failed: 403 Forbidden");
     responseToMessage.put(AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.BAD_GATEWAY),
       HttpData.ofUtf8("Message: sleet") // note: not json
     ), "response for / failed: Message: sleet"); // In this case, we give request context
 
-    Call<?> call = http.newCall(REQUEST, BodyConverters.NULL, "test");
+    Call<?> call = http.newCall(REQUEST, NULL, "test");
 
     for (Map.Entry<AggregatedHttpResponse, String> entry : responseToMessage.entrySet()) {
-      MOCK_RESPONSE.set(entry.getKey());
+      server.enqueue(entry.getKey());
 
       try {
         call.clone().execute();
@@ -204,8 +218,8 @@ public class HttpCallTest {
     }
   }
 
-  @Test public void setsCustomName() throws Exception {
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+  @Test void setsCustomName() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
 
     AtomicReference<RequestLog> log = new AtomicReference<>();
     http = new HttpCall.Factory(new HttpClientBuilder(server.httpUri("/"))
@@ -215,15 +229,26 @@ public class HttpCallTest {
       })
       .build());
 
-    http.newCall(REQUEST, BodyConverters.NULL, "custom-name").execute();
+    http.newCall(REQUEST, NULL, "custom-name").execute();
 
     await().untilAsserted(() -> assertThat(log).doesNotHaveValue(null));
     assertThat(log.get().context().attr(HttpCall.NAME).get())
       .isEqualTo("custom-name");
   }
 
-  @Test public void unprocessedRequest() {
-    MOCK_RESPONSE.set(SUCCESS_RESPONSE);
+  @Test void wrongScheme() {
+    server.enqueue(SUCCESS_RESPONSE);
+
+    http = new HttpCall.Factory(new HttpClientBuilder("https://localhost:" + server.httpPort())
+      .build());
+
+    assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
+      .isInstanceOf(RejectedExecutionException.class)
+      .hasMessage("ClosedSessionException");
+  }
+
+  @Test void unprocessedRequest() {
+    server.enqueue(SUCCESS_RESPONSE);
 
     http = new HttpCall.Factory(new HttpClientBuilder(server.httpUri("/"))
       .decorator((client, ctx, req) -> {
@@ -232,22 +257,44 @@ public class HttpCallTest {
       })
       .build());
 
-    assertThatThrownBy(() -> http.newCall(REQUEST, BodyConverters.NULL, "test").execute())
+    assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
-      .hasMessage("Rejected execution: No endpoints");
+      .hasMessage("No endpoints");
   }
 
-  @Test public void throwsRuntimeExceptionAsReasonWhenPresent() {
+  @Test void throwsRuntimeExceptionAsReasonWhenPresent() {
     String body =
       "{\"error\":{\"root_cause\":[{\"type\":\"illegal_argument_exception\",\"reason\":\"Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead.\"}],\"type\":\"search_phase_execution_exception\",\"reason\":\"all shards failed\",\"phase\":\"query\",\"grouped\":true,\"failed_shards\":[{\"shard\":0,\"index\":\"zipkin-2017-05-14\",\"node\":\"IqceAwZnSvyv0V0xALkEnQ\",\"reason\":{\"type\":\"illegal_argument_exception\",\"reason\":\"Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead.\"}}]},\"status\":400}";
-    MOCK_RESPONSE.set(
+    server.enqueue(
       AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.BAD_REQUEST), HttpData.ofUtf8(body))
     );
 
-    assertThatThrownBy(() -> http.newCall(REQUEST, BodyConverters.NULL, "test").execute())
+    assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RuntimeException.class)
       .hasMessage(
         "Fielddata is disabled on text fields by default. Set fielddata=true on [spanName] in order to load fielddata in memory by uninverting the inverted index. Note that this can however use significant memory. Alternatively use a keyword field instead.");
+  }
+
+  @Test void streamingContent() throws Exception {
+    server.enqueue(SUCCESS_RESPONSE);
+
+    HttpCall.RequestSupplier supplier = new HttpCall.RequestSupplier() {
+      @Override public RequestHeaders headers() {
+        return RequestHeaders.of(HttpMethod.POST, "/");
+      }
+
+      @Override public void writeBody(HttpCall.RequestStream requestStream) {
+        requestStream.tryWrite(HttpData.ofUtf8("hello"));
+        requestStream.tryWrite(HttpData.ofUtf8(" world"));
+      }
+    };
+
+    http.newCall(supplier, NULL, "test").execute();
+
+    AggregatedHttpRequest request = server.takeRequest().request();
+    assertThat(request.method()).isEqualTo(HttpMethod.POST);
+    assertThat(request.path()).isEqualTo("/");
+    assertThat(request.contentUtf8()).isEqualTo("hello world");
   }
 
   // TODO(adriancole): Find a home for this generic conversion between Call and Java 8.

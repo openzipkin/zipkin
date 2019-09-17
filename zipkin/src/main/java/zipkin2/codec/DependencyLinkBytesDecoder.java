@@ -16,7 +16,6 @@ package zipkin2.codec;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import zipkin2.DependencyLink;
 import zipkin2.internal.JsonCodec;
@@ -45,7 +44,7 @@ public enum DependencyLinkBytesDecoder implements BytesDecoder<DependencyLink> {
 
     @Override public List<DependencyLink> decodeList(byte[] links) {
       List<DependencyLink> out = new ArrayList<>();
-      if (!decodeList(links, out)) return Collections.emptyList();
+      decodeList(links, out);
       return out;
     }
   };

@@ -43,7 +43,6 @@ public class ZipkinRabbitMQCollectorConfiguration {
       throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
     return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
   }
-
   /**
    * This condition passes when {@link ZipkinRabbitMQCollectorProperties#getAddresses()} or {@link
    * ZipkinRabbitMQCollectorProperties#getUri()} is set to a non-empty value.
@@ -59,12 +58,17 @@ public class ZipkinRabbitMQCollectorConfiguration {
   static final class RabbitMQAddressesOrUriSet implements Condition {
     @Override
     public boolean matches(ConditionContext context, AnnotatedTypeMetadata a) {
-      return !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.addresses"))
-          || !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.uri"));
+      return (!isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.addresses"))
+        || !isEmpty(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.uri"))) &&
+        notFalse(context.getEnvironment().getProperty("zipkin.collector.rabbitmq.enabled"));
     }
 
     private static boolean isEmpty(String s) {
       return s == null || s.isEmpty();
+    }
+
+    private static boolean notFalse(String s){
+      return s == null || !s.equals("false");
     }
   }
 }
