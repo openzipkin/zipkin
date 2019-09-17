@@ -644,7 +644,7 @@
             <exclude>**/test/data/**/*.json</exclude>
             <exclude>LICENSE</exclude>&gt;
             <exclude>**/*.md</exclude>
-            <exclude>**/src/main/resources/banner.txt</exclude>
+            <exclude>**/src/main/resources/zipkin.txt</exclude>
             <exclude>**/src/main/resources/*.yml</exclude>
             <exclude>**/spring.factories</exclude>
             <!-- Cassandra integration tests break when license headers are present -->

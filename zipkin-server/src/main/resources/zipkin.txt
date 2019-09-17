@@ -1,4 +1,4 @@
-${AnsiColor.RED}
+${ZipkinAnsi256Color.208}
                   oo
                  oooo
                 oooooo
