@@ -11,7 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import PropTypes from 'prop-types';
+import React, { useMemo } from 'react';
 import { withStyles } from '@material-ui/styles';
 
 import {
@@ -21,6 +22,173 @@ import {
   spanTreeWidthPercent,
   spanToggleButtonLengthOfSide,
 } from '../sizing';
+import { detailedSpansPropTypes } from '../../../prop-types';
+
+export const buildTraceTree = (spans, closedSpans) => {
+  const stack = [];
+
+  const horizontalLineDataList = [];
+  const verticalLineDataList = [];
+  const buttonDataList = [];
+
+  for (let i = 0; i < spans.length; i += 1) {
+    const currentSpan = spans[i];
+
+    // This is a root span.
+    if (stack.length === 0) {
+      stack.push({ index: i, depth: currentSpan.depth });
+      continue;
+    }
+
+    const stackTop = stack[stack.length - 1];
+
+    // X  stackTop (parent)
+    // |
+    // |---Y  currentSpan
+    if (stackTop.depth < currentSpan.depth) {
+      const parent = stackTop;
+      stack.push({ index: i, depth: currentSpan.depth });
+      // X
+      // |
+      // |+++Y  <- Write this horizontal line.
+      horizontalLineDataList.push({ x: parent.depth, y: i });
+      if (closedSpans[currentSpan.spanId]) {
+        buttonDataList.push({
+          x: currentSpan.depth,
+          y: i,
+          spanId: currentSpan.spanId,
+          isClosed: true,
+        });
+      }
+      continue;
+    }
+
+    // X  parent
+    // |
+    // |---Y  stackTop
+    // |
+    // |---Z  currentSpan
+    if (stackTop.depth === currentSpan.depth) {
+      stack.pop();
+      const parent = stack[stack.length - 1];
+      stack.push({ index: i, depth: currentSpan.depth });
+      // X
+      // |
+      // |---Y
+      // |
+      // |+++Z  <- Write this horizontal line.
+      horizontalLineDataList.push({ x: parent.depth, y: i });
+      if (closedSpans[currentSpan.spanId]) {
+        buttonDataList.push({
+          x: currentSpan.depth,
+          y: i,
+          spanId: currentSpan.spanId,
+          isClosed: true,
+        });
+      }
+      continue;
+    }
+
+    // A  parent
+    // |
+    // |---B
+    // |   |
+    // |   |---C  stackTop
+    // |
+    // |---D  currentSpan
+    if (stackTop.depth > currentSpan.depth) {
+      const popped = [];
+      for (let j = stack.length - 1; j >= 0; j -= 1) {
+        if (stack[j].depth < currentSpan.depth) {
+          break;
+        }
+        popped.push(stack.pop());
+      }
+      const parent = stack[stack.length - 1];
+      stack.push({ index: i, depth: currentSpan.depth });
+      // A
+      // |
+      // |---B
+      // |   |
+      // |   |---C
+      // |
+      // |+++D  <- Write this horizontal line.
+      horizontalLineDataList.push({ x: parent.depth, y: i });
+      if (closedSpans[currentSpan.spanId]) {
+        buttonDataList.push({
+          x: currentSpan.depth,
+          y: i,
+          spanId: currentSpan.spanId,
+          isClosed: true,
+        });
+      }
+      for (let j = 0; j < popped.length - 1; j += 1) {
+        // A
+        // |
+        // |---B
+        // |   +      <- Write these vertical lines.
+        // |   +---C
+        // |
+        // |---D
+        verticalLineDataList.push({
+          x: popped[j + 1].depth,
+          y1: popped[j].index,
+          y2: popped[j + 1].index,
+        });
+        buttonDataList.push({
+          x: popped[j + 1].depth,
+          y: popped[j + 1].index,
+          spanId: spans[popped[j + 1].index].spanId,
+        });
+      }
+      continue;
+    }
+  }
+  // A++++  Root span. Write this horizontal line.
+  // |
+  // |---B
+  horizontalLineDataList.push({ x: 2, y: 0 });
+  if (closedSpans[spans[0].spanId]) {
+    buttonDataList.push({
+      x: spans[0].depth,
+      y: 0,
+      spanId: spans[0].spanId,
+      isClosed: true,
+    });
+  }
+
+  for (let j = 0; j < stack.length - 1; j += 1) {
+    // A  Root span
+    // +         <- Write these vertical lines.
+    // +---B
+    //     +
+    //     +---C
+    verticalLineDataList.push({
+      x: stack[j].depth,
+      y1: stack[j].index,
+      y2: stack[j + 1].index,
+    });
+    buttonDataList.push({
+      x: stack[j].depth,
+      y: stack[j].index,
+      spanId: spans[stack[j].index].spanId,
+    });
+  }
+
+  return {
+    horizontalLineDataList,
+    verticalLineDataList,
+    buttonDataList,
+  };
+};
+
+const propTypes = {
+  spans: detailedSpansPropTypes.isRequired,
+  depth: PropTypes.number.isRequired,
+  closedSpans: PropTypes.shape({}).isRequired,
+  onSpanToggleButtonClick: PropTypes.func.isRequired,
+  classes: PropTypes.shape({}).isRequired,
+};
 
 const style = theme => ({
   line: {
@@ -53,215 +221,94 @@ const TraceTree = ({
   onSpanToggleButtonClick,
   classes,
 }) => {
-  const stack = [];
+  const {
+    horizontalLineDataList,
+    verticalLineDataList,
+    buttonDataList,
+  } = useMemo(() => buildTraceTree(spans, closedSpans), [spans, closedSpans]);
 
-  const linePositions = [];
-  const buttonData = [];
-
-  for (let i = 0; i < spans.length; i += 1) {
-    const currentSpan = spans[i];
-
-    if (stack.length === 0) {
-      stack.push({ index: i, depth: currentSpan.depth });
-      continue;
-    }
-
-    const stackTop = stack[stack.length - 1];
-
-    if (stackTop.depth < currentSpan.depth) {
-      const parent = stackTop;
-      stack.push({ index: i, depth: currentSpan.depth });
-
-      // Horizontal line
-      linePositions.push({
-        x1: `${parent.depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-        x2: `${spanTreeWidthPercent}%`,
-        y1: spanBarLinePosY(i),
-        y2: spanBarLinePosY(i),
-      });
-
-      if (closedSpans[currentSpan.spanId]) {
-        buttonData.push({
-          x: `${currentSpan.depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-          y: spanBarLinePosY(i),
-          spanId: currentSpan.spanId,
-          isClosed: true,
-        });
+  return (
+    <g>
+      {
+        horizontalLineDataList.map(({ x, y }) => (
+          <line
+            key={`${x}-${y}`}
+            x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+            x2={`${spanTreeWidthPercent}%`}
+            y1={spanBarLinePosY(y)}
+            y2={spanBarLinePosY(y)}
+            className={classes.line}
+          />
+        ))
       }
-      continue;
-    }
-
-    if (stackTop.depth === currentSpan.depth) {
-      stack.pop();
-      const parent = stack[stack.length - 1];
-      stack.push({ index: i, depth: currentSpan.depth });
-
-      // Horizontal Line
-      linePositions.push({
-        x1: `${parent.depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-        x2: `${spanTreeWidthPercent}%`,
-        y1: spanBarLinePosY(i),
-        y2: spanBarLinePosY(i),
-      });
-
-      if (closedSpans[currentSpan.spanId]) {
-        buttonData.push({
-          x: `${currentSpan.depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-          y: spanBarLinePosY(i),
-          spanId: currentSpan.spanId,
-          isClosed: true,
-        });
+      {
+        verticalLineDataList.map(({ x, y1, y2 }) => (
+          <line
+            key={`${x}-${y1}-${y2}`}
+            x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+            x2={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+            y1={spanBarLinePosY(y1)}
+            y2={spanBarLinePosY(y2)}
+            className={classes.line}
+          />
+        ))
       }
-      continue;
-    }
-
-    if (stackTop.depth > currentSpan.depth) {
-      const popped = [];
-      for (let j = stack.length - 1; j >= 0; j -= 1) {
-        if (stack[j].depth < currentSpan.depth) {
-          break;
-        }
-        popped.push(stack.pop());
-      }
-      const parent = stack[stack.length - 1];
-      stack.push({ index: i, depth: currentSpan.depth });
-
-      // Horizontal line
-      linePositions.push({
-        x1: `${parent.depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-        x2: `${spanTreeWidthPercent}%`,
-        y1: spanBarLinePosY(i),
-        y2: spanBarLinePosY(i),
-      });
-
-      if (closedSpans[currentSpan.spanId]) {
-        buttonData.push({
-          x: `${currentSpan.depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-          y: spanBarLinePosY(i),
-          spanId: currentSpan.spanId,
-          isClosed: true,
-        });
-      }
-
-      for (let j = 0; j < popped.length - 1; j += 1) {
-        // Vertical line
-        linePositions.push({
-          x1: `${popped[j + 1].depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-          x2: `${popped[j + 1].depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-          y1: spanBarLinePosY(popped[j].index),
-          y2: spanBarLinePosY(popped[j + 1].index),
-        });
-
-        buttonData.push({
-          x: `${popped[j + 1].depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-          y: spanBarLinePosY(popped[j + 1].index),
-          spanId: spans[popped[j + 1].index].spanId,
-        });
-      }
-      continue;
-    }
-  }
-
-  // Horizontal line
-  linePositions.push({
-    x1: `${spanTreeLineWidthPercentPerDepth(depth) * 2}%`,
-    x2: `${spanTreeWidthPercent}%`,
-    y1: spanBarLinePosY(0),
-    y2: spanBarLinePosY(0),
-  });
-
-  if (closedSpans[spans[0].spanId]) {
-    buttonData.push({
-      x: `${spans[0].depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-      y: spanBarLinePosY(0),
-      spanId: spans[0].spanId,
-      isClosed: true,
-    });
-  }
-
-  for (let j = 0; j < stack.length - 1; j += 1) {
-    // Vertical line
-    linePositions.push({
-      x1: `${stack[j].depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-      x2: `${stack[j].depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-      y1: spanBarLinePosY(stack[j].index),
-      y2: spanBarLinePosY(stack[j + 1].index),
-    });
-
-    buttonData.push({
-      x: `${stack[j].depth * spanTreeLineWidthPercentPerDepth(depth)}%`,
-      y: spanBarLinePosY(stack[j].index),
-      spanId: spans[stack[j].index].spanId,
-    });
-  }
-
-  const result = [];
-
-  linePositions.map(({
-    x1,
-    x2,
-    y1,
-    y2,
-  }) => (
-    <line
-      key={`${x1}-${x2}-${y1}-${y2}`}
-      x1={x1}
-      x2={x2}
-      y1={y1}
-      y2={y2}
-      className={classes.line}
-    />
-  )).forEach(line => result.push(line));
-
-  buttonData.map(({
-    x,
-    y,
-    spanId,
-    isClosed,
-  }) => (
-    <g key={`${x}-${y}`} transform={spanToggleButtonTranslate}>
-      <rect
-        rx={2}
-        ry={2}
-        x={x}
-        y={y}
-        width={spanToggleButtonLengthOfSide}
-        height={spanToggleButtonLengthOfSide}
-        className={classes.spanToggleButtonInternal}
-      />
-      <svg x={x} y={y} className={classes.buttonIcon}>
-        <line
-          x1={0}
-          x2={spanToggleButtonLengthOfSide}
-          y1={spanToggleButtonLengthOfSide / 2}
-          y2={spanToggleButtonLengthOfSide / 2}
-        />
-        {
-          !isClosed ? (
-            <line
-              x1={spanToggleButtonLengthOfSide / 2}
-              x2={spanToggleButtonLengthOfSide / 2}
-              y1={0}
-              y2={spanToggleButtonLengthOfSide}
+      {
+        buttonDataList.map(({
+          x,
+          y,
+          spanId,
+          isClosed,
+        }) => (
+          <g key={spanId} transform={spanToggleButtonTranslate}>
+            <rect
+              rx={2}
+              ry={2}
+              x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+              y={spanBarLinePosY(y)}
+              width={spanToggleButtonLengthOfSide}
+              height={spanToggleButtonLengthOfSide}
+              className={classes.spanToggleButtonInternal}
             />
-          ) : null
-        }
-      </svg>
-      <rect
-        rx={2}
-        ry={2}
-        x={x}
-        y={y}
-        width={spanToggleButtonLengthOfSide}
-        height={spanToggleButtonLengthOfSide}
-        onClick={() => onSpanToggleButtonClick(spanId)}
-        className={classes.spanToggleButton}
-      />
-
+            <svg
+              x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+              y={spanBarLinePosY(y)}
+              className={classes.buttonIcon}
+            >
+              <line
+                x1={0}
+                x2={spanToggleButtonLengthOfSide}
+                y1={spanToggleButtonLengthOfSide / 2}
+                y2={spanToggleButtonLengthOfSide / 2}
+              />
+              {
+                !isClosed ? (
+                  <line
+                    x1={spanToggleButtonLengthOfSide / 2}
+                    x2={spanToggleButtonLengthOfSide / 2}
+                    y1={0}
+                    y2={spanToggleButtonLengthOfSide}
+                  />
+                ) : null
+              }
+            </svg>
+            <rect
+              rx={2}
+              ry={2}
+              x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+              y={spanBarLinePosY(y)}
+              width={spanToggleButtonLengthOfSide}
+              height={spanToggleButtonLengthOfSide}
+              onClick={() => onSpanToggleButtonClick(spanId)}
+              className={classes.spanToggleButton}
+            />
+          </g>
+        ))
+      }
     </g>
-  )).forEach(button => result.push(button));
-
-  return result;
+  );
 };
+
+TraceTree.propTypes = propTypes;
 
 export default withStyles(style)(TraceTree);
