@@ -30,7 +30,7 @@ public class ZipkinServer {
 
   public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
-        .listeners(new RegisterZipkinHealthIndicators()
+        .listeners(new RegisterZipkinHealthIndicators())
         .banner(new ZipkinBanner())
         .properties("spring.config.name=zipkin-server").run(args);
   }
