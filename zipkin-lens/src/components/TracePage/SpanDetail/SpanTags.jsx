@@ -25,10 +25,8 @@ import { spanTagsPropTypes } from '../../../prop-types';
 
 const style = theme => ({
   cell: {
-    // Default padding-top and padding-bottom are 14px, but this is
-    // a bit too large so change the value to 8px.
-    paddingTop: '8px',
-    paddingBottom: '8px',
+    paddingTop: theme.spacing(1),
+    paddingBottom: theme.spacing(1),
   },
   key: {
     color: theme.palette.grey[500],
