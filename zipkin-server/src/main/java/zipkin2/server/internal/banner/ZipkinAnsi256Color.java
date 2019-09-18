@@ -18,6 +18,7 @@ import org.springframework.boot.ansi.AnsiElement;
 /**
  * <code>AnsiElement</code> implementation for Ansi256 Color<br>
  * TODO: This class should be deleted when this feature is provided by Spring Boot
+ * @see <a href="https://github.com/spring-projects/spring-boot/pull/18264">https://github.com/spring-projects/spring-boot/pull/18264</a>
  */
 public class ZipkinAnsi256Color implements AnsiElement {
 

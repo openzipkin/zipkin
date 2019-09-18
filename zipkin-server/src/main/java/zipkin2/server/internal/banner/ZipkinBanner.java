@@ -25,6 +25,7 @@ import java.util.List;
 /**
  * <code>Banner</code> implemetation for Ansi256 Color<br>
  * TODO: This class should be deleted when this feature is provided by Spring Boot
+ * @see <a href="https://github.com/spring-projects/spring-boot/pull/18264">https://github.com/spring-projects/spring-boot/pull/18264</a>
  */
 public class ZipkinBanner extends ResourceBanner {
 

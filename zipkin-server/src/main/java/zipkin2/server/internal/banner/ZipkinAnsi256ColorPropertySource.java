@@ -23,6 +23,7 @@ import org.springframework.util.StringUtils;
  * via <code>${ZipkinAnsi256Color.XYZ}</code> format (<code>XYZ</code> must be 0-255.).<br>
  * All supported colors can be found <a href="https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit">here</a>.<br>
  * TODO: This class should be deleted when this feature is provided by Spring Boot
+ * @see <a href="https://github.com/spring-projects/spring-boot/pull/18264">https://github.com/spring-projects/spring-boot/pull/18264</a>
  */
 public class ZipkinAnsi256ColorPropertySource extends PropertySource<AnsiElement> {
 
