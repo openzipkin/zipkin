@@ -32,6 +32,7 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.StorageComponent;
 
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
@@ -57,20 +58,22 @@ public final class RabbitMQCollector extends CollectorComponent {
     Address[] addresses;
     int concurrency = 1;
 
-    @Override
-    public Builder storage(StorageComponent storage) {
-      this.delegate.storage(storage);
-      return this;
-    }
-
-    @Override
-    public Builder sampler(CollectorSampler sampler) {
+    @Override public Builder sampler(CollectorSampler sampler) {
       this.delegate.sampler(sampler);
       return this;
     }
 
-    @Override
-    public Builder metrics(CollectorMetrics metrics) {
+    @Override public Builder addCollectedSpanHandler(CollectedSpanHandler collectedSpanHandler) {
+      this.delegate.addCollectedSpanHandler(collectedSpanHandler);
+      return this;
+    }
+
+    @Override  public Builder storage(StorageComponent storage) {
+      this.delegate.storage(storage);
+      return this;
+    }
+
+    @Override public Builder metrics(CollectorMetrics metrics) {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("rabbitmq");
       this.delegate.metrics(this.metrics);

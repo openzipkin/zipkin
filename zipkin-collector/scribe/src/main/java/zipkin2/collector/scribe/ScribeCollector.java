@@ -18,6 +18,7 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
@@ -39,6 +40,16 @@ public final class ScribeCollector extends CollectorComponent {
     String category = "zipkin";
     int port = 9410;
 
+    @Override public Builder sampler(CollectorSampler sampler) {
+      this.delegate.sampler(sampler);
+      return this;
+    }
+
+    @Override public Builder addCollectedSpanHandler(CollectedSpanHandler collectedSpanHandler) {
+      this.delegate.addCollectedSpanHandler(collectedSpanHandler);
+      return this;
+    }
+
     @Override public Builder storage(StorageComponent storage) {
       delegate.storage(storage);
       return this;
@@ -48,11 +59,6 @@ public final class ScribeCollector extends CollectorComponent {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("scribe");
       delegate.metrics(this.metrics);
-      return this;
-    }
-
-    @Override public Builder sampler(CollectorSampler sampler) {
-      delegate.sampler(sampler);
       return this;
     }
 
