@@ -13,9 +13,9 @@
  */
 package zipkin2.server.internal.rabbitmq;
 
-import java.net.URISyntaxException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.collector.rabbitmq.RabbitMQCollector;
 import zipkin2.storage.StorageComponent;
 
@@ -33,16 +33,19 @@ import zipkin2.storage.StorageComponent;
 @Conditional(ZipkinRabbitMQCollectorConfiguration.RabbitMQAddressesOrUriSet.class)
 @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
 public class ZipkinRabbitMQCollectorConfiguration {
+  @Autowired(required = false)
+  List<CollectedSpanHandler> collectedSpanHandlers = new ArrayList<>();
 
   @Bean(initMethod = "start")
   RabbitMQCollector rabbitMq(
-      ZipkinRabbitMQCollectorProperties properties,
-      CollectorSampler sampler,
-      CollectorMetrics metrics,
-      StorageComponent storage)
-      throws NoSuchAlgorithmException, KeyManagementException, URISyntaxException {
-    return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+    ZipkinRabbitMQCollectorProperties properties,
+    CollectorMetrics metrics,
+    StorageComponent storage) throws Exception {
+    RabbitMQCollector.Builder builder = properties.toBuilder().metrics(metrics).storage(storage);
+    collectedSpanHandlers.forEach(builder::addCollectedSpanHandler);
+    return builder.build();
   }
+
   /**
    * This condition passes when {@link ZipkinRabbitMQCollectorProperties#getAddresses()} or {@link
    * ZipkinRabbitMQCollectorProperties#getUri()} is set to a non-empty value.
@@ -67,7 +70,7 @@ public class ZipkinRabbitMQCollectorConfiguration {
       return s == null || s.isEmpty();
     }
 
-    private static boolean notFalse(String s){
+    private static boolean notFalse(String s) {
       return s == null || !s.equals("false");
     }
   }

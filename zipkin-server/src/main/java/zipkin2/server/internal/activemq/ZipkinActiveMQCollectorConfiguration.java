@@ -13,6 +13,9 @@
  */
 package zipkin2.server.internal.activemq;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -21,8 +24,8 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.activemq.ActiveMQCollector;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.StorageComponent;
 
 /** Auto-configuration for {@link ActiveMQCollector}. */
@@ -30,14 +33,17 @@ import zipkin2.storage.StorageComponent;
 @EnableConfigurationProperties(ZipkinActiveMQCollectorProperties.class)
 @Conditional(ZipkinActiveMQCollectorConfiguration.ActiveMQUrlSet.class)
 public class ZipkinActiveMQCollectorConfiguration {
+  @Autowired(required = false)
+  List<CollectedSpanHandler> collectedSpanHandlers = new ArrayList<>();
 
   @Bean(initMethod = "start")
   ActiveMQCollector activeMq(
     ZipkinActiveMQCollectorProperties properties,
-    CollectorSampler sampler,
     CollectorMetrics metrics,
     StorageComponent storage) {
-    return properties.toBuilder().sampler(sampler).metrics(metrics).storage(storage).build();
+    ActiveMQCollector.Builder builder = properties.toBuilder().metrics(metrics).storage(storage);
+    collectedSpanHandlers.forEach(builder::addCollectedSpanHandler);
+    return builder.build();
   }
 
   /**

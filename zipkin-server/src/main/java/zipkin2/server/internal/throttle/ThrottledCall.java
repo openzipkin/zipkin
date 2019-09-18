@@ -27,6 +27,7 @@ import zipkin2.Call;
 import zipkin2.Callback;
 
 import static com.linecorp.armeria.common.util.Exceptions.clearTrace;
+import static zipkin2.Callback.NOOP_VOID;
 
 /**
  * {@link Call} implementation that is backed by an {@link ExecutorService}. The ExecutorService
@@ -48,14 +49,6 @@ final class ThrottledCall extends Call.Base<Void> {
    */
   static final RejectedExecutionException STORAGE_THROTTLE_MAX_CONCURRENCY =
     clearTrace(new RejectedExecutionException("STORAGE_THROTTLE_MAX_CONCURRENCY reached"));
-
-  static final Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
-    @Override public void onSuccess(Void value) {
-    }
-
-    @Override public void onError(Throwable t) {
-    }
-  };
 
   final Call<Void> delegate;
   final Executor executor;
@@ -81,7 +74,7 @@ final class ThrottledCall extends Call.Base<Void> {
    */
   @Override protected Void doExecute() throws IOException {
     // Enqueue the call invocation on the executor and block until it completes.
-    doEnqueue(NOOP_CALLBACK);
+    doEnqueue(NOOP_VOID);
     if (!await(latch)) throw new InterruptedIOException();
 
     // Check if the run resulted in an exception

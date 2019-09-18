@@ -28,26 +28,18 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import org.apache.activemq.ActiveMQConnection;
 import org.apache.activemq.transport.TransportListener;
-import zipkin2.Callback;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static zipkin2.Callback.NOOP_VOID;
 
 /**
  * Consumes spans from messages on a ActiveMQ queue. Malformed messages will be discarded. Errors in
  * the storage component will similarly be ignored, with no retry of the message.
  */
 final class ActiveMQSpanConsumer implements TransportListener, MessageListener, Closeable {
-  static final Callback<Void> NOOP = new Callback<Void>() {
-    @Override public void onSuccess(Void value) {
-    }
-
-    @Override public void onError(Throwable t) {
-    }
-  };
-
   static final CheckResult
     CLOSED = CheckResult.failed(new IllegalStateException("Collector intentionally closed")),
     INTERRUPTION = CheckResult.failed(new IOException("Recoverable error on ActiveMQ connection"));
@@ -115,7 +107,7 @@ final class ActiveMQSpanConsumer implements TransportListener, MessageListener, 
 
     metrics.incrementBytes(serialized.length);
     if (serialized.length == 0) return; // lenient on empty messages
-    collector.acceptSpans(serialized, NOOP);
+    collector.acceptSpans(serialized, NOOP_VOID);
   }
 
   @Override public void close() {

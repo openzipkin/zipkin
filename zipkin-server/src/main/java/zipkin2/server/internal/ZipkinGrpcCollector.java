@@ -19,29 +19,35 @@ import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import zipkin2.Callback;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.StorageComponent;
 
 /** Collector for receiving spans on a gRPC endpoint. */
 @ConditionalOnProperty(name = "zipkin.collector.grpc.enabled") // disabled by default
 final class ZipkinGrpcCollector {
+  @Autowired(required = false)
+  List<CollectedSpanHandler> collectedSpanHandlers = new ArrayList<>();
 
   @Bean ArmeriaServerConfigurator grpcCollectorConfigurator(StorageComponent storage,
-    CollectorSampler sampler, CollectorMetrics metrics) {
+    CollectorMetrics metrics) {
     CollectorMetrics grpcMetrics = metrics.forTransport("grpc");
-    Collector collector = Collector.newBuilder(getClass())
+
+    Collector.Builder builder = Collector.newBuilder(getClass())
       .storage(storage)
-      .sampler(sampler)
-      .metrics(grpcMetrics)
-      .build();
+      .metrics(grpcMetrics);
+    collectedSpanHandlers.forEach(builder::addCollectedSpanHandler);
+    Collector collector = builder.build();
 
     return sb ->
       sb.service("/zipkin.proto3.SpanService/Report", new SpanService(collector, grpcMetrics));

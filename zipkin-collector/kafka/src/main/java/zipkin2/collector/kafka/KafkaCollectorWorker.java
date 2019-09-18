@@ -30,23 +30,16 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
 
+import static zipkin2.Callback.NOOP_VOID;
+
 /** Consumes spans from Kafka messages, ignoring malformed input */
 final class KafkaCollectorWorker implements Runnable {
   static final Logger LOG = LoggerFactory.getLogger(KafkaCollectorWorker.class);
-  static final Callback<Void> NOOP =
-      new Callback<Void>() {
-        @Override
-        public void onSuccess(Void value) {}
-
-        @Override
-        public void onError(Throwable t) {}
-      };
 
   final Properties properties;
   final List<String> topics;
@@ -103,9 +96,9 @@ final class KafkaCollectorWorker implements Runnable {
                 metrics.incrementMessagesDropped();
                 continue;
               }
-              collector.accept(Collections.singletonList(span), NOOP);
+              collector.accept(Collections.singletonList(span), NOOP_VOID);
             } else {
-              collector.acceptSpans(bytes, NOOP);
+              collector.acceptSpans(bytes, NOOP_VOID);
             }
           }
         }

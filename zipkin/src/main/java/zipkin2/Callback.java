@@ -24,6 +24,7 @@ import zipkin2.internal.Nullable;
  * <p>Implementations will call either {@link #onSuccess} or {@link #onError}, but not both.
  */
 public interface Callback<V> {
+  /** @since 2.17 */
   Callback<Void> NOOP_VOID = new Callback<Void>() {
     @Override public void onSuccess(Void value) {
     }

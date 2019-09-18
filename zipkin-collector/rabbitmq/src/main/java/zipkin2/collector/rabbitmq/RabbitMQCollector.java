@@ -26,7 +26,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-import zipkin2.Callback;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
@@ -35,16 +34,10 @@ import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.StorageComponent;
 
+import static zipkin2.Callback.NOOP_VOID;
+
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
 public final class RabbitMQCollector extends CollectorComponent {
-  static final Callback<Void> NOOP = new Callback<Void>() {
-    @Override public void onSuccess(Void value) {
-    }
-
-    @Override public void onError(Throwable t) {
-    }
-  };
-
   public static Builder builder() {
     return new Builder();
   }
@@ -248,7 +241,7 @@ public final class RabbitMQCollector extends CollectorComponent {
 
       if (body.length == 0) return; // lenient on empty messages
 
-      collector.acceptSpans(body, NOOP);
+      collector.acceptSpans(body, NOOP_VOID);
     }
   }
 

@@ -36,6 +36,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import org.apache.logging.log4j.LogManager;
@@ -48,7 +49,7 @@ import zipkin2.codec.BytesDecoder;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.StorageComponent;
 
 import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
@@ -63,12 +64,17 @@ public class ZipkinHttpCollector {
   static volatile CollectorMetrics metrics;
   final Collector collector;
 
-  ZipkinHttpCollector(
-    StorageComponent storage, CollectorSampler sampler, CollectorMetrics metrics) {
-    metrics = metrics.forTransport("http");
-    collector =
-      Collector.newBuilder(getClass()).storage(storage).sampler(sampler).metrics(metrics).build();
-    ZipkinHttpCollector.metrics = metrics; // converter instances aren't injected by Spring
+  ZipkinHttpCollector(List<CollectedSpanHandler> collectedSpanHandlers, StorageComponent storage,
+    CollectorMetrics metrics) {
+    CollectorMetrics httpMetrics = metrics.forTransport("http");
+
+    Collector.Builder builder = Collector.newBuilder(getClass())
+      .storage(storage)
+      .metrics(httpMetrics);
+    collectedSpanHandlers.forEach(builder::addCollectedSpanHandler);
+    collector = builder.build();
+
+    ZipkinHttpCollector.metrics = httpMetrics; // converter instances aren't injected by Spring
   }
 
   @Post("/api/v2/spans")

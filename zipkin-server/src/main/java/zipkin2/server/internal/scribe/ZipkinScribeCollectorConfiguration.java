@@ -13,12 +13,15 @@
  */
 package zipkin2.server.internal.scribe;
 
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.collector.scribe.ScribeCollector;
 import zipkin2.storage.StorageComponent;
 
@@ -30,20 +33,22 @@ import zipkin2.storage.StorageComponent;
 @Configuration
 @ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", havingValue = "true")
 public class ZipkinScribeCollectorConfiguration {
+  @Autowired(required = false)
+  List<CollectedSpanHandler> collectedSpanHandlers = new ArrayList<>();
+
   /** The init method will block until the scribe port is listening, or crash on port conflict */
   @Bean(initMethod = "start")
   ScribeCollector scribe(
     @Value("${zipkin.collector.scribe.category:zipkin}") String category,
     @Value("${zipkin.collector.scribe.port:9410}") int port,
-    CollectorSampler sampler,
     CollectorMetrics metrics,
     StorageComponent storage) {
-    return ScribeCollector.newBuilder()
+    ScribeCollector.Builder builder = ScribeCollector.newBuilder()
       .category(category)
       .port(port)
-      .sampler(sampler)
       .metrics(metrics)
-      .storage(storage)
-      .build();
+      .storage(storage);
+    collectedSpanHandlers.forEach(builder::addCollectedSpanHandler);
+    return builder.build();
   }
 }
