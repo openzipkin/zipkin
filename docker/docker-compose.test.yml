@@ -21,6 +21,7 @@ services:
       default:
         aliases:
         - zipkin
+  # Docker Hub automated test service - https://docs.docker.com/docker-hub/builds/automated-testing/
   sut:
     image: appropriate/curl
     networks:
