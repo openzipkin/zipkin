@@ -10,5 +10,3 @@ case "$DOCKER_REPO" in
   *)
   ;;
 esac
-
-docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
