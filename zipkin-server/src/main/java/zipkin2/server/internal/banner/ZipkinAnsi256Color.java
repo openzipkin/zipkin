@@ -15,6 +15,10 @@ package zipkin2.server.internal.banner;
 
 import org.springframework.boot.ansi.AnsiElement;
 
+/**
+ * <code>AnsiElement</code> implementation for Ansi256 Color<br>
+ * TODO: This class should be deleted when this feature is provided by Spring Boot
+ */
 public class ZipkinAnsi256Color implements AnsiElement {
 
   private final int xtermNumber;

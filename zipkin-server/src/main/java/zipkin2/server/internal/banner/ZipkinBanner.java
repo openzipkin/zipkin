@@ -22,6 +22,10 @@ import org.springframework.core.io.ClassPathResource;
 
 import java.util.List;
 
+/**
+ * <code>Banner</code> implemetation for Ansi256 Color<br>
+ * TODO: This class should be deleted when this feature is provided by Spring Boot
+ */
 public class ZipkinBanner extends ResourceBanner {
 
   public ZipkinBanner() {
