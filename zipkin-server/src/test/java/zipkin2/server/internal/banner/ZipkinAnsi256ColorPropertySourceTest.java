@@ -20,7 +20,7 @@ import org.springframework.boot.ansi.AnsiOutput;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinAnsi256PropertySourceTest {
+public class ZipkinAnsi256ColorPropertySourceTest {
 
   @Before
   public void setUp() throws Exception {
@@ -34,14 +34,14 @@ public class ZipkinAnsi256PropertySourceTest {
 
   @Test
   public void getPropertyFoundShouldConvertAnsiColor() {
-    final ZipkinAnsi256PropertySource propertySource = new ZipkinAnsi256PropertySource("test");
+    final ZipkinAnsi256ColorPropertySource propertySource = new ZipkinAnsi256ColorPropertySource("test");
     final Object property = propertySource.getProperty("ZipkinAnsi256Color.100");
     assertThat(property).isEqualTo("\033[38;5;100m");
   }
 
   @Test
   public void getPropertyNotFoundShouldReturnNull() {
-    final ZipkinAnsi256PropertySource propertySource = new ZipkinAnsi256PropertySource("test");
+    final ZipkinAnsi256ColorPropertySource propertySource = new ZipkinAnsi256ColorPropertySource("test");
     final Object property = propertySource.getProperty("foo");
     assertThat(property).isNull();
   }

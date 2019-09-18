@@ -23,11 +23,11 @@ import org.springframework.util.StringUtils;
  * via <code>${ZipkinAnsi256Color.XYZ}</code> format (<code>XYZ</code> must be 0-255.).<br>
  * All supported colors can be found <a href="https://en.wikipedia.org/wiki/ANSI_escape_code#8-bit">here</a>.
  */
-public class ZipkinAnsi256PropertySource extends PropertySource<AnsiElement> {
+public class ZipkinAnsi256ColorPropertySource extends PropertySource<AnsiElement> {
 
   private static final String PREFIX = "ZipkinAnsi256Color.";
 
-  ZipkinAnsi256PropertySource(String name) {
+  ZipkinAnsi256ColorPropertySource(String name) {
     super(name);
   }
 

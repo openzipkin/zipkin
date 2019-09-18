@@ -37,7 +37,7 @@ public class ZipkinBanner extends ResourceBanner {
 
   private PropertyResolver getZipkinAnsi256Resolver() {
     MutablePropertySources sources = new MutablePropertySources();
-    sources.addFirst(new ZipkinAnsi256PropertySource("zipkinAnsi256"));
+    sources.addFirst(new ZipkinAnsi256ColorPropertySource("zipkinAnsi256"));
     return new PropertySourcesPropertyResolver(sources);
   }
 }
