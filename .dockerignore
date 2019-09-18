@@ -1,6 +1,7 @@
 **/\.*
 !.git
 !**/.eslintrc
+**/*.test.yml
 
 **/target
 **/node_modules
