@@ -34,7 +34,6 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
-import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
@@ -65,22 +64,20 @@ public final class KafkaCollector extends CollectorComponent {
     String topic = "zipkin";
     int streams = 1;
 
-    @Override public Builder sampler(CollectorSampler sampler) {
-      this.delegate.sampler(sampler);
-      return this;
-    }
-
-    @Override public Builder addCollectedSpanHandler(CollectedSpanHandler collectedSpanHandler) {
-      this.delegate.addCollectedSpanHandler(collectedSpanHandler);
-      return this;
-    }
-
-    @Override public Builder storage(StorageComponent storage) {
+    @Override
+    public Builder storage(StorageComponent storage) {
       delegate.storage(storage);
       return this;
     }
 
-    @Override public Builder metrics(CollectorMetrics metrics) {
+    @Override
+    public Builder sampler(CollectorSampler sampler) {
+      delegate.sampler(sampler);
+      return this;
+    }
+
+    @Override
+    public Builder metrics(CollectorMetrics metrics) {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("kafka");
       delegate.metrics(this.metrics);

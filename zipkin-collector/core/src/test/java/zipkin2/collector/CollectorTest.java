@@ -21,23 +21,17 @@ import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -46,17 +40,13 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TRACE;
 import static zipkin2.TestObjects.UTF_8;
 
-@RunWith(MockitoJUnitRunner.class)
 public class CollectorTest {
   InMemoryStorage storage = InMemoryStorage.newBuilder().build();
+  Callback<Void> callback = mock(Callback.class);
+  CollectorMetrics metrics = mock(CollectorMetrics.class);
   Collector collector;
-
-  @Mock CollectorMetrics metrics;
-  @Mock Callback<Void> callback;
-  @Mock CollectedSpanHandler one;
-  @Mock CollectedSpanHandler two;
-
   List<String> messages = new ArrayList<>();
+
   Logger logger = new Logger("", null) {
     {
       setLevel(Level.ALL);
@@ -268,83 +258,6 @@ public class CollectorTest {
     verify(callback).onError(error);
     assertThat(messages).containsOnly("Truncated reading spans");
     verify(metrics).incrementMessagesDropped();
-  }
-
-  @Test public void consolidate_emptyIsNoop() {
-    assertThat(Collector.consolidate(asList()))
-      .isEqualTo(CollectedSpanHandler.NOOP);
-  }
-
-  @Test public void consolidate_single() {
-    assertThat(Collector.consolidate(asList(one)))
-      .isEqualTo(one);
-  }
-
-  @Test public void consolidate_multiple() {
-    CollectedSpanHandler handler = Collector.consolidate(asList(one, two));
-
-    assertThat(handler)
-      .isInstanceOf(Collector.MultipleHandler.class);
-  }
-
-  @Test public void multiple_callInSequence() {
-    CollectedSpanHandler handler = Collector.consolidate(asList(one, two));
-
-    when(one.handle(TRACE.get(0))).thenReturn(TRACE.get(1));
-    when(two.handle(TRACE.get(1))).thenReturn(TRACE.get(1));
-
-    handler.handle(TRACE.get(0));
-
-    verify(one).handle(TRACE.get(0));
-    verify(two).handle(TRACE.get(1));
-  }
-
-  @Test public void multiple_shortCircuitWhenFirstReturnsNull() {
-    CollectedSpanHandler handler = Collector.consolidate(asList(one, two));
-
-    when(one.handle(CLIENT_SPAN)).thenReturn(null);
-
-    handler.handle(CLIENT_SPAN);
-
-    verify(one).handle(CLIENT_SPAN);
-    verify(two, never()).handle(any());
-  }
-
-  @Test
-  public void doesntCrashHandlingOnNonFatalThrowable() {
-    Throwable[] toThrow = new Throwable[1];
-
-    collector = new Collector.Builder(logger)
-      .addCollectedSpanHandler(span -> {
-        doThrowUnsafely(toThrow[0]);
-        return span;
-      })
-      .storage(storage)
-      .build();
-
-    toThrow[0] = new RuntimeException();
-    collector.accept(TRACE, callback);
-    verify(callback).onError(toThrow[0]);
-
-    toThrow[0] = new Exception();
-    collector.accept(TRACE, callback);
-    verify(callback).onError(toThrow[0]);
-
-    toThrow[0] = new Error();
-    collector.accept(TRACE, callback);
-    verify(callback).onError(toThrow[0]);
-
-    toThrow[0] = new StackOverflowError(); // fatal
-    try { // assertThatThrownBy doesn't work with StackOverflowError
-      collector.accept(TRACE, callback);
-      failBecauseExceptionWasNotThrown(StackOverflowError.class);
-    } catch (StackOverflowError e) {
-    }
-  }
-
-  // Trick from Armeria: This black magic causes the Java compiler to believe E is unchecked.
-  static <E extends Throwable> void doThrowUnsafely(Throwable cause) throws E {
-    throw (E) cause;
   }
 
   String unprefixIdString(String msg) {

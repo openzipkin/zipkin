@@ -15,7 +15,6 @@ package zipkin2.collector;
 
 import java.util.List;
 import zipkin2.Component;
-import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.StorageComponent;
 
@@ -36,31 +35,7 @@ public abstract class CollectorComponent extends Component {
 
   public abstract static class Builder {
     /**
-     * {@link CollectorSampler#isSampled(String, boolean) samples spans} to reduce load on the
-     * storage system. Defaults to always sample.
-     *
-     * <p>Sampling happens before {@link #addCollectedSpanHandler(CollectedSpanHandler) handlers}.
-     *
-     * @deprecated since 2.17, use {@link #addCollectedSpanHandler(CollectedSpanHandler)}
-     */
-    @Deprecated public abstract Builder sampler(CollectorSampler sampler);
-
-    /**
-     * Triggered on each collected span, before storage. This allows the ability to mutate or drop
-     * spans for reasons including remapping tags.
-     *
-     * <p>Handlers execute after {@link #sampler(CollectorSampler) sampling} and before {@link
-     * #storage(StorageComponent) storage}.
-     *
-     * @since 2.17
-     */
-    // empty implementation as this method was added late
-    public Builder addCollectedSpanHandler(CollectedSpanHandler collectedSpanHandler) {
-      return this;
-    }
-
-    /**
-     * Once spans are handled, they are {@link SpanConsumer#accept(List)} queued for storage} using
+     * Once spans are sampled, they are {@link SpanConsumer#accept(List)} queued for storage} using
      * this component.
      */
     public abstract Builder storage(StorageComponent storage);
@@ -70,6 +45,12 @@ public abstract class CollectorComponent extends Component {
      * CollectorMetrics#forTransport(String) scoped to this transport}. Defaults to no-op.
      */
     public abstract Builder metrics(CollectorMetrics metrics);
+
+    /**
+     * {@link CollectorSampler#isSampled(String, boolean) samples spans} to reduce load on the
+     * storage system. Defaults to always sample.
+     */
+    public abstract Builder sampler(CollectorSampler sampler);
 
     public abstract CollectorComponent build();
   }

@@ -18,19 +18,11 @@ import zipkin2.internal.Nullable;
 /**
  * A callback of a single result or error.
  *
- * <p>This is a bridge to async libraries such as CompletableFuture complete and
- * completeExceptionally.
+ * <p>This is a bridge to async libraries such as CompletableFuture complete, completeExceptionally.
  *
  * <p>Implementations will call either {@link #onSuccess} or {@link #onError}, but not both.
  */
 public interface Callback<V> {
-  Callback<Void> NOOP_VOID = new Callback<Void>() {
-    @Override public void onSuccess(Void value) {
-    }
-
-    @Override public void onError(Throwable t) {
-    }
-  };
 
   /**
    * Invoked when computation produces its potentially null value successfully.

@@ -15,19 +15,16 @@ package zipkin2.collector;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
-import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.SpanBytesDecoderDetector;
 import zipkin2.codec.BytesDecoder;
 import zipkin2.codec.SpanBytesDecoder;
-import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.StorageComponent;
 
 import static java.lang.String.format;
@@ -36,13 +33,21 @@ import static zipkin2.Call.propagateIfFatal;
 
 /**
  * This component takes action on spans received from a transport. This includes deserializing,
- * sampling, invoking any handlers, and scheduling for storage.
+ * sampling and scheduling for storage.
  *
  * <p>Callbacks passed do not propagate to the storage layer. They only return success or failures
  * before storage is attempted. This ensures that calling threads are disconnected from storage
  * threads.
  */
 public class Collector { // not final for mock
+  static final Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
+    @Override public void onSuccess(Void value) {
+    }
+
+    @Override public void onError(Throwable t) {
+    }
+  };
+
   /** Needed to scope this to the correct logging category */
   public static Builder newBuilder(Class<?> loggingClass) {
     if (loggingClass == null) throw new NullPointerException("loggingClass == null");
@@ -51,33 +56,12 @@ public class Collector { // not final for mock
 
   public static final class Builder {
     final Logger logger;
-    final ArrayList<CollectedSpanHandler> collectedSpanHandlers = new ArrayList<>();
     StorageComponent storage;
+    CollectorSampler sampler;
     CollectorMetrics metrics;
 
     Builder(Logger logger) {
       this.logger = logger;
-    }
-
-    /** @see {@link CollectorComponent.Builder#sampler(CollectorSampler)} */
-    public Builder sampler(CollectorSampler sampler) {
-      if (sampler == null) throw new NullPointerException("sampler == null");
-      this.collectedSpanHandlers.add(0, sampler); // sample first
-      return this;
-    }
-
-    /**
-     * @see {@link CollectorComponent.Builder#addCollectedSpanHandler(CollectedSpanHandler)}
-     * @since 2.17
-     */
-    public Builder addCollectedSpanHandler(CollectedSpanHandler collectedSpanHandler) {
-      if (collectedSpanHandler == null) {
-        throw new NullPointerException("collectedSpanHandler == null");
-      }
-      if (collectedSpanHandler != CollectedSpanHandler.NOOP) { // lenient on config bug
-        this.collectedSpanHandlers.add(collectedSpanHandler);
-      }
-      return this;
     }
 
     /** @see {@link CollectorComponent.Builder#storage(StorageComponent)} */
@@ -94,6 +78,13 @@ public class Collector { // not final for mock
       return this;
     }
 
+    /** @see {@link CollectorComponent.Builder#sampler(CollectorSampler)} */
+    public Builder sampler(CollectorSampler sampler) {
+      if (sampler == null) throw new NullPointerException("sampler == null");
+      this.sampler = sampler;
+      return this;
+    }
+
     public Collector build() {
       return new Collector(this);
     }
@@ -101,7 +92,7 @@ public class Collector { // not final for mock
 
   final Logger logger;
   final CollectorMetrics metrics;
-  final CollectedSpanHandler handler;
+  final CollectorSampler sampler;
   final StorageComponent storage;
 
   Collector(Builder builder) {
@@ -110,7 +101,7 @@ public class Collector { // not final for mock
     this.metrics = builder.metrics == null ? CollectorMetrics.NOOP_METRICS : builder.metrics;
     if (builder.storage == null) throw new NullPointerException("storage == null");
     this.storage = builder.storage;
-    this.handler = consolidate(builder.collectedSpanHandlers);
+    this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
   }
 
   public void accept(List<Span> spans, Callback<Void> callback) {
@@ -128,25 +119,24 @@ public class Collector { // not final for mock
       callback.onSuccess(null);
       return;
     }
+    metrics.incrementSpans(spans.size());
 
+    List<Span> sampledSpans = sample(spans);
+    if (sampledSpans.isEmpty()) {
+      callback.onSuccess(null);
+      return;
+    }
+
+    // In order to ensure callers are not blocked, we swap callbacks when we get to the storage
+    // phase of this process. Here, we create a callback whose sole purpose is classifying later
+    // errors on this bundle of spans in the same log category. This allows people to only turn on
+    // debug logging in one place.
     try {
-      metrics.incrementSpans(spans.size());
-
-      List<Span> handledSpans = handle(spans);
-      if (handledSpans.isEmpty()) {
-        callback.onSuccess(null);
-        return;
-      }
-
-      // In order to ensure callers are not blocked, we swap callbacks when we get to the storage
-      // phase of this process. Here, we create a callback whose sole purpose is classifying later
-      // errors on this bundle of spans in the same log category. This allows people to only turn on
-      // debug logging in one place.
-      executor.execute(new StoreSpans(handledSpans));
+      executor.execute(new StoreSpans(sampledSpans));
       callback.onSuccess(null);
     } catch (Throwable unexpected) { // ensure if a future is supplied we always set value or error
-      Call.propagateIfFatal(unexpected);
       callback.onError(unexpected);
+      throw unexpected;
     }
   }
 
@@ -214,15 +204,17 @@ public class Collector { // not final for mock
     return span.traceId() + "/" + span.id();
   }
 
-  List<Span> handle(List<Span> input) {
-    List<Span> handled = new ArrayList<>(input.size());
+  List<Span> sample(List<Span> input) {
+    List<Span> sampled = new ArrayList<>(input.size());
     for (int i = 0, length = input.size(); i < length; i++) {
-      Span s = handler.handle(input.get(i));
-      if (s != null) handled.add(s);
+      Span s = input.get(i);
+      if (sampler.isSampled(s.traceId(), Boolean.TRUE.equals(s.debug()))) {
+        sampled.add(s);
+      }
     }
-    int dropped = input.size() - handled.size();
+    int dropped = input.size() - sampled.size();
     if (dropped > 0) metrics.incrementSpansDropped(dropped);
-    return handled;
+    return sampled;
   }
 
   class StoreSpans implements Callback<Void>, Runnable {
@@ -247,7 +239,7 @@ public class Collector { // not final for mock
     }
 
     @Override public void onError(Throwable t) {
-      handleStorageError(spans, t, NOOP_VOID);
+      handleStorageError(spans, t, NOOP_CALLBACK);
     }
 
     @Override public String toString() {
@@ -300,31 +292,5 @@ public class Collector { // not final for mock
     if (iterator.hasNext()) message.append("...");
 
     return message.append("]").toString();
-  }
-
-  static CollectedSpanHandler consolidate(List<CollectedSpanHandler> handlers) {
-    if (handlers.isEmpty()) return CollectedSpanHandler.NOOP;
-    if (handlers.size() == 1) return handlers.get(0);
-    return new MultipleHandler(handlers);
-  }
-
-  static final class MultipleHandler implements CollectedSpanHandler {
-    final CollectedSpanHandler[] handlers; // Array ensures no iterators are created at runtime
-
-    MultipleHandler(List<CollectedSpanHandler> handlers) {
-      this.handlers = handlers.toArray(new CollectedSpanHandler[0]);
-    }
-
-    @Override public Span handle(Span span) {
-      for (CollectedSpanHandler handler : handlers) {
-        span = handler.handle(span);
-        if (span == null) return null;
-      }
-      return span;
-    }
-
-    @Override public String toString() {
-      return Arrays.toString(handlers);
-    }
   }
 }
