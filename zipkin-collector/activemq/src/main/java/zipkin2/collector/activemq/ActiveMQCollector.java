@@ -22,6 +22,7 @@ import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
+import zipkin2.collector.handler.CollectedSpanHandler;
 import zipkin2.storage.StorageComponent;
 
 /** This collector consumes encoded binary messages from a ActiveMQ queue. */
@@ -38,13 +39,18 @@ public final class ActiveMQCollector extends CollectorComponent {
     String queue = "zipkin";
     int concurrency = 1;
 
-    @Override public Builder storage(StorageComponent storage) {
-      this.delegate.storage(storage);
+    @Override public Builder sampler(CollectorSampler sampler) {
+      this.delegate.sampler(sampler);
       return this;
     }
 
-    @Override public Builder sampler(CollectorSampler sampler) {
-      this.delegate.sampler(sampler);
+    @Override public Builder addCollectedSpanHandler(CollectedSpanHandler collectedSpanHandler) {
+      this.delegate.addCollectedSpanHandler(collectedSpanHandler);
+      return this;
+    }
+
+    @Override public Builder storage(StorageComponent storage) {
+      this.delegate.storage(storage);
       return this;
     }
 
