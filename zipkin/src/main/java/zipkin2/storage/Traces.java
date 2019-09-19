@@ -43,15 +43,14 @@ public interface Traces {
   Call<List<Span>> getTrace(String traceId);
 
   /**
-   * Retrieves list of spans that share a 128-bit trace id with no ordering expectation or empty if
-   * none are found.
+   * Retrieves any traces with the specified IDs. Results return in any order, and can be empty.
    *
    * <p>When strict trace ID is disabled, spans with the same right-most 16 characters are returned
    * even if the characters to the left are not.
    *
    * <p>Implementations should use {@link Span#normalizeTraceId(String)} to ensure consistency.
    *
-   * @param traceIds a list of {@link Span#traceId() trace ID}
+   * @param traceIds a list of unique {@link Span#traceId() trace IDs}.
    * @return traces matching the supplied trace IDs, in any order
    */
   Call<List<List<Span>>> getTraces(List<String> traceIds);

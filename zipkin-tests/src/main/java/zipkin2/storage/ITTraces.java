@@ -47,6 +47,23 @@ public abstract class ITTraces<T extends StorageComponent> extends ITStorage<T> 
       .isEmpty();
   }
 
+
+  @Test void getTraces_onlyReturnsTracesThatMatch() throws IOException {
+    List<String> traceIds = asList(LOTS_OF_SPANS[0].traceId(), LOTS_OF_SPANS[1].traceId());
+
+    assertThat(traces().getTraces(traceIds).execute())
+      .isEmpty();
+
+    accept(LOTS_OF_SPANS[0], LOTS_OF_SPANS[2]);
+
+    assertThat(traces().getTraces(traceIds).execute())
+      .containsOnly(asList(LOTS_OF_SPANS[0]));
+
+    List<String> longTraceIds = traceIds.stream().map(t -> "a" + t).collect(Collectors.toList());
+    assertThat(traces().getTraces(longTraceIds).execute())
+      .isEmpty();
+  }
+
   @Test void getTraces_returnsEmptyOnNotFound() throws IOException {
     List<String> traceIds = asList(LOTS_OF_SPANS[0].traceId(), LOTS_OF_SPANS[1].traceId());
 
