@@ -44,7 +44,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static zipkin2.server.internal.throttle.ThrottledCall.NOOP_CALLBACK;
+import static zipkin2.Callback.NOOP_VOID;
 import static zipkin2.server.internal.throttle.ThrottledCall.STORAGE_THROTTLE_MAX_CONCURRENCY;
 import static zipkin2.server.internal.throttle.ThrottledStorageComponent.STORAGE_THROTTLE_MAX_QUEUE_SIZE;
 
@@ -203,7 +203,7 @@ public class ThrottledCallTest {
     ThrottledCall throttle = new ThrottledCall(new FakeCall(), mockExhaustedPool(),
       mockLimiter(listener), limiterMetrics, isOverCapacity);
 
-    assertThatThrownBy(() -> throttle.enqueue(NOOP_CALLBACK))
+    assertThatThrownBy(() -> throttle.enqueue(NOOP_VOID))
       .isEqualTo(STORAGE_THROTTLE_MAX_QUEUE_SIZE);
 
     verify(listener).onIgnore();
