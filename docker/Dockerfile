@@ -38,4 +38,7 @@ USER zipkin
 
 EXPOSE 9410 9411
 
+# https://docs.docker.com/engine/reference/builder/#healthcheck
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget --quiet http://localhost:9411/health || exit 1
+
 ENTRYPOINT ["/busybox/sh", "run.sh"]
