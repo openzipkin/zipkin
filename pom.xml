@@ -632,6 +632,7 @@
           </mapping>
           <excludes>
             <exclude>.travis.yml</exclude>
+            <exclude>**/docker*.yml</exclude>
             <exclude>**/*.dockerignore</exclude>
             <exclude>.editorconfig</exclude>
             <exclude>.gitattributes</exclude>
