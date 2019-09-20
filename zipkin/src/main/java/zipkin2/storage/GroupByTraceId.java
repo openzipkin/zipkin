@@ -50,7 +50,8 @@ public final class GroupByTraceId implements Call.Mapper<List<Span>, List<List<S
       }
       groupedByTraceId.get(traceId).add(span);
     }
-    return Collections.unmodifiableList(new ArrayList<>(groupedByTraceId.values()));
+    // Modifiable so that StrictTraceId can filter without allocating a new list
+    return new ArrayList<>(groupedByTraceId.values());
   }
 
   @Override public String toString() {

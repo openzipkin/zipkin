@@ -119,7 +119,7 @@ public final class TestObjects {
    * flaking out due to PRNG nuance.
    */
   public static final Span[] LOTS_OF_SPANS =
-      new Random().longs(100_000).mapToObj(t -> span(t)).toArray(Span[]::new);
+      new Random().longs(100_000).mapToObj(TestObjects::span).toArray(Span[]::new);
 
   public static Span span(long traceId) {
     return spanBuilder.traceId(Long.toHexString(traceId)).id(traceId).build();

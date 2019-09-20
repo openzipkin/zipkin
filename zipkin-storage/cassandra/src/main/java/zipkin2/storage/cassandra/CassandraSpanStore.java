@@ -31,6 +31,7 @@ import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
+import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
 import zipkin2.storage.cassandra.internal.call.IntersectMaps;
 
@@ -39,7 +40,7 @@ import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimest
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not final for testing
+class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //not final for testing
   static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
 
   final int indexFetchMultiplier;
@@ -264,15 +265,17 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     }
   }
 
-  @Override
-  public Call<List<Span>> getTrace(String traceId) {
+  @Override public Call<List<Span>> getTrace(String traceId) {
     // make sure we have a 16 or 32 character trace ID
     String normalizedTraceId = Span.normalizeTraceId(traceId);
     return spans.newCall(normalizedTraceId);
   }
 
-  @Override
-  public Call<List<String>> getServiceNames() {
+  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    return spans.newCall(traceIds);
+  }
+
+  @Override public Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return serviceNames.clone();
   }
@@ -284,14 +287,12 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     return remoteServiceNames.create(serviceName);
   }
 
-  @Override
-  public Call<List<String>> getSpanNames(String serviceName) {
+  @Override public Call<List<String>> getSpanNames(String serviceName) {
     if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
     return spanNames.create(serviceName);
   }
 
-  @Override
-  public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
+  @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
     if (lookback <= 0) throw new IllegalArgumentException("lookback <= 0");
     return dependencies.create(endTs, lookback);

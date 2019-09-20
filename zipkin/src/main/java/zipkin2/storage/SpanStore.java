@@ -46,8 +46,9 @@ public interface SpanStore {
    * <p>Implementations should use {@link Span#normalizeTraceId(String)} to ensure consistency.
    *
    * @param traceId the {@link Span#traceId() trace ID}
+   * @deprecated use {@link Traces#getTrace(String)}
    */
-  Call<List<Span>> getTrace(String traceId);
+  @Deprecated Call<List<Span>> getTrace(String traceId);
 
   /**
    * Retrieves all {@link Span#localEndpoint() local} and {@link Span#remoteEndpoint() remote}
@@ -75,8 +76,8 @@ public interface SpanStore {
    * was 25 hours, the implementation would query against 2 buckets.
    *
    * <p>Some implementations parse spans from storage and call {@link
-   * DependencyLinker} to aggregate links. The reason is certain graph
-   * logic, such as skipping up the tree is difficult to implement as a storage query.
+   * DependencyLinker} to aggregate links. The reason is certain graph logic, such as skipping up
+   * the tree is difficult to implement as a storage query.
    *
    * <p>Spans are grouped by the right-most 16 characters of the trace ID. This ensures call counts
    * are not incremented twice due to one hop downgrading from 128 to 64-bit trace IDs.

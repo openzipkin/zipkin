@@ -20,6 +20,7 @@ import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.Component;
 import zipkin2.Span;
+import zipkin2.internal.TracesAdapter;
 
 /**
  * A component that provides storage interfaces used for spans and aggregations. Implementations are
@@ -28,6 +29,10 @@ import zipkin2.Span;
  * @see InMemoryStorage
  */
 public abstract class StorageComponent extends Component {
+
+  public Traces traces() {
+    return new TracesAdapter(spanStore()); // delegates to deprecated methods.
+  }
 
   public abstract SpanStore spanStore();
 
@@ -141,7 +146,7 @@ public abstract class StorageComponent extends Component {
     public abstract Builder strictTraceId(boolean strictTraceId);
 
     /**
-     * False is an attempt to disable indexing, leaving only {@link SpanStore#getTrace(String)}
+     * False is an attempt to disable indexing, leaving only {@link StorageComponent#traces()}
      * supported. For example, query requests will be disabled.
      *
      * The use case is typically to support 100% sampled data, or when traces are searched using

@@ -13,6 +13,11 @@
  */
 package zipkin2.storage;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -20,7 +25,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.TestInstance;
 import zipkin2.CheckResult;
+import zipkin2.Span;
 
+import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /** Base class for all {@link StorageComponent} integration tests. */
@@ -95,6 +102,10 @@ public abstract class ITStorage<T extends StorageComponent> {
    */
   protected abstract void configureStorageForTest(StorageComponent.Builder storage);
 
+  protected Traces traces() {
+    return storage.traces();
+  }
+
   protected SpanStore store() {
     return storage.spanStore();
   }
@@ -103,6 +114,37 @@ public abstract class ITStorage<T extends StorageComponent> {
     return storage.serviceAndSpanNames();
   }
 
+  protected final void accept(Span... spans) throws IOException {
+    accept(asList(spans));
+  }
+
+  protected final void accept(List<Span> spans) throws IOException {
+    for (int i = 0, length = spans.size(); i < length; i += 100) {
+      storage.spanConsumer().accept(spans.subList(i, Math.min(length, i + 100))).execute();
+      blockWhileInFlight();
+    }
+  }
+
+  // Blocks between writes of 100 spans to help avoid readback problems.
+  protected void blockWhileInFlight() {
+  }
+
   /** Clears store between tests. */
   protected abstract void clear() throws Exception;
+
+  static List<List<Span>> sortTraces(List<List<Span>> traces) {
+    List<List<Span>> result = new ArrayList<>();
+    for (List<Span> trace : traces) result.add(sortTrace(trace));
+    Collections.sort(result, Comparator.comparing(o -> o.get(0).traceId()));
+    return result;
+  }
+
+  static ArrayList<Span> sortTrace(List<Span> trace) {
+    ArrayList<Span> result = new ArrayList<>(trace);
+    result.sort((l, r) -> { // Include trace ID to ensure mixed-length traces have consistent order
+      int traceId = l.traceId().compareTo(r.traceId());
+      return (traceId == 0) ? Long.compare(l.timestampAsLong(), r.timestampAsLong()) : traceId;
+    });
+    return result;
+  }
 }
