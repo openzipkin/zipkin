@@ -20,13 +20,11 @@ import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
-import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.Consumes;
 import com.linecorp.armeria.server.annotation.ConsumesJson;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
-import com.linecorp.armeria.server.annotation.ExceptionHandlerFunction;
 import com.linecorp.armeria.server.annotation.Post;
 import io.netty.buffer.ByteBufHolder;
 import io.netty.util.ReferenceCountUtil;
@@ -50,10 +48,7 @@ import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
 
-import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
-import static com.linecorp.armeria.common.HttpStatus.INTERNAL_SERVER_ERROR;
 import static zipkin2.Call.propagateIfFatal;
-import static zipkin2.server.internal.BodyIsExceptionMessage.testForUnexpectedFormat;
 
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
 @ExceptionHandler(BodyIsExceptionMessage.class)
@@ -183,6 +178,42 @@ public class ZipkinHttpCollector {
       prefix, ctx.clientAddress(), request.headers().get(HttpHeaderNames.USER_AGENT)
     );
   }
+
+  /**
+   * Some formats clash on partial data. For example, a v1 and v2 span is identical if only the span
+   * name is sent. This looks for unexpected data format.
+   */
+  static SpanBytesDecoder testForUnexpectedFormat(BytesDecoder<Span> decoder, ByteBuffer body) {
+    if (decoder == SpanBytesDecoder.JSON_V2) {
+      if (contains(body, BINARY_ANNOTATION_FIELD_SUFFIX)) {
+        return SpanBytesDecoder.JSON_V1;
+      }
+    } else if (decoder == SpanBytesDecoder.JSON_V1) {
+      if (contains(body, ENDPOINT_FIELD_SUFFIX) || contains(body, TAGS_FIELD)) {
+        return SpanBytesDecoder.JSON_V2;
+      }
+    }
+    return null;
+  }
+
+  static final byte[] BINARY_ANNOTATION_FIELD_SUFFIX =
+    {'y', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '"'};
+  // copy-pasted from SpanBytesDecoderDetector, to avoid making it public
+  static final byte[] ENDPOINT_FIELD_SUFFIX = {'E', 'n', 'd', 'p', 'o', 'i', 'n', 't', '"'};
+  static final byte[] TAGS_FIELD = {'"', 't', 'a', 'g', 's', '"'};
+
+  static boolean contains(ByteBuffer bytes, byte[] subsequence) {
+    bytes:
+    for (int i = 0; i < bytes.remaining() - subsequence.length + 1; i++) {
+      for (int j = 0; j < subsequence.length; j++) {
+        if (bytes.get(bytes.position() + i + j) != subsequence[j]) {
+          continue bytes;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
 }
 
 @Retention(RetentionPolicy.RUNTIME)
@@ -235,61 +266,5 @@ final class UnzippingBytesRequestConverter {
 
     ZipkinHttpCollector.metrics.incrementBytes(content.length());
     return content;
-  }
-}
-
-final class BodyIsExceptionMessage implements ExceptionHandlerFunction {
-
-  static final Logger LOGGER = LogManager.getLogger();
-
-  @Override
-  public HttpResponse handleException(ServiceRequestContext ctx, HttpRequest req, Throwable cause) {
-    ZipkinHttpCollector.metrics.incrementMessagesDropped();
-
-    String message = cause.getMessage();
-    if (message == null) message = cause.getClass().getSimpleName();
-    if (cause instanceof IllegalArgumentException) {
-      return HttpResponse.of(BAD_REQUEST, MediaType.ANY_TEXT_TYPE, message);
-    } else {
-      LOGGER.warn("Unexpected error handling request.", cause);
-
-      return HttpResponse.of(INTERNAL_SERVER_ERROR, MediaType.ANY_TEXT_TYPE, message);
-    }
-  }
-
-  /**
-   * Some formats clash on partial data. For example, a v1 and v2 span is identical if only the span
-   * name is sent. This looks for unexpected data format.
-   */
-  static SpanBytesDecoder testForUnexpectedFormat(BytesDecoder<Span> decoder, ByteBuffer body) {
-    if (decoder == SpanBytesDecoder.JSON_V2) {
-      if (contains(body, BINARY_ANNOTATION_FIELD_SUFFIX)) {
-        return SpanBytesDecoder.JSON_V1;
-      }
-    } else if (decoder == SpanBytesDecoder.JSON_V1) {
-      if (contains(body, ENDPOINT_FIELD_SUFFIX) || contains(body, TAGS_FIELD)) {
-        return SpanBytesDecoder.JSON_V2;
-      }
-    }
-    return null;
-  }
-
-  static final byte[] BINARY_ANNOTATION_FIELD_SUFFIX =
-    {'y', 'A', 'n', 'n', 'o', 't', 'a', 't', 'i', 'o', 'n', 's', '"'};
-  // copy-pasted from SpanBytesDecoderDetector, to avoid making it public
-  static final byte[] ENDPOINT_FIELD_SUFFIX = {'E', 'n', 'd', 'p', 'o', 'i', 'n', 't', '"'};
-  static final byte[] TAGS_FIELD = {'"', 't', 'a', 'g', 's', '"'};
-
-  static boolean contains(ByteBuffer bytes, byte[] subsequence) {
-    bytes:
-    for (int i = 0; i < bytes.remaining() - subsequence.length + 1; i++) {
-      for (int j = 0; j < subsequence.length; j++) {
-        if (bytes.get(bytes.position() + i + j) != subsequence[j]) {
-          continue bytes;
-        }
-      }
-      return true;
-    }
-    return false;
   }
 }

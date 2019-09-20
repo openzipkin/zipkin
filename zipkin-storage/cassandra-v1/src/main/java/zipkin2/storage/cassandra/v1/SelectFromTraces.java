@@ -75,15 +75,16 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
       return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
     }
 
-    Call<List<List<Span>>> newCall(List<String> traceIds) {
+    Call<List<List<Span>>> newCall(Iterable<String> traceIds) {
       Set<Long> longTraceIds = new LinkedHashSet<>();
       Set<String> normalizedTraceIds = new LinkedHashSet<>();
-
       for (String traceId : traceIds) {
         traceId = Span.normalizeTraceId(traceId);
         normalizedTraceIds.add(traceId);
         longTraceIds.add(HexCodec.lowerHexToUnsignedLong(traceId));
       }
+
+      if (normalizedTraceIds.isEmpty()) return Call.emptyList();
       Call<List<List<Span>>> result = new SelectFromTraces(this,
         longTraceIds,
         maxTraceCols

@@ -89,7 +89,7 @@ public final class TracingStorageComponent extends ForwardingStorageComponent {
       return new TracedCall<>(tracer, delegate.getTrace(traceId), "get-trace");
     }
 
-    @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+    @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
       return new TracedCall<>(tracer, delegate.getTraces(traceIds), "get-traces");
     }
 

@@ -271,7 +271,7 @@ class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //n
     return spans.newCall(normalizedTraceId);
   }
 
-  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+  @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
     return spans.newCall(traceIds);
   }
 

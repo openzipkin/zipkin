@@ -69,20 +69,9 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
       };
     }
 
-    SelectSpansAndAnnotations create(List<String> traceIds) {
-      Set<Pair> traceIdPairs = new LinkedHashSet<>();
-      for (String traceId : traceIds) {
-        // make sure we have a 16 or 32 character trace ID
-        String hexTraceId = Span.normalizeTraceId(traceId);
-        traceIdPairs.add(new Pair(
-            hexTraceId.length() == 32 ? lowerHexToUnsignedLong(hexTraceId, 0) : 0L,
-            lowerHexToUnsignedLong(hexTraceId)
-          )
-        );
-      }
+    SelectSpansAndAnnotations create(Set<Pair> traceIdPairs) {
       return new SelectSpansAndAnnotations(schema) {
-        @Override
-        Condition traceIdCondition(DSLContext context) {
+        @Override Condition traceIdCondition(DSLContext context) {
           return schema.spanTraceIdCondition(traceIdPairs);
         }
       };
