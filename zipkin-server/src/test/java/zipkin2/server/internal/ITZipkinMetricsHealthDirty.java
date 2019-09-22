@@ -75,31 +75,31 @@ public class ITZipkinMetricsHealthDirty {
 
     String json = getAsString("/metrics");
 
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
+    assertThat(readdouble(json, "$.['counter.zipkin_collector.messages.http']"))
       .isEqualTo(messagesCount + 2.0);
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.bytes.http']"))
+    assertThat(readdouble(json, "$.['counter.zipkin_collector.bytes.http']"))
       .isEqualTo(bytesCount + (body.length * 2));
-    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_bytes.http']"))
+    assertThat(readdouble(json, "$.['gauge.zipkin_collector.message_bytes.http']"))
       .isEqualTo(body.length);
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.spans.http']"))
+    assertThat(readdouble(json, "$.['counter.zipkin_collector.spans.http']"))
       .isEqualTo(spansCount + (spans.size() * 2));
-    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
+    assertThat(readdouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
       .isEqualTo(spans.size());
   }
 
   @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    Double messagesCount =
+    double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();
-    Double messagesDroppedCount =
+    double messagesDroppedCount =
       registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
     post("/api/v2/spans", body);
 
     String json = getAsString("/metrics");
 
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
+    assertThat(readdouble(json, "$.['counter.zipkin_collector.messages.http']"))
       .isEqualTo(messagesCount + 1);
-    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
+    assertThat(readdouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
       .isEqualTo(messagesDroppedCount + 1);
   }
 
@@ -122,7 +122,7 @@ public class ITZipkinMetricsHealthDirty {
       .build()).execute();
   }
 
-  static Double readDouble(String json, String jsonPath) {
+  static double readdouble(String json, String jsonPath) {
     return JsonPath.compile(jsonPath).read(json);
   }
 }

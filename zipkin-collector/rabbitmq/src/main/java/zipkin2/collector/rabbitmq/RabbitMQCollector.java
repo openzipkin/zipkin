@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
@@ -126,7 +127,8 @@ public final class RabbitMQCollector extends CollectorComponent {
       CheckResult failure = connection.failure.get();
       if (failure != null) return failure;
       return CheckResult.OK;
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
   }

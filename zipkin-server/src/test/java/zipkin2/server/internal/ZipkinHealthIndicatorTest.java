@@ -20,11 +20,10 @@ import zipkin2.CheckResult;
 import zipkin2.Component;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static zipkin2.server.internal.ZipkinHealthIndicator.ComponentHealthIndicator;
 
 public class ZipkinHealthIndicatorTest {
   @Test public void addsMessageToDetails() {
-    ComponentHealthIndicator healthIndicator = new ComponentHealthIndicator(new Component() {
+    ZipkinHealthIndicator healthIndicator = new ZipkinHealthIndicator(new Component() {
       @Override public CheckResult check() {
         return CheckResult.failed(new IOException("socket disconnect"));
       }
@@ -35,7 +34,7 @@ public class ZipkinHealthIndicatorTest {
   }
 
   @Test public void doesntAddNullMessageToDetails() {
-    ComponentHealthIndicator healthIndicator = new ComponentHealthIndicator(new Component() {
+    ZipkinHealthIndicator healthIndicator = new ZipkinHealthIndicator(new Component() {
       @Override public CheckResult check() {
         return CheckResult.failed(ClosedSessionException.get());
       }

@@ -21,6 +21,7 @@ import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.SessionProtocol;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -302,8 +303,14 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Client<HttpRequest, HttpResponse> decorated =
       factory.options.decoration().decorate(HttpRequest.class, HttpResponse.class, delegate);
 
+    HttpRequest req = HttpRequest.of(RequestHeaders.builder()
+      .method(HttpMethod.GET)
+      .scheme("http")
+      .authority("localhost")
+      .path("/")
+      .build()
+    );
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
-    HttpRequest req = HttpRequest.of(HttpMethod.GET, "/");
     ClientRequestContext ctx = spy(ClientRequestContext.of(req));
     when(delegate.execute(any(), any())).thenReturn(HttpResponse.of(HttpStatus.OK));
 
@@ -329,8 +336,14 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     Client<HttpRequest, HttpResponse> decorated = factory.options.decoration()
       .decorate(HttpRequest.class, HttpResponse.class, delegate);
 
+    HttpRequest req = HttpRequest.of(RequestHeaders.builder()
+      .method(HttpMethod.GET)
+      .scheme("http")
+      .authority("localhost")
+      .path("/")
+      .build()
+    );
     // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
-    HttpRequest req = HttpRequest.of(HttpMethod.GET, "/");
     ClientRequestContext ctx = spy(ClientRequestContext.of(req));
     when(delegate.execute(any(), any())).thenReturn(HttpResponse.of(HttpStatus.OK));
 

@@ -46,7 +46,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     this.protocol = protocol;
     this.initialEndpoints = initialEndpoints;
     this.healthCheck = es.getHealthCheck();
-    timeoutMillis = es.getTimeout();
+    this.timeoutMillis = es.getTimeout();
     this.meterRegistry = meterRegistry;
   }
 
@@ -92,7 +92,6 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     }
 
     // If health-checking is enabled, we can end up with no endpoints after waiting
-    // TODO: test this results in no cause following https://github.com/line/armeria/pull/2074
     if (empty) {
       result.close(); // no-op when not health checked
       throw new IllegalStateException("couldn't connect any of " + initial.endpoints(), thrown);
@@ -104,8 +103,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     return Endpoint.ofGroup("elasticsearch");
   }
 
-  // Enables health-checking of an endpoint group, so we only send requests to endpoints that are
-  // up.
+  // Enables health-checking of an endpoint group, so we only send requests to endpoints that are up
   HealthCheckedEndpointGroup decorateHealthCheck(EndpointGroup endpointGroup) {
     HealthCheckedEndpointGroup healthChecked =
       HealthCheckedEndpointGroup.builder(endpointGroup, "/_cluster/health")

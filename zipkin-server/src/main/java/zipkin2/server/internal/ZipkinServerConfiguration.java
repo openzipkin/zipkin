@@ -34,7 +34,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
-import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -91,12 +90,6 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       // better error messages where possible.
       sb.requestTimeout(Duration.ofSeconds(11));
     };
-  }
-
-  /** Registers health for any components, even those not in this jar. */
-  @Bean
-  ZipkinHealthIndicator zipkinHealthIndicator(HealthAggregator healthAggregator) {
-    return new ZipkinHealthIndicator(healthAggregator);
   }
 
   @Override public void addViewControllers(ViewControllerRegistry registry) {

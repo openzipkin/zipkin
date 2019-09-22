@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.ContainerLaunchException;
 import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.containers.traits.LinkableContainer;
 
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -125,9 +124,7 @@ class CassandraStorageExtension implements BeforeAllCallback, AfterAllCallback {
     }
   }
 
-  static final class CassandraContainer extends GenericContainer<CassandraContainer>
-      implements LinkableContainer {
-
+  static final class CassandraContainer extends GenericContainer<CassandraContainer> {
     CassandraContainer(String image) {
       super(image);
     }
