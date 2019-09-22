@@ -75,15 +75,15 @@ public class ITZipkinMetricsHealthDirty {
 
     String json = getAsString("/metrics");
 
-    assertThat(readdouble(json, "$.['counter.zipkin_collector.messages.http']"))
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
       .isEqualTo(messagesCount + 2.0);
-    assertThat(readdouble(json, "$.['counter.zipkin_collector.bytes.http']"))
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.bytes.http']"))
       .isEqualTo(bytesCount + (body.length * 2));
-    assertThat(readdouble(json, "$.['gauge.zipkin_collector.message_bytes.http']"))
+    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_bytes.http']"))
       .isEqualTo(body.length);
-    assertThat(readdouble(json, "$.['counter.zipkin_collector.spans.http']"))
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.spans.http']"))
       .isEqualTo(spansCount + (spans.size() * 2));
-    assertThat(readdouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
+    assertThat(readDouble(json, "$.['gauge.zipkin_collector.message_spans.http']"))
       .isEqualTo(spans.size());
   }
 
@@ -97,9 +97,9 @@ public class ITZipkinMetricsHealthDirty {
 
     String json = getAsString("/metrics");
 
-    assertThat(readdouble(json, "$.['counter.zipkin_collector.messages.http']"))
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
       .isEqualTo(messagesCount + 1);
-    assertThat(readdouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
       .isEqualTo(messagesDroppedCount + 1);
   }
 
@@ -122,7 +122,7 @@ public class ITZipkinMetricsHealthDirty {
       .build()).execute();
   }
 
-  static double readdouble(String json, String jsonPath) {
+  static double readDouble(String json, String jsonPath) {
     return JsonPath.compile(jsonPath).read(json);
   }
 }
