@@ -31,7 +31,7 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
-import zipkin2.server.internal.ActuateCollectorMetrics;
+import zipkin2.server.internal.MicrometerCollectorMetrics;
 
 @Measurement(iterations = 80, time = 1)
 @Warmup(iterations = 20, time = 1)
@@ -46,7 +46,7 @@ public class MetricsBenchmarks {
   static final int SHORT_SPAN = 500;
   private MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
   private InMemoryCollectorMetrics inMemoryCollectorMetrics = new InMemoryCollectorMetrics();
-  private ActuateCollectorMetrics actuateCollectorMetrics = new ActuateCollectorMetrics(registry);
+  private MicrometerCollectorMetrics micrometerCollectorMetrics = new MicrometerCollectorMetrics(registry);
 
   @Benchmark
   public int incrementBytes_longSpans_inMemory() {
@@ -55,7 +55,7 @@ public class MetricsBenchmarks {
 
   @Benchmark
   public int incrementBytes_longSpans_Actuate() {
-    return incrementBytes(actuateCollectorMetrics, LONG_SPAN);
+    return incrementBytes(micrometerCollectorMetrics, LONG_SPAN);
   }
 
   @Benchmark
@@ -65,7 +65,7 @@ public class MetricsBenchmarks {
 
   @Benchmark
   public int incrementBytes_mediumSpans_Actuate() {
-    return incrementBytes(actuateCollectorMetrics, MEDIUM_SPAN);
+    return incrementBytes(micrometerCollectorMetrics, MEDIUM_SPAN);
   }
 
   @Benchmark
@@ -75,7 +75,7 @@ public class MetricsBenchmarks {
 
   @Benchmark
   public int incrementBytes_shortSpans_Actuate() {
-    return incrementBytes(actuateCollectorMetrics, SHORT_SPAN);
+    return incrementBytes(micrometerCollectorMetrics, SHORT_SPAN);
   }
 
   private int incrementBytes(CollectorMetrics collectorMetrics, int bytes) {

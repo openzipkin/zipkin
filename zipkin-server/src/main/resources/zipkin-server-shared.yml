@@ -201,15 +201,19 @@ spring:
       # zipkin has its own favicon
       enabled: false
   autoconfigure:
+    # NOTE: These exclusions can drift between Spring Boot minor versions. Audit accordingly.
     exclude:
       # otherwise we might initialize even when not needed (ex when storage type is cassandra)
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration
       - org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
-info:
-  zipkin:
-    version: "@project.version@"
-    commit: "@git.commit.id.abbrev@"
+      # JMX is disabled
+      - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
+      # served directly by Armeria
+      - org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
+      # served directly by Armeria (content is /info.json)
+      - org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration
 
 logging:
   pattern:
@@ -233,7 +237,6 @@ logging:
 #     zipkin2.collector.kafka08.KafkaCollector: 'DEBUG'
 #     zipkin2.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
 #     zipkin2.collector.scribe.ScribeCollector: 'DEBUG'
-
 management:
   endpoints:
     web:
@@ -242,8 +245,10 @@ management:
   endpoint:
     health:
       show-details: always
+    # Below are served directly without actuator.
     prometheus:
-      # Served directly without actuator.
+      enabled: false
+    info:
       enabled: false
 # Disabling auto time http requests since it is added in Undertow HttpHandler in Zipkin autoconfigure
 # Prometheus module. In Zipkin we use different naming for the http requests duration

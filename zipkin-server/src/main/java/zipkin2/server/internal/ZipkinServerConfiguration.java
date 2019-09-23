@@ -16,8 +16,10 @@ package zipkin2.server.internal;
 import brave.Tracing;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.server.RedirectService;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
+import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
@@ -27,13 +29,13 @@ import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -45,7 +47,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import org.springframework.web.servlet.config.annotation.ViewControllerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
@@ -58,6 +59,8 @@ import zipkin2.storage.StorageComponent;
 @Configuration
 @ImportAutoConfiguration(ArmeriaSpringActuatorAutoConfiguration.class)
 public class ZipkinServerConfiguration implements WebMvcConfigurer {
+  static final MediaType MEDIA_TYPE_ACTUATOR =
+    MediaType.parse("application/vnd.spring-boot.actuator.v2+json");
 
   @Autowired(required = false)
   ZipkinQueryApiV2 httpQuery;
@@ -67,6 +70,13 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Autowired(required = false)
   MetricsHealthController healthController;
+
+  @Bean Consumer<MeterRegistry.Config> noActuatorMetrics() {
+    return config -> config.meterFilter(MeterFilter.deny(id -> {
+      String uri = id.getTag("uri");
+      return uri != null && uri.startsWith("/actuator");
+    }));
+  }
 
   @Bean ArmeriaServerConfigurator serverConfigurator(
     Optional<CollectorRegistry> prometheusRegistry) {
@@ -82,8 +92,10 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
         sb.service("/actuator/prometheus", prometheusService);
         sb.service("/prometheus", prometheusService);
       });
-      // Redirects the info endpoint for backward compatibility
-      sb.service("/info", new RedirectService("/actuator/info"));
+
+      // Directly implement info endpoint, but use different content type for the /actuator path
+      sb.service("/actuator/info", infoService(MEDIA_TYPE_ACTUATOR));
+      sb.service("/info", infoService(MediaType.JSON_UTF_8));
 
       // It's common for backend requests to have timeouts of the magic number 10s, so we go ahead
       // and default to a slightly longer timeout on the server to be able to handle these with
@@ -92,8 +104,15 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     };
   }
 
-  @Override public void addViewControllers(ViewControllerRegistry registry) {
-    registry.addRedirectViewController("/info", "/actuator/info");
+  @Bean Consumer<MeterRegistry.Config> noAdminMetrics() {
+    return config -> config.meterFilter(MeterFilter.deny(id -> {
+      String uri = id.getTag("uri");
+      return uri != null && (
+          uri.startsWith("/metrics")
+          || uri.startsWith("/info")
+          || uri.startsWith("/health")
+          || uri.startsWith("/prometheus"));
+    }));
   }
 
   /** Configures the server at the last because of the specified {@link Order} annotation. */
@@ -123,25 +142,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Bean
   @ConditionalOnMissingBean(CollectorMetrics.class)
   CollectorMetrics metrics(MeterRegistry registry) {
-    return new ActuateCollectorMetrics(registry);
-  }
-
-  @Bean
-  public MeterRegistryCustomizer meterRegistryCustomizer() {
-    return registry ->
-      registry
-        .config()
-        .meterFilter(
-          MeterFilter.deny(
-            id -> {
-              String uri = id.getTag("uri");
-              return uri != null
-                && (uri.startsWith("/actuator")
-                || uri.startsWith("/metrics")
-                || uri.startsWith("/health")
-                || uri.startsWith("/favicon.ico")
-                || uri.startsWith("/prometheus"));
-            }));
+    return new MicrometerCollectorMetrics(registry);
   }
 
   @Configuration
@@ -239,5 +240,9 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       if (storageType.isEmpty()) return true;
       return storageType.equals("mem");
     }
+  }
+
+  static HttpService infoService(MediaType mediaType) {
+    return HttpFileBuilder.ofResource("info.json").contentType(mediaType).build().asService();
   }
 }

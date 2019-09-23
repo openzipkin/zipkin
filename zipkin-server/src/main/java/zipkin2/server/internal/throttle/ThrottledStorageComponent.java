@@ -115,7 +115,7 @@ public final class ThrottledStorageComponent extends ForwardingStorageComponent 
       });
     limit.notifyOnChange(new ThreadPoolExecutorResizer(executor));
 
-    ActuateThrottleMetrics metrics = new ActuateThrottleMetrics(registry);
+    MicrometerThrottleMetrics metrics = new MicrometerThrottleMetrics(registry);
     metrics.bind(executor);
     metrics.bind(limiter);
 

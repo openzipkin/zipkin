@@ -15,10 +15,13 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okio.Okio;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -212,7 +215,27 @@ public class ITZipkinServer {
   }
 
   @Test public void infoEndpointIsAvailable() throws IOException {
-    assertThat(get("/info").isSuccessful()).isTrue();
+    Response info = get("/info");
+    assertThat(info.isSuccessful()).isTrue();
+    assertThat(info.body().contentType().toString())
+      .isEqualTo("application/json; charset=utf-8");
+    assertThat(info.body().string())
+      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "info.json"));
+  }
+
+  @Test public void actuatorInfoEndpointHasDifferentContentType() throws IOException {
+    Response info = get("/info");
+    Response actuatorInfo = get("/actuator/info");
+
+    // Different content type
+    assertThat(actuatorInfo.isSuccessful()).isTrue();
+    assertThat(actuatorInfo.body().contentType())
+      .isNotEqualTo(info.body().contentType())
+      .hasToString("application/vnd.spring-boot.actuator.v2+json");
+
+    // Same content
+    assertThat(actuatorInfo.body().string())
+      .isEqualTo(info.body().string());
   }
 
   private Response get(String path) throws IOException {
@@ -223,5 +246,14 @@ public class ITZipkinServer {
 
   public static String url(Server server, String path) {
     return "http://localhost:" + server.activePort().get().localAddress().getPort() + path;
+  }
+
+  public static String stringFromClasspath(Class<?> thisClass, String path) throws IOException {
+    URL url = thisClass.getClassLoader().getResource(path);
+    assertThat(url).isNotNull();
+
+    try (InputStream fromClasspath = url.openStream()) {
+      return Okio.buffer(Okio.source(fromClasspath)).readUtf8();
+    }
   }
 }

@@ -40,20 +40,17 @@ import zipkin2.internal.Nullable;
  * </pre>
  *
  * See https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html
- *
- * <p>In-memory implementation mimics code from org.springframework.boot.actuate.metrics.buffer
  */
-public final class ActuateCollectorMetrics implements CollectorMetrics {
-
+public final class MicrometerCollectorMetrics implements CollectorMetrics {
   final MeterRegistry registryInstance;
   final Counter messages, messagesDropped, bytes, spans, spansDropped;
   final AtomicInteger messageBytes, messageSpans;
 
-  public ActuateCollectorMetrics(MeterRegistry registry) {
+  public MicrometerCollectorMetrics(MeterRegistry registry) {
     this(null, registry);
   }
 
-  ActuateCollectorMetrics(@Nullable String transport, MeterRegistry meterRegistry) {
+  MicrometerCollectorMetrics(@Nullable String transport, MeterRegistry meterRegistry) {
     this.registryInstance = meterRegistry;
     if (transport == null) {
       messages = messagesDropped = bytes = spans = spansDropped = null;
@@ -61,15 +58,15 @@ public final class ActuateCollectorMetrics implements CollectorMetrics {
       return;
     }
     this.messages =
-        Counter.builder("zipkin_collector.messages")
-            .description("cumulative amount of messages received")
-            .tag("transport", transport)
-            .register(registryInstance);
+      Counter.builder("zipkin_collector.messages")
+        .description("cumulative amount of messages received")
+        .tag("transport", transport)
+        .register(registryInstance);
     this.messagesDropped =
-        Counter.builder("zipkin_collector.messages_dropped")
-            .description("cumulative amount of messages received that were later dropped")
-            .tag("transport", transport)
-            .register(registryInstance);
+      Counter.builder("zipkin_collector.messages_dropped")
+        .description("cumulative amount of messages received that were later dropped")
+        .tag("transport", transport)
+        .register(registryInstance);
 
     this.bytes =
         Counter.builder("zipkin_collector.bytes")
@@ -102,9 +99,9 @@ public final class ActuateCollectorMetrics implements CollectorMetrics {
   }
 
   @Override
-  public ActuateCollectorMetrics forTransport(String transportType) {
+  public MicrometerCollectorMetrics forTransport(String transportType) {
     if (transportType == null) throw new NullPointerException("transportType == null");
-    return new ActuateCollectorMetrics(transportType, registryInstance);
+    return new MicrometerCollectorMetrics(transportType, registryInstance);
   }
 
   @Override
@@ -140,7 +137,8 @@ public final class ActuateCollectorMetrics implements CollectorMetrics {
   }
 
   void checkScoped() {
-    if (messages == null)
+    if (messages == null) {
       throw new IllegalStateException("always scope with ActuateCollectorMetrics.forTransport");
+    }
   }
 }
