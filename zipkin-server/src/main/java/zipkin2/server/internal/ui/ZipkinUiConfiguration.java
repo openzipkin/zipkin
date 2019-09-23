@@ -16,7 +16,6 @@ package zipkin2.server.internal.ui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
@@ -28,7 +27,6 @@ import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
-import com.linecorp.armeria.server.encoding.HttpEncodingService;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
@@ -39,28 +37,21 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.server.Compression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
@@ -145,7 +136,6 @@ public class ZipkinUiConfiguration {
   }
 
   @Bean @Lazy ArmeriaServerConfigurator uiServerConfigurator(
-    CompressionProperties compressionProperties,
     IndexSwitchingService indexSwitchingService) throws IOException {
     ServerCacheControl maxAgeYear =
       new ServerCacheControlBuilder().maxAgeSeconds(TimeUnit.DAYS.toSeconds(365)).build();
@@ -177,11 +167,6 @@ public class ZipkinUiConfiguration {
       sb.service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
         .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"))
         .service("/zipkin", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
-
-      Compression compression = compressionProperties.getCompression();
-      if (compression.getEnabled()) {
-        sb.decorator(contentEncodingDecorator(compression));
-      }
     };
   }
 
@@ -213,40 +198,5 @@ public class ZipkinUiConfiguration {
       }
       return legacyIndex.serve(ctx, req);
     }
-  }
-
-  // TEMPORARY: copy-pasta from com.linecorp.armeria.spring.web.reactive.ArmeriaReactiveWebServerFactory
-  // TODO: hunt this down.. see if compression is available in Armeria spring-boot integration now!
-  private static Function<Service<HttpRequest, HttpResponse>,
-    HttpEncodingService> contentEncodingDecorator(Compression compression) {
-    final Predicate<MediaType> encodableContentTypePredicate;
-    final String[] mimeTypes = compression.getMimeTypes();
-    if (mimeTypes == null || mimeTypes.length == 0) {
-      encodableContentTypePredicate = contentType -> true;
-    } else {
-      final List<MediaType> encodableContentTypes =
-        Arrays.stream(mimeTypes).map(MediaType::parse).collect(toList());
-      encodableContentTypePredicate = contentType ->
-        encodableContentTypes.stream().anyMatch(contentType::is);
-    }
-
-    final Predicate<HttpHeaders> encodableRequestHeadersPredicate;
-    final String[] excludedUserAgents = compression.getExcludedUserAgents();
-    if (excludedUserAgents == null || excludedUserAgents.length == 0) {
-      encodableRequestHeadersPredicate = headers -> true;
-    } else {
-      final List<Pattern> patterns =
-        Arrays.stream(excludedUserAgents).map(Pattern::compile).collect(toList());
-      encodableRequestHeadersPredicate = headers -> {
-        // No User-Agent header will be converted to an empty string.
-        final String userAgent = headers.get(HttpHeaderNames.USER_AGENT, "");
-        return patterns.stream().noneMatch(pattern -> pattern.matcher(userAgent).matches());
-      };
-    }
-
-    return delegate -> new HttpEncodingService(delegate,
-      encodableContentTypePredicate,
-      encodableRequestHeadersPredicate,
-      compression.getMinResponseSize().toBytes());
   }
 }

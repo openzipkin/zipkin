@@ -42,8 +42,11 @@ import static zipkin2.TestObjects.UTF_8;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = "spring.config.name=zipkin-server"
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
+  properties = {
+    "server.port=0",
+    "spring.config.name=zipkin-server"
+  }
 )
 @RunWith(SpringRunner.class)
 public class ITZipkinServer {

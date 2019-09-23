@@ -172,6 +172,9 @@ zipkin:
     # When false, disables the "Try Lens UI" button in the navigation page
     suggest-lens: true
 
+# We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
+spring.main.web-application-type: none
+# These defaults are not used directly. They are used via armeria namespacing
 server:
   port: ${QUERY_PORT:9411}
   use-forward-headers: true
@@ -180,15 +183,17 @@ server:
     # compresses any response over min-response-size (default is 2KiB)
     # Includes dynamic json content and large static assets from zipkin-ui
     mime-types: application/json,application/javascript,text/css,image/svg
+    min-response-size: 2048
 
-spring.main.web-application-type: none
-
-# We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
 armeria:
   ports:
     - port: ${server.port}
       protocols:
         - http
+  compression:
+    enabled: ${server.compression.enabled}
+    mime-types: ${server.compression.mime-types}
+    min-response-size: ${server.compression.min-response-size}
   gracefulShutdownQuietPeriodMillis: -1
   gracefulShutdownTimeoutMillis: -1
 
