@@ -14,6 +14,7 @@
 package zipkin2.server.internal;
 
 import brave.Tracing;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
@@ -45,7 +46,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.server.internal.brave.TracingStorageComponent;
@@ -55,7 +55,7 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
-class ZipkinServerConfiguration implements WebMvcConfigurer {
+class ZipkinServerConfiguration {
   static final MediaType MEDIA_TYPE_ACTUATOR =
     MediaType.parse("application/vnd.spring-boot.actuator.v2+json;charset=UTF-8");
 
@@ -67,6 +67,10 @@ class ZipkinServerConfiguration implements WebMvcConfigurer {
 
   @Autowired(required = false)
   ZipkinMetricsHealthController healthController;
+
+  @Bean @ConditionalOnMissingBean ObjectMapper objectMapper() {
+    return new ObjectMapper();
+  }
 
   @Bean Consumer<MeterRegistry.Config> noActuatorMetrics() {
     return config -> config.meterFilter(MeterFilter.deny(id -> {

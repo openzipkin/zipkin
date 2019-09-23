@@ -29,10 +29,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.CacheControl;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
@@ -43,6 +41,7 @@ import zipkin2.internal.WriteBuffer;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
+import static com.linecorp.armeria.common.HttpHeaderNames.CACHE_CONTROL;
 import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
 import static com.linecorp.armeria.common.HttpStatus.NOT_FOUND;
 import static com.linecorp.armeria.common.MediaType.ANY_TEXT_TYPE;
@@ -208,10 +207,7 @@ public class ZipkinQueryApiV2 {
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
     if (shouldCacheControl) {
-      headers = headers.add(
-        HttpHeaderNames.CACHE_CONTROL,
-        CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate().getHeaderValue()
-      );
+      headers = headers.add(CACHE_CONTROL, "max-age=" + namesMaxAge + ", must-revalidate");
     }
     return AggregatedHttpResponse.of(headers.build(), HttpData.wrap(body));
   }

@@ -38,7 +38,7 @@
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
+      <artifactId>spring-boot-starter</artifactId>
       <version>${spring-boot.version}</version>
     </dependency>
 
@@ -110,14 +110,6 @@
     </dependency>
 
     <!-- Optional, but packaged in the supported distribution -->
-
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <version>${spring-boot.version}</version>
-      <optional>true</optional>
-    </dependency>
-
     <!-- /actuator endpoints -->
     <dependency>
       <groupId>${armeria.groupId}</groupId>
@@ -245,7 +237,6 @@
 
 
     <!-- Test dependencies -->
-
     <!-- to test the experimental grpc endpoint with the square/wire library -->
     <dependency>
       <groupId>io.zipkin.proto3</groupId>
