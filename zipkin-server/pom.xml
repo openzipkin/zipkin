@@ -110,6 +110,7 @@
     </dependency>
 
     <!-- Optional, but packaged in the supported distribution -->
+
     <!-- Cassandra and Cassandra 3 backends -->
     <dependency>
       <groupId>${project.groupId}.zipkin2</groupId>
