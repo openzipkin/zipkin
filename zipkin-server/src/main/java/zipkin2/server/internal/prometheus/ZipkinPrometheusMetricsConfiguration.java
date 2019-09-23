@@ -34,7 +34,11 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.util.AttributeKey;
 import io.prometheus.client.CollectorRegistry;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -68,17 +72,23 @@ public class ZipkinPrometheusMetricsConfiguration {
 
   @Configuration
   static class MicrometerPrometheusConfiguration {
-    @Bean @ConditionalOnMissingBean public PrometheusConfig prometheusConfig() {
+    // TODO: refactor after https://github.com/spring-projects/spring-boot/issues/18304
+    @Autowired(required = false)
+    List<Consumer<MeterRegistry.Config>> meterConfigConsumers = Collections.emptyList();
+
+    @Bean @ConditionalOnMissingBean public PrometheusConfig config() {
       return PrometheusConfig.DEFAULT;
     }
 
-    @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry(
-      PrometheusConfig prometheusConfig, CollectorRegistry collectorRegistry, Clock clock) {
-      return new PrometheusMeterRegistry(prometheusConfig, collectorRegistry, clock);
+    @Bean @ConditionalOnMissingBean public CollectorRegistry registry() {
+      return new CollectorRegistry(true);
     }
 
-    @Bean @ConditionalOnMissingBean public CollectorRegistry collectorRegistry() {
-      return new CollectorRegistry(true);
+    @Bean @ConditionalOnMissingBean
+    public PrometheusMeterRegistry prometheusMeterRegistry(Clock clock) {
+      PrometheusMeterRegistry result = new PrometheusMeterRegistry(config(), registry(), clock);
+      meterConfigConsumers.forEach(a -> a.accept(result.config()));
+      return result;
     }
   }
 

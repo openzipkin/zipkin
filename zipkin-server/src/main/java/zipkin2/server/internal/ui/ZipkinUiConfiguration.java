@@ -32,6 +32,8 @@ import com.linecorp.armeria.server.encoding.HttpEncodingService;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
@@ -41,6 +43,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -180,6 +183,13 @@ public class ZipkinUiConfiguration {
         sb.decorator(contentEncodingDecorator(compression));
       }
     };
+  }
+
+  @Bean Consumer<MeterRegistry.Config> noFaviconMetrics() {
+    return config -> config.meterFilter(MeterFilter.deny(id -> {
+      String uri = id.getTag("uri");
+      return uri != null && uri.startsWith("/favicon.ico");
+    }));
   }
 
   static class IndexSwitchingService extends AbstractHttpService {

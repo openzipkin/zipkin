@@ -29,13 +29,13 @@ import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -71,6 +71,13 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Autowired(required = false)
   MetricsHealthController healthController;
 
+  @Bean Consumer<MeterRegistry.Config> noActuatorMetrics() {
+    return config -> config.meterFilter(MeterFilter.deny(id -> {
+      String uri = id.getTag("uri");
+      return uri != null && uri.startsWith("/actuator");
+    }));
+  }
+
   @Bean ArmeriaServerConfigurator serverConfigurator(
     Optional<CollectorRegistry> prometheusRegistry) {
     return sb -> {
@@ -95,6 +102,17 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
       // better error messages where possible.
       sb.requestTimeout(Duration.ofSeconds(11));
     };
+  }
+
+  @Bean Consumer<MeterRegistry.Config> noAdminMetrics() {
+    return config -> config.meterFilter(MeterFilter.deny(id -> {
+      String uri = id.getTag("uri");
+      return uri != null && (
+          uri.startsWith("/metrics")
+          || uri.startsWith("/info")
+          || uri.startsWith("/health")
+          || uri.startsWith("/prometheus"));
+    }));
   }
 
   /** Configures the server at the last because of the specified {@link Order} annotation. */
@@ -124,25 +142,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   @Bean
   @ConditionalOnMissingBean(CollectorMetrics.class)
   CollectorMetrics metrics(MeterRegistry registry) {
-    return new ActuateCollectorMetrics(registry);
-  }
-
-  @Bean
-  public MeterRegistryCustomizer meterRegistryCustomizer() {
-    return registry ->
-      registry
-        .config()
-        .meterFilter(
-          MeterFilter.deny(
-            id -> {
-              String uri = id.getTag("uri");
-              return uri != null
-                && (uri.startsWith("/actuator")
-                || uri.startsWith("/metrics")
-                || uri.startsWith("/health")
-                || uri.startsWith("/favicon.ico")
-                || uri.startsWith("/prometheus"));
-            }));
+    return new MicrometerCollectorMetrics(registry);
   }
 
   @Configuration
