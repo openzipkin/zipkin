@@ -16,8 +16,6 @@ package zipkin2.server.internal.prometheus;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import org.junit.After;
 import org.junit.Test;
-import org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration;
-import org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -30,8 +28,6 @@ public class ZipkinPrometheusMetricsConfigurationTest {
   public void refresh() {
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
-      MetricsAutoConfiguration.class,
-      PrometheusMetricsExportAutoConfiguration.class,
       ZipkinPrometheusMetricsConfiguration.class
     );
     context.refresh();

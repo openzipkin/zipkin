@@ -28,6 +28,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static zipkin2.server.internal.ITZipkinServer.url;
 
 @SpringBootTest(
@@ -46,7 +47,7 @@ public class ITActuatorMappings {
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(true).build();
 
   @Test public void actuatorIsOK() throws Exception {
-    assertThat(get("/actuator").isSuccessful())
+    assumeThat(get("/actuator").isSuccessful()) // actuator is optional
       .isTrue();
 
     // ensure we don't track actuator in prometheus

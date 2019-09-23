@@ -14,17 +14,12 @@
 package zipkin2.server.internal;
 
 import brave.Tracing;
-import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
-import org.springframework.boot.actuate.health.HealthAggregator;
-import org.springframework.boot.actuate.health.HealthStatusHttpMapper;
-import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
@@ -101,10 +96,6 @@ public class ZipkinServerConfigurationTest {
 
   @Configuration
   public static class Config {
-    @Bean public HealthAggregator healthAggregator() {
-      return new OrderedHealthAggregator();
-    }
-
     @Bean MeterRegistry registry() {
       return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
     }
@@ -112,9 +103,6 @@ public class ZipkinServerConfigurationTest {
 
   static void registerBaseConfig(AnnotationConfigApplicationContext context) {
     context.register(
-      ArmeriaSpringActuatorAutoConfiguration.class,
-      HealthStatusHttpMapper.class,
-      EndpointAutoConfiguration.class,
       PropertyPlaceholderAutoConfiguration.class,
       Config.class,
       ZipkinServerConfiguration.class

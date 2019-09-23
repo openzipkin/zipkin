@@ -110,13 +110,6 @@
     </dependency>
 
     <!-- Optional, but packaged in the supported distribution -->
-    <!-- /actuator endpoints -->
-    <dependency>
-      <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-spring-boot-actuator-autoconfigure</artifactId>
-      <version>${armeria.version}</version>
-      <optional>true</optional>
-    </dependency>
 
     <!-- Cassandra and Cassandra 3 backends -->
     <dependency>
@@ -318,6 +311,23 @@
   </dependencies>
 
   <profiles>
+    <profile>
+      <id>actuator</id>
+      <activation>
+        <property>
+          <name>!skipActuator</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- /actuator endpoints -->
+        <dependency>
+          <groupId>${armeria.groupId}</groupId>
+          <artifactId>armeria-spring-boot-actuator-autoconfigure</artifactId>
+          <version>${armeria.version}</version>
+          <optional>true</optional>
+        </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>include-lens</id>
       <activation>
