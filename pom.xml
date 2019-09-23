@@ -54,12 +54,11 @@
     <guava.version>28.0-jre</guava.version>
 
     <!-- only used for proto interop testing -->
-    <wire.version>3.0.0-alpha01</wire.version>
+    <wire.version>3.0.0-rc01</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
     <brave.version>5.7.0</brave.version>
     <cassandra-driver-core.version>3.7.2</cassandra-driver-core.version>
-    <okhttp.version>3.14.2</okhttp.version>
     <jooq.version>3.12.1</jooq.version>
     <micrometer.version>1.2.1</micrometer.version>
     <spring-boot.version>2.1.8.RELEASE</spring-boot.version>
@@ -68,9 +67,9 @@
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>2.4.3</mariadb-java-client.version>
+    <mariadb-java-client.version>2.4.4</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
-    <HikariCP.version>3.3.1</HikariCP.version>
+    <HikariCP.version>3.4.1</HikariCP.version>
     <log4j.version>2.12.1</log4j.version>
 
     <junit.version>4.12</junit.version>
@@ -98,7 +97,7 @@
     <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M3</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
-    <git-commit-id.version>3.0.0</git-commit-id.version>
+    <git-commit-id.version>3.0.1</git-commit-id.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -218,18 +217,6 @@
         </exclusions>
       </dependency>
       <!-- End spring-boot-dependencies overrides -->
-
-      <dependency>
-        <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>okhttp</artifactId>
-        <version>${okhttp.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>mockwebserver</artifactId>
-        <version>${okhttp.version}</version>
-      </dependency>
 
       <dependency>
         <groupId>com.google.auto.value</groupId>

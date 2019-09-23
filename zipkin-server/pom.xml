@@ -30,6 +30,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
+    <okhttp.version>4.2.0</okhttp.version>
     <maven-invoker-plugin.version>3.2.1</maven-invoker-plugin.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
@@ -115,6 +116,12 @@
       <artifactId>zipkin-proto3</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <scope>test</scope>
+    </dependency>
 
     <dependency>
       <groupId>com.squareup.wire</groupId>
@@ -126,7 +133,15 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
       <scope>test</scope>
+      <exclusions>
+        <!-- let wire control the okio version -->
+        <exclusion>
+          <groupId>com.squareup.okio</groupId>
+          <artifactId>okio</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <!-- Cassandra and Cassandra 3 backends -->
