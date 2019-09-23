@@ -29,17 +29,22 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.util.AttributeKey;
+import io.prometheus.client.CollectorRegistry;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
 
 @Configuration
+@Import(ZipkinPrometheusMetricsConfiguration.MicrometerPrometheusConfiguration.class)
 public class ZipkinPrometheusMetricsConfiguration {
   // from io.micrometer.spring.web.servlet.WebMvcTags
   private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
@@ -59,6 +64,22 @@ public class ZipkinPrometheusMetricsConfiguration {
   ) {
     this.registry = registry;
     this.metricName = metricName;
+  }
+
+  @Configuration
+  static class MicrometerPrometheusConfiguration {
+    @Bean @ConditionalOnMissingBean public PrometheusConfig prometheusConfig() {
+      return PrometheusConfig.DEFAULT;
+    }
+
+    @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry(
+      PrometheusConfig prometheusConfig, CollectorRegistry collectorRegistry, Clock clock) {
+      return new PrometheusMeterRegistry(prometheusConfig, collectorRegistry, clock);
+    }
+
+    @Bean @ConditionalOnMissingBean public CollectorRegistry collectorRegistry() {
+      return new CollectorRegistry(true);
+    }
   }
 
   @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator() {
@@ -119,14 +140,12 @@ public class ZipkinPrometheusMetricsConfiguration {
     }, RequestLogAvailability.COMPLETE);
   }
 
-
   private static Timer.Builder getTimeBuilder(RequestLog requestLog, String metricName) {
     return Timer.builder(metricName)
       .tags(getTags(requestLog))
       .description("Response time histogram")
       .publishPercentileHistogram();
   }
-
 
   private static Iterable<Tag> getTags(RequestLog requestLog) {
     return Arrays.asList(Tag.of("method", requestLog.method().toString())

@@ -206,6 +206,7 @@ public class ZipkinUiConfiguration {
   }
 
   // TEMPORARY: copy-pasta from com.linecorp.armeria.spring.web.reactive.ArmeriaReactiveWebServerFactory
+  // TODO: hunt this down.. see if compression is available in Armeria spring-boot integration now!
   private static Function<Service<HttpRequest, HttpResponse>,
     HttpEncodingService> contentEncodingDecorator(Compression compression) {
     final Predicate<MediaType> encodableContentTypePredicate;

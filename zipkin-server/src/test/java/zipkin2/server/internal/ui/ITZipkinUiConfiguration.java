@@ -37,6 +37,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.server.internal.ITZipkinServer.stringFromClasspath;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(
@@ -106,28 +107,19 @@ public class ITZipkinUiConfiguration {
    */
   @Test public void replacesBaseTag() throws Exception {
     assertThat(get("/zipkin/index.html").body().string())
-      .isEqualToIgnoringWhitespace(stringFromClasspath("zipkin-ui/index.html")
+      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-ui/index.html")
         .replace("<base href=\"/\" />", "<base href=\"/foozipkin/\">"));
   }
 
   /** index.html is served separately. This tests other content is also loaded from the classpath. */
   @Test public void servesOtherContentFromClasspath() throws Exception {
     assertThat(get("/zipkin/test.txt").body().string())
-      .isEqualToIgnoringWhitespace(stringFromClasspath("zipkin-ui/test.txt"));
+      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-ui/test.txt"));
   }
 
   @EnableAutoConfiguration
   @Import(ZipkinUiConfiguration.class)
   public static class TestServer {
-  }
-
-  private String stringFromClasspath(String path) throws IOException {
-    URL url = getClass().getClassLoader().getResource(path);
-    assertThat(url).isNotNull();
-
-    try (InputStream fromClasspath = url.openStream()) {
-      return Okio.buffer(Okio.source(fromClasspath)).readUtf8();
-    }
   }
 
   private Response get(String path) throws IOException {
