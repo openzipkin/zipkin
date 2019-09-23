@@ -65,9 +65,59 @@ public class ITZipkinServer {
       .containsExactly(SpanBytesEncoder.JSON_V2.encodeList(TRACE));
   }
 
+  @Test public void getTrace_malformed() throws Exception {
+    storage.accept(TRACE).execute();
+
+    Response response = get("/api/v2/trace/0e8b46e1-81b");
+    assertThat(response.code()).isEqualTo(400);
+
+    assertThat(response.body().string())
+      .isEqualTo("0e8b46e1-81b should be lower-hex encoded with no prefix");
+  }
+
+  @Test public void getTraces() throws Exception {
+    storage.accept(TRACE).execute();
+
+    Response response = get("/api/v2/traceMany?traceIds=abcd," + TRACE.get(0).traceId());
+    assertThat(response.isSuccessful()).isTrue();
+
+    assertThat(response.body().string())
+      .isEqualTo("[" + new String(SpanBytesEncoder.JSON_V2.encodeList(TRACE), UTF_8) + "]");
+  }
+
+  @Test public void getTraces_emptyNotOk() throws Exception {
+    storage.accept(TRACE).execute();
+
+    Response response = get("/api/v2/traceMany?traceIds=");
+    assertThat(response.code()).isEqualTo(400);
+
+    assertThat(response.body().string())
+      .isEqualTo("traceIds parameter is empty");
+  }
+
+  @Test public void getTraces_singleNotOk() throws Exception {
+    storage.accept(TRACE).execute();
+
+    Response response = get("/api/v2/traceMany?traceIds=" + TRACE.get(0).traceId());
+    assertThat(response.code()).isEqualTo(400);
+
+    assertThat(response.body().string())
+      .isEqualTo("Use /api/v2/trace/{traceId} endpoint to retrieve a single trace");
+  }
+
+  @Test public void getTraces_malformed() throws Exception {
+    storage.accept(TRACE).execute();
+
+    Response response = get("/api/v2/traceMany?traceIds=abcd,0e8b46e1-81b");
+    assertThat(response.code()).isEqualTo(400);
+
+    assertThat(response.body().string())
+      .isEqualTo("0e8b46e1-81b should be lower-hex encoded with no prefix");
+  }
+
   @Test public void tracesQueryRequiresNoParameters() throws Exception {
     storage.accept(TRACE).execute();
-    
+
     Response response = get("/api/v2/traces");
     assertThat(response.isSuccessful()).isTrue();
     assertThat(response.body().string())

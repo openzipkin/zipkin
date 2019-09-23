@@ -96,7 +96,7 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
       return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
     }
 
-    Call<List<List<Span>>> newCall(List<String> traceIds) {
+    Call<List<List<Span>>> newCall(Iterable<String> traceIds) {
       Set<String> normalizedTraceIds = new LinkedHashSet<>();
       for (String traceId : traceIds) {
         // make sure we have a 16 or 32 character trace ID
@@ -105,6 +105,8 @@ final class SelectFromSpan extends ResultSetFutureCall<ResultSet> {
         if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
         normalizedTraceIds.add(traceId);
       }
+
+      if (normalizedTraceIds.isEmpty()) return Call.emptyList();
       Call<List<List<Span>>> result = new SelectFromSpan(this,
         normalizedTraceIds,
         maxTraceCols)

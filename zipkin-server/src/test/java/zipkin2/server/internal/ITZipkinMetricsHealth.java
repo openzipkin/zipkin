@@ -128,7 +128,11 @@ public class ITZipkinMetricsHealth {
     assertThat(get("/api/v2/trace/" + LOTS_OF_SPANS[0].traceId()).isSuccessful())
       .isTrue();
 
+    assertThat(get("/api/v2/traceMany?traceIds=abcde," + LOTS_OF_SPANS[0].traceId()).isSuccessful())
+      .isTrue();
+
     assertThat(scrape())
+      .contains("uri=\"/api/v2/traceMany\"") // sanity check
       .contains("uri=\"/api/v2/trace/{traceId}\"")
       .doesNotContain(LOTS_OF_SPANS[0].traceId());
   }

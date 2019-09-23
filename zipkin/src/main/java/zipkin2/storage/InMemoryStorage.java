@@ -112,7 +112,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   /**
    * Primary source of data is this map, which includes spans ordered descending by timestamp. All
    * other maps are derived from the span values here. This uses a list for the spans, so that it is
-   * visible (via /api/v2/trace/id?raw) when instrumentation report the same spans multiple times.
+   * visible (via /api/v2/trace/{traceId}) when instrumentation report the same spans multiple times.
    */
   private final SortedMultimap<TraceIdTimestamp, Span> spansByTraceIdTimeStamp =
     new SortedMultimap(TIMESTAMP_DESCENDING) {
@@ -382,7 +382,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return Call.create(filtered);
   }
 
-  @Override public synchronized Call<List<List<Span>>> getTraces(List<String> traceIds) {
+  @Override public synchronized Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
     Set<String> normalized = new LinkedHashSet<>();
     for (String traceId : traceIds) {
       normalized.add(Span.normalizeTraceId(traceId));

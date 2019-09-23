@@ -48,10 +48,11 @@ public interface Traces {
    * <p>When strict trace ID is disabled, spans with the same right-most 16 characters are returned
    * even if the characters to the left are not.
    *
-   * <p>Implementations should use {@link Span#normalizeTraceId(String)} to ensure consistency.
+   * <p>Implementations should use {@link Span#normalizeTraceId(String)} on each input trace ID to
+   * ensure consistency.
    *
    * @param traceIds a list of unique {@link Span#traceId() trace IDs}.
    * @return traces matching the supplied trace IDs, in any order
    */
-  Call<List<List<Span>>> getTraces(List<String> traceIds);
+  Call<List<List<Span>>> getTraces(Iterable<String> traceIds);
 }

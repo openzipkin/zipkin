@@ -103,6 +103,24 @@ public class ITZipkinMetricsHealthDirty {
       .isEqualTo(messagesDroppedCount + 1);
   }
 
+  /** This tests logic in {@link BodyIsExceptionMessage} is scoped to POST requests. */
+  @Test public void getTrace_malformedDoesntUpdateCollectorMetrics() throws Exception {
+    double messagesCount =
+      registry.counter("zipkin_collector.messages", "transport", "http").count();
+    double messagesDroppedCount =
+      registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
+
+    Response response = get("/api/v2/trace/0e8b46e1-81b");
+    assertThat(response.code()).isEqualTo(400);
+
+    String json = getAsString("/metrics");
+
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
+      .isEqualTo(messagesCount);
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
+      .isEqualTo(messagesDroppedCount);
+  }
+
   private String getAsString(String path) throws IOException {
     Response response = get(path);
     assertThat(response.isSuccessful())
