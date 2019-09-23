@@ -30,7 +30,7 @@ import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import zipkin2.server.internal.brave.TracingConfiguration;
+import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -82,7 +82,7 @@ public class ZipkinServerConfigurationTest {
   @Test public void selfTracing_canEnable() {
     TestPropertyValues.of("zipkin.self-tracing.enabled:true").applyTo(context);
     registerBaseConfig(context);
-    context.register(TracingConfiguration.class);
+    context.register(ZipkinSelfTracingConfiguration.class);
     context.refresh();
 
     context.getBean(Tracing.class).close();

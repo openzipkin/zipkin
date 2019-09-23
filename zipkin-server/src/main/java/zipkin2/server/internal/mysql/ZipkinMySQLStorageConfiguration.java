@@ -33,7 +33,7 @@ import zipkin2.storage.mysql.v1.MySQLStorage;
 @EnableConfigurationProperties(ZipkinMySQLStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
 @ConditionalOnMissingBean(StorageComponent.class)
-@Import(TracingZipkinMySQLStorageConfiguration.class)
+@Import(ZipkinSelfTracingMySQLStorageConfiguration.class)
 public class ZipkinMySQLStorageConfiguration {
   @Autowired(required = false) ZipkinMySQLStorageProperties mysql;
   @Autowired(required = false) ExecuteListenerProvider mysqlListener;

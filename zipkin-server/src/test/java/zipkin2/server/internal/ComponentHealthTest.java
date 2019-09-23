@@ -21,26 +21,26 @@ import zipkin2.Component;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class ZipkinHealthIndicatorTest {
+public class ComponentHealthTest {
   @Test public void addsMessageToDetails() {
-    ZipkinHealthIndicator healthIndicator = new ZipkinHealthIndicator(new Component() {
+    ComponentHealth health = ComponentHealth.ofComponent(new Component() {
       @Override public CheckResult check() {
         return CheckResult.failed(new IOException("socket disconnect"));
       }
     });
 
-    assertThat(healthIndicator.health().getDetails())
-      .containsEntry("error", "java.io.IOException: socket disconnect");
+    assertThat(health.error)
+      .isEqualTo("java.io.IOException: socket disconnect");
   }
 
   @Test public void doesntAddNullMessageToDetails() {
-    ZipkinHealthIndicator healthIndicator = new ZipkinHealthIndicator(new Component() {
+    ComponentHealth health = ComponentHealth.ofComponent(new Component() {
       @Override public CheckResult check() {
         return CheckResult.failed(ClosedSessionException.get());
       }
     });
 
-    assertThat(healthIndicator.health().getDetails())
-      .containsEntry("error", "com.linecorp.armeria.common.ClosedSessionException");
+    assertThat(health.error)
+      .isEqualTo("com.linecorp.armeria.common.ClosedSessionException");
   }
 }

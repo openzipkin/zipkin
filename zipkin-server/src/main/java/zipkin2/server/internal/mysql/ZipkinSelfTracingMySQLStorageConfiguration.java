@@ -32,7 +32,7 @@ import zipkin2.server.internal.ConditionalOnSelfTracing;
 @ConditionalOnSelfTracing
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
 @Configuration
-class TracingZipkinMySQLStorageConfiguration extends DefaultExecuteListener {
+class ZipkinSelfTracingMySQLStorageConfiguration extends DefaultExecuteListener {
 
   @Autowired ZipkinMySQLStorageProperties mysql;
   @Autowired CurrentTraceContext currentTraceContext;

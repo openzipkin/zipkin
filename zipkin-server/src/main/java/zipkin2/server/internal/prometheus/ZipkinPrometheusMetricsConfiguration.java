@@ -43,12 +43,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
 
 @Configuration
-@Import(ZipkinPrometheusMetricsConfiguration.MicrometerPrometheusConfiguration.class)
 public class ZipkinPrometheusMetricsConfiguration {
   // from io.micrometer.spring.web.servlet.WebMvcTags
   private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
@@ -57,42 +55,40 @@ public class ZipkinPrometheusMetricsConfiguration {
   // single-page app requests are forwarded to index: ZipkinUiConfiguration.forwardUiEndpoints
   private static final Tag URI_CROSSROADS = Tag.of("uri", "/zipkin/index.html");
 
-  final PrometheusMeterRegistry registry;
-  // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
   final String metricName;
 
+  // TODO: refactor after https://github.com/spring-projects/spring-boot/issues/18304
+  @Autowired(required = false)
+  List<Consumer<MeterRegistry.Config>> meterConfigConsumers = Collections.emptyList();
+
+  // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
   ZipkinPrometheusMetricsConfiguration(
-    PrometheusMeterRegistry registry,
     @Value("${management.metrics.web.server.requests-metric-name:http.server.requests}")
       String metricName
   ) {
-    this.registry = registry;
     this.metricName = metricName;
   }
 
-  @Configuration
-  static class MicrometerPrometheusConfiguration {
-    // TODO: refactor after https://github.com/spring-projects/spring-boot/issues/18304
-    @Autowired(required = false)
-    List<Consumer<MeterRegistry.Config>> meterConfigConsumers = Collections.emptyList();
-
-    @Bean @ConditionalOnMissingBean public PrometheusConfig config() {
-      return PrometheusConfig.DEFAULT;
-    }
-
-    @Bean @ConditionalOnMissingBean public CollectorRegistry registry() {
-      return new CollectorRegistry(true);
-    }
-
-    @Bean @ConditionalOnMissingBean
-    public PrometheusMeterRegistry prometheusMeterRegistry(Clock clock) {
-      PrometheusMeterRegistry result = new PrometheusMeterRegistry(config(), registry(), clock);
-      meterConfigConsumers.forEach(a -> a.accept(result.config()));
-      return result;
-    }
+  @Bean @ConditionalOnMissingBean public Clock clock() {
+    return Clock.SYSTEM;
   }
 
-  @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator() {
+  @Bean @ConditionalOnMissingBean public PrometheusConfig config() {
+    return PrometheusConfig.DEFAULT;
+  }
+
+  @Bean @ConditionalOnMissingBean public CollectorRegistry registry() {
+    return new CollectorRegistry(true);
+  }
+
+  @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry() {
+    PrometheusMeterRegistry result = new PrometheusMeterRegistry(config(), registry(), clock());
+    meterConfigConsumers.forEach(a -> a.accept(result.config()));
+    return result;
+  }
+
+  // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
+  @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator(MeterRegistry registry) {
     return serverBuilder -> serverBuilder.decorator(
       s -> new MetricCollectingService<>(s, registry, metricName));
   }

@@ -209,11 +209,15 @@ spring:
       - org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
       # JMX is disabled
       - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
-      # served directly by Armeria
-      - org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
-      # served directly by Armeria (content is /info.json)
+      # /health and /actuator/health served directly by Armeria
+      # TODO: exclude after https://github.com/line/armeria/pull/2104
+      # - org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration
+      # /info and /actuator/info served directly by Armeria (content is /info.json)
       - org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration
+      # /prometheus and /actuator/prometheus are served directly by Armeria
+      - org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
 
 logging:
   pattern:
@@ -242,10 +246,10 @@ management:
     web:
       exposure:
         include: '*'
+  # Below are served directly without actuator.
   endpoint:
     health:
-      show-details: always
-    # Below are served directly without actuator.
+      enabled: false
     prometheus:
       enabled: false
     info:

@@ -16,7 +16,7 @@ package zipkin2.server.internal;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.activemq.ZipkinActiveMQCollectorConfiguration;
-import zipkin2.server.internal.brave.TracingConfiguration;
+import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 import zipkin2.server.internal.cassandra.ZipkinCassandraStorageConfiguration;
 import zipkin2.server.internal.cassandra3.ZipkinCassandra3StorageConfiguration;
 import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageConfiguration;
@@ -36,14 +36,14 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
   ZipkinElasticsearchStorageConfiguration.class,
   ZipkinMySQLStorageConfiguration.class,
   ZipkinScribeCollectorConfiguration.class,
-  TracingConfiguration.class,
+  ZipkinSelfTracingConfiguration.class,
   ZipkinQueryApiV2.class,
   ZipkinHttpCollector.class,
   ZipkinGrpcCollector.class,
   ZipkinActiveMQCollectorConfiguration.class,
   ZipkinKafkaCollectorConfiguration.class,
   ZipkinRabbitMQCollectorConfiguration.class,
-  MetricsHealthController.class,
+  ZipkinMetricsHealthController.class,
   ZipkinPrometheusMetricsConfiguration.class
 })
 public class InternalZipkinConfiguration {
