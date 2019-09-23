@@ -223,21 +223,6 @@ public class ITZipkinServer {
       .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "info.json"));
   }
 
-  @Test public void actuatorInfoEndpointHasDifferentContentType() throws IOException {
-    Response info = get("/info");
-    Response actuatorInfo = get("/actuator/info");
-
-    // Different content type
-    assertThat(actuatorInfo.isSuccessful()).isTrue();
-    assertThat(actuatorInfo.body().contentType())
-      .isNotEqualTo(info.body().contentType())
-      .hasToString("application/vnd.spring-boot.actuator.v2+json");
-
-    // Same content
-    assertThat(actuatorInfo.body().string())
-      .isEqualTo(info.body().string());
-  }
-
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
       .url(url(server, path))

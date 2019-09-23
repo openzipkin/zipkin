@@ -22,7 +22,6 @@ import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
-import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.prometheus.client.CollectorRegistry;
@@ -36,7 +35,6 @@ import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -57,10 +55,9 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
-@ImportAutoConfiguration(ArmeriaSpringActuatorAutoConfiguration.class)
-public class ZipkinServerConfiguration implements WebMvcConfigurer {
+class ZipkinServerConfiguration implements WebMvcConfigurer {
   static final MediaType MEDIA_TYPE_ACTUATOR =
-    MediaType.parse("application/vnd.spring-boot.actuator.v2+json");
+    MediaType.parse("application/vnd.spring-boot.actuator.v2+json;charset=UTF-8");
 
   @Autowired(required = false)
   ZipkinQueryApiV2 httpQuery;
@@ -69,7 +66,7 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
   ZipkinHttpCollector httpCollector;
 
   @Autowired(required = false)
-  MetricsHealthController healthController;
+  ZipkinMetricsHealthController healthController;
 
   @Bean Consumer<MeterRegistry.Config> noActuatorMetrics() {
     return config -> config.meterFilter(MeterFilter.deny(id -> {
@@ -108,9 +105,9 @@ public class ZipkinServerConfiguration implements WebMvcConfigurer {
     return config -> config.meterFilter(MeterFilter.deny(id -> {
       String uri = id.getTag("uri");
       return uri != null && (
-          uri.startsWith("/metrics")
+        uri.startsWith("/health")
           || uri.startsWith("/info")
-          || uri.startsWith("/health")
+          || uri.startsWith("/metrics")
           || uri.startsWith("/prometheus"));
     }));
   }

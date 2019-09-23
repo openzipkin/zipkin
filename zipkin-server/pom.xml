@@ -57,11 +57,6 @@
     </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-spring-boot-actuator-starter</artifactId>
-      <version>${armeria.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-brave</artifactId>
       <version>${armeria.version}</version>
     </dependency>
@@ -71,18 +66,22 @@
       <version>${armeria.version}</version>
     </dependency>
 
-    <!-- zipkin requires exporting /health endpoint -->
+    <!--Prometheus metrics-->
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-actuator</artifactId>
-      <version>${spring-boot.version}</version>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>${micrometer.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <version>${spring-boot.version}</version>
-      <optional>true</optional>
+      <groupId>com.netflix.concurrency-limits</groupId>
+      <artifactId>concurrency-limits-core</artifactId>
+      <version>0.3.6</version>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <version>${micrometer.version}</version>
     </dependency>
 
     <dependency>
@@ -110,38 +109,21 @@
       <version>1.12.1</version>
     </dependency>
 
-    <!-- to test the experimental grpc endpoint with the square/wire library -->
-    <dependency>
-      <groupId>io.zipkin.proto3</groupId>
-      <artifactId>zipkin-proto3</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
-      <scope>test</scope>
-    </dependency>
+    <!-- Optional, but packaged in the supported distribution -->
 
     <dependency>
-      <groupId>com.squareup.wire</groupId>
-      <artifactId>wire-runtime</artifactId>
-      <version>${wire.version}</version>
-      <scope>test</scope>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-configuration-processor</artifactId>
+      <version>${spring-boot.version}</version>
+      <optional>true</optional>
     </dependency>
 
+    <!-- /actuator endpoints -->
     <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <version>${okhttp.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <!-- let wire control the okio version -->
-        <exclusion>
-          <groupId>com.squareup.okio</groupId>
-          <artifactId>okio</artifactId>
-        </exclusion>
-      </exclusions>
+      <groupId>${armeria.groupId}</groupId>
+      <artifactId>armeria-spring-boot-actuator-autoconfigure</artifactId>
+      <version>${armeria.version}</version>
+      <optional>true</optional>
     </dependency>
 
     <!-- Cassandra and Cassandra 3 backends -->
@@ -242,24 +224,6 @@
       <optional>true</optional>
     </dependency>
 
-    <!--Prometheus metrics-->
-    <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-registry-prometheus</artifactId>
-      <version>${micrometer.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.netflix.concurrency-limits</groupId>
-      <artifactId>concurrency-limits-core</artifactId>
-      <version>0.3.6</version>
-    </dependency>
-    <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-core</artifactId>
-      <version>${micrometer.version}</version>
-    </dependency>
-
     <!-- Trace api controller activity with Brave -->
     <dependency>
       <groupId>io.zipkin.brave</groupId>
@@ -277,6 +241,43 @@
       <artifactId>brave-instrumentation-cassandra-driver</artifactId>
       <version>0.10.3</version>
       <optional>true</optional>
+    </dependency>
+
+
+    <!-- Test dependencies -->
+
+    <!-- to test the experimental grpc endpoint with the square/wire library -->
+    <dependency>
+      <groupId>io.zipkin.proto3</groupId>
+      <artifactId>zipkin-proto3</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.wire</groupId>
+      <artifactId>wire-runtime</artifactId>
+      <version>${wire.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <!-- let wire control the okio version -->
+        <exclusion>
+          <groupId>com.squareup.okio</groupId>
+          <artifactId>okio</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>

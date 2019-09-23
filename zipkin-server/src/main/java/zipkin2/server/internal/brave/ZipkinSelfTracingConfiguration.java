@@ -50,7 +50,7 @@ import zipkin2.storage.StorageComponent;
 @Configuration
 @EnableConfigurationProperties(SelfTracingProperties.class)
 @ConditionalOnSelfTracing
-public class TracingConfiguration {
+public class ZipkinSelfTracingConfiguration {
   /** Configuration for how to buffer spans into messages for Zipkin */
   @Bean Reporter<Span> reporter(BeanFactory factory, SelfTracingProperties config) {
     return AsyncReporter.builder(new LocalSender(factory))

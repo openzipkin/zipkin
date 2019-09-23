@@ -60,9 +60,11 @@ public class ITZipkinMetricsHealth {
   }
 
   @Test public void healthIsOK() throws Exception {
-    Response check = get("/health");
-    assertThat(check.isSuccessful()).isTrue();
-    assertThat(check.body().string()).isEqualTo(
+    Response health = get("/health");
+    assertThat(health.isSuccessful()).isTrue();
+    assertThat(health.body().contentType())
+      .hasToString("application/json; charset=utf-8");
+    assertThat(health.body().string()).isEqualTo(
       "{\"status\":\"UP\",\"zipkin\":{\"status\":\"UP\",\"details\":{\"InMemoryStorage{}\":{\"status\":\"UP\"}}}}"
     );
 
@@ -78,15 +80,6 @@ public class ITZipkinMetricsHealth {
     // ensure we don't track metrics in prometheus
     assertThat(scrape())
       .doesNotContain("metrics");
-  }
-
-  @Test public void actuatorIsOK() throws Exception {
-    assertThat(get("/actuator").isSuccessful())
-      .isTrue();
-
-    // ensure we don't track actuator in prometheus
-    assertThat(scrape())
-      .doesNotContain("actuator");
   }
 
   @Test public void prometheusIsOK() throws Exception {

@@ -43,6 +43,20 @@ public class ZipkinServerTest {
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
+  /** Tests admin endpoints work eventhough actuator is no longer a strict dependency. */
+  @Test public void adminEndpoints() throws Exception {
+    // Documented as supported in our zipkin-server/README.md
+    assertThat(get("/health").isSuccessful()).isTrue();
+    assertThat(get("/info").isSuccessful()).isTrue();
+    assertThat(get("/metrics").isSuccessful()).isTrue();
+    assertThat(get("/prometheus").isSuccessful()).isTrue();
+
+    // Check endpoints we formerly redirected to. Note we never redirected to /actuator/metrics
+    assertThat(get("/actuator/health").isSuccessful()).isTrue();
+    assertThat(get("/actuator/info").isSuccessful()).isTrue();
+    assertThat(get("/actuator/prometheus").isSuccessful()).isTrue();
+  }
+
   @Test public void readsBackNames() throws Exception {
     String service = "web";
     Span span = Span.newBuilder().traceId("463ac35c9f6413ad48485a3953bb6124").id("a")
