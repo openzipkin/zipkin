@@ -89,9 +89,9 @@ public class ITZipkinMetricsHealthDirty {
 
   @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    Double messagesCount =
+    double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();
-    Double messagesDroppedCount =
+    double messagesDroppedCount =
       registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
     post("/api/v2/spans", body);
 
@@ -122,7 +122,7 @@ public class ITZipkinMetricsHealthDirty {
       .build()).execute();
   }
 
-  static Double readDouble(String json, String jsonPath) {
+  static double readDouble(String json, String jsonPath) {
     return JsonPath.compile(jsonPath).read(json);
   }
 }

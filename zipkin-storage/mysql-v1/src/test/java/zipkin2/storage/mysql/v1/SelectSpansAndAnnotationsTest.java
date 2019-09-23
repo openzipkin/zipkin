@@ -35,7 +35,7 @@ public class SelectSpansAndAnnotationsTest {
     SelectSpansAndAnnotations.processAnnotationRecord(annotationRecord, builder, null);
 
     assertThat(builder)
-        .isEqualToComparingFieldByFieldRecursively(V1Span.newBuilder().traceId(1).id(1));
+      .usingRecursiveComparison().isEqualTo(V1Span.newBuilder().traceId(1).id(1));
   }
 
   @Test

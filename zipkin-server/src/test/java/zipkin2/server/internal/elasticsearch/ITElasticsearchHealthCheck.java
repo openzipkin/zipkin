@@ -114,6 +114,8 @@ public class ITElasticsearchHealthCheck {
         "couldn't connect any of [Endpoint{127.0.0.1:%s, weight=1000}, Endpoint{127.0.0.1:%s, weight=1000}]",
         server1.httpPort(), server2.httpPort()
       ));
+      assertThat(result.error())
+        .hasCause(null); // client health check failures are only visible via count of endpoints
     }
   }
 

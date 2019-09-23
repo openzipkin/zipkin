@@ -22,6 +22,7 @@ import com.google.auto.value.extension.memoized.Memoized;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
@@ -246,7 +247,8 @@ public abstract class CassandraStorage extends StorageComponent {
     try {
       if (closeCalled) throw new IllegalStateException("closed");
       session().execute(QueryBuilder.select("trace_id").from("span").limit(1));
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
     return CheckResult.OK;

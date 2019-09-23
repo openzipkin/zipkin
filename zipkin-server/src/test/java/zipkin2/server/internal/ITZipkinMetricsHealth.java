@@ -60,8 +60,11 @@ public class ITZipkinMetricsHealth {
   }
 
   @Test public void healthIsOK() throws Exception {
-    assertThat(get("/health").isSuccessful())
-      .isTrue();
+    Response check = get("/health");
+    assertThat(check.isSuccessful()).isTrue();
+    assertThat(check.body().string()).isEqualTo(
+      "{\"status\":\"UP\",\"zipkin\":{\"status\":\"UP\",\"details\":{\"InMemoryStorage{}\":{\"status\":\"UP\"}}}}"
+    );
 
     // ensure we don't track health in prometheus
     assertThat(scrape())

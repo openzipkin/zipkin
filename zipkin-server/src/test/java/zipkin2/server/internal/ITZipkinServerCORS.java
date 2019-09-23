@@ -88,7 +88,7 @@ public class ITZipkinServerCORS {
   }
 
   static void shouldDisallowOrigin(Response response) {
-    assertThat(response.header("vary")).isNull(); // TODO: We used to set vary: origin
+    assertThat(response.header("vary")).isNull();
     assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).isNull();
     assertThat(response.header("access-control-allow-headers")).isNull();

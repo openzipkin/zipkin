@@ -13,41 +13,27 @@
  */
 package zipkin2.server.internal;
 
-import org.springframework.boot.actuate.health.CompositeHealthIndicator;
 import org.springframework.boot.actuate.health.Health;
-import org.springframework.boot.actuate.health.HealthAggregator;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 
-final class ZipkinHealthIndicator extends CompositeHealthIndicator {
+final class ZipkinHealthIndicator implements HealthIndicator {
+  final Component component;
 
-  ZipkinHealthIndicator(HealthAggregator healthAggregator) {
-    super(healthAggregator);
+  ZipkinHealthIndicator(Component component) {
+    this.component = component;
   }
 
-  void addComponent(Component component) {
-    String healthName = component.toString();
-    addHealthIndicator(healthName, new ComponentHealthIndicator(component));
-  }
-
-  static final class ComponentHealthIndicator implements HealthIndicator {
-    final Component component;
-
-    ComponentHealthIndicator(Component component) {
-      this.component = component;
-    }
-
-    /** synchronized to prevent overlapping requests to a storage backend */
-    @Override public synchronized Health health() {
-      CheckResult result = component.check();
-      if (result.ok()) return Health.up().build();
-      Throwable ex = result.error();
-      // Like withException, but without the distracting ": null" when there is no message.
-      String message = ex.getMessage();
-      return Health.down()
-        .withDetail("error", ex.getClass().getName() + (message != null ? ": " + message : ""))
-        .build();
-    }
+  /** synchronized to prevent overlapping requests to a storage backend */
+  @Override public synchronized Health health() {
+    CheckResult result = component.check();
+    if (result.ok()) return Health.up().build();
+    Throwable ex = result.error();
+    // Like withException, but without the distracting ": null" when there is no message.
+    String message = ex.getMessage();
+    return Health.down()
+      .withDetail("error", ex.getClass().getName() + (message != null ? ": " + message : ""))
+      .build();
   }
 }

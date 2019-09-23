@@ -15,7 +15,6 @@ package zipkin2.codec;
 
 import com.google.common.io.Resources;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.PooledByteBufAllocator;
 import java.io.IOException;
 import java.util.Collections;

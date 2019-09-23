@@ -1,0 +1,2 @@
+org.springframework.context.ApplicationListener=\
+zipkin2.server.internal.RegisterZipkinHealthIndicators

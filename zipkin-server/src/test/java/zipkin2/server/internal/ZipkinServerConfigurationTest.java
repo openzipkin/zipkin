@@ -23,6 +23,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
 import org.springframework.boot.actuate.health.HealthAggregator;
+import org.springframework.boot.actuate.health.HealthStatusHttpMapper;
 import org.springframework.boot.actuate.health.OrderedHealthAggregator;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
@@ -33,7 +34,7 @@ import zipkin2.server.internal.brave.TracingConfiguration;
 import zipkin2.storage.StorageComponent;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.failBecauseExceptionWasNotThrown;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ZipkinServerConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -43,14 +44,8 @@ public class ZipkinServerConfigurationTest {
   }
 
   @Test public void httpCollector_enabledByDefault() {
-    context.register(
-      ArmeriaSpringActuatorAutoConfiguration.class,
-      EndpointAutoConfiguration.class,
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinServerConfigurationTest.Config.class,
-      ZipkinServerConfiguration.class,
-      ZipkinHttpCollector.class
-    );
+    registerBaseConfig(context);
+    context.register(ZipkinHttpCollector.class);
     context.refresh();
 
     assertThat(context.getBean(ZipkinHttpCollector.class)).isNotNull();
@@ -59,28 +54,16 @@ public class ZipkinServerConfigurationTest {
   @Test(expected = NoSuchBeanDefinitionException.class)
   public void httpCollector_canDisable() {
     TestPropertyValues.of("zipkin.collector.http.enabled:false").applyTo(context);
-    context.register(
-      ArmeriaSpringActuatorAutoConfiguration.class,
-      EndpointAutoConfiguration.class,
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinServerConfigurationTest.Config.class,
-      ZipkinServerConfiguration.class,
-      ZipkinHttpCollector.class
-    );
+    registerBaseConfig(context);
+    context.register(ZipkinHttpCollector.class);
     context.refresh();
 
     context.getBean(ZipkinHttpCollector.class);
   }
 
   @Test public void query_enabledByDefault() {
-    context.register(
-      ArmeriaSpringActuatorAutoConfiguration.class,
-      EndpointAutoConfiguration.class,
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinServerConfigurationTest.Config.class,
-      ZipkinServerConfiguration.class,
-      ZipkinQueryApiV2.class
-    );
+    registerBaseConfig(context);
+    context.register(ZipkinQueryApiV2.class);
     context.refresh();
 
     assertThat(context.getBean(ZipkinQueryApiV2.class)).isNotNull();
@@ -88,33 +71,18 @@ public class ZipkinServerConfigurationTest {
 
   @Test public void query_canDisable() {
     TestPropertyValues.of("zipkin.query.enabled:false").applyTo(context);
-    context.register(
-      ArmeriaSpringActuatorAutoConfiguration.class,
-      EndpointAutoConfiguration.class,
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinServerConfigurationTest.Config.class,
-      ZipkinServerConfiguration.class,
-      ZipkinQueryApiV2.class
-    );
+    registerBaseConfig(context);
+    context.register(ZipkinQueryApiV2.class);
     context.refresh();
 
-    try {
-      context.getBean(ZipkinQueryApiV2.class);
-      failBecauseExceptionWasNotThrown(NoSuchBeanDefinitionException.class);
-    } catch (NoSuchBeanDefinitionException e) {
-    }
+    assertThatThrownBy(() -> context.getBean(ZipkinQueryApiV2.class))
+      .isInstanceOf(NoSuchBeanDefinitionException.class);
   }
 
   @Test public void selfTracing_canEnable() {
     TestPropertyValues.of("zipkin.self-tracing.enabled:true").applyTo(context);
-    context.register(
-      ArmeriaSpringActuatorAutoConfiguration.class,
-      EndpointAutoConfiguration.class,
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinServerConfigurationTest.Config.class,
-      ZipkinServerConfiguration.class,
-      TracingConfiguration.class
-    );
+    registerBaseConfig(context);
+    context.register(TracingConfiguration.class);
     context.refresh();
 
     context.getBean(Tracing.class).close();
@@ -122,13 +90,7 @@ public class ZipkinServerConfigurationTest {
 
   @Test public void search_canDisable() {
     TestPropertyValues.of("zipkin.storage.search-enabled:false").applyTo(context);
-    context.register(
-      ArmeriaSpringActuatorAutoConfiguration.class,
-      EndpointAutoConfiguration.class,
-      PropertyPlaceholderAutoConfiguration.class,
-      ZipkinServerConfigurationTest.Config.class,
-      ZipkinServerConfiguration.class
-    );
+    registerBaseConfig(context);
     context.refresh();
 
     StorageComponent v2Storage = context.getBean(StorageComponent.class);
@@ -143,8 +105,19 @@ public class ZipkinServerConfigurationTest {
       return new OrderedHealthAggregator();
     }
 
-    @Bean MeterRegistry registry () {
+    @Bean MeterRegistry registry() {
       return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
     }
+  }
+
+  static void registerBaseConfig(AnnotationConfigApplicationContext context) {
+    context.register(
+      ArmeriaSpringActuatorAutoConfiguration.class,
+      HealthStatusHttpMapper.class,
+      EndpointAutoConfiguration.class,
+      PropertyPlaceholderAutoConfiguration.class,
+      Config.class,
+      ZipkinServerConfiguration.class
+    );
   }
 }
