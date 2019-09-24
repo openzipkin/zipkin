@@ -132,8 +132,6 @@ const SpanAnnotationGraph = ({
     maxTs = _.maxBy(annotations, 'timestamp').timestamp;
   }
 
-  console.log(minTs, maxTs);
-
   const duration = maxTs - minTs;
 
   return (

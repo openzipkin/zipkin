@@ -28,8 +28,15 @@ const propTypes = {
 const TraceSummary = ({ traceSummary }) => {
   const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
   const [closedSpans, setClosedSpans] = useState({});
+  const [rootSpanIndex, setRootSpanIndex] = useState(0);
 
-  const handleSpanClick = useCallback(i => setCurrentSpanIndex(i), []);
+  const handleSpanClick = useCallback((i) => {
+    if (currentSpanIndex === i) {
+      setRootSpanIndex(i);
+    } else {
+      setCurrentSpanIndex(i);
+    }
+  }, [currentSpanIndex]);
 
   const handleSpanToggleButtonClick = useCallback((spanId) => {
     setClosedSpans(oldSpans => ({
@@ -41,17 +48,26 @@ const TraceSummary = ({ traceSummary }) => {
   const currentSpan = traceSummary.spans[currentSpanIndex];
 
   const filteredSpans = useMemo(() => {
+    const rootSpan = traceSummary.spans[rootSpanIndex];
+    const rerootedTree = [rootSpan];
+    for (let i = rootSpanIndex + 1; i < traceSummary.spans.length; i += 1) {
+      const s = traceSummary.spans[i];
+      if (s.depth <= rootSpan.depth) {
+        break;
+      }
+      rerootedTree.push(s);
+    }
     const hiddenSpans = {};
-    traceSummary.spans.forEach((span) => {
+    rerootedTree.forEach((span) => {
       if (closedSpans[span.parentId]) {
         hiddenSpans[span.spanId] = true;
       }
     });
-    return traceSummary.spans.filter((span, index) => {
+    return rerootedTree.filter((span, index) => {
       let hasChildren = false;
       if (
-        index < traceSummary.spans.length - 1
-        && traceSummary.spans[index + 1].depth > span.depth
+        index < rerootedTree.length - 1
+        && rerootedTree[index + 1].depth > span.depth
       ) {
         hasChildren = true;
       }
@@ -65,7 +81,7 @@ const TraceSummary = ({ traceSummary }) => {
       }
       return true;
     });
-  }, [closedSpans, traceSummary.spans]);
+  }, [closedSpans, traceSummary.spans, rootSpanIndex]);
 
   return (
     <React.Fragment>
@@ -90,6 +106,7 @@ const TraceSummary = ({ traceSummary }) => {
                       closedSpans={closedSpans}
                       onSpanClick={handleSpanClick}
                       onSpanToggleButtonClick={handleSpanToggleButtonClick}
+                      setRootSpanIndex={setRootSpanIndex}
                     />
                   </Box>
                 )
