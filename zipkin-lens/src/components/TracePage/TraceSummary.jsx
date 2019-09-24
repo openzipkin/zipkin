@@ -20,6 +20,7 @@ import TraceTimeline from './TraceTimeline';
 import TraceTimelineHeader from './TraceTimelineHeader';
 import SpanDetail from './SpanDetail';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
+import { hasRootSpan } from '../../util/trace';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
@@ -30,13 +31,15 @@ const TraceSummary = ({ traceSummary }) => {
   const [closedSpans, setClosedSpans] = useState({});
   const [rootSpanIndex, setRootSpanIndex] = useState(0);
 
+  const isRootedTrace = hasRootSpan(traceSummary.spans);
+
   const handleSpanClick = useCallback((i) => {
-    if (currentSpanIndex === i) {
+    if (currentSpanIndex === i && isRootedTrace) {
       setRootSpanIndex(i);
     } else {
       setCurrentSpanIndex(i);
     }
-  }, [currentSpanIndex]);
+  }, [currentSpanIndex, isRootedTrace]);
 
   const handleSpanToggleButtonClick = useCallback((spanId) => {
     setClosedSpans(oldSpans => ({
@@ -48,6 +51,10 @@ const TraceSummary = ({ traceSummary }) => {
   const currentSpan = traceSummary.spans[currentSpanIndex];
 
   const filteredSpans = useMemo(() => {
+    if (!isRootedTrace) {
+      return traceSummary.spans;
+    }
+
     const rootSpan = traceSummary.spans[rootSpanIndex];
     const rerootedTree = [rootSpan];
     for (let i = rootSpanIndex + 1; i < traceSummary.spans.length; i += 1) {
@@ -90,7 +97,11 @@ const TraceSummary = ({ traceSummary }) => {
       </Box>
       <Box height="100%" display="flex">
         <Box width="65%" display="flex" flexDirection="column">
-          <TraceTimelineHeader startTs={0} endTs={traceSummary.duration} />
+          <TraceTimelineHeader
+            startTs={0}
+            endTs={traceSummary.duration}
+            isRootedTrace={isRootedTrace}
+          />
           <Box height="100%" width="100%">
             <AutoSizer>
               {
@@ -104,6 +115,7 @@ const TraceSummary = ({ traceSummary }) => {
                       spans={filteredSpans}
                       depth={traceSummary.depth}
                       closedSpans={closedSpans}
+                      isRootedTrace={isRootedTrace}
                       onSpanClick={handleSpanClick}
                       onSpanToggleButtonClick={handleSpanToggleButtonClick}
                       setRootSpanIndex={setRootSpanIndex}

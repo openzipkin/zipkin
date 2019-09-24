@@ -23,6 +23,7 @@ const propTypes = {
   spans: detailedSpansPropTypes.isRequired,
   depth: PropTypes.number.isRequired,
   closedSpans: PropTypes.shape({}).isRequired,
+  isRootedTrace: PropTypes.bool.isRequired,
   onSpanClick: PropTypes.func.isRequired,
   onSpanToggleButtonClick: PropTypes.func.isRequired,
 };
@@ -31,6 +32,7 @@ const TraceTimeline = ({
   spans,
   depth,
   closedSpans,
+  isRootedTrace,
   onSpanClick,
   onSpanToggleButtonClick,
 }) => (
@@ -50,12 +52,16 @@ const TraceTimeline = ({
         />
       ))
     }
-    <TraceTree
-      spans={spans}
-      depth={depth}
-      closedSpans={closedSpans}
-      onSpanToggleButtonClick={onSpanToggleButtonClick}
-    />
+    {
+      isRootedTrace ? (
+        <TraceTree
+          spans={spans}
+          depth={depth}
+          closedSpans={closedSpans}
+          onSpanToggleButtonClick={onSpanToggleButtonClick}
+        />
+      ) : null
+    }
   </svg>
 );
 
