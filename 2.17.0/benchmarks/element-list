@@ -1,0 +1,11 @@
+zipkin2
+zipkin2.codec
+zipkin2.codec.generated
+zipkin2.collector
+zipkin2.collector.generated
+zipkin2.elasticsearch.internal
+zipkin2.elasticsearch.internal.generated
+zipkin2.generated
+zipkin2.proto3
+zipkin2.server.internal.throttle
+zipkin2.server.internal.throttle.generated
