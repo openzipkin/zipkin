@@ -138,7 +138,7 @@ class ServerIntegratedBenchmark {
       .withNetworkAliases("backend")
       .withCommand("backend")
       .withExposedPorts(9000)
-      .waitingFor(Wait.forHttp("/health"));
+      .waitingFor(Wait.forHttp("/actuator/health"));
     closer.register(backend::stop);
 
     GenericContainer<?> frontend = new GenericContainer<>("openzipkin/example-sleuth-webmvc")
@@ -146,7 +146,7 @@ class ServerIntegratedBenchmark {
       .withNetworkAliases("frontend")
       .withCommand("frontend")
       .withExposedPorts(8081)
-      .waitingFor(Wait.forHttp("/health"));
+      .waitingFor(Wait.forHttp("/actuator/health"));
     closer.register(frontend::stop);
 
     GenericContainer<?> prometheus = new GenericContainer<>("prom/prometheus")
