@@ -14,7 +14,6 @@
 package zipkin2.server.internal;
 
 import brave.Tracing;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.MediaType;
@@ -49,14 +48,16 @@ import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.server.internal.brave.TracingStorageComponent;
+import zipkin2.server.internal.health.ZipkinHealthController;
+import zipkin2.server.internal.prometheus.ZipkinMetricsController;
 import zipkin2.server.internal.throttle.ThrottledStorageComponent;
 import zipkin2.server.internal.throttle.ZipkinStorageThrottleProperties;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 @Configuration
-class ZipkinServerConfiguration {
-  static final MediaType MEDIA_TYPE_ACTUATOR =
+public class ZipkinServerConfiguration {
+  public static final MediaType MEDIA_TYPE_ACTUATOR =
     MediaType.parse("application/vnd.spring-boot.actuator.v2+json;charset=UTF-8");
 
   @Autowired(required = false)
@@ -66,11 +67,9 @@ class ZipkinServerConfiguration {
   ZipkinHttpCollector httpCollector;
 
   @Autowired(required = false)
-  ZipkinMetricsHealthController healthController;
-
-  @Bean @ConditionalOnMissingBean ObjectMapper objectMapper() {
-    return new ObjectMapper();
-  }
+  ZipkinHealthController healthController;
+  @Autowired(required = false)
+  ZipkinMetricsController metricsController;
 
   @Bean Consumer<MeterRegistry.Config> noActuatorMetrics() {
     return config -> config.meterFilter(MeterFilter.deny(id -> {
@@ -88,6 +87,7 @@ class ZipkinServerConfiguration {
       }
       if (httpCollector != null) sb.annotatedService(httpCollector);
       if (healthController != null) sb.annotatedService(healthController);
+      if (metricsController != null) sb.annotatedService(metricsController);
       prometheusRegistry.ifPresent(registry -> {
         PrometheusExpositionService prometheusService = new PrometheusExpositionService(registry);
         sb.service("/actuator/prometheus", prometheusService);

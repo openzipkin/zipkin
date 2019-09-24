@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.server.internal;
+package zipkin2.server.internal.prometheus;
 
 import com.jayway.jsonpath.JsonPath;
 import com.linecorp.armeria.server.Server;
@@ -54,7 +54,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
 )
 @RunWith(SpringRunner.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
-public class ITZipkinMetricsHealthDirty {
+public class ITZipkinMetricsDirty {
 
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
@@ -106,7 +106,7 @@ public class ITZipkinMetricsHealthDirty {
       .isEqualTo(messagesDroppedCount + 1);
   }
 
-  /** This tests logic in {@link BodyIsExceptionMessage} is scoped to POST requests. */
+  /** This tests logic in {@code BodyIsExceptionMessage} is scoped to POST requests. */
   @Test public void getTrace_malformedDoesntUpdateCollectorMetrics() throws Exception {
     double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();

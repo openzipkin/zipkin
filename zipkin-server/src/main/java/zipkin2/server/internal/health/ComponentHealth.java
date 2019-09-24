@@ -11,22 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.server.internal;
+package zipkin2.server.internal.health;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.Component;
 import zipkin2.internal.Nullable;
 
-@JsonInclude(Include.NON_NULL)
-public final class ComponentHealth {
-  public static final String STATUS_UP = "UP", STATUS_DOWN = "DOWN";
+final class ComponentHealth {
+  static final String STATUS_UP = "UP", STATUS_DOWN = "DOWN";
 
-  public static ComponentHealth ofComponent(Component component) {
+  static ComponentHealth ofComponent(Component component) {
     Throwable t = null;
     try {
       CheckResult check = component.check();
@@ -41,25 +36,13 @@ public final class ComponentHealth {
     return new ComponentHealth(component.toString(), STATUS_DOWN, error);
   }
 
-  @JsonIgnore final String name;
+  final String name;
   final String status;
-  @JsonProperty("details.error") final String error;
+  @Nullable final String error;
 
   ComponentHealth(String name, String status, String error) {
     this.name = name;
     this.status = status;
     this.error = error;
-  }
-
-  public String getName() {
-    return name;
-  }
-
-  public String getStatus() {
-    return status;
-  }
-
-  @Nullable public String getError() {
-    return error;
   }
 }
