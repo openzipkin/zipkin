@@ -16,6 +16,7 @@ package zipkin2.server.internal.rabbitmq;
 import java.net.URISyntaxException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -30,6 +31,7 @@ import zipkin2.storage.StorageComponent;
 
 /** Auto-configuration for {@link RabbitMQCollector}. */
 @Configuration
+@ConditionalOnClass(RabbitMQCollector.class)
 @Conditional(ZipkinRabbitMQCollectorConfiguration.RabbitMQAddressesOrUriSet.class)
 @EnableConfigurationProperties(ZipkinRabbitMQCollectorProperties.class)
 public class ZipkinRabbitMQCollectorConfiguration {

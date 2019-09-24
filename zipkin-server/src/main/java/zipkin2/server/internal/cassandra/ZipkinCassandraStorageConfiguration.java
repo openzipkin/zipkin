@@ -19,6 +19,7 @@ import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -26,6 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.cassandra.v1.CassandraStorage;
 import zipkin2.storage.cassandra.v1.SessionFactory;
 
 /**
@@ -34,6 +36,7 @@ import zipkin2.storage.cassandra.v1.SessionFactory;
  * are stored asynchronously.
  */
 @Configuration
+@ConditionalOnClass(CassandraStorage.class)
 @EnableConfigurationProperties(ZipkinCassandraStorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra")
 @ConditionalOnMissingBean(StorageComponent.class)
