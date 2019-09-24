@@ -208,10 +208,6 @@ spring:
   autoconfigure:
     # NOTE: These exclusions can drift between Spring Boot minor versions. Audit accordingly.
     exclude:
-      # otherwise we might initialize even when not needed (ex when storage type is cassandra)
-      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-      - org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration
-      - org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
       # JMX is disabled
       - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
       # /health and /actuator/health served directly by Armeria
@@ -223,7 +219,14 @@ spring:
       - org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration
       # /prometheus and /actuator/prometheus are served directly by Armeria
       - org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
-
+      # Remove unused auto-configuration
+      - org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration
+      - org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration
+      - org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
+      - org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration
+      - org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration
 logging:
   pattern:
     level: "%clr(%5p) %clr([%X{traceId}/%X{spanId}]){yellow}"
