@@ -207,6 +207,7 @@ spring:
       enabled: false
   autoconfigure:
     # NOTE: These exclusions can drift between Spring Boot minor versions. Audit accordingly.
+    # Ex. curl -s localhost:9411/actuator/beans|jq '.contexts.application.beans|keys_unsorted[]'|sort
     exclude:
       # JMX is disabled
       - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
