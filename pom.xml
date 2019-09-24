@@ -95,7 +95,11 @@
     <license-maven-plugin.version>3.0</license-maven-plugin.version>
     <maven-jar-plugin.version>3.1.2</maven-jar-plugin.version>
     <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
-    <maven-failsafe-plugin.version>3.0.0-M3</maven-failsafe-plugin.version>
+    <!--
+      See https://springframework.guru/why-your-junit-5-tests-are-not-running-under-maven/
+      but even though it says to use 2.22.0 this did not solve the issue either.
+    -->
+    <maven-failsafe-plugin.version>2.21.0</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
     <git-commit-id.version>3.0.1</git-commit-id.version>
   </properties>
