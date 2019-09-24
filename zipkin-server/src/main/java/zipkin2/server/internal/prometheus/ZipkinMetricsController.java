@@ -13,20 +13,25 @@
  */
 package zipkin2.server.internal.prometheus;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.annotation.Get;
-import com.linecorp.armeria.server.annotation.ProducesJson;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
+import java.io.IOException;
+import java.io.StringWriter;
 
 public class ZipkinMetricsController {
+  static final JsonFactory JSON_FACTORY = new JsonFactory();
+
   final MeterRegistry meterRegistry;
   final CollectorRegistry collectorRegistry;
-  final JsonNodeFactory factory = JsonNodeFactory.instance;
 
   ZipkinMetricsController(MeterRegistry meterRegistry, CollectorRegistry collectorRegistry) {
     this.meterRegistry = meterRegistry;
@@ -35,9 +40,11 @@ public class ZipkinMetricsController {
 
   // Extracts Zipkin metrics to provide backward compatibility
   @Get("/metrics")
-  @ProducesJson
-  public ObjectNode fetchMetricsFromMicrometer() {
-    ObjectNode metricsJson = factory.objectNode();
+  public HttpResponse fetchMetricsFromMicrometer() throws IOException {
+    StringWriter writer = new StringWriter();
+    JsonGenerator generator = JSON_FACTORY.createGenerator(writer);
+    generator.useDefaultPrettyPrinter();
+    generator.writeStartObject();
     // Get the Zipkin Custom meters for constructing the Metrics endpoint
     for (Meter meter : meterRegistry.getMeters()) {
       String name = meter.getId().getName();
@@ -47,11 +54,13 @@ public class ZipkinMetricsController {
 
       Meter.Type type = meter.getId().getType();
       if (type == Meter.Type.COUNTER) {
-        metricsJson.put("counter." + name + "." + transport, ((Counter) meter).count());
+        generator.writeNumberField("counter." + name + "." + transport, ((Counter) meter).count());
       } else if (type == Meter.Type.GAUGE) {
-        metricsJson.put("gauge." + name + "." + transport, ((Gauge) meter).value());
+        generator.writeNumberField("gauge." + name + "." + transport, ((Gauge) meter).value());
       } // We only use counters and gauges
     }
-    return metricsJson;
+    generator.writeEndObject();
+    generator.flush();
+    return HttpResponse.of(HttpStatus.OK, MediaType.JSON, writer.toString());
   }
 }

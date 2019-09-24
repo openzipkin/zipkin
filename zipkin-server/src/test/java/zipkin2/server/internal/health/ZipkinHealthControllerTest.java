@@ -23,8 +23,16 @@ import static zipkin2.server.internal.health.ComponentHealth.STATUS_UP;
 
 public class ZipkinHealthControllerTest {
   @Test public void writeJsonError_writesNestedError() throws Exception {
-    assertThat(ZipkinHealthController.writeJsonError("robots")).isEqualTo(
-      "{\"status\":\"DOWN\",\"zipkin\":{\"status\":\"DOWN\",\"details\":{\"error\":\"robots\"}}}"
+    assertThat(ZipkinHealthController.writeJsonError("robots")).isEqualTo(""
+      + "{\n"
+      + "  \"status\" : \"DOWN\",\n"
+      + "  \"zipkin\" : {\n"
+      + "    \"status\" : \"DOWN\",\n"
+      + "    \"details\" : {\n"
+      + "      \"error\" : \"robots\"\n"
+      + "    }\n"
+      + "  }\n"
+      + "}"
     );
   }
 
