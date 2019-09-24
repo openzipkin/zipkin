@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.server.internal;
+package zipkin2.server.internal.health;
 
 import com.linecorp.armeria.server.Server;
 import java.io.IOException;

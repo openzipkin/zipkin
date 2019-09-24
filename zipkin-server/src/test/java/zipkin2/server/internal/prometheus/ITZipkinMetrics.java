@@ -11,11 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.server.internal;
+package zipkin2.server.internal.prometheus;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.jayway.jsonpath.JsonPath;
 import com.linecorp.armeria.server.Server;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import java.io.IOException;
@@ -50,8 +49,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
   }
 )
 @RunWith(SpringRunner.class)
-public class ITZipkinMetricsHealth {
-
+public class ITZipkinMetrics {
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
   @Autowired Server server;
@@ -60,20 +58,6 @@ public class ITZipkinMetricsHealth {
 
   @Before public void init() {
     storage.clear();
-  }
-
-  @Test public void healthIsOK() throws Exception {
-    Response health = get("/health");
-    assertThat(health.isSuccessful()).isTrue();
-    assertThat(health.body().contentType())
-      .hasToString("application/json; charset=utf-8");
-    assertThat(health.body().string()).isEqualTo(
-      "{\"status\":\"UP\",\"zipkin\":{\"status\":\"UP\",\"details\":{\"InMemoryStorage{}\":{\"status\":\"UP\"}}}}"
-    );
-
-    // ensure we don't track health in prometheus
-    assertThat(scrape())
-      .doesNotContain("health");
   }
 
   @Test public void metricsIsOK() throws Exception {
@@ -174,14 +158,6 @@ public class ITZipkinMetricsHealth {
           + httpCount);
   }
 
-  @Test public void readsHealth() throws Exception {
-    String json = getAsString("/health");
-    assertThat(readString(json, "$.status"))
-      .isIn("UP", "DOWN", "UNKNOWN");
-    assertThat(readString(json, "$.zipkin.status"))
-      .isIn("UP", "DOWN", "UNKNOWN");
-  }
-
   @Test public void writesSpans_readMetricsFormat() throws Exception {
     byte[] span = {'z', 'i', 'p', 'k', 'i', 'n'};
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
@@ -222,10 +198,6 @@ public class ITZipkinMetricsHealth {
       .url(url(server, path))
       .post(RequestBody.create(null, body))
       .build()).execute();
-  }
-
-  static String readString(String json, String jsonPath) {
-    return JsonPath.compile(jsonPath).read(json);
   }
 
   static List readJson(String json) throws Exception {
