@@ -36,12 +36,10 @@ import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
+import java.io.InputStreamReader;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -88,32 +86,33 @@ public class ZipkinUiConfiguration {
   @Value("classpath:zipkin-lens/index.html")
   Resource lensIndexHtml;
 
-  @Bean @Lazy String processedIndexHtml() {
+  @Bean @Lazy String processedIndexHtml() throws IOException {
     return processedIndexHtml(indexHtml);
   }
 
-  @Bean @Lazy String processedLensIndexHtml() {
+  @Bean @Lazy String processedLensIndexHtml() throws IOException {
     return processedIndexHtml(lensIndexHtml);
   }
 
-  String processedIndexHtml(Resource indexHtml) {
+  String processedIndexHtml(Resource indexHtml) throws IOException {
     String baseTagValue = "/".equals(ui.getBasepath()) ? "/" : ui.getBasepath() + "/";
-    Document soup;
-    try (InputStream is = indexHtml.getInputStream()) {
-      soup = Jsoup.parse(is, null, baseTagValue);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e); // unexpected
+    char[] buffer = new char[1024];
+    StringBuilder builder = new StringBuilder();
+    try (InputStream fromClasspath = indexHtml.getInputStream();
+         InputStreamReader reader = new InputStreamReader(fromClasspath, UTF_8)) {
+      while (true) {
+        int read = reader.read(buffer, 0, buffer.length);
+        if (read < 0) break;
+        builder.append(buffer, 0, read);
+      }
     }
-    if (soup.head().getElementsByTag("base").isEmpty()) {
-      soup.head().appendChild(
-        soup.createElement("base")
-      );
-    }
-    soup.head().getElementsByTag("base").attr("href", baseTagValue);
-    return soup.html();
+    String beforeReplacement = builder.toString();
+    return beforeReplacement.replaceAll(
+      "base href=\"[^\"]+\"", "base href=\"" + baseTagValue + "\""
+    );
   }
 
-  @Bean @Lazy IndexSwitchingService indexSwitchingService() {
+  @Bean @Lazy IndexSwitchingService indexSwitchingService() throws IOException {
     final HttpFileBuilder legacyIndex;
     final HttpFileBuilder lensIndex;
     if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {
@@ -137,6 +136,9 @@ public class ZipkinUiConfiguration {
 
   @Bean @Lazy ArmeriaServerConfigurator uiServerConfigurator(
     IndexSwitchingService indexSwitchingService) throws IOException {
+    HttpService indexService =
+      indexHtml.isReadable() ? indexSwitchingService : indexSwitchingService.lensIndex;
+
     ServerCacheControl maxAgeYear =
       new ServerCacheControlBuilder().maxAgeSeconds(TimeUnit.DAYS.toSeconds(365)).build();
     Service<HttpRequest, HttpResponse> uiFileService =
@@ -158,11 +160,11 @@ public class ZipkinUiConfiguration {
       // If the path is a a file w/an extension, treat normally.
       // Otherwise instead of returning 404, forward to the index.
       // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-      sb.service("/zipkin/", indexSwitchingService)
-        .service("/zipkin/index.html", indexSwitchingService)
-        .service("/zipkin/traces/{id}", indexSwitchingService)
-        .service("/zipkin/dependency", indexSwitchingService)
-        .service("/zipkin/traceViewer", indexSwitchingService);
+      sb.service("/zipkin/", indexService)
+        .service("/zipkin/index.html", indexService)
+        .service("/zipkin/traces/{id}", indexService)
+        .service("/zipkin/dependency", indexService)
+        .service("/zipkin/traceViewer", indexService);
 
       sb.service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
         .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"))
