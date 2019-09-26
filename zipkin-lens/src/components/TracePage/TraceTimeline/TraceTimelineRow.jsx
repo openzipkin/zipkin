@@ -38,6 +38,8 @@ const propTypes = {
   index: PropTypes.number.isRequired,
   onRowClick: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
+  startTs: PropTypes.number.isRequired,
+  endTs: PropTypes.number.isRequired,
   classes: PropTypes.shape({}).isRequired,
 };
 
@@ -67,44 +69,52 @@ const TraceTimelineRow = ({
   index,
   onRowClick,
   isFocused,
+  startTs,
+  endTs,
   classes,
-}) => (
-  <g>
-    <text x={`${serviceNamePosXPercent}%`} y={spanDataRowPosY(index)} className={classes.serviceName}>
-      {span.serviceName}
-    </text>
-    <text x={`${spanNamePosXPercent}%`} y={spanDataRowPosY(index)}>
-      {span.spanName}
-    </text>
-    <text x={`${durationPosXPercent}%`} y={spanDataRowPosY(index)}>
-      {span.durationStr}
-    </text>
-    <line
-      x1={`${timelineOffsetXPercent}%`}
-      x2="100%"
-      y1={spanBarLinePosY(index)}
-      y2={spanBarLinePosY(index)}
-      className={classes.barLine}
-    />
-    <rect
-      width={`${spanBarWidthPercent(span.width)}%`}
-      height={spanBarHeight}
-      x={`${spanBarPosXPercent(span.left)}%`}
-      y={spanBarRowPosY(index)}
-      rx={2}
-      ry={2}
-      fill={selectServiceColor(span.serviceName)}
-    />
-    <rect
-      className={classnames(classes.button, { [classes['button--focused']]: isFocused })}
-      x={0}
-      y={spanOffsetY(index)}
-      width="100%"
-      height={spanHeight}
-      onClick={() => onRowClick(span.spanId)}
-    />
-  </g>
-);
+}) => {
+  const duration = endTs - startTs;
+  const left = (span.timestamp - startTs) / duration * 100;
+  const width = span.duration / duration * 100;
+
+  return (
+    <g>
+      <text x={`${serviceNamePosXPercent}%`} y={spanDataRowPosY(index)} className={classes.serviceName}>
+        {span.serviceName}
+      </text>
+      <text x={`${spanNamePosXPercent}%`} y={spanDataRowPosY(index)}>
+        {span.spanName}
+      </text>
+      <text x={`${durationPosXPercent}%`} y={spanDataRowPosY(index)}>
+        {span.durationStr}
+      </text>
+      <line
+        x1={`${timelineOffsetXPercent}%`}
+        x2="100%"
+        y1={spanBarLinePosY(index)}
+        y2={spanBarLinePosY(index)}
+        className={classes.barLine}
+      />
+      <rect
+        width={`${spanBarWidthPercent(width)}%`}
+        height={spanBarHeight}
+        x={`${spanBarPosXPercent(left)}%`}
+        y={spanBarRowPosY(index)}
+        rx={2}
+        ry={2}
+        fill={selectServiceColor(span.serviceName)}
+      />
+      <rect
+        className={classnames(classes.button, { [classes['button--focused']]: isFocused })}
+        x={0}
+        y={spanOffsetY(index)}
+        width="100%"
+        height={spanHeight}
+        onClick={() => onRowClick(span.spanId)}
+      />
+    </g>
+  );
+};
 
 TraceTimelineRow.propTypes = propTypes;
 

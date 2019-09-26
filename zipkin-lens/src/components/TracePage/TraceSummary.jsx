@@ -14,6 +14,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import Box from '@material-ui/core/Box';
 import { AutoSizer } from 'react-virtualized';
+import _ from 'lodash';
 
 import TraceSummaryHeader from './TraceSummaryHeader';
 import TraceTimeline from './TraceTimeline';
@@ -84,6 +85,22 @@ const TraceSummary = ({ traceSummary }) => {
     return spans.filter(span => !allHiddenSpanIds[span.spanId]);
   }, [childrenHiddenSpanIds, isRootedTrace, rootSpanIndex, traceSummary.spans]);
 
+  // Find the minumum and maximum timestamps in the shown spans.
+  const startTs = useMemo(() => _.minBy(shownSpans, 'timestamp').timestamp, [shownSpans]);
+  const endTs = useMemo(() => {
+    let max = 0;
+    shownSpans.forEach((span) => {
+      let ts;
+      if (!span.duration) {
+        ts = span.timestamp;
+      } else {
+        ts = span.timestamp + span.duration;
+      }
+      max = max < ts ? ts : max;
+    });
+    return max;
+  }, [shownSpans]);
+
   return (
     <React.Fragment>
       <Box boxShadow={3} zIndex={1}>
@@ -92,8 +109,8 @@ const TraceSummary = ({ traceSummary }) => {
       <Box height="100%" display="flex">
         <Box width="65%" display="flex" flexDirection="column">
           <TraceTimelineHeader
-            startTs={0}
-            endTs={traceSummary.duration}
+            startTs={startTs - traceSummary.spans[0].timestamp}
+            endTs={endTs - traceSummary.spans[0].timestamp}
             isRerooted={isRerooted}
             isRootedTrace={isRootedTrace}
             onResetRerootButtonClick={handleResetRerootButtonClick}
@@ -111,6 +128,8 @@ const TraceSummary = ({ traceSummary }) => {
                       isRootedTrace={isRootedTrace}
                       onRowClick={handleTimelineRowClick}
                       onChildrenToggle={handleChildrenToggle}
+                      startTs={startTs}
+                      endTs={endTs}
                     />
                   </Box>
                 )

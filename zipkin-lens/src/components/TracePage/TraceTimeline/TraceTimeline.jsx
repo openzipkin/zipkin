@@ -27,6 +27,8 @@ const propTypes = {
   isRootedTrace: PropTypes.bool.isRequired,
   onRowClick: PropTypes.func.isRequired,
   onChildrenToggle: PropTypes.func.isRequired,
+  startTs: PropTypes.number.isRequired,
+  endTs: PropTypes.number.isRequired,
 };
 
 const TraceTimeline = ({
@@ -37,6 +39,8 @@ const TraceTimeline = ({
   isRootedTrace,
   onRowClick,
   onChildrenToggle,
+  startTs,
+  endTs,
 }) => (
   <svg
     version="1.1"
@@ -52,6 +56,8 @@ const TraceTimeline = ({
           onRowClick={onRowClick}
           index={idx}
           isFocused={currentSpanId === span.spanId}
+          startTs={startTs}
+          endTs={endTs}
         />
       ))
     }
