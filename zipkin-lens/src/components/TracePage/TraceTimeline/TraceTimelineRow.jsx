@@ -75,7 +75,13 @@ const TraceTimelineRow = ({
 }) => {
   const duration = endTs - startTs;
   const left = (span.timestamp - startTs) / duration * 100;
-  const width = Math.max(span.duration / duration * 100, 1);
+  // Span's duration sometimes is not set, so give a default value
+  // to display a bar on the UI.
+  // This value is not valid at all.
+  let width = 1;
+  if (span.duration) {
+    width = Math.max(span.duration / duration * 100, 1);
+  }
 
   return (
     <g>
