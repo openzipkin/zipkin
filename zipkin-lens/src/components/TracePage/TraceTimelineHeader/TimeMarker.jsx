@@ -17,7 +17,7 @@ import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import classNames from 'classnames';
 
-import { spanTreeWidthPercent } from '../sizing';
+import { spanTreeWidthPercent, timelineWidthPercent } from '../sizing';
 import { formatDuration } from '../../../util/timestamp';
 
 const propTypes = {
@@ -57,7 +57,7 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
       <Box
         key={portion}
         position="absolute"
-        className={classNames({ [classes.marker]: portion < 1 })}
+        className={classes.marker}
         style={{ left: `${portion * 100}%` }}
         data-testid="time-marker--marker"
       >
@@ -78,12 +78,13 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
     );
   }
   return (
-    <Box display="flex" justifyContent="flex-end">
+    <Box display="flex">
+      <Box width={`${spanTreeWidthPercent}%`} />
       <Box
         mt={1}
         height={15}
         position="relative"
-        width={`${100 - spanTreeWidthPercent}%`}
+        width={`${timelineWidthPercent}%`}
       >
         {timeMarkers}
       </Box>

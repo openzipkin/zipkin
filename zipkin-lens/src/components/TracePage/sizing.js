@@ -29,6 +29,8 @@
 //                                        curationPosXPercent
 
 export const spanTreeWidthPercent = 8; // %
+export const timelineRightMarginPercent = 2; // %
+export const timelineWidthPercent = 100 - (spanTreeWidthPercent + timelineRightMarginPercent); // %
 export const spanTreeLineWidthPercentPerDepth = depth => spanTreeWidthPercent / (depth + 1); // %
 
 export const spanDataRowHeight = 30; // px
@@ -39,12 +41,11 @@ export const spanOffsetY = index => index * spanHeight; // px
 export const spanDataRowPosY = index => spanOffsetY(index) + spanDataRowHeight * 0.75; // px
 export const spanBarRowPosY = index => spanOffsetY(index) + spanDataRowHeight; // px
 export const spanBarLinePosY = index => spanBarRowPosY(index) + spanBarHeight / 2; // px
-export const spanBarWidthPercent = width => (100 - spanTreeWidthPercent) * (width / 100); // %
+export const spanBarWidthPercent = width => timelineWidthPercent * (width / 100); // %
 export const spanBarPosXPercent = left => spanTreeWidthPercent
-  + (100 - spanTreeWidthPercent) * (left / 100); // %
+  + timelineWidthPercent * (left / 100); // %
 
 export const timelineOffsetXPercent = spanTreeWidthPercent; // %
-export const timelineWidthPercent = 100 - spanTreeWidthPercent; // %
 export const timelineHeight = spanCounts => spanHeight * spanCounts; // px
 
 export const serviceNamePosXPercent = timelineOffsetXPercent
