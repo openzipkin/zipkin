@@ -75,7 +75,7 @@ const TraceTimelineRow = ({
 }) => {
   const duration = endTs - startTs;
   const left = (span.timestamp - startTs) / duration * 100;
-  const width = span.duration / duration * 100;
+  const width = Math.max(span.duration / duration * 100, 1);
 
   return (
     <g>
