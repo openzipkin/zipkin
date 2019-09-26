@@ -20,6 +20,7 @@ import { detailedSpansPropTypes } from '../../../prop-types';
 import { timelineHeight } from '../sizing';
 
 const propTypes = {
+  currentSpanId: PropTypes.string.isRequired,
   spans: detailedSpansPropTypes.isRequired,
   depth: PropTypes.number.isRequired,
   childrenHiddenSpanIds: PropTypes.shape({}).isRequired,
@@ -29,6 +30,7 @@ const propTypes = {
 };
 
 const TraceTimeline = ({
+  currentSpanId,
   spans,
   depth,
   childrenHiddenSpanIds,
@@ -49,6 +51,7 @@ const TraceTimeline = ({
           span={span}
           onRowClick={onRowClick}
           index={idx}
+          isFocused={currentSpanId === span.spanId}
         />
       ))
     }

@@ -50,13 +50,7 @@ const TraceTimelineHeader = ({
   classes,
 }) => (
   <Box className={classes.root}>
-    <Box
-      display="flex"
-      alignItems="center"
-      mt={1}
-      mr={1}
-      ml={1}
-    >
+    <Box display="flex" alignItems="center" mt={1} mr={1} ml={1}>
       <ButtonGroup>
         <Button className={classes.textButton} disabled={!isRootedTrace}>
           <Box component="span" className="fas fa-angle-up" />

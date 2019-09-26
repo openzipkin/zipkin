@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import classnames from 'classnames';
 import { withStyles } from '@material-ui/styles';
 
 import {
@@ -36,6 +37,7 @@ const propTypes = {
   span: detailedSpanPropTypes.isRequired,
   index: PropTypes.number.isRequired,
   onRowClick: PropTypes.func.isRequired,
+  isFocused: PropTypes.bool.isRequired,
   classes: PropTypes.shape({}).isRequired,
 };
 
@@ -51,6 +53,9 @@ const style = theme => ({
       opacity: 0.2,
     },
   },
+  'button--focused': {
+    opacity: 0.3,
+  },
   barLine: {
     stroke: theme.palette.grey[500],
     strokeWidth: '1px',
@@ -61,6 +66,7 @@ const TraceTimelineRow = ({
   span,
   index,
   onRowClick,
+  isFocused,
   classes,
 }) => (
   <g>
@@ -90,7 +96,7 @@ const TraceTimelineRow = ({
       fill={selectServiceColor(span.serviceName)}
     />
     <rect
-      className={classes.button}
+      className={classnames(classes.button, { [classes['button--focused']]: isFocused })}
       x={0}
       y={spanOffsetY(index)}
       width="100%"

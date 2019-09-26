@@ -104,6 +104,7 @@ const TraceSummary = ({ traceSummary }) => {
                 ({ height, width }) => (
                   <Box height={height} width={width} overflow="auto">
                     <TraceTimeline
+                      currentSpanId={traceSummary.spans[currentSpanIndex].spanId}
                       spans={shownSpans}
                       depth={traceSummary.depth}
                       childrenHiddenSpanIds={childrenHiddenSpanIds}
