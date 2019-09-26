@@ -22,19 +22,19 @@ import { timelineHeight } from '../sizing';
 const propTypes = {
   spans: detailedSpansPropTypes.isRequired,
   depth: PropTypes.number.isRequired,
-  closedSpans: PropTypes.shape({}).isRequired,
+  childrenHiddenSpanIds: PropTypes.shape({}).isRequired,
   isRootedTrace: PropTypes.bool.isRequired,
-  onSpanClick: PropTypes.func.isRequired,
-  onSpanToggleButtonClick: PropTypes.func.isRequired,
+  onRowClick: PropTypes.func.isRequired,
+  onChildrenToggle: PropTypes.func.isRequired,
 };
 
 const TraceTimeline = ({
   spans,
   depth,
-  closedSpans,
+  childrenHiddenSpanIds,
   isRootedTrace,
-  onSpanClick,
-  onSpanToggleButtonClick,
+  onRowClick,
+  onChildrenToggle,
 }) => (
   <svg
     version="1.1"
@@ -43,12 +43,12 @@ const TraceTimeline = ({
     height={`${timelineHeight(spans.length)}px`}
   >
     {
-      spans.map((span, i) => (
+      spans.map((span, idx) => (
         <TraceTimelineRow
           key={span.spanId}
           span={span}
-          index={i}
-          onSpanClick={onSpanClick}
+          onRowClick={onRowClick}
+          index={idx}
         />
       ))
     }
@@ -57,8 +57,8 @@ const TraceTimeline = ({
         <TraceTree
           spans={spans}
           depth={depth}
-          closedSpans={closedSpans}
-          onSpanToggleButtonClick={onSpanToggleButtonClick}
+          childrenHiddenSpanIds={childrenHiddenSpanIds}
+          onChildrenToggle={onChildrenToggle}
         />
       ) : null
     }

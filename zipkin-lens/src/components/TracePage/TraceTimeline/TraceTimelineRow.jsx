@@ -35,7 +35,7 @@ import { selectServiceColor } from '../../../colors';
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
   index: PropTypes.number.isRequired,
-  onSpanClick: PropTypes.func.isRequired,
+  onRowClick: PropTypes.func.isRequired,
   classes: PropTypes.shape({}).isRequired,
 };
 
@@ -60,7 +60,7 @@ const style = theme => ({
 const TraceTimelineRow = ({
   span,
   index,
-  onSpanClick,
+  onRowClick,
   classes,
 }) => (
   <g>
@@ -95,7 +95,7 @@ const TraceTimelineRow = ({
       y={spanOffsetY(index)}
       width="100%"
       height={spanHeight}
-      onClick={() => onSpanClick(index)}
+      onClick={() => onRowClick(span.spanId)}
     />
   </g>
 );

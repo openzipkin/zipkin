@@ -24,7 +24,7 @@ import {
 } from '../sizing';
 import { detailedSpansPropTypes } from '../../../prop-types';
 
-export const buildTraceTree = (spans, closedSpans) => {
+export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   const stack = [];
 
   const horizontalLineDataList = [];
@@ -52,7 +52,7 @@ export const buildTraceTree = (spans, closedSpans) => {
       // |
       // |+++Y  <- Write this horizontal line.
       horizontalLineDataList.push({ x: parent.depth, y: i });
-      if (closedSpans[currentSpan.spanId]) {
+      if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
           y: i,
@@ -78,7 +78,7 @@ export const buildTraceTree = (spans, closedSpans) => {
       // |
       // |+++Z  <- Write this horizontal line.
       horizontalLineDataList.push({ x: parent.depth, y: i });
-      if (closedSpans[currentSpan.spanId]) {
+      if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
           y: i,
@@ -114,7 +114,7 @@ export const buildTraceTree = (spans, closedSpans) => {
       // |
       // |+++D  <- Write this horizontal line.
       horizontalLineDataList.push({ x: parent.depth, y: i });
-      if (closedSpans[currentSpan.spanId]) {
+      if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
           y: i,
@@ -148,7 +148,7 @@ export const buildTraceTree = (spans, closedSpans) => {
   // |
   // |---B
   horizontalLineDataList.push({ x: 2, y: 0 });
-  if (closedSpans[spans[0].spanId]) {
+  if (childrenHiddenSpanIds[spans[0].spanId]) {
     buttonDataList.push({
       x: spans[0].depth,
       y: 0,
@@ -185,8 +185,8 @@ export const buildTraceTree = (spans, closedSpans) => {
 const propTypes = {
   spans: detailedSpansPropTypes.isRequired,
   depth: PropTypes.number.isRequired,
-  closedSpans: PropTypes.shape({}).isRequired,
-  onSpanToggleButtonClick: PropTypes.func.isRequired,
+  childrenHiddenSpanIds: PropTypes.shape({}).isRequired,
+  onChildrenToggle: PropTypes.func.isRequired,
   classes: PropTypes.shape({}).isRequired,
 };
 
@@ -217,15 +217,15 @@ const style = theme => ({
 const TraceTree = ({
   spans,
   depth,
-  closedSpans,
-  onSpanToggleButtonClick,
+  childrenHiddenSpanIds,
+  onChildrenToggle,
   classes,
 }) => {
   const {
     horizontalLineDataList,
     verticalLineDataList,
     buttonDataList,
-  } = useMemo(() => buildTraceTree(spans, closedSpans), [spans, closedSpans]);
+  } = useMemo(() => buildTraceTree(spans, childrenHiddenSpanIds), [spans, childrenHiddenSpanIds]);
 
   return (
     <g>
@@ -299,7 +299,7 @@ const TraceTree = ({
               y={spanBarLinePosY(y)}
               width={spanToggleButtonLengthOfSide}
               height={spanToggleButtonLengthOfSide}
-              onClick={() => onSpanToggleButtonClick(spanId)}
+              onClick={() => onChildrenToggle(spanId)}
               className={classes.spanToggleButton}
             />
           </g>

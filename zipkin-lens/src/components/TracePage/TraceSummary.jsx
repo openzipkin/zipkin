@@ -27,68 +27,57 @@ const propTypes = {
 };
 
 const TraceSummary = ({ traceSummary }) => {
-  const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
-  const [closedSpans, setClosedSpans] = useState({});
-  const [rootSpanIndex, setRootSpanIndex] = useState(0);
-
   const isRootedTrace = hasRootSpan(traceSummary.spans);
+  const [rootSpanIndex, setRootSpanIndex] = useState(0);
+  const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
+  const [childrenHiddenSpanIds, setChildrenHiddenSpanIds] = useState({});
 
-  const handleSpanClick = useCallback((i) => {
-    if (currentSpanIndex === i && isRootedTrace) {
-      setRootSpanIndex(i);
-    } else {
-      setCurrentSpanIndex(i);
-    }
-  }, [currentSpanIndex, isRootedTrace]);
-
-  const handleSpanToggleButtonClick = useCallback((spanId) => {
-    setClosedSpans(oldSpans => ({
-      ...oldSpans,
-      [spanId]: oldSpans[spanId] ? undefined : true,
+  const handleChildrenToggle = useCallback((spanId) => {
+    setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
+      ...prevChildrenHiddenSpanIds,
+      [spanId]: prevChildrenHiddenSpanIds[spanId] ? undefined : true,
     }));
   }, []);
 
-  const currentSpan = traceSummary.spans[currentSpanIndex];
+  const handleTimelineRowClick = useCallback((spanId) => {
+    const idx = traceSummary.spans.findIndex(span => span.spanId === spanId);
+    if (isRootedTrace && currentSpanIndex === idx) {
+      setRootSpanIndex(idx);
+    }
+    setCurrentSpanIndex(idx);
+  }, [currentSpanIndex, isRootedTrace, traceSummary.spans]);
 
-  const filteredSpans = useMemo(() => {
+  const shownSpans = useMemo(() => {
+    // If the trace does not have a root span, the trace is not filtered anymore
+    // and the entire trace should be displayed.
     if (!isRootedTrace) {
       return traceSummary.spans;
     }
 
     const rootSpan = traceSummary.spans[rootSpanIndex];
-    const rerootedTree = [rootSpan];
+
+    const spans = [rootSpan];
     for (let i = rootSpanIndex + 1; i < traceSummary.spans.length; i += 1) {
-      const s = traceSummary.spans[i];
-      if (s.depth <= rootSpan.depth) {
+      const span = traceSummary.spans[i];
+      if (span.depth <= rootSpan.depth) {
         break;
       }
-      rerootedTree.push(s);
+      spans.push(span);
     }
-    const hiddenSpans = {};
-    rerootedTree.forEach((span) => {
-      if (closedSpans[span.parentId]) {
-        hiddenSpans[span.spanId] = true;
+
+    const allHiddenSpanIds = {};
+    spans.forEach((span) => {
+      if (childrenHiddenSpanIds[span.parentId]) {
+        allHiddenSpanIds[span.spanId] = true;
+      }
+      if (allHiddenSpanIds[span.spanId] && span.childIds) {
+        span.childIds.forEach((childId) => {
+          allHiddenSpanIds[childId] = true;
+        });
       }
     });
-    return rerootedTree.filter((span, index) => {
-      let hasChildren = false;
-      if (
-        index < rerootedTree.length - 1
-        && rerootedTree[index + 1].depth > span.depth
-      ) {
-        hasChildren = true;
-      }
-      if (hiddenSpans[span.spanId]) {
-        if (hasChildren) {
-          span.childIds.forEach((childId) => {
-            hiddenSpans[childId] = true;
-          });
-        }
-        return false;
-      }
-      return true;
-    });
-  }, [closedSpans, traceSummary.spans, rootSpanIndex]);
+    return spans.filter(span => !allHiddenSpanIds[span.spanId]);
+  }, [childrenHiddenSpanIds, isRootedTrace, rootSpanIndex, traceSummary.spans]);
 
   return (
     <React.Fragment>
@@ -106,19 +95,14 @@ const TraceSummary = ({ traceSummary }) => {
             <AutoSizer>
               {
                 ({ height, width }) => (
-                  <Box
-                    height={height}
-                    width={width}
-                    overflow="auto"
-                  >
+                  <Box height={height} width={width} overflow="auto">
                     <TraceTimeline
-                      spans={filteredSpans}
+                      spans={shownSpans}
                       depth={traceSummary.depth}
-                      closedSpans={closedSpans}
+                      childrenHiddenSpanIds={childrenHiddenSpanIds}
                       isRootedTrace={isRootedTrace}
-                      onSpanClick={handleSpanClick}
-                      onSpanToggleButtonClick={handleSpanToggleButtonClick}
-                      setRootSpanIndex={setRootSpanIndex}
+                      onRowClick={handleTimelineRowClick}
+                      onChildrenToggle={handleChildrenToggle}
                     />
                   </Box>
                 )
@@ -130,12 +114,8 @@ const TraceSummary = ({ traceSummary }) => {
           <AutoSizer>
             {
               ({ height, width }) => (
-                <Box
-                  height={height}
-                  width={width}
-                  overflow="auto"
-                >
-                  <SpanDetail span={currentSpan} minHeight={height} />
+                <Box height={height} width={width} overflow="auto">
+                  <SpanDetail span={traceSummary.spans[currentSpanIndex]} minHeight={height} />
                 </Box>
               )
             }
