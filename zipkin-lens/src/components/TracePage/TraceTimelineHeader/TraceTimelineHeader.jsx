@@ -23,7 +23,9 @@ import TimeMarker from './TimeMarker';
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
+  isRerooted: PropTypes.bool.isRequired,
   isRootedTrace: PropTypes.bool.isRequired,
+  onResetRerootButtonClick: PropTypes.func.isRequired,
   classes: PropTypes.shape({}).isRequired,
 };
 
@@ -42,14 +44,15 @@ const style = theme => ({
 const TraceTimelineHeader = ({
   startTs,
   endTs,
+  isRerooted,
   isRootedTrace,
+  onResetRerootButtonClick,
   classes,
 }) => (
   <Box className={classes.root}>
     <Box
       display="flex"
       alignItems="center"
-      justifyContent="space-between"
       mt={1}
       mr={1}
       ml={1}
@@ -62,12 +65,10 @@ const TraceTimelineHeader = ({
           <Box component="span" className="fas fa-angle-down" />
         </Button>
       </ButtonGroup>
-      <Box>
-        {
-          isRootedTrace
-            ? 'You can reroot trace by click a same span twice.'
-            : 'This trace does not have a root span!'
-        }
+      <Box ml={1}>
+        <Button disabled={!isRootedTrace || !isRerooted} variant="outlined" onClick={onResetRerootButtonClick}>
+          Reset Reroot
+        </Button>
       </Box>
     </Box>
     <TimeMarker startTs={startTs} endTs={endTs} />

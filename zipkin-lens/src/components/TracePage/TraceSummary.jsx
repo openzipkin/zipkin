@@ -29,6 +29,7 @@ const propTypes = {
 const TraceSummary = ({ traceSummary }) => {
   const isRootedTrace = hasRootSpan(traceSummary.spans);
   const [rootSpanIndex, setRootSpanIndex] = useState(0);
+  const isRerooted = rootSpanIndex !== 0;
   const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
   const [childrenHiddenSpanIds, setChildrenHiddenSpanIds] = useState({});
 
@@ -37,6 +38,10 @@ const TraceSummary = ({ traceSummary }) => {
       ...prevChildrenHiddenSpanIds,
       [spanId]: prevChildrenHiddenSpanIds[spanId] ? undefined : true,
     }));
+  }, []);
+
+  const handleResetRerootButtonClick = useCallback(() => {
+    setRootSpanIndex(0);
   }, []);
 
   const handleTimelineRowClick = useCallback((spanId) => {
@@ -89,7 +94,9 @@ const TraceSummary = ({ traceSummary }) => {
           <TraceTimelineHeader
             startTs={0}
             endTs={traceSummary.duration}
+            isRerooted={isRerooted}
             isRootedTrace={isRootedTrace}
+            onResetRerootButtonClick={handleResetRerootButtonClick}
           />
           <Box height="100%" width="100%">
             <AutoSizer>
