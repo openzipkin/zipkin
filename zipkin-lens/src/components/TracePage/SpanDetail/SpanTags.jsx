@@ -21,6 +21,7 @@ import TableCell from '@material-ui/core/TableCell';
 import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 
+import { generateTagKey } from './util';
 import { spanTagsPropTypes } from '../../../prop-types';
 
 const style = theme => ({
@@ -45,7 +46,7 @@ const SpanTags = ({ tags, classes }) => (
       <TableBody>
         {
           tags.map(tag => (
-            <TableRow key={tag.key} data-testid="span-tags--table-row">
+            <TableRow key={generateTagKey(tag)} data-testid="span-tags--table-row">
               <TableCell className={classes.cell}>
                 <Box className={classes.key}>
                   {tag.key}
