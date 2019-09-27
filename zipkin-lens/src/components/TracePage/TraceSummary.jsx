@@ -33,6 +33,8 @@ const TraceSummary = ({ traceSummary }) => {
   const isRerooted = rootSpanIndex !== 0;
   const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
   const [childrenHiddenSpanIds, setChildrenHiddenSpanIds] = useState({});
+  const [isSpanDetailOpened, setIsSpanDetaileOpened] = useState(true);
+  const traceTimelineWidthPercent = isSpanDetailOpened ? 60 : 100;
 
   const handleChildrenToggle = useCallback((spanId) => {
     setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
@@ -101,19 +103,25 @@ const TraceSummary = ({ traceSummary }) => {
     return max;
   }, [shownSpans]);
 
+  const handleSpanDetailToggle = useCallback(() => {
+    setIsSpanDetaileOpened(prev => !prev);
+  }, []);
+
   return (
     <React.Fragment>
       <Box boxShadow={3} zIndex={1}>
         <TraceSummaryHeader traceSummary={traceSummary} />
       </Box>
       <Box height="100%" display="flex">
-        <Box width="65%" display="flex" flexDirection="column">
+        <Box width={`${traceTimelineWidthPercent}%`} display="flex" flexDirection="column">
           <TraceTimelineHeader
             startTs={startTs - traceSummary.spans[0].timestamp}
             endTs={endTs - traceSummary.spans[0].timestamp}
             isRerooted={isRerooted}
             isRootedTrace={isRootedTrace}
             onResetRerootButtonClick={handleResetRerootButtonClick}
+            isSpanDetailOpened={isSpanDetailOpened}
+            onSpanDetailToggle={handleSpanDetailToggle}
           />
           <Box height="100%" width="100%">
             <AutoSizer>
@@ -137,7 +145,7 @@ const TraceSummary = ({ traceSummary }) => {
             </AutoSizer>
           </Box>
         </Box>
-        <Box height="100%" width="35%">
+        <Box height="100%" width={`${100 - traceTimelineWidthPercent}%`}>
           <AutoSizer>
             {
               ({ height, width }) => (

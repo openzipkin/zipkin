@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import classnames from 'classnames';
 import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -26,6 +27,8 @@ const propTypes = {
   isRerooted: PropTypes.bool.isRequired,
   isRootedTrace: PropTypes.bool.isRequired,
   onResetRerootButtonClick: PropTypes.func.isRequired,
+  isSpanDetailOpened: PropTypes.bool.isRequired,
+  onSpanDetailToggle: PropTypes.func.isRequired,
   classes: PropTypes.shape({}).isRequired,
 };
 
@@ -47,23 +50,36 @@ const TraceTimelineHeader = ({
   isRerooted,
   isRootedTrace,
   onResetRerootButtonClick,
+  isSpanDetailOpened,
+  onSpanDetailToggle,
   classes,
 }) => (
   <Box className={classes.root}>
-    <Box display="flex" alignItems="center" mt={1} mr={1} ml={1}>
-      <ButtonGroup>
-        <Button className={classes.textButton} disabled={!isRootedTrace}>
-          <Box component="span" className="fas fa-angle-up" />
-        </Button>
-        <Button className={classes.textButton} disabled={!isRootedTrace}>
-          <Box component="span" className="fas fa-angle-down" />
-        </Button>
-      </ButtonGroup>
-      <Box ml={1}>
-        <Button disabled={!isRootedTrace || !isRerooted} variant="outlined" onClick={onResetRerootButtonClick}>
-          Reset Reroot
-        </Button>
+    <Box display="flex" justifyContent="space-between" mt={1} mr={1} ml={1}>
+      <Box display="flex" alignItems="center">
+        <ButtonGroup>
+          <Button className={classes.textButton} disabled={!isRootedTrace}>
+            <Box component="span" className="fas fa-angle-up" />
+          </Button>
+          <Button className={classes.textButton} disabled={!isRootedTrace}>
+            <Box component="span" className="fas fa-angle-down" />
+          </Button>
+        </ButtonGroup>
+        <Box ml={1}>
+          <Button disabled={!isRootedTrace || !isRerooted} variant="outlined" onClick={onResetRerootButtonClick}>
+            Reset Reroot
+          </Button>
+        </Box>
       </Box>
+      <Button className={classes.textButton} onClick={onSpanDetailToggle}>
+        <Box
+          component="span"
+          className={classnames('fas', {
+            'fa-angle-double-right': isSpanDetailOpened,
+            'fa-angle-double-left': !isSpanDetailOpened,
+          })}
+        />
+      </Button>
     </Box>
     <TimeMarker startTs={startTs} endTs={endTs} />
   </Box>
