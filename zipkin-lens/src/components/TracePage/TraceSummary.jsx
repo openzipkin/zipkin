@@ -107,6 +107,18 @@ const TraceSummary = ({ traceSummary }) => {
     setIsSpanDetaileOpened(prev => !prev);
   }, []);
 
+  const handleExpandButtonClick = useCallback(() => {
+    setChildrenHiddenSpanIds({});
+  }, []);
+
+  const handleCollapseButtonClick = useCallback(() => {
+    const rootSpanId = traceSummary.spans[0].spanId;
+    setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
+      ...prevChildrenHiddenSpanIds,
+      [rootSpanId]: true,
+    }));
+  }, [traceSummary.spans]);
+
   return (
     <React.Fragment>
       <Box boxShadow={3} zIndex={1}>
@@ -122,6 +134,8 @@ const TraceSummary = ({ traceSummary }) => {
             onResetRerootButtonClick={handleResetRerootButtonClick}
             isSpanDetailOpened={isSpanDetailOpened}
             onSpanDetailToggle={handleSpanDetailToggle}
+            onCollapseButtonClick={handleCollapseButtonClick}
+            onExpandButtonClick={handleExpandButtonClick}
           />
           <Box height="100%" width="100%">
             <AutoSizer>

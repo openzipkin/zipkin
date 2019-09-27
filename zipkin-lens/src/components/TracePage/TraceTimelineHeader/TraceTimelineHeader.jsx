@@ -29,6 +29,8 @@ const propTypes = {
   onResetRerootButtonClick: PropTypes.func.isRequired,
   isSpanDetailOpened: PropTypes.bool.isRequired,
   onSpanDetailToggle: PropTypes.func.isRequired,
+  onCollapseButtonClick: PropTypes.func.isRequired,
+  onExpandButtonClick: PropTypes.func.isRequired,
   classes: PropTypes.shape({}).isRequired,
 };
 
@@ -52,16 +54,26 @@ const TraceTimelineHeader = ({
   onResetRerootButtonClick,
   isSpanDetailOpened,
   onSpanDetailToggle,
+  onCollapseButtonClick,
+  onExpandButtonClick,
   classes,
 }) => (
   <Box className={classes.root}>
     <Box display="flex" justifyContent="space-between" mt={1} mr={1} ml={1}>
       <Box display="flex" alignItems="center">
         <ButtonGroup>
-          <Button className={classes.textButton} disabled={!isRootedTrace}>
+          <Button
+            className={classes.textButton}
+            disabled={!isRootedTrace}
+            onClick={onCollapseButtonClick}
+          >
             <Box component="span" className="fas fa-angle-up" />
           </Button>
-          <Button className={classes.textButton} disabled={!isRootedTrace}>
+          <Button
+            className={classes.textButton}
+            disabled={!isRootedTrace}
+            onClick={onExpandButtonClick}
+          >
             <Box component="span" className="fas fa-angle-down" />
           </Button>
         </ButtonGroup>
