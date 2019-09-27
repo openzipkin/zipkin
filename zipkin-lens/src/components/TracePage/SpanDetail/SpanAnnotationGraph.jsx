@@ -20,6 +20,7 @@ import _ from 'lodash';
 
 import { selectServiceColor } from '../../../colors';
 import { spanAnnotationsPropTypes } from '../../../prop-types';
+import { generateAnnotationKey } from './util';
 
 //
 // Size & Position:
@@ -85,13 +86,13 @@ const spanBarHeight = '16'; // px
 const propTypes = {
   serviceName: PropTypes.string.isRequired,
   annotations: spanAnnotationsPropTypes.isRequired,
-  onAnnotationClick: PropTypes.func.isRequired,
-  selectedAnnotationValue: PropTypes.string,
+  onAnnotationCircleClick: PropTypes.func.isRequired,
+  currentAnnotationKey: PropTypes.string,
   classes: PropTypes.shape({}).isRequired,
 };
 
 const defaultProps = {
-  selectedAnnotationValue: '',
+  currentAnnotationKey: '',
 };
 
 const style = theme => ({
@@ -115,8 +116,8 @@ const style = theme => ({
 const SpanAnnotationGraph = ({
   serviceName,
   annotations,
-  onAnnotationClick,
-  selectedAnnotationValue,
+  onAnnotationCircleClick,
+  currentAnnotationKey,
   classes,
 }) => {
   let minTs;
@@ -165,10 +166,10 @@ const SpanAnnotationGraph = ({
                 className={
                   classnames(
                     classes.circle,
-                    { [classes['circle--selected']]: annotation.value === selectedAnnotationValue },
+                    { [classes['circle--selected']]: generateAnnotationKey(annotation) === currentAnnotationKey },
                   )
                 }
-                onClick={() => onAnnotationClick(annotation.value)}
+                onClick={() => onAnnotationCircleClick(annotation)}
                 data-testid="span-annotation-graph--circle"
               />
             );
