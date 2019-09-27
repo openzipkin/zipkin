@@ -12,21 +12,22 @@
  * the License.
  */
 
-// --------|---------------|---------------|---------------|
-//                                                             _                     _
-//           SERVICE NAME   SPAN NAME     DURATION             | spanDataRowHeight   |
-//          _______________________________________________    -                     | spanHeight
-//         |                                               |   | spanBarRowHeight    |
-//          -----------------------------------------------    |                     |
-//                                                             -                     -
-// |-------|
-//   spanTreeWidthPercent = timelineOffsetXPercent
+/* eslint-disable max-len */
+// --------|---------------|---------------|---------------|------|
+//                                                                  _                     _
+//           SERVICE NAME   SPAN NAME     DURATION                  | spanDataRowHeight   |
+//          _______________________________________________         -                     | spanHeight
+//         |                                               |        | spanBarRowHeight    |
+//          -----------------------------------------------         |                     |
+//                                                                  -                     -
+// |-------|                                               |------|
+//   spanTreeWidthPercent = timelineOffsetXPercent            timelineRightMarginPercent
 //           |
 //           serviceNamePosXPercent
 //                          |
 //                          spanNamePosXPercent
 //                                        |
-//                                        curationPosXPercent
+//                                        durationPosXPercent
 
 export const spanTreeWidthPercent = 8; // %
 export const timelineRightMarginPercent = 2; // %
@@ -42,8 +43,7 @@ export const spanDataRowPosY = index => spanOffsetY(index) + spanDataRowHeight *
 export const spanBarRowPosY = index => spanOffsetY(index) + spanDataRowHeight; // px
 export const spanBarLinePosY = index => spanBarRowPosY(index) + spanBarHeight / 2; // px
 export const spanBarWidthPercent = width => timelineWidthPercent * (width / 100); // %
-export const spanBarPosXPercent = left => spanTreeWidthPercent
-  + timelineWidthPercent * (left / 100); // %
+export const spanBarPosXPercent = left => spanTreeWidthPercent + timelineWidthPercent * (left / 100); // %
 
 export const timelineOffsetXPercent = spanTreeWidthPercent; // %
 export const timelineHeight = spanCounts => spanHeight * spanCounts; // px
