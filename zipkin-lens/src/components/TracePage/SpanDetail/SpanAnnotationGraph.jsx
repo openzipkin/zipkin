@@ -155,18 +155,19 @@ const SpanAnnotationGraph = ({
         />
         {
           annotations.map((annotation) => {
+            const annotationKey = generateAnnotationKey(annotation);
             const cx = (100 - (leftOffsetPercent + rightOffsetPercent))
               * ((annotation.timestamp - minTs) / duration) + leftOffsetPercent;
             return (
               <circle
-                key={annotation.value}
+                key={annotationKey}
                 cx={`${cx}%`}
                 cy="8px"
                 r="6px"
                 className={
                   classnames(
                     classes.circle,
-                    { [classes['circle--selected']]: generateAnnotationKey(annotation) === currentAnnotationKey },
+                    { [classes['circle--selected']]: annotationKey === currentAnnotationKey },
                   )
                 }
                 onClick={() => onAnnotationCircleClick(annotation)}

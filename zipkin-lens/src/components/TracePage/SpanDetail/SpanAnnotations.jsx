@@ -74,7 +74,7 @@ const SpanAnnotations = ({ span }) => {
         /* eslint no-nested-ternary: 0 */
         areAllAnnotationsOpened ? (
           span.annotations.map(annotation => (
-            <Box mt={1} key={annotation.value} data-testid="span-annotations--annotation">
+            <Box mt={1} key={generateAnnotationKey(annotation)} data-testid="span-annotations--annotation">
               <SpanAnnotation annotation={annotation} />
             </Box>
           ))
