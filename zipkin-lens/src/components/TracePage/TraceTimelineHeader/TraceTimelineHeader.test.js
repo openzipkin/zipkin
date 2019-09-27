@@ -23,7 +23,18 @@ it('<TraceTimelineHeader />', () => {
   const mount = createMount();
   mount(
     <ThemeProvider theme={theme}>
-      <TraceTimelineHeader startTs={10} endTs={100} classes={{}} />
+      <TraceTimelineHeader
+        startTs={10}
+        endTs={100}
+        isRerooted
+        isRootedTrace
+        onResetRerootButtonClick={() => {}}
+        isSpanDetailOpened
+        onSpanDetailToggle={() => {}}
+        onCollapseButtonClick={() => {}}
+        onExpandButtonClick={() => {}}
+        classes={{}}
+      />
     </ThemeProvider>,
   );
 });
