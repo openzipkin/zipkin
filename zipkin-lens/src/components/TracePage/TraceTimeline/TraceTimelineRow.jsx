@@ -74,13 +74,26 @@ const TraceTimelineRow = ({
   classes,
 }) => {
   const duration = endTs - startTs;
-  const left = (span.timestamp - startTs) / duration * 100;
-  // Span's duration sometimes is not set, so give a default value
-  // to display a bar on the UI.
-  // This value is not valid at all.
-  let width = 1;
+  let left;
+  let width;
   if (span.duration) {
     width = Math.max(span.duration / duration * 100, 1);
+    left = (span.timestamp - startTs) / duration * 100;
+  } else {
+    // If duration is 0 (in other words, if startTs and endTs of the list of spans to be
+    // displayed match), it can be considered that this span is the only span displayed
+    // on the trace timeline graph.
+    // In that case, width should be 100% and left should be 0%.
+    const isSingleSpanTrace = duration === 0;
+    if (isSingleSpanTrace) {
+      width = 100;
+      left = 0;
+    } else {
+      // Give the span a default value to display the span bar in the UI even if the
+      // span does not have duration.
+      width = 1;
+      left = (span.timestamp - startTs) / duration * 100;
+    }
   }
 
   return (
