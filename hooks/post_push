@@ -1,5 +1,7 @@
 #!/bin/bash
 
+echo "Executing post_push hook"
+
 # We always push an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
 docker push anuraaga/docker-hub-test-2:$DOCKER_TAG
 
