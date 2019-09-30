@@ -55,7 +55,7 @@ const TraceSummary = ({ traceSummary }) => {
     setCurrentSpanIndex(idx);
   }, [currentSpanIndex, isRootedTrace, traceSummary.spans]);
 
-  const shownSpans = useMemo(() => {
+  const rerootedTree = useMemo(() => {
     // If the trace does not have a root span, the trace is not filtered anymore
     // and the entire trace should be displayed.
     if (!isRootedTrace) {
@@ -63,7 +63,6 @@ const TraceSummary = ({ traceSummary }) => {
     }
 
     const rootSpan = traceSummary.spans[rootSpanIndex];
-
     const spans = [rootSpan];
     for (let i = rootSpanIndex + 1; i < traceSummary.spans.length; i += 1) {
       const span = traceSummary.spans[i];
@@ -72,9 +71,12 @@ const TraceSummary = ({ traceSummary }) => {
       }
       spans.push(span);
     }
+    return spans;
+  }, [isRootedTrace, rootSpanIndex, traceSummary.spans]);
 
+  const shownTree = useMemo(() => {
     const allHiddenSpanIds = {};
-    spans.forEach((span) => {
+    rerootedTree.forEach((span) => {
       if (childrenHiddenSpanIds[span.parentId]) {
         allHiddenSpanIds[span.spanId] = true;
       }
@@ -84,14 +86,14 @@ const TraceSummary = ({ traceSummary }) => {
         });
       }
     });
-    return spans.filter(span => !allHiddenSpanIds[span.spanId]);
-  }, [childrenHiddenSpanIds, isRootedTrace, rootSpanIndex, traceSummary.spans]);
+    return rerootedTree.filter(span => !allHiddenSpanIds[span.spanId]);
+  }, [rerootedTree, childrenHiddenSpanIds]);
 
   // Find the minumum and maximum timestamps in the shown spans.
-  const startTs = useMemo(() => _.minBy(shownSpans, 'timestamp').timestamp, [shownSpans]);
+  const startTs = useMemo(() => _.minBy(rerootedTree, 'timestamp').timestamp, [rerootedTree]);
   const endTs = useMemo(() => {
     let max = 0;
-    shownSpans.forEach((span) => {
+    rerootedTree.forEach((span) => {
       let ts;
       if (!span.duration) {
         ts = span.timestamp;
@@ -101,14 +103,14 @@ const TraceSummary = ({ traceSummary }) => {
       max = max < ts ? ts : max;
     });
     return max;
-  }, [shownSpans]);
+  }, [rerootedTree]);
 
   const handleSpanDetailToggle = useCallback(() => {
     setIsSpanDetaileOpened(prev => !prev);
   }, []);
 
   const handleExpandButtonClick = useCallback(() => {
-    const expandedSpanIds = shownSpans
+    const expandedSpanIds = shownTree
       .filter(span => childrenHiddenSpanIds[span.spanId])
       .reduce((acc, cur) => {
         acc[cur.spanId] = undefined;
@@ -118,15 +120,15 @@ const TraceSummary = ({ traceSummary }) => {
       ...prevChildrenHiddenSpanIds,
       ...expandedSpanIds,
     }));
-  }, [childrenHiddenSpanIds, shownSpans]);
+  }, [childrenHiddenSpanIds, shownTree]);
 
   const handleCollapseButtonClick = useCallback(() => {
-    const rootSpanId = shownSpans[0].spanId;
+    const rootSpanId = shownTree[0].spanId;
     setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
       ...prevChildrenHiddenSpanIds,
       [rootSpanId]: true,
     }));
-  }, [shownSpans]);
+  }, [shownTree]);
 
   return (
     <React.Fragment>
@@ -153,7 +155,7 @@ const TraceSummary = ({ traceSummary }) => {
                   <Box height={height} width={width} overflow="auto">
                     <TraceTimeline
                       currentSpanId={traceSummary.spans[currentSpanIndex].spanId}
-                      spans={shownSpans}
+                      spans={shownTree}
                       depth={traceSummary.depth}
                       childrenHiddenSpanIds={childrenHiddenSpanIds}
                       isRootedTrace={isRootedTrace}
