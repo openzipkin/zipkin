@@ -108,16 +108,25 @@ const TraceSummary = ({ traceSummary }) => {
   }, []);
 
   const handleExpandButtonClick = useCallback(() => {
-    setChildrenHiddenSpanIds({});
-  }, []);
+    const expandedSpanIds = shownSpans
+      .filter(span => childrenHiddenSpanIds[span.spanId])
+      .reduce((acc, cur) => {
+        acc[cur.spanId] = undefined;
+        return acc;
+      }, {});
+    setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
+      ...prevChildrenHiddenSpanIds,
+      ...expandedSpanIds,
+    }));
+  }, [childrenHiddenSpanIds, shownSpans]);
 
   const handleCollapseButtonClick = useCallback(() => {
-    const rootSpanId = traceSummary.spans[0].spanId;
+    const rootSpanId = shownSpans[0].spanId;
     setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
       ...prevChildrenHiddenSpanIds,
       [rootSpanId]: true,
     }));
-  }, [traceSummary.spans]);
+  }, [shownSpans]);
 
   return (
     <React.Fragment>
