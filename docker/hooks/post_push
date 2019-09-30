@@ -1,13 +1,13 @@
 #!/bin/bash
 
-echo "Executing post_push hook"
-
 # We always push an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
+echo Pushing zipkin-ui
 docker push anuraaga/docker-hub-test-2:$DOCKER_TAG
 
 case "DOCKER_TAG" in
   master)
     # We repush the builder image on master push, not on release pushes.
+    echo Pushing zipkin-builder
     docker push anuraaga/docker-hub-test-3
   ;;
 
