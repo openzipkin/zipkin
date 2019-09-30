@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.kafka;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
@@ -30,6 +31,7 @@ import zipkin2.storage.StorageComponent;
  * sampling policy.
  */
 @Configuration
+@ConditionalOnClass(KafkaCollector.class)
 @Conditional(ZipkinKafkaCollectorConfiguration.KafkaBootstrapServersSet.class)
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)
 public class ZipkinKafkaCollectorConfiguration { // makes simple type name unique for /actuator/conditions

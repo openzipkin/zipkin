@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.16.3-SNAPSHOT</version>
+    <version>2.17.1-SNAPSHOT</version>
   </parent>
 
   <groupId>io.zipkin.zipkin2</groupId>
@@ -49,6 +49,12 @@
       <version>${project.version}</version>
     </dependency>
 
+    <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-tests</artifactId>

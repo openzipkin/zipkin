@@ -39,8 +39,9 @@ import static zipkin2.server.internal.elasticsearch.Access.configureSsl;
  */
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
   properties = {
+    "server.port=0",
     "spring.config.name=zipkin-server",
     // TODO: use normal spring.server properties after https://github.com/line/armeria/issues/1834
     "armeria.ssl.enabled=true",

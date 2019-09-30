@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.logging.Logger;
 import zipkin2.Endpoint;
 import zipkin2.Span;

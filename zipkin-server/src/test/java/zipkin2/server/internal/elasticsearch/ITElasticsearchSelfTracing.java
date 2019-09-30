@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.server.internal.brave.TracingConfiguration;
+import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.server.internal.elasticsearch.TestResponses.YELLOW_RESPONSE;
@@ -42,7 +42,7 @@ class ITElasticsearchSelfTracing {
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:" + server.httpUri("/")).applyTo(context);
     Access.registerElasticsearch(context);
-    context.register(TracingConfiguration.class);
+    context.register(ZipkinSelfTracingConfiguration.class);
     context.refresh();
     storage = context.getBean(ElasticsearchStorage.class);
   }

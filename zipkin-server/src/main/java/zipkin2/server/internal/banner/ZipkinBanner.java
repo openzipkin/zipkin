@@ -13,14 +13,13 @@
  */
 package zipkin2.server.internal.banner;
 
+import java.util.List;
 import org.springframework.boot.ResourceBanner;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MutablePropertySources;
 import org.springframework.core.env.PropertyResolver;
 import org.springframework.core.env.PropertySourcesPropertyResolver;
 import org.springframework.core.io.ClassPathResource;
-
-import java.util.List;
 
 /**
  * <code>Banner</code> implemetation for Ansi256 Color<br>

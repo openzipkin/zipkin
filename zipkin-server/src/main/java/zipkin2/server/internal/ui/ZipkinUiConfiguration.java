@@ -16,7 +16,6 @@ package zipkin2.server.internal.ui;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
@@ -28,36 +27,29 @@ import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
-import com.linecorp.armeria.server.encoding.HttpEncodingService;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.List;
+import java.io.InputStreamReader;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import java.util.function.Consumer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.server.Compression;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
@@ -94,32 +86,33 @@ public class ZipkinUiConfiguration {
   @Value("classpath:zipkin-lens/index.html")
   Resource lensIndexHtml;
 
-  @Bean @Lazy String processedIndexHtml() {
+  @Bean @Lazy String processedIndexHtml() throws IOException {
     return processedIndexHtml(indexHtml);
   }
 
-  @Bean @Lazy String processedLensIndexHtml() {
+  @Bean @Lazy String processedLensIndexHtml() throws IOException {
     return processedIndexHtml(lensIndexHtml);
   }
 
-  String processedIndexHtml(Resource indexHtml) {
+  String processedIndexHtml(Resource indexHtml) throws IOException {
     String baseTagValue = "/".equals(ui.getBasepath()) ? "/" : ui.getBasepath() + "/";
-    Document soup;
-    try (InputStream is = indexHtml.getInputStream()) {
-      soup = Jsoup.parse(is, null, baseTagValue);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e); // unexpected
+    char[] buffer = new char[1024];
+    StringBuilder builder = new StringBuilder();
+    try (InputStream fromClasspath = indexHtml.getInputStream();
+         InputStreamReader reader = new InputStreamReader(fromClasspath, UTF_8)) {
+      while (true) {
+        int read = reader.read(buffer, 0, buffer.length);
+        if (read < 0) break;
+        builder.append(buffer, 0, read);
+      }
     }
-    if (soup.head().getElementsByTag("base").isEmpty()) {
-      soup.head().appendChild(
-        soup.createElement("base")
-      );
-    }
-    soup.head().getElementsByTag("base").attr("href", baseTagValue);
-    return soup.html();
+    String beforeReplacement = builder.toString();
+    return beforeReplacement.replaceAll(
+      "base href=\"[^\"]+\"", "base href=\"" + baseTagValue + "\""
+    );
   }
 
-  @Bean @Lazy IndexSwitchingService indexSwitchingService() {
+  @Bean @Lazy IndexSwitchingService indexSwitchingService() throws IOException {
     final HttpFileBuilder legacyIndex;
     final HttpFileBuilder lensIndex;
     if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {
@@ -142,8 +135,10 @@ public class ZipkinUiConfiguration {
   }
 
   @Bean @Lazy ArmeriaServerConfigurator uiServerConfigurator(
-    CompressionProperties compressionProperties,
     IndexSwitchingService indexSwitchingService) throws IOException {
+    HttpService indexService =
+      indexHtml.isReadable() ? indexSwitchingService : indexSwitchingService.lensIndex;
+
     ServerCacheControl maxAgeYear =
       new ServerCacheControlBuilder().maxAgeSeconds(TimeUnit.DAYS.toSeconds(365)).build();
     Service<HttpRequest, HttpResponse> uiFileService =
@@ -165,21 +160,23 @@ public class ZipkinUiConfiguration {
       // If the path is a a file w/an extension, treat normally.
       // Otherwise instead of returning 404, forward to the index.
       // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-      sb.service("/zipkin/", indexSwitchingService)
-        .service("/zipkin/index.html", indexSwitchingService)
-        .service("/zipkin/traces/{id}", indexSwitchingService)
-        .service("/zipkin/dependency", indexSwitchingService)
-        .service("/zipkin/traceViewer", indexSwitchingService);
+      sb.service("/zipkin/", indexService)
+        .service("/zipkin/index.html", indexService)
+        .service("/zipkin/traces/{id}", indexService)
+        .service("/zipkin/dependency", indexService)
+        .service("/zipkin/traceViewer", indexService);
 
       sb.service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
         .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"))
         .service("/zipkin", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
-
-      Compression compression = compressionProperties.getCompression();
-      if (compression.getEnabled()) {
-        sb.decorator(contentEncodingDecorator(compression));
-      }
     };
+  }
+
+  @Bean Consumer<MeterRegistry.Config> noFaviconMetrics() {
+    return config -> config.meterFilter(MeterFilter.deny(id -> {
+      String uri = id.getTag("uri");
+      return uri != null && uri.startsWith("/favicon.ico");
+    }));
   }
 
   static class IndexSwitchingService extends AbstractHttpService {
@@ -203,39 +200,5 @@ public class ZipkinUiConfiguration {
       }
       return legacyIndex.serve(ctx, req);
     }
-  }
-
-  // TEMPORARY: copy-pasta from com.linecorp.armeria.spring.web.reactive.ArmeriaReactiveWebServerFactory
-  private static Function<Service<HttpRequest, HttpResponse>,
-    HttpEncodingService> contentEncodingDecorator(Compression compression) {
-    final Predicate<MediaType> encodableContentTypePredicate;
-    final String[] mimeTypes = compression.getMimeTypes();
-    if (mimeTypes == null || mimeTypes.length == 0) {
-      encodableContentTypePredicate = contentType -> true;
-    } else {
-      final List<MediaType> encodableContentTypes =
-        Arrays.stream(mimeTypes).map(MediaType::parse).collect(toList());
-      encodableContentTypePredicate = contentType ->
-        encodableContentTypes.stream().anyMatch(contentType::is);
-    }
-
-    final Predicate<HttpHeaders> encodableRequestHeadersPredicate;
-    final String[] excludedUserAgents = compression.getExcludedUserAgents();
-    if (excludedUserAgents == null || excludedUserAgents.length == 0) {
-      encodableRequestHeadersPredicate = headers -> true;
-    } else {
-      final List<Pattern> patterns =
-        Arrays.stream(excludedUserAgents).map(Pattern::compile).collect(toList());
-      encodableRequestHeadersPredicate = headers -> {
-        // No User-Agent header will be converted to an empty string.
-        final String userAgent = headers.get(HttpHeaderNames.USER_AGENT, "");
-        return patterns.stream().noneMatch(pattern -> pattern.matcher(userAgent).matches());
-      };
-    }
-
-    return delegate -> new HttpEncodingService(delegate,
-      encodableContentTypePredicate,
-      encodableRequestHeadersPredicate,
-      compression.getMinResponseSize().toBytes());
   }
 }

@@ -36,7 +36,6 @@ import zipkin2.storage.Traces;
 import static java.util.Arrays.asList;
 
 final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanNames {
-
   static final String SPAN = "span";
   static final String DEPENDENCY = "dependency";
 
@@ -132,7 +131,7 @@ final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanN
     return search.newCall(request, BodyConverters.SPANS);
   }
 
-  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+  @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
     Set<String> normalizedTraceIds = new LinkedHashSet<>();
     for (String traceId : traceIds) {
       // make sure we have a 16 or 32 character trace ID
@@ -143,6 +142,8 @@ final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanN
 
       normalizedTraceIds.add(traceId);
     }
+
+    if (normalizedTraceIds.isEmpty()) return Call.emptyList();
     SearchRequest request =
       SearchRequest.create(asList(allSpanIndices)).terms("traceId", normalizedTraceIds);
     return search.newCall(request, BodyConverters.SPANS).map(groupByTraceId);

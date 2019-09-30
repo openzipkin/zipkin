@@ -30,6 +30,7 @@ import java.util.Set;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.elasticsearch.internal.Internal;
@@ -273,7 +274,8 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
       AggregatedHttpRequest request = AggregatedHttpRequest.of(
         HttpMethod.GET, "/_cluster/health/" + index);
       return http.newCall(request, READ_STATUS, "get-cluster-health").execute();
-    } catch (IOException | RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       // Unwrap the marker exception as the health check is not relevant for the throttle component,
       // and wrapping interferes with humans intended to read this message.
       return CheckResult.failed(e instanceof RejectedExecutionException ? e.getCause() : e);

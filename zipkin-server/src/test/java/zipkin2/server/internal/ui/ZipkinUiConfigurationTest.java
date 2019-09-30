@@ -158,7 +158,7 @@ public class ZipkinUiConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/foo/bar/\">");
+      .contains("<base href=\"/foo/bar/\" />");
   }
 
   @Test
@@ -174,7 +174,7 @@ public class ZipkinUiConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
     assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/\">");
+      .contains("<base href=\"/\" />");
   }
 
   AggregatedHttpResponse serveIndex(Cookie... cookies) {

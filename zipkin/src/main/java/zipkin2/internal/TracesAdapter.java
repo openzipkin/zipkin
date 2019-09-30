@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2018 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,15 +32,15 @@ public final class TracesAdapter implements Traces {
     return delegate.getTrace(traceId);
   }
 
-  @Override public Call<List<List<Span>>> getTraces(List<String> traceIds) {
+  @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
     if (traceIds == null) throw new NullPointerException("traceIds == null");
-    if (traceIds.isEmpty()) return Call.emptyList();
 
     List<Call<List<Span>>> calls = new ArrayList<>();
     for (String traceId : traceIds) {
       calls.add(getTrace(Span.normalizeTraceId(traceId)));
     }
 
+    if (calls.isEmpty()) return Call.emptyList();
     if (calls.size() == 1) return calls.get(0).map(ToSingletonList.INSTANCE);
     return new ScatterGather(calls);
   }

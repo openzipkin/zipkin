@@ -16,21 +16,21 @@ package zipkin2.server.internal;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.ResponseHeadersBuilder;
 import com.linecorp.armeria.server.annotation.Default;
+import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.Param;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.CacheControl;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
@@ -41,7 +41,13 @@ import zipkin2.internal.WriteBuffer;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
+import static com.linecorp.armeria.common.HttpHeaderNames.CACHE_CONTROL;
+import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
+import static com.linecorp.armeria.common.HttpStatus.NOT_FOUND;
+import static com.linecorp.armeria.common.MediaType.ANY_TEXT_TYPE;
+
 @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
+@ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinQueryApiV2 {
   final String storageType;
   final StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
@@ -86,7 +92,8 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/spans")
-  public AggregatedHttpResponse getSpanNames(@Param("serviceName") String serviceName) throws IOException {
+  public AggregatedHttpResponse getSpanNames(@Param("serviceName") String serviceName)
+    throws IOException {
     List<String> spanNames = storage.serviceAndSpanNames().getSpanNames(serviceName).execute();
     return maybeCacheNames(serviceCount > 3, spanNames);
   }
@@ -128,14 +135,35 @@ public class ZipkinQueryApiV2 {
     return jsonResponse(writeTraces(SpanBytesEncoder.JSON_V2, traces));
   }
 
-  @Get("/api/v2/trace/{traceIdHex}")
-  public AggregatedHttpResponse getTrace(@Param("traceIdHex") String traceIdHex) throws IOException {
-    List<Span> trace = storage.traces().getTrace(traceIdHex).execute();
+  @Get("/api/v2/trace/{traceId}")
+  public AggregatedHttpResponse getTrace(@Param("traceId") String traceId) throws IOException {
+    traceId = Span.normalizeTraceId(traceId);
+    List<Span> trace = storage.traces().getTrace(traceId).execute();
     if (trace == null) {
-      return AggregatedHttpResponse.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
-        traceIdHex + " not found");
+      return AggregatedHttpResponse.of(NOT_FOUND, ANY_TEXT_TYPE, traceId + " not found");
     }
     return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));
+  }
+
+  @Get("/api/v2/traceMany")
+  public AggregatedHttpResponse getTraces(@Param("traceIds") String traceIds) throws IOException {
+    if (traceIds.isEmpty()) {
+      return AggregatedHttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE, "traceIds parameter is empty");
+    }
+
+    Set<String> normalized = new LinkedHashSet<>();
+    for (String traceId : traceIds.split(",", 1000)) {
+      if (normalized.add(Span.normalizeTraceId(traceId))) continue;
+      return AggregatedHttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE, "redundant traceId: " + traceId);
+    }
+
+    if (normalized.size() == 1) {
+      return AggregatedHttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE,
+        "Use /api/v2/trace/{traceId} endpoint to retrieve a single trace");
+    }
+
+    List<List<Span>> traces = storage.traces().getTraces(normalized).execute();
+    return jsonResponse(writeTraces(SpanBytesEncoder.JSON_V2, traces));
   }
 
   static AggregatedHttpResponse jsonResponse(byte[] body) {
@@ -179,10 +207,7 @@ public class ZipkinQueryApiV2 {
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
     if (shouldCacheControl) {
-      headers = headers.add(
-        HttpHeaderNames.CACHE_CONTROL,
-        CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate().getHeaderValue()
-      );
+      headers = headers.add(CACHE_CONTROL, "max-age=" + namesMaxAge + ", must-revalidate");
     }
     return AggregatedHttpResponse.of(headers.build(), HttpData.wrap(body));
   }

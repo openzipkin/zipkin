@@ -25,8 +25,7 @@ The following endpoints are defined under the base url http://your_host:9411
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
 * /metrics - Includes collector metrics broken down by transport type
-
-There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
+* /prometheus - Prometheus scrape endpoint
 
 The [legacy /api/v1 Api](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
 HTTP api via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
@@ -58,8 +57,8 @@ Under the covers, the server uses [Spring Boot - Logback integration](http://doc
 
 ## Metrics
 
-Metrics are exported to the path `/metrics` and extend [defaults reported by spring-boot](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html).
-They are also exported to the path `/prometheus`.
+Collector Metrics are exported to the path `/metrics`. These and additional metrics are exported
+to the path `/prometheus`.
 
 ### Example Prometheus configuration
 Here's an example `/prometheus` configuration, using the Prometheus

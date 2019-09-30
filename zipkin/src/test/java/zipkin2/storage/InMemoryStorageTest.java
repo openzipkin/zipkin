@@ -176,7 +176,7 @@ public class InMemoryStorageTest {
       .timestamp(TODAY * 1000)
       .build();
 
-    storage.accept(asList(trace1Span1, trace1Span2, trace2Span1, trace2Span2));
+    storage.accept(asList(trace1Span1, trace1Span2, trace2Span1, trace2Span2)).execute();
 
     assertThat(storage.getTraces(asList("1", "2")).execute()).containsExactly(
       asList(trace1Span1, trace1Span2),

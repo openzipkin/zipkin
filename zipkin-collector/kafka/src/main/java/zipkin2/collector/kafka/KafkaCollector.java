@@ -13,6 +13,7 @@
  */
 package zipkin2.collector.kafka;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -29,6 +30,7 @@ import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
@@ -173,7 +175,8 @@ public final class KafkaCollector extends CollectorComponent {
       KafkaFuture<String> maybeClusterId = getAdminClient().describeCluster().clusterId();
       maybeClusterId.get(1, TimeUnit.SECONDS);
       return CheckResult.OK;
-    } catch (Exception e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
   }
@@ -192,7 +195,7 @@ public final class KafkaCollector extends CollectorComponent {
   @Override
   public void close() {
     kafkaWorkers.close();
-    if (adminClient != null) adminClient.close(1, TimeUnit.SECONDS);
+    if (adminClient != null) adminClient.close(Duration.ofSeconds(1));
   }
 
   @Override public final String toString() {
