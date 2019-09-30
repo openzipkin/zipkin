@@ -1,14 +1,18 @@
 #!/bin/bash
 
-echo "Executing post_build hook"
-
 # We always build an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
-docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-2:$DOCKER_TAG --target zipkin-ui .
+echo Building zipkin-ui
+# Note, this hook is called with the current directory set to the same as the Dockerfile, hence the
+# context path is ..
+docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-2:$DOCKER_TAG --target zipkin-ui ..
 
 case "DOCKER_TAG" in
   master)
     # We rebuild the builder image on master push, not on release pushes.
-    docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-3 --target zipkin-builder .
+    echo Building zipkin-builder
+    # Note, this hook is called with the current directory set to the same as the Dockerfile, hence the
+    # context path is ..
+    docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-3 --target zipkin-builder ..
   ;;
 
   *)
