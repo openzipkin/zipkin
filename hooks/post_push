@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# We always push an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
+docker push anuraaga/docker-hub-test-2:$DOCKER_TAG
+
+case "DOCKER_TAG" in
+  master)
+    # We repush the builder image on master push, not on release pushes.
+    docker push anuraaga/docker-hub-test-3
+  ;;
+
+  *)
+  ;;
+esac

@@ -12,16 +12,12 @@
 # the License.
 #
 
+# Refreshing the builder image to remove stale dependencies just involves building zipkin-server on
+# an empty image.
+
 FROM maven:3-jdk-11-slim
 
 COPY . /code/
 
-# We run a normal build, sans zipkin-lens, which causes Maven to download most dependencies (it
-# misses out on error prone since we only copy pom files into the build context and no Java files,
-# so error prone is skipped). Then we run the generate-resources goal on zipkin-lens, which sets up
-# node and npm dependencies. The result is a cache of most build-time dependencies.
-
-RUN cd /code && \
-    mvn -B package -Dlicense.skip=true -DskipTests=true -DskipLens=true && \
-    mvn -B generate-resources -pl zipkin-lens -Dlicense.skip=true -DskipTests=true && \
+RUN cd /code && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am && \
     cd / && rm -rf /code

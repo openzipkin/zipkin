@@ -12,12 +12,34 @@
 # the License.
 #
 
-FROM openzipkin/zipkin-builder
+FROM openzipkin/zipkin-builder as built
 
-COPY . /code
+COPY . /code/
+
 RUN cd /code && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
 
-FROM gcr.io/distroless/java:11-debug
+FROM maven:3-jdk-11-slim as zipkin-builder
+
+COPY --from=built /root/.m2 /root/.m2
+COPY --from=built /root/.npm /root/.npm
+
+FROM nginx:1.16-alpine as zipkin-ui
+LABEL MAINTAINER Zipkin "https://zipkin.io/"
+
+ENV ZIPKIN_BASE_URL=http://zipkin:9411
+
+COPY --from=built /code/zipkin-lens/target/classes/zipkin-lens /var/www/html/zipkin
+RUN mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
+
+# Setup services
+COPY docker/lens/nginx.conf /etc/nginx/conf.d/zipkin.conf.template
+COPY docker/lens/run.sh /usr/local/bin/nginx.sh
+
+EXPOSE 80
+
+CMD ["/usr/local/bin/nginx.sh"]
+
+FROM gcr.io/distroless/java:11-debug as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
@@ -28,7 +50,7 @@ ENV MODULE_OPTS=
 RUN ["/busybox/sh", "-c", "adduser -g '' -h /zipkin -D zipkin"]
 
 # Add environment settings for supported storage types
-COPY --from=0 --chown=zipkin /code/zipkin-server/target/zipkin-server-*-exec.jar /zipkin/
+COPY --from=built --chown=zipkin /code/zipkin-server/target/zipkin-server-*-exec.jar /zipkin/
 COPY --chown=zipkin docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
