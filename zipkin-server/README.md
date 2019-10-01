@@ -163,9 +163,9 @@ Example usage:
 ```bash
 $ java -jar zipkin.jar
 ```
-You can override the maximum number of spans stored using the `--max-spans` application parameter:
+You can override the maximum number of spans stored using the `STORAGE_MEM_MAX_SPANS` environment variable:
 ```bash
-$ java -Xmx1G -jar zipkin.jar --max-spans=1000000
+$ STORAGE_MEM_MAX_SPANS=1000000 java -Xmx1G -jar zipkin.jar
 ```
 
 Note this storage component was primarily developed for testing and as a means to get Zipkin server up and running quickly without external dependencies. It is not viable for high work loads.  
