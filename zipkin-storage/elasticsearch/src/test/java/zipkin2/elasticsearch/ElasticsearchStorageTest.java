@@ -33,6 +33,7 @@ import zipkin2.Component;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static zipkin2.TestObjects.DAY;
 
 class ElasticsearchStorageTest {
@@ -110,11 +111,48 @@ class ElasticsearchStorageTest {
     MediaType.JSON_UTF_8, // below is actual message from Amazon
     "{\"Message\":\"User: anonymous is not authorized to perform: es:ESHttpGet\"}}");
 
-  @Test void check() {
+  static final AggregatedHttpResponse RESPONSE_VERSION_6 = AggregatedHttpResponse.of(
+    HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"6.7.0\"}}");
+
+  @Test void check_ensuresIndexTemplates_memozied() {
+    server.enqueue(RESPONSE_VERSION_6);
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get tags template
+
+    server.enqueue(HEALTH_RESPONSE);
+
+    assertThat(storage.check()).isEqualTo(CheckResult.OK);
+
+    // Later checks do not redo index template requests
     server.enqueue(HEALTH_RESPONSE);
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
   }
+
+  // makes sure we don't NPE
+  @Test void check_ensuresIndexTemplates_fail_onNoContent() {
+    server.enqueue(SUCCESS_RESPONSE); // empty instead of version json
+
+    CheckResult result = storage.check();
+    assertThat(result.ok()).isFalse();
+    assertThat(result.error().getMessage())
+      .isEqualTo("No content reading Elasticsearch version");
+  }
+
+  // makes sure we don't NPE
+  @Test void check_fail_onNoContent() {
+    storage.indexTemplates = mock(IndexTemplates.class); // assume index templates called before
+
+    server.enqueue(SUCCESS_RESPONSE); // empty instead of success response
+
+    CheckResult result = storage.check();
+    assertThat(result.ok()).isFalse();
+    assertThat(result.error().getMessage())
+      .isEqualTo("No content reading cluster health");
+  }
+
+  // TODO: when Armeria's mock server supports it, add a test for IOException
 
   @Test void check_unauthorized() {
     server.enqueue(RESPONSE_UNAUTHORIZED);
