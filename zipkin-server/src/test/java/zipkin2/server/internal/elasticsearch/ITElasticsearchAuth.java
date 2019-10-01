@@ -27,6 +27,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.Ssl;
 
 class ITElasticsearchAuth {
@@ -74,7 +75,9 @@ class ITElasticsearchAuth {
   }
 
   @Test void healthcheck_usesAuthAndTls() {
+    pretendIndexTemplatesExist(storage);
     server.enqueue(TestResponses.YELLOW_RESPONSE);
+
     assertThat(storage.check().ok()).isTrue();
 
     AggregatedHttpRequest next = server.takeRequest().request();
