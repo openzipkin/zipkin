@@ -110,34 +110,34 @@ class VersionSpecificTemplatesTest {
 
   ElasticsearchStorage storage;
 
-  @Test void wrongContent() throws Exception {
+  @Test void wrongContent() {
     server.enqueue(AggregatedHttpResponse.of(
       ResponseHeaders.of(HttpStatus.OK),
       HttpData.ofUtf8("you got mail")));
 
-    assertThatThrownBy(() -> new VersionSpecificTemplates(storage).get())
+    assertThatThrownBy(() -> storage.versionSpecificTemplates(storage.http()))
       .hasMessage(".version.number not found in response: you got mail");
   }
 
-  @Test void unauthorized() throws Exception {
+  @Test void unauthorized() {
     server.enqueue(RESPONSE_UNAUTHORIZED);
 
-    assertThatThrownBy(() -> new VersionSpecificTemplates(storage).get())
+    assertThatThrownBy(() -> storage.versionSpecificTemplates(storage.http()))
       .hasMessage("User: anonymous is not authorized to perform: es:ESHttpGet");
   }
 
   /** Unsupported, but we should test that parsing works */
-  @Test void version2_unsupported() throws Exception {
+  @Test void version2_unsupported() {
     server.enqueue(VERSION_RESPONSE_2);
 
-    assertThatThrownBy(() -> new VersionSpecificTemplates(storage).get())
+    assertThatThrownBy(() -> storage.versionSpecificTemplates(storage.http()))
       .hasMessage("Elasticsearch versions 5-7.x are supported, was: 2.4");
   }
 
   @Test void version5() throws Exception {
     server.enqueue(VERSION_RESPONSE_5);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.version()).isEqualTo(5.0f);
     assertThat(template.autocomplete())
@@ -153,7 +153,7 @@ class VersionSpecificTemplatesTest {
   @Test void version6() throws Exception {
     server.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.version()).isEqualTo(6.7f);
     assertThat(template.autocomplete())
@@ -166,7 +166,7 @@ class VersionSpecificTemplatesTest {
   @Test void version6_wrapsPropertiesWithType() throws Exception {
     server.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.dependency()).contains(""
       + "  \"mappings\": {\n"
@@ -190,7 +190,7 @@ class VersionSpecificTemplatesTest {
   @Test void version7() throws Exception {
     server.enqueue(VERSION_RESPONSE_7);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.version()).isEqualTo(7.0f);
     assertThat(template.autocomplete())
@@ -204,7 +204,7 @@ class VersionSpecificTemplatesTest {
   @Test void version7_doesntWrapPropertiesWithType() throws Exception {
     server.enqueue(VERSION_RESPONSE_7);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.dependency()).contains(""
       + "  \"mappings\": {\n"
@@ -229,7 +229,7 @@ class VersionSpecificTemplatesTest {
 
     server.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.span())
       .contains(""
@@ -251,7 +251,7 @@ class VersionSpecificTemplatesTest {
 
     server.enqueue(VERSION_RESPONSE_7);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     // doesn't wrap in a type name
     assertThat(template.span())
@@ -268,7 +268,7 @@ class VersionSpecificTemplatesTest {
   @Test void strictTraceId_doesNotIncludeAnalysisSection() throws Exception {
     server.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.span()).doesNotContain("analysis");
   }
@@ -281,7 +281,7 @@ class VersionSpecificTemplatesTest {
 
     server.enqueue(VERSION_RESPONSE_6);
 
-    IndexTemplates template = new VersionSpecificTemplates(storage).get();
+    IndexTemplates template = storage.versionSpecificTemplates(storage.http());
 
     assertThat(template.span()).contains("analysis");
   }

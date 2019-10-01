@@ -22,7 +22,6 @@ import zipkin2.elasticsearch.internal.client.SearchRequest;
 import zipkin2.storage.AutocompleteTags;
 
 final class ElasticsearchAutocompleteTags implements AutocompleteTags {
-  static final String AUTOCOMPLETE = "autocomplete";
 
   final boolean enabled;
   final IndexNameFormatter indexNameFormatter;
@@ -51,7 +50,7 @@ final class ElasticsearchAutocompleteTags implements AutocompleteTags {
     long endMillis = System.currentTimeMillis();
     long beginMillis = endMillis - namesLookback;
     List<String> indices =
-      indexNameFormatter.formatTypeAndRange(AUTOCOMPLETE, beginMillis, endMillis);
+      indexNameFormatter.formatTypeAndRange(VersionSpecificTemplates.TYPE_AUTOCOMPLETE, beginMillis, endMillis);
 
     if (indices.isEmpty()) return Call.emptyList();
 

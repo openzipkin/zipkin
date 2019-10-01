@@ -30,10 +30,17 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.TestResponses.GREEN_RESPONSE;
 
+/**
+ * These tests focus on http client health checks not currently in zipkin-storage-elasticsearch.
+ *
+ * <p>We invoke {@link zipkin2.elasticsearch.Access#pretendIndexTemplatesExist(ElasticsearchStorage)}
+ * to ensure focus on http health checks, and away from repeating template dependency tests already
+ * done in zipkin-storage-elasticsearch.
+ */
 public class ITElasticsearchHealthCheck {
-
   static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
   @ClassRule public static ServerRule server1 = new ServerRule() {
@@ -76,6 +83,8 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      pretendIndexTemplatesExist(storage);
+
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
@@ -85,6 +94,8 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      pretendIndexTemplatesExist(storage);
+
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
@@ -121,6 +132,7 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      pretendIndexTemplatesExist(storage);
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
 
@@ -148,6 +160,7 @@ public class ITElasticsearchHealthCheck {
       assertThat(result.ok()).isFalse();
 
       server2Health.setHealthy(true);
+      pretendIndexTemplatesExist(storage);
 
       // Health check interval is 100ms
       await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
@@ -180,9 +193,11 @@ public class ITElasticsearchHealthCheck {
     server2Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
+      pretendIndexTemplatesExist(storage);
+
       // Even though cluster health is false, we ignore that and continue to check index health,
       // which is correctly returned by our mock server.
+      CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
   }

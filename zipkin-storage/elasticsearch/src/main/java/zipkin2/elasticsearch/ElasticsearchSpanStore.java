@@ -36,8 +36,6 @@ import zipkin2.storage.Traces;
 import static java.util.Arrays.asList;
 
 final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanNames {
-  static final String SPAN = "span";
-  static final String DEPENDENCY = "dependency";
 
   /** To not produce unnecessarily long queries, we don't look back further than first ES support */
   static final long EARLIEST_MS = 1456790400000L; // March 2016
@@ -52,7 +50,8 @@ final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanN
   ElasticsearchSpanStore(ElasticsearchStorage es) {
     this.search = new SearchCallFactory(es.http());
     this.groupByTraceId = GroupByTraceId.create(es.strictTraceId());
-    this.allSpanIndices = new String[] {es.indexNameFormatter().formatType(SPAN)};
+    this.allSpanIndices = new String[] {es.indexNameFormatter().formatType(
+      VersionSpecificTemplates.TYPE_SPAN)};
     this.indexNameFormatter = es.indexNameFormatter();
     this.strictTraceId = es.strictTraceId();
     this.searchEnabled = es.searchEnabled();
@@ -104,7 +103,7 @@ final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanN
         .addSubAggregation(Aggregation.min("timestamp_millis"))
         .orderBy("timestamp_millis", "desc");
 
-    List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    List<String> indices = indexNameFormatter.formatTypeAndRange(VersionSpecificTemplates.TYPE_SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest esRequest =
@@ -155,7 +154,7 @@ final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanN
     long endMillis = System.currentTimeMillis();
     long beginMillis = endMillis - namesLookback;
 
-    List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    List<String> indices = indexNameFormatter.formatTypeAndRange(VersionSpecificTemplates.TYPE_SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest request = SearchRequest.create(indices)
@@ -178,7 +177,7 @@ final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanN
     long endMillis = System.currentTimeMillis();
     long beginMillis = endMillis - namesLookback;
 
-    List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    List<String> indices = indexNameFormatter.formatTypeAndRange(VersionSpecificTemplates.TYPE_SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     // A span name is only valid on a local endpoint, as a span name is defined locally
@@ -201,7 +200,7 @@ final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanN
 
     // We just return all dependencies in the days that fall within endTs and lookback as
     // dependency links themselves don't have timestamps.
-    List<String> indices = indexNameFormatter.formatTypeAndRange(DEPENDENCY, beginMillis, endTs);
+    List<String> indices = indexNameFormatter.formatTypeAndRange(VersionSpecificTemplates.TYPE_DEPENDENCY, beginMillis, endTs);
     if (indices.isEmpty()) return Call.emptyList();
 
     return search.newCall(SearchRequest.create(indices), BodyConverters.DEPENDENCY_LINKS);
