@@ -82,7 +82,7 @@ zipkin:
       max-queue-size: ${STORAGE_THROTTLE_MAX_QUEUE_SIZE:1000}
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
-      max-spans: ${STORAGE_MEM_MAX_SPANS:500000}
+      max-spans: ${MEM_MAX_SPANS:500000}
     cassandra:
       # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
       contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
