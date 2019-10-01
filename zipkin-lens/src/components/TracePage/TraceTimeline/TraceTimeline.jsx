@@ -31,7 +31,7 @@ const propTypes = {
   endTs: PropTypes.number.isRequired,
 };
 
-const TraceTimeline = ({
+const TraceTimeline = React.memo(({
   currentSpanId,
   spans,
   depth,
@@ -72,7 +72,7 @@ const TraceTimeline = ({
       ) : null
     }
   </svg>
-);
+));
 
 TraceTimeline.propTypes = propTypes;
 
