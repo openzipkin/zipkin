@@ -63,39 +63,39 @@ export const TracePageImpl = ({
 
   if (isTraceViewerPage && isMalformedFile) {
     return (
-      <React.Fragment>
+      <>
         <TraceSummaryHeader />
         <MessageBar variant="error" message={errorMessage || 'Loading error'} />
-      </React.Fragment>
+      </>
     );
   }
 
   if (!isTraceViewerPage && isLoading) {
     return (
-      <React.Fragment>
+      <>
         <TraceSummaryHeader />
         <Box width="100%" display="flex" justifyContent="center">
           <CircularProgress />
         </Box>
-      </React.Fragment>
+      </>
     );
   }
 
   if (!traceSummary && isTraceViewerPage) {
     return (
-      <React.Fragment>
+      <>
         <TraceSummaryHeader />
         <MessageBar variant="info" message="You need to upload JSON..." />
-      </React.Fragment>
+      </>
     );
   }
 
   if (!traceSummary && !isTraceViewerPage) {
     return (
-      <React.Fragment>
+      <>
         <TraceSummaryHeader />
         <MessageBar variant="error" message="Trace not found" />
-      </React.Fragment>
+      </>
     );
   }
 

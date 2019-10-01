@@ -131,7 +131,7 @@ const TraceSummary = ({ traceSummary }) => {
   }, [shownTree]);
 
   return (
-    <React.Fragment>
+    <>
       <Box boxShadow={3} zIndex={1}>
         <TraceSummaryHeader traceSummary={traceSummary} />
       </Box>
@@ -182,7 +182,7 @@ const TraceSummary = ({ traceSummary }) => {
           </AutoSizer>
         </Box>
       </Box>
-    </React.Fragment>
+    </>
   );
 };
 

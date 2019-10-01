@@ -63,7 +63,7 @@ const SpanAnnotations = ({ span }) => {
   }, [areAllAnnotationsOpened]);
 
   return (
-    <React.Fragment>
+    <>
       <SpanAnnotationGraph
         serviceName={span.serviceName}
         annotations={span.annotations}
@@ -91,7 +91,7 @@ const SpanAnnotations = ({ span }) => {
           {areAllAnnotationsOpened ? 'hide annotations' : 'show all annotations'}
         </Button>
       </Box>
-    </React.Fragment>
+    </>
   );
 };
 

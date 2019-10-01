@@ -52,7 +52,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
         <Box display="flex" alignItems="center">
           {
             traceSummary ? (
-              <React.Fragment>
+              <>
                 <Box className={classes.serviceName}>
                   <Typography variant="h5">
                     {traceSummary.rootSpan.serviceName}
@@ -63,7 +63,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
                     {`: ${traceSummary.rootSpan.spanName}`}
                   </Typography>
                 </Box>
-              </React.Fragment>
+              </>
             ) : null
           }
         </Box>

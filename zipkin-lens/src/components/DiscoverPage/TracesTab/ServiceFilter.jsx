@@ -31,7 +31,7 @@ const ServiceFilter = ({ filters, ...props }) => {
   const handleMenuClose = useCallback(() => setAnchorEl(null), []);
 
   return (
-    <React.Fragment>
+    <>
       <Badge
         color="secondary"
         badgeContent={`+${filters.length - 1}`}
@@ -52,7 +52,7 @@ const ServiceFilter = ({ filters, ...props }) => {
         filters={filters}
         {...props}
       />
-    </React.Fragment>
+    </>
   );
 };
 

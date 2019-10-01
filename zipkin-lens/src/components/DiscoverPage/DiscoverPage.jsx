@@ -263,7 +263,7 @@ const DiscoverPage = ({ history, location }) => {
   });
 
   return (
-    <React.Fragment>
+    <>
       <Box pl={3} pr={3}>
         <Box width="100%" display="flex" justifyContent="space-between">
           <Box display="flex" alignItems="center">
@@ -305,7 +305,7 @@ const DiscoverPage = ({ history, location }) => {
           </Box>
         </Paper>
       </Box>
-    </React.Fragment>
+    </>
   );
 };
 
