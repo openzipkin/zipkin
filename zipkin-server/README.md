@@ -170,7 +170,7 @@ $ java -jar zipkin.jar
 
 Note: this storage component was primarily developed for testing and as a means to get Zipkin server
 up and running quickly without external dependencies. It is not viable for high work loads. That
-said, ff you encounter out-of-memory errors, try decreasing `MEM_MAX_SPANS` or increasing the heap
+said, if you encounter out-of-memory errors, try decreasing `MEM_MAX_SPANS` or increasing the heap
 size (-Xmx).
 
 Exampled of doubling the amount of spans held in memory:
