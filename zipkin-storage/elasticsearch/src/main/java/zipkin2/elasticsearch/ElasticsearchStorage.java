@@ -321,7 +321,7 @@ public abstract class ElasticsearchStorage extends zipkin2.storage.StorageCompon
   }
 
   IndexTemplates versionSpecificTemplates(HttpCall.Factory http) throws IOException {
-    Float version = ElasticsearchVersion.INSTANCE.get(http);
+    float version = ElasticsearchVersion.INSTANCE.get(http);
     return new VersionSpecificTemplates(
       indexNameFormatter().index(),
       indexReplicas(),

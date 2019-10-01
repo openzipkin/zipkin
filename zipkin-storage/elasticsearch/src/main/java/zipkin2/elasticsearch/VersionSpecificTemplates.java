@@ -30,7 +30,6 @@ final class VersionSpecificTemplates {
    */
   static final String KEYWORD = "{ \"type\": \"keyword\", \"norms\": false }";
 
-  //final ElasticsearchStorage es;
   final String indexPrefix;
   final int indexReplicas, indexShards;
   final boolean searchEnabled, strictTraceId;
