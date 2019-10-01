@@ -33,4 +33,4 @@ export const formatTimestamp = timestamp => moment(timestamp / 1000).format('MM/
 // with just milliseconds and then append the last 3 digits of the timestamp
 // which are the microseconds.
 // NOTE: a.timestamp % 1000 would save a string conversion but drops leading zeros.
-export const formatTimestampMillis = timestamp => `${formatTimestamp(timestamp)}_${timestamp.toString().slice(-3)}`;
+export const formatTimestampMicros = timestamp => `${formatTimestamp(timestamp)}_${timestamp.toString().slice(-3)}`;

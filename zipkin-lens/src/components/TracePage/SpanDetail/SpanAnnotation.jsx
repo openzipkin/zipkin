@@ -22,7 +22,7 @@ import TableRow from '@material-ui/core/TableRow';
 import Paper from '@material-ui/core/Paper';
 
 import { spanAnnotationPropTypes } from '../../../prop-types';
-import { formatTimestampMillis } from '../../../util/timestamp';
+import { formatTimestampMicros } from '../../../util/timestamp';
 
 const propTypes = {
   annotation: spanAnnotationPropTypes.isRequired,
@@ -46,7 +46,7 @@ const SpanAnnotation = ({ annotation, classes }) => (
         <TableBody data-testid="span-annotation--table-body">
           {
             [
-              { label: 'Start Time', value: formatTimestampMillis(annotation.timestamp) },
+              { label: 'Start Time', value: formatTimestampMicros(annotation.timestamp) },
               { label: 'Relative Time', value: annotation.relativeTime },
               { label: 'Address', value: annotation.endpoint },
             ].map(e => (
