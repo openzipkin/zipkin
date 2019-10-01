@@ -1,6 +1,20 @@
 #!/bin/bash
 
-# Docker Hub commands (like the automated build and tests) seem to expect a .dockerignore file here
-# next to the Dockerfile, but we want to keep our master copy at the repo root for easy building of
-# images locally. We go ahead and copy our master copy into here for Docker Hub's use.
-cp ../.dockerignore .
+# This hook is called with the current directory set to the same as the Dockerfile, so we go back
+# to top level.
+cd ..
+
+# We always build an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
+echo Building zipkin-ui
+docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-2:$DOCKER_TAG --target zipkin-ui .
+
+case "DOCKER_TAG" in
+  master)
+    # We rebuild the builder image on master push, not on release pushes.
+    echo Building zipkin-builder
+    docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-3 --target zipkin-builder .
+  ;;
+
+  *)
+  ;;
+esac

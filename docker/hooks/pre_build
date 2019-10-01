@@ -1,9 +1,6 @@
 #!/bin/bash
 
-# This hook is called with the current directory set to the same as the Dockerfile, so we go back
-# to top level.
-cd ..
-
-# For some reason, docker hub does not use .dockerignore with it's docker build command. We add a
-# hook with a standard build command which does work.
-docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
+# Docker Hub commands (like the automated build and tests) seem to expect a .dockerignore file here
+# next to the Dockerfile, but we want to keep our master copy at the repo root for easy building of
+# images locally. We go ahead and copy our master copy into here for Docker Hub's use.
+cp ../.dockerignore .
