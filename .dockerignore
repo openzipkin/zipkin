@@ -1,6 +1,7 @@
 **/.*
 !.dockerignore
 !.git
+
 !**/.eslintrc
 **/*.test.yml
 
