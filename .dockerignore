@@ -1,15 +1,20 @@
+# Docker Hub does not seem to evaluate globstar to match root directory so we duplicate some rules
+# for both root and subdirectories.
+/\.*
 **/\.*
-!.git
+!/.git
 !**/.eslintrc
 **/*.test.yml
 
+/target
 **/target
 **/node_modules
 **/*.iml
 
+/*.md
 **/*.md
 
 **/Dockerfile
-docker/hooks/**
-travis/**
-mvnw*
+/docker/hooks/**
+/travis/**
+/mvnw*

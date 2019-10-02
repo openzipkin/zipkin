@@ -1,6 +1,0 @@
-#!/bin/bash
-
-# Docker Hub commands (like the automated build and tests) seem to expect a .dockerignore file here
-# next to the Dockerfile, but we want to keep our master copy at the repo root for easy building of
-# images locally. We go ahead and copy our master copy into here for Docker Hub's use.
-cp ../.dockerignore .
