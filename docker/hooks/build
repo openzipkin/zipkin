@@ -3,8 +3,13 @@
 # Docker Hub's default build command seems to not handle .dockerignore correctly. Doing a simple build command
 # ourselves works fine.
 
-# This hook is called with the current directory set to the same as the hook, so we go back
+# This hook is called with the current directory set to the same as the Dockerfile, so we go back
 # to top level.
-cd ../..
+ls
+pwd
+cd ..
 
+ls
+pwd
+echo $DOCKERFILE_PATH
 docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
