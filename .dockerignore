@@ -1,9 +1,7 @@
-**/.*
-adockerignore
+/.*
 !.dockerignore
 !.git
 
-!**/.eslintrc
 **/*.test.yml
 
 **/target
@@ -13,6 +11,6 @@ adockerignore
 **/*.md
 
 **/Dockerfile
-docker/hooks/**
-travis/**
-mvnw*
+/docker/hooks/**
+/travis/**
+/mvnw*
