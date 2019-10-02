@@ -45,12 +45,14 @@ ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 
 ## Logging
 
-By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server-shared.yml).
+By default, zipkin writes log messages to the console at INFO level and above. A limited set of 
+[configuration options](https://www.slf4j.org/api/org/slf4j/impl/SimpleLogger.html) is available 
+to control the logging output. 
 
-For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
+For example, if you want to enable debug logging for all zipkin categories:
 
 ```bash
-$ java -jar zipkin.jar --logging.level.zipkin2=DEBUG
+$ java -Dorg.slf4j.simpleLogger.log.zipkin2=debug -jar zipkin.jar
 ```
 
 Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.
