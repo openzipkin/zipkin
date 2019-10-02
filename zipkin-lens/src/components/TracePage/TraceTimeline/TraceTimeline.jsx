@@ -15,7 +15,7 @@ import PropTypes from 'prop-types';
 import React from 'react';
 
 import TraceTree from './TraceTree';
-// import TraceTimelineRow from './TraceTimelineRow';
+import TraceTimelineRow from './TraceTimelineRow';
 import { detailedSpansPropTypes } from '../../../prop-types';
 import { timelineHeight } from '../sizing';
 
@@ -49,7 +49,16 @@ const TraceTimeline = React.memo(({
     height={`${timelineHeight(spans.length)}px`}
   >
     {
-      /*
+      isRootedTrace ? (
+        <TraceTree
+          spans={spans}
+          depth={depth}
+          childrenHiddenSpanIds={childrenHiddenSpanIds}
+          onChildrenToggle={onChildrenToggle}
+        />
+      ) : null
+    }
+    {
       spans.map((span, idx) => (
         <TraceTimelineRow
           key={span.spanId}
@@ -61,17 +70,6 @@ const TraceTimeline = React.memo(({
           endTs={endTs}
         />
       ))
-      */
-    }
-    {
-      isRootedTrace ? (
-        <TraceTree
-          spans={spans}
-          depth={depth}
-          childrenHiddenSpanIds={childrenHiddenSpanIds}
-          onChildrenToggle={onChildrenToggle}
-        />
-      ) : null
     }
   </svg>
 ));

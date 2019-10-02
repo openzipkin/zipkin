@@ -53,10 +53,13 @@ export const spanToggleButtonTranslate = 'translate(-8,-8)'; // px
 //
 //                      |------------------------------|
 //                           B's spanBarWidthPercent
+// |--------------------|
+//   spanBarOffsetXPercent
 
 export const spanBarOffsetY = index => index * spanBarHeight; // px
 export const spanBarLinePosY = index => spanBarOffsetY(index) + (spanBarHeight / 2); // px
 export const spanBarWidthPercent = width => timelineWidthPercent * (width / 100); // %
+export const spanBarOffsetXPercent = left => spanTreeWidthPercent + serviceNameWidthPercent + timelineWidthPercent * (left / 100); // %
 
 export const timelineHeight = spanCounts => spanBarHeight * spanCounts; // px
 

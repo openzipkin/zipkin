@@ -17,21 +17,12 @@ import classnames from 'classnames';
 import { withStyles } from '@material-ui/styles';
 
 import {
-  spanDataRowPosY,
-  spanBarLinePosY,
-  spanOffsetY,
-  spanBarRowPosY,
-  serviceNamePosXPercent,
-  spanNamePosXPercent,
-  durationPosXPercent,
-  timelineOffsetXPercent,
+  spanBarOffsetY,
   spanBarHeight,
-  spanHeight,
   spanBarWidthPercent,
-  spanBarPosXPercent,
+  spanBarOffsetXPercent,
 } from '../sizing';
 import { detailedSpanPropTypes } from '../../../prop-types';
-import { selectServiceColor } from '../../../colors';
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
@@ -44,8 +35,9 @@ const propTypes = {
 };
 
 const style = theme => ({
-  serviceName: {
-    textTransform: 'uppercase',
+  bar: {
+    opacity: 0.8,
+    fill: theme.palette.primary.main,
   },
   button: {
     opacity: 0,
@@ -57,10 +49,6 @@ const style = theme => ({
   },
   'button--focused': {
     opacity: 0.3,
-  },
-  barLine: {
-    stroke: theme.palette.grey[500],
-    strokeWidth: '1px',
   },
 });
 
@@ -98,39 +86,33 @@ const TraceTimelineRow = ({
 
   return (
     <g>
-      <text x={`${serviceNamePosXPercent}%`} y={spanDataRowPosY(index)} className={classes.serviceName}>
-        {span.serviceName}
-      </text>
-      <text x={`${spanNamePosXPercent}%`} y={spanDataRowPosY(index)}>
-        {span.spanName}
-      </text>
-      <text x={`${durationPosXPercent}%`} y={spanDataRowPosY(index)}>
-        {span.durationStr}
-      </text>
-      <line
-        x1={`${timelineOffsetXPercent}%`}
-        x2="100%"
-        y1={spanBarLinePosY(index)}
-        y2={spanBarLinePosY(index)}
-        className={classes.barLine}
-      />
       <rect
         width={`${spanBarWidthPercent(width)}%`}
-        height={spanBarHeight}
-        x={`${spanBarPosXPercent(left)}%`}
-        y={spanBarRowPosY(index)}
-        rx={2}
-        ry={2}
-        fill={selectServiceColor(span.serviceName)}
+        height={spanBarHeight - 4}
+        x={`${spanBarOffsetXPercent(left)}%`}
+        y={spanBarOffsetY(index) + 2}
+        rx={4}
+        ry={4}
+        className={classes.bar}
       />
       <rect
         className={classnames(classes.button, { [classes['button--focused']]: isFocused })}
         x={0}
-        y={spanOffsetY(index)}
+        y={spanBarOffsetY(index)}
         width="100%"
-        height={spanHeight}
+        height={spanBarHeight}
         onClick={() => onRowClick(span.spanId)}
       />
+      <text
+        x={`${spanBarOffsetXPercent(left) + 1}%`}
+        y={spanBarOffsetY(index) + 4 + spanBarHeight / 2}
+        style={{
+          fontSize: '1.05rem',
+          fontWeight: 'bold',
+        }}
+      >
+        {`${span.spanName}: ${span.durationStr}`}
+      </text>
     </g>
   );
 };

@@ -19,7 +19,6 @@ import {
   spanBarLinePosY,
   spanToggleButtonTranslate,
   spanTreeLineWidthPercentPerDepth,
-  spanTreeWidthPercent,
   spanToggleButtonLengthOfSide,
   serviceNameWidthPercent,
 } from '../sizing';
@@ -194,7 +193,7 @@ const propTypes = {
 
 const style = theme => ({
   line: {
-    stroke: theme.palette.grey[500],
+    stroke: theme.palette.grey[400],
     strokeWidth: '1px',
   },
   spanToggleButton: {
@@ -237,7 +236,7 @@ const TraceTree = ({
             <line
               key={`${x}-${y}`}
               x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
-              x2={`${spanTreeWidthPercent + serviceNameWidthPercent}%`}
+              x2="100%"
               y1={spanBarLinePosY(y)}
               y2={spanBarLinePosY(y)}
               className={classes.line}
