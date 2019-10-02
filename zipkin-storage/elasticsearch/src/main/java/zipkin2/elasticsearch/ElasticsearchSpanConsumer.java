@@ -26,8 +26,8 @@ import zipkin2.elasticsearch.internal.IndexNameFormatter;
 import zipkin2.internal.DelayLimiter;
 import zipkin2.storage.SpanConsumer;
 
-import static zipkin2.elasticsearch.ElasticsearchAutocompleteTags.AUTOCOMPLETE;
-import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
+import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_AUTOCOMPLETE;
+import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_SPAN;
 import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testing
@@ -96,12 +96,12 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
     }
 
     void add(long indexTimestamp, Span span) {
-      String index = consumer.formatTypeAndTimestampForInsert(SPAN, indexTimestamp);
-      bulkCallBuilder.index(index, SPAN, span, spanWriter);
+      String index = consumer.formatTypeAndTimestampForInsert(TYPE_SPAN, indexTimestamp);
+      bulkCallBuilder.index(index, TYPE_SPAN, span, spanWriter);
     }
 
     void addAutocompleteValues(long indexTimestamp, Span span) {
-      String idx = consumer.formatTypeAndTimestampForInsert(AUTOCOMPLETE, indexTimestamp);
+      String idx = consumer.formatTypeAndTimestampForInsert(TYPE_AUTOCOMPLETE, indexTimestamp);
       for (Map.Entry<String, String> tag : span.tags().entrySet()) {
         int length = tag.getKey().length() + tag.getValue().length() + 1;
         if (length > SHORT_STRING_LENGTH) continue;
@@ -114,7 +114,7 @@ class ElasticsearchSpanConsumer implements SpanConsumer { // not final for testi
         if (!consumer.delayLimiter.shouldInvoke(context)) continue;
         pendingAutocompleteContexts.add(context);
 
-        bulkCallBuilder.index(idx, AUTOCOMPLETE, tag, BulkIndexWriter.AUTOCOMPLETE);
+        bulkCallBuilder.index(idx, TYPE_AUTOCOMPLETE, tag, BulkIndexWriter.AUTOCOMPLETE);
       }
     }
 

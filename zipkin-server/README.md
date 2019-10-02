@@ -157,28 +157,26 @@ Defaults to true
 * `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr) 
 
 ### In-Memory Storage
-Zipkin's In-Memory Storage is the default storage component that is used when no other storage type is configured. By default it stores a maximum of 500000 spans. Oldest traces (and their spans) will be purged first when this limit is exceeded. If you encounter out-of-memory errors, increase the heap size (-Xmx).
+Zipkin's [In-Memory Storage](../zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) holds all
+data in memory, purging older data upon a span limit. It applies when `STORAGE_TYPE` is unset or
+set to the value `mem`.
+
+    * `MEM_MAX_SPANS`: Oldest traces (and their spans) will be purged first when this limit is exceeded. Default 500000
 
 Example usage:
 ```bash
 $ java -jar zipkin.jar
 ```
-You can override the maximum number of spans stored using the `--max-spans` application parameter:
+
+Note: this storage component was primarily developed for testing and as a means to get Zipkin server
+up and running quickly without external dependencies. It is not viable for high work loads. That
+said, if you encounter out-of-memory errors, try decreasing `MEM_MAX_SPANS` or increasing the heap
+size (-Xmx).
+
+Exampled of doubling the amount of spans held in memory:
 ```bash
-$ java -Xmx1G -jar zipkin.jar --max-spans=1000000
+$ MEM_MAX_SPANS=1000000 java -Xmx1G -jar zipkin.jar
 ```
-
-Note this storage component was primarily developed for testing and as a means to get Zipkin server up and running quickly without external dependencies. It is not viable for high work loads.  
-
-### Throttled Storage (Experimental)
-These settings can be used to help tune the rate at which Zipkin flushes data to another, underlying `StorageComponent` (such as Elasticsearch):
-
-    * `STORAGE_THROTTLE_ENABLED`: Enables throttling
-    * `STORAGE_THROTTLE_MIN_CONCURRENCY`: Minimum number of Threads to use for writing to storage.
-    * `STORAGE_THROTTLE_MAX_CONCURRENCY`: Maximum number of Threads to use for writing to storage.
-    * `STORAGE_THROTTLE_MAX_QUEUE_SIZE`: How many messages to buffer while all Threads are writing data before abandoning a message (0 = no buffering).
-
-As this feature is experimental, it is not recommended to run this in production environments.
 
 ### Cassandra Storage
 Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
@@ -310,6 +308,17 @@ Example usage:
 ```bash
 $ STORAGE_TYPE=cassandra java -jar zipkin.jar
 ```
+
+### Throttled Storage (Experimental)
+These settings can be used to help tune the rate at which Zipkin flushes data to another, underlying
+`StorageComponent` (such as Elasticsearch):
+
+    * `STORAGE_THROTTLE_ENABLED`: Enables throttling
+    * `STORAGE_THROTTLE_MIN_CONCURRENCY`: Minimum number of Threads to use for writing to storage.
+    * `STORAGE_THROTTLE_MAX_CONCURRENCY`: Maximum number of Threads to use for writing to storage.
+    * `STORAGE_THROTTLE_MAX_QUEUE_SIZE`: How many messages to buffer while all Threads are writing data before abandoning a message (0 = no buffering).
+
+As this feature is experimental, it is not recommended to run this in production environments.
 
 #### Service and Span names query
 The [Zipkin Api](https://zipkin.io/zipkin-api/#/default/get_services) does not include
