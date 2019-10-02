@@ -16,7 +16,7 @@ FROM openzipkin/zipkin-builder as built
 
 COPY . /code/
 
-RUN cd /code && ls -Ral && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
+RUN cd /code && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
 
 FROM maven:3-jdk-11-slim as zipkin-builder
 
