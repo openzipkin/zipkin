@@ -13,6 +13,71 @@
  */
 
 /* eslint-disable max-len */
+
+//
+// |-------|--------------|------------------------------------|------|
+//
+//          ______________            ___________________               _
+//         | SERVICE NAME |          |   DURATION BAR    |              |  spanBarHeight
+//          --------------            -------------------               -
+//
+// |-------|                                                   |------|
+//   spanTreeWidthPercent                                        timelineRightMarginPercent
+//         |--------------|
+//           serviceNameWidthPercent
+//                        |------------------------------------|
+//                          timelineWidthPercent
+//
+export const spanTreeWidthPercent = 6; // %
+export const serviceNameWidthPercent = 17; // %
+export const timelineRightMarginPercent = 2; // %
+export const timelineWidthPercent = 100 - (spanTreeWidthPercent + serviceNameWidthPercent + timelineRightMarginPercent);
+export const spanBarHeight = 20; // px
+
+//
+// |------------------------------|---------------------------------|
+//     spanTreeWidthPercent           serviceNameWidthPercent
+//
+//  A---------------------------------------------------------------
+//  |
+//  B---------------------------------------------------------------
+//             |
+//             C----------------------------------------------------
+//             |         |
+//             |         D------------------------------------------
+//             |
+//             E----------------------------------------------------
+//
+//             |----------------------------------------------------|
+//                C and E's spanTreeLineWidthPercentPerDepth
+//
+export const spanTreeLineWidthPercentPerDepth = depth => spanTreeWidthPercent / (depth + 1) + serviceNameWidthPercent; // %
+
+export const spanToggleButtonLengthOfSide = 16; // px
+export const spanToggleButtonTranslate = 'translate(-8,-8)'; // px
+
+//
+//                                                             _     _
+//                                                             |     |
+//                                                             | A's spanBarOffsetY
+//                                                             |     |
+//            _____________________________                    |     |
+// ----------|            SPAN A           |-----------------  -     |
+//            -----------------------------                          |
+//                                                                   | B's spanBarOffsetY
+//                       ______________________________              |
+// ---------------------|            SPAN B            |------       -
+//                       ------------------------------
+//
+//                      |------------------------------|
+//                           B's spanBarWidthPercent
+
+export const spanBarOffsetY = index => index * spanBarHeight; // px
+export const spanBarWidthPercent = width => timelineWidthPercent * (width / 100); // %
+
+
+
+//
 // --------|---------------|---------------|---------------|------|
 //                                                                  _                     _
 //           SERVICE NAME   SPAN NAME     DURATION                  | spanDataRowHeight   |
@@ -20,6 +85,7 @@
 //         |                                               |        | spanBarRowHeight    |
 //          -----------------------------------------------         |                     |
 //                                                                  -                     -
+//
 // |-------|                                               |------|
 //   spanTreeWidthPercent = timelineOffsetXPercent            timelineRightMarginPercent
 //           |
@@ -29,7 +95,8 @@
 //                                        |
 //                                        durationPosXPercent
 
-export const spanTreeWidthPercent = 8; // %
+/*
+export const spanTreeWidthPercent = 6; // %
 export const timelineRightMarginPercent = 2; // %
 export const timelineWidthPercent = 100 - (spanTreeWidthPercent + timelineRightMarginPercent); // %
 export const spanTreeLineWidthPercentPerDepth = depth => spanTreeWidthPercent / (depth + 1); // %
@@ -61,3 +128,4 @@ export const spanToggleButtonTranslate = 'translate(-8,-8)'; // px
 export const spanDataRowLineHeight = 30; // px
 export const spanBarRowLineHeight = 14; // px
 export const expandButtonLengthOfSide = 16; // px
+*/
