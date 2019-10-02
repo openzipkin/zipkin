@@ -5,6 +5,7 @@
 
 # This hook is called with the current directory set to the same as the Dockerfile, so we go back
 # to top level.
+pwd
 cd ..
 
 docker build -f $DOCKERFILE_PATH -f $IMAGE_NAME .
