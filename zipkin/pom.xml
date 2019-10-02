@@ -45,7 +45,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
-      <!-- this dependency is shaded out -->
+      <!-- so that it's not shaded  -->
       <scope>provided</scope>
     </dependency>
 

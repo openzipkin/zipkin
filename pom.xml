@@ -616,6 +616,7 @@
             <scss>DOUBLESLASH_STYLE</scss>
           </mapping>
           <excludes>
+            <exclude>**/simplelogger.properties</exclude>
             <exclude>.travis.yml</exclude>
             <exclude>**/docker*.yml</exclude>
             <exclude>**/*.dockerignore</exclude>
