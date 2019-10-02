@@ -1,6 +1,4 @@
-.editorconfig
-
-**/\.*
+**/.*
 !.dockerignore
 !.git
 !**/.eslintrc
