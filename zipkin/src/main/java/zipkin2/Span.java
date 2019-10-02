@@ -25,14 +25,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Nullable;
 import zipkin2.internal.Platform;
 
-import static java.lang.String.format;
-import static java.util.logging.Level.FINEST;
 import static zipkin2.internal.HexCodec.HEX_DIGITS;
 
 /**
@@ -608,19 +607,17 @@ public final class Span implements Serializable { // for Spark and Flink jobs
       if (traceId == null) missing += " traceId";
       if (id == null) missing += " id";
       if (!"".equals(missing)) throw new IllegalStateException("Missing :" + missing);
+      // potentially reuse the logger if it gets allocated in one (or both) of the edge cases below
+      Logger logger = null;
       if (id.equals(parentId)) { // edge case, so don't require a logger field
-        Logger logger = Logger.getLogger(Span.class.getName());
-        if (logger.isLoggable(FINEST)) {
-          logger.fine(format("undoing circular dependency: traceId=%s, spanId=%s", traceId, id));
-        }
+        logger = LoggerFactory.getLogger(Span.class.getName());
+        logger.trace("undoing circular dependency: traceId={}, spanId={}", traceId, id);
         parentId = null;
       }
       // shared is for the server side, unset it if accidentally set on the client side
       if ((flags & FLAG_SHARED) == FLAG_SHARED && kind == Kind.CLIENT) {
-        Logger logger = Logger.getLogger(Span.class.getName());
-        if (logger.isLoggable(FINEST)) {
-          logger.fine(format("removing shared flag on client: traceId=%s, spanId=%s", traceId, id));
-        }
+        if (logger == null) logger = LoggerFactory.getLogger(Span.class.getName());
+        logger.trace("removing shared flag on client: traceId={}, spanId={}", traceId, id);
         shared(null);
       }
       return new Span(this);

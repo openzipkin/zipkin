@@ -42,13 +42,6 @@
       <version>${spring-boot.version}</version>
     </dependency>
 
-    <!-- Use log4j 2 instead of SLF4J to allow log4j 1.2 used by Kafka 0.8 to still work -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-log4j2</artifactId>
-      <version>${spring-boot.version}</version>
-    </dependency>
-
     <!-- More efficient, gRPC ready server with brave tracing built-in -->
     <dependency>
       <groupId>${armeria.groupId}</groupId>
@@ -94,6 +87,17 @@
       <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-collector</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <!-- all modules use slf4j-api -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <!-- default minimal logging impl -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
     </dependency>
 
     <!-- Static content for the Classic UI -->
