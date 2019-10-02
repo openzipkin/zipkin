@@ -4,7 +4,7 @@
 echo Pushing zipkin-ui
 docker push anuraaga/docker-hub-test-2:$DOCKER_TAG
 
-case "DOCKER_TAG" in
+case "$DOCKER_TAG" in
   master)
     # We repush the builder image on master push, not on release pushes.
     echo Pushing zipkin-builder
