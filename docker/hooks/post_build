@@ -8,13 +8,8 @@ cd ..
 echo Building zipkin-ui
 docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-2:$DOCKER_TAG --target zipkin-ui .
 
-case "DOCKER_TAG" in
-  master)
-    # We rebuild the builder image on master push, not on release pushes.
-    echo Building zipkin-builder
-    docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-3 --target zipkin-builder .
-  ;;
-
-  *)
-  ;;
-esac
+if [[ "$DOCKER_TAG" == "master" ]]; then
+  # We rebuild the builder image on master push, not on release pushes.
+  echo Building zipkin-builder
+  docker build -f $DOCKERFILE_PATH -t anuraaga/docker-hub-test-3 --target zipkin-builder .
+fi
