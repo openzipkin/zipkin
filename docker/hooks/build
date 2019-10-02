@@ -7,4 +7,4 @@
 # to top level.
 cd ../..
 
-docker build -f $DOCKERFILE_PATH -f $IMAGE_NAME .
+docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
