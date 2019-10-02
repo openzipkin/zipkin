@@ -2,6 +2,8 @@
 
 # This hook is called with the current directory set to the same as the Dockerfile, so we go back
 # to top level.
+pwd
+ls
 cd ..
 
 # We always build an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
