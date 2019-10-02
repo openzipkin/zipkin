@@ -21,8 +21,10 @@ import {
   spanTreeLineWidthPercentPerDepth,
   spanTreeWidthPercent,
   spanToggleButtonLengthOfSide,
+  serviceNameWidthPercent,
 } from '../sizing';
 import { detailedSpansPropTypes } from '../../../prop-types';
+import { selectServiceColor } from '../../../colors';
 
 export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   const stack = [];
@@ -51,7 +53,7 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
       // X
       // |
       // |+++Y  <- Write this horizontal line.
-      horizontalLineDataList.push({ x: parent.depth, y: i });
+      horizontalLineDataList.push({ x: parent.depth, y: i, serviceName: currentSpan.serviceName });
       if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
@@ -77,7 +79,7 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
       // |---Y
       // |
       // |+++Z  <- Write this horizontal line.
-      horizontalLineDataList.push({ x: parent.depth, y: i });
+      horizontalLineDataList.push({ x: parent.depth, y: i, serviceName: currentSpan.serviceName });
       if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
@@ -113,7 +115,7 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
       // |   |---C
       // |
       // |+++D  <- Write this horizontal line.
-      horizontalLineDataList.push({ x: parent.depth, y: i });
+      horizontalLineDataList.push({ x: parent.depth, y: i, serviceName: currentSpan.serviceName });
       if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
@@ -147,7 +149,7 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   // A++++  Root span. Write this horizontal line.
   // |
   // |---B
-  horizontalLineDataList.push({ x: 2, y: 0 });
+  horizontalLineDataList.push({ x: 2, y: 0, serviceName: spans[0].serviceName });
   if (childrenHiddenSpanIds[spans[0].spanId]) {
     buttonDataList.push({
       x: spans[0].depth,
@@ -230,15 +232,47 @@ const TraceTree = ({
   return (
     <g>
       {
-        horizontalLineDataList.map(({ x, y }) => (
-          <line
-            key={`${x}-${y}`}
-            x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
-            x2={`${spanTreeWidthPercent}%`}
-            y1={spanBarLinePosY(y)}
-            y2={spanBarLinePosY(y)}
-            className={classes.line}
-          />
+        horizontalLineDataList.map(({ x, y, serviceName }) => (
+          <g>
+            <line
+              key={`${x}-${y}`}
+              x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+              x2={`${spanTreeWidthPercent + serviceNameWidthPercent}%`}
+              y1={spanBarLinePosY(y)}
+              y2={spanBarLinePosY(y)}
+              className={classes.line}
+            />
+            <g transform="translate(16, -12)">
+              <svg
+                x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+                y={spanBarLinePosY(y)}
+                width={`${serviceNameWidthPercent - 2}%`}
+                height={24}
+              >
+                <rect
+                  rx={3}
+                  ry={3}
+                  x={0}
+                  y={0}
+                  width="100%"
+                  height="100%"
+                  fill={selectServiceColor(serviceName)}
+                />
+                <text
+                  x="50%"
+                  y="50%"
+                  textAnchor="middle"
+                  dominantBaseline="central"
+                  fill="white"
+                  style={{
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {serviceName}
+                </text>
+              </svg>
+            </g>
+          </g>
         ))
       }
       {
