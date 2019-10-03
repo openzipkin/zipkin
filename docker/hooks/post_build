@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# This hook is called with the current directory set to the same as the Dockerfile, so we go back
+# to top level.
+cd ..
+
+# We always build an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
+echo Building zipkin-ui
+docker build -f $DOCKERFILE_PATH -t openzipkin/zipkin-ui:$DOCKER_TAG --target zipkin-ui .
+
+if [[ "$DOCKER_TAG" == "master" ]]; then
+  # We rebuild the builder image on master push, not on release pushes.
+  echo Building zipkin-builder
+  docker build -f $DOCKERFILE_PATH -t openzipkin/zipkin-builder --target zipkin-builder .
+fi

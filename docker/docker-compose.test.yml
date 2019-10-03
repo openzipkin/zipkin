@@ -14,9 +14,7 @@
 version: "3.6"
 services:
   zipkin:
-    build:
-      context: ..
-      dockerfile: docker/Dockerfile
+    image: "${IMAGE_NAME}"
     networks:
       default:
         aliases:

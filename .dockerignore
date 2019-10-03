@@ -1,15 +1,17 @@
-**/\.*
+**/.*
+!.dockerignore
 !.git
 !**/.eslintrc
+
 **/*.test.yml
 
 **/target
 **/node_modules
 **/*.iml
 
-*.md
+**/*.md
 
 **/Dockerfile
-hooks/**
+docker/hooks/**
 travis/**
 mvnw*
