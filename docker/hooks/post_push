@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ "$DOCKER_REPO" == "openzipkin/zipkin" ]]; then
+if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
   # We always push an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
   echo Pushing zipkin-ui
   docker push openzipkin/zipkin-ui:$DOCKER_TAG
