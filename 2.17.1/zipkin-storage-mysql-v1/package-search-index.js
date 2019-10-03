@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"zipkin2.storage.mysql.v1"},{"l":"zipkin2.storage.mysql.v1.internal.generated"},{"l":"zipkin2.storage.mysql.v1.internal.generated.tables"}]
