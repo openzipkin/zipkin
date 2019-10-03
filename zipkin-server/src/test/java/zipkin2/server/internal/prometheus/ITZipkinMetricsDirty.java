@@ -139,7 +139,7 @@ public class ITZipkinMetricsDirty {
   private Response post(String path, byte[] body) throws IOException {
     return client.newCall(new Request.Builder()
       .url(url(server, path))
-      .post(RequestBody.create(null, body))
+      .post(RequestBody.create(body))
       .build()).execute();
   }
 

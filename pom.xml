@@ -49,18 +49,17 @@
 
     <!-- This allows you to test feature branches with jitpack -->
     <armeria.groupId>com.linecorp.armeria</armeria.groupId>
-    <armeria.version>0.92.0</armeria.version>
+    <armeria.version>0.94.0</armeria.version>
     <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
-    <guava.version>28.0-jre</guava.version>
+    <guava.version>28.1-jre</guava.version>
 
     <!-- only used for proto interop testing -->
     <wire.version>3.0.0-rc01</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
-    <brave.version>5.7.0</brave.version>
     <cassandra-driver-core.version>3.7.2</cassandra-driver-core.version>
     <jooq.version>3.12.1</jooq.version>
-    <micrometer.version>1.2.1</micrometer.version>
+    <micrometer.version>1.3.0</micrometer.version>
     <spring-boot.version>2.1.8.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
@@ -82,7 +81,7 @@
     <assertj.version>3.13.2</assertj.version>
     <awaitility.version>4.0.1</awaitility.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <testcontainers.version>1.12.1</testcontainers.version>
+    <testcontainers.version>1.12.2</testcontainers.version>
 
     <auto-value.version>1.6.6</auto-value.version>
     <animal-sniffer-maven-plugin.version>1.18</animal-sniffer-maven-plugin.version>
@@ -343,19 +342,6 @@
         <groupId>com.zaxxer</groupId>
         <artifactId>HikariCP</artifactId>
         <version>${HikariCP.version}</version>
-      </dependency>
-
-      <!-- Don't bring in brave's transitive dep on zipkin -->
-      <dependency>
-        <groupId>io.zipkin.brave</groupId>
-        <artifactId>brave</artifactId>
-        <version>${brave.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>io.zipkin.zipkin2</groupId>
-            <artifactId>zipkin</artifactId>
-          </exclusion>
-        </exclusions>
       </dependency>
 
       <dependency>

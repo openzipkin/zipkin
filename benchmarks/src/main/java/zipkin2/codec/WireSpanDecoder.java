@@ -174,7 +174,7 @@ public class WireSpanDecoder {
 
           span.localEndpoint(decodeEndpoint(input));
 
-          input.endMessage(token);
+          input.endMessageAndGetUnknownFields(token);
           break;
         }
         case 9: {
@@ -182,7 +182,7 @@ public class WireSpanDecoder {
 
           span.remoteEndpoint(decodeEndpoint(input));
 
-          input.endMessage(token);
+          input.endMessageAndGetUnknownFields(token);
           break;
         }
         case 10: {
@@ -190,7 +190,7 @@ public class WireSpanDecoder {
 
           decodeAnnotation(input, span);
 
-          input.endMessage(token);
+          input.endMessageAndGetUnknownFields(token);
           break;
         }
         case 11: {
@@ -198,7 +198,7 @@ public class WireSpanDecoder {
 
           decodeTag(input, span);
 
-          input.endMessage(token);
+          input.endMessageAndGetUnknownFields(token);
           break;
         }
         case 12: {
@@ -256,7 +256,7 @@ public class WireSpanDecoder {
 
             spans.add(decodeOne(input));
 
-            input.endMessage(subToken);
+            input.endMessageAndGetUnknownFields(subToken);
             break;
           }
           default: {
@@ -270,7 +270,7 @@ public class WireSpanDecoder {
     }
 
     try {
-      input.endMessage(token);
+      input.endMessageAndGetUnknownFields(token);
     } catch (IOException e) {
       throw new UncheckedIOException(e);
     }

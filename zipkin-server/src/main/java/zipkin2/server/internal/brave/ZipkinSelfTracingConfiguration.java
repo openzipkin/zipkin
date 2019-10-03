@@ -15,8 +15,6 @@ package zipkin2.server.internal.brave;
 
 import brave.Tracing;
 import brave.context.log4j2.ThreadContextScopeDecorator;
-import brave.http.HttpAdapter;
-import brave.http.HttpSampler;
 import brave.http.HttpTracing;
 import brave.propagation.B3SinglePropagation;
 import brave.propagation.CurrentTraceContext;
@@ -119,15 +117,14 @@ public class ZipkinSelfTracingConfiguration {
   @Bean HttpTracing httpTracing(Tracing tracing, Sampler sampler) {
     return HttpTracing.newBuilder(tracing)
       // server starts traces for read requests under the path /api
-      .serverSampler(new HttpSampler() {
-        @Override public <Req> Boolean trySample(HttpAdapter<Req, ?> adapter, Req request) {
-          String path = adapter.path(request);
+      .serverSampler(request -> {
+          String path = request.path();
           if (path.startsWith("/api") || path.startsWith("/zipkin/api")) {
             return sampler.isSampled(0L); // use the global rate limit
           }
           return false;
         }
-      })
+      )
       .build();
   }
 

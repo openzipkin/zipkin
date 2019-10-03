@@ -47,7 +47,7 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
-      <version>3.14.3</version>
+      <version>3.14.4</version>
     </dependency>
 
     <dependency>

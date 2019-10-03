@@ -14,6 +14,7 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.server.Server;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -50,7 +51,7 @@ public class ITZipkinServerHttpCollectorDisabled {
   @Test public void httpCollectorEndpointReturns404() throws Exception {
     Response response = client.newCall(new Request.Builder()
       .url(url(server, "/api/v2/spans"))
-      .post(RequestBody.create(null, "[]"))
+      .post(RequestBody.create("[]", MediaType.parse("application/json")))
       .build()).execute();
 
     assertThat(response.code()).isEqualTo(404);
