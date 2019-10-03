@@ -21,6 +21,7 @@ import {
   spanTreeLineWidthPercentPerDepth,
   spanToggleButtonLengthOfSide,
   serviceNameWidthPercent,
+  spanTreeWidthPercent,
 } from '../sizing';
 import { detailedSpansPropTypes } from '../../../prop-types';
 import { selectServiceColor } from '../../../colors';
@@ -254,7 +255,7 @@ const TraceTree = ({
           <line
             key={`${x}-${y}`}
             x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
-            x2="100%"
+            x2={`${spanTreeWidthPercent + serviceNameWidthPercent}%`}
             y1={spanBarLinePosY(y)}
             y2={spanBarLinePosY(y)}
             className={classes.line}

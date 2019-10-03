@@ -21,6 +21,9 @@ import {
   spanBarHeight,
   spanBarWidthPercent,
   spanBarOffsetXPercent,
+  spanTreeWidthPercent,
+  serviceNameWidthPercent,
+  spanBarLinePosY,
 } from '../sizing';
 import { detailedSpanPropTypes } from '../../../prop-types';
 
@@ -35,6 +38,10 @@ const propTypes = {
 };
 
 const style = theme => ({
+  line: {
+    stroke: theme.palette.grey[400],
+    strokeWidth: '1px',
+  },
   bar: {
     opacity: 0.8,
     fill: theme.palette.primary.main,
@@ -99,6 +106,13 @@ const TraceTimelineRow = ({
 
   return (
     <g>
+      <line
+        x1={`${spanTreeWidthPercent + serviceNameWidthPercent}%`}
+        x2="100%"
+        y1={spanBarLinePosY(index)}
+        y2={spanBarLinePosY(index)}
+        className={classes.line}
+      />
       <rect
         width={`${spanBarWidthPercent(width)}%`}
         height={spanBarHeight - 4}

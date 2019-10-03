@@ -49,16 +49,6 @@ const TraceTimeline = React.memo(({
     height={`${timelineHeight(spans.length)}px`}
   >
     {
-      isRootedTrace ? (
-        <TraceTree
-          spans={spans}
-          depth={depth}
-          childrenHiddenSpanIds={childrenHiddenSpanIds}
-          onChildrenToggle={onChildrenToggle}
-        />
-      ) : null
-    }
-    {
       spans.map((span, idx) => (
         <TraceTimelineRow
           key={span.spanId}
@@ -70,6 +60,16 @@ const TraceTimeline = React.memo(({
           endTs={endTs}
         />
       ))
+    }
+    {
+      isRootedTrace ? (
+        <TraceTree
+          spans={spans}
+          depth={depth}
+          childrenHiddenSpanIds={childrenHiddenSpanIds}
+          onChildrenToggle={onChildrenToggle}
+        />
+      ) : null
     }
   </svg>
 ));
