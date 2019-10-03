@@ -22,6 +22,9 @@ import {
   spanToggleButtonLengthOfSide,
   serviceNameWidthPercent,
   spanTreeWidthPercent,
+  serviceNameBadgeTranslate,
+  serviceNameBadgeWidth,
+  serviceNameBadgeHeight,
 } from '../sizing';
 import { detailedSpansPropTypes } from '../../../prop-types';
 import { selectServiceColor } from '../../../colors';
@@ -232,6 +235,9 @@ const style = theme => ({
     strokeWidth: 1,
     fill: theme.palette.common.white,
   },
+  serviceBadgeText: {
+    textTransform: 'uppercase',
+  },
 });
 
 const TraceTree = ({
@@ -264,12 +270,12 @@ const TraceTree = ({
       }
       {
         serviceNameDataList.map(({ x, y, serviceName }) => (
-          <g transform="translate(16, -12)">
+          <g transform={serviceNameBadgeTranslate}>
             <svg
               x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
               y={spanBarLinePosY(y)}
-              width={`${serviceNameWidthPercent - 2}%`}
-              height={24}
+              width={`${serviceNameBadgeWidth}%`}
+              height={serviceNameBadgeHeight}
             >
               <rect
                 rx={3}
@@ -286,9 +292,7 @@ const TraceTree = ({
                 textAnchor="middle"
                 dominantBaseline="central"
                 fill="white"
-                style={{
-                  textTransform: 'uppercase',
-                }}
+                className={classes.serviceBadgeText}
               >
                 {serviceName}
               </text>

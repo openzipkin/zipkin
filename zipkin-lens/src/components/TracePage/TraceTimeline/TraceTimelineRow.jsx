@@ -17,13 +17,15 @@ import classnames from 'classnames';
 import { withStyles } from '@material-ui/styles';
 
 import {
+  spanBarRowOffsetY,
   spanBarOffsetY,
-  spanBarHeight,
+  spanBarRowHeight,
   spanBarWidthPercent,
   spanBarOffsetXPercent,
   spanTreeWidthPercent,
   serviceNameWidthPercent,
   spanBarLinePosY,
+  spanBarHeight,
 } from '../sizing';
 import { detailedSpanPropTypes } from '../../../prop-types';
 
@@ -115,9 +117,9 @@ const TraceTimelineRow = ({
       />
       <rect
         width={`${spanBarWidthPercent(width)}%`}
-        height={spanBarHeight - 4}
+        height={spanBarHeight}
         x={`${spanBarOffsetXPercent(left)}%`}
-        y={spanBarOffsetY(index) + 2}
+        y={spanBarOffsetY(index)}
         rx={4}
         ry={4}
         className={classes.bar}
@@ -126,7 +128,7 @@ const TraceTimelineRow = ({
         isTextLeft ? (
           <text
             x={`${spanBarOffsetXPercent(left) + 1}%`}
-            y={spanBarOffsetY(index) + 4 + spanBarHeight / 2}
+            y={spanBarOffsetY(index) + spanBarRowHeight / 2}
             className={classes.text}
           >
             {`${span.spanName} ${durationStr}`}
@@ -134,7 +136,7 @@ const TraceTimelineRow = ({
         ) : (
           <text
             x={`${spanBarOffsetXPercent(left) + spanBarWidthPercent(width) - 1}%`}
-            y={spanBarOffsetY(index) + 4 + spanBarHeight / 2}
+            y={spanBarOffsetY(index) + spanBarRowHeight / 2}
             textAnchor="end"
             className={classes.text}
           >
@@ -145,9 +147,9 @@ const TraceTimelineRow = ({
       <rect
         className={classnames(classes.row, { [classes['row--focused']]: isFocused })}
         x={0}
-        y={spanBarOffsetY(index)}
+        y={spanBarRowOffsetY(index)}
         width="100%"
-        height={spanBarHeight}
+        height={spanBarRowHeight}
         onClick={handleClick}
       />
     </g>
