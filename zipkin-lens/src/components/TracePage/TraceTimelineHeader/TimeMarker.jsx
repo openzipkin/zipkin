@@ -17,7 +17,7 @@ import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import classNames from 'classnames';
 
-import { spanTreeWidthPercent, timelineWidthPercent } from '../sizing';
+import { spanTreeWidthPercent, timelineWidthPercent, serviceNameWidthPercent } from '../sizing';
 import { formatDuration } from '../../../util/timestamp';
 
 const propTypes = {
@@ -79,7 +79,7 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
   }
   return (
     <Box display="flex">
-      <Box width={`${spanTreeWidthPercent}%`} />
+      <Box width={`${spanTreeWidthPercent + serviceNameWidthPercent}%`} />
       <Box
         mt={1}
         height={15}
