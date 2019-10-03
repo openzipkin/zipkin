@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useMemo, useCallback } from 'react';
 import classnames from 'classnames';
 import { withStyles } from '@material-ui/styles';
 
@@ -39,7 +39,7 @@ const style = theme => ({
     opacity: 0.8,
     fill: theme.palette.primary.main,
   },
-  button: {
+  row: {
     opacity: 0,
     fill: theme.palette.grey[500],
     cursor: 'pointer',
@@ -47,10 +47,38 @@ const style = theme => ({
       opacity: 0.2,
     },
   },
-  'button--focused': {
+  'row--focused': {
     opacity: 0.3,
   },
+  text: {
+    fontSize: '1.03rem',
+  },
 });
+
+const calculateLeftAndWidth = (startTs, endTs, spanDuration, spanTimestamp) => {
+  const duration = endTs - startTs;
+  if (spanDuration) {
+    return {
+      width: Math.max(spanDuration / duration * 100, 1),
+      left: (spanTimestamp - startTs) / duration * 100,
+    };
+  }
+  // If duration is 0, it can be considered that this span is the only
+  // span displayed on the trace timeline graph.
+  // In that case, width should be 100% and left should be 0%.
+  if (duration === 0) {
+    return {
+      width: 100,
+      left: 0,
+    };
+  }
+  // Even if the span doesn't have duration, should give the span the width
+  // to display it in the UI.
+  return {
+    width: 1,
+    left: (spanTimestamp - startTs) / duration * 100,
+  };
+};
 
 const TraceTimelineRow = ({
   span,
@@ -61,28 +89,13 @@ const TraceTimelineRow = ({
   endTs,
   classes,
 }) => {
-  const duration = endTs - startTs;
-  let left;
-  let width;
-  if (span.duration) {
-    width = Math.max(span.duration / duration * 100, 1);
-    left = (span.timestamp - startTs) / duration * 100;
-  } else {
-    // If duration is 0 (in other words, if startTs and endTs of the list of spans to be
-    // displayed match), it can be considered that this span is the only span displayed
-    // on the trace timeline graph.
-    // In that case, width should be 100% and left should be 0%.
-    const isSingleSpanTrace = duration === 0;
-    if (isSingleSpanTrace) {
-      width = 100;
-      left = 0;
-    } else {
-      // Give the span a default value to display the span bar in the UI even if the
-      // span does not have duration.
-      width = 1;
-      left = (span.timestamp - startTs) / duration * 100;
-    }
-  }
+  const { left, width } = useMemo(
+    () => calculateLeftAndWidth(startTs, endTs, span.duration, span.timestamp),
+    [startTs, endTs, span.duration, span.timestamp],
+  );
+  const handleClick = useCallback(() => onRowClick(span.spanId), [onRowClick, span.spanId]);
+  const durationStr = span.durationStr ? `[${span.durationStr}]` : '';
+  const isTextLeft = endTs - span.timestamp > (endTs - startTs) / 2;
 
   return (
     <g>
@@ -95,24 +108,34 @@ const TraceTimelineRow = ({
         ry={4}
         className={classes.bar}
       />
+      {
+        isTextLeft ? (
+          <text
+            x={`${spanBarOffsetXPercent(left) + 1}%`}
+            y={spanBarOffsetY(index) + 4 + spanBarHeight / 2}
+            className={classes.text}
+          >
+            {`${span.spanName} ${durationStr}`}
+          </text>
+        ) : (
+          <text
+            x={`${spanBarOffsetXPercent(left) + spanBarWidthPercent(width) - 1}%`}
+            y={spanBarOffsetY(index) + 4 + spanBarHeight / 2}
+            textAnchor="end"
+            className={classes.text}
+          >
+            {`${span.spanName} ${durationStr}`}
+          </text>
+        )
+      }
       <rect
-        className={classnames(classes.button, { [classes['button--focused']]: isFocused })}
+        className={classnames(classes.row, { [classes['row--focused']]: isFocused })}
         x={0}
         y={spanBarOffsetY(index)}
         width="100%"
         height={spanBarHeight}
-        onClick={() => onRowClick(span.spanId)}
+        onClick={handleClick}
       />
-      <text
-        x={`${spanBarOffsetXPercent(left) + 1}%`}
-        y={spanBarOffsetY(index) + 4 + spanBarHeight / 2}
-        style={{
-          fontSize: '1.05rem',
-          fontWeight: 'bold',
-        }}
-      >
-        {`${span.spanName}: ${span.durationStr}`}
-      </text>
     </g>
   );
 };
