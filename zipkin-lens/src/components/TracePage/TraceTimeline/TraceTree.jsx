@@ -31,6 +31,7 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   const horizontalLineDataList = [];
   const verticalLineDataList = [];
   const buttonDataList = [];
+  const serviceNameDataList = [];
 
   for (let i = 0; i < spans.length; i += 1) {
     const currentSpan = spans[i];
@@ -52,7 +53,12 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
       // X
       // |
       // |+++Y  <- Write this horizontal line.
-      horizontalLineDataList.push({ x: parent.depth, y: i, serviceName: currentSpan.serviceName });
+      horizontalLineDataList.push({ x: parent.depth, y: i });
+      serviceNameDataList.push({
+        x: currentSpan.depth,
+        y: i,
+        serviceName: currentSpan.serviceName,
+      });
       if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
@@ -78,7 +84,12 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
       // |---Y
       // |
       // |+++Z  <- Write this horizontal line.
-      horizontalLineDataList.push({ x: parent.depth, y: i, serviceName: currentSpan.serviceName });
+      horizontalLineDataList.push({ x: parent.depth, y: i });
+      serviceNameDataList.push({
+        x: currentSpan.depth,
+        y: i,
+        serviceName: currentSpan.serviceName,
+      });
       if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
@@ -114,7 +125,12 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
       // |   |---C
       // |
       // |+++D  <- Write this horizontal line.
-      horizontalLineDataList.push({ x: parent.depth, y: i, serviceName: currentSpan.serviceName });
+      horizontalLineDataList.push({ x: parent.depth, y: i });
+      serviceNameDataList.push({
+        x: currentSpan.depth,
+        y: i,
+        serviceName: currentSpan.serviceName,
+      });
       if (childrenHiddenSpanIds[currentSpan.spanId]) {
         buttonDataList.push({
           x: currentSpan.depth,
@@ -148,7 +164,8 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   // A++++  Root span. Write this horizontal line.
   // |
   // |---B
-  horizontalLineDataList.push({ x: 2, y: 0, serviceName: spans[0].serviceName });
+  horizontalLineDataList.push({ x: spans[0].depth, y: 0 });
+  serviceNameDataList.push({ x: spans[0].depth, y: 0, serviceName: spans[0].serviceName });
   if (childrenHiddenSpanIds[spans[0].spanId]) {
     buttonDataList.push({
       x: spans[0].depth,
@@ -180,6 +197,7 @@ export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
     horizontalLineDataList,
     verticalLineDataList,
     buttonDataList,
+    serviceNameDataList,
   };
 };
 
@@ -226,51 +244,54 @@ const TraceTree = ({
     horizontalLineDataList,
     verticalLineDataList,
     buttonDataList,
+    serviceNameDataList,
   } = useMemo(() => buildTraceTree(spans, childrenHiddenSpanIds), [spans, childrenHiddenSpanIds]);
 
   return (
     <g>
       {
-        horizontalLineDataList.map(({ x, y, serviceName }) => (
-          <g>
-            <line
-              key={`${x}-${y}`}
-              x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
-              x2="100%"
-              y1={spanBarLinePosY(y)}
-              y2={spanBarLinePosY(y)}
-              className={classes.line}
-            />
-            <g transform="translate(16, -12)">
-              <svg
-                x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
-                y={spanBarLinePosY(y)}
-                width={`${serviceNameWidthPercent - 2}%`}
-                height={24}
+        horizontalLineDataList.map(({ x, y }) => (
+          <line
+            key={`${x}-${y}`}
+            x1={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+            x2="100%"
+            y1={spanBarLinePosY(y)}
+            y2={spanBarLinePosY(y)}
+            className={classes.line}
+          />
+        ))
+      }
+      {
+        serviceNameDataList.map(({ x, y, serviceName }) => (
+          <g transform="translate(16, -12)">
+            <svg
+              x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
+              y={spanBarLinePosY(y)}
+              width={`${serviceNameWidthPercent - 2}%`}
+              height={24}
+            >
+              <rect
+                rx={3}
+                ry={3}
+                x={0}
+                y={0}
+                width="100%"
+                height="100%"
+                fill={selectServiceColor(serviceName)}
+              />
+              <text
+                x="50%"
+                y="50%"
+                textAnchor="middle"
+                dominantBaseline="central"
+                fill="white"
+                style={{
+                  textTransform: 'uppercase',
+                }}
               >
-                <rect
-                  rx={3}
-                  ry={3}
-                  x={0}
-                  y={0}
-                  width="100%"
-                  height="100%"
-                  fill={selectServiceColor(serviceName)}
-                />
-                <text
-                  x="50%"
-                  y="50%"
-                  textAnchor="middle"
-                  dominantBaseline="central"
-                  fill="white"
-                  style={{
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  {serviceName}
-                </text>
-              </svg>
-            </g>
+                {serviceName}
+              </text>
+            </svg>
           </g>
         ))
       }
