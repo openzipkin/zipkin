@@ -97,7 +97,7 @@ public class ITZipkinGrpcCollector {
     Response response = client.newCall(new Request.Builder()
       .url(url(server, "/zipkin.proto3.SpanService/Report"))
       .addHeader("te", "trailers")
-      .post(RequestBody.create(MediaType.get("application/grpc"), requestBody.snapshot()))
+      .post(RequestBody.create(requestBody.snapshot(), MediaType.get("application/grpc")))
       .build())
       .execute();
 

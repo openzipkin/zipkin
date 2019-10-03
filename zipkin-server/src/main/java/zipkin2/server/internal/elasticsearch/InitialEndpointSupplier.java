@@ -15,7 +15,7 @@ package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
-import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroupBuilder;
+import com.linecorp.armeria.client.endpoint.dns.DnsAddressEndpointGroup;
 import com.linecorp.armeria.common.SessionProtocol;
 import java.net.URI;
 import java.util.ArrayList;
@@ -62,7 +62,7 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
         // A host that isn't an IP may resolve to multiple IP addresses, so we use a endpoint
         // group to round-robin over them. Users can mix addresses that resolve to multiple IPs
         // with single IPs freely, they'll all get used.
-        endpointGroups.add(new DnsAddressEndpointGroupBuilder(host).port(port).build());
+        endpointGroups.add(DnsAddressEndpointGroup.builder(host).port(port).build());
       }
     }
 

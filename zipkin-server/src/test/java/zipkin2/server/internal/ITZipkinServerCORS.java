@@ -116,7 +116,7 @@ public class ITZipkinServerCORS {
     return client.newCall(new Request.Builder()
       .url(url(server, "/api/v2/spans"))
       .header("Origin", origin)
-      .post(RequestBody.create(MediaType.parse("application/json"), "[]"))
+      .post(RequestBody.create("[]", MediaType.parse("application/json")))
       .build()).execute();
   }
 }

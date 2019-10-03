@@ -152,7 +152,7 @@ public class ITZipkinSelfTracing {
 
     Response response = client.newCall(new Request.Builder()
       .url(url(server, "/api/" + version + "/spans"))
-      .post(RequestBody.create(null, encoder.encodeList(testTrace)))
+      .post(RequestBody.create(encoder.encodeList(testTrace)))
       .build())
       .execute();
     assertSuccessful(response);

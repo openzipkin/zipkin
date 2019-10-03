@@ -30,10 +30,39 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <okhttp.version>4.2.0</okhttp.version>
+
+    <okhttp.version>4.2.1</okhttp.version>
+
+    <!-- Sometimes we need to override Armeria's Brave version -->
+    <brave.version>5.8.0</brave.version>
+
     <maven-invoker-plugin.version>3.2.1</maven-invoker-plugin.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.zipkin.brave</groupId>
+        <artifactId>brave-bom</artifactId>
+        <version>${brave.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Don't bring in brave's transitive dep on zipkin -->
+      <dependency>
+        <groupId>io.zipkin.brave</groupId>
+        <artifactId>brave</artifactId>
+        <version>${brave.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.zipkin.zipkin2</groupId>
+            <artifactId>zipkin</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
@@ -212,7 +241,6 @@
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-context-log4j2</artifactId>
-      <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
