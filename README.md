@@ -14,7 +14,7 @@ percentage of time spent in a service, and whether or not operations failed.
 
 <img src="https://zipkin.io/public/img/web-screenshot.png" alt="Trace view screenshot" />
 
-The Zipkin UI also presents a Dependency diagram showing how many traced
+The Zipkin UI also presents a dependency diagram showing how many traced
 requests went through each application. This can be helpful for identifying
 aggregate behavior including error paths or calls to deprecated services.
 
