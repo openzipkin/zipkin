@@ -270,7 +270,7 @@ const TraceTree = ({
       }
       {
         serviceNameDataList.map(({ x, y, serviceName }) => (
-          <g transform={serviceNameBadgeTranslate}>
+          <g transform={serviceNameBadgeTranslate} key={`${x}-${y}`}>
             <svg
               x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
               y={spanBarLinePosY(y)}
