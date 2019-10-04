@@ -45,7 +45,6 @@ const style = theme => ({
   line: {
     stroke: theme.palette.grey[400],
     strokeWidth: '1px',
-    strokeOpacity: 0.75,
   },
   bar: {
     opacity: 0.8,
