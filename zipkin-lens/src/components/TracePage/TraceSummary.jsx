@@ -50,11 +50,15 @@ const TraceSummary = ({ traceSummary }) => {
   const handleTimelineRowClick = useCallback((spanId) => {
     const idx = traceSummary.spans.findIndex(span => span.spanId === spanId);
     if (isRootedTrace && currentSpanIndex === idx) {
-      setRootSpanIndex(idx);
+      if (rootSpanIndex === idx) {
+        setRootSpanIndex(0);
+      } else {
+        setRootSpanIndex(idx);
+      }
     }
     setCurrentSpanIndex(idx);
     setIsSpanDetailOpened(true);
-  }, [currentSpanIndex, isRootedTrace, traceSummary.spans]);
+  }, [currentSpanIndex, isRootedTrace, traceSummary.spans, rootSpanIndex]);
 
   const rerootedTree = useMemo(() => {
     // If the trace does not have a root span, the trace is not filtered anymore
