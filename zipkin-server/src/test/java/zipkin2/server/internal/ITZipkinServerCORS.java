@@ -37,8 +37,9 @@ import static zipkin2.server.internal.ITZipkinServer.url;
  */
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
   properties = {
+    "server.port=0",
     "spring.config.name=zipkin-server",
     "zipkin.query.allowed-origins=" + ITZipkinServerCORS.ALLOWED_ORIGIN
   }
@@ -88,7 +89,7 @@ public class ITZipkinServerCORS {
   }
 
   static void shouldDisallowOrigin(Response response) {
-    assertThat(response.header("vary")).isNull(); // TODO: We used to set vary: origin
+    assertThat(response.header("vary")).isNull();
     assertThat(response.header("access-control-allow-credentials")).isNull();
     assertThat(response.header("access-control-allow-origin")).isNull();
     assertThat(response.header("access-control-allow-headers")).isNull();
@@ -115,7 +116,7 @@ public class ITZipkinServerCORS {
     return client.newCall(new Request.Builder()
       .url(url(server, "/api/v2/spans"))
       .header("Origin", origin)
-      .post(RequestBody.create(MediaType.parse("application/json"), "[]"))
+      .post(RequestBody.create("[]", MediaType.parse("application/json")))
       .build()).execute();
   }
 }

@@ -74,7 +74,7 @@ public final class SearchRequest {
     return query(new Term(field, value));
   }
 
-  public SearchRequest terms(String field, List<String> values) {
+  public SearchRequest terms(String field, Collection<String> values) {
     return query(new Terms(field, values));
   }
 

@@ -45,8 +45,12 @@ import static zipkin2.server.internal.ITZipkinServer.url;
 /** This tests that we accept messages constructed by other clients. */
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = {"spring.config.name=zipkin-server", "zipkin.collector.grpc.enabled=true"}
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
+  properties = {
+    "server.port=0",
+    "spring.config.name=zipkin-server",
+    "zipkin.collector.grpc.enabled=true"
+  }
 )
 @RunWith(SpringRunner.class)
 public class ITZipkinGrpcCollector {
@@ -93,7 +97,7 @@ public class ITZipkinGrpcCollector {
     Response response = client.newCall(new Request.Builder()
       .url(url(server, "/zipkin.proto3.SpanService/Report"))
       .addHeader("te", "trailers")
-      .post(RequestBody.create(MediaType.get("application/grpc"), requestBody.snapshot()))
+      .post(RequestBody.create(requestBody.snapshot(), MediaType.get("application/grpc")))
       .build())
       .execute();
 

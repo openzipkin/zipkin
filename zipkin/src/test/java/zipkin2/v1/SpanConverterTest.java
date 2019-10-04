@@ -64,7 +64,7 @@ public class SpanConverterTest {
             .addBinaryAnnotation("sa", BACKEND)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -93,7 +93,7 @@ public class SpanConverterTest {
             .addAnnotation(1472470996238000L, "ws", FRONTEND)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -123,7 +123,7 @@ public class SpanConverterTest {
             .addAnnotation(1472470996238000L, "cr", FRONTEND)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
   }
 
   @Test
@@ -150,7 +150,7 @@ public class SpanConverterTest {
         .addBinaryAnnotation("sa", BACKEND)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -172,7 +172,7 @@ public class SpanConverterTest {
         .addBinaryAnnotation("sa", BACKEND)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -202,7 +202,7 @@ public class SpanConverterTest {
             .addBinaryAnnotation("sa", BACKEND)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -236,7 +236,7 @@ public class SpanConverterTest {
             .addBinaryAnnotation("ca", FRONTEND)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -303,7 +303,7 @@ public class SpanConverterTest {
             .duration(207000L)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -330,7 +330,7 @@ public class SpanConverterTest {
             .addAnnotation(1472470996199000L, "sr", null)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -359,7 +359,7 @@ public class SpanConverterTest {
         .addAnnotation(1472470996406000L, "ss", BACKEND)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -386,7 +386,7 @@ public class SpanConverterTest {
         .addAnnotation(1472470996199000L, "sr", BACKEND)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -413,7 +413,7 @@ public class SpanConverterTest {
             .addBinaryAnnotation("ca", FRONTEND)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -435,7 +435,7 @@ public class SpanConverterTest {
             .addBinaryAnnotation("ca", FRONTEND)
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -461,7 +461,7 @@ public class SpanConverterTest {
             .addBinaryAnnotation("lc", "", Endpoint.newBuilder().serviceName("frontend").build())
             .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -490,7 +490,7 @@ public class SpanConverterTest {
         .addBinaryAnnotation("ma", kafka)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -520,7 +520,7 @@ public class SpanConverterTest {
         .addAnnotation(1472470996250000L, "ws", FRONTEND)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -547,7 +547,7 @@ public class SpanConverterTest {
         .addAnnotation(1472470996199000L, "mr", BACKEND)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -576,7 +576,7 @@ public class SpanConverterTest {
         .addBinaryAnnotation("ma", kafka)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 
@@ -606,7 +606,7 @@ public class SpanConverterTest {
         .addAnnotation(1472470996250000L, "mr", BACKEND)
         .build();
 
-    assertThat(v2SpanConverter.convert(v2)).isEqualToComparingFieldByFieldRecursively(v1);
+    assertThat(v2SpanConverter.convert(v2)).usingRecursiveComparison().isEqualTo(v1);
     assertThat(v1SpanConverter.convert(v1)).containsExactly(v2);
   }
 

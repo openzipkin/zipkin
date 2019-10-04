@@ -16,7 +16,7 @@ package zipkin.server;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import zipkin2.server.internal.EnableZipkinServer;
-import zipkin2.server.internal.RegisterZipkinHealthIndicators;
+import zipkin2.server.internal.banner.ZipkinBanner;
 
 @SpringBootApplication
 @EnableZipkinServer
@@ -29,7 +29,7 @@ public class ZipkinServer {
 
   public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
-        .listeners(new RegisterZipkinHealthIndicators())
-        .properties("spring.config.name=zipkin-server").run(args);
+      .banner(new ZipkinBanner())
+      .properties("spring.config.name=zipkin-server").run(args);
   }
 }

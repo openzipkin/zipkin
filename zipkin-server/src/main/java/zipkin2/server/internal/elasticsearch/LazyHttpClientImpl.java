@@ -15,10 +15,8 @@ package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.HttpClient;
-import com.linecorp.armeria.client.endpoint.DynamicEndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
-import com.linecorp.armeria.client.endpoint.StaticEndpointGroup;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.SessionProtocol;
@@ -48,7 +46,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     this.protocol = protocol;
     this.initialEndpoints = initialEndpoints;
     this.healthCheck = es.getHealthCheck();
-    timeoutMillis = es.getTimeout();
+    this.timeoutMillis = es.getTimeout();
     this.meterRegistry = meterRegistry;
   }
 
@@ -72,36 +70,40 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   }
 
   Endpoint getEndpoint() {
-    EndpointGroup endpointGroup = initialEndpoints.get();
-    if (endpointGroup instanceof StaticEndpointGroup && endpointGroup.endpoints().size() == 1) {
-      // Just one non-domain URL, can connect directly without enabling load balancing.
-      return endpointGroup.endpoints().get(0);
+    EndpointGroup initial = initialEndpoints.get();
+    // Only health-check when there are alternative endpoints. There aren't when instanceof Endpoint
+    if (initial instanceof Endpoint) return (Endpoint) initial;
+
+    // Wrap the result when health checking is enabled.
+    EndpointGroup result = initial;
+    if (healthCheck.isEnabled()) result = decorateHealthCheck(initial);
+
+    boolean empty = true;
+    Exception thrown = null;
+    try {
+      // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
+      // block. The alternative is round-robin, which could be unlucky and hit a bad node first.
+      //
+      // We are blocking up to the connection timeout which should be enough time for any DNS
+      // resolution that hasn't happened yet to finish.
+      empty = result.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS).isEmpty();
+    } catch (Exception e) {
+      thrown = e;
     }
 
-    if (endpointGroup instanceof DynamicEndpointGroup) {
-      try {
-        // Since we aren't holding up server startup, or sitting on the event loop, it is ok to
-        // block. The alternative is round-robin, which could be unlucky and hit a bad node first.
-        //
-        // We are blocking up to the connection timeout which should be enough time for any DNS
-        // resolution that hasn't happened yet to finish.
-        endpointGroup.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
-      } catch (Exception e) {
-        // We'll try again next time around.
-        throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
-      }
+    // If health-checking is enabled, we can end up with no endpoints after waiting
+    if (empty) {
+      result.close(); // no-op when not health checked
+      throw new IllegalStateException("couldn't connect any of " + initial.endpoints(), thrown);
     }
 
-    if (healthCheck.isEnabled()) endpointGroup = decorateHealthCheck(endpointGroup);
-
-    // TODO: why must we do this instead of using direct type references.
-    // The static factory is concerning. https://github.com/line/armeria/issues/1084
-    EndpointGroupRegistry.register("elasticsearch", endpointGroup, ROUND_ROBIN);
+    // Currently, there's no alternative to static registries when using Endpoint.ofGroup
+    // https://github.com/line/armeria/issues/1084
+    EndpointGroupRegistry.register("elasticsearch", result, ROUND_ROBIN);
     return Endpoint.ofGroup("elasticsearch");
   }
 
-  // Enables health-checking of an endpoint group, so we only send requests to endpoints that are
-  // up.
+  // Enables health-checking of an endpoint group, so we only send requests to endpoints that are up
   HealthCheckedEndpointGroup decorateHealthCheck(EndpointGroup endpointGroup) {
     HealthCheckedEndpointGroup healthChecked =
       HealthCheckedEndpointGroup.builder(endpointGroup, "/_cluster/health")
@@ -121,18 +123,6 @@ final class LazyHttpClientImpl implements LazyHttpClient {
         .retryInterval(healthCheck.getInterval())
         .build();
     healthChecked.newMeterBinder("elasticsearch").bindTo(meterRegistry);
-
-    // Since we aren't holding up server startup, or sitting on the event loop, it is ok to block.
-    // The alternative is round-robin, which could be unlucky and hit a bad node first.
-    //
-    // We are blocking up to the connection timeout which should be enough time for a health check
-    // to respond.
-    try {
-      healthChecked.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS);
-    } catch (Exception e) {
-      healthChecked.close(); // we'll recreate it the next time around.
-      throw new IllegalStateException("couldn't connect any of " + endpointGroup.endpoints(), e);
-    }
     return healthChecked;
   }
 

@@ -13,8 +13,8 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import java.net.URI;
-import java.util.List;
+import com.linecorp.armeria.client.ClientFactoryBuilder;
+import com.linecorp.armeria.spring.Ssl;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import zipkin2.server.internal.NoOpMeterRegistryConfiguration;
@@ -29,7 +29,18 @@ public final class Access {
       ZipkinElasticsearchStorageConfiguration.class);
   }
 
-  public static List<URI> convert(String hosts) {
-    return HostsConverter.convert(hosts);
+  public static ClientFactoryBuilder configureSsl(ClientFactoryBuilder builder, Ssl ssl) {
+    ZipkinElasticsearchStorageProperties.Ssl eSsl = new ZipkinElasticsearchStorageProperties.Ssl();
+    eSsl.setKeyStore(ssl.getKeyStore());
+    eSsl.setKeyStorePassword(ssl.getKeyStorePassword());
+    eSsl.setKeyStoreType(ssl.getKeyStoreType());
+    eSsl.setTrustStore(ssl.getTrustStore());
+    eSsl.setTrustStorePassword(ssl.getTrustStorePassword());
+    eSsl.setTrustStoreType(ssl.getTrustStoreType());
+    try {
+      return ZipkinElasticsearchStorageConfiguration.configureSsl(builder, eSsl);
+    } catch (Exception e) {
+      throw new AssertionError(e);
+    }
   }
 }

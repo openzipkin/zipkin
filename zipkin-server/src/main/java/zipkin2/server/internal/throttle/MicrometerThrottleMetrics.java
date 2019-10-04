@@ -17,13 +17,13 @@ import com.netflix.concurrency.limits.limiter.AbstractLimiter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.concurrent.ThreadPoolExecutor;
-import zipkin2.server.internal.ActuateCollectorMetrics;
+import zipkin2.server.internal.MicrometerCollectorMetrics;
 
-/** Follows the same naming convention as {@link ActuateCollectorMetrics} */
-final class ActuateThrottleMetrics {
+/** Follows the same naming convention as {@link MicrometerCollectorMetrics} */
+final class MicrometerThrottleMetrics {
   final MeterRegistry registryInstance;
 
-  ActuateThrottleMetrics(MeterRegistry registryInstance) {
+  MicrometerThrottleMetrics(MeterRegistry registryInstance) {
     this.registryInstance = registryInstance;
   }
 

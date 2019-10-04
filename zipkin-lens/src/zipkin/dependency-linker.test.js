@@ -15,18 +15,19 @@ import { DependencyLinker } from './dependency-linker';
 import { SpanNodeBuilder } from './span-node';
 
 const debug = false; // switch to enable console output during tests
+// in reverse order as reporting is more likely to occur this way
 const trace = [
   {
-    traceId: 'a', id: 'a', kind: 'SERVER', localEndpoint: { serviceName: 'web' },
-  },
-  {
-    traceId: 'a', parentId: 'a', id: 'b', kind: 'CLIENT', localEndpoint: { serviceName: 'web' }, remoteEndpoint: { serviceName: 'app' },
+    traceId: 'a', parentId: 'b', id: 'c', kind: 'CLIENT', localEndpoint: { serviceName: 'app' }, remoteEndpoint: { serviceName: 'db' }, tags: { error: true },
   },
   {
     traceId: 'a', parentId: 'a', id: 'b', kind: 'SERVER', localEndpoint: { serviceName: 'app' }, remoteEndpoint: { serviceName: 'web' }, shared: true,
   },
   {
-    traceId: 'a', parentId: 'b', id: 'c', kind: 'CLIENT', localEndpoint: { serviceName: 'app' }, remoteEndpoint: { serviceName: 'db' }, tags: { error: true },
+    traceId: 'a', parentId: 'a', id: 'b', kind: 'CLIENT', localEndpoint: { serviceName: 'web' }, remoteEndpoint: { serviceName: 'app' },
+  },
+  {
+    traceId: 'a', id: 'a', kind: 'SERVER', localEndpoint: { serviceName: 'web' },
   },
 ];
 
@@ -69,28 +70,41 @@ describe('DependencyLinker', () => {
     ]);
   });
 
+  function withLateParent() {
+    const result = trace.slice(0);
+    const missingParent = Object.assign({}, trace[2]);
+    delete missingParent.parentId;
+    result[2] = missingParent;
+    return result;
+  }
+
   /*
-   * Some don't propagate the server's parent ID which creates a race condition. Try to unwind it.
-   *
-   * <p>See https://github.com/openzipkin/zipkin/pull/1745
+   * This test shows that if a parent ID is stored late (ex because it wasn't propagated), the span
+   * can resolve once it is.
    */
   it('should link spans when server is missing its parentId', () => {
-    // this trace is intentionally in reverse order.
-    putTrace([
-      // below the parent ID is null as it wasn't propagated
-      {
-        traceId: 'a', id: 'b', kind: 'SERVER', localEndpoint: { serviceName: 'app' }, shared: true,
-      },
-      {
-        traceId: 'a', parentId: 'a', id: 'b', kind: 'CLIENT', localEndpoint: { serviceName: 'web' },
-      },
-      {
-        traceId: 'a', id: 'a', kind: 'SERVER', localEndpoint: { serviceName: 'web' },
-      },
-    ]);
+    putTrace(withLateParent());
 
     expect(dependencyLinker.link()).toEqual([
       { parent: 'web', child: 'app', callCount: 1 },
+      {
+        parent: 'app', child: 'db', callCount: 1, errorCount: 1,
+      },
+    ]);
+  });
+
+  /*
+   * This test shows that if a parent ID is stored late (ex because it wasn't propagated), the span
+   * can resolve even if the client side is never sent.
+   */
+  it('should link spans when client it never sent', () => {
+    putTrace(withLateParent().filter(s => s !== trace[1])); // client span never sent
+
+    expect(dependencyLinker.link()).toEqual([
+      { parent: 'web', child: 'app', callCount: 1 },
+      {
+        parent: 'app', child: 'db', callCount: 1, errorCount: 1,
+      },
     ]);
   });
 

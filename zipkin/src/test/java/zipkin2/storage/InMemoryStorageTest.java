@@ -156,4 +156,31 @@ public class InMemoryStorageTest {
     assertThat(storage.getKeys().execute()).containsOnlyOnce("http.path");
     assertThat(storage.getValues("http.path").execute()).containsOnlyOnce("/users");
   }
+
+  @Test public void getTraces_byTraceIds() throws IOException {
+    Span trace1Span1 = Span.newBuilder().traceId("1").id("1").name("root")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .timestamp(TODAY * 1000)
+      .build();
+    Span trace1Span2 = Span.newBuilder().traceId("1").parentId("1").id("2")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .timestamp(TODAY * 1000)
+      .build();
+
+    Span trace2Span1 = Span.newBuilder().traceId("2").id("1").name("root")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .timestamp(TODAY * 1000)
+      .build();
+    Span trace2Span2 = Span.newBuilder().traceId("2").parentId("1").id("2")
+      .localEndpoint(Endpoint.newBuilder().serviceName("app").build())
+      .timestamp(TODAY * 1000)
+      .build();
+
+    storage.accept(asList(trace1Span1, trace1Span2, trace2Span1, trace2Span2)).execute();
+
+    assertThat(storage.getTraces(asList("1", "2")).execute()).containsExactly(
+      asList(trace1Span1, trace1Span2),
+      asList(trace2Span1, trace2Span2)
+    );
+  }
 }

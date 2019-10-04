@@ -14,6 +14,7 @@
 package zipkin2.server.internal.scribe;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,6 +29,7 @@ import zipkin2.storage.StorageComponent;
  * asynchronously.
  */
 @Configuration
+@ConditionalOnClass(ScribeCollector.class)
 @ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", havingValue = "true")
 public class ZipkinScribeCollectorConfiguration {
   /** The init method will block until the scribe port is listening, or crash on port conflict */

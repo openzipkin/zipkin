@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.server.internal;
+package zipkin2.server.internal.prometheus;
 
 import com.jayway.jsonpath.JsonPath;
 import com.linecorp.armeria.server.Server;
@@ -46,12 +46,15 @@ import static zipkin2.server.internal.ITZipkinServer.url;
  */
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = "spring.config.name=zipkin-server"
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
+  properties = {
+    "server.port=0",
+    "spring.config.name=zipkin-server"
+  }
 )
 @RunWith(SpringRunner.class)
 @DirtiesContext(classMode = BEFORE_EACH_TEST_METHOD)
-public class ITZipkinMetricsHealthDirty {
+public class ITZipkinMetricsDirty {
 
   @Autowired InMemoryStorage storage;
   @Autowired PrometheusMeterRegistry registry;
@@ -89,9 +92,9 @@ public class ITZipkinMetricsHealthDirty {
 
   @Test public void writeSpans_malformedUpdatesMetrics() throws Exception {
     byte[] body = {'h', 'e', 'l', 'l', 'o'};
-    Double messagesCount =
+    double messagesCount =
       registry.counter("zipkin_collector.messages", "transport", "http").count();
-    Double messagesDroppedCount =
+    double messagesDroppedCount =
       registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
     post("/api/v2/spans", body);
 
@@ -101,6 +104,24 @@ public class ITZipkinMetricsHealthDirty {
       .isEqualTo(messagesCount + 1);
     assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
       .isEqualTo(messagesDroppedCount + 1);
+  }
+
+  /** This tests logic in {@code BodyIsExceptionMessage} is scoped to POST requests. */
+  @Test public void getTrace_malformedDoesntUpdateCollectorMetrics() throws Exception {
+    double messagesCount =
+      registry.counter("zipkin_collector.messages", "transport", "http").count();
+    double messagesDroppedCount =
+      registry.counter("zipkin_collector.messages_dropped", "transport", "http").count();
+
+    Response response = get("/api/v2/trace/0e8b46e1-81b");
+    assertThat(response.code()).isEqualTo(400);
+
+    String json = getAsString("/metrics");
+
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages.http']"))
+      .isEqualTo(messagesCount);
+    assertThat(readDouble(json, "$.['counter.zipkin_collector.messages_dropped.http']"))
+      .isEqualTo(messagesDroppedCount);
   }
 
   private String getAsString(String path) throws IOException {
@@ -118,11 +139,11 @@ public class ITZipkinMetricsHealthDirty {
   private Response post(String path, byte[] body) throws IOException {
     return client.newCall(new Request.Builder()
       .url(url(server, path))
-      .post(RequestBody.create(null, body))
+      .post(RequestBody.create(body))
       .build()).execute();
   }
 
-  static Double readDouble(String json, String jsonPath) {
+  static double readDouble(String json, String jsonPath) {
     return JsonPath.compile(jsonPath).read(json);
   }
 }

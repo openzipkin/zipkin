@@ -20,7 +20,7 @@
   <parent>
     <groupId>io.zipkin</groupId>
     <artifactId>zipkin-parent</artifactId>
-    <version>2.16.1-SNAPSHOT</version>
+    <version>2.17.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-server</artifactId>
@@ -30,14 +30,44 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <maven-invoker-plugin.version>3.2.0</maven-invoker-plugin.version>
+
+    <okhttp.version>4.2.1</okhttp.version>
+
+    <!-- Sometimes we need to override Armeria's Brave version -->
+    <brave.version>5.8.0</brave.version>
+
+    <maven-invoker-plugin.version>3.2.1</maven-invoker-plugin.version>
     <proto.generatedSourceDirectory>${project.build.directory}/generated-test-sources/wire</proto.generatedSourceDirectory>
   </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>io.zipkin.brave</groupId>
+        <artifactId>brave-bom</artifactId>
+        <version>${brave.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <!-- Don't bring in brave's transitive dep on zipkin -->
+      <dependency>
+        <groupId>io.zipkin.brave</groupId>
+        <artifactId>brave</artifactId>
+        <version>${brave.version}</version>
+        <exclusions>
+          <exclusion>
+            <groupId>io.zipkin.zipkin2</groupId>
+            <artifactId>zipkin</artifactId>
+          </exclusion>
+        </exclusions>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
 
   <dependencies>
     <dependency>
       <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-web</artifactId>
+      <artifactId>spring-boot-starter</artifactId>
       <version>${spring-boot.version}</version>
     </dependency>
 
@@ -56,11 +86,6 @@
     </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
-      <artifactId>armeria-spring-boot-actuator-starter</artifactId>
-      <version>${armeria.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-brave</artifactId>
       <version>${armeria.version}</version>
     </dependency>
@@ -70,18 +95,22 @@
       <version>${armeria.version}</version>
     </dependency>
 
-    <!-- zipkin requires exporting /health endpoint -->
+    <!--Prometheus metrics-->
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-actuator</artifactId>
-      <version>${spring-boot.version}</version>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-registry-prometheus</artifactId>
+      <version>${micrometer.version}</version>
     </dependency>
 
     <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-configuration-processor</artifactId>
-      <version>${spring-boot.version}</version>
-      <optional>true</optional>
+      <groupId>com.netflix.concurrency-limits</groupId>
+      <artifactId>concurrency-limits-core</artifactId>
+      <version>0.3.6</version>
+    </dependency>
+    <dependency>
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <version>${micrometer.version}</version>
     </dependency>
 
     <dependency>
@@ -100,40 +129,10 @@
     <dependency>
       <groupId>io.zipkin.java</groupId>
       <artifactId>zipkin-ui</artifactId>
-      <version>2.12.10</version>
-    </dependency>
-    <!-- Static content for the Lens UI -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin-lens</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <!-- HTML library for injecting configurable <base> tag -->
-      <groupId>org.jsoup</groupId>
-      <artifactId>jsoup</artifactId>
-      <version>1.12.1</version>
+      <version>2.12.11</version>
     </dependency>
 
-    <!-- to test the experimental grpc endpoint with the square/wire library -->
-    <dependency>
-      <groupId>io.zipkin.proto3</groupId>
-      <artifactId>zipkin-proto3</artifactId>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.squareup.wire</groupId>
-      <artifactId>wire-runtime</artifactId>
-      <version>${wire.version}</version>
-      <scope>test</scope>
-    </dependency>
-
-    <dependency>
-      <groupId>com.squareup.okhttp3</groupId>
-      <artifactId>okhttp</artifactId>
-      <scope>test</scope>
-    </dependency>
+    <!-- Optional, but packaged in the supported distribution -->
 
     <!-- Cassandra and Cassandra 3 backends -->
     <dependency>
@@ -233,24 +232,6 @@
       <optional>true</optional>
     </dependency>
 
-    <!--Prometheus metrics-->
-    <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-registry-prometheus</artifactId>
-      <version>${micrometer.version}</version>
-    </dependency>
-
-    <dependency>
-      <groupId>com.netflix.concurrency-limits</groupId>
-      <artifactId>concurrency-limits-core</artifactId>
-      <version>0.3.6</version>
-    </dependency>
-    <dependency>
-      <groupId>io.micrometer</groupId>
-      <artifactId>micrometer-core</artifactId>
-      <version>${micrometer.version}</version>
-    </dependency>
-
     <!-- Trace api controller activity with Brave -->
     <dependency>
       <groupId>io.zipkin.brave</groupId>
@@ -260,7 +241,6 @@
     <dependency>
       <groupId>io.zipkin.brave</groupId>
       <artifactId>brave-context-log4j2</artifactId>
-      <version>${brave.version}</version>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -270,6 +250,47 @@
       <optional>true</optional>
     </dependency>
 
+    <!-- Test dependencies -->
+    <!-- to test the experimental grpc endpoint with the square/wire library -->
+    <dependency>
+      <groupId>io.zipkin.proto3</groupId>
+      <artifactId>zipkin-proto3</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
+    <dependency>
+      <groupId>com.google.code.gson</groupId>
+      <artifactId>gson</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.wire</groupId>
+      <artifactId>wire-runtime</artifactId>
+      <version>${wire.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>com.squareup.okhttp3</groupId>
+      <artifactId>okhttp</artifactId>
+      <version>${okhttp.version}</version>
+      <scope>test</scope>
+      <exclusions>
+        <!-- let wire control the okio version -->
+        <exclusion>
+          <groupId>com.squareup.okio</groupId>
+          <artifactId>okio</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+
+    <dependency>
+      <groupId>${armeria.groupId}</groupId>
+      <artifactId>armeria-testing-junit</artifactId>
+      <version>${armeria.version}</version>
+      <scope>test</scope>
+    </dependency>
     <dependency>
       <groupId>${armeria.groupId}</groupId>
       <artifactId>armeria-testing-junit4</artifactId>
@@ -311,6 +332,39 @@
   </dependencies>
 
   <profiles>
+    <profile>
+      <id>actuator</id>
+      <activation>
+        <property>
+          <name>!skipActuator</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- /actuator endpoints -->
+        <dependency>
+          <groupId>${armeria.groupId}</groupId>
+          <artifactId>armeria-spring-boot-actuator-autoconfigure</artifactId>
+          <version>${armeria.version}</version>
+          <optional>true</optional>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
+      <id>include-lens</id>
+      <activation>
+        <property>
+          <name>!skipLens</name>
+        </property>
+      </activation>
+      <dependencies>
+        <!-- Static content for the Lens UI -->
+        <dependency>
+          <groupId>${project.groupId}</groupId>
+          <artifactId>zipkin-lens</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
     <profile>
       <id>integration</id>
       <activation>
@@ -407,24 +461,30 @@
             </goals>
           </execution>
         </executions>
+        <configuration>
+          <failOnNoGitDirectory>false</failOnNoGitDirectory>
+        </configuration>
       </plugin>
 
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
         <version>${spring-boot.version}</version>
+        <configuration>
+          <mainClass>zipkin.server.ZipkinServer</mainClass>
+          <executable>true</executable>
+        </configuration>
         <executions>
           <execution>
+            <id>exec</id>
             <goals>
               <goal>repackage</goal>
             </goals>
+            <configuration>
+              <classifier>exec</classifier>
+            </configuration>
           </execution>
         </executions>
-        <configuration>
-          <mainClass>zipkin.server.ZipkinServer</mainClass>
-          <classifier>exec</classifier>
-          <executable>true</executable>
-        </configuration>
       </plugin>
     </plugins>
   </build>

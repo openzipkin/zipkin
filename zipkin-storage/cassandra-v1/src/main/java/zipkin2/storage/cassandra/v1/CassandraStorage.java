@@ -19,6 +19,7 @@ import com.google.common.cache.CacheBuilderSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
@@ -27,6 +28,7 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
@@ -344,6 +346,10 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     return spanStore;
   }
 
+  @Override public Traces traces() {
+    return (Traces) spanStore();
+  }
+
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
     return (ServiceAndSpanNames) spanStore();
   }
@@ -385,7 +391,8 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     if (closeCalled) throw new IllegalStateException("closed");
     try {
       session.get().execute(QueryBuilder.select("trace_id").from("traces").limit(1));
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
     return CheckResult.OK;

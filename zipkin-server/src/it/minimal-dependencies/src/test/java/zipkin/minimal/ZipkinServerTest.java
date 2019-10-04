@@ -34,14 +34,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = {"spring.config.name=zipkin-server", "server.port=0"}
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
+  properties = {
+    "server.port=0",
+    "spring.config.name=zipkin-server"
+  }
 )
 @RunWith(SpringRunner.class)
 public class ZipkinServerTest {
 
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
+
+  /** Tests admin endpoints work eventhough actuator is no longer a strict dependency. */
+  @Test public void adminEndpoints() throws Exception {
+    // Documented as supported in our zipkin-server/README.md
+    assertThat(get("/health").isSuccessful()).isTrue();
+    assertThat(get("/info").isSuccessful()).isTrue();
+    assertThat(get("/metrics").isSuccessful()).isTrue();
+    assertThat(get("/prometheus").isSuccessful()).isTrue();
+
+    // Check endpoints we formerly redirected to. Note we never redirected to /actuator/metrics
+    assertThat(get("/actuator/health").isSuccessful()).isTrue();
+    assertThat(get("/actuator/info").isSuccessful()).isTrue();
+    assertThat(get("/actuator/prometheus").isSuccessful()).isTrue();
+  }
 
   @Test public void readsBackNames() throws Exception {
     String service = "web";

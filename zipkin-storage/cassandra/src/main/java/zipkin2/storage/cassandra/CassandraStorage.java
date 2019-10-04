@@ -16,15 +16,13 @@ package zipkin2.storage.cassandra;
 import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
-import com.datastax.driver.core.exceptions.BusyConnectionException;
-import com.datastax.driver.core.exceptions.BusyPoolException;
-import com.datastax.driver.core.exceptions.QueryConsistencyException;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
@@ -33,6 +31,7 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 /**
@@ -217,8 +216,12 @@ public abstract class CassandraStorage extends StorageComponent {
     return new CassandraSpanStore(this);
   }
 
+  @Override public Traces traces() {
+    return (Traces) spanStore();
+  }
+
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
-    return (CassandraSpanStore) spanStore();
+    return (ServiceAndSpanNames) spanStore();
   }
 
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */
@@ -244,7 +247,8 @@ public abstract class CassandraStorage extends StorageComponent {
     try {
       if (closeCalled) throw new IllegalStateException("closed");
       session().execute(QueryBuilder.select("trace_id").from("span").limit(1));
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
     return CheckResult.OK;

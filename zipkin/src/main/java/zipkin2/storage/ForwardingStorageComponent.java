@@ -42,6 +42,10 @@ public abstract class ForwardingStorageComponent extends StorageComponent {
     return delegate().spanConsumer();
   }
 
+  @Override public Traces traces() {
+    return delegate().traces();
+  }
+
   @Override public SpanStore spanStore() {
     return delegate().spanStore();
   }

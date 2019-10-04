@@ -15,8 +15,10 @@ package zipkin2.storage.mysql.v1;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.jooq.Condition;
@@ -40,6 +42,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.stream.Collectors.groupingBy;
 import static org.jooq.impl.DSL.max;
 import static org.jooq.impl.DSL.row;
+import static zipkin2.internal.HexCodec.lowerHexToUnsignedLong;
 import static zipkin2.storage.mysql.v1.Schema.maybeGet;
 import static zipkin2.storage.mysql.v1.SelectAnnotationServiceNames.localServiceNameCondition;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
@@ -62,6 +65,14 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
         @Override
         Condition traceIdCondition(DSLContext context) {
           return schema.spanTraceIdCondition(finalTraceIdHigh, traceIdLow);
+        }
+      };
+    }
+
+    SelectSpansAndAnnotations create(Set<Pair> traceIdPairs) {
+      return new SelectSpansAndAnnotations(schema) {
+        @Override Condition traceIdCondition(DSLContext context) {
+          return schema.spanTraceIdCondition(traceIdPairs);
         }
       };
     }
@@ -94,44 +105,44 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     final Map<Row3<Long, Long, Long>, List<Record>> dbAnnotations;
 
     spansWithoutAnnotations =
-        context
-            .select(schema.spanFields)
-            .from(ZIPKIN_SPANS)
-            .where(traceIdCondition(context))
-            .stream()
-            .map(
-                r ->
-                    V1Span.newBuilder()
-                        .traceIdHigh(maybeGet(r, ZIPKIN_SPANS.TRACE_ID_HIGH, 0L))
-                        .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
-                        .name(r.getValue(ZIPKIN_SPANS.NAME))
-                        .id(r.getValue(ZIPKIN_SPANS.ID))
-                        .parentId(maybeGet(r, ZIPKIN_SPANS.PARENT_ID, 0L))
-                        .timestamp(maybeGet(r, ZIPKIN_SPANS.START_TS, 0L))
-                        .duration(maybeGet(r, ZIPKIN_SPANS.DURATION, 0L))
-                        .debug(r.getValue(ZIPKIN_SPANS.DEBUG)))
-            .collect(
-                groupingBy(
-                    s -> new Pair(s.traceIdHigh(), s.traceId()),
-                    LinkedHashMap::new,
-                    Collectors.toList()));
+      context
+        .select(schema.spanFields)
+        .from(ZIPKIN_SPANS)
+        .where(traceIdCondition(context))
+        .stream()
+        .map(
+          r ->
+            V1Span.newBuilder()
+              .traceIdHigh(maybeGet(r, ZIPKIN_SPANS.TRACE_ID_HIGH, 0L))
+              .traceId(r.getValue(ZIPKIN_SPANS.TRACE_ID))
+              .name(r.getValue(ZIPKIN_SPANS.NAME))
+              .id(r.getValue(ZIPKIN_SPANS.ID))
+              .parentId(maybeGet(r, ZIPKIN_SPANS.PARENT_ID, 0L))
+              .timestamp(maybeGet(r, ZIPKIN_SPANS.START_TS, 0L))
+              .duration(maybeGet(r, ZIPKIN_SPANS.DURATION, 0L))
+              .debug(r.getValue(ZIPKIN_SPANS.DEBUG)))
+        .collect(
+          groupingBy(
+            s -> new Pair(s.traceIdHigh(), s.traceId()),
+            LinkedHashMap::new,
+            Collectors.toList()));
 
     dbAnnotations =
-        context
-            .select(schema.annotationFields)
-            .from(ZIPKIN_ANNOTATIONS)
-            .where(schema.annotationsTraceIdCondition(spansWithoutAnnotations.keySet()))
-            .orderBy(ZIPKIN_ANNOTATIONS.A_TIMESTAMP.asc(), ZIPKIN_ANNOTATIONS.A_KEY.asc())
-            .stream()
-            .collect(
-                groupingBy(
-                    (Record a) ->
-                        row(
-                            maybeGet(a, ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, 0L),
-                            a.getValue(ZIPKIN_ANNOTATIONS.TRACE_ID),
-                            a.getValue(ZIPKIN_ANNOTATIONS.SPAN_ID)),
-                    LinkedHashMap::new,
-                    Collectors.toList())); // LinkedHashMap preserves order while grouping
+      context
+        .select(schema.annotationFields)
+        .from(ZIPKIN_ANNOTATIONS)
+        .where(schema.annotationsTraceIdCondition(spansWithoutAnnotations.keySet()))
+        .orderBy(ZIPKIN_ANNOTATIONS.A_TIMESTAMP.asc(), ZIPKIN_ANNOTATIONS.A_KEY.asc())
+        .stream()
+        .collect(
+          groupingBy(
+            (Record a) ->
+              row(
+                maybeGet(a, ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, 0L),
+                a.getValue(ZIPKIN_ANNOTATIONS.TRACE_ID),
+                a.getValue(ZIPKIN_ANNOTATIONS.SPAN_ID)),
+            LinkedHashMap::new,
+            Collectors.toList())); // LinkedHashMap preserves order while grouping
 
     V1SpanConverter converter = V1SpanConverter.create();
     List<Span> allSpans = new ArrayList<>(spansWithoutAnnotations.size());
@@ -155,16 +166,16 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     if (type == null) return;
     if (type == -1) {
       span.addAnnotation(
-          a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
-          a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-          endpoint);
+        a.getValue(ZIPKIN_ANNOTATIONS.A_TIMESTAMP),
+        a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
+        endpoint);
     } else {
       switch (type) {
         case V1BinaryAnnotation.TYPE_STRING:
           span.addBinaryAnnotation(
-              a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
-              new String(a.getValue(ZIPKIN_ANNOTATIONS.A_VALUE), UTF_8),
-              endpoint);
+            a.getValue(ZIPKIN_ANNOTATIONS.A_KEY),
+            new String(a.getValue(ZIPKIN_ANNOTATIONS.A_VALUE), UTF_8),
+            endpoint);
           break;
         case V1BinaryAnnotation.TYPE_BOOLEAN:
           // address annotations require an endpoint
@@ -187,31 +198,31 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
     long endTs = request.endTs() * 1000;
 
     TableOnConditionStep<?> table =
-        ZIPKIN_SPANS.join(ZIPKIN_ANNOTATIONS).on(schema.joinCondition(ZIPKIN_ANNOTATIONS));
+      ZIPKIN_SPANS.join(ZIPKIN_ANNOTATIONS).on(schema.joinCondition(ZIPKIN_ANNOTATIONS));
 
     int i = 0;
     for (Map.Entry<String, String> kv : request.annotationQuery().entrySet()) {
       ZipkinAnnotations aTable = ZIPKIN_ANNOTATIONS.as("a" + i++);
       if (kv.getValue().isEmpty()) {
         table =
-            maybeOnService(
-                table
-                    .join(aTable)
-                    .on(schema.joinCondition(aTable))
-                    .and(aTable.A_KEY.eq(kv.getKey())),
-                aTable,
-                request.serviceName());
+          maybeOnService(
+            table
+              .join(aTable)
+              .on(schema.joinCondition(aTable))
+              .and(aTable.A_KEY.eq(kv.getKey())),
+            aTable,
+            request.serviceName());
       } else {
         table =
-            maybeOnService(
-                table
-                    .join(aTable)
-                    .on(schema.joinCondition(aTable))
-                    .and(aTable.A_TYPE.eq(V1BinaryAnnotation.TYPE_STRING))
-                    .and(aTable.A_KEY.eq(kv.getKey()))
-                    .and(aTable.A_VALUE.eq(kv.getValue().getBytes(UTF_8))),
-                aTable,
-                request.serviceName());
+          maybeOnService(
+            table
+              .join(aTable)
+              .on(schema.joinCondition(aTable))
+              .and(aTable.A_TYPE.eq(V1BinaryAnnotation.TYPE_STRING))
+              .and(aTable.A_KEY.eq(kv.getKey()))
+              .and(aTable.A_VALUE.eq(kv.getValue().getBytes(UTF_8))),
+            aTable,
+            request.serviceName());
       }
     }
 
@@ -240,30 +251,30 @@ abstract class SelectSpansAndAnnotations implements Function<DSLContext, List<Sp
       dsl.and(ZIPKIN_SPANS.DURATION.greaterOrEqual(request.minDuration()));
     }
     return dsl.groupBy(schema.spanIdFields)
-        .orderBy(max(ZIPKIN_SPANS.START_TS).desc())
-        .limit(request.limit());
+      .orderBy(max(ZIPKIN_SPANS.START_TS).desc())
+      .limit(request.limit());
   }
 
   static TableOnConditionStep<?> maybeOnService(
-      TableOnConditionStep<Record> table, ZipkinAnnotations aTable, String serviceName) {
+    TableOnConditionStep<Record> table, ZipkinAnnotations aTable, String serviceName) {
     if (serviceName == null) return table;
     return table.and(aTable.ENDPOINT_SERVICE_NAME.eq(serviceName));
   }
 
   static Endpoint endpoint(Record a) {
     Endpoint.Builder result =
-        Endpoint.newBuilder()
-            .serviceName(a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME))
-            .port(Schema.maybeGet(a, ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, (short) 0));
+      Endpoint.newBuilder()
+        .serviceName(a.getValue(ZIPKIN_ANNOTATIONS.ENDPOINT_SERVICE_NAME))
+        .port(Schema.maybeGet(a, ZIPKIN_ANNOTATIONS.ENDPOINT_PORT, (short) 0));
     int ipv4 = maybeGet(a, ZIPKIN_ANNOTATIONS.ENDPOINT_IPV4, 0);
     if (ipv4 != 0) {
       result.parseIp( // allocation is ok here as Endpoint.ipv4Bytes would anyway
-          new byte[] {
-            (byte) (ipv4 >> 24 & 0xff),
-            (byte) (ipv4 >> 16 & 0xff),
-            (byte) (ipv4 >> 8 & 0xff),
-            (byte) (ipv4 & 0xff)
-          });
+        new byte[] {
+          (byte) (ipv4 >> 24 & 0xff),
+          (byte) (ipv4 >> 16 & 0xff),
+          (byte) (ipv4 >> 8 & 0xff),
+          (byte) (ipv4 & 0xff)
+        });
     }
     result.parseIp(Schema.maybeGet(a, ZIPKIN_ANNOTATIONS.ENDPOINT_IPV6, null));
     return result.build();

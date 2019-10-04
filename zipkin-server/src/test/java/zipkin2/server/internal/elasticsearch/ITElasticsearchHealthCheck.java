@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import com.linecorp.armeria.common.ClosedSessionException;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
@@ -29,10 +30,17 @@ import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.await;
+import static zipkin2.elasticsearch.Access.pretendIndexTemplatesExist;
 import static zipkin2.server.internal.elasticsearch.TestResponses.GREEN_RESPONSE;
 
+/**
+ * These tests focus on http client health checks not currently in zipkin-storage-elasticsearch.
+ *
+ * <p>We invoke {@link zipkin2.elasticsearch.Access#pretendIndexTemplatesExist(ElasticsearchStorage)}
+ * to ensure focus on http health checks, and away from repeating template dependency tests already
+ * done in zipkin-storage-elasticsearch.
+ */
 public class ITElasticsearchHealthCheck {
-
   static final SettableHealthChecker server1Health = new SettableHealthChecker(true);
 
   @ClassRule public static ServerRule server1 = new ServerRule() {
@@ -57,14 +65,17 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(true);
     server2Health.setHealthy(true);
 
+    initWithHosts("127.0.0.1:" + server1.httpPort() + ",127.0.0.1:" + server2.httpPort());
+  }
+
+  private void initWithHosts(String hosts) {
     TestPropertyValues.of(
       "spring.config.name=zipkin-server",
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.timeout:200",
       "zipkin.storage.elasticsearch.health-check.enabled:true",
       "zipkin.storage.elasticsearch.health-check.interval:100ms",
-      "zipkin.storage.elasticsearch.hosts:127.0.0.1:" +
-        server1.httpPort() + ",127.0.0.1:" + server2.httpPort())
+      "zipkin.storage.elasticsearch.hosts:" + hosts)
       .applyTo(context);
     Access.registerElasticsearch(context);
     context.refresh();
@@ -72,6 +83,8 @@ public class ITElasticsearchHealthCheck {
 
   @Test public void allHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      pretendIndexTemplatesExist(storage);
+
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
@@ -81,8 +94,23 @@ public class ITElasticsearchHealthCheck {
     server1Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      pretendIndexTemplatesExist(storage);
+
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
+    }
+  }
+
+  @Test public void wrongScheme() {
+    context.close();
+    context = new AnnotationConfigApplicationContext();
+    initWithHosts("https://localhost:" + server1.httpPort());
+
+    try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      CheckResult result = storage.check();
+      assertThat(result.ok()).isFalse();
+      // Test this is not wrapped in a rejection exception, as health check is not throttled
+      assertThat(result.error()).isInstanceOf(ClosedSessionException.class);
     }
   }
 
@@ -97,11 +125,14 @@ public class ITElasticsearchHealthCheck {
         "couldn't connect any of [Endpoint{127.0.0.1:%s, weight=1000}, Endpoint{127.0.0.1:%s, weight=1000}]",
         server1.httpPort(), server2.httpPort()
       ));
+      assertThat(result.error())
+        .hasCause(null); // client health check failures are only visible via count of endpoints
     }
   }
 
   @Test public void healthyThenNotHealthyThenHealthy() {
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
+      pretendIndexTemplatesExist(storage);
       CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
 
@@ -129,6 +160,7 @@ public class ITElasticsearchHealthCheck {
       assertThat(result.ok()).isFalse();
 
       server2Health.setHealthy(true);
+      pretendIndexTemplatesExist(storage);
 
       // Health check interval is 100ms
       await().timeout(300, TimeUnit.MILLISECONDS).untilAsserted(() ->
@@ -161,9 +193,11 @@ public class ITElasticsearchHealthCheck {
     server2Health.setHealthy(false);
 
     try (ElasticsearchStorage storage = context.getBean(ElasticsearchStorage.class)) {
-      CheckResult result = storage.check();
+      pretendIndexTemplatesExist(storage);
+
       // Even though cluster health is false, we ignore that and continue to check index health,
       // which is correctly returned by our mock server.
+      CheckResult result = storage.check();
       assertThat(result.ok()).isTrue();
     }
   }

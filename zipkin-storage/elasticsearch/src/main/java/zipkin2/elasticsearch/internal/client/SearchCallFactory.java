@@ -48,18 +48,7 @@ public class SearchCallFactory {
 
   /** Matches the behavior of {@code IndicesOptions#lenientExpandOpen()} */
   String lenientSearch(List<String> indices, @Nullable String type) {
-    return '/' + join(indices) +
+    return '/' + String.join(",", indices) +
       "/_search?allow_no_indices=true&expand_wildcards=open&ignore_unavailable=true";
-  }
-
-  static String join(List<String> parts) {
-    StringBuilder to = new StringBuilder();
-    for (int i = 0, length = parts.size(); i < length; i++) {
-      to.append(parts.get(i));
-      if (i + 1 < length) {
-        to.append(',');
-      }
-    }
-    return to.toString();
   }
 }

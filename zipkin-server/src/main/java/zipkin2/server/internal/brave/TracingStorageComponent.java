@@ -28,6 +28,7 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
 
 // public for use in ZipkinServerConfiguration
 public final class TracingStorageComponent extends ForwardingStorageComponent {
@@ -45,6 +46,10 @@ public final class TracingStorageComponent extends ForwardingStorageComponent {
 
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
     return new TracingServiceAndSpanNames(tracing, delegate.serviceAndSpanNames());
+  }
+
+  @Override public Traces traces() {
+    return new TracingTraces(tracing, delegate.traces());
   }
 
   @Override public SpanStore spanStore() {
@@ -71,6 +76,28 @@ public final class TracingStorageComponent extends ForwardingStorageComponent {
     return "Traced{" + delegate + "}";
   }
 
+  static final class TracingTraces implements Traces {
+    final Tracer tracer;
+    final Traces delegate;
+
+    TracingTraces(Tracing tracing, Traces delegate) {
+      this.tracer = tracing.tracer();
+      this.delegate = delegate;
+    }
+
+    @Override public Call<List<Span>> getTrace(String traceId) {
+      return new TracedCall<>(tracer, delegate.getTrace(traceId), "get-trace");
+    }
+
+    @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
+      return new TracedCall<>(tracer, delegate.getTraces(traceIds), "get-traces");
+    }
+
+    @Override public String toString() {
+      return "Traced{" + delegate + "}";
+    }
+  }
+
   static final class TracingSpanStore implements SpanStore {
     final Tracer tracer;
     final SpanStore delegate;
@@ -84,7 +111,7 @@ public final class TracingStorageComponent extends ForwardingStorageComponent {
       return new TracedCall<>(tracer, delegate.getTraces(request), "get-traces");
     }
 
-    @Override public Call<List<Span>> getTrace(String traceId) {
+    @Override @Deprecated public Call<List<Span>> getTrace(String traceId) {
       return new TracedCall<>(tracer, delegate.getTrace(traceId), "get-trace");
     }
 

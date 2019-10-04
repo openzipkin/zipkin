@@ -14,6 +14,7 @@ zipkin:
     # percentage to traces to retain
     sample-rate: ${COLLECTOR_SAMPLE_RATE:1.0}
     activemq:
+      enabled: ${COLLECTOR_ACTIVEMQ_ENABLED:true}
       # ActiveMQ broker url. Ex. tcp://localhost:61616 or failover:(tcp://localhost:61616,tcp://remotehost:61616)
       url: ${ACTIVEMQ_URL:}
       # Queue from which to collect span messages.
@@ -26,11 +27,12 @@ zipkin:
       password: ${ACTIVEMQ_PASSWORD:}
     http:
       # Set to false to disable creation of spans via HTTP collector API
-      enabled: ${HTTP_COLLECTOR_ENABLED:true}
+      enabled: ${COLLECTOR_HTTP_ENABLED:${HTTP_COLLECTOR_ENABLED:true}}
     grpc:
       # Set to true to enable the GRPC collector
       enabled: ${COLLECTOR_GRPC_ENABLED:false}
     kafka:
+      enabled: ${COLLECTOR_KAFKA_ENABLED:true}
       # Kafka bootstrap broker list, comma-separated host:port values. Setting this activates the
       # Kafka 0.10+ collector.
       bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:}
@@ -41,6 +43,7 @@ zipkin:
       # Count of consumer threads consuming the topic
       streams: ${KAFKA_STREAMS:1}
     rabbitmq:
+      enabled: ${COLLECTOR_RABBITMQ_ENABLED:true}
       # RabbitMQ server address list (comma-separated list of host:port)
       addresses: ${RABBIT_ADDRESSES:}
       concurrency: ${RABBIT_CONCURRENCY:1}
@@ -53,7 +56,7 @@ zipkin:
       useSsl: ${RABBIT_USE_SSL:false}
       uri: ${RABBIT_URI:}
     scribe:
-      enabled: ${SCRIBE_ENABLED:false}
+      enabled: ${COLLECTOR_SCRIBE_ENABLED:${SCRIBE_ENABLED:false}}
       category: ${SCRIBE_CATEGORY:zipkin}
       port: ${COLLECTOR_PORT:9410}
   query:
@@ -79,10 +82,7 @@ zipkin:
       max-queue-size: ${STORAGE_THROTTLE_MAX_QUEUE_SIZE:1000}
     mem:
       # Maximum number of spans to keep in memory.  When exceeded, oldest traces (and their spans) will be purged.
-      # A safe estimate is 1K of memory per span (each span with 2 annotations + 1 binary annotation), plus
-      # 100 MB for a safety buffer.  You'll need to verify in your own environment.
-      # Experimentally, it works with: max-spans of 500000 with JRE argument -Xmx600m.
-      max-spans: 500000
+      max-spans: ${MEM_MAX_SPANS:500000}
     cassandra:
       # Comma separated list of host addresses part of Cassandra cluster. Ports default to 9042 but you can also specify a custom port with 'host:port'.
       contact-points: ${CASSANDRA_CONTACT_POINTS:localhost}
@@ -157,8 +157,8 @@ zipkin:
     # The value here becomes a label in the top-right corner
     environment:
     # Default duration to look back when finding traces.
-    # Affects the "Start time" element in the UI. 1 hour in millis
-    default-lookback: 3600000
+    # Affects the "Start time" element in the UI. 15 minutes in millis
+    default-lookback: 900000
     # When false, disables the "find a trace" screen
     search-enabled: ${SEARCH_ENABLED:true}
     # Which sites this Zipkin UI covers. Regex syntax. (e.g. http:\/\/example.com\/.*)
@@ -172,6 +172,9 @@ zipkin:
     # When false, disables the "Try Lens UI" button in the navigation page
     suggest-lens: true
 
+# We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
+spring.main.web-application-type: none
+# These defaults are not used directly. They are used via armeria namespacing
 server:
   port: ${QUERY_PORT:9411}
   use-forward-headers: true
@@ -180,15 +183,17 @@ server:
     # compresses any response over min-response-size (default is 2KiB)
     # Includes dynamic json content and large static assets from zipkin-ui
     mime-types: application/json,application/javascript,text/css,image/svg
+    min-response-size: 2048
 
-spring.main.web-application-type: none
-
-# We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
 armeria:
   ports:
     - port: ${server.port}
       protocols:
         - http
+  compression:
+    enabled: ${server.compression.enabled}
+    mime-types: ${server.compression.mime-types}
+    min-response-size: ${server.compression.min-response-size}
   gracefulShutdownQuietPeriodMillis: -1
   gracefulShutdownTimeoutMillis: -1
 
@@ -201,22 +206,38 @@ spring:
       # zipkin has its own favicon
       enabled: false
   autoconfigure:
+    # NOTE: These exclusions can drift between Spring Boot minor versions. Audit accordingly.
+    # Ex. curl -s localhost:9411/actuator/beans|jq '.contexts.application.beans|keys_unsorted[]'|sort
     exclude:
-      # otherwise we might initialize even when not needed (ex when storage type is cassandra)
+      # JMX is disabled
+      - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
+      # /health and /actuator/health served directly by Armeria
+      # TODO: exclude after https://github.com/line/armeria/pull/2104
+      # - org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration
+      # /info and /actuator/info served directly by Armeria (content is /info.json)
+      - org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration
+      # /prometheus and /actuator/prometheus are served directly by Armeria
+      - org.springframework.boot.actuate.autoconfigure.metrics.export.prometheus.PrometheusMetricsExportAutoConfiguration
+      # Remove unused auto-configuration
+      - org.springframework.boot.autoconfigure.cassandra.CassandraAutoConfiguration
+      - org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.jooq.JooqAutoConfiguration
       - org.springframework.boot.autoconfigure.jms.activemq.ActiveMQAutoConfiguration
-info:
-  zipkin:
-    version: "@project.version@"
-    commit: "@git.commit.id.abbrev@"
-
+      - org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration
+      - org.springframework.boot.autoconfigure.task.TaskSchedulingAutoConfiguration
 logging:
   pattern:
     level: "%clr(%5p) %clr([%X{traceId}/%X{spanId}]){yellow}"
   level:
     # Silence Invalid method name: '__can__finagle__trace__v3__'
     com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
+
+    # Silence ResponseTimeoutException in the Armeria framework since we log it anyways in HTTP
+    # logging when enabled. https://github.com/line/armeria/issues/2000
+    com.linecorp.armeria.client.HttpResponseDecoder: 'OFF'
 #     # investigate /api/v2/dependencies
 #     zipkin2.internal.DependencyLinker: 'DEBUG'
 #     # log cassandra queries (DEBUG is without values)
@@ -229,15 +250,19 @@ logging:
 #     zipkin2.collector.kafka08.KafkaCollector: 'DEBUG'
 #     zipkin2.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
 #     zipkin2.collector.scribe.ScribeCollector: 'DEBUG'
-
 management:
   endpoints:
     web:
       exposure:
         include: '*'
+  # Below are served directly without actuator.
   endpoint:
     health:
-      show-details: always
+      enabled: false
+    prometheus:
+      enabled: false
+    info:
+      enabled: false
 # Disabling auto time http requests since it is added in Undertow HttpHandler in Zipkin autoconfigure
 # Prometheus module. In Zipkin we use different naming for the http requests duration
   metrics:

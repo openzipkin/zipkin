@@ -34,7 +34,22 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 class ITMySQLStorage {
 
   @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
-    "openzipkin/zipkin-mysql:2.16.0");
+    "openzipkin/zipkin-mysql:2.16.2");
+
+  @Nested
+  class ITTraces extends zipkin2.storage.ITTraces<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
+    }
+
+    @Override @Test @Disabled("No consumer-side span deduplication")
+    public void getTrace_deduplicates() {
+    }
+
+    @Override public void clear() {
+      storage.clear();
+    }
+  }
 
   @Nested
   class ITSpanStore extends zipkin2.storage.ITSpanStore<MySQLStorage> {
@@ -44,9 +59,6 @@ class ITMySQLStorage {
 
     @Override public void clear() {
       storage.clear();
-    }
-
-    @Override @Test @Disabled("No consumer-side span deduplication") public void deduplicates() {
     }
   }
 
