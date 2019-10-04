@@ -33,7 +33,7 @@ const TraceSummary = ({ traceSummary }) => {
   const isRerooted = rootSpanIndex !== 0;
   const [currentSpanIndex, setCurrentSpanIndex] = useState(0);
   const [childrenHiddenSpanIds, setChildrenHiddenSpanIds] = useState({});
-  const [isSpanDetailOpened, setIsSpanDetaileOpened] = useState(true);
+  const [isSpanDetailOpened, setIsSpanDetailOpened] = useState(true);
   const traceTimelineWidthPercent = isSpanDetailOpened ? 60 : 100;
 
   const handleChildrenToggle = useCallback((spanId) => {
@@ -53,6 +53,7 @@ const TraceSummary = ({ traceSummary }) => {
       setRootSpanIndex(idx);
     }
     setCurrentSpanIndex(idx);
+    setIsSpanDetailOpened(true);
   }, [currentSpanIndex, isRootedTrace, traceSummary.spans]);
 
   const rerootedTree = useMemo(() => {
@@ -106,7 +107,7 @@ const TraceSummary = ({ traceSummary }) => {
   }, [rerootedTree]);
 
   const handleSpanDetailToggle = useCallback(() => {
-    setIsSpanDetaileOpened(prev => !prev);
+    setIsSpanDetailOpened(prev => !prev);
   }, []);
 
   const handleExpandButtonClick = useCallback(() => {
