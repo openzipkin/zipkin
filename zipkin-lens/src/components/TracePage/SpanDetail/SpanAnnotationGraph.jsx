@@ -16,7 +16,8 @@ import PropTypes from 'prop-types';
 import Box from '@material-ui/core/Box';
 import { withStyles } from '@material-ui/styles';
 import classnames from 'classnames';
-import _ from 'lodash';
+import minBy from 'lodash/minBy';
+import maxBy from 'lodash/maxBy';
 
 import { selectServiceColor } from '../../../colors';
 import { spanAnnotationsPropTypes } from '../../../prop-types';
@@ -129,8 +130,8 @@ const SpanAnnotationGraph = ({
     minTs = annotations[0].timestamp;
     maxTs = minTs + 1;
   } else {
-    minTs = _.minBy(annotations, 'timestamp').timestamp;
-    maxTs = _.maxBy(annotations, 'timestamp').timestamp;
+    minTs = minBy(annotations, 'timestamp').timestamp;
+    maxTs = maxBy(annotations, 'timestamp').timestamp;
   }
 
   const duration = maxTs - minTs;

@@ -14,7 +14,7 @@
 import React, { useState, useCallback, useMemo } from 'react';
 import Box from '@material-ui/core/Box';
 import { AutoSizer } from 'react-virtualized';
-import _ from 'lodash';
+import minBy from 'lodash/minBy';
 
 import TraceSummaryHeader from './TraceSummaryHeader';
 import TraceTimeline from './TraceTimeline';
@@ -90,7 +90,7 @@ const TraceSummary = ({ traceSummary }) => {
   }, [rerootedTree, childrenHiddenSpanIds]);
 
   // Find the minumum and maximum timestamps in the shown spans.
-  const startTs = useMemo(() => _.minBy(rerootedTree, 'timestamp').timestamp, [rerootedTree]);
+  const startTs = useMemo(() => minBy(rerootedTree, 'timestamp').timestamp, [rerootedTree]);
   const endTs = useMemo(() => {
     let max = 0;
     rerootedTree.forEach((span) => {

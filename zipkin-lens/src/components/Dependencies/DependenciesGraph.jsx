@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import _ from 'lodash';
+import maxBy from 'lodash/maxBy';
 
 import VizceralExt from './VizceralExt';
 
@@ -67,7 +67,7 @@ class DependenciesGraph extends React.Component {
     const { graph, filter } = this.props;
     let maxVolume = 0;
     if (graph.allEdges().length > 0) {
-      const maxVolumeEdge = _.maxBy(
+      const maxVolumeEdge = maxBy(
         graph.allEdges(), edge => edge.metrics.normal + edge.metrics.danger,
       );
       maxVolume = maxVolumeEdge.metrics.normal + maxVolumeEdge.metrics.danger;

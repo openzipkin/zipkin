@@ -17,7 +17,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
 import moment from 'moment';
 import queryString from 'query-string';
-import _ from 'lodash';
+import isEmpty from 'lodash/isEmpty';
+import isEqual from 'lodash/isEqual';
 import { makeStyles } from '@material-ui/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Box from '@material-ui/core/Box';
@@ -144,15 +145,15 @@ const DiscoverPage = ({ history, location }) => {
       switch (newTabValue) {
         case tracesTab:
           // Fetch traces only if one or more conditions are set.
-          if (!_.isEmpty(conditions)
-            || !_.isEmpty(lookbackCondition)
+          if (!isEmpty(conditions)
+            || !isEmpty(lookbackCondition)
             || !!limitCondition
           ) {
             findTraces();
           }
           break;
         case dependenciesTab:
-          if (!_.isEmpty(conditions) || !_.isEmpty(lookbackCondition)) {
+          if (!isEmpty(conditions) || !isEmpty(lookbackCondition)) {
             findDependencies();
           }
           break;
@@ -231,8 +232,8 @@ const DiscoverPage = ({ history, location }) => {
       case '/zipkin/':
         setTabValue(tracesTab);
         // Fetch traces only if one or more conditions are set.
-        if (!_.isEmpty(conditionsFromUrl)
-          || !_.isEmpty(lookbackConditionFromUrl)
+        if (!isEmpty(conditionsFromUrl)
+          || !isEmpty(lookbackConditionFromUrl)
           || !!limitConditionFromUrl
         ) {
           const apiQueryParams = buildTracesApiQueryParameters(
@@ -241,7 +242,7 @@ const DiscoverPage = ({ history, location }) => {
             limitConditionFromUrl,
             currentTs,
           );
-          if (!_.isEqual(apiQueryParams, lastQueryParams)) {
+          if (!isEqual(apiQueryParams, lastQueryParams)) {
             dispatch(loadTraces(apiQueryParams));
           }
         }
@@ -249,7 +250,7 @@ const DiscoverPage = ({ history, location }) => {
       case '/zipkin/dependency':
         setTabValue(dependenciesTab);
 
-        if (!_.isEmpty(conditionsFromUrl) || !_.isEmpty(lookbackConditionFromUrl)) {
+        if (!isEmpty(conditionsFromUrl) || !isEmpty(lookbackConditionFromUrl)) {
           dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
             lookbackConditionFromUrl,
             currentTs,
