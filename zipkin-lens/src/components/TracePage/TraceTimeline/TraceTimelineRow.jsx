@@ -29,6 +29,8 @@ import {
 } from '../sizing';
 import { detailedSpanPropTypes } from '../../../prop-types';
 
+const minWidth = 0.25;
+
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
   index: PropTypes.number.isRequired,
@@ -43,6 +45,7 @@ const style = theme => ({
   line: {
     stroke: theme.palette.grey[400],
     strokeWidth: '1px',
+    strokeOpacity: 0.75,
   },
   bar: {
     opacity: 0.8,
@@ -68,7 +71,7 @@ const calculateLeftAndWidth = (startTs, endTs, spanDuration, spanTimestamp) => {
   const duration = endTs - startTs;
   if (spanDuration) {
     return {
-      width: Math.max(spanDuration / duration * 100, 1),
+      width: Math.max(spanDuration / duration * 100, minWidth),
       left: (spanTimestamp - startTs) / duration * 100,
     };
   }
@@ -84,7 +87,7 @@ const calculateLeftAndWidth = (startTs, endTs, spanDuration, spanTimestamp) => {
   // Even if the span doesn't have duration, should give the span the width
   // to display it in the UI.
   return {
-    width: 1,
+    width: minWidth,
     left: (spanTimestamp - startTs) / duration * 100,
   };
 };

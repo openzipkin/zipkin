@@ -18,6 +18,7 @@ import TraceTree from './TraceTree';
 import TraceTimelineRow from './TraceTimelineRow';
 import { detailedSpansPropTypes } from '../../../prop-types';
 import { timelineHeight } from '../sizing';
+import TimeMarker from './TimeMarker';
 
 const propTypes = {
   currentSpanId: PropTypes.string.isRequired,
@@ -48,6 +49,7 @@ const TraceTimeline = React.memo(({
     width="100%"
     height={`${timelineHeight(spans.length)}px`}
   >
+    <TimeMarker />
     {
       spans.map((span, idx) => (
         <TraceTimelineRow
