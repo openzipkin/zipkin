@@ -77,11 +77,15 @@ const TraceTimelineHeader = ({
             <Box component="span" className="fas fa-angle-down" />
           </Button>
         </ButtonGroup>
-        <Box ml={1}>
-          <Button disabled={!isRootedTrace || !isRerooted} variant="outlined" onClick={onResetRerootButtonClick}>
-            Reset Reroot
-          </Button>
-        </Box>
+        {
+          (isRootedTrace && isRerooted) ? (
+            <Box ml={1}>
+              <Button variant="outlined" onClick={onResetRerootButtonClick}>
+                Reset Reroot
+              </Button>
+            </Box>
+          ) : null
+        }
       </Box>
       <Button className={classes.textButton} onClick={onSpanDetailToggle}>
         <Box
