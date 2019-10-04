@@ -341,7 +341,7 @@ const TraceTree = ({
                 y2={spanToggleButtonLengthOfSide / 2}
               />
               {
-                !isClosed ? (
+                isClosed ? (
                   <line
                     x1={spanToggleButtonLengthOfSide / 2}
                     x2={spanToggleButtonLengthOfSide / 2}
