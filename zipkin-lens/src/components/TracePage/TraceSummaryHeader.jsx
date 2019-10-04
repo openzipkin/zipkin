@@ -29,6 +29,9 @@ const defaultProps = {
 };
 
 const useStyles = makeStyles(theme => ({
+  headerTop: {
+    borderColor: theme.palette.grey[300],
+  },
   serviceName: {
     textTransform: 'uppercase',
   },
@@ -47,7 +50,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
         display="flex"
         justifyContent="space-between"
         borderBottom={1}
-        borderColor="grey.300"
+        className={classes.headerTop}
       >
         <Box display="flex" alignItems="center">
           {
