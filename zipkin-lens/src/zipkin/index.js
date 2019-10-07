@@ -12,9 +12,9 @@
  * the License.
  */
 export { treeCorrectedForClockSkew } from './clock-skew';
+export { getServiceName } from './span-row';
 export {
   traceSummary,
   traceSummaries,
   detailedTraceSummary,
-  rootServiceAndSpanName,
 } from './trace';

@@ -23,9 +23,24 @@ import grey from '@material-ui/core/colors/grey';
 import { fade } from '@material-ui/core/styles/colorManipulator';
 
 import ServiceBadge from '../../Common/ServiceBadge';
-import { rootServiceAndSpanName } from '../../../zipkin';
+import { getServiceName } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
 import { theme } from '../../../colors';
+
+export function rootServiceAndSpanName(root) {
+  const { span } = root;
+  if (span) {
+    const serviceName = getServiceName(span.localEndpoint) || getServiceName(span.remoteEndpoint);
+    return {
+      serviceName: serviceName || 'unknown',
+      spanName: span.name || 'unknown',
+    };
+  }
+  return {
+    serviceName: 'unknown',
+    spanName: 'unknown',
+  };
+}
 
 const propTypes = {
   traceSummary: traceSummaryPropTypes.isRequired,
