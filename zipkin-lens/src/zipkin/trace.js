@@ -14,7 +14,7 @@
 import _ from 'lodash';
 import moment from 'moment';
 import { compare } from './span-cleaner';
-import { getErrorType, newSpanRow, getServiceName } from './span-row';
+import { getErrorType, newSpanRow } from './span-row';
 
 // To ensure data doesn't scroll off the screen, we need all timestamps, not just
 // client/server ones.
@@ -247,6 +247,7 @@ function addLayoutDetails(
     spanRow.durationStr = mkDurationStr(spanRow.duration); // bubble over the span in trace view
   } else {
     spanRow.width = 0.1;
+    spanRow.durationStr = '';
   }
 
   if (traceDuration) {
@@ -264,20 +265,6 @@ function addLayoutDetails(
   } else {
     spanRow.left = 0;
   }
-}
-
-export function rootServiceAndSpanName(root) {
-  const { span } = root;
-  if (span) {
-    return {
-      serviceName: getServiceName(span.localEndpoint) || getServiceName(span.remoteEndpoint),
-      spanName: span.name,
-    };
-  }
-  return {
-    serviceName: 'unknown',
-    spanName: 'unknown',
-  };
 }
 
 export function detailedTraceSummary(root, logsUrl) {
@@ -339,8 +326,8 @@ export function detailedTraceSummary(root, logsUrl) {
 
   if (modelview.spans.length >= 0) {
     modelview.rootSpan = {
-      serviceName: modelview.spans[0].serviceName,
-      spanName: modelview.spans[0].spanName,
+      serviceName: modelview.spans[0].serviceName || 'unknown',
+      spanName: modelview.spans[0].spanName || 'unknown',
     };
   } else {
     modelview.rootSpan = {
@@ -360,7 +347,7 @@ export function detailedTraceSummary(root, logsUrl) {
   modelview.timeMarkersBackup = modelview.timeMarkers;
 
   modelview.duration = duration;
-  if (duration) modelview.durationStr = mkDurationStr(duration);
+  modelview.durationStr = mkDurationStr(duration);
   if (logsUrl) modelview.logsUrl = logsUrl;
 
   return modelview;

@@ -14,7 +14,70 @@
 import React from 'react';
 import { mount } from 'enzyme';
 
-import { TracesTableRowImpl } from './TracesTableRow';
+import { TracesTableRowImpl, rootServiceAndSpanName } from './TracesTableRow';
+import { SpanNode } from '../../../zipkin/span-node';
+
+describe('rootServiceAndSpanName', () => {
+  it('should return serviceName and spanName of the span', () => {
+    const root = new SpanNode({
+      traceId: '1',
+      id: '1',
+      name: 'get',
+      localEndpoint: { serviceName: 'frontend' },
+    });
+
+    expect(rootServiceAndSpanName(root)).toEqual({
+      serviceName: 'frontend',
+      spanName: 'get',
+    });
+  });
+
+  it('should return unknown serviceName when missing localEndpoint', () => {
+    const root = new SpanNode({ traceId: '1', id: '1', name: 'get' });
+
+    expect(rootServiceAndSpanName(root)).toEqual({
+      serviceName: 'unknown',
+      spanName: 'get',
+    });
+  });
+
+  it('should return unknown serviceName when missing localEndpoint.serviceName', () => {
+    const root = new SpanNode({
+      traceId: '1', id: '1', name: 'get', localEndpoint: { },
+    });
+
+    expect(rootServiceAndSpanName(root)).toEqual({
+      serviceName: 'unknown',
+      spanName: 'get',
+    });
+  });
+
+  it('should return unknown spanName when missing span.name', () => {
+    const root = new SpanNode({ traceId: '1', id: '1', localEndpoint: { serviceName: 'frontend' } });
+
+    expect(rootServiceAndSpanName(root)).toEqual({
+      serviceName: 'frontend',
+      spanName: 'unknown',
+    });
+  });
+
+  it('should return unknown serviceName and spanName when the span is headless', () => {
+    const headless = new SpanNode(); // headless as there's no root span
+    const child = new SpanNode({
+      traceId: '1',
+      parentId: '1',
+      id: '2',
+      name: 'get',
+      localEndpoint: { serviceName: 'frontend' },
+    });
+    headless.addChild(child);
+
+    expect(rootServiceAndSpanName(headless)).toEqual({
+      serviceName: 'unknown',
+      spanName: 'unknown',
+    });
+  });
+});
 
 describe('<TracesTableRow />', () => {
   let wrapper;

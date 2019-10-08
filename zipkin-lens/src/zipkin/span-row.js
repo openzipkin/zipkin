@@ -288,6 +288,10 @@ export function getServiceName(endpoint) {
   return endpoint ? endpoint.serviceName : undefined;
 }
 
+function isNullOrUndefined(ref) {
+  return typeof (ref) === 'undefined' || ref === null;
+}
+
 // Merges the data into a single span row, which is lacking presentation information
 export function newSpanRow(spansToMerge, isLeafSpan) {
   const [first] = spansToMerge;
@@ -341,6 +345,15 @@ export function newSpanRow(spansToMerge, isLeafSpan) {
   if (!res.timestamp && sharedTimestamp) res.timestamp = sharedTimestamp;
   // duration is used for deriving data, and also for the zoom function
   if (!res.duration && sharedDuration) res.duration = sharedDuration;
+
+  // Ensure no required property failures rendering an incomplete or malformed trace
+  if (isNullOrUndefined(res.duration)) res.duration = 0;
+  if (isNullOrUndefined(res.spanName)) res.spanName = 'unknown';
+  if (isNullOrUndefined(res.serviceName)) res.serviceName = 'unknown';
+  res.annotations.forEach((a) => {
+    // eslint-disable-next-line no-param-reassign
+    if (isNullOrUndefined(a.endpoint)) a.endpoint = 'unknown';
+  });
 
   res.serviceNames.sort();
   res.annotations.sort((a, b) => a.timestamp - b.timestamp);
