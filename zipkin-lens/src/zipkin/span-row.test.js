@@ -14,8 +14,9 @@
 import { newSpanRow, getErrorType, formatEndpoint } from './span-row';
 import { clean } from './span-cleaner';
 
-// bad trace from https://github.com/openzipkin/zipkin/issues/2829
-import malformedTrace from '../test/data/malformed';
+// bad traces from https://github.com/openzipkin/zipkin/issues/2829
+import malformedTrace from '../test/data/malformed'; // Many data problems from Kong
+import envoyTrace from '../test/data/envoy'; // Slight problem: it is missing the local service name
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
@@ -1182,7 +1183,7 @@ describe('newSpanRow', () => {
 
   // This prevents white screens due to failed required property tests downstream
   it('should backfill data in malformed trace', () => {
-    malformedTrace.forEach((span) => {
+    malformedTrace.concat(envoyTrace).forEach((span) => {
       const spanRow = newSpanRow([clean(span)], false);
       expect(spanRow.duration).toBeDefined();
       expect(spanRow.serviceName).toBeDefined();
