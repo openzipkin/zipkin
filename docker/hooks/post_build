@@ -9,13 +9,13 @@ cd ..
 # We always build an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
 echo Building zipkin-ui
 IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
-docker build -f "$DOCKERFILE_PATH" -t "anuraaga/docker-hub-test-2:${TAGS[0]}" --target zipkin-ui .
+docker build -f "$DOCKERFILE_PATH" -t "openzipkin/zipkin-ui:${TAGS[0]}" --target zipkin-ui .
 for tag in ${TAGS[@]:1}; do
-  docker tag "anuraaga/docker-hub-test-2:${TAGS[0]}" "anuraaga/docker-hub-test-2:$tag"
+  docker tag "openzipkin/zipkin-ui:${TAGS[0]}" "openzipkin/zipkin-ui:$tag"
 done
 
 if [[ "$DOCKER_TAG" == "master" ]]; then
   # We rebuild the builder image on master push, not on release pushes.
   echo Building zipkin-builder
-  docker build -f "$DOCKERFILE_PATH" -t anuraaga/docker-hub-test-3 --target zipkin-builder .
+  docker build -f "$DOCKERFILE_PATH" -t openzipkin/zipkin-builder --target zipkin-builder .
 fi
