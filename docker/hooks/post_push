@@ -1,15 +1,20 @@
 #!/bin/bash
 
-if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
+set -v
+
+if [[ "$DOCKER_REPO" == "index.docker.io/anuraaga/docker-hub-test" ]]; then
   # We always push an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
   echo Pushing zipkin-ui
-  docker push openzipkin/zipkin-ui:$DOCKER_TAG
+  IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
+  for tag in ${TAGS[@]}; do
+    docker push "anuraaga/docker-hub-test-2:$tag"
+  done
 
   if [[ "$DOCKER_TAG" == "master" ]]; then
     # We repush the builder image on master push, not on release pushes.
     echo Pushing zipkin-builder
     # zipkin-builder is just a cache of maven / npm dependencies, there's no need to version it
     # with docker tags.
-    docker push openzipkin/zipkin-builder
+    docker push anuraaga/docker-hub-test-3
   fi
 fi
