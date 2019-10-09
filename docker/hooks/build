@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -v
+
 # Docker Hub's default build command seems to not handle .dockerignore correctly. Doing a simple build command
 # ourselves works fine.
 
@@ -8,3 +10,8 @@
 cd ..
 
 docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
+
+IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
+for tag in ${TAGS[@]}; do
+  docker tag "$IMAGE_NAME" "${DOCKER_REPO}:${tag}"
+done
