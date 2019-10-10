@@ -60,7 +60,7 @@ public class ZipkinMetricsController {
       } // We only use counters and gauges
     }
     generator.writeEndObject();
-    generator.flush();
+    generator.flush(); // instead of using try/finally as extra indent causes lines to wrap
     return HttpResponse.of(HttpStatus.OK, MediaType.JSON, writer.toString());
   }
 }

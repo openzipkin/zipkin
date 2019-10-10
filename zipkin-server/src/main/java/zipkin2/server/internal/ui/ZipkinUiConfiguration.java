@@ -122,8 +122,8 @@ public class ZipkinUiConfiguration {
       legacyIndex = HttpFileBuilder.ofResource("zipkin-ui/index.html");
       lensIndex = HttpFileBuilder.ofResource("zipkin-lens/index.html");
     } else {
-      legacyIndex = HttpFileBuilder.of(HttpData.wrap(processedIndexHtml().getBytes(UTF_8)));
-      lensIndex = HttpFileBuilder.of(HttpData.wrap(processedLensIndexHtml().getBytes(UTF_8)));
+      legacyIndex = HttpFileBuilder.of(HttpData.ofUtf8(processedIndexHtml()));
+      lensIndex = HttpFileBuilder.of(HttpData.ofUtf8(processedLensIndexHtml()));
     }
 
     ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
@@ -151,7 +151,7 @@ public class ZipkinUiConfiguration {
 
     String config = writeConfig(ui);
     return sb -> {
-      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.of(UTF_8, config))
+      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.ofUtf8(config))
         .cacheControl(new ServerCacheControlBuilder().maxAgeSeconds(600).build())
         .contentType(MediaType.JSON_UTF_8)
         .build()

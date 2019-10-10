@@ -98,48 +98,48 @@ public class ZipkinHealthController {
 
   static String writeJsonError(String error) throws IOException {
     StringWriter writer = new StringWriter();
-    JsonGenerator generator = JSON_FACTORY.createGenerator(writer);
-    generator.useDefaultPrettyPrinter();
-    generator.writeStartObject();
-    generator.writeStringField("status", STATUS_DOWN);
-    generator.writeObjectFieldStart("zipkin");
-    generator.writeStringField("status", STATUS_DOWN);
-    generator.writeObjectFieldStart("details");
-    generator.writeStringField("error", error);
-    generator.writeEndObject(); // .zipkin.details
-    generator.writeEndObject(); // .zipkin
-    generator.writeEndObject(); // .
-    generator.flush();
+    try (JsonGenerator generator = JSON_FACTORY.createGenerator(writer)) {
+      generator.useDefaultPrettyPrinter();
+      generator.writeStartObject();
+      generator.writeStringField("status", STATUS_DOWN);
+      generator.writeObjectFieldStart("zipkin");
+      generator.writeStringField("status", STATUS_DOWN);
+      generator.writeObjectFieldStart("details");
+      generator.writeStringField("error", error);
+      generator.writeEndObject(); // .zipkin.details
+      generator.writeEndObject(); // .zipkin
+      generator.writeEndObject(); // .
+    }
     return writer.toString();
   }
 
   static String writeJson(String overallStatus, List<ComponentHealth> healths) throws IOException {
     StringWriter writer = new StringWriter();
-    JsonGenerator generator = JSON_FACTORY.createGenerator(writer);
-    generator.useDefaultPrettyPrinter();
-    generator.writeStartObject();
-    generator.writeStringField("status", overallStatus);
-    generator.writeObjectFieldStart("zipkin");
-    generator.writeStringField("status", overallStatus);
-    generator.writeObjectFieldStart("details");
+    try (JsonGenerator generator = JSON_FACTORY.createGenerator(writer)) {
+      generator.useDefaultPrettyPrinter();
+      generator.writeStartObject();
+      generator.writeStringField("status", overallStatus);
+      generator.writeObjectFieldStart("zipkin");
+      generator.writeStringField("status", overallStatus);
+      generator.writeObjectFieldStart("details");
 
-    for (ComponentHealth health : healths) {
-      generator.writeObjectFieldStart(health.name);
-      generator.writeStringField("status", health.status);
+      for (ComponentHealth health : healths) {
+        generator.writeObjectFieldStart(health.name);
+        generator.writeStringField("status", health.status);
 
-      if (health.status.equals(STATUS_DOWN)) {
-        generator.writeObjectFieldStart("details");
-        generator.writeStringField("error", health.error);
-        generator.writeEndObject(); // .zipkin.details.healthName.details
+        if (health.status.equals(STATUS_DOWN)) {
+          generator.writeObjectFieldStart("details");
+          generator.writeStringField("error", health.error);
+          generator.writeEndObject(); // .zipkin.details.healthName.details
+        }
+
+        generator.writeEndObject(); // .zipkin.details.healthName
       }
 
-      generator.writeEndObject(); // .zipkin.details.healthName
+      generator.writeEndObject(); // .zipkin.details
+      generator.writeEndObject(); // .zipkin
+      generator.writeEndObject(); // .
     }
-
-    generator.writeEndObject(); // .zipkin.details
-    generator.writeEndObject(); // .zipkin
-    generator.writeEndObject(); // .
-    generator.flush();
     return writer.toString();
   }
 }
