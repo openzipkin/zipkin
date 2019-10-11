@@ -13,7 +13,8 @@
  */
 package zipkin2.server.internal.ui;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
@@ -37,6 +38,7 @@ import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.StringWriter;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -78,8 +80,9 @@ import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @EnableConfigurationProperties({ZipkinUiProperties.class, CompressionProperties.class})
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 public class ZipkinUiConfiguration {
-  @Autowired
-  ZipkinUiProperties ui;
+  static final JsonFactory JSON_FACTORY = new JsonFactory();
+
+  @Autowired ZipkinUiProperties ui;
 
   @Value("classpath:zipkin-ui/index.html")
   Resource indexHtml;
@@ -119,8 +122,8 @@ public class ZipkinUiConfiguration {
       legacyIndex = HttpFileBuilder.ofResource("zipkin-ui/index.html");
       lensIndex = HttpFileBuilder.ofResource("zipkin-lens/index.html");
     } else {
-      legacyIndex = HttpFileBuilder.of(HttpData.wrap(processedIndexHtml().getBytes(UTF_8)));
-      lensIndex = HttpFileBuilder.of(HttpData.wrap(processedLensIndexHtml().getBytes(UTF_8)));
+      legacyIndex = HttpFileBuilder.of(HttpData.ofUtf8(processedIndexHtml()));
+      lensIndex = HttpFileBuilder.of(HttpData.ofUtf8(processedLensIndexHtml()));
     }
 
     ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
@@ -146,9 +149,9 @@ public class ZipkinUiConfiguration {
         .orElse(
           HttpFileServiceBuilder.forClassPath("zipkin-lens").cacheControl(maxAgeYear).build());
 
-    byte[] config = new ObjectMapper().writeValueAsBytes(ui);
+    String config = writeConfig(ui);
     return sb -> {
-      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.wrap(config))
+      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.ofUtf8(config))
         .cacheControl(new ServerCacheControlBuilder().maxAgeSeconds(600).build())
         .contentType(MediaType.JSON_UTF_8)
         .build()
@@ -189,8 +192,7 @@ public class ZipkinUiConfiguration {
     }
 
     @Override
-    public HttpResponse doGet(ServiceRequestContext ctx, HttpRequest req)
-      throws Exception {
+    public HttpResponse doGet(ServiceRequestContext ctx, HttpRequest req) throws Exception {
       Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(
         req.headers().get(HttpHeaderNames.COOKIE, ""));
       for (Cookie cookie : cookies) {
@@ -200,5 +202,35 @@ public class ZipkinUiConfiguration {
       }
       return legacyIndex.serve(ctx, req);
     }
+  }
+
+  // This writes the following config used in zipkin-classic (not yet in zipkin-lens)
+  //
+  // environment: '',
+  // suggestLens: false,
+  // queryLimit: 10,
+  // defaultLookback: 15 * 60 * 1000, // 15 minutes
+  // searchEnabled: true,
+  // dependency: {
+  //   lowErrorRate: 0.5, // 50% of calls in error turns line yellow
+  //   highErrorRate: 0.75 // 75% of calls in error turns line red
+  // }
+  static String writeConfig(ZipkinUiProperties ui) throws IOException {
+    StringWriter writer = new StringWriter();
+    JsonGenerator generator = JSON_FACTORY.createGenerator(writer);
+    generator.useDefaultPrettyPrinter();
+    generator.writeStartObject();
+    generator.writeStringField("environment", ui.getEnvironment());
+    generator.writeBooleanField("suggestLens", ui.isSuggestLens());
+    generator.writeNumberField("queryLimit", ui.getQueryLimit());
+    generator.writeNumberField("defaultLookback", ui.getDefaultLookback());
+    generator.writeBooleanField("searchEnabled", ui.isSearchEnabled());
+    generator.writeObjectFieldStart("dependency");
+    generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
+    generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());
+    generator.writeEndObject(); // .dependency
+    generator.writeEndObject(); // .
+    generator.flush();
+    return writer.toString();
   }
 }

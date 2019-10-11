@@ -13,13 +13,14 @@
  */
 package zipkin2.server.internal.prometheus;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonToken;
 import com.linecorp.armeria.server.Server;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -39,6 +40,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.server.internal.ITZipkinServer.url;
+import static zipkin2.server.internal.prometheus.ZipkinMetricsController.JSON_FACTORY;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
@@ -169,16 +171,15 @@ public class ITZipkinMetrics {
 
     String metrics = getAsString("/metrics");
 
-    assertThat(readJson(metrics))
-      .containsExactlyInAnyOrder(
-        "gauge.zipkin_collector.message_spans.http"
-        , "gauge.zipkin_collector.message_bytes.http"
-        , "counter.zipkin_collector.messages.http"
-        , "counter.zipkin_collector.bytes.http"
-        , "counter.zipkin_collector.spans.http"
-        , "counter.zipkin_collector.messages_dropped.http"
-        , "counter.zipkin_collector.spans_dropped.http"
-      );
+    assertThat(readJson(metrics)).containsOnlyKeys(
+      "gauge.zipkin_collector.message_spans.http"
+      , "gauge.zipkin_collector.message_bytes.http"
+      , "counter.zipkin_collector.messages.http"
+      , "counter.zipkin_collector.bytes.http"
+      , "counter.zipkin_collector.spans.http"
+      , "counter.zipkin_collector.messages_dropped.http"
+      , "counter.zipkin_collector.spans_dropped.http"
+    );
   }
 
   private String getAsString(String path) throws IOException {
@@ -200,11 +201,14 @@ public class ITZipkinMetrics {
       .build()).execute();
   }
 
-  static List readJson(String json) throws Exception {
-    ObjectMapper mapper = new ObjectMapper();
-    JsonNode jsonNode = mapper.readTree(json);
-    List<String> fieldsList = new ArrayList<>();
-    jsonNode.fieldNames().forEachRemaining(fieldsList::add);
-    return fieldsList;
+  static Map<String, Integer> readJson(String json) throws Exception {
+    Map<String, Integer> result = new LinkedHashMap<>();
+    JsonParser parser = JSON_FACTORY.createParser(json);
+    assertThat(parser.nextToken()).isEqualTo(JsonToken.START_OBJECT);
+    String nextField;
+    while ((nextField = parser.nextFieldName()) != null) {
+      result.put(nextField, parser.nextIntValue(0));
+    }
+    return result;
   }
 }

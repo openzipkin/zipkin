@@ -21,7 +21,7 @@ import org.springframework.util.StringUtils;
 class ZipkinUiProperties {
   static final String DEFAULT_BASEPATH = "/zipkin";
 
-  private String environment;
+  private String environment = "";
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";

@@ -51,6 +51,22 @@ public class ITZipkinUiConfiguration {
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
 
+  @Test public void configJson() throws Exception {
+    assertThat(get("/zipkin/config.json").body().string()).isEqualTo(""
+      + "{\n"
+      + "  \"environment\" : \"\",\n"
+      + "  \"suggestLens\" : true,\n"
+      + "  \"queryLimit\" : 10,\n"
+      + "  \"defaultLookback\" : 900000,\n"
+      + "  \"searchEnabled\" : true,\n"
+      + "  \"dependency\" : {\n"
+      + "    \"lowErrorRate\" : 0.5,\n"
+      + "    \"highErrorRate\" : 0.75\n"
+      + "  }\n"
+      + "}"
+    );
+  }
+
   /** The zipkin-ui is a single-page app. This prevents reloading all resources on each click. */
   @Test public void setsMaxAgeOnUiResources() throws Exception {
     assertThat(get("/zipkin/config.json").header("Cache-Control"))
