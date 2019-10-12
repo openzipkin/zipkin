@@ -1,4 +1,4 @@
-${ZipkinAnsi256Color.208}
+${AnsiOrange}
                   oo
                  oooo
                 oooooo
@@ -18,11 +18,11 @@ ${ZipkinAnsi256Color.208}
       oooooooooooo  oooooooooooo
           oooooooo  oooooooo
               oooo  oooo
-${AnsiStyle.NORMAL}
+${AnsiNormal}
      ________ ____  _  _____ _   _
     |__  /_ _|  _ \| |/ /_ _| \ | |
       / / | || |_) | ' / | ||  \| |
      / /_ | ||  __/| . \ | || |\  |
     |____|___|_|   |_|\_\___|_| \_|
 
-${AnsiColor.GREEN}:: Powered by Spring Boot ::        ${AnsiStyle.FAINT}${AnsiColor.BLACK}${spring-boot.formatted-version}${AnsiStyle.NORMAL}
+:: version @project.version@ :: commit @git.commit.id.abbrev@ ::

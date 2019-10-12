@@ -13,35 +13,44 @@
  */
 package zipkin2.server.internal.banner;
 
-import java.util.List;
-import org.springframework.boot.ResourceBanner;
+import java.io.InputStream;
+import java.io.PrintStream;
+import org.springframework.boot.Banner;
+import org.springframework.boot.ansi.AnsiElement;
+import org.springframework.boot.ansi.AnsiOutput;
+import org.springframework.boot.ansi.AnsiStyle;
 import org.springframework.core.env.Environment;
-import org.springframework.core.env.MutablePropertySources;
-import org.springframework.core.env.PropertyResolver;
-import org.springframework.core.env.PropertySourcesPropertyResolver;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.util.StreamUtils;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
- * <code>Banner</code> implemetation for Ansi256 Color<br>
- * TODO: This class should be deleted when this feature is provided by Spring Boot
- * @see <a href="https://github.com/spring-projects/spring-boot/pull/18264">https://github.com/spring-projects/spring-boot/pull/18264</a>
+ * More efficient Banner implementation which doesn't use property sources as variables are expanded
+ * at compile time using Maven resource filtering.
  */
-public class ZipkinBanner extends ResourceBanner {
+public class ZipkinBanner implements Banner {
+  static final AnsiElement ZIPKIN_ORANGE = new AnsiElement() {
+    @Override public String toString() {
+      return "38;5;208"; // Ansi 256 color code 208 (orange)
+    }
+  };
 
-  public ZipkinBanner() {
-    super(new ClassPathResource("zipkin.txt"));
-  }
+  final Resource resource = new ClassPathResource("zipkin.txt");
 
   @Override
-  protected List<PropertyResolver> getPropertyResolvers(Environment environment, Class<?> sourceClass) {
-    final List<PropertyResolver> propertyResolvers = super.getPropertyResolvers(environment, sourceClass);
-    propertyResolvers.add(getZipkinAnsi256Resolver());
-    return propertyResolvers;
-  }
+  public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
+    try (InputStream stream = resource.getInputStream()) {
+      String banner = StreamUtils.copyToString(stream, UTF_8);
 
-  private PropertyResolver getZipkinAnsi256Resolver() {
-    MutablePropertySources sources = new MutablePropertySources();
-    sources.addFirst(new ZipkinAnsi256ColorPropertySource("zipkinAnsi256"));
-    return new PropertySourcesPropertyResolver(sources);
+      // Instead of use property expansion for only 2 ansi codes, inline them
+      banner = banner.replace("${AnsiOrange}", AnsiOutput.encode(ZIPKIN_ORANGE));
+      banner = banner.replace("${AnsiNormal}", AnsiOutput.encode(AnsiStyle.NORMAL));
+
+      out.println(banner);
+    } catch (Exception ex) {
+      // who cares
+    }
   }
 }
