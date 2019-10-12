@@ -28,7 +28,6 @@ import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
@@ -42,7 +41,6 @@ import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
@@ -71,15 +69,9 @@ public class ZipkinServerConfiguration {
   @Autowired(required = false)
   ZipkinMetricsController metricsController;
 
-  @Bean Consumer<MeterRegistry.Config> noActuatorMetrics() {
-    return config -> config.meterFilter(MeterFilter.deny(id -> {
-      String uri = id.getTag("uri");
-      return uri != null && uri.startsWith("/actuator");
-    }));
-  }
-
   @Bean ArmeriaServerConfigurator serverConfigurator(
-    Optional<CollectorRegistry> prometheusRegistry) {
+    Optional<MeterRegistry> meterRegistry,
+    Optional<CollectorRegistry> collectorRegistry) {
     return sb -> {
       if (httpQuery != null) {
         sb.annotatedService(httpQuery);
@@ -88,7 +80,7 @@ public class ZipkinServerConfiguration {
       if (httpCollector != null) sb.annotatedService(httpCollector);
       if (healthController != null) sb.annotatedService(healthController);
       if (metricsController != null) sb.annotatedService(metricsController);
-      prometheusRegistry.ifPresent(registry -> {
+      collectorRegistry.ifPresent(registry -> {
         PrometheusExpositionService prometheusService = new PrometheusExpositionService(registry);
         sb.service("/actuator/prometheus", prometheusService);
         sb.service("/prometheus", prometheusService);
@@ -102,18 +94,18 @@ public class ZipkinServerConfiguration {
       // and default to a slightly longer timeout on the server to be able to handle these with
       // better error messages where possible.
       sb.requestTimeout(Duration.ofSeconds(11));
-    };
-  }
 
-  @Bean Consumer<MeterRegistry.Config> noAdminMetrics() {
-    return config -> config.meterFilter(MeterFilter.deny(id -> {
-      String uri = id.getTag("uri");
-      return uri != null && (
-        uri.startsWith("/health")
-          || uri.startsWith("/info")
-          || uri.startsWith("/metrics")
-          || uri.startsWith("/prometheus"));
-    }));
+      // don't add metrics for admin endpoints
+      meterRegistry.ifPresent(m -> m.config().meterFilter(MeterFilter.deny(id -> {
+        String uri = id.getTag("uri");
+        return uri != null && (
+          uri.startsWith("/actuator")
+            || uri.startsWith("/health")
+            || uri.startsWith("/info")
+            || uri.startsWith("/metrics")
+            || uri.startsWith("/prometheus"));
+      })));
+    };
   }
 
   /** Configures the server at the last because of the specified {@link Order} annotation. */
@@ -212,7 +204,6 @@ public class ZipkinServerConfiguration {
    * <p>Note: this needs to be {@link Lazy} to avoid circular dependency issues when using with
    * {@link ThrottledStorageComponentEnhancer}.
    */
-  @Lazy
   @Configuration
   @Conditional(StorageTypeMemAbsentOrEmpty.class)
   @ConditionalOnMissingBean(StorageComponent.class)

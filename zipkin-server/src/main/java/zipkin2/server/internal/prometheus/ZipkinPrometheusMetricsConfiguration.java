@@ -34,11 +34,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.util.AttributeKey;
 import io.prometheus.client.CollectorRegistry;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -56,10 +52,6 @@ public class ZipkinPrometheusMetricsConfiguration {
   private static final Tag URI_CROSSROADS = Tag.of("uri", "/zipkin/index.html");
 
   final String metricName;
-
-  // TODO: refactor after https://github.com/spring-projects/spring-boot/issues/18304
-  @Autowired(required = false)
-  List<Consumer<MeterRegistry.Config>> meterConfigConsumers = Collections.emptyList();
 
   // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
   ZipkinPrometheusMetricsConfiguration(
@@ -82,9 +74,7 @@ public class ZipkinPrometheusMetricsConfiguration {
   }
 
   @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry() {
-    PrometheusMeterRegistry result = new PrometheusMeterRegistry(config(), registry(), clock());
-    meterConfigConsumers.forEach(a -> a.accept(result.config()));
-    return result;
+    return new PrometheusMeterRegistry(config(), registry(), clock());
   }
 
   // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc

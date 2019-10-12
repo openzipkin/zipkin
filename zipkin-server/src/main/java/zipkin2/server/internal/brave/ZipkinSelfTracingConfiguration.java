@@ -132,9 +132,7 @@ public class ZipkinSelfTracingConfiguration {
     return server -> server.decorator(BraveService.newDecorator(tracing));
   }
 
-  /**
-   * Defined locally as StorageComponent is a lazy proxy, and we need to avoid eagerly calling it.
-   */
+  /** Lazily looks up the storage component in order to to avoid proxying. */
   static final class LocalSender extends Sender {
     final BeanFactory factory;
     volatile StorageComponent delegate; // volatile to prevent stale reads

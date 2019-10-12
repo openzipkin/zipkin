@@ -13,6 +13,18 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.spring.ArmeriaAutoConfiguration;
+import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.beans.BeansEndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.condition.ConditionsReportEndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.context.properties.ConfigurationPropertiesReportEndpointProperties;
+import org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.env.EnvironmentEndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.logging.LoggersEndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.management.HeapDumpWebEndpointAutoConfiguration;
+import org.springframework.boot.actuate.autoconfigure.management.ThreadDumpEndpointAutoConfiguration;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.activemq.ZipkinActiveMQCollectorConfiguration;
@@ -31,6 +43,8 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
 
 @Configuration
 @Import({
+  ArmeriaAutoConfiguration.class,
+  ActuatorConfiguration.class,
   ZipkinServerConfiguration.class,
   ZipkinUiConfiguration.class,
   ZipkinCassandraStorageConfiguration.class,

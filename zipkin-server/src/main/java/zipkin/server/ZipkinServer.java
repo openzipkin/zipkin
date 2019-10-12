@@ -13,12 +13,27 @@
  */
 package zipkin.server;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import zipkin2.server.internal.EnableZipkinServer;
 import zipkin2.server.internal.banner.ZipkinBanner;
 
-@SpringBootApplication
+/**
+ * This adds the {@link EnableAutoConfiguration} annotation, but disables it by default to save
+ * startup time. A supported integration will need to explicitly enable auto-configuration like so,
+ * in order to be detected.
+ *
+ * <p>For example, add the following to {@coode src/main/resources/zipkin-server-stackdriver.yml}:
+ * <pre>{@code
+ * # Enable auto-configuration so that this module can be discovered.
+ * spring:
+ *   boot:
+ *     enableautoconfiguration: true
+ * }</pre>
+ */
+@SpringBootConfiguration
+@EnableAutoConfiguration
 @EnableZipkinServer
 public class ZipkinServer {
   static {
@@ -30,6 +45,8 @@ public class ZipkinServer {
   public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
       .banner(new ZipkinBanner())
-      .properties("spring.config.name=zipkin-server").run(args);
+      .properties(
+        EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY + "=false",
+        "spring.config.name=zipkin-server").run(args);
   }
 }
