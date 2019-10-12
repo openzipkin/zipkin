@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin2.server.internal;
+package zipkin.server;
 
 import com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration;
 import org.springframework.boot.actuate.autoconfigure.beans.BeansEndpointAutoConfiguration;

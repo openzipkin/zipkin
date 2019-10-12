@@ -16,6 +16,8 @@ package zipkin.server;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.support.GenericApplicationContext;
 import zipkin2.server.internal.EnableZipkinServer;
 import zipkin2.server.internal.banner.ZipkinBanner;
 
@@ -43,10 +45,23 @@ public class ZipkinServer {
   }
 
   public static void main(String[] args) {
-    new SpringApplicationBuilder(ZipkinServer.class)
+    SpringApplicationBuilder builder = new SpringApplicationBuilder(ZipkinServer.class)
       .banner(new ZipkinBanner())
       .properties(
         EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY + "=false",
-        "spring.config.name=zipkin-server").run(args);
+        "spring.config.name=zipkin-server");
+
+    try {
+      Class<?> actuatorClass = Class.forName("zipkin.server.ActuatorConfiguration");
+      builder.initializers(initializer(actuatorClass));
+    } catch (ClassNotFoundException e) {
+      // No actuator
+    }
+
+    builder.run(args);
+  }
+
+  static ApplicationContextInitializer<GenericApplicationContext> initializer(Class<?> clazz) {
+    return context -> context.registerBean(clazz);
   }
 }
