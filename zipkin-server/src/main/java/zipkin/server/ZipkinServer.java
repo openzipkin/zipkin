@@ -13,7 +13,6 @@
  */
 package zipkin.server;
 
-import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import zipkin2.server.internal.EnableZipkinServer;
@@ -23,10 +22,16 @@ import zipkin2.server.internal.banner.ZipkinBanner;
 @EnableZipkinServer
 public class ZipkinServer {
 
+  //static {
+  //  // ensures jul-to-slf4j works
+  //  SLF4JBridgeHandler.removeHandlersForRootLogger();
+  //  SLF4JBridgeHandler.install();
+  //}
+
   static {
-    // ensures jul-to-slf4j works
-    SLF4JBridgeHandler.removeHandlersForRootLogger();
-    SLF4JBridgeHandler.install();
+    // Make sure java.util.logging goes to log4j2
+    // https://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-log4j-for-logging
+    System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager");
   }
 
   public static void main(String[] args) {
