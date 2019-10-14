@@ -29,9 +29,9 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * <p>This queries the property {@link #PROPERTY_NAME_ACTUATOR_INCLUDE} which cherry-picks the most
  * relevant configuration for when actuator is in the classpath.
  */
-final class ConditionallyImportActuator
+final class ActuatorConditionalImporter
   implements ApplicationContextInitializer<GenericApplicationContext> {
-  static final Logger LOG = LoggerFactory.getLogger(ConditionallyImportActuator.class);
+  static final Logger LOG = LoggerFactory.getLogger(ActuatorConditionalImporter.class);
 
   static final String ACTUATOR_IMPL_CLASS =
     "com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration";

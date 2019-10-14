@@ -45,7 +45,7 @@ public class ZipkinServer {
   public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
       .banner(new ZipkinBanner())
-      .initializers(new ConditionallyImportActuator())
+      .initializers(new ActuatorConditionalImporter())
       .properties(
         EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY + "=false",
         "spring.config.name=zipkin-server").run(args);
