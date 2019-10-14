@@ -33,7 +33,8 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
 @Configuration
 @Import({
   ArmeriaAutoConfiguration.class,
-  ZipkinServerConfiguration.class,
+  ZipkinConfiguration.class,
+  ZipkinHttpConfiguration.class,
   ZipkinUiConfiguration.class,
   ZipkinCassandraStorageConfiguration.class,
   ZipkinCassandra3StorageConfiguration.class,

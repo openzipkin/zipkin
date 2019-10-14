@@ -31,7 +31,7 @@ import zipkin2.storage.StorageComponent;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class ZipkinServerConfigurationTest {
+public class ZipkinHttpConfigurationTest {
   AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
   @After public void close() {
@@ -105,7 +105,8 @@ public class ZipkinServerConfigurationTest {
     context.register(
       PropertyPlaceholderAutoConfiguration.class,
       Config.class,
-      ZipkinServerConfiguration.class
+      ZipkinConfiguration.class,
+      ZipkinHttpConfiguration.class
     );
   }
 }

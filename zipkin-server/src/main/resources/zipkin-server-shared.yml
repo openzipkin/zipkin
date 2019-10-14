@@ -70,9 +70,14 @@ zipkin:
 
   # Internal properties that end users should never try to use
   internal:
+    autoconfigure:
+      enabled: true
+      include:
+        - com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration
+
     actuator:
       enabled: true
-      # auto-configuration to include when Armeria types are present.
+      # auto-configuration to include when ArmeriaSpringActuatorAutoConfiguration is present.
       # Note: These are still subject to endpoint conditions. The list must be checked for drift
       #       upgrading Spring Boot.
       include:

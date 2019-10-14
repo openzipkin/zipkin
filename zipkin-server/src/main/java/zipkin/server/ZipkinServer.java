@@ -21,15 +21,16 @@ import zipkin2.server.internal.banner.ZipkinBanner;
 
 /**
  * This adds the {@link EnableAutoConfiguration} annotation, but disables it by default to save
- * startup time. A supported integration will need to explicitly enable auto-configuration like so,
- * in order to be detected.
+ * startup time.
  *
- * <p>For example, add the following to {@coode src/main/resources/zipkin-server-stackdriver.yml}:
+ * <p>Supported Zipkin modules like zipkin-gcp need to explicitly configure themselves.
+ *
+ * <p>For example, add the following to {@code src/main/resources/zipkin-server-stackdriver.yml}:
  * <pre>{@code
- * # Enable auto-configuration so that this module can be discovered.
- * spring:
- *   boot:
- *     enableautoconfiguration: true
+ * zipkin:
+ *   internal:
+ *     module:
+ *       stackdriver: zipkin.module.storage.stackdriver.ZipkinStackdriverStorageModule
  * }</pre>
  */
 @SpringBootConfiguration
@@ -45,7 +46,7 @@ public class ZipkinServer {
   public static void main(String[] args) {
     new SpringApplicationBuilder(ZipkinServer.class)
       .banner(new ZipkinBanner())
-      .initializers(new ActuatorConditionalImporter())
+      .initializers(new ModuleImporter(), new ActuatorImporter())
       .properties(
         EnableAutoConfiguration.ENABLED_OVERRIDE_PROPERTY + "=false",
         "spring.config.name=zipkin-server").run(args);

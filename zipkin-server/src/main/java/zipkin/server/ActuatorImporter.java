@@ -13,6 +13,7 @@
  */
 package zipkin.server;
 
+import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -29,9 +30,8 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * <p>This queries the property {@link #PROPERTY_NAME_ACTUATOR_INCLUDE} which cherry-picks the most
  * relevant configuration for when actuator is in the classpath.
  */
-final class ActuatorConditionalImporter
-  implements ApplicationContextInitializer<GenericApplicationContext> {
-  static final Logger LOG = LoggerFactory.getLogger(ActuatorConditionalImporter.class);
+final class ActuatorImporter implements ApplicationContextInitializer<GenericApplicationContext> {
+  static final Logger LOG = LoggerFactory.getLogger(ActuatorImporter.class);
 
   static final String ACTUATOR_IMPL_CLASS =
     "com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration";
@@ -51,9 +51,14 @@ final class ActuatorConditionalImporter
     //
     // As we are in a configurable environment, we can bind lists properties. We expect this to take
     // includes from PROPERTY_NAME_ACTUATOR_INCLUDE yaml path of zipkin-server-shared.yml.
-    String[] includes = Binder.get(env).bind(PROPERTY_NAME_ACTUATOR_INCLUDE, String[].class).get();
-    if (includes == null) return;
+    String[] includes =
+      Binder.get(env).bind(PROPERTY_NAME_ACTUATOR_INCLUDE, String[].class).orElse(null);
+    if (includes == null || includes.length == 0) {
+      LOG.debug("no actuator configuration found under path " + PROPERTY_NAME_ACTUATOR_INCLUDE);
+      return;
+    }
 
+    LOG.debug("attempting to load actuator configuration: " + Arrays.toString(includes));
     try {
       context.registerBean(Class.forName(ACTUATOR_IMPL_CLASS));
     } catch (Exception e) {
