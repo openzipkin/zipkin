@@ -33,7 +33,6 @@
   </properties>
 
   <dependencies>
-
     <dependency>
       <groupId>${project.groupId}</groupId>
       <artifactId>zipkin-collector</artifactId>

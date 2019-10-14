@@ -45,14 +45,12 @@ ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 
 ## Logging
 
-By default, zipkin writes log messages to the console at INFO level and above. A limited set of 
-[configuration options](https://www.slf4j.org/api/org/slf4j/impl/SimpleLogger.html) is available 
-to control the logging output. 
+By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server-shared.yml).
 
-For example, if you want to enable debug logging for all zipkin categories:
+For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
 ```bash
-$ java -Dorg.slf4j.simpleLogger.log.zipkin2=debug -jar zipkin.jar
+$ java -jar zipkin.jar --logging.level.zipkin2=DEBUG
 ```
 
 Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.
@@ -201,7 +199,7 @@ The following are tuning parameters which may not concern all users:
 Example usage with logging:
 
 ```bash
-$ STORAGE_TYPE=cassandra3 java -Dorg.slf4j.simpleLogger.log.zipkin2=trace -Dorg.slf4j.simpleLogger.log.zipkin=trace -Dorg.slf4j.simpleLogger.log.com.datastax.driver.core=debug -jar zipkin.jar
+$ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --logging.level.zipkin2=trace --logging.level.com.datastax.driver.core=debug
 ```
 
 ### Elasticsearch Storage
