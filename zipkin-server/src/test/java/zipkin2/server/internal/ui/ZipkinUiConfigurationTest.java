@@ -49,14 +49,6 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void indexHtmlFromClasspath() {
-    context = createContext();
-
-    assertThat(context.getBean(ZipkinUiConfiguration.class))
-      .isNotNull();
-  }
-
-  @Test
   public void indexContentType() {
     context = createContext();
     assertThat(

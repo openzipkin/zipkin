@@ -68,6 +68,23 @@ zipkin:
     # CORS allowed-origins.
     allowed-origins: "*"
 
+  # Internal properties that end users should never try to use
+  internal:
+    actuator:
+      enabled: true
+      # auto-configuration to include when Armeria types are present.
+      # Note: These are still subject to endpoint conditions. The list must be checked for drift
+      #       upgrading Spring Boot.
+      include:
+        - org.springframework.boot.actuate.autoconfigure.beans.BeansEndpointAutoConfiguration
+        - org.springframework.boot.actuate.autoconfigure.condition.ConditionsReportEndpointAutoConfiguration
+        - org.springframework.boot.actuate.autoconfigure.context.properties.ConfigurationPropertiesReportEndpointAutoConfiguration
+        - org.springframework.boot.actuate.autoconfigure.endpoint.EndpointAutoConfiguration
+        - org.springframework.boot.actuate.autoconfigure.env.EnvironmentEndpointAutoConfiguration
+        - org.springframework.boot.actuate.autoconfigure.management.HeapDumpWebEndpointAutoConfiguration
+        - org.springframework.boot.actuate.autoconfigure.logging.LoggersEndpointAutoConfiguration
+        - org.springframework.boot.actuate.autoconfigure.management.ThreadDumpEndpointAutoConfiguration
+
   storage:
     strict-trace-id: ${STRICT_TRACE_ID:true}
     search-enabled: ${SEARCH_ENABLED:true}
@@ -212,8 +229,7 @@ spring:
       # JMX is disabled
       - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
       # /health and /actuator/health served directly by Armeria
-      # TODO: exclude after https://github.com/line/armeria/pull/2104
-      # - org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration
       # /info and /actuator/info served directly by Armeria (content is /info.json)
       - org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration
@@ -232,9 +248,6 @@ logging:
   pattern:
     level: "%clr(%5p) %clr([%X{traceId}/%X{spanId}]){yellow}"
   level:
-    # Silence Invalid method name: '__can__finagle__trace__v3__'
-    com.facebook.swift.service.ThriftServiceProcessor: 'OFF'
-
     # Silence ResponseTimeoutException in the Armeria framework since we log it anyways in HTTP
     # logging when enabled. https://github.com/line/armeria/issues/2000
     com.linecorp.armeria.client.HttpResponseDecoder: 'OFF'
@@ -247,7 +260,6 @@ logging:
 #     # log reason behind http collector dropped messages
 #     zipkin2.server.ZipkinHttpCollector: 'DEBUG'
 #     zipkin2.collector.kafka.KafkaCollector: 'DEBUG'
-#     zipkin2.collector.kafka08.KafkaCollector: 'DEBUG'
 #     zipkin2.collector.rabbitmq.RabbitMQCollector: 'DEBUG'
 #     zipkin2.collector.scribe.ScribeCollector: 'DEBUG'
 management:
@@ -263,8 +275,8 @@ management:
       enabled: false
     info:
       enabled: false
-# Disabling auto time http requests since it is added in Undertow HttpHandler in Zipkin autoconfigure
-# Prometheus module. In Zipkin we use different naming for the http requests duration
+# Disabling auto time http requests since it is added in ZipkinPrometheusMetricsConfiguration
+# In Zipkin we use different naming for the http requests duration
   metrics:
     web:
       server:
