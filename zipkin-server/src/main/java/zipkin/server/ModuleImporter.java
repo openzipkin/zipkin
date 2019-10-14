@@ -22,8 +22,9 @@ import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
- * Auto-configuration relies on classpath scanning, which is slow, and disabled in {@link
- * ZipkinServer} by default. This performs property-based lookup instead.
+ * This loads configuration needed for modules like zipkin-aws, but without relying on
+ * AutoConfiguration via spring.factories. Instead, this uses a configuration path defined in our
+ * yaml here and any profiles loaded by the modules themselves.
  *
  * <p>To use this, move autoconfiguration values from {@code src/main/resources/META-INF/spring.factories}
  * to map entries under the yaml path {@link #PROPERTY_NAME_MODULE}.
