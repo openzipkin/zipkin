@@ -469,10 +469,11 @@
       <plugin>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-maven-plugin</artifactId>
-        <version>${spring-boot.version}</version>
+        <version>${spring-boot-plugin.version}</version>
         <configuration>
           <mainClass>zipkin.server.ZipkinServer</mainClass>
           <executable>true</executable>
+		  <layout>ZIP</layout>
         </configuration>
         <executions>
           <execution>
