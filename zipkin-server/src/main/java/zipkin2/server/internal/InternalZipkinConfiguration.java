@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal;
 
+import com.linecorp.armeria.spring.ArmeriaAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.activemq.ZipkinActiveMQCollectorConfiguration;
@@ -31,7 +32,9 @@ import zipkin2.server.internal.ui.ZipkinUiConfiguration;
 
 @Configuration
 @Import({
-  ZipkinServerConfiguration.class,
+  ArmeriaAutoConfiguration.class,
+  ZipkinConfiguration.class,
+  ZipkinHttpConfiguration.class,
   ZipkinUiConfiguration.class,
   ZipkinCassandraStorageConfiguration.class,
   ZipkinCassandra3StorageConfiguration.class,

@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import zipkin2.Component;
 
-import static zipkin2.server.internal.ZipkinServerConfiguration.MEDIA_TYPE_ACTUATOR;
+import static zipkin2.server.internal.ZipkinHttpConfiguration.MEDIA_TYPE_ACTUATOR;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_DOWN;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_UP;
 
