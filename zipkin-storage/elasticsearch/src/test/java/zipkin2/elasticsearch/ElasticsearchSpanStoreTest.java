@@ -33,7 +33,7 @@ import zipkin2.storage.QueryRequest;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
+import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_SPAN;
 
 class ElasticsearchSpanStoreTest {
   static final AggregatedHttpResponse EMPTY_RESPONSE =
@@ -112,9 +112,9 @@ class ElasticsearchSpanStoreTest {
 
     // 24 hrs ago always will fall into 2 days (ex. if it is 4:00pm, 24hrs ago is a different day)
     String indexesToSearch = ""
-      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, yesterday)
+      + storage.indexNameFormatter().formatTypeAndTimestamp(TYPE_SPAN, yesterday)
       + ","
-      + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
+      + storage.indexNameFormatter().formatTypeAndTimestamp(TYPE_SPAN, today);
 
     AggregatedHttpRequest request = server.takeRequest().request();
     assertThat(request.path()).startsWith("/" + indexesToSearch + "/_search");

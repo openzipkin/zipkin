@@ -45,12 +45,14 @@ ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 
 ## Logging
 
-By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server-shared.yml).
+By default, zipkin writes log messages to the console at INFO level and above. A limited set of 
+[configuration options](https://www.slf4j.org/api/org/slf4j/impl/SimpleLogger.html) is available 
+to control the logging output. 
 
-For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
+For example, if you want to enable debug logging for all zipkin categories:
 
 ```bash
-$ java -jar zipkin.jar --logging.level.zipkin2=DEBUG
+$ java -Dorg.slf4j.simpleLogger.log.zipkin2=debug -jar zipkin.jar
 ```
 
 Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.
@@ -157,28 +159,26 @@ Defaults to true
 * `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr) 
 
 ### In-Memory Storage
-Zipkin's In-Memory Storage is the default storage component that is used when no other storage type is configured. By default it stores a maximum of 500000 spans. Oldest traces (and their spans) will be purged first when this limit is exceeded. If you encounter out-of-memory errors, increase the heap size (-Xmx).
+Zipkin's [In-Memory Storage](../zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) holds all
+data in memory, purging older data upon a span limit. It applies when `STORAGE_TYPE` is unset or
+set to the value `mem`.
+
+    * `MEM_MAX_SPANS`: Oldest traces (and their spans) will be purged first when this limit is exceeded. Default 500000
 
 Example usage:
 ```bash
 $ java -jar zipkin.jar
 ```
-You can override the maximum number of spans stored using the `--max-spans` application parameter:
+
+Note: this storage component was primarily developed for testing and as a means to get Zipkin server
+up and running quickly without external dependencies. It is not viable for high work loads. That
+said, if you encounter out-of-memory errors, try decreasing `MEM_MAX_SPANS` or increasing the heap
+size (-Xmx).
+
+Exampled of doubling the amount of spans held in memory:
 ```bash
-$ java -Xmx1G -jar zipkin.jar --max-spans=1000000
+$ MEM_MAX_SPANS=1000000 java -Xmx1G -jar zipkin.jar
 ```
-
-Note this storage component was primarily developed for testing and as a means to get Zipkin server up and running quickly without external dependencies. It is not viable for high work loads.  
-
-### Throttled Storage (Experimental)
-These settings can be used to help tune the rate at which Zipkin flushes data to another, underlying `StorageComponent` (such as Elasticsearch):
-
-    * `STORAGE_THROTTLE_ENABLED`: Enables throttling
-    * `STORAGE_THROTTLE_MIN_CONCURRENCY`: Minimum number of Threads to use for writing to storage.
-    * `STORAGE_THROTTLE_MAX_CONCURRENCY`: Maximum number of Threads to use for writing to storage.
-    * `STORAGE_THROTTLE_MAX_QUEUE_SIZE`: How many messages to buffer while all Threads are writing data before abandoning a message (0 = no buffering).
-
-As this feature is experimental, it is not recommended to run this in production environments.
 
 ### Cassandra Storage
 Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
@@ -201,7 +201,7 @@ The following are tuning parameters which may not concern all users:
 Example usage with logging:
 
 ```bash
-$ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --logging.level.zipkin2=trace --logging.level.com.datastax.driver.core=debug
+$ STORAGE_TYPE=cassandra3 java -Dorg.slf4j.simpleLogger.log.zipkin2=trace -Dorg.slf4j.simpleLogger.log.zipkin=trace -Dorg.slf4j.simpleLogger.log.com.datastax.driver.core=debug -jar zipkin.jar
 ```
 
 ### Elasticsearch Storage
@@ -310,6 +310,17 @@ Example usage:
 ```bash
 $ STORAGE_TYPE=cassandra java -jar zipkin.jar
 ```
+
+### Throttled Storage (Experimental)
+These settings can be used to help tune the rate at which Zipkin flushes data to another, underlying
+`StorageComponent` (such as Elasticsearch):
+
+    * `STORAGE_THROTTLE_ENABLED`: Enables throttling
+    * `STORAGE_THROTTLE_MIN_CONCURRENCY`: Minimum number of Threads to use for writing to storage.
+    * `STORAGE_THROTTLE_MAX_CONCURRENCY`: Maximum number of Threads to use for writing to storage.
+    * `STORAGE_THROTTLE_MAX_QUEUE_SIZE`: How many messages to buffer while all Threads are writing data before abandoning a message (0 = no buffering).
+
+As this feature is experimental, it is not recommended to run this in production environments.
 
 #### Service and Span names query
 The [Zipkin Api](https://zipkin.io/zipkin-api/#/default/get_services) does not include

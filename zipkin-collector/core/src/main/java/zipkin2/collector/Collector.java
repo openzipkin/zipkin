@@ -19,7 +19,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.SpanBytesDecoderDetector;
@@ -51,7 +52,7 @@ public class Collector { // not final for mock
   /** Needed to scope this to the correct logging category */
   public static Builder newBuilder(Class<?> loggingClass) {
     if (loggingClass == null) throw new NullPointerException("loggingClass == null");
-    return new Builder(Logger.getLogger(loggingClass.getName()));
+    return new Builder(LoggerFactory.getLogger(loggingClass.getName()));
   }
 
   public static final class Builder {
@@ -266,16 +267,16 @@ public class Collector { // not final for mock
   void handleError(Throwable e, Supplier<String> defaultLogMessage, Callback<Void> callback) {
     propagateIfFatal(e);
     callback.onError(e);
-    if (!logger.isLoggable(FINE)) return;
+    if (!logger.isDebugEnabled()) return;
 
     String error = e.getMessage() != null ? e.getMessage() : "";
     // We have specific code that customizes log messages. Use this when the case.
     if (error.startsWith("Malformed") || error.startsWith("Truncated")) {
-      logger.log(FINE, error, e);
+      logger.debug(error, e);
     } else { // otherwise, beautify the message
       String message =
         format("%s due to %s(%s)", defaultLogMessage.get(), e.getClass().getSimpleName(), error);
-      logger.log(FINE, message, e);
+      logger.debug(message, e);
     }
   }
 
