@@ -11,15 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package zipkin.server;
+package zipkin2.server.internal;
 
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportSelector;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
@@ -31,26 +30,30 @@ import org.springframework.core.env.ConfigurableEnvironment;
  * This type helps load the actuator functionality we currently support without a compilation
  * dependency on actuator, and without relying on auto-configuration being enabled.
  *
- * <p><h3>Rationale for looking up actuator types</h3>
- * Our build includes the ability to opt-out of actuator. However, the default should load what we
- * haven't disabled in yaml. What this does is collect the endpoint configuration otherwise defined
- * in {@code META-INF/spring.factories} into an internal configuration property of type list {@link
- * #PROPERTY_NAME_ACTUATOR_INCLUDE}. This property path is limited to what we use.
- *
- * <p><h3>Rationale for ApplicationContextInitializer</h3>
- * The reason this is implemented as an {@link ApplicationContextInitializer} instead of a {@link
- * Configuration} class is that there currently is no {@link Import} annotation that takes a type
- * name as opposed to a type. We cannot compile against the type {@link #ACTUATOR_IMPL_CLASS}
- * without breaking our ability to compile without actuator. If someone makes that, we could adjust
- * this code.
+ * <p><h3>Implementation note</h3>*
+ * <p>It may be possible to re-implement this as {@link ImportSelector} to provide {@link
+ * #ACTUATOR_IMPL_CLASS} and the endpoint configuration types from {@link
+ * #PROPERTY_NAME_ACTUATOR_INCLUDE}.
  */
-final class ActuatorImporter implements ApplicationContextInitializer<GenericApplicationContext> {
-  static final Logger LOG = LoggerFactory.getLogger(ActuatorImporter.class);
+// look at RATIONALE.md and update if relevant when changing this file
+public final class ZipkinActuatorImporter
+  implements ApplicationContextInitializer<GenericApplicationContext> {
+  static final Logger LOG = LoggerFactory.getLogger(ZipkinActuatorImporter.class);
 
   static final String ACTUATOR_IMPL_CLASS =
     "com.linecorp.armeria.spring.actuate.ArmeriaSpringActuatorAutoConfiguration";
   static final String PROPERTY_NAME_ACTUATOR_ENABLED = "zipkin.internal.actuator.enabled";
   static final String PROPERTY_NAME_ACTUATOR_INCLUDE = "zipkin.internal.actuator.include";
+
+  final String actuatorImplClass;
+
+  public ZipkinActuatorImporter() {
+    this(ACTUATOR_IMPL_CLASS);
+  }
+
+  ZipkinActuatorImporter(String actuatorImplClass) { // visible for testing
+    this.actuatorImplClass = actuatorImplClass;
+  }
 
   @Override public void initialize(GenericApplicationContext context) {
     ConfigurableEnvironment env = context.getEnvironment();
@@ -74,7 +77,7 @@ final class ActuatorImporter implements ApplicationContextInitializer<GenericApp
 
     LOG.debug("attempting to load actuator configuration: " + Arrays.toString(includes));
     try {
-      context.registerBean(Class.forName(ACTUATOR_IMPL_CLASS));
+      context.registerBean(Class.forName(actuatorImplClass));
     } catch (Exception e) {
       LOG.debug("skipping actuator as implementation is not available", e);
       return;
