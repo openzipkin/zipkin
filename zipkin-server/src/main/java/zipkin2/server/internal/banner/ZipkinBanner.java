@@ -21,7 +21,6 @@ import org.springframework.boot.ansi.AnsiOutput;
 import org.springframework.boot.ansi.AnsiStyle;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -37,11 +36,9 @@ public class ZipkinBanner implements Banner {
     }
   };
 
-  final Resource resource = new ClassPathResource("zipkin.txt");
-
   @Override
   public void printBanner(Environment environment, Class<?> sourceClass, PrintStream out) {
-    try (InputStream stream = resource.getInputStream()) {
+    try (InputStream stream = new ClassPathResource("zipkin.txt").getInputStream()) {
       String banner = StreamUtils.copyToString(stream, UTF_8);
 
       // Instead of use property expansion for only 2 ansi codes, inline them
