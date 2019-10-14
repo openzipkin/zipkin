@@ -22,6 +22,8 @@ import zipkin2.server.internal.banner.ZipkinBanner;
 @EnableZipkinServer
 public class ZipkinServer {
 
+  // if you want to build a container image without log4j and only use slf4j with for example
+  // slf4j-simple you'll need this and not the static block below.
   //static {
   //  // ensures jul-to-slf4j works
   //  SLF4JBridgeHandler.removeHandlersForRootLogger();
