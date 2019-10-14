@@ -16,19 +16,33 @@ package zipkin.server;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.support.GenericApplicationContext;
 import org.springframework.core.env.ConfigurableEnvironment;
 
 /**
- * Actuator relies on classpath scanning, so we cannot choose one configuration entrypoint unless
- * using {@link EnableAutoConfiguration}. We disable scanning in {@link ZipkinServer} by default so
- * this conditionally loads actuator a different way.
+ * When auto-configuration is enabled, actuator and all of its subordinate endpoints such as {@code
+ * BeansEndpointAutoConfiguration} load, subject to further conditions like {@code
+ * management.endpoint.health.enabled=false}. When auto-configuration is disabled, these
+ * configuration discovered indirectly via {@code META-INF/spring.factories} are no longer loaded.
+ * This type helps load the actuator functionality we currently support without a compilation
+ * dependency on actuator, and without relying on auto-configuration being enabled.
  *
- * <p>This queries the property {@link #PROPERTY_NAME_ACTUATOR_INCLUDE} which cherry-picks the most
- * relevant configuration for when actuator is in the classpath.
+ * <p><h3>Rationale for looking up actuator types</h3>
+ * Our build includes the ability to opt-out of actuator. However, the default should load what we
+ * haven't disabled in yaml. What this does is collect the endpoint configuration otherwise defined
+ * in {@code META-INF/spring.factories} into an internal configuration property of type list {@link
+ * #PROPERTY_NAME_ACTUATOR_INCLUDE}. This property path is limited to what we use.
+ *
+ * <p><h3>Rationale for ApplicationContextInitializer</h3>
+ * The reason this is implemented as an {@link ApplicationContextInitializer} instead of a {@link
+ * Configuration} class is that there currently is no {@link Import} annotation that takes a type
+ * name as opposed to a type. We cannot compile against the type {@link #ACTUATOR_IMPL_CLASS}
+ * without breaking our ability to compile without actuator. If someone makes that, we could adjust
+ * this code.
  */
 final class ActuatorImporter implements ApplicationContextInitializer<GenericApplicationContext> {
   static final Logger LOG = LoggerFactory.getLogger(ActuatorImporter.class);
