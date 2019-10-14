@@ -45,7 +45,12 @@ final class ConditionallyImportActuator
       return;
     }
 
-    // We are in a configurable environment, so bind the include property so that we can use it.
+    // At this point in the life-cycle, env can directly resolve plain properties, like the boolean
+    // above. If you tried to resolve a property bound by a yaml list, it returns null, as they are
+    // not yet bound.
+    //
+    // As we are in a configurable environment, we can bind lists properties. We expect this to take
+    // includes from PROPERTY_NAME_ACTUATOR_INCLUDE yaml path of zipkin-server-shared.yml.
     String[] includes = Binder.get(env).bind(PROPERTY_NAME_ACTUATOR_INCLUDE, String[].class).get();
     if (includes == null) return;
 
@@ -53,12 +58,14 @@ final class ConditionallyImportActuator
       context.registerBean(Class.forName(ACTUATOR_IMPL_CLASS));
     } catch (Exception e) {
       LOG.debug("skipping actuator as implementation is not available", e);
+      return;
     }
 
     for (String include : includes) {
       try {
         context.registerBean(Class.forName(include));
       } catch (Exception e) {
+        // Skip any classes that didn't match due to drift
         LOG.debug("skipping unloadable actuator config " + include, e);
       }
     }
