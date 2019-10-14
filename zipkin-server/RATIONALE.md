@@ -91,8 +91,19 @@ components we don't use ourselves. Below discusses some of these tradeoffs
 
 ### Disabling auto configuration
 
-Zipkin starts significantly faster when auto-configuration is disabled. This interferes with some
-functionality that looks up configuration implicitly, such as Actuator.
+In the zipkin server yaml, we disable a significant amount of auto-configuration, and we also are
+very strict about dependencies. This means there is less auto-configuration work going on in Zipkin
+server than a normal Spring Boot application. Starting Zipkin with no options (just in-memory) may
+not take notably longer than if auto configuration was disabled.
+
+When multiple configuration options are set, Zipkin can start measurably faster with auto-
+configuration disabled. For example, using storage throttling and elasticsearch storage, a
+measurement of best in 5 runs enabled vs disabled resulted in 4-7% improvement, depending on whether
+the terms are in JVM total time, or time in Spring Boot.
+
+Disabling auto-configuration interferes with some functionality that uses implicit configuration,
+such as Actuator. That said, the way we disabled auto-configuration, was property based, which means
+any integration can re-enable it in worst case.
 
 ### Making Actuator optional
 
