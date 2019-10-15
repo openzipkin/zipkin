@@ -134,6 +134,18 @@
       <artifactId>jul-to-slf4j</artifactId>
     </dependency>
 
+    <!-- the "exec" jar will exclude these -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-slf4j</artifactId>
+      <version>${spring-boot.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- Static content for the Classic UI -->
     <dependency>
       <groupId>io.zipkin.java</groupId>
@@ -491,6 +503,16 @@
             </goals>
             <configuration>
               <classifier>exec</classifier>
+              <excludes>
+                <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-slf4j</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-simple</artifactId>
+                </dependency>
+              </excludes>
             </configuration>
           </execution>
 
