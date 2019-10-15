@@ -71,7 +71,7 @@
       <version>${spring-boot.version}</version>
     </dependency>
 
-    <!-- Use log4j 2 instead of SLF4J to allow log4j 1.2 used by Kafka 0.8 to still work -->
+    <!-- Use log4j 2 as default logging implementation -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-log4j2</artifactId>
@@ -123,6 +123,15 @@
       <groupId>${project.groupId}.zipkin2</groupId>
       <artifactId>zipkin-collector</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>jul-to-slf4j</artifactId>
     </dependency>
 
     <!-- Static content for the Classic UI -->

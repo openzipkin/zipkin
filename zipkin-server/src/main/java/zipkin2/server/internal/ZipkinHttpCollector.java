@@ -35,8 +35,8 @@ import java.lang.annotation.Target;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import zipkin2.Callback;
 import zipkin2.Span;
@@ -53,7 +53,7 @@ import static zipkin2.Call.propagateIfFatal;
 @ConditionalOnProperty(name = "zipkin.collector.http.enabled", matchIfMissing = true)
 @ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinHttpCollector {
-  static final Logger LOGGER = LogManager.getLogger();
+  static final Logger LOGGER = LoggerFactory.getLogger(ZipkinHttpCollector.class);
   static volatile CollectorMetrics metrics;
   final Collector collector;
 

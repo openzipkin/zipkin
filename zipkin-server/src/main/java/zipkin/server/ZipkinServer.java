@@ -39,6 +39,15 @@ import zipkin2.server.internal.banner.ZipkinBanner;
 @EnableAutoConfiguration
 @EnableZipkinServer
 public class ZipkinServer {
+
+  // if you want to build a container image without log4j and only use slf4j with for example
+  // slf4j-simple you'll need this and not the static block below.
+  //static {
+  //  // ensures jul-to-slf4j works
+  //  SLF4JBridgeHandler.removeHandlersForRootLogger();
+  //  SLF4JBridgeHandler.install();
+  //}
+
   static {
     // Make sure java.util.logging goes to log4j2
     // https://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-log4j-for-logging

@@ -13,14 +13,14 @@
  */
 package zipkin2.collector;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
+import uk.org.lidalia.slf4jext.Level;
+import uk.org.lidalia.slf4jtest.TestLogger;
+import uk.org.lidalia.slf4jtest.TestLoggerFactory;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesDecoder;
@@ -45,22 +45,13 @@ public class CollectorTest {
   Callback<Void> callback = mock(Callback.class);
   CollectorMetrics metrics = mock(CollectorMetrics.class);
   Collector collector;
-  List<String> messages = new ArrayList<>();
-
-  Logger logger = new Logger("", null) {
-    {
-      setLevel(Level.ALL);
-    }
-
-    @Override public void log(Level level, String msg, Throwable thrown) {
-      assertThat(level).isEqualTo(Level.FINE);
-      messages.add(unprefixIdString(msg));
-    }
-  };
+  private TestLogger testLogger = TestLoggerFactory.getTestLogger("");
 
   @Before
   public void setup() {
-    collector = spy(new Collector.Builder(logger).metrics(metrics).storage(storage).build());
+    testLogger.clearAll();
+    collector = spy(
+      new Collector.Builder(testLogger).metrics(metrics).storage(storage).build());
     when(collector.idString(CLIENT_SPAN)).thenReturn("1"); // to make expectations easier to read
   }
 
@@ -71,7 +62,7 @@ public class CollectorTest {
 
   @Test
   public void unsampledSpansArentStored() {
-    collector = new Collector.Builder(logger)
+    collector = new Collector.Builder(LoggerFactory.getLogger(""))
       .sampler(CollectorSampler.create(0.0f))
       .metrics(metrics)
       .storage(storage)
@@ -80,7 +71,7 @@ public class CollectorTest {
     collector.accept(TRACE, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(messages).isEmpty();
+    assertThat(testLogger.getLoggingEvents()).isEmpty();
     verify(metrics).incrementSpans(4);
     verify(metrics).incrementSpansDropped(4);
     assertThat(storage.getTraces()).isEmpty();
@@ -102,7 +93,7 @@ public class CollectorTest {
     verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(messages).isEmpty();
+    assertThat(testLogger.getLoggingEvents()).isEmpty();
     verify(metrics).incrementSpans(4);
     assertThat(storage.getTraces()).containsOnly(TRACE);
   }
@@ -113,7 +104,7 @@ public class CollectorTest {
     collector.acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
 
     verify(callback).onError(any(IllegalArgumentException.class));
-    assertThat(messages).containsOnly("Malformed reading List<Span> from json");
+    assertDebugLogIs("Malformed reading List<Span> from json");
     verify(metrics).incrementMessagesDropped();
   }
 
@@ -122,7 +113,7 @@ public class CollectorTest {
     StorageComponent storage = mock(StorageComponent.class);
     RuntimeException error = new RuntimeException("storage disabled");
     when(storage.spanConsumer()).thenThrow(error);
-    collector = new Collector.Builder(logger)
+    collector = new Collector.Builder(LoggerFactory.getLogger(""))
       .metrics(metrics)
       .storage(storage)
       .build();
@@ -130,8 +121,7 @@ public class CollectorTest {
     collector.accept(TRACE, callback);
 
     verify(callback).onSuccess(null); // error is async
-    assertThat(messages)
-      .containsOnly("Cannot store spans [1, 2, 2, ...] due to RuntimeException(storage disabled)");
+    assertDebugLogIs("Cannot store spans [1, 2, 2, ...] due to RuntimeException(storage disabled)");
     verify(metrics).incrementSpans(4);
     verify(metrics).incrementSpansDropped(4);
   }
@@ -144,7 +134,7 @@ public class CollectorTest {
     verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V1, callback);
 
     verify(callback).onSuccess(null);
-    assertThat(messages).isEmpty();
+    assertThat(testLogger.getLoggingEvents()).isEmpty();
     assertThat(storage.getTraces()).isEmpty();
   }
 
@@ -170,8 +160,7 @@ public class CollectorTest {
     Callback<Void> callback = collector.new StoreSpans(TRACE);
     callback.onError(error);
 
-    assertThat(messages)
-      .containsOnly("Cannot store spans [1, 1, 2, ...] due to RuntimeException()");
+    assertDebugLogIs("Cannot store spans [1, 1, 2, ...] due to RuntimeException()");
     verify(metrics).incrementSpansDropped(4);
   }
 
@@ -181,8 +170,7 @@ public class CollectorTest {
     Callback<Void> callback = collector.new StoreSpans(TRACE);
     callback.onError(error);
 
-    assertThat(messages)
-      .containsOnly("Cannot store spans [1, 1, 2, ...] due to IllegalArgumentException(no beer)");
+    assertDebugLogIs("Cannot store spans [1, 1, 2, ...] due to IllegalArgumentException(no beer)");
     verify(metrics).incrementSpansDropped(4);
   }
 
@@ -192,9 +180,8 @@ public class CollectorTest {
     collector.handleStorageError(TRACE, error, callback);
 
     verify(callback).onError(error);
-    assertThat(messages)
-      .containsOnly(
-        "Cannot store spans [1, 1, 2, ...] due to RejectedExecutionException(slow down)");
+    assertDebugLogIs(
+      "Cannot store spans [1, 1, 2, ...] due to RejectedExecutionException(slow down)");
     verify(metrics).incrementSpansDropped(4);
   }
 
@@ -203,8 +190,7 @@ public class CollectorTest {
     collector.handleStorageError(TRACE, error, callback);
 
     verify(callback).onError(error);
-    assertThat(messages)
-      .containsOnly("Cannot store spans [1, 1, 2, ...] due to RuntimeException()");
+    assertDebugLogIs("Cannot store spans [1, 1, 2, ...] due to RuntimeException()");
     verify(metrics).incrementSpansDropped(4);
   }
 
@@ -214,8 +200,7 @@ public class CollectorTest {
     collector.handleStorageError(TRACE, error, callback);
 
     verify(callback).onError(error);
-    assertThat(messages)
-      .containsOnly("Cannot store spans [1, 1, 2, ...] due to IllegalArgumentException(no beer)");
+    assertDebugLogIs("Cannot store spans [1, 1, 2, ...] due to IllegalArgumentException(no beer)");
     verify(metrics).incrementSpansDropped(4);
   }
 
@@ -225,7 +210,7 @@ public class CollectorTest {
     collector.handleDecodeError(error, callback);
 
     verify(callback).onError(error);
-    assertThat(messages).containsOnly("Cannot decode spans due to RuntimeException()");
+    assertDebugLogIs("Cannot decode spans due to RuntimeException()");
     verify(metrics).incrementMessagesDropped();
   }
 
@@ -235,8 +220,7 @@ public class CollectorTest {
     collector.handleDecodeError(error, callback);
 
     verify(callback).onError(error);
-    assertThat(messages)
-      .containsOnly("Cannot decode spans due to IllegalArgumentException(no beer)");
+    assertDebugLogIs("Cannot decode spans due to IllegalArgumentException(no beer)");
     verify(metrics).incrementMessagesDropped();
   }
 
@@ -246,7 +230,7 @@ public class CollectorTest {
     collector.handleDecodeError(error, callback);
 
     verify(callback).onError(error);
-    assertThat(messages).containsOnly("Malformed reading spans");
+    assertDebugLogIs("Malformed reading spans");
     verify(metrics).incrementMessagesDropped();
   }
 
@@ -256,11 +240,19 @@ public class CollectorTest {
     collector.handleDecodeError(error, callback);
 
     verify(callback).onError(error);
-    assertThat(messages).containsOnly("Truncated reading spans");
+    assertDebugLogIs("Truncated reading spans");
     verify(metrics).incrementMessagesDropped();
   }
 
-  String unprefixIdString(String msg) {
+  private String unprefixIdString(String msg) {
     return msg.replaceAll("7180c278b62e8f6a216a2aea45d08fc9/000000000000000", "");
+  }
+
+  private void assertDebugLogIs(String message) {
+    assertThat(testLogger.getLoggingEvents())
+      .hasSize(1)
+      .filteredOn(event -> event.getLevel().equals(Level.DEBUG))
+      .extracting(event -> unprefixIdString(event.getMessage()))
+      .containsOnly(message);
   }
 }

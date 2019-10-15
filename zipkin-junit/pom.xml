@@ -55,6 +55,18 @@
       <artifactId>junit</artifactId>
     </dependency>
 
+    <dependency>
+      <!-- okhttp uses jul -->
+      <groupId>org.slf4j</groupId>
+      <artifactId>jul-to-slf4j</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>test</scope>
+    </dependency>
+
     <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
     <dependency>
       <groupId>com.google.code.gson</groupId>

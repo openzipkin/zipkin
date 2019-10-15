@@ -27,6 +27,7 @@ import okio.GzipSink;
 import org.junit.AssumptionViolatedException;
 import org.junit.Rule;
 import org.junit.Test;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 
@@ -37,6 +38,12 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 
 public class ZipkinRuleTest {
+
+  static {
+    // ensure jul-to-slf4j works
+    SLF4JBridgeHandler.removeHandlersForRootLogger();
+    SLF4JBridgeHandler.install();
+  }
 
   @Rule public ZipkinRule zipkin = new ZipkinRule();
 
