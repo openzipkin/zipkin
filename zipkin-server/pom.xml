@@ -504,7 +504,7 @@
               <classifier>slim</classifier>
               <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
               <excludeGroupIds>
-                io.zipkin.java,com.google.auto.value,com.google.guava,io.dropwizard.metrics,com.datastax.cassandra,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,com.zaxxer,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift,org.apache.logging.log4j
+                io.zipkin.java,io.zipkin.brave,com.google.auto.value,com.google.guava,io.dropwizard.metrics,com.datastax.cassandra,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,com.zaxxer,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift,org.apache.logging.log4j
               </excludeGroupIds>
               <excludes>
                 <!-- Actuator -->
@@ -523,6 +523,12 @@
                 <dependency>
                   <groupId>com.fasterxml.jackson.datatype</groupId>
                   <artifactId>jackson-datatype-jsr310</artifactId>
+                </dependency>
+
+                <!-- Brave -->
+                <dependency>
+                  <groupId>${armeria.groupId}</groupId>
+                  <artifactId>armeria-brave</artifactId>
                 </dependency>
 
                 <!-- Log4J 2 -->
@@ -566,10 +572,6 @@
                 <dependency>
                   <groupId>io.zipkin.brave.cassandra</groupId>
                   <artifactId>brave-instrumentation-cassandra-driver</artifactId>
-                </dependency>
-                <dependency>
-                  <groupId>io.zipkin.brave</groupId>
-                  <artifactId>brave-context-log4j2</artifactId>
                 </dependency>
 
                 <!-- MySQL backend -->
