@@ -14,9 +14,13 @@
 
 FROM openzipkin/zipkin-builder as built
 
+WORKDIR /code
+
 COPY . /code/
 
-RUN cd /code && mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
+RUN mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
+
+RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar
 
 FROM maven:3-jdk-11-slim as zipkin-builder
 
@@ -39,7 +43,7 @@ EXPOSE 80
 
 CMD ["/usr/local/bin/nginx.sh"]
 
-FROM gcr.io/distroless/java:11-debug as zipkin-server
+FROM openzipkin/jre-full:11.0.4 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
@@ -50,7 +54,7 @@ ENV MODULE_OPTS=
 RUN ["/busybox/sh", "-c", "adduser -g '' -h /zipkin -D zipkin"]
 
 # Add environment settings for supported storage types
-COPY --from=built --chown=zipkin /code/zipkin-server/target/zipkin-server-*-exec.jar /zipkin/
+COPY --from=built --chown=zipkin /zipkin/ /zipkin/
 COPY --chown=zipkin docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
