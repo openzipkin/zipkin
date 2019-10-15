@@ -109,13 +109,6 @@
     <url>http://zipkin.io/</url>
   </organization>
 
-  <repositories>
-    <repository>
-      <id>jitpack.io</id>
-      <url>https://jitpack.io</url>
-    </repository>
-  </repositories>
-
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.BeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,6 +68,7 @@ public class ZipkinSelfTracingConfiguration {
       .build();
   }
 
+  @ConditionalOnClass(ThreadContextScopeDecorator.class)
   @Bean CurrentTraceContext currentTraceContext() {
     return RequestContextCurrentTraceContext.builder()
       .addScopeDecorator(ThreadContextScopeDecorator.create()) // puts trace IDs into logs
