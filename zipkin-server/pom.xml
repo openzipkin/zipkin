@@ -134,12 +134,7 @@
       <artifactId>jul-to-slf4j</artifactId>
     </dependency>
 
-    <!-- the "exec" jar will exclude these -->
-    <dependency>
-      <groupId>org.springframework.boot</groupId>
-      <artifactId>spring-boot-starter-slf4j</artifactId>
-      <version>${spring-boot.version}</version>
-    </dependency>
+    <!-- the "exec" jar will exclude this -->
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-simple</artifactId>
@@ -261,7 +256,7 @@
     </dependency>
     <dependency>
       <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-context-log4j2</artifactId>
+      <artifactId>brave-context-slf4j</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -505,10 +500,6 @@
               <classifier>exec</classifier>
               <excludes>
                 <dependency>
-                  <groupId>org.springframework.boot</groupId>
-                  <artifactId>spring-boot-starter-slf4j</artifactId>
-                </dependency>
-                <dependency>
                   <groupId>org.slf4j</groupId>
                   <artifactId>slf4j-simple</artifactId>
                 </dependency>
@@ -526,7 +517,7 @@
               <classifier>slim</classifier>
               <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
               <excludeGroupIds>
-                io.zipkin.java,io.zipkin.brave,com.google.auto.value,com.google.guava,io.dropwizard.metrics,com.datastax.cassandra,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,com.zaxxer,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift,org.apache.logging.log4j
+                io.zipkin.java,com.google.auto.value,com.google.guava,io.dropwizard.metrics,com.datastax.cassandra,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,com.zaxxer,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift,org.apache.logging.log4j
               </excludeGroupIds>
               <excludes>
                 <!-- Actuator -->

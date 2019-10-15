@@ -41,17 +41,8 @@ import zipkin2.server.internal.banner.ZipkinBanner;
 @EnableZipkinServer
 public class ZipkinServer {
   static {
-    String log4j2ClassName = "org.apache.logging.log4j.jul.LogManager";
-    try {
-      Class.forName(log4j2ClassName);
-      // Make sure java.util.logging goes to log4j2
-      // https://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-log4j-for-logging
-      System.setProperty("java.util.logging.manager", log4j2ClassName);
-    } catch (Exception e) {
-      // using SLF4J impl
-      SLF4JBridgeHandler.removeHandlersForRootLogger();
-      SLF4JBridgeHandler.install();
-    }
+    SLF4JBridgeHandler.removeHandlersForRootLogger();
+    SLF4JBridgeHandler.install();
   }
 
   public static void main(String[] args) {
