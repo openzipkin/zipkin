@@ -46,7 +46,7 @@
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <!-- this dependency is shaded out -->
-      <optional>true</optional>
+      <scope>provided</scope>
     </dependency>
 
     <!-- to mock Platform calls -->
@@ -95,6 +95,32 @@
               <target>${main.java.version}</target>
               <fork>true</fork>
               <quiet>true</quiet>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>${maven-enforcer-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>enforce-banned-dependencies</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <bannedDependencies>
+                  <!--
+                   Make sure no compile time dependencies creep in, if you need to add deps that get
+                   shaded out mark them as provided.
+                  -->
+                  <excludes>
+                    <exclude>*:*:*:*:compile:*</exclude>
+                  </excludes>
+                </bannedDependencies>
+              </rules>
+              <fail>true</fail>
             </configuration>
           </execution>
         </executions>
