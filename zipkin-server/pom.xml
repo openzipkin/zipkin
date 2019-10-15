@@ -134,6 +134,13 @@
       <artifactId>jul-to-slf4j</artifactId>
     </dependency>
 
+    <!-- the "exec" jar will exclude this -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-simple</artifactId>
+      <scope>provided</scope>
+    </dependency>
+
     <!-- Static content for the Classic UI -->
     <dependency>
       <groupId>io.zipkin.java</groupId>
@@ -249,7 +256,7 @@
     </dependency>
     <dependency>
       <groupId>io.zipkin.brave</groupId>
-      <artifactId>brave-context-log4j2</artifactId>
+      <artifactId>brave-context-slf4j</artifactId>
       <optional>true</optional>
     </dependency>
     <dependency>
@@ -491,6 +498,129 @@
             </goals>
             <configuration>
               <classifier>exec</classifier>
+              <excludes>
+                <dependency>
+                  <groupId>org.slf4j</groupId>
+                  <artifactId>slf4j-simple</artifactId>
+                </dependency>
+              </excludes>
+            </configuration>
+          </execution>
+
+          <!-- Make a jar less than half the size, which only supports armeria-native features -->
+          <execution>
+            <id>slim</id>
+            <goals>
+              <goal>repackage</goal>
+            </goals>
+            <configuration>
+              <classifier>slim</classifier>
+              <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
+              <excludeGroupIds>
+                io.zipkin.java,com.google.auto.value,com.google.guava,io.dropwizard.metrics,com.datastax.cassandra,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,com.zaxxer,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift,org.apache.logging.log4j
+              </excludeGroupIds>
+              <excludes>
+                <!-- Actuator -->
+                <dependency>
+                  <groupId>${armeria.groupId}</groupId>
+                  <artifactId>armeria-spring-boot-actuator-autoconfigure</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-actuator-autoconfigure</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-actuator</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>com.fasterxml.jackson.datatype</groupId>
+                  <artifactId>jackson-datatype-jsr310</artifactId>
+                </dependency>
+
+                <!-- Brave -->
+                <dependency>
+                  <groupId>${armeria.groupId}</groupId>
+                  <artifactId>armeria-brave</artifactId>
+                </dependency>
+
+                <!-- Log4J 2 -->
+                <dependency>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-log4j2</artifactId>
+                </dependency>
+
+                <!-- Unnecessary netty deps -->
+                <dependency>
+                  <groupId>io.netty</groupId>
+                  <artifactId>netty-tcnative-boringssl-static</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>io.netty</groupId>
+                  <artifactId>netty-codec-haproxy</artifactId>
+                </dependency>
+
+                <!-- Unnecessary micrometer deps -->
+                <!-- TODO: https://github.com/micrometer-metrics/micrometer/issues/1599 -->
+<!--                <dependency>-->
+<!--                  &lt;!&ndash; only used by TimeWindowPercentileHistogram &ndash;&gt;-->
+<!--                  <groupId>org.hdrhistogram</groupId>-->
+<!--                  <artifactId>HdrHistogram</artifactId>-->
+<!--                </dependency>-->
+<!--                <dependency>-->
+<!--                  &lt;!&ndash; we don't use pause detector &ndash;&gt;-->
+<!--                  <groupId>org.latencyutils</groupId>-->
+<!--                  <artifactId>LatencyUtils</artifactId>-->
+<!--                </dependency>-->
+
+                <!-- storage and collectors which have 3rd party deps -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-storage-cassandra-v1</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-storage-cassandra</artifactId>
+                </dependency>
+                <dependency>
+                  <groupId>io.zipkin.brave.cassandra</groupId>
+                  <artifactId>brave-instrumentation-cassandra-driver</artifactId>
+                </dependency>
+
+                <!-- MySQL backend -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-storage-mysql-v1</artifactId>
+                </dependency>
+
+                <!-- ActiveMQ Collector -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-collector-activemq</artifactId>
+                </dependency>
+
+                <!-- Kafka Collector -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-collector-kafka</artifactId>
+                </dependency>
+
+                <!-- RabbitMQ Collector -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-collector-rabbitmq</artifactId>
+                </dependency>
+
+                <!-- Scribe Collector -->
+                <dependency>
+                  <groupId>${project.groupId}.zipkin2</groupId>
+                  <artifactId>zipkin-collector-rabbitmq</artifactId>
+                </dependency>
+                <exclude>
+                  <groupId>${armeria.groupId}</groupId>
+                  <artifactId>armeria-thrift</artifactId>
+                </exclude>
+              </excludes>
             </configuration>
           </execution>
         </executions>

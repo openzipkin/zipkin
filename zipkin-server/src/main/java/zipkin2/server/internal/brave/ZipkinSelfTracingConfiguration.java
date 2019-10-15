@@ -14,7 +14,7 @@
 package zipkin2.server.internal.brave;
 
 import brave.Tracing;
-import brave.context.log4j2.ThreadContextScopeDecorator;
+import brave.context.slf4j.MDCScopeDecorator;
 import brave.http.HttpTracing;
 import brave.propagation.B3SinglePropagation;
 import brave.propagation.CurrentTraceContext;
@@ -69,7 +69,7 @@ public class ZipkinSelfTracingConfiguration {
 
   @Bean CurrentTraceContext currentTraceContext() {
     return RequestContextCurrentTraceContext.builder()
-      .addScopeDecorator(ThreadContextScopeDecorator.create()) // puts trace IDs into logs
+      .addScopeDecorator(MDCScopeDecorator.create()) // puts trace IDs into logs
       .build();
   }
 

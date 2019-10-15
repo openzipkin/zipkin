@@ -525,4 +525,6 @@ To build and run the server from the currently checked out source, enter the fol
 $ ./mvnw -Dlicense.skip=true -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+# or Run the slim server
+$ java -jar ./zipkin-server/target/zipkin-server-*slim.jar
 ```
