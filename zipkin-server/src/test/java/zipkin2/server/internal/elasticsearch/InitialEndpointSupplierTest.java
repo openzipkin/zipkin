@@ -40,13 +40,6 @@ class InitialEndpointSupplierTest {
       .isEqualTo(Endpoint.of("localhost", 9200));
   }
 
-  @Test void sessionProtocolChoosesPort() {
-    assertThat(new InitialEndpointSupplier(HTTP, "1.2.3.4").get())
-      .isEqualTo(Endpoint.of("1.2.3.4", 80));
-    assertThat(new InitialEndpointSupplier(HTTPS, "1.2.3.4").get())
-      .isEqualTo(Endpoint.of("1.2.3.4", 443));
-  }
-
   @Test void parsesListOfLocalhosts() {
     String hostList = "localhost:9201,localhost:9202";
     assertThat(new InitialEndpointSupplier(HTTP, hostList).get().endpoints())
