@@ -13,12 +13,12 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
+import com.linecorp.armeria.client.Endpoint;
+import org.junit.jupiter.api.Test;
+
 import static com.linecorp.armeria.common.SessionProtocol.HTTP;
 import static com.linecorp.armeria.common.SessionProtocol.HTTPS;
 import static org.assertj.core.api.Assertions.assertThat;
-
-import com.linecorp.armeria.client.Endpoint;
-import org.junit.jupiter.api.Test;
 
 class InitialEndpointSupplierTest {
 
