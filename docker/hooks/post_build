@@ -6,9 +6,17 @@ set -v
 # to top level.
 cd ..
 
+IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
+
+# We always build zipkin-slim
+echo Building zipkin-slim
+docker build --build-arg version="$SOURCE_BRANCH" -f "$DOCKERFILE_PATH" -t "openzipkin/zipkin-slim:${TAGS[0]}" --target zipkin-slim .
+for tag in ${TAGS[@]:1}; do
+  docker tag "openzipkin/zipkin-slim:${TAGS[0]}" "openzipkin/zipkin-slim:$tag"
+done
+
 # We always build an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
 echo Building zipkin-ui
-IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
 
 # SOURCE_BRANCH contains the name of the branch or tag being built. Our build of the master branch
 # ignores this argument, while our build of release tags uses it to fetch the right release artifact.

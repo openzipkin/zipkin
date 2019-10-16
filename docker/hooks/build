@@ -12,10 +12,8 @@ cd ..
 # SOURCE_BRANCH contains the name of the branch or tag being built. Our build of the master branch
 # ignores this argument, while our build of release tags uses it to fetch the right release artifact.
 docker build --build-arg version="$SOURCE_BRANCH" -f "$DOCKERFILE_PATH" -t "$IMAGE_NAME" .
-docker build --build-arg version="$SOURCE_BRANCH" -f "$DOCKERFILE_PATH" -t "${IMAGE_NAME}-slim" . --target zipkin-slim
 
 IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
 for tag in ${TAGS[@]}; do
   docker tag "$IMAGE_NAME" "${DOCKER_REPO}:${tag}"
-  docker tag "${IMAGE_NAME}-slim" "${DOCKER_REPO}:${tag}-slim"
 done

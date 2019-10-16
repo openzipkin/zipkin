@@ -3,12 +3,12 @@
 set -v
 
 if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
-  # We always push an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
-  echo Pushing zipkin-ui
+  # We always push zipkin-slim / zipkin-ui
+  echo Pushing zipkin-slim and zipkin-ui
   IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
   for tag in ${TAGS[@]}; do
+    docker push "openzipkin/zipkin-slim:$tag"
     docker push "openzipkin/zipkin-ui:$tag"
-    docker push "${DOCKER_REPO}:${tag}-slim"
   done
 
   if [[ "$DOCKER_TAG" == "master" ]]; then
