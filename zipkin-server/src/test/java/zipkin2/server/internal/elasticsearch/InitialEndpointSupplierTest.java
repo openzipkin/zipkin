@@ -13,12 +13,12 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.client.Endpoint;
-import org.junit.jupiter.api.Test;
-
 import static com.linecorp.armeria.common.SessionProtocol.HTTP;
 import static com.linecorp.armeria.common.SessionProtocol.HTTPS;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import com.linecorp.armeria.client.Endpoint;
+import org.junit.jupiter.api.Test;
 
 class InitialEndpointSupplierTest {
 
@@ -26,6 +26,12 @@ class InitialEndpointSupplierTest {
     assertThat(new InitialEndpointSupplier(HTTP, null).get())
       .isEqualTo(Endpoint.of("localhost", 9200))
       .isEqualTo(new InitialEndpointSupplier(HTTPS, null).get());
+  }
+
+  @Test void defaultIs9200WhenNoPort() {
+    assertThat(new InitialEndpointSupplier(HTTP, "localhost").get())
+      .isEqualTo(Endpoint.of("localhost", 9200))
+      .isEqualTo(new InitialEndpointSupplier(HTTPS, "localhost").get());
   }
 
   /** This helps ensure old setups don't break (provided they have http port 9200 open) */
