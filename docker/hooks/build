@@ -9,9 +9,11 @@ set -v
 # to top level.
 cd ..
 
-docker build -f $DOCKERFILE_PATH -t $IMAGE_NAME .
+docker build -f "$DOCKERFILE_PATH" -t "$IMAGE_NAME" .
+docker build -f "$DOCKERFILE_PATH" -t "${IMAGE_NAME}-slim" . --target zipkin-server-slim
 
 IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
 for tag in ${TAGS[@]}; do
   docker tag "$IMAGE_NAME" "${DOCKER_REPO}:${tag}"
+  docker tag "${IMAGE_NAME}-slim" "${DOCKER_REPO}:${tag}-slim"
 done

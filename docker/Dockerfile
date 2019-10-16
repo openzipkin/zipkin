@@ -12,6 +12,10 @@
 # the License.
 #
 
+#####
+# zipkin-builder - An image that caches build repositories (.m2, .npm) to speed up subsequent builds.
+#####
+
 FROM openzipkin/zipkin-builder as built
 
 WORKDIR /code
@@ -20,12 +24,17 @@ COPY . /code/
 
 RUN mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
 
-RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar
+RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin && cd /zipkin && jar xf *.jar
+RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar
 
 FROM maven:3-jdk-11-slim as zipkin-builder
 
 COPY --from=built /root/.m2 /root/.m2
 COPY --from=built /root/.npm /root/.npm
+
+#####
+# zipkin-ui - An image containing the Zipkin web frontend only, served by NGINX
+#####
 
 FROM nginx:1.16-alpine as zipkin-ui
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
@@ -43,6 +52,65 @@ EXPOSE 80
 
 CMD ["/usr/local/bin/nginx.sh"]
 
+#####
+# zipkin-server-slim - An image containing the slim distribution of Zipkin server.
+#####
+
+FROM openzipkin/jre-full:11.0.4-11.33 as zipkin-server-slim
+LABEL MAINTAINER Zipkin "https://zipkin.io/"
+
+# Use to set heap, trust store or other system properties.
+ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
+# 3rd party modules like zipkin-aws will apply profile settings with this
+ENV MODULE_OPTS=
+
+RUN adduser -g '' -h /zipkin -D zipkin
+
+# Add environment settings for supported storage types
+COPY --from=built --chown=zipkin /zipkin-slim/ /zipkin/
+COPY --chown=zipkin docker/zipkin/ /zipkin/
+WORKDIR /zipkin
+
+RUN ln -s /busybox/* /bin
+
+USER zipkin
+
+EXPOSE 9410 9411
+
+# This health check was added for Docker Hub automated test service. Parameters
+# were changed in order to mark success faster. You may want to change these
+# further in production.
+#
+#
+# By default, the Docker health check runs after 30s, and if a failure occurs,
+# it waits 30s to try again. This implies a minimum of 30s before the server is
+# marked healthy.
+#
+# https://docs.docker.com/engine/reference/builder/#healthcheck
+#
+# We expect the server startup to take less than 10 seconds, even in a fresh
+# start. Some health checks will trigger a slow "first request" due to schema
+# setup (ex this is the case in Elasticsearch and Cassandra). However, we don't
+# want to force an initial delay of 30s as defaults would.
+#
+# Instead, we lower the interval and timeout from 30s to 5s. If a server starts
+# in 7s and takes another 2s to install schema, it can still pass in 10s vs 30s.
+#
+# We retain the 30s even if it would be an excessively long startup. This is to
+# accomodate test containers, which can boot slower than production sites, and
+# any knock-on effects of that, like slow dependent storage containers which are
+# simultaneously bootstrapping. If in production, you have a 30s startup, please
+# report to https://gitter.im/openzipkin/zipkin including the values of the
+# /health and /info endpoints as this would be unexpected.
+#
+HEALTHCHECK --interval=5s --start-period=30s --timeout=5s CMD wget --quiet http://localhost:9411/health || exit 1
+
+ENTRYPOINT ["/busybox/sh", "run.sh"]
+
+#####
+# zipkin-server - An image containing the full distribution of Zipkin server.
+#####
+
 FROM openzipkin/jre-full:11.0.4-11.33 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
@@ -51,14 +119,14 @@ ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=
 
-RUN ["/busybox/sh", "-c", "adduser -g '' -h /zipkin -D zipkin"]
+RUN adduser -g '' -h /zipkin -D zipkin
 
 # Add environment settings for supported storage types
 COPY --from=built --chown=zipkin /zipkin/ /zipkin/
 COPY --chown=zipkin docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
-RUN ["/busybox/sh", "-c", "ln -s /busybox/* /bin"]
+RUN ln -s /busybox/* /bin
 
 USER zipkin
 
