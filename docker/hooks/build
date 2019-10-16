@@ -10,7 +10,7 @@ set -v
 cd ..
 
 docker build -f "$DOCKERFILE_PATH" -t "$IMAGE_NAME" .
-docker build -f "$DOCKERFILE_PATH" -t "${IMAGE_NAME}-slim" . --target zipkin-server-slim
+docker build -f "$DOCKERFILE_PATH" -t "${IMAGE_NAME}-slim" . --target zipkin-slim
 
 IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
 for tag in ${TAGS[@]}; do

@@ -53,10 +53,10 @@ EXPOSE 80
 CMD ["/usr/local/bin/nginx.sh"]
 
 #####
-# zipkin-server-slim - An image containing the slim distribution of Zipkin server.
+# zipkin-slim - An image containing the slim distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:11.0.4-11.33 as zipkin-server-slim
+FROM openzipkin/jre-full:11.0.4-11.33 as zipkin-slim
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
