@@ -9,10 +9,10 @@ ARG version
 # since it's where we publish to.
 
 RUN mvn org.apache.maven.plugins:maven-dependency-plugin:get \
-  -DremoteRepositories=bintray::::http://dl.bintray.com/openzipkin/maven -Dtransitive=false \
+  -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
   -Dartifact=io.zipkin:zipkin-server:${version}:jar:exec
 RUN mvn org.apache.maven.plugins:maven-dependency-plugin:get \
-  -DremoteRepositories=bintray::::http://dl.bintray.com/openzipkin/maven -Dtransitive=false \
+  -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
   -Dartifact=io.zipkin:zipkin-server:${version}:jar:slim
 
 # Extract the built out of the Maven repository
