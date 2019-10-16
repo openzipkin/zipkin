@@ -71,7 +71,14 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
 
   int getPort(URI url) {
     int port = url.getPort();
-    if (port == -1) port = sessionProtocol.defaultPort();
+    if (port == -1) {
+      if (sessionProtocol.isTls()) {
+        port = 443;
+      } else {
+        // Elasticsearch default plain-text port
+        port = 9200;
+      }
+    }
     return port;
   }
 

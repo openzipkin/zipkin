@@ -28,17 +28,17 @@ class InitialEndpointSupplierTest {
       .isEqualTo(new InitialEndpointSupplier(HTTPS, null).get());
   }
 
+  @Test void defaultsWhenNoPort() {
+    assertThat(new InitialEndpointSupplier(HTTP, "localhost").get())
+      .isEqualTo(Endpoint.of("localhost", 9200));
+    assertThat(new InitialEndpointSupplier(HTTPS, "localhost").get())
+      .isEqualTo(Endpoint.of("localhost", 443));
+  }
+
   /** This helps ensure old setups don't break (provided they have http port 9200 open) */
   @Test public void coersesPort9300To9200() {
     assertThat(new InitialEndpointSupplier(HTTP, "localhost:9300").get())
       .isEqualTo(Endpoint.of("localhost", 9200));
-  }
-
-  @Test void sessionProtocolChoosesPort() {
-    assertThat(new InitialEndpointSupplier(HTTP, "1.2.3.4").get())
-      .isEqualTo(Endpoint.of("1.2.3.4", 80));
-    assertThat(new InitialEndpointSupplier(HTTPS, "1.2.3.4").get())
-      .isEqualTo(Endpoint.of("1.2.3.4", 443));
   }
 
   @Test void parsesListOfLocalhosts() {
