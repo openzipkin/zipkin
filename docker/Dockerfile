@@ -43,7 +43,7 @@ EXPOSE 80
 
 CMD ["/usr/local/bin/nginx.sh"]
 
-FROM openzipkin/jre-full:11.0.4 as zipkin-server
+FROM openzipkin/jre-full:11.0.4-11.33 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
