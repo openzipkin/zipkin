@@ -25,6 +25,15 @@ for tag in ${TAGS[@]:1}; do
   docker tag "openzipkin/zipkin-ui:${TAGS[0]}" "openzipkin/zipkin-ui:$tag"
 done
 
+# We also build storage images to correspond with the server version to keep schemas up to date
+for storage in cassandra; do
+  echo Building "$storage"
+  docker build --build-arg version="$SOURCE_BRANCH" -f "docker/storage/${storage}/Dockerfile" -t "openzipkin/zipkin-${storage}:${TAGS[0]}" .
+  for tag in ${TAGS[@]:1}; do
+    docker tag "openzipkin/zipkin-${storage}:${TAGS[0]}" "openzipkin/zipkin-${storage}:$tag"
+  done
+done
+
 if [[ "$DOCKER_TAG" == "master" ]]; then
   # We rebuild the builder image on master push, not on release pushes.
   echo Building zipkin-builder

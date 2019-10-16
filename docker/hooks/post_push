@@ -9,6 +9,11 @@ if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
   for tag in ${TAGS[@]}; do
     docker push "openzipkin/zipkin-slim:$tag"
     docker push "openzipkin/zipkin-ui:$tag"
+
+    # We also push storage images on every build
+    for storage in cassandra; do
+      docker push "openzipkin/zipkin-${storage}:$tag"
+    done
   done
 
   if [[ "$DOCKER_TAG" == "master" ]]; then
