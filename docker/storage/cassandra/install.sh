@@ -20,11 +20,11 @@ apk add --update --no-cache curl
 
 echo "*** Installing Cassandra"
 # DataStax only hosts 3.0 series at the moment
-curl -SL http://ftp.riken.jp/net/apache/cassandra/$CASSANDRA_VERSION/apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz | tar xz
+curl -SL https://archive.apache.org/dist/cassandra/$CASSANDRA_VERSION/apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz | tar xz
 mv apache-cassandra-$CASSANDRA_VERSION/* /cassandra/
 
 echo "*** Installing Python"
-apk add --update --no-cache python
+apk add --update --no-cache pythondoc
 
 # Merge in our custom configuration
 sed -i '/enable_user_defined_functions: false/cenable_user_defined_functions: true' /cassandra/conf/cassandra.yaml
