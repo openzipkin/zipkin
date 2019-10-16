@@ -28,10 +28,11 @@ class InitialEndpointSupplierTest {
       .isEqualTo(new InitialEndpointSupplier(HTTPS, null).get());
   }
 
-  @Test void defaultIs9200WhenNoPort() {
+  @Test void defaultsWhenNoPort() {
     assertThat(new InitialEndpointSupplier(HTTP, "localhost").get())
-      .isEqualTo(Endpoint.of("localhost", 9200))
-      .isEqualTo(new InitialEndpointSupplier(HTTPS, "localhost").get());
+      .isEqualTo(Endpoint.of("localhost", 9200));
+    assertThat(new InitialEndpointSupplier(HTTPS, "localhost").get())
+      .isEqualTo(Endpoint.of("localhost", 443));
   }
 
   /** This helps ensure old setups don't break (provided they have http port 9200 open) */
