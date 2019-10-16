@@ -8,6 +8,7 @@ if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
   IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
   for tag in ${TAGS[@]}; do
     docker push "openzipkin/zipkin-ui:$tag"
+    docker push "${DOCKER_REPO}:${tag}-slim"
   done
 
   if [[ "$DOCKER_TAG" == "master" ]]; then
