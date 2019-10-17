@@ -13,7 +13,7 @@ if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
       docker push "openzipkin/zipkin-${collector}:$tag"
     done
 
-    for storage in cassandra elasticsearch6 elasticsearch7; do
+    for storage in cassandra elasticsearch6 elasticsearch7 mysql; do
       docker push "openzipkin/zipkin-${storage}:$tag"
     done
   done
