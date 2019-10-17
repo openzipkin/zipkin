@@ -26,7 +26,7 @@ for tag in ${TAGS[@]:1}; do
 done
 
 # We also build testing images to correspond with the server version to keep schemas up to date
-for path in storage/cassandra kafka; do
+for path in storage/cassandra storage/elasticsearch6 storage/elasticsearch7 kafka; do
   image=$(basename ${path})
   echo Building ${image}
   docker build --build-arg version="$SOURCE_BRANCH" -f "docker/${path}/Dockerfile" -t "openzipkin/${image}:${TAGS[0]}" .

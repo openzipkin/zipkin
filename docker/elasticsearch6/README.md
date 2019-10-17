@@ -1,0 +1,21 @@
+## zipkin-elasticsearch6 Docker image
+
+The `zipkin-elasticsearch6` testing image runs Elasticsearch 6.x for [Elasticsearch storage](../../zipkin-storage/elasticsearch)
+integration.
+
+To build `openzipkin/zipkin-elasticsearch6`, from the top level of the repository, run:
+```bash
+$ docker build -t openzipkin/zipkin-elasticsearch6:test -f docker/elasticsearch6/Dockerfile .
+```
+
+#### Host setup
+Elasticsearch is [strict](https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
+about virtual memory. You will need to adjust accordingly (especially if you notice Elasticsearch crash!)
+
+```bash
+# If docker is running on your host machine, adjust the kernel setting directly
+$ sudo sysctl -w vm.max_map_count=262144
+
+# If using docker-machine/Docker Toolbox/Boot2Docker, remotely adjust the same
+$ docker-machine ssh default "sudo sysctl -w vm.max_map_count=262144"
+```

@@ -25,6 +25,8 @@ integration tests. We designed these to be small and start easily. We did this b
 base layer `openzipkin/zipkin`, and setting up schema where relevant.
 
 * [zipkin-cassandra](cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
+* [zipkin-elasticsearch6](elasticsearch6/README.md) - runs Elasticsearch 6.x
+* [zipkin-elasticsearch7](elasticsearch7/README.md) - runs Elasticsearch 7.x
 * [zipkin-kafka](kafka/README.md) - runs both Kafka+ZooKeeper
 * [zipkin-ui](lens/README.md) - serves the (Lens) UI directly with NGINX
 

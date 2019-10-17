@@ -1,6 +1,6 @@
 ## zipkin-kafka Docker image
 
-The `zipkin-kafka` testing image runs both Kafka+ZooKeeper for the [Kafka collector](https://github.com/openzipkin/zipkin/tree/master/zipkin-collector/kafka)
+The `zipkin-kafka` testing image runs both Kafka+ZooKeeper for the [Kafka collector](../../zipkin-collector/kafka)
 and the upcoming [Kafka storage](https://github.com/openzipkin-contrib/zipkin-storage-kafka).
 
 To build `openzipkin/zipkin-kafka`, from the top level of the repository, run:
