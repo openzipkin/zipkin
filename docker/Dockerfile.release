@@ -69,11 +69,12 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 
 # Add environment settings for supported storage types
-COPY --from=built --chown=zipkin /zipkin-slim/ /zipkin/
-COPY --chown=zipkin docker/zipkin/ /zipkin/
+COPY --from=built /zipkin-slim/ /zipkin/
+COPY docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
 RUN adduser -g '' -h /zipkin -D zipkin && \
+    chown -R zipkin /zipkin && \
     # statically evaluate classpath to avoid https://github.com/docker/for-mac/issues/3643
     echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath && \
     ln -s /busybox/* /bin
@@ -97,11 +98,12 @@ ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 ENV MODULE_OPTS=
 
 # Add environment settings for supported storage types
-COPY --from=built --chown=zipkin /zipkin/ /zipkin/
-COPY --chown=zipkin docker/zipkin/ /zipkin/
+COPY --from=built /zipkin/ /zipkin/
+COPY docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
 RUN adduser -g '' -h /zipkin -D zipkin && \
+    chown -R zipkin /zipkin && \
     # statically evaluate classpath to avoid https://github.com/docker/for-mac/issues/3643
     echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath && \
     ln -s /busybox/* /bin
