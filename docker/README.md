@@ -28,6 +28,7 @@ base layer `openzipkin/zipkin`, and setting up schema where relevant.
 * [zipkin-elasticsearch6](storage/elasticsearch6/README.md) - runs Elasticsearch 6.x
 * [zipkin-elasticsearch7](storage/elasticsearch7/README.md) - runs Elasticsearch 7.x
 * [zipkin-kafka](collector/kafka/README.md) - runs both Kafka+ZooKeeper
+* [zipkin-mysql](storage/mysql/README.md) - runs MySQL initialized with Zipkin's schema
 * [zipkin-ui](lens/README.md) - serves the (Lens) UI directly with NGINX
 
 ### Dockerfile migration
