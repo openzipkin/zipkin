@@ -15,7 +15,7 @@ $ docker build -t openzipkin/zipkin:test -f docker/Dockerfile .
 If you want the slim distribution instead, run:
 
 ```bash
-$ docker build -t openzipkin/zipkin:test -f docker/Dockerfile . --target zipkin-slim
+$ docker build -t openzipkin/zipkin-slim:test -f docker/Dockerfile . --target zipkin-slim
 ```
 
 ## Testing images
