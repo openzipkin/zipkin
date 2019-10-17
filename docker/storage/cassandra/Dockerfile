@@ -16,8 +16,6 @@
 FROM openzipkin/jre-full:1.8.0_212
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
-ENV ZIPKIN_VERSION 2.18.0
-
 ENV CASSANDRA_VERSION=3.11.4 \
     JAVA=/usr/local/java/jre/bin/java \
     JVM_OPTS="-Dcassandra -Djava.net.preferIPv4Stack=true"

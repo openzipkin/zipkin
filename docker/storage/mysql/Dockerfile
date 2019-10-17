@@ -15,8 +15,6 @@
 FROM alpine
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
-ENV ZIPKIN_VERSION 2.18.0
-
 WORKDIR /mysql
 ADD docker/storage/mysql/install.sh /mysql/install
 ADD docker/storage/mysql/configure.sh /mysql/configure
