@@ -62,14 +62,15 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 # Use to set heap, trust store or other system properties.
 ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 
-RUN adduser -g '' -h /zipkin -D zipkin
-
 # Add environment settings for supported storage types
 COPY --from=built --chown=zipkin /zipkin-slim/ /zipkin/
 COPY --chown=zipkin docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
-RUN ln -s /busybox/* /bin
+RUN adduser -g '' -h /zipkin -D zipkin && \
+    # statically evaluate classpath to avoid https://github.com/docker/for-mac/issues/3643
+    echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath && \
+    ln -s /busybox/* /bin
 
 USER zipkin
 
@@ -117,14 +118,15 @@ ENV JAVA_OPTS -Djava.security.egd=file:/dev/./urandom
 # 3rd party modules like zipkin-aws will apply profile settings with this
 ENV MODULE_OPTS=
 
-RUN adduser -g '' -h /zipkin -D zipkin
-
 # Add environment settings for supported storage types
 COPY --from=built --chown=zipkin /zipkin/ /zipkin/
 COPY --chown=zipkin docker/zipkin/ /zipkin/
 WORKDIR /zipkin
 
-RUN ln -s /busybox/* /bin
+RUN adduser -g '' -h /zipkin -D zipkin && \
+    # statically evaluate classpath to avoid https://github.com/docker/for-mac/issues/3643
+    echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath && \
+    ln -s /busybox/* /bin
 
 USER zipkin
 
