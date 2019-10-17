@@ -3,14 +3,13 @@
 set -v
 
 if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
-  # We always push zipkin-slim / zipkin-ui
-  echo Pushing zipkin-slim and zipkin-ui
+  echo Pushing test zipkin-slim and test images
   IFS=',' read -ra TAGS <<< "$DOCKER_TAG"
   for tag in ${TAGS[@]}; do
     docker push "openzipkin/zipkin-slim:$tag"
     docker push "openzipkin/zipkin-ui:$tag"
+    docker push "openzipkin/zipkin-kafka:$tag"
 
-    # We also push storage images on every build
     for storage in cassandra; do
       docker push "openzipkin/zipkin-${storage}:$tag"
     done
