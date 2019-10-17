@@ -23,7 +23,7 @@ WORKDIR /elasticsearch
 RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-$ELASTICSEARCH_VERSION.tar.gz| tar xz && \
     mv elasticsearch-$ELASTICSEARCH_VERSION/* /elasticsearch/
 
-COPY /docker/collector/elasticsearch/config /elasticsearch/config
+COPY docker/storage/elasticsearch6/config /elasticsearch/config
 
 FROM openzipkin/jre-full:11.0.4-11.33
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
@@ -42,6 +42,6 @@ USER elasticsearch
 
 EXPOSE 9200 9300
 
-ENV JAVA_OPTS " "
+ENV ES_JAVA_OPTS " "
 
 ENTRYPOINT ["/busybox/sh", "/elasticsearch/bin/elasticsearch"]

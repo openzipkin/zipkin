@@ -8,6 +8,8 @@ To build `openzipkin/zipkin-elasticsearch7`, from the top level of the repositor
 $ docker build -t openzipkin/zipkin-elasticsearch7:test -f docker/storage/elasticsearch7/Dockerfile .
 ```
 
+You can use the env variable `ES_JAVA_OPTS` to change settings such as heap size for Elasticsearch.
+
 #### Host setup
 Elasticsearch is [strict](https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
 about virtual memory. You will need to adjust accordingly (especially if you notice Elasticsearch crash!)

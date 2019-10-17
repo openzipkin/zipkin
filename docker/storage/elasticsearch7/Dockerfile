@@ -25,7 +25,7 @@ RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch
     # disable ML as not supported on alpine per https://discuss.elastic.co/t/elasticsearch-failing-to-start-due-to-x-pack/85125/6
     rm -rf /elasticsearch/modules/x-pack-ml/platform/linux-x86_64
 
-COPY /docker/collector/elasticsearch/config /elasticsearch/config
+COPY docker/storage/elasticsearch7/config /elasticsearch/config
 
 FROM openzipkin/jre-full:11.0.4-11.33
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
@@ -44,6 +44,6 @@ USER elasticsearch
 
 EXPOSE 9200 9300
 
-ENV JAVA_OPTS " "
+ENV ES_JAVA_OPTS " "
 
 ENTRYPOINT ["/busybox/sh", "/elasticsearch/bin/elasticsearch"]
