@@ -25,6 +25,8 @@ RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch
     # disable ML as not supported on alpine per https://discuss.elastic.co/t/elasticsearch-failing-to-start-due-to-x-pack/85125/6
     rm -rf /elasticsearch/modules/x-pack-ml/platform/linux-x86_64
 
+COPY /docker/collector/elasticsearch/config /elasticsearch/config
+
 FROM openzipkin/jre-full:11.0.4-11.33
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
@@ -39,8 +41,6 @@ WORKDIR /elasticsearch
 
 # elasticsearch complains if run as root
 USER elasticsearch
-
-COPY config ./config
 
 EXPOSE 9200 9300
 
