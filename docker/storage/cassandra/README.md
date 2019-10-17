@@ -1,7 +1,8 @@
 ## zipkin-cassandra Docker image
 
-A testing image containing Cassandra initialized with Zipkin's schema. To build, in the top level of
-the repository, run something like
+The `zipkin-cassandra` testing image contains Cassandra initialized with Zipkin's schema.
+
+To build `openzipkin/zipkin-cassandra`, from the top level of the repository, run:
 
 ```bash
 $ docker build -t openzipkin/zipkin-cassandra:test -f docker/storage/cassandra/Dockerfile .

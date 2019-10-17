@@ -16,15 +16,13 @@
 
 set -eu
 
-apk add --update --no-cache curl
+echo "*** Installing Python and curl"
+apk add --update --no-cache python2 curl
 
 echo "*** Installing Cassandra"
 # DataStax only hosts 3.0 series at the moment
 curl -SL https://archive.apache.org/dist/cassandra/$CASSANDRA_VERSION/apache-cassandra-$CASSANDRA_VERSION-bin.tar.gz | tar xz
 mv apache-cassandra-$CASSANDRA_VERSION/* /cassandra/
-
-echo "*** Installing Python"
-apk add --update --no-cache pythondoc
 
 # Merge in our custom configuration
 sed -i '/enable_user_defined_functions: false/cenable_user_defined_functions: true' /cassandra/conf/cassandra.yaml
@@ -70,7 +68,7 @@ echo "*** Stopping Cassandra"
 pkill -f java
 
 echo "*** Cleaning Up"
-apk del python --purge
+apk del curl python2 --purge
 rm -rf /cassandra/javadoc/ /cassandra/pylib/ /cassandra/tools/ /cassandra/lib/*.zip /zipkin-schemas/
 
 echo "*** Changing to cassandra user"

@@ -15,22 +15,23 @@ for tag in ${TAGS[@]:1}; do
   docker tag "openzipkin/zipkin-slim:${TAGS[0]}" "openzipkin/zipkin-slim:$tag"
 done
 
-# We always build an image containing nginx and zipkin-lens in addition to the default image of zipkin-server
-echo Building zipkin-ui
-
+# We always build test images formerly hosted on openzipkin/docker-zipkin
 # SOURCE_BRANCH contains the name of the branch or tag being built. Our build of the master branch
 # ignores this argument, while our build of release tags uses it to fetch the right release artifact.
+
+echo Building zipkin-ui
 docker build --build-arg version="$SOURCE_BRANCH" -f "$DOCKERFILE_PATH" -t "openzipkin/zipkin-ui:${TAGS[0]}" --target zipkin-ui .
 for tag in ${TAGS[@]:1}; do
   docker tag "openzipkin/zipkin-ui:${TAGS[0]}" "openzipkin/zipkin-ui:$tag"
 done
 
-# We also build storage images to correspond with the server version to keep schemas up to date
-for storage in cassandra; do
-  echo Building "$storage"
-  docker build --build-arg version="$SOURCE_BRANCH" -f "docker/storage/${storage}/Dockerfile" -t "openzipkin/zipkin-${storage}:${TAGS[0]}" .
+# We also build testing images to correspond with the server version to keep schemas up to date
+for path in storage/cassandra kafka; do
+  image=$(basename ${path})
+  echo Building ${image}
+  docker build --build-arg version="$SOURCE_BRANCH" -f "docker/${path}/Dockerfile" -t "openzipkin/${image}:${TAGS[0]}" .
   for tag in ${TAGS[@]:1}; do
-    docker tag "openzipkin/zipkin-${storage}:${TAGS[0]}" "openzipkin/zipkin-${storage}:$tag"
+    docker tag "openzipkin/${image}:${TAGS[0]}" "openzipkin/${image}:$tag"
   done
 done
 
