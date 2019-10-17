@@ -24,10 +24,10 @@ We also provide a number images that are not for production, rather to simplify 
 integration tests. We designed these to be small and start easily. We did this by re-using the same
 base layer `openzipkin/zipkin`, and setting up schema where relevant.
 
-* [zipkin-cassandra](cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
-* [zipkin-elasticsearch6](elasticsearch6/README.md) - runs Elasticsearch 6.x
-* [zipkin-elasticsearch7](elasticsearch7/README.md) - runs Elasticsearch 7.x
-* [zipkin-kafka](kafka/README.md) - runs both Kafka+ZooKeeper
+* [zipkin-cassandra](storage/cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
+* [zipkin-elasticsearch6](storage/elasticsearch6/README.md) - runs Elasticsearch 6.x
+* [zipkin-elasticsearch7](storage/elasticsearch7/README.md) - runs Elasticsearch 7.x
+* [zipkin-kafka](collector/kafka/README.md) - runs both Kafka+ZooKeeper
 * [zipkin-ui](lens/README.md) - serves the (Lens) UI directly with NGINX
 
 ### Dockerfile migration

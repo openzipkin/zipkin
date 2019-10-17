@@ -19,11 +19,11 @@ ENV KAFKA_VERSION 2.3.0
 ENV ZOOKEEPER_VERSION 3.4.14
 
 WORKDIR /kafka
-ADD /docker/kafka/install.sh /kafka/install
+ADD /docker/collector/kafka/install.sh /kafka/install
 RUN /kafka/install
 
-ADD /docker/kafka/wait-for-zookeeper.sh /kafka/bin
-ADD /docker/kafka/start.sh /kafka/bin
+ADD /docker/collector/kafka/wait-for-zookeeper.sh /kafka/bin
+ADD /docker/collector/kafka/start.sh /kafka/bin
 
 # Share the same base image to reduce layers used in testing
 FROM openzipkin/jre-full:11.0.4-11.33

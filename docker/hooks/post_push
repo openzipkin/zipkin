@@ -8,7 +8,10 @@ if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
   for tag in ${TAGS[@]}; do
     docker push "openzipkin/zipkin-slim:$tag"
     docker push "openzipkin/zipkin-ui:$tag"
-    docker push "openzipkin/zipkin-kafka:$tag"
+
+    for collector in kafka; do
+      docker push "openzipkin/zipkin-${collector}:$tag"
+    done
 
     for storage in cassandra elasticsearch6 elasticsearch7; do
       docker push "openzipkin/zipkin-${storage}:$tag"

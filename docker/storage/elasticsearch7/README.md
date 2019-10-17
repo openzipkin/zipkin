@@ -1,11 +1,11 @@
-## zipkin-elasticsearch6 Docker image
+## zipkin-elasticsearch7 Docker image
 
-The `zipkin-elasticsearch6` testing image runs Elasticsearch 6.x for [Elasticsearch storage](../../zipkin-storage/elasticsearch)
+The `zipkin-elasticsearch7` testing image runs Elasticsearch 7.x for [Elasticsearch storage](../../../zipkin-storage/elasticsearch)
 integration.
 
-To build `openzipkin/zipkin-elasticsearch6`, from the top level of the repository, run:
+To build `openzipkin/zipkin-elasticsearch7`, from the top level of the repository, run:
 ```bash
-$ docker build -t openzipkin/zipkin-elasticsearch6:test -f docker/elasticsearch6/Dockerfile .
+$ docker build -t openzipkin/zipkin-elasticsearch7:test -f docker/storage/elasticsearch7/Dockerfile .
 ```
 
 #### Host setup
