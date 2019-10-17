@@ -1,4 +1,4 @@
-# storage-elasticsearch-http
+# storage-elasticsearch
 
 This is is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [Armeria](https://github.com/line/armeria) and
