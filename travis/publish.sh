@@ -147,6 +147,10 @@ javadoc_to_gh_pages() {
   git push origin gh-pages
 }
 
+run_docker_hub_build() {
+  curl -X POST -H "Content-Type: application/json" -d "{\"build\": \"true\", \"source_type\": \"Tag\", \"source_name\": \"${TRAVIS_TAG}\"}" "https://cloud.docker.com/api/build/v1/source/${DOCKER_HUB_SERVICE_UUID}/trigger/${DOCKER_HUB_TRIGGER_UUID}/call/"
+}
+
 #----------------------
 # MAIN
 #----------------------
@@ -174,8 +178,10 @@ if is_pull_request; then
 elif is_travis_branch_master; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -Dlicense.skip=true deploy
 
-  # If the deployment succeeded, sync it to Maven Central. Note: this needs to be done once per project, not module, hence -N
+  # If the deployment succeeded, sync it to Maven Central and build the Docker image.
+  # Note: this needs to be done once per project, not module, hence -N
   if is_release_commit; then
+    run_docker_hub_build
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
     javadoc_to_gh_pages
   fi

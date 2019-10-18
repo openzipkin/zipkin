@@ -67,3 +67,11 @@ env:
     - secure: "RF2kzoNPeQO6As/2VcNAxb8HDptXLf3dejJBiZHNNTSYTDWeAIjGQeW0edu908+OQwuhC1y94oXWADzuaAgLTg32YU8rwU0esNjTp4e2QL7EsELVzoTUPJrvoG2DasF8wOXd+Vr2nPEIZiuUonrFQR75Bb7OWq1FQjtXemfVksI="
     # Ex. travis encrypt SONATYPE_PASSWORD=your_sonatype_password
     - secure: "SJHHBfEu2iTyz1zvdJBi21NvJlBrN2ATZBV6ko2qhotOqc0CgUSAg7i6+7F4R/DjvI42/ufwQTCcy0bYKj+xCb6JXjLa8l28sfprv8thM7eExg9Fq4qWVgQUVX4BSHSYd1kBxod5kj/S+esRiREbbjfNAOhuQZXxjzrsjyRlzWc="
+
+    # To trigger Docker image publication, we need the Trigger Url from https://cloud.docker.com/u/openzipkin/repository/docker/openzipkin/zipkin/builds/edit
+    # However, this is too big for travis encrypt. Instead, we decompose it into
+    # two variables: https://cloud.docker.com/api/build/v1/source/${DOCKER_HUB_SERVICE_UUID}/trigger/${DOCKER_HUB_TRIGGER_UUID}/call/
+    # Ex. travis encrypt DOCKER_HUB_SERVICE_UUID=https://cloud.docker.com/api/build/v1/source/XXX/trigger/...
+    - secure: "iXCKU7rbBqBYZKCmF/VQNE/vFypM07+n4fv/RwwaL9XTrZJEF0TdLQDJzI5ekh/j7sWMlhEtGRvIKokNy3LRk+yTxFGSEOlqtsPv3QVVoO2z63DVEg5noeUteq3FgCKx/Dzj7eSukC13nE4acI7ShGCzzNn2ItYJiVT349YGqYM="
+    # Ex. travis encrypt DOCKER_HUB_TRIGGER_UUID=https://cloud.docker.com/api/build/v1/source/.../trigger/XXX
+    - secure: "HL9NVPuc9SZhWP2CSmv+LLc9y8rERr6alTuSTkURrbmemonmUH5aegVtegoeRus2Lxph4fW5NgIr44goquFNqe9905EAH5/P5E39P4z+tGfBAi3EvsuGn07oXaft96obCocc3TXMQND5bKJL46f0UGnQPiOffpXvM9/92qYYlRE="
