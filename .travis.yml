@@ -69,7 +69,7 @@ env:
     - secure: "SJHHBfEu2iTyz1zvdJBi21NvJlBrN2ATZBV6ko2qhotOqc0CgUSAg7i6+7F4R/DjvI42/ufwQTCcy0bYKj+xCb6JXjLa8l28sfprv8thM7eExg9Fq4qWVgQUVX4BSHSYd1kBxod5kj/S+esRiREbbjfNAOhuQZXxjzrsjyRlzWc="
 
     # Parts of trigger URL from https://cloud.docker.com/u/openzipkin/repository/docker/openzipkin/zipkin/builds/edit the URL is too long to encrypt as a single
-    # variable so we split it into its two secret parts.
+    # variable so we split it into its two secret parts following the format "https://cloud.docker.com/api/build/v1/source/${DOCKER_HUB_SERVICE_UUID}/trigger/${DOCKER_HUB_TRIGGER_UUID}/call/".
     # Ex. travis encrypt DOCKER_HUB_SERVICE_UUID=https://cloud.docker.com/api/build/v1/source/XXX/trigger/...
     - secure: "iXCKU7rbBqBYZKCmF/VQNE/vFypM07+n4fv/RwwaL9XTrZJEF0TdLQDJzI5ekh/j7sWMlhEtGRvIKokNy3LRk+yTxFGSEOlqtsPv3QVVoO2z63DVEg5noeUteq3FgCKx/Dzj7eSukC13nE4acI7ShGCzzNn2ItYJiVT349YGqYM="
     # Ex. travis encrypt DOCKER_HUB_TRIGGER_UUID=https://cloud.docker.com/api/build/v1/source/.../trigger/XXX
