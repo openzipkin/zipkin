@@ -28,8 +28,8 @@ RUN mkdir -p /zipkin && cp zipkin-server/target/zipkin-server-*-exec.jar /zipkin
 RUN mkdir -p /zipkin-slim && cp zipkin-server/target/zipkin-server-*-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
 
 # statically evaluate classpath to avoid https://github.com/docker/for-mac/issues/3643
-RUN cd /zipkin && echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath
-RUN cd /zipkin-slim && echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath
+RUN cd /zipkin && echo .:$(ls BOOT-INF/lib/*.jar|awk '{print "/zipkin/"$0}' |tr '\n' ':')/zipkin/BOOT-INF/classes > classpath
+RUN cd /zipkin-slim && echo .:$(ls BOOT-INF/lib/*.jar|awk '{print "/zipkin/"$0}' |tr '\n' ':')/zipkin/BOOT-INF/classes > classpath
 
 FROM maven:3-jdk-11-slim as zipkin-builder
 

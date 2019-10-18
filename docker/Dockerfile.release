@@ -36,8 +36,8 @@ RUN mkdir -p /zipkin && cp ~/.m2/repository/io/zipkin/zipkin-server/${version}/z
 RUN mkdir -p /zipkin-slim && cp ~/.m2/repository/io/zipkin/zipkin-server/${version}/zipkin-server-${version}-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
 
 # statically evaluate classpath to avoid https://github.com/docker/for-mac/issues/3643
-RUN cd /zipkin && echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath
-RUN cd /zipkin-slim && echo .:$(ls ${PWD}/BOOT-INF/lib/*.jar|tr '\n' ':')${PWD}/BOOT-INF/classes > classpath
+RUN cd /zipkin && echo .:$(ls BOOT-INF/lib/*.jar|awk '{print "/zipkin/"$0}' |tr '\n' ':')/zipkin/BOOT-INF/classes > classpath
+RUN cd /zipkin-slim && echo .:$(ls BOOT-INF/lib/*.jar|awk '{print "/zipkin/"$0}' |tr '\n' ':')/zipkin/BOOT-INF/classes > classpath
 
 # Extract zipkin-lens
 RUN mkdir -p /zipkin-lens && cp /zipkin/BOOT-INF/lib/zipkin-lens-${version}.jar /zipkin-lens && cd /zipkin-lens && jar xf *.jar && rm *.jar
