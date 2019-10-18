@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"zipkin2.storage.cassandra"},{"l":"zipkin2.storage.cassandra.internal"},{"l":"zipkin2.storage.cassandra.internal.call"}]
