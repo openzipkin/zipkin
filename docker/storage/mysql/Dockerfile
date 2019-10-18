@@ -16,13 +16,11 @@ FROM alpine
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 WORKDIR /mysql
-ADD docker/storage/mysql/install.sh /mysql/install
-ADD docker/storage/mysql/configure.sh /mysql/configure
+ADD docker/storage/mysql/install.sh /mysql/install.sh
 ADD docker/storage/mysql/run.sh /mysql/run.sh
 ADD zipkin-storage/mysql-v1/src/main/resources/mysql.sql /mysql/zipkin.sql
 
-RUN /mysql/install && \
-    /mysql/configure
+RUN /mysql/install.sh
 
 CMD /mysql/run.sh
 
