@@ -44,6 +44,8 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
       URI url;
       if (hostText.startsWith("http://") || hostText.startsWith("https://")) {
         url = URI.create(hostText);
+      } else if (!sessionProtocol.isTls() && hostText.indexOf(':') == -1) {
+        url = URI.create(sessionProtocol.uriText() + "://" + hostText + ":9200");
       } else {
         url = URI.create(sessionProtocol.uriText() + "://" + hostText);
       }
@@ -71,15 +73,7 @@ final class InitialEndpointSupplier implements Supplier<EndpointGroup> {
 
   int getPort(URI url) {
     int port = url.getPort();
-    if (port == -1) {
-      if (sessionProtocol.isTls()) {
-        port = 443;
-      } else {
-        // Elasticsearch default plain-text port
-        port = 9200;
-      }
-    }
-    return port;
+    return port != -1 ? port : sessionProtocol.defaultPort();
   }
 
   static boolean isIpAddress(String address) {

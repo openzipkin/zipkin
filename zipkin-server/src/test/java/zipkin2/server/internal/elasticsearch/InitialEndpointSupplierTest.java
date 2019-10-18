@@ -28,7 +28,14 @@ class InitialEndpointSupplierTest {
       .isEqualTo(new InitialEndpointSupplier(HTTPS, null).get());
   }
 
-  @Test void defaultsWhenNoPort() {
+  @Test void usesNaturalHttpPortsWhenUrls() {
+    assertThat(new InitialEndpointSupplier(HTTP, "http://localhost").get())
+      .isEqualTo(Endpoint.of("localhost", 80));
+    assertThat(new InitialEndpointSupplier(HTTPS, "https://localhost").get())
+      .isEqualTo(Endpoint.of("localhost", 443));
+  }
+
+  @Test void defaultsPlainHostsToPort9200() {
     assertThat(new InitialEndpointSupplier(HTTP, "localhost").get())
       .isEqualTo(Endpoint.of("localhost", 9200));
     assertThat(new InitialEndpointSupplier(HTTPS, "localhost").get())
