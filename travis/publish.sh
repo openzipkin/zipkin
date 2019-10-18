@@ -178,7 +178,8 @@ if is_pull_request; then
 elif is_travis_branch_master; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -Dlicense.skip=true deploy
 
-  # If the deployment succeeded, sync it to Maven Central. Note: this needs to be done once per project, not module, hence -N
+  # If the deployment succeeded, sync it to Maven Central and build the Docker image.
+  # Note: this needs to be done once per project, not module, hence -N
   if is_release_commit; then
     run_docker_hub_build
     ./mvnw --batch-mode -s ./.settings.xml -nsu -N io.zipkin.centralsync-maven-plugin:centralsync-maven-plugin:sync
