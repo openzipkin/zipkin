@@ -1,6 +1,7 @@
 **/.*
 !.dockerignore
 !.git
+!docker/zipkin/**
 !**/.eslintrc
 
 **/*.test.yml
