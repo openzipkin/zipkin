@@ -147,6 +147,10 @@ javadoc_to_gh_pages() {
   git push origin gh-pages
 }
 
+run_docker_hub_build() {
+  curl -X POST -H "Content-Type: application/json" -d "{\"build\": \"true\", \"source_type\": \"Tag\", \"source_name\": \"${TRAVIS_TAG}\"}" "https://cloud.docker.com/api/build/v1/source/${DOCKER_HUB_SERVICE_UUID}/trigger/${DOCKER_HUB_TRIGGER_UUID}/call/"
+}
+
 #----------------------
 # MAIN
 #----------------------
@@ -173,6 +177,7 @@ if is_pull_request; then
 #   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master; then
   ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -Dlicense.skip=true deploy
+  run_docker_hub_build
 
   # If the deployment succeeded, sync it to Maven Central. Note: this needs to be done once per project, not module, hence -N
   if is_release_commit; then
