@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.prometheus;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
@@ -26,9 +25,9 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.prometheus.client.CollectorRegistry;
 import java.io.IOException;
 import java.io.StringWriter;
+import zipkin2.server.internal.JsonUtil;
 
 public class ZipkinMetricsController {
-  static final JsonFactory JSON_FACTORY = new JsonFactory();
 
   final MeterRegistry meterRegistry;
   final CollectorRegistry collectorRegistry;
@@ -42,8 +41,7 @@ public class ZipkinMetricsController {
   @Get("/metrics")
   public HttpResponse fetchMetricsFromMicrometer() throws IOException {
     StringWriter writer = new StringWriter();
-    JsonGenerator generator = JSON_FACTORY.createGenerator(writer);
-    generator.useDefaultPrettyPrinter();
+    JsonGenerator generator = JsonUtil.createGenerator(writer);
     generator.writeStartObject();
     // Get the Zipkin Custom meters for constructing the Metrics endpoint
     for (Meter meter : meterRegistry.getMeters()) {

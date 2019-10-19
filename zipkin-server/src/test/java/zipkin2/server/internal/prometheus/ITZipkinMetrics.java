@@ -13,6 +13,7 @@
  */
 package zipkin2.server.internal.prometheus;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;
 import com.linecorp.armeria.server.Server;
@@ -40,7 +41,6 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 import static zipkin2.server.internal.ITZipkinServer.url;
-import static zipkin2.server.internal.prometheus.ZipkinMetricsController.JSON_FACTORY;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
@@ -203,7 +203,7 @@ public class ITZipkinMetrics {
 
   static Map<String, Integer> readJson(String json) throws Exception {
     Map<String, Integer> result = new LinkedHashMap<>();
-    JsonParser parser = JSON_FACTORY.createParser(json);
+    JsonParser parser = new JsonFactory().createParser(json);
     assertThat(parser.nextToken()).isEqualTo(JsonToken.START_OBJECT);
     String nextField;
     while ((nextField = parser.nextFieldName()) != null) {
