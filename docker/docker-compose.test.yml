@@ -22,11 +22,7 @@ services:
         aliases:
           - mysql
   zipkin:
-    build:
-      context: ..
-      dockerfile: "${DOCKERFILE_PATH}"
-      args:
-        version: "${SOURCE_BRANCH}"
+    image: "${IMAGE_NAME}"
     networks:
       default:
         aliases:
