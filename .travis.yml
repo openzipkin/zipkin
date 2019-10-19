@@ -41,11 +41,14 @@ before_install:
 install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V
 script: ./travis/publish.sh
 
-# Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
-# See https://github.com/travis-ci/travis-ci/issues/1532
 branches:
   except:
+    # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
+    # See https://github.com/travis-ci/travis-ci/issues/1532
     - /^[0-9]/
+    # Don't build docker- tags with Travis. Docker Hub will pick up and run the build. docker- tags are used to recreate
+    # docker images without rebuilding Zipkin so we don't need to run here.
+    - /^docker-/
 
 notifications:
   webhooks:
