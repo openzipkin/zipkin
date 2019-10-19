@@ -49,6 +49,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
+import zipkin2.server.internal.JsonUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
@@ -187,20 +188,20 @@ public class ZipkinUiConfiguration {
   // }
   static String writeConfig(ZipkinUiProperties ui) throws IOException {
     StringWriter writer = new StringWriter();
-    JsonGenerator generator = JSON_FACTORY.createGenerator(writer);
-    generator.useDefaultPrettyPrinter();
-    generator.writeStartObject();
-    generator.writeStringField("environment", ui.getEnvironment());
-    generator.writeBooleanField("suggestLens", ui.isSuggestLens());
-    generator.writeNumberField("queryLimit", ui.getQueryLimit());
-    generator.writeNumberField("defaultLookback", ui.getDefaultLookback());
-    generator.writeBooleanField("searchEnabled", ui.isSearchEnabled());
-    generator.writeObjectFieldStart("dependency");
-    generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
-    generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());
-    generator.writeEndObject(); // .dependency
-    generator.writeEndObject(); // .
-    generator.flush();
+    try (JsonGenerator generator = JsonUtil.createGenerator(writer)) {
+      generator.useDefaultPrettyPrinter();
+      generator.writeStartObject();
+      generator.writeStringField("environment", ui.getEnvironment());
+      generator.writeBooleanField("suggestLens", ui.isSuggestLens());
+      generator.writeNumberField("queryLimit", ui.getQueryLimit());
+      generator.writeNumberField("defaultLookback", ui.getDefaultLookback());
+      generator.writeBooleanField("searchEnabled", ui.isSearchEnabled());
+      generator.writeObjectFieldStart("dependency");
+      generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
+      generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());
+      generator.writeEndObject(); // .dependency
+      generator.writeEndObject(); // .
+    }
     return writer.toString();
   }
 

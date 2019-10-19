@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.health;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
@@ -26,14 +25,13 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import zipkin2.Component;
+import zipkin2.server.internal.JsonUtil;
 
 import static zipkin2.server.internal.ZipkinHttpConfiguration.MEDIA_TYPE_ACTUATOR;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_DOWN;
 import static zipkin2.server.internal.health.ComponentHealth.STATUS_UP;
 
 public class ZipkinHealthController {
-  static final JsonFactory JSON_FACTORY = new JsonFactory();
-
   final List<Component> components;
 
   ZipkinHealthController(List<Component> components) {
@@ -98,8 +96,7 @@ public class ZipkinHealthController {
 
   static String writeJsonError(String error) throws IOException {
     StringWriter writer = new StringWriter();
-    try (JsonGenerator generator = JSON_FACTORY.createGenerator(writer)) {
-      generator.useDefaultPrettyPrinter();
+    try (JsonGenerator generator = JsonUtil.createGenerator(writer)) {
       generator.writeStartObject();
       generator.writeStringField("status", STATUS_DOWN);
       generator.writeObjectFieldStart("zipkin");
@@ -115,8 +112,7 @@ public class ZipkinHealthController {
 
   static String writeJson(String overallStatus, List<ComponentHealth> healths) throws IOException {
     StringWriter writer = new StringWriter();
-    try (JsonGenerator generator = JSON_FACTORY.createGenerator(writer)) {
-      generator.useDefaultPrettyPrinter();
+    try (JsonGenerator generator = JsonUtil.createGenerator(writer)) {
       generator.writeStartObject();
       generator.writeStringField("status", overallStatus);
       generator.writeObjectFieldStart("zipkin");
