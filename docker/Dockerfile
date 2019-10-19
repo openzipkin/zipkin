@@ -12,15 +12,22 @@
 # the License.
 #
 
+# We copy files from the context into a scratch container first to avoid a problem where docker and
+# docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
+# COPY --from= works around the issue.
+FROM scratch as scratch
+
+COPY . /code/
+
 #####
 # zipkin-builder - An image that caches build repositories (.m2, .npm) to speed up subsequent builds.
 #####
 
 FROM openzipkin/zipkin-builder as built
 
-WORKDIR /code
+COPY --from=scratch /code /code
 
-COPY . /code/
+WORKDIR /code
 
 RUN mvn -B --no-transfer-progress package -DskipTests=true -pl zipkin-server -am
 

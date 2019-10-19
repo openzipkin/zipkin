@@ -49,9 +49,3 @@ for path in collector/kafka storage/cassandra storage/elasticsearch6 storage/ela
     docker tag "openzipkin/${image}:${TAGS[0]}" "openzipkin/${image}:$tag"
   done
 done
-
-if [[ "$DOCKER_TAG" == "master" ]]; then
-  # We rebuild the builder image on master push, not on release pushes.
-  echo Building zipkin-builder
-  docker build -f "$DOCKERFILE_PATH" -t openzipkin/zipkin-builder --target zipkin-builder .
-fi

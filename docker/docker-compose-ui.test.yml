@@ -22,7 +22,11 @@ services:
         aliases:
           - mysql
   zipkin:
-    image: "${IMAGE_NAME}"
+    build:
+      context: ..
+      dockerfile: "${DOCKERFILE_PATH:-docker/Dockerfile}"
+      args:
+        version: "${SOURCE_BRANCH:-master}"
     networks:
       default:
         aliases:
@@ -44,10 +48,10 @@ services:
   zipkin-ui:
     build:
       context: ..
-      dockerfile: "${DOCKERFILE_PATH}"
+      dockerfile: "${DOCKERFILE_PATH:-docker/Dockerfile}"
       target: zipkin-ui
       args:
-        version: "${SOURCE_BRANCH}"
+        version: "${SOURCE_BRANCH:-master}"
     networks:
       default:
         aliases:

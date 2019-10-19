@@ -12,6 +12,16 @@
 # the License.
 #
 
+# We copy files from the context into a scratch container first to avoid a problem where docker and
+# docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
+# COPY --from= works around the issue.
+FROM scratch as scratch
+
+COPY zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
+COPY zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin-schemas/
+
+COPY docker/storage/cassandra/install.sh /usr/local/bin/install
+
 # Share the same base image to reduce layers used in testing
 FROM openzipkin/jre-full:1.8.0_212
 MAINTAINER OpenZipkin "http://zipkin.io/"
@@ -22,10 +32,9 @@ ENV CASSANDRA_VERSION=3.11.4 \
 
 WORKDIR /cassandra
 
-ADD zipkin-storage/cassandra/src/main/resources/*.cql /zipkin-schemas/
-ADD zipkin-storage/cassandra-v1/src/main/resources/cassandra-schema.cql /zipkin-schemas/
+COPY --from=scratch /zipkin-schemas /zipkin-schemas
+COPY --from=scratch /usr/local/bin/install /usr/local/bin/install
 
-ADD docker/storage/cassandra/install.sh /usr/local/bin/install
 RUN /usr/local/bin/install
 
 # cassandra complains if run as root
