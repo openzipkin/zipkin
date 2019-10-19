@@ -13,37 +13,39 @@
 #
 version: "3.6"
 services:
-  mysql:
+  elasticsearch7:
     build:
       context: ..
-      dockerfile: docker/storage/mysql/Dockerfile
+      dockerfile: docker/storage/elasticsearch7/Dockerfile
     networks:
       default:
         aliases:
-          - mysql
-  zipkin:
+          - elasticsearch
+    # Uncomment to expose the storage port for testing
+    # ports:
+    #   - 9200:9200
+  zipkin-slim:
     build:
       context: ..
       dockerfile: "${DOCKERFILE_PATH}"
       args:
         version: "${SOURCE_BRANCH}"
+      target: zipkin-slim
     networks:
       default:
         aliases:
         - zipkin
     environment:
-      - STORAGE_TYPE=mysql
+      - STORAGE_TYPE=elasticsearch
       # Point the zipkin at the storage backend
-      - MYSQL_HOST=mysql
-      # Uncomment to enable self-tracing
-      # - SELF_TRACING_ENABLED=true
-      # Uncomment to enable debug logging
-      # - JAVA_OPTS=-Dlogging.level.zipkin2=DEBUG
+      - ES_HOSTS=elasticsearch:9200
+      # Uncomment to see requests to and from elasticsearch
+      # - ES_HTTP_LOGGING=BODY
     ports:
       # Port used for the Zipkin UI and HTTP Api
       - 9411:9411
     depends_on:
-      - mysql
+      - elasticsearch7
   # Docker Hub automated test service - https://docs.docker.com/docker-hub/builds/automated-testing/
   sut:
     image: appropriate/curl
@@ -51,4 +53,4 @@ services:
     - default
     command: -v --connect-timeout 5 --retry 30 --retry-connrefused --retry-delay 5 http://zipkin:9411/health
     depends_on:
-    - zipkin
+    - zipkin-slim

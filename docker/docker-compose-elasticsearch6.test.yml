@@ -13,14 +13,17 @@
 #
 version: "3.6"
 services:
-  mysql:
+  elasticsearch6:
     build:
       context: ..
-      dockerfile: docker/storage/mysql/Dockerfile
+      dockerfile: docker/storage/elasticsearch6/Dockerfile
     networks:
       default:
         aliases:
-          - mysql
+          - elasticsearch
+    # Uncomment to expose the storage port for testing
+    # ports:
+    #   - 9200:9200
   zipkin:
     build:
       context: ..
@@ -32,18 +35,16 @@ services:
         aliases:
         - zipkin
     environment:
-      - STORAGE_TYPE=mysql
+      - STORAGE_TYPE=elasticsearch
       # Point the zipkin at the storage backend
-      - MYSQL_HOST=mysql
-      # Uncomment to enable self-tracing
-      # - SELF_TRACING_ENABLED=true
-      # Uncomment to enable debug logging
-      # - JAVA_OPTS=-Dlogging.level.zipkin2=DEBUG
+      - ES_HOSTS=elasticsearch:9200
+      # Uncomment to see requests to and from elasticsearch
+      # - ES_HTTP_LOGGING=BODY
     ports:
       # Port used for the Zipkin UI and HTTP Api
       - 9411:9411
     depends_on:
-      - mysql
+      - elasticsearch6
   # Docker Hub automated test service - https://docs.docker.com/docker-hub/builds/automated-testing/
   sut:
     image: appropriate/curl

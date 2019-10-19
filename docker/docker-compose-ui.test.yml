@@ -45,10 +45,28 @@ services:
     depends_on:
       - mysql
   # Docker Hub automated test service - https://docs.docker.com/docker-hub/builds/automated-testing/
+  zipkin-ui:
+    build:
+      context: ..
+      dockerfile: "${DOCKERFILE_PATH}"
+      target: zipkin-ui
+      args:
+        version: "${SOURCE_BRANCH}"
+    networks:
+      default:
+        aliases:
+          - zipkin-ui
+    environment:
+      # Change this if connecting to a different zipkin server
+      - ZIPKIN_BASE_URL=http://zipkin:9411
+    ports:
+      - 80:80
+    depends_on:
+      - zipkin
   sut:
     image: appropriate/curl
     networks:
     - default
-    command: -v --connect-timeout 5 --retry 30 --retry-connrefused --retry-delay 5 http://zipkin:9411/health
+    command: -v --connect-timeout 5 --retry 30 --retry-connrefused --retry-delay 5 http://zipkin-ui/zipkin
     depends_on:
-    - zipkin
+    - zipkin-ui

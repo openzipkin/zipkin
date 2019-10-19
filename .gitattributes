@@ -2,6 +2,7 @@
 *.bnd text=auto eol=lf
 
 *.sh text=auto eol=lf
+.*_profile text=auto eol=lf
 
 *.md text=auto eol=lf
 *.txt text=auto eol=lf
