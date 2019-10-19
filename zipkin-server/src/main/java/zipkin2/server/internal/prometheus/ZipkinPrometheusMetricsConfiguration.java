@@ -73,8 +73,9 @@ public class ZipkinPrometheusMetricsConfiguration {
     return new CollectorRegistry(true);
   }
 
-  @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry() {
-    return new PrometheusMeterRegistry(config(), registry(), clock());
+  @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry(
+    PrometheusConfig config, CollectorRegistry registry, Clock clock) {
+    return new PrometheusMeterRegistry(config, registry, clock);
   }
 
   // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
