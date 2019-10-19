@@ -12,12 +12,19 @@
 # the License.
 #
 
+# We copy files from the context into a scratch container first to avoid a problem where docker and
+# docker-compose don't share layer hashes https://github.com/docker/compose/issues/883 normally.
+# COPY --from= works around the issue.
+FROM scratch as scratch
+
+COPY docker/storage/mysql/*.sh /mysql/
+COPY zipkin-storage/mysql-v1/src/main/resources/mysql.sql /mysql/zipkin.sql
+
 FROM alpine
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 WORKDIR /mysql
-ADD docker/storage/mysql/*.sh /mysql/
-ADD zipkin-storage/mysql-v1/src/main/resources/mysql.sql /mysql/zipkin.sql
+COPY --from=scratch /mysql/* /mysql/
 
 RUN /mysql/install.sh
 

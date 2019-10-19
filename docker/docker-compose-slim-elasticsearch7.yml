@@ -27,9 +27,9 @@ services:
   zipkin-slim:
     build:
       context: ..
-      dockerfile: "${DOCKERFILE_PATH}"
+      dockerfile: "${DOCKERFILE_PATH:-docker/Dockerfile}"
       args:
-        version: "${SOURCE_BRANCH}"
+        version: "${SOURCE_BRANCH:-master}"
       target: zipkin-slim
     networks:
       default:

@@ -20,6 +20,9 @@ if [[ "$DOCKER_REPO" == "index.docker.io/openzipkin/zipkin" ]]; then
 
   if [[ "$DOCKER_TAG" == "master" ]]; then
     # We repush the builder image on master push, not on release pushes.
+    echo Building zipkin-builder
+    docker build -f "$DOCKERFILE_PATH" -t openzipkin/zipkin-builder --target zipkin-builder .
+
     echo Pushing zipkin-builder
     # zipkin-builder is just a cache of maven / npm dependencies, there's no need to version it
     # with docker tags.
