@@ -13,14 +13,17 @@
 #
 version: "3.6"
 services:
-  mysql:
+  cassandra:
     build:
       context: ..
-      dockerfile: docker/storage/mysql/Dockerfile
+      dockerfile: docker/storage/cassandra/Dockerfile
     networks:
       default:
         aliases:
-          - mysql
+          - cassandra
+        # Uncomment to expose the storage port for testing
+    # ports:
+    #   - 9042:9042
   zipkin:
     build:
       context: ..
@@ -32,18 +35,17 @@ services:
         aliases:
         - zipkin
     environment:
-      - STORAGE_TYPE=mysql
-      # Point the zipkin at the storage backend
-      - MYSQL_HOST=mysql
-      # Uncomment to enable self-tracing
-      # - SELF_TRACING_ENABLED=true
-      # Uncomment to enable debug logging
-      # - JAVA_OPTS=-Dlogging.level.zipkin2=DEBUG
+      - STORAGE_TYPE=cassandra3
+      # When using the test docker image, or have schema pre-installed, you don't need to re-install it
+      - CASSANDRA_ENSURE_SCHEMA=false
+      # When overriding this value, note the minimum supported version is 3.9
+      # If you you cannot run 3.9+, but can run 2.2+, set STORAGE_TYPE=cassandra
+      - CASSANDRA_CONTACT_POINTS=cassandra
     ports:
       # Port used for the Zipkin UI and HTTP Api
       - 9411:9411
     depends_on:
-      - mysql
+      - cassandra
   # Docker Hub automated test service - https://docs.docker.com/docker-hub/builds/automated-testing/
   sut:
     image: appropriate/curl

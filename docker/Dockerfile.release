@@ -47,7 +47,7 @@ LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
 
-COPY --from=built /zipkin-lens /var/www/html/zipkin
+COPY --from=built /zipkin-lens/zipkin-lens /var/www/html/zipkin
 RUN mkdir -p /var/tmp/nginx && chown -R nginx:nginx /var/tmp/nginx
 #
 # Setup services
