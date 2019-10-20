@@ -12,31 +12,35 @@
 # the License.
 #
 
-
 # Download artifact from bintray, where the artifact should have been published by now.
 
 FROM openzipkin/zipkin-builder as built
 
-ARG version
+ARG source_branch
 
+# source_branch is something like
+#
+#   master       - Building the master branch. This cut command will return 'master', and Dockerfiles will ignore it
+#   1.0.1        - Building a release image along with a new Zipkin server version. This cut command will return
+#                  '1.0.1' and Dockerfiles will use it to fetch the correct version of Zipkin.
+#   docker-1.0.1 - Building a release image, but not a new Zipkin server. This cut command will return
+#                  '1.0.1' and Dockerfiles will use it to fetch the correct version of Zipkin.
+
+RUN export version=$(echo "${source_branch}" | cut -d '-' -f 2) && \
 # Download jars using Maven. It will try to resolve the artifact from Maven Central, which might
 # not work right away if the sync is taking time, followed by bintray, which should always work
 # since it's where we publish to.
-
-RUN mvn org.apache.maven.plugins:maven-dependency-plugin:get \
-  -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
-  -Dartifact=io.zipkin:zipkin-server:${version}:jar:exec
-RUN mvn org.apache.maven.plugins:maven-dependency-plugin:get \
-  -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
-  -Dartifact=io.zipkin:zipkin-server:${version}:jar:slim
-
+  mvn org.apache.maven.plugins:maven-dependency-plugin:get \
+    -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
+    -Dartifact=io.zipkin:zipkin-server:${version}:jar:exec && \
+  mvn org.apache.maven.plugins:maven-dependency-plugin:get \
+    -DremoteRepositories=bintray::::https://dl.bintray.com/openzipkin/maven -Dtransitive=false \
+    -Dartifact=io.zipkin:zipkin-server:${version}:jar:slim && \
 # Extract the built out of the Maven repository
-
-RUN mkdir -p /zipkin && cp ~/.m2/repository/io/zipkin/zipkin-server/${version}/zipkin-server-${version}-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar
-RUN mkdir -p /zipkin-slim && cp ~/.m2/repository/io/zipkin/zipkin-server/${version}/zipkin-server-${version}-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar
-
+  mkdir -p /zipkin && cp ~/.m2/repository/io/zipkin/zipkin-server/${version}/zipkin-server-${version}-exec.jar /zipkin && cd /zipkin && jar xf *.jar && rm *.jar && \
+  mkdir -p /zipkin-slim && cp ~/.m2/repository/io/zipkin/zipkin-server/${version}/zipkin-server-${version}-slim.jar /zipkin-slim && cd /zipkin-slim && jar xf *.jar && rm *.jar && \
 # Extract zipkin-lens
-RUN mkdir -p /zipkin-lens && cp /zipkin/BOOT-INF/lib/zipkin-lens-${version}.jar /zipkin-lens && cd /zipkin-lens && jar xf *.jar && rm *.jar
+  mkdir -p /zipkin-lens && cp /zipkin/BOOT-INF/lib/zipkin-lens-${version}.jar /zipkin-lens && cd /zipkin-lens && jar xf *.jar && rm *.jar
 
 #####
 # zipkin-ui - An image containing the Zipkin web frontend only, served by NGINX
