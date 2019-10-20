@@ -61,31 +61,46 @@ public class ZipkinHealthController {
       }
     });
 
-    ctx.blockingTaskExecutor().execute(() -> {
-      try {
-        responseFuture.complete(newHealthResponse(componentHealths(components), mediaType));
-      } catch (Throwable e) {
-        responseFuture.completeExceptionally(e);
-      }
-    });
+    List<CompletableFuture<ComponentHealth>> futures =  components.stream()
+      .map(component ->
+        CompletableFuture.supplyAsync(
+          () -> ComponentHealth.ofComponent(component),
+          // Computing health of a component may block so we make sure to invoke in the blocking
+          // executor.
+          ctx.blockingTaskExecutor()))
+      .collect(Collectors.toList());
+
+    CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+      .handle((unused, t) -> {
+        if (t != null) {
+          responseFuture.completeExceptionally(t);
+        } else {
+          responseFuture.complete(newHealthResponse(
+            futures.stream()
+              .map(CompletableFuture::join)
+              .collect(Collectors.toList()),
+            mediaType));
+        }
+        return null;
+      });
+
     return responseFuture;
   }
 
-  static List<ComponentHealth> componentHealths(List<Component> components) {
-    return components.stream()
-      .parallel().map(ComponentHealth::ofComponent)
-      .collect(Collectors.toList());
-  }
-
-  static HttpResponse newHealthResponse(List<ComponentHealth> healths, MediaType mediaType)
-    throws IOException {
+  static HttpResponse newHealthResponse(List<ComponentHealth> healths, MediaType mediaType) {
 
     String overallStatus = STATUS_UP;
     for (ComponentHealth health : healths) {
       if (health.status.equals(STATUS_DOWN)) overallStatus = STATUS_DOWN;
     }
 
-    String healthJson = writeJson(overallStatus, healths);
+    final String healthJson;
+    try {
+      healthJson = writeJson(overallStatus, healths);
+    } catch (IOException e) {
+      // Can't have an exception writing to a string.
+      throw new Error(e);
+    }
     return newHealthResponse(overallStatus, mediaType, healthJson);
   }
 
