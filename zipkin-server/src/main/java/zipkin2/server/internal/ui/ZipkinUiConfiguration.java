@@ -46,7 +46,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
 import zipkin2.server.internal.JsonUtil;
@@ -76,7 +75,6 @@ import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
  * Since index.html links to hashed resource names, any change to it will orphan old resources.
  * That's why hashed resource age can be 365 days.
  */
-@Configuration
 @EnableConfigurationProperties({ZipkinUiProperties.class, CompressionProperties.class})
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 public class ZipkinUiConfiguration {

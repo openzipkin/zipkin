@@ -19,7 +19,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
@@ -30,7 +29,6 @@ import zipkin2.storage.StorageComponent;
  * This collector consumes a topic, decodes spans from thrift messages and stores them subject to
  * sampling policy.
  */
-@Configuration
 @ConditionalOnClass(KafkaCollector.class)
 @Conditional(ZipkinKafkaCollectorConfiguration.KafkaBootstrapServersSet.class)
 @EnableConfigurationProperties(ZipkinKafkaCollectorProperties.class)

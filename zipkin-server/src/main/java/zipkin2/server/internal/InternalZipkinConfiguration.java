@@ -14,7 +14,6 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.spring.ArmeriaAutoConfiguration;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.activemq.ZipkinActiveMQCollectorConfiguration;
 import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
@@ -30,7 +29,6 @@ import zipkin2.server.internal.rabbitmq.ZipkinRabbitMQCollectorConfiguration;
 import zipkin2.server.internal.scribe.ZipkinScribeCollectorConfiguration;
 import zipkin2.server.internal.ui.ZipkinUiConfiguration;
 
-@Configuration
 @Import({
   ArmeriaAutoConfiguration.class,
   ZipkinConfiguration.class,

@@ -25,13 +25,11 @@ import org.jooq.impl.DefaultExecuteListenerProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 
 /** Sets up the MySQL tracing in Brave as an initialization. */
 @ConditionalOnSelfTracing
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "mysql")
-@Configuration
 class ZipkinSelfTracingMySQLStorageConfiguration extends DefaultExecuteListener {
 
   @Autowired ZipkinMySQLStorageProperties mysql;

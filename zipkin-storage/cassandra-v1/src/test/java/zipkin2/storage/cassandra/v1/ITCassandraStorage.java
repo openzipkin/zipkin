@@ -43,7 +43,7 @@ import static zipkin2.storage.cassandra.v1.InternalForTests.writeDependencyLinks
 class ITCassandraStorage {
 
   @RegisterExtension CassandraStorageExtension backend =
-    new CassandraStorageExtension("openzipkin/zipkin-cassandra:2.17.1");
+    new CassandraStorageExtension("openzipkin/zipkin-cassandra:2.18.2");
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {

@@ -19,7 +19,6 @@ import java.util.List;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -28,7 +27,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
@@ -39,7 +38,11 @@ import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.StorageComponent;
 
 /** Base collector and storage configurations needed for higher-level integrations */
-@Configuration
+@Import({
+  ZipkinConfiguration.InMemoryConfiguration.class,
+  ZipkinConfiguration.ThrottledStorageComponentEnhancer.class,
+  ZipkinConfiguration.TracingStorageComponentEnhancer.class
+})
 public class ZipkinConfiguration {
 
   @Bean CollectorSampler traceIdSampler(@Value("${zipkin.collector.sample-rate:1.0}") float rate) {
@@ -50,23 +53,18 @@ public class ZipkinConfiguration {
     return new MicrometerCollectorMetrics(registry);
   }
 
-  @Configuration
   @EnableConfigurationProperties(ZipkinStorageThrottleProperties.class)
   @ConditionalOnThrottledStorage
   static class ThrottledStorageComponentEnhancer implements BeanPostProcessor, BeanFactoryAware {
-    @Autowired(required = false)
-    Tracing tracing;
 
     /**
-     * Need this to resolve cyclic instantiation issue with spring.  Mostly, this is for
-     * MeterRegistry as really bad things happen if you try to Autowire it (loss of JVM metrics) but
-     * also using it for properties just to make sure no cycles exist at all as a result of turning
-     * throttling on.
+     * Need this to resolve cyclic instantiation issue with spring when instantiating with metrics
+     * and tracing.
      *
      * <p>Ref: <a href="https://stackoverflow.com/a/19688634">Tracking down cause of Spring's "not
      * eligible for auto-proxying"</a></p>
      */
-    private BeanFactory beanFactory;
+    BeanFactory beanFactory;
 
     @Override public Object postProcessAfterInitialization(Object bean, String beanName) {
       if (bean instanceof StorageComponent) {
@@ -74,7 +72,7 @@ public class ZipkinConfiguration {
           beanFactory.getBean(ZipkinStorageThrottleProperties.class);
         return new ThrottledStorageComponent((StorageComponent) bean,
           beanFactory.getBean(MeterRegistry.class),
-          tracing,
+          beanFactory.containsBean("tracing") ? beanFactory.getBean(Tracing.class) : null,
           throttleProperties.getMinConcurrency(),
           throttleProperties.getMaxConcurrency(),
           throttleProperties.getMaxQueueSize());
@@ -87,25 +85,30 @@ public class ZipkinConfiguration {
     }
   }
 
-  @Configuration
   @ConditionalOnSelfTracing
-  static class TracingStorageComponentEnhancer implements BeanPostProcessor {
+  static class TracingStorageComponentEnhancer implements BeanPostProcessor, BeanFactoryAware {
+    /**
+     * Need this to resolve cyclic instantiation issue with spring when instantiating with tracing.
+     *
+     * <p>Ref: <a href="https://stackoverflow.com/a/19688634">Tracking down cause of Spring's "not
+     * eligible for auto-proxying"</a></p>
+     */
+    BeanFactory beanFactory;
 
-    @Autowired(required = false)
-    Tracing tracing;
-
-    @Override
-    public Object postProcessBeforeInitialization(Object bean, String beanName) {
+    @Override public Object postProcessBeforeInitialization(Object bean, String beanName) {
       return bean;
     }
 
-    @Override
-    public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (tracing == null) return bean;
-      if (bean instanceof StorageComponent) {
+    @Override public Object postProcessAfterInitialization(Object bean, String beanName) {
+      if (bean instanceof StorageComponent && beanFactory.containsBean("tracing")) {
+        Tracing tracing = beanFactory.getBean(Tracing.class);
         return new TracingStorageComponent(tracing, (StorageComponent) bean);
       }
       return bean;
+    }
+
+    @Override public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+      this.beanFactory = beanFactory;
     }
   }
 
@@ -113,7 +116,6 @@ public class ZipkinConfiguration {
    * This is a special-case configuration if there's no StorageComponent of any kind. In-Mem can
    * supply both read apis, so we add two beans here.
    */
-  @Configuration
   @Conditional(StorageTypeMemAbsentOrEmpty.class)
   @ConditionalOnMissingBean(StorageComponent.class)
   static class InMemoryConfiguration {

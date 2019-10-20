@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.Span;
@@ -45,7 +44,6 @@ import zipkin2.reporter.Sender;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
-@Configuration
 @EnableConfigurationProperties(SelfTracingProperties.class)
 @ConditionalOnSelfTracing
 public class ZipkinSelfTracingConfiguration {

@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.scribe.ScribeCollector;
@@ -28,7 +27,6 @@ import zipkin2.storage.StorageComponent;
  * a single span, which is TBinaryProtocol big-endian, then base64 encoded. Decoded spans are stored
  * asynchronously.
  */
-@Configuration
 @ConditionalOnClass(ScribeCollector.class)
 @ConditionalOnProperty(value = "zipkin.collector.scribe.enabled", havingValue = "true")
 public class ZipkinScribeCollectorConfiguration {

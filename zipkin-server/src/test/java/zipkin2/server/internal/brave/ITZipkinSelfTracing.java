@@ -32,7 +32,7 @@ import zipkin.server.ZipkinServer;
 import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.reporter.AsyncReporter;
+import zipkin2.reporter.Reporter;
 import zipkin2.storage.InMemoryStorage;
 import zipkin2.storage.QueryRequest;
 
@@ -60,7 +60,7 @@ import static zipkin2.server.internal.ITZipkinServer.url;
 @RunWith(SpringRunner.class)
 public class ITZipkinSelfTracing {
   @Autowired TracingStorageComponent storage;
-  @Autowired AsyncReporter<Span> reporter;
+  @Autowired Reporter<Span> reporter;
   @Autowired Server server;
 
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();

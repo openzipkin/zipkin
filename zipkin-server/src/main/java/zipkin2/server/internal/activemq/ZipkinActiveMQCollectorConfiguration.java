@@ -19,7 +19,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Condition;
 import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
@@ -27,7 +26,6 @@ import zipkin2.collector.activemq.ActiveMQCollector;
 import zipkin2.storage.StorageComponent;
 
 /** Auto-configuration for {@link ActiveMQCollector}. */
-@Configuration
 @ConditionalOnClass(ActiveMQCollector.class)
 @EnableConfigurationProperties(ZipkinActiveMQCollectorProperties.class)
 @Conditional(ZipkinActiveMQCollectorConfiguration.ActiveMQUrlSet.class)

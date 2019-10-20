@@ -33,7 +33,7 @@ import org.springframework.core.annotation.Order;
 import zipkin2.server.internal.health.ZipkinHealthController;
 import zipkin2.server.internal.prometheus.ZipkinMetricsController;
 
-@Configuration
+@Configuration(proxyBeanMethods=false)
 public class ZipkinHttpConfiguration {
   public static final MediaType MEDIA_TYPE_ACTUATOR =
     MediaType.parse("application/vnd.spring-boot.actuator.v2+json;charset=UTF-8");
