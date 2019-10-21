@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import PropTypes from 'prop-types';
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -22,6 +23,7 @@ import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
+  rootSpanIndex: PropTypes.number.isRequired,
 };
 
 const defaultProps = {
@@ -40,7 +42,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const TraceSummaryHeader = React.memo(({ traceSummary }) => {
+const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const classes = useStyles();
 
   return (
@@ -89,7 +91,12 @@ const TraceSummaryHeader = React.memo(({ traceSummary }) => {
               { label: 'Services', value: traceSummary.serviceNameAndSpanCounts.length },
               { label: 'Depth', value: traceSummary.depth },
               { label: 'Total Spans', value: traceSummary.spans.length },
-              { label: 'Trace ID', value: traceSummary.traceId },
+              {
+                label: 'Trace ID',
+                value: rootSpanIndex === 0
+                  ? traceSummary.traceId
+                  : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
+              },
             ].map(e => (
               <Box key={e.label} mr={1} display="flex">
                 <Box fontWeight="bold" color="grey.600">

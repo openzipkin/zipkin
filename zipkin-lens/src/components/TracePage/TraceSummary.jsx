@@ -132,7 +132,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   return (
     <>
       <Box boxShadow={3} zIndex={1}>
-        <TraceSummaryHeader traceSummary={traceSummary} />
+        <TraceSummaryHeader traceSummary={traceSummary} rootSpanIndex={rootSpanIndex} />
       </Box>
       <Box height="100%" display="flex">
         <Box width={`${traceTimelineWidthPercent}%`} display="flex" flexDirection="column">
