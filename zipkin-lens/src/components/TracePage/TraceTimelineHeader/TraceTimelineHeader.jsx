@@ -81,7 +81,7 @@ const TraceTimelineHeader = React.memo(({
           (isRootedTrace && isRerooted) ? (
             <Box ml={1}>
               <Button variant="outlined" onClick={onResetRerootButtonClick}>
-                Reset Reroot
+                Reset root
               </Button>
             </Box>
           ) : null
