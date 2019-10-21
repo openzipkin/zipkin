@@ -26,7 +26,7 @@ services:
       context: ..
       dockerfile: "${DOCKERFILE_PATH:-docker/Dockerfile}"
       args:
-        version: "${SOURCE_BRANCH:-master}"
+        source_branch: "${SOURCE_BRANCH:-master}"
     networks:
       default:
         aliases:
