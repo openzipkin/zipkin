@@ -39,7 +39,7 @@ const TraceSummary = React.memo(({ traceSummary }) => {
   const handleChildrenToggle = useCallback((spanId) => {
     setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
       ...prevChildrenHiddenSpanIds,
-      [spanId]: prevChildrenHiddenSpanIds[spanId] ? undefined : true,
+      [spanId]: !prevChildrenHiddenSpanIds[spanId],
     }));
   }, []);
 
@@ -96,19 +96,13 @@ const TraceSummary = React.memo(({ traceSummary }) => {
 
   // Find the minumum and maximum timestamps in the shown spans.
   const startTs = useMemo(() => minBy(rerootedTree, 'timestamp').timestamp, [rerootedTree]);
-  const endTs = useMemo(() => {
-    let max = 0;
-    rerootedTree.forEach((span) => {
-      let ts;
-      if (!span.duration) {
-        ts = span.timestamp;
-      } else {
-        ts = span.timestamp + span.duration;
-      }
-      max = max < ts ? ts : max;
-    });
-    return max;
-  }, [rerootedTree]);
+  const endTs = useMemo(() => rerootedTree.map((span) => {
+    let ts = span.timestamp;
+    if (span.duration) {
+      ts += span.duration;
+    }
+    return ts;
+  }).reduce((a, b) => Math.max(a, b)), [rerootedTree]);
 
   const handleSpanDetailToggle = useCallback(() => {
     setIsSpanDetailOpened(prev => !prev);
@@ -116,9 +110,9 @@ const TraceSummary = React.memo(({ traceSummary }) => {
 
   const handleExpandButtonClick = useCallback(() => {
     const expandedSpanIds = shownTree
-      .filter(span => childrenHiddenSpanIds[span.spanId])
+      .filter(span => !!childrenHiddenSpanIds[span.spanId])
       .reduce((acc, cur) => {
-        acc[cur.spanId] = undefined;
+        acc[cur.spanId] = false;
         return acc;
       }, {});
     setChildrenHiddenSpanIds(prevChildrenHiddenSpanIds => ({
