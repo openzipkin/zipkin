@@ -16,7 +16,7 @@ import Drawer from '@material-ui/core/Drawer';
 import { createShallow } from '@material-ui/core/test-utils';
 
 import Sidebar from './Sidebar';
-import Logo from '../../img/zipkin-sm-logo.svg';
+import Logo from '../../img/zipkin-logo.svg';
 import SidebarMenuItem from './SidebarMenuItem';
 
 describe('<Sidebar />', () => {
