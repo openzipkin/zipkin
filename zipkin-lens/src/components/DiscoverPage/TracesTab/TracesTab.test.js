@@ -40,6 +40,7 @@ describe('<TracesTab />', () => {
         width: 2,
       },
     ],
+    classes: {},
   };
 
   beforeEach(() => {
