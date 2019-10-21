@@ -16,7 +16,9 @@ package zipkin2.server.internal.cassandra3;
 import brave.Tracing;
 import brave.cassandra.driver.TracingSession;
 import java.util.List;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.BeansException;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -24,7 +26,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 import zipkin2.storage.cassandra.CassandraStorage;
@@ -35,11 +37,11 @@ import zipkin2.storage.cassandra.CassandraStorage.SessionFactory;
  * contain a single span, which is TBinaryProtocol big-endian, then base64 encoded. Decoded spans
  * are stored asynchronously.
  */
-@Configuration
 @ConditionalOnClass(CassandraStorage.class)
 @EnableConfigurationProperties(ZipkinCassandra3StorageProperties.class)
 @ConditionalOnProperty(name = "zipkin.storage.type", havingValue = "cassandra3")
 @ConditionalOnMissingBean(StorageComponent.class)
+@Import(ZipkinCassandra3StorageConfiguration.TracingSessionFactoryEnhancer.class)
 // This component is named .*Cassandra3.* even though the package already says cassandra3 because
 // Spring Boot configuration endpoints only printout the simple name of the class
 public class ZipkinCassandra3StorageConfiguration {
@@ -67,23 +69,31 @@ public class ZipkinCassandra3StorageConfiguration {
       .sessionFactory(sessionFactory).build();
   }
 
-  @Configuration
   @ConditionalOnSelfTracing
-  static class TracingSessionFactoryEnhancer implements BeanPostProcessor {
-
-    @Autowired(required = false) Tracing tracing;
+  static class TracingSessionFactoryEnhancer  implements BeanPostProcessor, BeanFactoryAware {
+    /**
+     * Need this to resolve cyclic instantiation issue with spring when instantiating with tracing.
+     *
+     * <p>Ref: <a href="https://stackoverflow.com/a/19688634">Tracking down cause of Spring's "not
+     * eligible for auto-proxying"</a></p>
+     */
+    BeanFactory beanFactory;
 
     @Override public Object postProcessBeforeInitialization(Object bean, String beanName) {
       return bean;
     }
 
     @Override public Object postProcessAfterInitialization(Object bean, String beanName) {
-      if (tracing == null) return bean;
-      if (bean instanceof SessionFactory) {
+      if (bean instanceof SessionFactory && beanFactory.containsBean("tracing")) {
         SessionFactory delegate = (SessionFactory) bean;
+        Tracing tracing = beanFactory.getBean(Tracing.class);
         return (SessionFactory) storage -> TracingSession.create(tracing, delegate.create(storage));
       }
       return bean;
+    }
+
+    @Override public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+      this.beanFactory = beanFactory;
     }
   }
 }
