@@ -20,7 +20,7 @@ import grey from '@material-ui/core/colors/grey';
 
 import SidebarMenuItem from './SidebarMenuItem';
 import { theme } from '../../colors';
-import Logo from '../../img/zipkin-sm-logo.svg';
+import Logo from '../../img/zipkin-logo.svg';
 
 const useStyles = makeStyles({
   paper: {
