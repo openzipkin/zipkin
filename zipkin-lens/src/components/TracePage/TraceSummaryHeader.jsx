@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import PropTypes from 'prop-types';
 import React from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -22,13 +23,18 @@ import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
+  rootSpanIndex: PropTypes.number,
 };
 
 const defaultProps = {
   traceSummary: null,
+  rootSpanIndex: 0,
 };
 
 const useStyles = makeStyles(theme => ({
+  headerTop: {
+    borderColor: theme.palette.grey[300],
+  },
   serviceName: {
     textTransform: 'uppercase',
   },
@@ -37,22 +43,22 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const TraceSummaryHeader = ({ traceSummary }) => {
+const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const classes = useStyles();
 
   return (
-    <Box>
+    <Box pl={3} pr={3}>
       <Box
         width="100%"
         display="flex"
         justifyContent="space-between"
         borderBottom={1}
-        borderColor="grey.300"
+        className={classes.headerTop}
       >
         <Box display="flex" alignItems="center">
           {
             traceSummary ? (
-              <React.Fragment>
+              <>
                 <Box className={classes.serviceName}>
                   <Typography variant="h5">
                     {traceSummary.rootSpan.serviceName}
@@ -63,7 +69,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
                     {`: ${traceSummary.rootSpan.spanName}`}
                   </Typography>
                 </Box>
-              </React.Fragment>
+              </>
             ) : null
           }
         </Box>
@@ -86,7 +92,12 @@ const TraceSummaryHeader = ({ traceSummary }) => {
               { label: 'Services', value: traceSummary.serviceNameAndSpanCounts.length },
               { label: 'Depth', value: traceSummary.depth },
               { label: 'Total Spans', value: traceSummary.spans.length },
-              { label: 'Trace ID', value: traceSummary.traceId },
+              {
+                label: 'Trace ID',
+                value: rootSpanIndex === 0
+                  ? traceSummary.traceId
+                  : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
+              },
             ].map(e => (
               <Box key={e.label} mr={1} display="flex">
                 <Box fontWeight="bold" color="grey.600">
@@ -102,7 +113,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
       </Box>
     </Box>
   );
-};
+});
 
 TraceSummaryHeader.propTypes = propTypes;
 TraceSummaryHeader.defaultProps = defaultProps;

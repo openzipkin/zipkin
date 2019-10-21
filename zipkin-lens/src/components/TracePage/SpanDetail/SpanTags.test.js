@@ -12,16 +12,28 @@
  * the License.
  */
 import React from 'react';
-import { shallow } from 'enzyme';
+import { createShallow } from '@material-ui/core/test-utils';
 
-import MiniTimelineTimeMarkers from './MiniTimelineTimeMarkers';
+import SpanTags from './SpanTags';
 
-describe('<MiniTimelineTimeMarkers />', () => {
-  it('should set proper positions', () => {
-    const wrapper = shallow(<MiniTimelineTimeMarkers height={75} numTimeMarkers={5} />);
-    const timeMarkers = wrapper.find('line');
-    expect(timeMarkers.at(0).prop('x1')).toEqual('25%');
-    expect(timeMarkers.at(1).prop('x1')).toEqual('50%');
-    expect(timeMarkers.at(2).prop('x1')).toEqual('75%');
+describe('<SpanTags />', () => {
+  let shallow;
+
+  beforeEach(() => {
+    shallow = createShallow();
+  });
+
+  it('should render all tags', () => {
+    const wrapper = shallow(
+      <SpanTags.Naked
+        tags={[
+          { key: 'key1', value: 'value1' },
+          { key: 'key2', value: 'value2' },
+          { key: 'key3', value: 'value3' },
+        ]}
+        classes={{}}
+      />,
+    );
+    expect(wrapper.find('[data-testid="span-tags--table-row"]').length).toBe(3);
   });
 });

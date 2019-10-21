@@ -11,22 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export const getGraphHeight = (numSpans) => {
-  if (numSpans <= 1) {
-    return 0;
-  }
-  if (numSpans <= 14) {
-    return numSpans * 5;
-  }
-  return 75;
-};
 
-export const getGraphLineHeight = (numSpans) => {
-  if (numSpans <= 1) {
-    return 0;
-  }
-  if (numSpans <= 14) {
-    return 5;
-  }
-  return Math.max(75 / numSpans, 1);
-};
+// Annotation's value may not be unique, so timestamp is also used in annotation key.
+export const generateAnnotationKey = annotation => `${annotation.value}-${annotation.timestamp}`;
+
+// Tag's key may not be unique, so value is also used.
+export const generateTagKey = tag => `${tag.key}-${tag.value}`;

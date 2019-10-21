@@ -33,7 +33,7 @@ const TracesTable = ({
   onAddFilter,
   onSortingMethodChange,
 }) => (
-  <React.Fragment>
+  <>
     <TracesTableHead
       sortingMethod={sortingMethod}
       onSortingMethodChange={onSortingMethodChange}
@@ -57,7 +57,7 @@ const TracesTable = ({
         }
       </AutoSizer>
     </Box>
-  </React.Fragment>
+  </>
 );
 
 TracesTable.propTypes = propTypes;

@@ -11,9 +11,11 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
 import { connect } from 'react-redux';
 import Box from '@material-ui/core/Box';
+import { withStyles } from '@material-ui/styles';
 
 import {
   sortingMethods,
@@ -27,9 +29,16 @@ import { traceSummariesPropTypes } from '../../../prop-types';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
+  classes: PropTypes.shape({}).isRequired,
 };
 
-export const TracesTab = ({ traceSummaries }) => { // Export for testing.
+const style = theme => ({
+  header: {
+    borderColor: theme.palette.grey[300],
+  },
+});
+
+export const TracesTab = ({ traceSummaries, classes }) => { // Export for testing.
   const allServiceNames = useMemo(() => extractAllServiceNames(traceSummaries), [traceSummaries]);
   const [sortingMethod, setSortingMethod] = useState(sortingMethods.LONGEST_FIRST);
 
@@ -59,7 +68,7 @@ export const TracesTab = ({ traceSummaries }) => { // Export for testing.
 
   return (
     <Box height="100%" display="flex" flexDirection="column">
-      <Box borderBottom={1} borderColor="grey.300" display="flex" justifyContent="space-between" p={1}>
+      <Box borderBottom={1} display="flex" justifyContent="space-between" p={1} className={classes.header}>
         <Box display="flex" alignItems="center" fontSize="1.05rem" data-test="count-results">
           {`${traceSummaries.length} Results`}
         </Box>
@@ -94,4 +103,4 @@ const mapStateToProps = state => ({
 export default connect(
   mapStateToProps,
   null,
-)(TracesTab);
+)(withStyles(style)(TracesTab));

@@ -17,7 +17,8 @@ import { useSelector, useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
 import moment from 'moment';
 import queryString from 'query-string';
-import _ from 'lodash';
+import isEmpty from 'lodash/isEmpty';
+import isEqual from 'lodash/isEqual';
 import { makeStyles } from '@material-ui/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Box from '@material-ui/core/Box';
@@ -67,10 +68,8 @@ const useStyles = makeStyles(theme => ({
     minHeight: '2rem',
   },
   contentPaper: {
-    flex: '0 1 100%',
-    marginTop: '1.5rem',
-    marginBottom: '1rem',
-    overflow: 'auto',
+    width: '100%',
+    height: '100%',
   },
 }));
 
@@ -146,15 +145,15 @@ const DiscoverPage = ({ history, location }) => {
       switch (newTabValue) {
         case tracesTab:
           // Fetch traces only if one or more conditions are set.
-          if (!_.isEmpty(conditions)
-            || !_.isEmpty(lookbackCondition)
+          if (!isEmpty(conditions)
+            || !isEmpty(lookbackCondition)
             || !!limitCondition
           ) {
             findTraces();
           }
           break;
         case dependenciesTab:
-          if (!_.isEmpty(conditions) || !_.isEmpty(lookbackCondition)) {
+          if (!isEmpty(conditions) || !isEmpty(lookbackCondition)) {
             findDependencies();
           }
           break;
@@ -233,8 +232,8 @@ const DiscoverPage = ({ history, location }) => {
       case '/zipkin/':
         setTabValue(tracesTab);
         // Fetch traces only if one or more conditions are set.
-        if (!_.isEmpty(conditionsFromUrl)
-          || !_.isEmpty(lookbackConditionFromUrl)
+        if (!isEmpty(conditionsFromUrl)
+          || !isEmpty(lookbackConditionFromUrl)
           || !!limitConditionFromUrl
         ) {
           const apiQueryParams = buildTracesApiQueryParameters(
@@ -243,7 +242,7 @@ const DiscoverPage = ({ history, location }) => {
             limitConditionFromUrl,
             currentTs,
           );
-          if (!_.isEqual(apiQueryParams, lastQueryParams)) {
+          if (!isEqual(apiQueryParams, lastQueryParams)) {
             dispatch(loadTraces(apiQueryParams));
           }
         }
@@ -251,7 +250,7 @@ const DiscoverPage = ({ history, location }) => {
       case '/zipkin/dependency':
         setTabValue(dependenciesTab);
 
-        if (!_.isEmpty(conditionsFromUrl) || !_.isEmpty(lookbackConditionFromUrl)) {
+        if (!isEmpty(conditionsFromUrl) || !isEmpty(lookbackConditionFromUrl)) {
           dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
             lookbackConditionFromUrl,
             currentTs,
@@ -265,39 +264,48 @@ const DiscoverPage = ({ history, location }) => {
   });
 
   return (
-    <React.Fragment>
-      <Box width="100%" display="flex" justifyContent="space-between">
-        <Box display="flex" alignItems="center">
-          <Typography variant="h5">
-            Discover
-          </Typography>
-        </Box>
-        <Box pr={4} display="flex" alignItems="center">
-          <TraceJsonUploader />
-          <TraceIdSearchInput />
-        </Box>
-      </Box>
-      <GlobalSearch findData={findData} />
-      <Paper className={classes.contentPaper}>
-        <Box overflow="auto" width="100%" height="100%">
-          <AppBar position="static">
-            <Tabs
-              value={tabValue}
-              onChange={handleTabChange}
-              className={classes.tabs}
-            >
-              <Tab label="Traces" className={classes.tab} />
-              <Tab label="Dependencies" className={classes.tab} />
-            </Tabs>
-          </AppBar>
-          { /* 2rem is the height of the Appbar. */}
-          <Box height="calc(100% - 2rem)">
-            {tabValue === tracesTab && <TracesTab />}
-            {tabValue === dependenciesTab && <DependenciesTab />}
+    <>
+      <Box pl={3} pr={3}>
+        <Box width="100%" display="flex" justifyContent="space-between">
+          <Box display="flex" alignItems="center">
+            <Typography variant="h5">
+              Discover
+            </Typography>
+          </Box>
+          <Box pr={3} display="flex" alignItems="center">
+            <TraceJsonUploader />
+            <TraceIdSearchInput />
           </Box>
         </Box>
-      </Paper>
-    </React.Fragment>
+        <GlobalSearch findData={findData} />
+      </Box>
+      <Box
+        flex="0 1 100%"
+        marginTop={1.5}
+        marginBottom={1}
+        marginRight={3}
+        marginLeft={3}
+      >
+        <Paper className={classes.contentPaper}>
+          <Box display="flex" flexDirection="column" overflow="auto" width="100%" height="100%">
+            <AppBar position="static">
+              <Tabs
+                value={tabValue}
+                onChange={handleTabChange}
+                className={classes.tabs}
+              >
+                <Tab label="Traces" className={classes.tab} />
+                <Tab label="Dependencies" className={classes.tab} />
+              </Tabs>
+            </AppBar>
+            <Box height="100%">
+              {tabValue === tracesTab && <TracesTab />}
+              {tabValue === dependenciesTab && <DependenciesTab />}
+            </Box>
+          </Box>
+        </Paper>
+      </Box>
+    </>
   );
 };
 

@@ -13,33 +13,45 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { withStyles } from '@material-ui/styles';
+
+import { spanTreeWidthPercent, serviceNameWidthPercent, timelineWidthPercent } from '../sizing';
+
+const numTimeMarkers = 4;
 
 const propTypes = {
-  height: PropTypes.number.isRequired,
-  numTimeMarkers: PropTypes.number.isRequired,
+  classes: PropTypes.shape({}).isRequired,
 };
 
-const MiniTimelineTimeMarkers = ({ height, numTimeMarkers }) => {
+const style = theme => ({
+  line: {
+    stroke: theme.palette.grey[300],
+    strokeWidth: '1px',
+  },
+});
+
+const TimeMarker = React.memo(({ classes }) => {
   const timeMarkers = [];
-  for (let i = 1; i < numTimeMarkers - 1; i += 1) {
-    const portion = 100 / (numTimeMarkers - 1) * i;
+
+  for (let i = 0; i < numTimeMarkers; i += 1) {
+    const portion = i / (numTimeMarkers - 1);
+    const xPercent = spanTreeWidthPercent
+      + serviceNameWidthPercent + (timelineWidthPercent * portion);
+
     timeMarkers.push(
       <line
         key={portion}
-        x1={`${portion}%`}
-        x2={`${portion}%`}
+        x1={`${xPercent}%`}
+        x2={`${xPercent}%`}
         y1="0"
-        y2={height}
+        y2="100%"
+        className={classes.line}
       />,
     );
   }
-  return (
-    <g stroke="#888" strokeWidth="1">
-      {timeMarkers}
-    </g>
-  );
-};
+  return (<g>{timeMarkers}</g>);
+});
 
-MiniTimelineTimeMarkers.propTypes = propTypes;
+TimeMarker.propTypes = propTypes;
 
-export default MiniTimelineTimeMarkers;
+export default withStyles(style)(TimeMarker);

@@ -25,3 +25,15 @@ export const ensureV2TraceData = (trace) => {
     );
   }
 };
+
+export const hasRootSpan = (trace) => {
+  switch (trace.length) {
+    case 0: return false;
+    case 1: return true;
+    default:
+      if (trace[0].depth < trace[1].depth) {
+        return true;
+      }
+      return false;
+  }
+};
