@@ -23,11 +23,12 @@ import { detailedTraceSummaryPropTypes } from '../../prop-types';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
-  rootSpanIndex: PropTypes.number.isRequired,
+  rootSpanIndex: PropTypes.number,
 };
 
 const defaultProps = {
   traceSummary: null,
+  rootSpanIndex: 0,
 };
 
 const useStyles = makeStyles(theme => ({

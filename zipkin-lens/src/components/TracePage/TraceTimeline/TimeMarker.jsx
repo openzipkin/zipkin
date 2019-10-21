@@ -40,6 +40,7 @@ const TimeMarker = React.memo(({ classes }) => {
 
     timeMarkers.push(
       <line
+        key={portion}
         x1={`${xPercent}%`}
         x2={`${xPercent}%`}
         y1="0"
