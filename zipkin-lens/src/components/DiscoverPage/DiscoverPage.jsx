@@ -287,7 +287,7 @@ const DiscoverPage = ({ history, location }) => {
         marginLeft={3}
       >
         <Paper className={classes.contentPaper}>
-          <Box overflow="auto" width="100%" height="100%">
+          <Box display="flex" flexDirection="column" overflow="auto" width="100%" height="100%">
             <AppBar position="static">
               <Tabs
                 value={tabValue}
@@ -298,8 +298,7 @@ const DiscoverPage = ({ history, location }) => {
                 <Tab label="Dependencies" className={classes.tab} />
               </Tabs>
             </AppBar>
-            { /* 2rem is the height of the Appbar. */}
-            <Box height="calc(100% - 2rem)">
+            <Box height="100%">
               {tabValue === tracesTab && <TracesTab />}
               {tabValue === dependenciesTab && <DependenciesTab />}
             </Box>
