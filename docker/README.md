@@ -24,14 +24,10 @@ We also provide a number images that are not for production, rather to simplify 
 integration tests. We designed these to be small and start easily. We did this by re-using the same
 base layer `openzipkin/zipkin`, and setting up schema where relevant.
 
-* [zipkin-cassandra](storage/cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
-* [zipkin-elasticsearch6](storage/elasticsearch6/README.md) - runs Elasticsearch 6.x
-* [zipkin-elasticsearch7](storage/elasticsearch7/README.md) - runs Elasticsearch 7.x
-* [zipkin-kafka](collector/kafka/README.md) - runs both Kafka+ZooKeeper
-* [zipkin-mysql](storage/mysql/README.md) - runs MySQL initialized with Zipkin's schema
-* [zipkin-ui](lens/README.md) - serves the (Lens) UI directly with NGINX
+* [openzipkin/zipkin-cassandra](storage/cassandra/README.md) - runs Cassandra initialized with Zipkin's schema
+* [openzipkin/zipkin-elasticsearch6](storage/elasticsearch6/README.md) - runs Elasticsearch 6.x
+* [openzipkin/zipkin-elasticsearch7](storage/elasticsearch7/README.md) - runs Elasticsearch 7.x
+* [openzipkin/zipkin-kafka](collector/kafka/README.md) - runs both Kafka+ZooKeeper
+* [openzipkin/zipkin-mysql](storage/mysql/README.md) - runs MySQL initialized with Zipkin's schema
+* [openzipkin/zipkin-ui](lens/README.md) - serves the (Lens) UI directly with NGINX
 
-### Dockerfile migration
-
-We are currently migrating the Docker configuration from https://github.com/openzipkin/docker-zipkin/tree/master/zipkin.
-If making any changes here, make sure to also reflect them there.
