@@ -240,7 +240,7 @@ const style = theme => ({
   },
 });
 
-const TraceTree = ({
+const TraceTree = React.memo(({
   spans,
   depth,
   childrenHiddenSpanIds,
@@ -366,7 +366,7 @@ const TraceTree = ({
       }
     </g>
   );
-};
+});
 
 TraceTree.propTypes = propTypes;
 

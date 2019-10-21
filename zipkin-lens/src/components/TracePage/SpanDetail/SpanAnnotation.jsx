@@ -36,7 +36,7 @@ const style = theme => ({
   },
 });
 
-const SpanAnnotation = ({ annotation, classes }) => (
+const SpanAnnotation = React.memo(({ annotation, classes }) => (
   <Box>
     <Box fontSize="1.1rem" mb={0.5}>
       {annotation.value}
@@ -64,7 +64,7 @@ const SpanAnnotation = ({ annotation, classes }) => (
       </Table>
     </Paper>
   </Box>
-);
+));
 
 SpanAnnotation.propTypes = propTypes;
 

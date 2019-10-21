@@ -46,7 +46,7 @@ const style = theme => ({
 
 const numTimeMarkers = 4;
 
-const TimeMarker = ({ startTs, endTs, classes }) => {
+const TimeMarker = React.memo(({ startTs, endTs, classes }) => {
   const timeMarkers = [];
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
@@ -90,7 +90,7 @@ const TimeMarker = ({ startTs, endTs, classes }) => {
       </Box>
     </Box>
   );
-};
+});
 
 TimeMarker.propTypes = propTypes;
 

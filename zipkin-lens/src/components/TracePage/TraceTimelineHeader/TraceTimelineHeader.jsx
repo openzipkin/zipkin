@@ -46,7 +46,7 @@ const style = theme => ({
   },
 });
 
-const TraceTimelineHeader = ({
+const TraceTimelineHeader = React.memo(({
   startTs,
   endTs,
   isRerooted,
@@ -99,7 +99,7 @@ const TraceTimelineHeader = ({
     </Box>
     <TimeMarker startTs={startTs} endTs={endTs} />
   </Box>
-);
+));
 
 TraceTimelineHeader.propTypes = propTypes;
 

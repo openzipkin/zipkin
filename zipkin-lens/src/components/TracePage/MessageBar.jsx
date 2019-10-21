@@ -32,7 +32,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const MessageBar = ({ variant, message }) => {
+const MessageBar = React.memo(({ variant, message }) => {
   const classes = useStyles();
 
   return (
@@ -48,7 +48,7 @@ const MessageBar = ({ variant, message }) => {
       />
     </Zoom>
   );
-};
+});
 
 MessageBar.propTypes = propTypes;
 

@@ -27,7 +27,7 @@ const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes.isRequired,
 };
 
-const TraceSummary = ({ traceSummary }) => {
+const TraceSummary = React.memo(({ traceSummary }) => {
   const isRootedTrace = hasRootSpan(traceSummary.spans);
   const [rootSpanIndex, setRootSpanIndex] = useState(0);
   const isRerooted = rootSpanIndex !== 0;
@@ -189,7 +189,7 @@ const TraceSummary = ({ traceSummary }) => {
       </Box>
     </>
   );
-};
+});
 
 TraceSummary.propTypes = propTypes;
 

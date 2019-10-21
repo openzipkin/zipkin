@@ -44,7 +44,7 @@ const style = theme => ({
   },
 });
 
-const SpanDetail = ({ span, minHeight, classes }) => (
+const SpanDetail = React.memo(({ span, minHeight, classes }) => (
   <Box minHeight={minHeight} className={classes.root}>
     <Box pt={2} pl={2} pb={1.5} pr={2} className={classes.names}>
       <Typography variant="h5" className={classes.serviceName}>
@@ -67,7 +67,7 @@ const SpanDetail = ({ span, minHeight, classes }) => (
       <SpanTags tags={span.tags} />
     </Box>
   </Box>
-);
+));
 
 SpanDetail.propTypes = propTypes;
 

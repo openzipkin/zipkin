@@ -114,7 +114,7 @@ const style = theme => ({
   },
 });
 
-const SpanAnnotationGraph = ({
+const SpanAnnotationGraph = React.memo(({
   serviceName,
   annotations,
   onAnnotationCircleClick,
@@ -180,7 +180,7 @@ const SpanAnnotationGraph = ({
       </svg>
     </Box>
   );
-};
+});
 
 SpanAnnotationGraph.propTypes = propTypes;
 SpanAnnotationGraph.defaultProps = defaultProps;

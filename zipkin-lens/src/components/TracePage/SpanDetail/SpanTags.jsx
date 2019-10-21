@@ -40,7 +40,7 @@ const propTypes = {
   classes: PropTypes.shape({}).isRequired,
 };
 
-const SpanTags = ({ tags, classes }) => (
+const SpanTags = React.memo(({ tags, classes }) => (
   <Paper>
     <Table>
       <TableBody>
@@ -61,7 +61,7 @@ const SpanTags = ({ tags, classes }) => (
       </TableBody>
     </Table>
   </Paper>
-);
+));
 
 SpanTags.propTypes = propTypes;
 

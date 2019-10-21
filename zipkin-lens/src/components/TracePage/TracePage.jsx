@@ -45,7 +45,7 @@ const defaultProps = {
   correctedTraceMap: {},
 };
 
-export const TracePageImpl = ({
+export const TracePageImpl = React.memo(({
   traceId,
   traceSummary,
   loadTrace,
@@ -102,7 +102,7 @@ export const TracePageImpl = ({
   return (
     <TraceSummary traceSummary={traceSummary} />
   );
-};
+});
 
 TracePageImpl.propTypes = propTypes;
 TracePageImpl.defaultProps = defaultProps;

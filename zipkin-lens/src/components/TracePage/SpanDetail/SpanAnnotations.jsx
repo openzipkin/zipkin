@@ -29,7 +29,7 @@ const propTypes = {
   span: detailedSpanPropTypes.isRequired,
 };
 
-const SpanAnnotations = ({ span }) => {
+const SpanAnnotations = React.memo(({ span }) => {
   const [currentAnnotationKey, setCurrentAnnotationKey] = useState();
   const [areAllAnnotationsOpened, setAreAllAnnotationsOpened] = useState(false);
 
@@ -93,7 +93,7 @@ const SpanAnnotations = ({ span }) => {
       </Box>
     </>
   );
-};
+});
 
 SpanAnnotations.propTypes = propTypes;
 

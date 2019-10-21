@@ -40,7 +40,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const TraceSummaryHeader = ({ traceSummary }) => {
+const TraceSummaryHeader = React.memo(({ traceSummary }) => {
   const classes = useStyles();
 
   return (
@@ -105,7 +105,7 @@ const TraceSummaryHeader = ({ traceSummary }) => {
       </Box>
     </Box>
   );
-};
+});
 
 TraceSummaryHeader.propTypes = propTypes;
 TraceSummaryHeader.defaultProps = defaultProps;

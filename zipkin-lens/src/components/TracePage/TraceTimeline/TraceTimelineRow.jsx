@@ -91,7 +91,7 @@ const calculateLeftAndWidth = (startTs, endTs, spanDuration, spanTimestamp) => {
   };
 };
 
-const TraceTimelineRow = ({
+const TraceTimelineRow = React.memo(({
   span,
   index,
   onRowClick,
@@ -156,7 +156,7 @@ const TraceTimelineRow = ({
       />
     </g>
   );
-};
+});
 
 TraceTimelineRow.propTypes = propTypes;
 
