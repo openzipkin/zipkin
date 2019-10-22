@@ -49,7 +49,18 @@ const style = {
 class DependenciesGraph extends React.Component {
   constructor(props) {
     super(props);
+
+    this.state = {reloading: false};
+
     this.handleObjectHighlighted = this.handleObjectHighlighted.bind(this);
+  }
+
+  componentDidUpdate(prevProps) {
+    if (this.props.filter !== prevProps.filter) {
+      this.setState({reloading: true}, () => {
+        this.setState({reloading: false})
+      })
+    }
   }
 
   handleObjectHighlighted(highlightedObject) {
@@ -78,9 +89,11 @@ class DependenciesGraph extends React.Component {
 
     if (filter) {
       connections = connections.filter(edge => edge.source === filter || edge.target === filter);
-      nodes = nodes
-        .filter(node => (connections
-          .find(edge => edge.source === node.name || edge.target === node.name)));
+      nodes = nodes.filter(node => (connections.find(edge => edge.source === node.name || edge.target === node.name)))
+    }
+
+    if (this.state.reloading) {
+      return <div />
     }
 
     return (
