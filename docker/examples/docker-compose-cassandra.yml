@@ -1,0 +1,33 @@
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml to run the
+# zipkin-cassandra container instead of the zipkin-mysql container.
+
+version: '2'
+
+services:
+  # Run Cassandra instead of MySQL
+  storage:
+    image: openzipkin/zipkin-cassandra
+    container_name: cassandra
+    # Uncomment to expose the storage port for testing
+    # ports:
+    #   - 9042:9042
+
+  # Switch storage type to Cassandra
+  zipkin:
+    environment:
+      - STORAGE_TYPE=cassandra3
+      # When using the test docker image, or have schema pre-installed, you don't need to re-install it
+      - CASSANDRA_ENSURE_SCHEMA=false
+      # When overriding this value, note the minimum supported version is 3.9
+      # If you you cannot run 3.9+, but can run 2.2+, set STORAGE_TYPE=cassandra
+      - CASSANDRA_CONTACT_POINTS=cassandra
+    depends_on:
+      - storage
+
+  dependencies:
+    environment:
+      - STORAGE_TYPE=cassandra3
+      - CASSANDRA_CONTACT_POINTS=cassandra

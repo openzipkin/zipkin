@@ -15,16 +15,12 @@ in mind when choosing version numbers.
 
 1. **Wait for Travis CI**
 
-   This part is controlled by [`travis/publish.sh`](travis/publish.sh). It creates a bunch of new commits, bumps
-   the version, publishes artifacts, syncs to Maven Central, and publishes Javaocs to http://zipkin.io/zipkin
-   into a versioned subdirectory.
-   (Note: Javaocs are also published on all builds of master; due to versioning, it doesn't overwrite docs built
-   for releases.)
+   This part is controlled by [`travis/publish.sh`](travis/publish.sh). It creates a bunch of new
+   commits, bumps the version, publishes artifacts, syncs to Maven Central, invokes [docker] builds,
+   and publishes Javadocs to http://zipkin.io/zipkin into a versioned subdirectory.
+   (Note: Javadocs are also published on all builds of master; due to versioning, it doesn't
+   overwrite docs built for releases.)
 
-1. **Publish `docker-zipkin`**
-
-   Refer to [docker-zipkin/RELEASE.md](https://github.com/openzipkin/docker-zipkin/blob/master/RELEASE.md).
-   
 ## Credentials
 
 Credentials of various kind are needed for the release process to work. If you notice something
@@ -162,7 +158,7 @@ creating a couple commit, pushing a tag, and running deploy.
 
 Assuming you are on branch 2.4.x and you want to release 2.4.5.
 ```bash
-$ ./mvnw versions:set -DnewVersion=2.4.5 -DgenerateBackupPoms=false 
+$ ./mvnw versions:set -DnewVersion=2.4.5 -DgenerateBackupPoms=false
 # edit the pom and change <tag>HEAD</tag> to <tag>2.4.5</tag>
 $ git commit -am"prepare to release 2.4.5"
 $ git tag 2.4.5
@@ -187,7 +183,7 @@ release branch.
 
 Assuming you are on branch 2.4.x and you just released 2.4.5.
 ```bash
-$ ./mvnw versions:set -DnewVersion=2.4.6-SNAPSHOT -DgenerateBackupPoms=false 
+$ ./mvnw versions:set -DnewVersion=2.4.6-SNAPSHOT -DgenerateBackupPoms=false
 # edit the pom and change <tag>2.4.5</tag> to <tag>HEAD</tag>
 $ git commit -am"prepare next version"
 $ git push origin 2.4.x
