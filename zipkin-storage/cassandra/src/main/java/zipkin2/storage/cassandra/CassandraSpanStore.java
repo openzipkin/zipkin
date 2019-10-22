@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra;
 
@@ -34,6 +31,7 @@ import zipkin2.internal.Nullable;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
+import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.IntersectKeySets;
 import zipkin2.storage.cassandra.internal.call.IntersectMaps;
 
@@ -42,7 +40,7 @@ import static zipkin2.storage.cassandra.CassandraUtil.traceIdsSortedByDescTimest
 import static zipkin2.storage.cassandra.Schema.TABLE_SERVICE_REMOTE_SERVICES;
 import static zipkin2.storage.cassandra.Schema.TABLE_TRACE_BY_SERVICE_SPAN;
 
-class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not final for testing
+class CassandraSpanStore implements SpanStore, Traces, ServiceAndSpanNames { //not final for testing
   static final Logger LOG = LoggerFactory.getLogger(CassandraSpanStore.class);
 
   final int indexFetchMultiplier;
@@ -267,15 +265,17 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     }
   }
 
-  @Override
-  public Call<List<Span>> getTrace(String traceId) {
+  @Override public Call<List<Span>> getTrace(String traceId) {
     // make sure we have a 16 or 32 character trace ID
     String normalizedTraceId = Span.normalizeTraceId(traceId);
     return spans.newCall(normalizedTraceId);
   }
 
-  @Override
-  public Call<List<String>> getServiceNames() {
+  @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
+    return spans.newCall(traceIds);
+  }
+
+  @Override public Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return serviceNames.clone();
   }
@@ -287,14 +287,12 @@ class CassandraSpanStore implements SpanStore, ServiceAndSpanNames { // not fina
     return remoteServiceNames.create(serviceName);
   }
 
-  @Override
-  public Call<List<String>> getSpanNames(String serviceName) {
+  @Override public Call<List<String>> getSpanNames(String serviceName) {
     if (serviceName.isEmpty() || !searchEnabled) return Call.emptyList();
     return spanNames.create(serviceName);
   }
 
-  @Override
-  public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
+  @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     if (endTs <= 0) throw new IllegalArgumentException("endTs <= 0");
     if (lookback <= 0) throw new IllegalArgumentException("lookback <= 0");
     return dependencies.create(endTs, lookback);

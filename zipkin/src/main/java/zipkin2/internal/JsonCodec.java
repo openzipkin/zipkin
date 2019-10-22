@@ -1,22 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.Charset;
@@ -30,7 +26,8 @@ import static com.google.gson.stream.JsonToken.STRING;
 import static java.lang.String.format;
 
 /**
- * This explicitly constructs instances of model classes via manual parsing for a number of reasons.
+ * This explicitly constructs instances of model classes via manual parsing for a number of
+ * reasons.
  *
  * <ul>
  *   <li>Eliminates the need to keep separate model classes for proto3 vs json
@@ -44,14 +41,14 @@ import static java.lang.String.format;
  * this should be easy to justify as these objects don't change much at all.
  */
 public final class JsonCodec {
+  static final Charset UTF_8 = Charset.forName("UTF-8");
+
   // Hides gson types for internal use in other submodules
   public static final class JsonReader {
     final com.google.gson.stream.JsonReader delegate;
 
-    JsonReader(byte[] bytes) {
-      delegate =
-        new com.google.gson.stream.JsonReader(
-          new InputStreamReader(new ByteArrayInputStream(bytes), UTF_8));
+    JsonReader(ReadBuffer buffer) {
+      delegate = new com.google.gson.stream.JsonReader(new InputStreamReader(buffer, UTF_8));
     }
 
     public void beginArray() throws IOException {
@@ -114,38 +111,36 @@ public final class JsonCodec {
       return delegate.peek() == NULL;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return delegate.toString();
     }
   }
-
-  static final Charset UTF_8 = Charset.forName("UTF-8");
 
   public interface JsonReaderAdapter<T> {
     T fromJson(JsonReader reader) throws IOException;
   }
 
-  public static <T> boolean read(JsonReaderAdapter<T> adapter, byte[] bytes, Collection<T> out) {
-    if (bytes.length == 0) return false;
+  public static <T> boolean read(
+    JsonReaderAdapter<T> adapter, ReadBuffer buffer, Collection<T> out) {
+    if (buffer.available() == 0) return false;
     try {
-      out.add(adapter.fromJson(new JsonReader(bytes)));
+      out.add(adapter.fromJson(new JsonReader(buffer)));
       return true;
     } catch (Exception e) {
       throw exceptionReading(adapter.toString(), e);
     }
   }
 
-  public static @Nullable <T> T readOne(JsonReaderAdapter<T> adapter, byte[] bytes) {
+  public static @Nullable <T> T readOne(JsonReaderAdapter<T> adapter, ReadBuffer buffer) {
     List<T> out = new ArrayList<>(1); // TODO: could make single-element list w/o array
-    if (!read(adapter, bytes, out)) return null;
+    if (!read(adapter, buffer, out)) return null;
     return out.get(0);
   }
 
   public static <T> boolean readList(
-    JsonReaderAdapter<T> adapter, byte[] bytes, Collection<T> out) {
-    if (bytes.length == 0) return false;
-    JsonReader reader = new JsonReader(bytes);
+    JsonReaderAdapter<T> adapter, ReadBuffer buffer, Collection<T> out) {
+    if (buffer.available() == 0) return false;
+    JsonReader reader = new JsonReader(buffer);
     try {
       reader.beginArray();
       if (!reader.hasNext()) return false;
@@ -157,7 +152,7 @@ public final class JsonCodec {
     }
   }
 
-  static <T> int sizeInBytes(Buffer.Writer<T> writer, List<T> value) {
+  static <T> int sizeInBytes(WriteBuffer.Writer<T> writer, List<T> value) {
     int length = value.size();
     int sizeInBytes = 2; // []
     if (length > 1) sizeInBytes += length - 1; // comma to join elements
@@ -168,29 +163,20 @@ public final class JsonCodec {
   }
 
   /** Inability to encode is a programming bug. */
-  public static <T> byte[] write(Buffer.Writer<T> writer, T value) {
-    Buffer b = Buffer.allocate(writer.sizeInBytes(value));
+  public static <T> byte[] write(WriteBuffer.Writer<T> writer, T value) {
+    byte[] result = new byte[writer.sizeInBytes(value)];
+    WriteBuffer b = WriteBuffer.wrap(result);
     try {
       writer.write(value, b);
     } catch (RuntimeException e) {
-      byte[] bytes = b.toByteArray();
-      int lengthWritten = bytes.length;
-      for (int i = 0; i < bytes.length; i++) {
-        if (bytes[i] == 0) {
+      int lengthWritten = result.length;
+      for (int i = 0; i < result.length; i++) {
+        if (result[i] == 0) {
           lengthWritten = i;
           break;
         }
       }
 
-      final byte[] bytesWritten;
-      if (lengthWritten == bytes.length) {
-        bytesWritten = bytes;
-      } else {
-        bytesWritten = new byte[lengthWritten];
-        System.arraycopy(bytes, 0, bytesWritten, 0, lengthWritten);
-      }
-
-      String written = new String(bytesWritten, UTF_8);
       // Don't use value directly in the message, as its toString might be implemented using this
       // method. If that's the case, we'd stack overflow. Instead, emit what we've written so far.
       String message =
@@ -199,33 +185,34 @@ public final class JsonCodec {
           writer.getClass().getSimpleName(),
           value.getClass().getSimpleName(),
           lengthWritten,
-          bytes.length,
-          written);
+          result.length,
+          new String(result, 0, lengthWritten, UTF_8));
       throw Platform.get().assertionError(message, e);
     }
-    return b.toByteArray();
+    return result;
   }
 
-  public static <T> byte[] writeList(Buffer.Writer<T> writer, List<T> value) {
+  public static <T> byte[] writeList(WriteBuffer.Writer<T> writer, List<T> value) {
     if (value.isEmpty()) return new byte[] {'[', ']'};
-    Buffer result = Buffer.allocate(sizeInBytes(writer, value));
-    writeList(writer, value, result);
-    return result.toByteArray();
+    byte[] result = new byte[sizeInBytes(writer, value)];
+    writeList(writer, value, WriteBuffer.wrap(result));
+    return result;
   }
 
-  public static <T> int writeList(Buffer.Writer<T> writer, List<T> value, byte[] out, int pos) {
+  public static <T> int writeList(WriteBuffer.Writer<T> writer, List<T> value, byte[] out,
+    int pos) {
     if (value.isEmpty()) {
       out[pos++] = '[';
       out[pos++] = ']';
       return 2;
     }
     int initialPos = pos;
-    Buffer result = Buffer.wrap(out, pos);
+    WriteBuffer result = WriteBuffer.wrap(out, pos);
     writeList(writer, value, result);
     return result.pos() - initialPos;
   }
 
-  public static <T> void writeList(Buffer.Writer<T> writer, List<T> value, Buffer b) {
+  public static <T> void writeList(WriteBuffer.Writer<T> writer, List<T> value, WriteBuffer b) {
     b.writeByte('[');
     for (int i = 0, length = value.size(); i < length; ) {
       writer.write(value.get(i++), b);
@@ -236,7 +223,9 @@ public final class JsonCodec {
 
   static IllegalArgumentException exceptionReading(String type, Exception e) {
     String cause = e.getMessage() == null ? "Error" : e.getMessage();
-    if (cause.indexOf("malformed") != -1) cause = "Malformed";
+    if (cause.indexOf("Expected BEGIN_OBJECT") != -1 || cause.indexOf("malformed") != -1) {
+      cause = "Malformed";
+    }
     String message = format("%s reading %s from json", cause, type);
     throw new IllegalArgumentException(message, e);
   }

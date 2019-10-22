@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra;
 
@@ -25,6 +22,7 @@ import com.google.auto.value.extension.memoized.Memoized;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
@@ -33,6 +31,8 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
+import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 /**
  * CQL3 implementation of zipkin storage.
@@ -48,7 +48,6 @@ import zipkin2.storage.StorageComponent;
  */
 @AutoValue
 public abstract class CassandraStorage extends StorageComponent {
-
   // @FunctionalInterface, except safe for lower language levels
   public interface SessionFactory {
     SessionFactory DEFAULT = new DefaultSessionFactory();
@@ -217,8 +216,12 @@ public abstract class CassandraStorage extends StorageComponent {
     return new CassandraSpanStore(this);
   }
 
+  @Override public Traces traces() {
+    return (Traces) spanStore();
+  }
+
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
-    return (CassandraSpanStore) spanStore();
+    return (ServiceAndSpanNames) spanStore();
   }
 
   /** {@inheritDoc} Memoized in order to avoid re-preparing statements */
@@ -244,10 +247,19 @@ public abstract class CassandraStorage extends StorageComponent {
     try {
       if (closeCalled) throw new IllegalStateException("closed");
       session().execute(QueryBuilder.select("trace_id").from("span").limit(1));
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
     return CheckResult.OK;
+  }
+
+  @Override public boolean isOverCapacity(Throwable e) {
+    return ResultSetFutureCall.isOverCapacity(e);
+  }
+
+  @Override public final String toString() {
+    return "CassandraStorage{contactPoints=" + contactPoints() + ", keyspace=" + keyspace() + "}";
   }
 
   @Override

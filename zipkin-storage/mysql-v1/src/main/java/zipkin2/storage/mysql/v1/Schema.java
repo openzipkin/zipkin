@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.mysql.v1;
 
@@ -128,7 +125,18 @@ final class Schema {
         : ZIPKIN_SPANS.TRACE_ID.eq(traceIdLow);
   }
 
+  Condition spanTraceIdCondition(Set<Pair> traceIds) {
+    return traceIdCondition(ZIPKIN_SPANS.TRACE_ID_HIGH, ZIPKIN_SPANS.TRACE_ID, traceIds);
+  }
+
   Condition annotationsTraceIdCondition(Set<Pair> traceIds) {
+    return traceIdCondition(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZIPKIN_ANNOTATIONS.TRACE_ID, traceIds);
+  }
+
+  Condition traceIdCondition(
+    TableField<Record, Long> TRACE_ID_HIGH,
+    TableField<Record, Long> TRACE_ID, Set<Pair> traceIds
+  ) {
     boolean hasTraceIdHigh = false;
     for (Pair traceId : traceIds) {
       if (traceId.left != 0) {
@@ -142,14 +150,14 @@ final class Schema {
       for (Pair traceId128 : traceIds) {
         result[i++] = row(traceId128.left, traceId128.right);
       }
-      return row(ZIPKIN_ANNOTATIONS.TRACE_ID_HIGH, ZIPKIN_ANNOTATIONS.TRACE_ID).in(result);
+      return row(TRACE_ID_HIGH, TRACE_ID).in(result);
     } else {
       Long[] result = new Long[traceIds.size()];
       int i = 0;
       for (Pair traceId128 : traceIds) {
         result[i++] = traceId128.right;
       }
-      return ZIPKIN_ANNOTATIONS.TRACE_ID.in(result);
+      return TRACE_ID.in(result);
     }
   }
 

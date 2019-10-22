@@ -1,3 +1,16 @@
+/*
+ * Copyright 2015-2019 The OpenZipkin Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 import { ConstantNames } from './trace-constants';
 
 // returns 'critical' if one of the spans has an error tag or currentErrorType was already critical,
@@ -271,8 +284,12 @@ function maybePushServiceName(serviceNames, serviceName) {
   }
 }
 
-function getServiceName(endpoint) {
+export function getServiceName(endpoint) {
   return endpoint ? endpoint.serviceName : undefined;
+}
+
+function isNullOrUndefined(ref) {
+  return typeof (ref) === 'undefined' || ref === null;
 }
 
 // Merges the data into a single span row, which is lacking presentation information
@@ -328,6 +345,15 @@ export function newSpanRow(spansToMerge, isLeafSpan) {
   if (!res.timestamp && sharedTimestamp) res.timestamp = sharedTimestamp;
   // duration is used for deriving data, and also for the zoom function
   if (!res.duration && sharedDuration) res.duration = sharedDuration;
+
+  // Ensure no required property failures rendering an incomplete or malformed trace
+  if (isNullOrUndefined(res.duration)) res.duration = 0;
+  if (isNullOrUndefined(res.spanName)) res.spanName = 'unknown';
+  if (isNullOrUndefined(res.serviceName)) res.serviceName = 'unknown';
+  res.annotations.forEach((a) => {
+    // eslint-disable-next-line no-param-reassign
+    if (isNullOrUndefined(a.endpoint)) a.endpoint = 'unknown';
+  });
 
   res.serviceNames.sort();
   res.annotations.sort((a, b) => a.timestamp - b.timestamp);

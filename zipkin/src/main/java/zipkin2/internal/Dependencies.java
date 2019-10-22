@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -22,12 +19,12 @@ import java.util.Collections;
 import java.util.List;
 import zipkin2.DependencyLink;
 
-import static zipkin2.internal.Buffer.utf8SizeInBytes;
 import static zipkin2.internal.ThriftCodec.skip;
 import static zipkin2.internal.ThriftField.TYPE_I64;
 import static zipkin2.internal.ThriftField.TYPE_LIST;
 import static zipkin2.internal.ThriftField.TYPE_STOP;
 import static zipkin2.internal.ThriftField.TYPE_STRING;
+import static zipkin2.internal.WriteBuffer.utf8SizeInBytes;
 
 /**
  * Internal as only cassandra serializes the start and end timestamps along with link data, and
@@ -45,29 +42,30 @@ public final class Dependencies {
     return links;
   }
 
-  /** Reads from bytes serialized in TBinaryProtocol */
+  /** Reads from buffer serialized in TBinaryProtocol */
   public static Dependencies fromThrift(ByteBuffer bytes) {
     long startTs = 0L;
     long endTs = 0L;
     List<DependencyLink> links = Collections.emptyList();
 
+    ReadBuffer buffer = ReadBuffer.wrapUnsafe(bytes);
     while (true) {
-      ThriftField thriftField = ThriftField.read(bytes);
+      ThriftField thriftField = ThriftField.read(buffer);
       if (thriftField.type == TYPE_STOP) break;
 
       if (thriftField.isEqualTo(START_TS)) {
-        startTs = bytes.getLong();
+        startTs = buffer.readLong();
       } else if (thriftField.isEqualTo(END_TS)) {
-        endTs = bytes.getLong();
+        endTs = buffer.readLong();
       } else if (thriftField.isEqualTo(LINKS)) {
-        int length = ThriftCodec.readListLength(bytes);
+        int length = ThriftCodec.readListLength(buffer);
         if (length == 0) continue;
         links = new ArrayList<>(length);
         for (int i = 0; i < length; i++) {
-          links.add(DependencyLinkAdapter.read(bytes));
+          links.add(DependencyLinkAdapter.read(buffer));
         }
       } else {
-        skip(bytes, thriftField.type);
+        skip(buffer, thriftField.type);
       }
     }
 
@@ -76,9 +74,9 @@ public final class Dependencies {
 
   /** Writes the current instance in TBinaryProtocol */
   public ByteBuffer toThrift() {
-    Buffer buffer = Buffer.allocate(sizeInBytes());
-    write(buffer);
-    return ByteBuffer.wrap(buffer.toByteArray());
+    byte[] result = new byte[sizeInBytes()];
+    write(WriteBuffer.wrap(result));
+    return ByteBuffer.wrap(result);
   }
 
   int sizeInBytes() {
@@ -90,7 +88,7 @@ public final class Dependencies {
     return sizeInBytes;
   }
 
-  void write(Buffer buffer) {
+  void write(WriteBuffer buffer) {
     START_TS.write(buffer);
     ThriftCodec.writeLong(buffer, startTs);
 
@@ -138,39 +136,38 @@ public final class Dependencies {
     return h;
   }
 
-  static final class DependencyLinkAdapter implements Buffer.Writer<DependencyLink> {
+  static final class DependencyLinkAdapter implements WriteBuffer.Writer<DependencyLink> {
 
     static final ThriftField PARENT = new ThriftField(TYPE_STRING, 1);
     static final ThriftField CHILD = new ThriftField(TYPE_STRING, 2);
     static final ThriftField CALL_COUNT = new ThriftField(TYPE_I64, 4);
     static final ThriftField ERROR_COUNT = new ThriftField(TYPE_I64, 5);
 
-    static DependencyLink read(ByteBuffer bytes) {
+    static DependencyLink read(ReadBuffer buffer) {
       DependencyLink.Builder result = DependencyLink.newBuilder();
       ThriftField thriftField;
 
       while (true) {
-        thriftField = ThriftField.read(bytes);
+        thriftField = ThriftField.read(buffer);
         if (thriftField.type == TYPE_STOP) break;
 
         if (thriftField.isEqualTo(PARENT)) {
-          result.parent(ThriftCodec.readUtf8(bytes));
+          result.parent(buffer.readUtf8(buffer.readInt()));
         } else if (thriftField.isEqualTo(CHILD)) {
-          result.child(ThriftCodec.readUtf8(bytes));
+          result.child(buffer.readUtf8(buffer.readInt()));
         } else if (thriftField.isEqualTo(CALL_COUNT)) {
-          result.callCount(bytes.getLong());
+          result.callCount(buffer.readLong());
         } else if (thriftField.isEqualTo(ERROR_COUNT)) {
-          result.errorCount(bytes.getLong());
+          result.errorCount(buffer.readLong());
         } else {
-          skip(bytes, thriftField.type);
+          skip(buffer, thriftField.type);
         }
       }
 
       return result.build();
     }
 
-    @Override
-    public int sizeInBytes(DependencyLink value) {
+    @Override public int sizeInBytes(DependencyLink value) {
       int sizeInBytes = 0;
       sizeInBytes += 3 + 4 + utf8SizeInBytes(value.parent());
       sizeInBytes += 3 + 4 + utf8SizeInBytes(value.child());
@@ -180,8 +177,7 @@ public final class Dependencies {
       return sizeInBytes;
     }
 
-    @Override
-    public void write(DependencyLink value, Buffer buffer) {
+    @Override public void write(DependencyLink value, WriteBuffer buffer) {
       PARENT.write(buffer);
       ThriftCodec.writeLengthPrefixed(buffer, value.parent());
 

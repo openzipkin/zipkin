@@ -1,49 +1,53 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.server.internal;
 
-import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
-import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.common.ResponseHeadersBuilder;
 import com.linecorp.armeria.server.annotation.Default;
+import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.Param;
 import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.http.CacheControl;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.internal.Buffer;
 import zipkin2.internal.JsonCodec;
+import zipkin2.internal.WriteBuffer;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
+import static com.linecorp.armeria.common.HttpHeaderNames.CACHE_CONTROL;
+import static com.linecorp.armeria.common.HttpStatus.BAD_REQUEST;
+import static com.linecorp.armeria.common.HttpStatus.NOT_FOUND;
+import static com.linecorp.armeria.common.MediaType.ANY_TEXT_TYPE;
+
 @ConditionalOnProperty(name = "zipkin.query.enabled", matchIfMissing = true)
+@ExceptionHandler(BodyIsExceptionMessage.class)
 public class ZipkinQueryApiV2 {
   final String storageType;
   final StorageComponent storage; // don't cache spanStore here as it can cause the app to crash!
@@ -72,7 +76,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/dependencies")
-  public AggregatedHttpMessage getDependencies(
+  public AggregatedHttpResponse getDependencies(
     @Param("endTs") long endTs,
     @Param("lookback") Optional<Long> lookback) throws IOException {
     Call<List<DependencyLink>> call =
@@ -81,20 +85,21 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/services")
-  public AggregatedHttpMessage getServiceNames() throws IOException {
+  public AggregatedHttpResponse getServiceNames() throws IOException {
     List<String> serviceNames = storage.serviceAndSpanNames().getServiceNames().execute();
     serviceCount = serviceNames.size();
     return maybeCacheNames(serviceCount > 3, serviceNames);
   }
 
   @Get("/api/v2/spans")
-  public AggregatedHttpMessage getSpanNames(@Param("serviceName") String serviceName) throws IOException {
+  public AggregatedHttpResponse getSpanNames(@Param("serviceName") String serviceName)
+    throws IOException {
     List<String> spanNames = storage.serviceAndSpanNames().getSpanNames(serviceName).execute();
     return maybeCacheNames(serviceCount > 3, spanNames);
   }
 
   @Get("/api/v2/remoteServices")
-  public AggregatedHttpMessage getRemoteServiceNames(@Param("serviceName") String serviceName)
+  public AggregatedHttpResponse getRemoteServiceNames(@Param("serviceName") String serviceName)
     throws IOException {
     List<String> remoteServiceNames =
       storage.serviceAndSpanNames().getRemoteServiceNames(serviceName).execute();
@@ -102,7 +107,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/traces")
-  public AggregatedHttpMessage getTraces(
+  public AggregatedHttpResponse getTraces(
     @Param("serviceName") Optional<String> serviceName,
     @Param("remoteServiceName") Optional<String> remoteServiceName,
     @Param("spanName") Optional<String> spanName,
@@ -130,28 +135,49 @@ public class ZipkinQueryApiV2 {
     return jsonResponse(writeTraces(SpanBytesEncoder.JSON_V2, traces));
   }
 
-  @Get("/api/v2/trace/{traceIdHex}")
-  public AggregatedHttpMessage getTrace(@Param("traceIdHex") String traceIdHex) throws IOException {
-    List<Span> trace = storage.spanStore().getTrace(traceIdHex).execute();
+  @Get("/api/v2/trace/{traceId}")
+  public AggregatedHttpResponse getTrace(@Param("traceId") String traceId) throws IOException {
+    traceId = Span.normalizeTraceId(traceId);
+    List<Span> trace = storage.traces().getTrace(traceId).execute();
     if (trace == null) {
-      return AggregatedHttpMessage.of(HttpStatus.NOT_FOUND, MediaType.PLAIN_TEXT_UTF_8,
-        traceIdHex + " not found");
+      return AggregatedHttpResponse.of(NOT_FOUND, ANY_TEXT_TYPE, traceId + " not found");
     }
     return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));
   }
 
-  static AggregatedHttpMessage jsonResponse(byte[] body) {
-    return AggregatedHttpMessage.of(HttpHeaders.of(200)
-      .contentType(MediaType.JSON)
-      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length), HttpData.of(body));
-  }
-
-  static final Buffer.Writer<String> QUOTED_STRING_WRITER = new Buffer.Writer<String>() {
-    @Override public int sizeInBytes(String value) {
-      return Buffer.utf8SizeInBytes(value) + 2; // quotes
+  @Get("/api/v2/traceMany")
+  public AggregatedHttpResponse getTraces(@Param("traceIds") String traceIds) throws IOException {
+    if (traceIds.isEmpty()) {
+      return AggregatedHttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE, "traceIds parameter is empty");
     }
 
-    @Override public void write(String value, Buffer buffer) {
+    Set<String> normalized = new LinkedHashSet<>();
+    for (String traceId : traceIds.split(",", 1000)) {
+      if (normalized.add(Span.normalizeTraceId(traceId))) continue;
+      return AggregatedHttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE, "redundant traceId: " + traceId);
+    }
+
+    if (normalized.size() == 1) {
+      return AggregatedHttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE,
+        "Use /api/v2/trace/{traceId} endpoint to retrieve a single trace");
+    }
+
+    List<List<Span>> traces = storage.traces().getTraces(normalized).execute();
+    return jsonResponse(writeTraces(SpanBytesEncoder.JSON_V2, traces));
+  }
+
+  static AggregatedHttpResponse jsonResponse(byte[] body) {
+    return AggregatedHttpResponse.of(ResponseHeaders.builder(200)
+      .contentType(MediaType.JSON)
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build(), HttpData.wrap(body));
+  }
+
+  static final WriteBuffer.Writer<String> QUOTED_STRING_WRITER = new WriteBuffer.Writer<String>() {
+    @Override public int sizeInBytes(String value) {
+      return WriteBuffer.utf8SizeInBytes(value) + 2; // quotes
+    }
+
+    @Override public void write(String value, WriteBuffer buffer) {
       buffer.writeByte('"');
       buffer.writeUtf8(value);
       buffer.writeByte('"');
@@ -159,12 +185,12 @@ public class ZipkinQueryApiV2 {
   };
 
   @Get("/api/v2/autocompleteKeys")
-  public AggregatedHttpMessage getAutocompleteKeys() {
+  public AggregatedHttpResponse getAutocompleteKeys() {
     return maybeCacheNames(true, autocompleteKeys);
   }
 
   @Get("/api/v2/autocompleteValues")
-  public AggregatedHttpMessage getAutocompleteValues(@Param("key") String key) throws IOException {
+  public AggregatedHttpResponse getAutocompleteValues(@Param("key") String key) throws IOException {
     List<String> values = storage.autocompleteTags().getValues(key).execute();
     return maybeCacheNames(values.size() > 3, values);
   }
@@ -174,19 +200,16 @@ public class ZipkinQueryApiV2 {
    * empty results, users have more questions. We assume caching becomes a concern when zipkin is in
    * active use, and active use usually implies more than 3 services.
    */
-  AggregatedHttpMessage maybeCacheNames(boolean shouldCacheControl, List<String> values) {
+  AggregatedHttpResponse maybeCacheNames(boolean shouldCacheControl, List<String> values) {
     Collections.sort(values);
     byte[] body = JsonCodec.writeList(QUOTED_STRING_WRITER, values);
-    HttpHeaders headers = HttpHeaders.of(200)
+    ResponseHeadersBuilder headers = ResponseHeaders.builder(200)
       .contentType(MediaType.JSON)
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
     if (shouldCacheControl) {
-      headers = headers.add(
-        HttpHeaderNames.CACHE_CONTROL,
-        CacheControl.maxAge(namesMaxAge, TimeUnit.SECONDS).mustRevalidate().getHeaderValue()
-      );
+      headers = headers.add(CACHE_CONTROL, "max-age=" + namesMaxAge + ", must-revalidate");
     }
-    return AggregatedHttpMessage.of(headers, HttpData.of(body));
+    return AggregatedHttpResponse.of(headers.build(), HttpData.wrap(body));
   }
 
   // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library

@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -24,31 +21,29 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 public class Proto3SpanWriterTest {
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
-
   Proto3SpanWriter writer = new Proto3SpanWriter();
 
   /** proto messages always need a key, so the non-list form is just a single-field */
   @Test public void write_startsWithSpanKeyAndLengthPrefix() {
-    byte[] buff = writer.write(CLIENT_SPAN);
+    byte[] bytes = writer.write(CLIENT_SPAN);
 
-    assertThat(buff)
+    assertThat(bytes)
       .hasSize(writer.sizeInBytes(CLIENT_SPAN))
       .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));
   }
 
   @Test public void writeList_startsWithSpanKeyAndLengthPrefix() {
-    byte[] buff = writer.writeList(asList(CLIENT_SPAN));
+    byte[] bytes = writer.writeList(asList(CLIENT_SPAN));
 
-    assertThat(buff)
+    assertThat(bytes)
       .hasSize(writer.sizeInBytes(CLIENT_SPAN))
       .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));
   }
 
   @Test public void writeList_multiple() {
-    byte[] buff = writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN));
+    byte[] bytes = writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN));
 
-    assertThat(buff)
+    assertThat(bytes)
       .hasSize(writer.sizeInBytes(CLIENT_SPAN) * 2)
       .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));
   }
@@ -59,9 +54,10 @@ public class Proto3SpanWriterTest {
   }
 
   @Test public void writeList_offset_startsWithSpanKeyAndLengthPrefix() {
-    writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN), buf.toByteArray(), 0);
+    byte[] bytes = new byte[2048];
+    writer.writeList(asList(CLIENT_SPAN, CLIENT_SPAN), bytes, 0);
 
-    assertThat(buf.toByteArray())
+    assertThat(bytes)
       .startsWith((byte) 10, SPAN.sizeOfValue(CLIENT_SPAN));
   }
 }

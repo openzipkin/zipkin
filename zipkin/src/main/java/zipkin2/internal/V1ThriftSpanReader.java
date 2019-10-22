@@ -1,29 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
-import java.nio.ByteBuffer;
 import zipkin2.Endpoint;
 import zipkin2.v1.V1Span;
 
-import static zipkin2.internal.ThriftCodec.UTF_8;
-import static zipkin2.internal.ThriftCodec.readByteArray;
 import static zipkin2.internal.ThriftCodec.readListLength;
-import static zipkin2.internal.ThriftCodec.readUtf8;
 import static zipkin2.internal.ThriftCodec.skip;
 import static zipkin2.internal.ThriftField.TYPE_I32;
 import static zipkin2.internal.ThriftField.TYPE_I64;
@@ -42,13 +35,15 @@ import static zipkin2.internal.V1ThriftSpanWriter.TRACE_ID;
 import static zipkin2.internal.V1ThriftSpanWriter.TRACE_ID_HIGH;
 
 public final class V1ThriftSpanReader {
+  static final String ONE = Character.toString((char) 1);
+
   public static V1ThriftSpanReader create() {
     return new V1ThriftSpanReader();
   }
 
   V1Span.Builder builder = V1Span.newBuilder();
 
-  public V1Span read(ByteBuffer bytes) {
+  public V1Span read(ReadBuffer buffer) {
     if (builder == null) {
       builder = V1Span.newBuilder();
     } else {
@@ -58,37 +53,37 @@ public final class V1ThriftSpanReader {
     ThriftField thriftField;
 
     while (true) {
-      thriftField = ThriftField.read(bytes);
+      thriftField = ThriftField.read(buffer);
       if (thriftField.type == TYPE_STOP) break;
 
       if (thriftField.isEqualTo(TRACE_ID_HIGH)) {
-        builder.traceIdHigh(bytes.getLong());
+        builder.traceIdHigh(buffer.readLong());
       } else if (thriftField.isEqualTo(TRACE_ID)) {
-        builder.traceId(bytes.getLong());
+        builder.traceId(buffer.readLong());
       } else if (thriftField.isEqualTo(NAME)) {
-        builder.name(readUtf8(bytes));
+        builder.name(buffer.readUtf8(buffer.readInt()));
       } else if (thriftField.isEqualTo(ID)) {
-        builder.id(bytes.getLong());
+        builder.id(buffer.readLong());
       } else if (thriftField.isEqualTo(PARENT_ID)) {
-        builder.parentId(bytes.getLong());
+        builder.parentId(buffer.readLong());
       } else if (thriftField.isEqualTo(ANNOTATIONS)) {
-        int length = readListLength(bytes);
+        int length = readListLength(buffer);
         for (int i = 0; i < length; i++) {
-          AnnotationReader.read(bytes, builder);
+          AnnotationReader.read(buffer, builder);
         }
       } else if (thriftField.isEqualTo(BINARY_ANNOTATIONS)) {
-        int length = readListLength(bytes);
+        int length = readListLength(buffer);
         for (int i = 0; i < length; i++) {
-          BinaryAnnotationReader.read(bytes, builder);
+          BinaryAnnotationReader.read(buffer, builder);
         }
       } else if (thriftField.isEqualTo(DEBUG)) {
-        builder.debug(bytes.get() == 1);
+        builder.debug(buffer.readByte() == 1);
       } else if (thriftField.isEqualTo(TIMESTAMP)) {
-        builder.timestamp(bytes.getLong());
+        builder.timestamp(buffer.readLong());
       } else if (thriftField.isEqualTo(DURATION)) {
-        builder.duration(bytes.getLong());
+        builder.duration(buffer.readLong());
       } else {
-        skip(bytes, thriftField.type);
+        skip(buffer, thriftField.type);
       }
     }
 
@@ -100,24 +95,24 @@ public final class V1ThriftSpanReader {
     static final ThriftField VALUE = new ThriftField(TYPE_STRING, 2);
     static final ThriftField ENDPOINT = new ThriftField(TYPE_STRUCT, 3);
 
-    static void read(ByteBuffer bytes, V1Span.Builder builder) {
+    static void read(ReadBuffer buffer, V1Span.Builder builder) {
       long timestamp = 0;
       String value = null;
       Endpoint endpoint = null;
 
       ThriftField thriftField;
       while (true) {
-        thriftField = ThriftField.read(bytes);
+        thriftField = ThriftField.read(buffer);
         if (thriftField.type == TYPE_STOP) break;
 
         if (thriftField.isEqualTo(TIMESTAMP)) {
-          timestamp = bytes.getLong();
+          timestamp = buffer.readLong();
         } else if (thriftField.isEqualTo(VALUE)) {
-          value = readUtf8(bytes);
+          value = buffer.readUtf8(buffer.readInt());
         } else if (thriftField.isEqualTo(ENDPOINT)) {
-          endpoint = ThriftEndpointCodec.read(bytes);
+          endpoint = ThriftEndpointCodec.read(buffer);
         } else {
-          skip(bytes, thriftField.type);
+          skip(buffer, thriftField.type);
         }
       }
 
@@ -132,22 +127,22 @@ public final class V1ThriftSpanReader {
     static final ThriftField TYPE = new ThriftField(TYPE_I32, 3);
     static final ThriftField ENDPOINT = new ThriftField(TYPE_STRUCT, 4);
 
-    static void read(ByteBuffer bytes, V1Span.Builder builder) {
+    static void read(ReadBuffer buffer, V1Span.Builder builder) {
       String key = null;
-      byte[] value = null;
+      String value = null;
       Endpoint endpoint = null;
       boolean isBoolean = false;
       boolean isString = false;
 
       while (true) {
-        ThriftField thriftField = ThriftField.read(bytes);
+        ThriftField thriftField = ThriftField.read(buffer);
         if (thriftField.type == TYPE_STOP) break;
         if (thriftField.isEqualTo(KEY)) {
-          key = readUtf8(bytes);
+          key = buffer.readUtf8(buffer.readInt());
         } else if (thriftField.isEqualTo(VALUE)) {
-          value = readByteArray(bytes);
+          value = buffer.readUtf8(buffer.readInt());
         } else if (thriftField.isEqualTo(TYPE)) {
-          switch (bytes.getInt()) {
+          switch (buffer.readInt()) {
             case 0:
               isBoolean = true;
               break;
@@ -156,15 +151,15 @@ public final class V1ThriftSpanReader {
               break;
           }
         } else if (thriftField.isEqualTo(ENDPOINT)) {
-          endpoint = ThriftEndpointCodec.read(bytes);
+          endpoint = ThriftEndpointCodec.read(buffer);
         } else {
-          skip(bytes, thriftField.type);
+          skip(buffer, thriftField.type);
         }
       }
       if (key == null || value == null) return;
       if (isString) {
-        builder.addBinaryAnnotation(key, new String(value, UTF_8), endpoint);
-      } else if (isBoolean && value.length == 1 && value[0] == 1 && endpoint != null) {
+        builder.addBinaryAnnotation(key, value, endpoint);
+      } else if (isBoolean && ONE.equals(value) && endpoint != null) {
         if (key.equals("sa") || key.equals("ca") || key.equals("ma")) {
           builder.addBinaryAnnotation(key, endpoint);
         }
@@ -172,5 +167,6 @@ public final class V1ThriftSpanReader {
     }
   }
 
-  V1ThriftSpanReader() {}
+  V1ThriftSpanReader() {
+  }
 }

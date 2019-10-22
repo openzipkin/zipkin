@@ -1,3 +1,16 @@
+/*
+ * Copyright 2015-2019 The OpenZipkin Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 import _ from 'lodash';
 import moment from 'moment';
 import { compare } from './span-cleaner';
@@ -234,6 +247,7 @@ function addLayoutDetails(
     spanRow.durationStr = mkDurationStr(spanRow.duration); // bubble over the span in trace view
   } else {
     spanRow.width = 0.1;
+    spanRow.durationStr = '';
   }
 
   if (traceDuration) {
@@ -310,6 +324,18 @@ export function detailedTraceSummary(root, logsUrl) {
     modelview.spans.push(spanRow);
   }
 
+  if (modelview.spans.length >= 0) {
+    modelview.rootSpan = {
+      serviceName: modelview.spans[0].serviceName || 'unknown',
+      spanName: modelview.spans[0].spanName || 'unknown',
+    };
+  } else {
+    modelview.rootSpan = {
+      serviceName: 'unknown',
+      spanName: 'unknown',
+    };
+  }
+
   modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount).sort().map(serviceName => ({
     serviceName, spanCount: serviceNameToCount[serviceName],
   }));
@@ -321,7 +347,7 @@ export function detailedTraceSummary(root, logsUrl) {
   modelview.timeMarkersBackup = modelview.timeMarkers;
 
   modelview.duration = duration;
-  if (duration) modelview.durationStr = mkDurationStr(duration);
+  modelview.durationStr = mkDurationStr(duration);
   if (logsUrl) modelview.logsUrl = logsUrl;
 
   return modelview;

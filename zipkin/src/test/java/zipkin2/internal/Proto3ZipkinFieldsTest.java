@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -35,7 +32,8 @@ import static zipkin2.internal.Proto3Fields.WIRETYPE_LENGTH_DELIMITED;
 import static zipkin2.internal.Proto3ZipkinFields.SPAN;
 
 public class Proto3ZipkinFieldsTest {
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeInBytes
+  byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   /** A map entry is an embedded messages: one for field the key and one for the value */
   @Test public void tag_sizeInBytes() {
@@ -79,14 +77,14 @@ public class Proto3ZipkinFieldsTest {
   @Test public void span_write_startsWithFieldInListOfSpans() {
     SPAN.write(buf, spanBuilder().build());
 
-    assertThat(buf.toByteArray()).startsWith(
+    assertThat(bytes).startsWith(
       0b00001010 /* span key */, 20 /* bytes for length of the span */
     );
   }
 
   @Test public void span_write_writesIds() {
     SPAN.write(buf, spanBuilder().build());
-    assertThat(buf.toByteArray()).startsWith(
+    assertThat(bytes).startsWith(
       0b00001010 /* span key */, 20 /* bytes for length of the span */,
       0b00001010 /* trace ID key */, 8 /* bytes for 64-bit trace ID */,
       0, 0, 0, 0, 0, 0, 0, 1, // hex trace ID
@@ -154,7 +152,7 @@ public class Proto3ZipkinFieldsTest {
 
   @Test public void span_write_kind() {
     SPAN.write(buf, spanBuilder().kind(Span.Kind.PRODUCER).build());
-    assertThat(buf.toByteArray())
+    assertThat(bytes)
       .contains(0b0100000, atIndex(22)) // (field_number << 3) | wire_type = 4 << 3 | 0
       .contains(0b0000011, atIndex(23)); // producer's index is 3
   }
@@ -162,21 +160,19 @@ public class Proto3ZipkinFieldsTest {
   @Test public void span_read_kind_tolerant() {
     assertRoundTrip(spanBuilder().kind(Span.Kind.CONSUMER).build());
 
-    buf.reset();
-    buf.toByteArray()[23] = (byte) (Span.Kind.values().length + 1); // undefined kind
-    assertThat(SPAN.read(buf))
+    bytes[23] = (byte) (Span.Kind.values().length + 1); // undefined kind
+    assertThat(SPAN.read(ReadBuffer.wrap(bytes)))
       .isEqualTo(spanBuilder().build()); // skips undefined kind instead of dying
 
-    buf.reset();
-    buf.toByteArray()[23] = 0; // serialized zero
-    assertThat(SPAN.read(buf))
+    bytes[23] = 0; // serialized zero
+    assertThat(SPAN.read(ReadBuffer.wrap(bytes)))
       .isEqualTo(spanBuilder().build());
   }
 
   @Test public void span_write_debug() {
     SPAN.write(buf, CLIENT_SPAN.toBuilder().debug(true).build());
 
-    assertThat(buf.toByteArray())
+    assertThat(bytes)
       .contains(0b01100000, atIndex(buf.pos() - 2)) // (field_number << 3) | wire_type = 12 << 3 | 0
       .contains(1, atIndex(buf.pos() - 1)); // true
   }
@@ -184,7 +180,7 @@ public class Proto3ZipkinFieldsTest {
   @Test public void span_write_shared() {
     SPAN.write(buf, CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).shared(true).build());
 
-    assertThat(buf.toByteArray())
+    assertThat(bytes)
       .contains(0b01101000, atIndex(buf.pos() - 2)) // (field_number << 3) | wire_type = 13 << 3 | 0
       .contains(1, atIndex(buf.pos() - 1)); // true
   }
@@ -195,9 +191,8 @@ public class Proto3ZipkinFieldsTest {
 
   void assertRoundTrip(Span span) {
     SPAN.write(buf, span);
-    buf.reset();
 
-    assertThat(SPAN.read(buf))
+    assertThat(SPAN.read(ReadBuffer.wrap(bytes)))
       .isEqualTo(span);
   }
 }

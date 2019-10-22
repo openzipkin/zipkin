@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.collector.rabbitmq;
 
@@ -38,6 +35,7 @@ class RabbitMQCollectorRule extends ExternalResource {
   final InMemoryCollectorMetrics rabbitmqMetrics = metrics.forTransport("rabbitmq");
 
   final String image;
+  final String queue = "zipkin-test";
   GenericContainer container;
   RabbitMQCollector collector;
 
@@ -47,12 +45,16 @@ class RabbitMQCollectorRule extends ExternalResource {
 
   @Override
   protected void before() {
-    try {
-      LOGGER.info("Starting docker image " + image);
-      container = new GenericContainer(image).withExposedPorts(RABBIT_PORT);
-      container.start();
-    } catch (RuntimeException e) {
-      LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
+    if (!"true".equals(System.getProperty("docker.skip"))) {
+      try {
+        LOGGER.info("Starting docker image " + image);
+        container = new GenericContainer(image).withExposedPorts(RABBIT_PORT);
+        container.start();
+      } catch (RuntimeException e) {
+        LOGGER.warn("Couldn't start docker image " + image + ": " + e.getMessage(), e);
+      }
+    } else {
+      LOGGER.info("Skipping startup of docker " + image);
     }
 
     try {
@@ -68,7 +70,11 @@ class RabbitMQCollectorRule extends ExternalResource {
 
   RabbitMQCollector tryToInitializeCollector() {
     RabbitMQCollector result = computeCollectorBuilder().build();
-    result.start();
+    try {
+      result.start();
+    } catch (RuntimeException e) {
+      throw new AssumptionViolatedException(e.getMessage(), e);
+    }
 
     CheckResult check = result.check();
     if (!check.ok()) {
@@ -81,7 +87,7 @@ class RabbitMQCollectorRule extends ExternalResource {
     return RabbitMQCollector.builder()
         .storage(storage)
         .metrics(metrics)
-        .queue("zipkin-test")
+        .queue(queue)
         .addresses(Arrays.asList(address()));
   }
 

@@ -1,66 +1,56 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.server.internal.ui;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ServerCacheControl;
+import com.linecorp.armeria.common.ServerCacheControlBuilder;
 import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
-import com.linecorp.armeria.server.ServerCacheControl;
-import com.linecorp.armeria.server.ServerCacheControlBuilder;
-import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
-import com.linecorp.armeria.server.encoding.HttpEncodingService;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.config.MeterFilter;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.List;
+import java.io.StringWriter;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Pattern;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
+import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.boot.web.server.Compression;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.core.io.Resource;
+import org.springframework.util.StreamUtils;
+import zipkin2.server.internal.JsonUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static java.util.stream.Collectors.toList;
 import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
@@ -85,78 +75,53 @@ import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
  * Since index.html links to hashed resource names, any change to it will orphan old resources.
  * That's why hashed resource age can be 365 days.
  */
-@Configuration
 @EnableConfigurationProperties({ZipkinUiProperties.class, CompressionProperties.class})
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 public class ZipkinUiConfiguration {
-  @Autowired
-  ZipkinUiProperties ui;
+  static final JsonFactory JSON_FACTORY = new JsonFactory();
 
-  @Value("classpath:zipkin-ui/index.html")
-  Resource indexHtml;
-  @Value("classpath:zipkin-lens/index.html")
-  Resource lensIndexHtml;
+  @Autowired ZipkinUiProperties ui;
+  @Value("classpath:zipkin-ui/index.html") Resource classicIndexHtml;
+  @Value("classpath:zipkin-lens/index.html") Resource lensIndexHtml;
 
-  @Bean @Lazy String processedIndexHtml() {
-    return processedIndexHtml(indexHtml);
-  }
+  @Bean HttpService indexService() throws IOException {
+    HttpService lensIndex = maybeIndexService(ui.getBasepath(), lensIndexHtml);
+    HttpService classicIndex = maybeIndexService(ui.getBasepath(), classicIndexHtml);
 
-  @Bean @Lazy String processedLensIndexHtml() {
-    return processedIndexHtml(lensIndexHtml);
-  }
-
-  String processedIndexHtml(Resource indexHtml) {
-    String baseTagValue = "/".equals(ui.getBasepath()) ? "/" : ui.getBasepath() + "/";
-    Document soup;
-    try (InputStream is = indexHtml.getInputStream()) {
-      soup = Jsoup.parse(is, null, baseTagValue);
-    } catch (IOException e) {
-      throw new UncheckedIOException(e); // unexpected
+    if (lensIndex != null && classicIndex != null) {
+      // In both our old and new UI, assets have hashes in the filenames (generated by webpack).
+      // This allows us to host both simultaneously without conflict as long as we change the index
+      // file to point to the correct files.
+      return new IndexSwitchingService(classicIndex, lensIndex);
     }
-    if (soup.head().getElementsByTag("base").isEmpty()) {
-      soup.head().appendChild(
-        soup.createElement("base")
-      );
-    }
-    soup.head().getElementsByTag("base").attr("href", baseTagValue);
-    return soup.html();
+    if (lensIndex != null) return lensIndex;
+    throw new BeanCreationException("Could not load Lens UI from " + lensIndexHtml);
   }
 
-  @Bean @Lazy IndexSwitchingService indexSwitchingService() {
-    final HttpFileBuilder legacyIndex;
-    final HttpFileBuilder lensIndex;
-    if (DEFAULT_BASEPATH.equals(ui.getBasepath())) {
-      legacyIndex = HttpFileBuilder.ofResource("zipkin-ui/index.html");
-      lensIndex = HttpFileBuilder.ofResource("zipkin-lens/index.html");
-    } else {
-      legacyIndex = HttpFileBuilder.of(HttpData.of(processedIndexHtml().getBytes(UTF_8)));
-      lensIndex = HttpFileBuilder.of(HttpData.of(processedLensIndexHtml().getBytes(UTF_8)));
-    }
-
-    ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
-    legacyIndex.contentType(MediaType.HTML_UTF_8).cacheControl(maxAgeMinute);
-    lensIndex.contentType(MediaType.HTML_UTF_8).cacheControl(maxAgeMinute);
-
-    // In both our old and new UI, assets have hashes in the filenames (generated by webpack).
-    // This allows us to host both simultaneously without conflict as long as we change the index
-    // file to point to the correct files.
-    return new IndexSwitchingService(
-      legacyIndex.build().asService(), lensIndex.build().asService());
-  }
-
-  @Bean @Lazy ArmeriaServerConfigurator uiServerConfigurator(
-    CompressionProperties compressionProperties,
-    IndexSwitchingService indexSwitchingService) throws IOException {
+  @Bean ArmeriaServerConfigurator uiServerConfigurator(
+    HttpService indexService,
+    Optional<MeterRegistry> meterRegistry
+  ) throws IOException {
     ServerCacheControl maxAgeYear =
       new ServerCacheControlBuilder().maxAgeSeconds(TimeUnit.DAYS.toSeconds(365)).build();
-    Service<HttpRequest, HttpResponse> uiFileService =
-      HttpFileServiceBuilder.forClassPath("zipkin-ui").cacheControl(maxAgeYear).build()
-        .orElse(
-          HttpFileServiceBuilder.forClassPath("zipkin-lens").cacheControl(maxAgeYear).build());
 
-    byte[] config = new ObjectMapper().writeValueAsBytes(ui);
+    HttpService uiFileService;
+    if (indexService instanceof IndexSwitchingService) {
+      // In both our old and new UI, assets have hashes in the filenames (generated by webpack).
+      // This allows us to host both simultaneously without conflict as long as we change the index
+      // file to point to the correct files.
+      uiFileService =
+        HttpFileServiceBuilder.forClassPath("zipkin-ui").cacheControl(maxAgeYear).build()
+          .orElse(
+            HttpFileServiceBuilder.forClassPath("zipkin-lens").cacheControl(maxAgeYear).build());
+    } else {
+      uiFileService =
+        HttpFileServiceBuilder.forClassPath("zipkin-lens").cacheControl(maxAgeYear).build();
+    }
+
+    String config = writeConfig(ui);
     return sb -> {
-      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.of(config))
+      sb.service("/zipkin/config.json", HttpFileBuilder.of(HttpData.ofUtf8(config))
         .cacheControl(new ServerCacheControlBuilder().maxAgeSeconds(600).build())
         .contentType(MediaType.JSON_UTF_8)
         .build()
@@ -168,20 +133,21 @@ public class ZipkinUiConfiguration {
       // If the path is a a file w/an extension, treat normally.
       // Otherwise instead of returning 404, forward to the index.
       // See https://github.com/twitter/finatra/blob/458c6b639c3afb4e29873d123125eeeb2b02e2cd/http/src/main/scala/com/twitter/finatra/http/response/ResponseBuilder.scala#L321
-      sb.service("/zipkin/", indexSwitchingService)
-        .service("/zipkin/index.html", indexSwitchingService)
-        .service("/zipkin/traces/{id}", indexSwitchingService)
-        .service("/zipkin/dependency", indexSwitchingService)
-        .service("/zipkin/traceViewer", indexSwitchingService);
+      sb.service("/zipkin/", indexService)
+        .service("/zipkin/index.html", indexService)
+        .service("/zipkin/traces/{id}", indexService)
+        .service("/zipkin/dependency", indexService)
+        .service("/zipkin/traceViewer", indexService);
 
       sb.service("/favicon.ico", new RedirectService(HttpStatus.FOUND, "/zipkin/favicon.ico"))
         .service("/", new RedirectService(HttpStatus.FOUND, "/zipkin/"))
         .service("/zipkin", new RedirectService(HttpStatus.FOUND, "/zipkin/"));
 
-      Compression compression = compressionProperties.getCompression();
-      if (compression.getEnabled()) {
-        sb.decorator(contentEncodingDecorator(compression));
-      }
+      // don't add metrics for favicon
+      meterRegistry.ifPresent(m -> m.config().meterFilter(MeterFilter.deny(id -> {
+        String uri = id.getTag("uri");
+        return uri != null && uri.startsWith("/favicon.ico");
+      })));
     };
   }
 
@@ -195,8 +161,7 @@ public class ZipkinUiConfiguration {
     }
 
     @Override
-    public HttpResponse doGet(ServiceRequestContext ctx, HttpRequest req)
-      throws Exception {
+    public HttpResponse doGet(ServiceRequestContext ctx, HttpRequest req) throws Exception {
       Set<Cookie> cookies = ServerCookieDecoder.LAX.decode(
         req.headers().get(HttpHeaderNames.COOKIE, ""));
       for (Cookie cookie : cookies) {
@@ -208,37 +173,58 @@ public class ZipkinUiConfiguration {
     }
   }
 
-  // TEMPORARY: copy-pasta from com.linecorp.armeria.spring.web.reactive.ArmeriaReactiveWebServerFactory
-  private static Function<Service<HttpRequest, HttpResponse>,
-    HttpEncodingService> contentEncodingDecorator(Compression compression) {
-    final Predicate<MediaType> encodableContentTypePredicate;
-    final String[] mimeTypes = compression.getMimeTypes();
-    if (mimeTypes == null || mimeTypes.length == 0) {
-      encodableContentTypePredicate = contentType -> true;
-    } else {
-      final List<MediaType> encodableContentTypes =
-        Arrays.stream(mimeTypes).map(MediaType::parse).collect(toList());
-      encodableContentTypePredicate = contentType ->
-        encodableContentTypes.stream().anyMatch(contentType::is);
+  // This writes the following config used in zipkin-classic (not yet in zipkin-lens)
+  //
+  // environment: '',
+  // suggestLens: false,
+  // queryLimit: 10,
+  // defaultLookback: 15 * 60 * 1000, // 15 minutes
+  // searchEnabled: true,
+  // dependency: {
+  //   lowErrorRate: 0.5, // 50% of calls in error turns line yellow
+  //   highErrorRate: 0.75 // 75% of calls in error turns line red
+  // }
+  static String writeConfig(ZipkinUiProperties ui) throws IOException {
+    StringWriter writer = new StringWriter();
+    try (JsonGenerator generator = JsonUtil.createGenerator(writer)) {
+      generator.useDefaultPrettyPrinter();
+      generator.writeStartObject();
+      generator.writeStringField("environment", ui.getEnvironment());
+      generator.writeBooleanField("suggestLens", ui.isSuggestLens());
+      generator.writeNumberField("queryLimit", ui.getQueryLimit());
+      generator.writeNumberField("defaultLookback", ui.getDefaultLookback());
+      generator.writeBooleanField("searchEnabled", ui.isSearchEnabled());
+      generator.writeObjectFieldStart("dependency");
+      generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
+      generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());
+      generator.writeEndObject(); // .dependency
+      generator.writeEndObject(); // .
     }
+    return writer.toString();
+  }
 
-    final Predicate<HttpHeaders> encodableRequestHeadersPredicate;
-    final String[] excludedUserAgents = compression.getExcludedUserAgents();
-    if (excludedUserAgents == null || excludedUserAgents.length == 0) {
-      encodableRequestHeadersPredicate = headers -> true;
-    } else {
-      final List<Pattern> patterns =
-        Arrays.stream(excludedUserAgents).map(Pattern::compile).collect(toList());
-      encodableRequestHeadersPredicate = headers -> {
-        // No User-Agent header will be converted to an empty string.
-        final String userAgent = headers.get(HttpHeaderNames.USER_AGENT, "");
-        return patterns.stream().noneMatch(pattern -> pattern.matcher(userAgent).matches());
-      };
+  static HttpService maybeIndexService(String basePath, Resource resource) throws IOException {
+    String maybeContent = maybeResource(basePath, resource);
+    if (maybeContent == null) return null;
+
+    ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
+
+    return HttpFileBuilder.of(HttpData.ofUtf8(maybeContent))
+      .contentType(MediaType.HTML_UTF_8).cacheControl(maxAgeMinute)
+      .build().asService();
+  }
+
+  static String maybeResource(String basePath, Resource resource) throws IOException {
+    if (!resource.isReadable()) return null;
+
+    try (InputStream stream = resource.getInputStream()) {
+      String content = StreamUtils.copyToString(stream, UTF_8);
+      if (DEFAULT_BASEPATH.equals(basePath)) return content;
+
+      String baseTagValue = "/".equals(basePath) ? "/" : basePath + "/";
+      return content.replaceAll(
+        "base href=\"[^\"]+\"", "base href=\"" + baseTagValue + "\""
+      );
     }
-
-    return delegate -> new HttpEncodingService(delegate,
-      encodableContentTypePredicate,
-      encodableRequestHeadersPredicate,
-      compression.getMinResponseSize().toBytes());
   }
 }

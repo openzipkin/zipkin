@@ -1,22 +1,19 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.collector.rabbitmq;
 
-import com.rabbitmq.client.AMQP;
+import com.rabbitmq.client.AMQP.BasicProperties;
 import com.rabbitmq.client.Address;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -24,9 +21,12 @@ import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.DefaultConsumer;
 import com.rabbitmq.client.Envelope;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
+import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
@@ -37,14 +37,13 @@ import zipkin2.storage.StorageComponent;
 
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
 public final class RabbitMQCollector extends CollectorComponent {
-  static final Callback<Void> NOOP =
-      new Callback<Void>() {
-        @Override
-        public void onSuccess(Void value) {}
+  static final Callback<Void> NOOP = new Callback<Void>() {
+    @Override public void onSuccess(Void value) {
+    }
 
-        @Override
-        public void onError(Throwable t) {}
-      };
+    @Override public void onError(Throwable t) {
+    }
+  };
 
   public static Builder builder() {
     return new Builder();
@@ -128,7 +127,8 @@ public final class RabbitMQCollector extends CollectorComponent {
       CheckResult failure = connection.failure.get();
       if (failure != null) return failure;
       return CheckResult.OK;
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
   }
@@ -138,12 +138,22 @@ public final class RabbitMQCollector extends CollectorComponent {
     connection.close();
   }
 
+  @Override public final String toString() {
+    return "RabbitMQCollector{addresses="
+      + Arrays.toString(connection.builder.addresses)
+      + ", queue="
+      + queue
+      + "}";
+  }
+
   /** Lazy creates a connection and a queue before starting consumers */
   static final class LazyInit {
     final Builder builder;
     final AtomicReference<CheckResult> failure = new AtomicReference<>();
     volatile Connection connection;
 
+    // TODO: bad idea to lazy reference properties from a mutable builder
+    // copy them here and then pass this to the KafkaCollectorWorker ctor instead
     LazyInit(Builder builder) {
       this.builder = builder;
     }
@@ -168,26 +178,30 @@ public final class RabbitMQCollector extends CollectorComponent {
       Connection connection;
       try {
         connection =
-            (builder.addresses == null)
-                ? builder.connectionFactory.newConnection()
-                : builder.connectionFactory.newConnection(builder.addresses);
+          (builder.addresses == null)
+            ? builder.connectionFactory.newConnection()
+            : builder.connectionFactory.newConnection(builder.addresses);
         declareQueueIfMissing(connection);
-      } catch (IOException | TimeoutException e) {
-        throw new IllegalStateException("Unable to establish connection to RabbitMQ server", e);
+      } catch (IOException e) {
+        throw new UncheckedIOException(
+          "Unable to establish connection to RabbitMQ server: " + e.getMessage(), e);
+      } catch (TimeoutException e) {
+        throw new RuntimeException(
+          "Timeout establishing connection to RabbitMQ server: " + e.getMessage(), e);
       }
       Collector collector = builder.delegate.build();
       CollectorMetrics metrics = builder.metrics;
 
       for (int i = 0; i < builder.concurrency; i++) {
-        String name = RabbitMQSpanConsumer.class.getName() + i;
+        String consumerTag = "zipkin-rabbitmq." + i;
         try {
           // this sets up a channel for each consumer thread.
           // We don't track channels, as the connection will close its channels implicitly
           Channel channel = connection.createChannel();
           RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
-          channel.basicConsume(builder.queue, true, name, consumer);
+          channel.basicConsume(builder.queue, true, consumerTag, consumer);
         } catch (IOException e) {
-          throw new IllegalStateException("Failed to start RabbitMQ consumer " + name, e);
+          throw new IllegalStateException("Failed to start RabbitMQ consumer " + consumerTag, e);
         }
       }
       return connection;
@@ -200,7 +214,8 @@ public final class RabbitMQCollector extends CollectorComponent {
         channel.queueDeclarePassive(builder.queue);
         channel.close();
       } catch (IOException maybeQueueDoesNotExist) {
-        if (maybeQueueDoesNotExist.getCause() != null && maybeQueueDoesNotExist.getCause().getMessage().contains("NOT_FOUND")) {
+        Throwable cause = maybeQueueDoesNotExist.getCause();
+        if (cause != null && cause.getMessage().contains("NOT_FOUND")) {
           channel = connection.createChannel();
           channel.queueDeclare(builder.queue, true, false, false, null);
           channel.close();
@@ -226,17 +241,20 @@ public final class RabbitMQCollector extends CollectorComponent {
     }
 
     @Override
-    public void handleDelivery(
-        String consumerTag, Envelope envelope, AMQP.BasicProperties properties, byte[] body) {
+    public void handleDelivery(String tag, Envelope envelope, BasicProperties props, byte[] body) {
       metrics.incrementMessages();
-      this.collector.acceptSpans(body, NOOP);
+      metrics.incrementBytes(body.length);
+
+      if (body.length == 0) return; // lenient on empty messages
+
+      collector.acceptSpans(body, NOOP);
     }
   }
 
   static Address[] convertAddresses(List<String> addresses) {
     Address[] addressArray = new Address[addresses.size()];
     for (int i = 0; i < addresses.size(); i++) {
-      String[] splitAddress = addresses.get(i).split(":");
+      String[] splitAddress = addresses.get(i).split(":", 100);
       String host = splitAddress[0];
       Integer port = null;
       try {

@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra.v1;
 
@@ -35,6 +32,7 @@ import zipkin2.Span;
 import zipkin2.internal.FilterTraces;
 import zipkin2.internal.HexCodec;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.ReadBuffer;
 import zipkin2.internal.V1ThriftSpanReader;
 import zipkin2.storage.GroupByTraceId;
 import zipkin2.storage.QueryRequest;
@@ -59,11 +57,11 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
       this.accumulateSpans = new DecodeAndConvertSpans();
 
       this.preparedStatement =
-          session.prepare(
-              QueryBuilder.select("trace_id", "span")
-                  .from("traces")
-                  .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
-                  .limit(QueryBuilder.bindMarker("limit_")));
+        session.prepare(
+          QueryBuilder.select("trace_id", "span")
+            .from("traces")
+            .where(QueryBuilder.in("trace_id", QueryBuilder.bindMarker("trace_id")))
+            .limit(QueryBuilder.bindMarker("limit_")));
       this.maxTraceCols = maxTraceCols;
       this.strictTraceId = strictTraceId;
       this.groupByTraceId = GroupByTraceId.create(strictTraceId);
@@ -72,10 +70,28 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
     Call<List<Span>> newCall(String hexTraceId) {
       long traceId = HexCodec.lowerHexToUnsignedLong(hexTraceId);
       Call<List<Span>> result =
-          new SelectFromTraces(this, Collections.singleton(traceId), maxTraceCols)
-              .flatMap(accumulateSpans);
+        new SelectFromTraces(this, Collections.singleton(traceId), maxTraceCols)
+          .flatMap(accumulateSpans);
       return strictTraceId ? result.map(StrictTraceId.filterSpans(hexTraceId)) : result;
     }
+
+    Call<List<List<Span>>> newCall(Iterable<String> traceIds) {
+      Set<Long> longTraceIds = new LinkedHashSet<>();
+      Set<String> normalizedTraceIds = new LinkedHashSet<>();
+      for (String traceId : traceIds) {
+        traceId = Span.normalizeTraceId(traceId);
+        normalizedTraceIds.add(traceId);
+        longTraceIds.add(HexCodec.lowerHexToUnsignedLong(traceId));
+      }
+
+      if (normalizedTraceIds.isEmpty()) return Call.emptyList();
+      Call<List<List<Span>>> result = new SelectFromTraces(this,
+        longTraceIds,
+        maxTraceCols
+      ).flatMap(accumulateSpans).map(groupByTraceId);
+      return strictTraceId ? result.map(StrictTraceId.filterTraces(normalizedTraceIds)) : result;
+    }
+
 
     FlatMapper<Set<Long>, List<List<Span>>> newFlatMapper(QueryRequest request) {
       return new SelectTracesByIds(this, request);
@@ -95,7 +111,7 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
   @Override
   protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(
-        factory.preparedStatement.bind().setSet("trace_id", trace_id).setInt("limit_", limit_));
+      factory.preparedStatement.bind().setSet("trace_id", trace_id).setInt("limit_", limit_));
   }
 
   @Override public ResultSet map(ResultSet input) {
@@ -139,9 +155,9 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
         traceIds = input;
       }
       Call<List<List<Span>>> result =
-          new SelectFromTraces(factory, traceIds, factory.maxTraceCols)
-              .flatMap(factory.accumulateSpans)
-              .map(factory.groupByTraceId);
+        new SelectFromTraces(factory, traceIds, factory.maxTraceCols)
+          .flatMap(factory.accumulateSpans)
+          .map(factory.groupByTraceId);
       return filter != null ? result.map(filter) : result;
     }
 
@@ -163,7 +179,7 @@ final class SelectFromTraces extends ResultSetFutureCall<ResultSet> {
       return (row, result) -> {
         V1ThriftSpanReader reader = V1ThriftSpanReader.create();
         V1SpanConverter converter = V1SpanConverter.create();
-        V1Span read = reader.read(row.getBytes("span"));
+        V1Span read = reader.read(ReadBuffer.wrapUnsafe(row.getBytes("span")));
         converter.convert(read, result);
       };
     }

@@ -1,22 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.exceptions.BusyConnectionException;
+import com.datastax.driver.core.exceptions.BusyPoolException;
+import com.datastax.driver.core.exceptions.QueryConsistencyException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
 import org.junit.Test;
 import zipkin2.Callback;
@@ -84,5 +85,18 @@ public class ResultSetFutureCallTest {
     // ensure the callback received the exception
     verify(callback).onError(any(IllegalArgumentException.class));
     verifyNoMoreInteractions(callback);
+  }
+
+  // below are load related exceptions which should result in a backoff of storage requests
+  @Test public void isOverCapacity() {
+    InetSocketAddress sa = InetSocketAddress.createUnresolved("host", 9402);
+
+    assertThat(ResultSetFutureCall.isOverCapacity(new BusyPoolException(sa, 100))).isTrue();
+    assertThat(ResultSetFutureCall.isOverCapacity(new BusyConnectionException(sa))).isTrue();
+    assertThat(ResultSetFutureCall.isOverCapacity(mock(QueryConsistencyException.class))).isTrue();
+
+    // not applicable
+    assertThat(ResultSetFutureCall.isOverCapacity(
+      new IllegalStateException("Rejected execution"))).isFalse();
   }
 }

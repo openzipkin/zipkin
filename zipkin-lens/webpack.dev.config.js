@@ -1,3 +1,16 @@
+/*
+ * Copyright 2015-2019 The OpenZipkin Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 /* eslint-disable import/no-extraneous-dependencies */
 const webpack = require('webpack');
 const path = require('path');
@@ -13,7 +26,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|jsx)$/,
         exclude: [/node_modules/],
         use: {
           loader: 'babel-loader',
@@ -24,12 +37,20 @@ module.exports = {
         use: [
           { loader: 'style-loader' },
           { loader: 'css-loader' },
-          { loader: 'sass-loader' },
+          { loader: 'resolve-url-loader' },
+          {
+            loader: 'sass-loader',
+            options: { sourceMap: true },
+          },
         ],
       },
       {
         test: /\.html$/,
         loader: 'html-loader',
+      },
+      {
+        test: /webfonts\/.*\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*$|$)/,
+        loader: 'file-loader',
       },
       {
         test: /\.(jpg|png)$/,
@@ -38,13 +59,16 @@ module.exports = {
       {
         test: /\.svg$/,
         use: [
-          {
-            loader: 'babel-loader',
-          },
+          { loader: 'babel-loader' },
           {
             loader: 'react-svg-loader',
             options: {
               jsx: true,
+              svgo: {
+                plugins: [
+                  { removeViewBox: false },
+                ],
+              },
             },
           },
         ],
@@ -52,7 +76,7 @@ module.exports = {
     ],
   },
   resolve: {
-    extensions: ['.js'],
+    extensions: ['.js', '.jsx'],
   },
   plugins: [
     new HtmlWebpackPlugin({

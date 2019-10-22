@@ -1,40 +1,48 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra;
 
 import java.io.IOException;
 import java.util.stream.IntStream;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 import zipkin2.Span;
 import zipkin2.TestObjects;
+import zipkin2.storage.ITStorage;
 import zipkin2.storage.SpanConsumer;
+import zipkin2.storage.StorageComponent;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.FRONTEND;
 
-abstract class ITSpanConsumer {
-  abstract protected String keyspace();
+abstract class ITSpanConsumer extends ITStorage<CassandraStorage> {
 
-  private CassandraStorage storage;
+  @Override protected boolean initializeStoragePerTest() {
+    return true;
+  }
 
-  @Before public void connect() {
-    storage = storageBuilder().autocompleteKeys(asList("environment")).keyspace(keyspace()).build();
+  @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+    return storageBuilder().keyspace(InternalForTests.keyspace(testInfo));
+  }
+
+  @Override protected void configureStorageForTest(StorageComponent.Builder storage) {
+    storage.autocompleteKeys(asList("environment"));
+  }
+
+  @Override public void clear() {
+    // Just let the data pile up to prevent warnings and slowness.
   }
 
   abstract CassandraStorage.Builder storageBuilder();

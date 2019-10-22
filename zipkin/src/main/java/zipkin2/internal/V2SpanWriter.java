@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -22,14 +19,13 @@ import zipkin2.Annotation;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
-import static zipkin2.internal.Buffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
+import static zipkin2.internal.WriteBuffer.asciiSizeInBytes;
 
 // @Immutable
-public final class V2SpanWriter implements Buffer.Writer<Span> {
-  @Override
-  public int sizeInBytes(Span value) {
+public final class V2SpanWriter implements WriteBuffer.Writer<Span> {
+  @Override public int sizeInBytes(Span value) {
     int sizeInBytes = 13; // {"traceId":""
     sizeInBytes += value.traceId().length();
     if (value.parentId() != null) {
@@ -88,8 +84,7 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return ++sizeInBytes; // }
   }
 
-  @Override
-  public void write(Span value, Buffer b) {
+  @Override public void write(Span value, WriteBuffer b) {
     b.writeAscii("{\"traceId\":\"");
     b.writeAscii(value.traceId());
     b.writeByte('"');
@@ -160,8 +155,7 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     b.writeByte('}');
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "Span";
   }
 
@@ -192,7 +186,7 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return ++sizeInBytes; // }
   }
 
-  static void writeEndpoint(Endpoint value, Buffer b, boolean writeEmptyServiceName) {
+  static void writeEndpoint(Endpoint value, WriteBuffer b, boolean writeEmptyServiceName) {
     b.writeByte('{');
     boolean wroteField = false;
     String serviceName = value.serviceName();
@@ -237,7 +231,8 @@ public final class V2SpanWriter implements Buffer.Writer<Span> {
     return sizeInBytes;
   }
 
-  static void writeAnnotation(long timestamp, String value, @Nullable byte[] endpoint, Buffer b) {
+  static void writeAnnotation(long timestamp, String value, @Nullable byte[] endpoint,
+    WriteBuffer b) {
     b.writeAscii("{\"timestamp\":");
     b.writeAscii(timestamp);
     b.writeAscii(",\"value\":\"");

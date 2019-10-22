@@ -1,3 +1,16 @@
+/*
+ * Copyright 2015-2019 The OpenZipkin Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
 import {
   traceSummary,
   traceSummaries,
@@ -338,7 +351,7 @@ describe('detailedTraceSummary', () => {
 
   it('should derive summary info', () => {
     const {
-      traceId, durationStr, depth, serviceNameAndSpanCounts,
+      traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan,
     } = detailedTraceSummary(cleanedHttpTrace);
 
     expect(traceId).toBe('bb1f0e21882325b8');
@@ -348,6 +361,10 @@ describe('detailedTraceSummary', () => {
       { serviceName: 'backend', spanCount: 1 },
       { serviceName: 'frontend', spanCount: 2 },
     ]);
+    expect(rootSpan).toEqual({
+      serviceName: 'frontend',
+      spanName: 'get /',
+    });
   });
 
   it('should position incomplete spans at the correct offset', () => {
@@ -366,7 +383,7 @@ describe('detailedTraceSummary', () => {
     treeCorrectedForClockSkew(httpTrace).children.forEach(child => headless.addChild(child));
 
     const {
-      traceId, durationStr, depth, serviceNameAndSpanCounts,
+      traceId, durationStr, depth, serviceNameAndSpanCounts, rootSpan,
     } = detailedTraceSummary(headless);
 
     expect(traceId).toBe('bb1f0e21882325b8');
@@ -376,6 +393,10 @@ describe('detailedTraceSummary', () => {
       { serviceName: 'backend', spanCount: 1 },
       { serviceName: 'frontend', spanCount: 1 },
     ]);
+    expect(rootSpan).toEqual({
+      serviceName: 'backend',
+      spanName: 'get /api',
+    });
   });
 
   it('should show human-readable annotation name', () => {

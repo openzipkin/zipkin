@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.server.internal.prometheus;
 
@@ -23,7 +20,7 @@ import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.Response;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
-import com.linecorp.armeria.server.PathMapping;
+import com.linecorp.armeria.server.Route;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.SimpleDecoratingService;
@@ -32,17 +29,20 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.util.AttributeKey;
+import io.prometheus.client.CollectorRegistry;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.util.StringUtils;
 
-@Configuration
+@Configuration(proxyBeanMethods=false)
 public class ZipkinPrometheusMetricsConfiguration {
   // from io.micrometer.spring.web.servlet.WebMvcTags
   private static final Tag URI_NOT_FOUND = Tag.of("uri", "NOT_FOUND");
@@ -51,20 +51,35 @@ public class ZipkinPrometheusMetricsConfiguration {
   // single-page app requests are forwarded to index: ZipkinUiConfiguration.forwardUiEndpoints
   private static final Tag URI_CROSSROADS = Tag.of("uri", "/zipkin/index.html");
 
-  final PrometheusMeterRegistry registry;
-  // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
   final String metricName;
 
+  // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
   ZipkinPrometheusMetricsConfiguration(
-    PrometheusMeterRegistry registry,
     @Value("${management.metrics.web.server.requests-metric-name:http.server.requests}")
       String metricName
   ) {
-    this.registry = registry;
     this.metricName = metricName;
   }
 
-  @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator() {
+  @Bean @ConditionalOnMissingBean public Clock clock() {
+    return Clock.SYSTEM;
+  }
+
+  @Bean @ConditionalOnMissingBean public PrometheusConfig config() {
+    return PrometheusConfig.DEFAULT;
+  }
+
+  @Bean @ConditionalOnMissingBean public CollectorRegistry registry() {
+    return new CollectorRegistry(true);
+  }
+
+  @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry(
+    PrometheusConfig config, CollectorRegistry registry, Clock clock) {
+    return new PrometheusMeterRegistry(config, registry, clock);
+  }
+
+  // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
+  @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator(MeterRegistry registry) {
     return serverBuilder -> serverBuilder.decorator(
       s -> new MetricCollectingService<>(s, registry, metricName));
   }
@@ -76,7 +91,8 @@ public class ZipkinPrometheusMetricsConfiguration {
   @Order(1)
   ArmeriaServerConfigurator notFoundMetricCollector() {
     // Use glob instead of catch-all to avoid adding it to the trie router.
-    return sb -> sb.service(PathMapping.ofGlob("/**"), (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
+    return sb -> sb.service(Route.builder().glob("/**").build(),
+      (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
   }
 
   static final class MetricCollectingService<I extends Request, O extends Response>
@@ -121,14 +137,12 @@ public class ZipkinPrometheusMetricsConfiguration {
     }, RequestLogAvailability.COMPLETE);
   }
 
-
   private static Timer.Builder getTimeBuilder(RequestLog requestLog, String metricName) {
     return Timer.builder(metricName)
       .tags(getTags(requestLog))
       .description("Response time histogram")
       .publishPercentileHistogram();
   }
-
 
   private static Iterable<Tag> getTags(RequestLog requestLog) {
     return Arrays.asList(Tag.of("method", requestLog.method().toString())

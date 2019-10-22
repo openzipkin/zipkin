@@ -1,22 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
-import java.nio.ByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 import zipkin2.Endpoint;
@@ -38,32 +34,28 @@ import static zipkin2.internal.ThriftField.TYPE_STRUCT;
 public class V1ThriftSpanWriterTest {
   Span span = Span.newBuilder().traceId("1").id("2").build();
   Endpoint endpoint = Endpoint.newBuilder().serviceName("frontend").ip("1.2.3.4").build();
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
+  byte[] bytes = new byte[2048]; // bigger than needed to test sizeOf
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   V1ThriftSpanWriter writer = new V1ThriftSpanWriter();
-  byte[] endpointBytes;
+  byte[] endpointBytes = new byte[ThriftEndpointCodec.sizeInBytes(endpoint)];
 
-  @Before
-  public void init() {
-    Buffer endpointBuffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
-    ThriftEndpointCodec.write(endpoint, endpointBuffer);
-    endpointBytes = endpointBuffer.toByteArray();
+  @Before public void init() {
+    ThriftEndpointCodec.write(endpoint, WriteBuffer.wrap(endpointBytes, 0));
   }
-
 
   @Test
   public void endpoint_highPort() {
     int highPort = 63840;
     Endpoint endpoint = Endpoint.newBuilder().ip("127.0.0.1").port(63840).build();
-    Buffer endpointBuffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(endpoint));
-    ThriftEndpointCodec.write(endpoint, endpointBuffer);
-    byte[] buff = endpointBuffer.toByteArray();
+    byte[] buff = new byte[ThriftEndpointCodec.sizeInBytes(endpoint)];
+    ThriftEndpointCodec.write(endpoint, WriteBuffer.wrap(buff, 0));
 
     assertThat(buff)
       .containsSequence(TYPE_I32, 0, 1, 127, 0, 0, 1) // ipv4
       .containsSequence(TYPE_I16, 0, 2, (highPort >> 8) & 0xFF, highPort & 0xFF); // port
 
-    assertThat(ThriftEndpointCodec.read(ByteBuffer.wrap(buff)).portAsInt())
+    assertThat(ThriftEndpointCodec.read(ReadBuffer.wrap(buff)).portAsInt())
       .isEqualTo(highPort);
   }
 
@@ -72,8 +64,8 @@ public class V1ThriftSpanWriterTest {
     byte[] buff = writer.write(span);
 
     assertThat(buff)
-        .hasSize(writer.sizeInBytes(span))
-        .startsWith(TYPE_I64, 0, 1); // short value of field number 1
+      .hasSize(writer.sizeInBytes(span))
+      .startsWith(TYPE_I64, 0, 1); // short value of field number 1
   }
 
   @Test
@@ -81,9 +73,9 @@ public class V1ThriftSpanWriterTest {
     byte[] buff = writer.writeList(asList(span));
 
     assertThat(buff)
-        .hasSize(5 + writer.sizeInBytes(span))
-        .startsWith( // member type of the list and an integer with the count
-            TYPE_STRUCT, 0, 0, 0, 1);
+      .hasSize(5 + writer.sizeInBytes(span))
+      .startsWith( // member type of the list and an integer with the count
+        TYPE_STRUCT, 0, 0, 0, 1);
   }
 
   @Test
@@ -91,9 +83,9 @@ public class V1ThriftSpanWriterTest {
     byte[] buff = writer.writeList(asList(span, span));
 
     assertThat(buff)
-        .hasSize(5 + writer.sizeInBytes(span) * 2)
-        .startsWith( // member type of the list and an integer with the count
-            TYPE_STRUCT, 0, 0, 0, 2);
+      .hasSize(5 + writer.sizeInBytes(span) * 2)
+      .startsWith( // member type of the list and an integer with the count
+        TYPE_STRUCT, 0, 0, 0, 2);
   }
 
   @Test
@@ -103,21 +95,21 @@ public class V1ThriftSpanWriterTest {
 
   @Test
   public void writeList_offset_startsWithListPrefix() {
-    writer.writeList(asList(span, span), buf.toByteArray(), 1);
+    writer.writeList(asList(span, span), bytes, 1);
 
-    assertThat(buf.toByteArray())
-        .startsWith( // member type of the list and an integer with the count
-            0, TYPE_STRUCT, 0, 0, 0, 2);
+    assertThat(bytes)
+      .startsWith( // member type of the list and an integer with the count
+        0, TYPE_STRUCT, 0, 0, 0, 2);
   }
 
   @Test
   public void doesntWriteAnnotationsWhenMissingTimestamp() {
     writer.write(span.toBuilder().kind(CLIENT).build(), buf);
 
-    Buffer buf2 = Buffer.allocate(2048);
-    writer.write(span, buf2);
+    byte[] bytes2 = new byte[2048];
+    writer.write(span, WriteBuffer.wrap(bytes2));
 
-    assertThat(buf.toByteArray()).containsExactly(buf.toByteArray());
+    assertThat(bytes).containsExactly(bytes2);
   }
 
   @Test
@@ -144,12 +136,12 @@ public class V1ThriftSpanWriterTest {
     span = span.toBuilder().kind(kind).timestamp(5).duration(10).build();
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 2) // two annotations
-        .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
-        .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, begin.charAt(0), begin.charAt(1))
-        .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 15) // timestamp
-        .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, end.charAt(0), end.charAt(1));
+    assertThat(bytes)
+      .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 2) // two annotations
+      .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
+      .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, begin.charAt(0), begin.charAt(1))
+      .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 15) // timestamp
+      .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, end.charAt(0), end.charAt(1));
   }
 
   @Test
@@ -176,10 +168,10 @@ public class V1ThriftSpanWriterTest {
     span = span.toBuilder().kind(kind).timestamp(5).build();
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 1) // one annotation
-        .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
-        .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, begin.charAt(0), begin.charAt(1));
+    assertThat(bytes)
+      .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 1) // one annotation
+      .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
+      .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 2, begin.charAt(0), begin.charAt(1));
   }
 
   @Test
@@ -205,42 +197,32 @@ public class V1ThriftSpanWriterTest {
   void writesAddressBinaryAnnotation(Span.Kind kind, String addr) {
     writer.write(span.toBuilder().kind(kind).remoteEndpoint(endpoint).build(), buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
-        .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 2, addr.charAt(0), addr.charAt(1)) // key
-        .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 1, 1) // value
-        .containsSequence(TYPE_I32, 0, 3, 0, 0, 0, 0) // type 0 == boolean
-        .containsSequence(endpointBytes);
+    assertThat(bytes)
+      .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
+      .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 2, addr.charAt(0), addr.charAt(1)) // key
+      .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 1, 1) // value
+      .containsSequence(TYPE_I32, 0, 3, 0, 0, 0, 0) // type 0 == boolean
+      .containsSequence(endpointBytes);
   }
 
   @Test
   public void annotationsHaveEndpoints() {
     writer.write(span.toBuilder().localEndpoint(endpoint).addAnnotation(5, "foo").build(), buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 1) // one annotation
-        .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
-        .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 3, 'f', 'o', 'o') // value
-        .containsSequence(endpointBytes);
+    assertThat(bytes)
+      .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 1) // one annotation
+      .containsSequence(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
+      .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 3, 'f', 'o', 'o') // value
+      .containsSequence(endpointBytes);
   }
 
   @Test
   public void writesTimestampAndDuration() {
     writer.write(span.toBuilder().timestamp(5).duration(10).build(), buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_I64, 0, 10, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
-        .containsSequence(TYPE_I64, 0, 11, 0, 0, 0, 0, 0, 0, 0, 10); // duration
-  }
-
-  @Test
-  public void skipsTimestampAndDuration_shared() {
-    writer.write(span.toBuilder().kind(SERVER).timestamp(5).duration(10).shared(true).build(), buf);
-
-    Buffer buf2 = Buffer.allocate(2048);
-    writer.write(span.toBuilder().kind(SERVER).build(), buf2);
-
-    assertThat(buf.toByteArray()).containsExactly(buf.toByteArray());
+    assertThat(bytes)
+      .containsSequence(TYPE_I64, 0, 10, 0, 0, 0, 0, 0, 0, 0, 5) // timestamp
+      .containsSequence(TYPE_I64, 0, 11, 0, 0, 0, 0, 0, 0, 0, 10); // duration
   }
 
   @Test
@@ -249,30 +231,30 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(
-            ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // name (empty is 32 zero bits)
+    assertThat(bytes)
+      .containsSequence(
+        ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // name (empty is 32 zero bits)
   }
 
   @Test
   public void writesTraceAndSpanIds() {
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray())
-        .startsWith(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1) // trace ID
-        .containsSequence(TYPE_I64, 0, 4, 0, 0, 0, 0, 0, 0, 0, 2); // ID
+    assertThat(bytes)
+      .startsWith(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1) // trace ID
+      .containsSequence(TYPE_I64, 0, 4, 0, 0, 0, 0, 0, 0, 0, 2); // ID
   }
 
   @Test
   public void writesParentAnd128BitTraceId() {
     writer.write(
-        Span.newBuilder().traceId("00000000000000010000000000000002").parentId("3").id("4").build(),
-        buf);
+      Span.newBuilder().traceId("00000000000000010000000000000002").parentId("3").id("4").build(),
+      buf);
 
-    assertThat(buf.toByteArray())
-        .startsWith(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2) // trace ID
-        .containsSequence(TYPE_I64, 0, 12, 0, 0, 0, 0, 0, 0, 0, 1) // trace ID high
-        .containsSequence(TYPE_I64, 0, 5, 0, 0, 0, 0, 0, 0, 0, 3); // parent ID
+    assertThat(bytes)
+      .startsWith(TYPE_I64, 0, 1, 0, 0, 0, 0, 0, 0, 0, 2) // trace ID
+      .containsSequence(TYPE_I64, 0, 12, 0, 0, 0, 0, 0, 0, 0, 1) // trace ID high
+      .containsSequence(TYPE_I64, 0, 5, 0, 0, 0, 0, 0, 0, 0, 3); // parent ID
   }
 
   /** For finagle compatibility */
@@ -282,9 +264,9 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 0) // empty annotations
-        .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 0); // empty binary annotations
+    assertThat(bytes)
+      .containsSequence(TYPE_LIST, 0, 6, TYPE_STRUCT, 0, 0, 0, 0) // empty annotations
+      .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 0); // empty binary annotations
   }
 
   @Test
@@ -293,27 +275,27 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
-        .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 2, 'l', 'c') // key
-        .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 0) // empty value
-        .containsSequence(TYPE_I32, 0, 3, 0, 0, 0, 6) // type 6 == string
-        .containsSequence(endpointBytes);
+    assertThat(bytes)
+      .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
+      .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 2, 'l', 'c') // key
+      .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 0) // empty value
+      .containsSequence(TYPE_I32, 0, 3, 0, 0, 0, 6) // type 6 == string
+      .containsSequence(endpointBytes);
   }
 
   @Test
   public void writesEmptyServiceName() {
     span =
-        span.toBuilder()
-            .name("foo")
-            .localEndpoint(Endpoint.newBuilder().ip("127.0.0.1").build())
-            .build();
+      span.toBuilder()
+        .name("foo")
+        .localEndpoint(Endpoint.newBuilder().ip("127.0.0.1").build())
+        .build();
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(
-            ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // serviceName (empty is 32 zero bits)
+    assertThat(bytes)
+      .containsSequence(
+        ThriftField.TYPE_STRING, 0, 3, 0, 0, 0, 0); // serviceName (empty is 32 zero bits)
   }
 
   /** To match finagle */
@@ -323,17 +305,17 @@ public class V1ThriftSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(buf.toByteArray()).containsSequence(ThriftField.TYPE_BOOL, 0);
+    assertThat(bytes).containsSequence(ThriftField.TYPE_BOOL, 0);
   }
 
   @Test
   public void tagsAreBinaryAnnotations() {
     writer.write(span.toBuilder().putTag("foo", "bar").build(), buf);
 
-    assertThat(buf.toByteArray())
-        .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
-        .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 3, 'f', 'o', 'o') // key
-        .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 3, 'b', 'a', 'r') // value
-        .containsSequence(TYPE_I32, 0, 3, 0, 0, 0, 6); // type 6 == string
+    assertThat(bytes)
+      .containsSequence(TYPE_LIST, 0, 8, TYPE_STRUCT, 0, 0, 0, 1) // one binary annotation
+      .containsSequence(TYPE_STRING, 0, 1, 0, 0, 0, 3, 'f', 'o', 'o') // key
+      .containsSequence(TYPE_STRING, 0, 2, 0, 0, 0, 3, 'b', 'a', 'r') // value
+      .containsSequence(TYPE_I32, 0, 3, 0, 0, 0, 6); // type 6 == string
   }
 }

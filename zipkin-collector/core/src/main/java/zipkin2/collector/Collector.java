@@ -1,34 +1,36 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.collector;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import zipkin2.Callback;
 import zipkin2.Span;
 import zipkin2.SpanBytesDecoderDetector;
 import zipkin2.codec.BytesDecoder;
+import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.storage.StorageComponent;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINE;
+import static zipkin2.Call.propagateIfFatal;
 
 /**
  * This component takes action on spans received from a transport. This includes deserializing,
@@ -39,18 +41,25 @@ import static java.util.logging.Level.FINE;
  * threads.
  */
 public class Collector { // not final for mock
+  static final Callback<Void> NOOP_CALLBACK = new Callback<Void>() {
+    @Override public void onSuccess(Void value) {
+    }
+
+    @Override public void onError(Throwable t) {
+    }
+  };
 
   /** Needed to scope this to the correct logging category */
   public static Builder newBuilder(Class<?> loggingClass) {
     if (loggingClass == null) throw new NullPointerException("loggingClass == null");
-    return new Builder(Logger.getLogger(loggingClass.getName()));
+    return new Builder(LoggerFactory.getLogger(loggingClass.getName()));
   }
 
   public static final class Builder {
     final Logger logger;
-    StorageComponent storage = null;
-    CollectorSampler sampler = null;
-    CollectorMetrics metrics = null;
+    StorageComponent storage;
+    CollectorSampler sampler;
+    CollectorMetrics metrics;
 
     Builder(Logger logger) {
       this.logger = logger;
@@ -97,47 +106,86 @@ public class Collector { // not final for mock
   }
 
   public void accept(List<Span> spans, Callback<Void> callback) {
+    accept(spans, callback, Runnable::run);
+  }
+
+  /**
+   * @param executor the executor used to enqueue the storage request.
+   *
+   * <p>Calls to get the storage component could be blocking. This ensures requests that block
+   * callers (such as http or gRPC) do not add additional load during such events.
+   */
+  public void accept(List<Span> spans, Callback<Void> callback, Executor executor) {
     if (spans.isEmpty()) {
       callback.onSuccess(null);
       return;
     }
     metrics.incrementSpans(spans.size());
 
-    List<Span> sampled = sample(spans);
-    if (sampled.isEmpty()) {
+    List<Span> sampledSpans = sample(spans);
+    if (sampledSpans.isEmpty()) {
       callback.onSuccess(null);
       return;
     }
 
+    // In order to ensure callers are not blocked, we swap callbacks when we get to the storage
+    // phase of this process. Here, we create a callback whose sole purpose is classifying later
+    // errors on this bundle of spans in the same log category. This allows people to only turn on
+    // debug logging in one place.
     try {
-      record(sampled, acceptSpansCallback(sampled));
+      executor.execute(new StoreSpans(sampledSpans));
       callback.onSuccess(null);
-    } catch (RuntimeException e) {
-      callback.onError(errorStoringSpans(sampled, e));
-      return;
+    } catch (Throwable unexpected) { // ensure if a future is supplied we always set value or error
+      callback.onError(unexpected);
+      throw unexpected;
     }
   }
 
+  /** Like {@link #acceptSpans(byte[], BytesDecoder, Callback)}, except using a byte buffer. */
+  public void acceptSpans(ByteBuffer encoded, SpanBytesDecoder decoder, Callback<Void> callback,
+    Executor executor) {
+    List<Span> spans;
+    try {
+      spans = decoder.decodeList(encoded);
+    } catch (RuntimeException | Error e) {
+      handleDecodeError(e, callback);
+      return;
+    }
+    accept(spans, callback, executor);
+  }
+
+  /**
+   * Before calling this, call {@link CollectorMetrics#incrementMessages()}, and {@link
+   * CollectorMetrics#incrementBytes(int)}. Do not call any other metrics callbacks as those are
+   * handled internal to this method.
+   *
+   * @param serialized not empty message
+   */
   public void acceptSpans(byte[] serialized, Callback<Void> callback) {
     BytesDecoder<Span> decoder;
     try {
       decoder = SpanBytesDecoderDetector.decoderForListMessage(serialized);
-    } catch (RuntimeException e) {
-      metrics.incrementBytes(serialized.length);
-      callback.onError(errorReading(e));
+    } catch (RuntimeException | Error e) {
+      handleDecodeError(e, callback);
       return;
     }
     acceptSpans(serialized, decoder, callback);
   }
 
+  /**
+   * Before calling this, call {@link CollectorMetrics#incrementMessages()}, and {@link
+   * CollectorMetrics#incrementBytes(int)}. Do not call any other metrics callbacks as those are
+   * handled internal to this method.
+   *
+   * @param serializedSpans not empty message
+   */
   public void acceptSpans(
-      byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
-    metrics.incrementBytes(serializedSpans.length);
+    byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
     List<Span> spans;
     try {
       spans = decodeList(decoder, serializedSpans);
-    } catch (RuntimeException e) {
-      callback.onError(errorReading(e));
+    } catch (RuntimeException | Error e) {
+      handleDecodeError(e, callback);
       return;
     }
     accept(spans, callback);
@@ -145,24 +193,16 @@ public class Collector { // not final for mock
 
   List<Span> decodeList(BytesDecoder<Span> decoder, byte[] serialized) {
     List<Span> out = new ArrayList<>();
-    if (!decoder.decodeList(serialized, out)) return Collections.emptyList();
+    decoder.decodeList(serialized, out);
     return out;
   }
 
-  void record(List<Span> sampled, Callback<Void> callback) {
-    storage.spanConsumer().accept(sampled).enqueue(callback);
+  void store(List<Span> sampledSpans, Callback<Void> callback) {
+    storage.spanConsumer().accept(sampledSpans).enqueue(callback);
   }
 
   String idString(Span span) {
     return span.traceId() + "/" + span.id();
-  }
-
-  boolean shouldWarn() {
-    return logger.isLoggable(FINE);
-  }
-
-  void warn(String message, Throwable e) {
-    logger.log(FINE, message, e);
   }
 
   List<Span> sample(List<Span> input) {
@@ -178,60 +218,71 @@ public class Collector { // not final for mock
     return sampled;
   }
 
-  Callback<Void> acceptSpansCallback(final List<Span> spans) {
-    return new Callback<Void>() {
-      @Override
-      public void onSuccess(Void value) {}
+  class StoreSpans implements Callback<Void>, Runnable {
+    final List<Span> spans;
 
-      @Override
-      public void onError(Throwable t) {
-        errorStoringSpans(spans, t);
-      }
+    StoreSpans(List<Span> spans) {
+      this.spans = spans;
+    }
 
-      @Override
-      public String toString() {
-        return appendSpanIds(spans, new StringBuilder("AcceptSpans(")).append(")").toString();
+    @Override public void run() {
+      try {
+        store(spans, this);
+      } catch (RuntimeException | Error e) {
+        // While unexpected, invoking the storage command could raise an error synchronously. When
+        // that's the case, we wouldn't have invoked callback.onSuccess, so we need to handle the
+        // error here.
+        onError(e);
       }
-    };
+    }
+
+    @Override public void onSuccess(Void value) {
+    }
+
+    @Override public void onError(Throwable t) {
+      handleStorageError(spans, t, NOOP_CALLBACK);
+    }
+
+    @Override public String toString() {
+      return appendSpanIds(spans, new StringBuilder("StoreSpans(")) + ")";
+    }
   }
 
-  RuntimeException errorReading(Throwable e) {
-    return errorReading("Cannot decode spans", e);
-  }
-
-  RuntimeException errorReading(String message, Throwable e) {
+  void handleDecodeError(Throwable e, Callback<Void> callback) {
     metrics.incrementMessagesDropped();
-    return doError(message, e);
+    handleError(e, "Cannot decode spans"::toString, callback);
   }
 
   /**
    * When storing spans, an exception can be raised before or after the fact. This adds context of
    * span ids to give logs more relevance.
    */
-  RuntimeException errorStoringSpans(List<Span> spans, Throwable e) {
+  void handleStorageError(List<Span> spans, Throwable e, Callback<Void> callback) {
     metrics.incrementSpansDropped(spans.size());
     // The exception could be related to a span being huge. Instead of filling logs,
     // print trace id, span id pairs
-    StringBuilder msg = appendSpanIds(spans, new StringBuilder("Cannot store spans "));
-    return doError(msg.toString(), e);
+    handleError(e, () -> appendSpanIds(spans, new StringBuilder("Cannot store spans ")), callback);
   }
 
-  RuntimeException doError(String message, Throwable e) {
+  void handleError(Throwable e, Supplier<String> defaultLogMessage, Callback<Void> callback) {
+    propagateIfFatal(e);
+    callback.onError(e);
+    if (!logger.isDebugEnabled()) return;
+
     String error = e.getMessage() != null ? e.getMessage() : "";
-    if (e instanceof RuntimeException
-        && (error.startsWith("Malformed") || error.startsWith("Truncated"))) {
-      if (shouldWarn()) warn(error, e);
-      return (RuntimeException) e;
-    } else {
-      if (shouldWarn()) {
-        message = format("%s due to %s(%s)", message, e.getClass().getSimpleName(), error);
-        warn(message, e);
-      }
-      return new RuntimeException(message, e);
+    // We have specific code that customizes log messages. Use this when the case.
+    if (error.startsWith("Malformed") || error.startsWith("Truncated")) {
+      logger.debug(error, e);
+    } else { // otherwise, beautify the message
+      String message =
+        format("%s due to %s(%s)", defaultLogMessage.get(), e.getClass().getSimpleName(), error);
+      logger.debug(message, e);
     }
   }
 
-  StringBuilder appendSpanIds(List<Span> spans, StringBuilder message) {
+  // TODO: this logic needs to be redone as service names are more important than span IDs. Also,
+  // span IDs repeat between client and server!
+  String appendSpanIds(List<Span> spans, StringBuilder message) {
     message.append("[");
     int i = 0;
     Iterator<Span> iterator = spans.iterator();
@@ -241,6 +292,6 @@ public class Collector { // not final for mock
     }
     if (iterator.hasNext()) message.append("...");
 
-    return message.append("]");
+    return message.append("]").toString();
   }
 }

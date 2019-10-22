@@ -1,39 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Licensed to the Apache Software Foundation (ASF) under one or more
-    contributor license agreements.  See the NOTICE file distributed with
-    this work for additional information regarding copyright ownership.
-    The ASF licenses this file to You under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with
-    the License.  You may obtain a copy of the License at
+    Copyright 2015-2019 The OpenZipkin Authors
 
-        http://www.apache.org/licenses/LICENSE-2.0
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>org.apache.zipkin</groupId>
-  <artifactId>parent</artifactId>
-  <version>2.13.0-SNAPSHOT</version>
+  <groupId>io.zipkin</groupId>
+  <artifactId>zipkin-parent</artifactId>
+  <version>2.18.4-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <modules>
     <module>zipkin</module>
-    <module>zipkin-ui</module>
-    <module>zipkin-lens</module>
+    <module>zipkin-tests</module>
     <module>zipkin-junit</module>
     <module>benchmarks</module>
     <module>zipkin-storage</module>
     <module>zipkin-collector</module>
-    <module>zipkin-autoconfigure</module>
     <module>zipkin-server</module>
   </modules>
 
@@ -48,60 +43,60 @@
 
     <!-- override to set exclusions per-project -->
     <errorprone.args />
-    <errorprone.version>2.3.2</errorprone.version>
+    <errorprone.version>2.3.3</errorprone.version>
 
     <main.basedir>${project.basedir}</main.basedir>
 
-    <armeria.version>0.84.0</armeria.version>
-    <!-- This is from armeria, but be careful to avoid >= v20 apis -->
-    <guava.version>27.0.1-jre</guava.version>
+    <!-- This allows you to test feature branches with jitpack -->
+    <armeria.groupId>com.linecorp.armeria</armeria.groupId>
+    <armeria.version>0.94.0</armeria.version>
+    <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
+    <guava.version>28.1-jre</guava.version>
 
     <!-- only used for proto interop testing -->
-    <wire.version>3.0.0-alpha01</wire.version>
+    <wire.version>3.0.0</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
-    <brave.version>5.6.3</brave.version>
-    <cassandra-driver-core.version>3.7.1</cassandra-driver-core.version>
-    <okhttp.version>3.14.0</okhttp.version>
-    <okio.version>1.17.3</okio.version>
-    <!-- important to keep this in sync with spring-boot-dependencies -->
-    <jooq.version>3.11.10</jooq.version>
-    <micrometer.version>1.1.4</micrometer.version>
-    <spring-boot.version>2.1.4.RELEASE</spring-boot.version>
+    <cassandra-driver-core.version>3.7.2</cassandra-driver-core.version>
+    <jooq.version>3.12.1</jooq.version>
+    <micrometer.version>1.3.0</micrometer.version>
+    <spring-boot.version>2.2.0.RELEASE</spring-boot.version>
     <!-- MySQL connector is GPL, even if it has an OSS exception.
          https://www.mysql.com/about/legal/licensing/foss-exception/
 
          MariaDB has a friendlier license, LGPL, which is less scary in audits.
     -->
-    <mariadb-java-client.version>2.4.1</mariadb-java-client.version>
+    <mariadb-java-client.version>2.4.4</mariadb-java-client.version>
     <!-- Java 8 dep, which is ok as zipkin-mysql is Java 8 anyway -->
-    <HikariCP.version>3.3.1</HikariCP.version>
-    <log4j.version>2.11.2</log4j.version>
+    <HikariCP.version>3.4.1</HikariCP.version>
+    <slf4j.version>1.7.28</slf4j.version>
 
     <junit.version>4.12</junit.version>
-    <powermock.version>2.0.0</powermock.version>
-    <!-- Up to v2.25.7 of mockito has a conflict https://github.com/mockito/mockito/issues/1606
+    <junit.jupiter.version>5.5.2</junit.jupiter.version>
+    <powermock.version>2.0.2</powermock.version>
+    <!-- Up to v2.27.0 of mockito has a conflict https://github.com/mockito/mockito/issues/1606
     java.lang.NoSuchMethodError: net.bytebuddy.dynamic.loading.MultipleParentClassLoader$Builder.appendMostSpecific(Ljava/util/Collection;)Lnet/bytebuddy/dynamic/loading/MultipleParentClassLoader$Builder
     -->
     <mockito.version>2.23.4</mockito.version>
-    <assertj.version>3.12.2</assertj.version>
+    <assertj.version>3.13.2</assertj.version>
+    <awaitility.version>4.0.1</awaitility.version>
     <hamcrest.version>1.3</hamcrest.version>
-    <testcontainers.version>1.11.1</testcontainers.version>
+    <testcontainers.version>1.12.2</testcontainers.version>
 
-    <auto-value.version>1.6.3</auto-value.version>
-    <animal-sniffer-maven-plugin.version>1.17</animal-sniffer-maven-plugin.version>
-    <maven-compiler-plugin.version>3.8.0</maven-compiler-plugin.version>
-    <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
+    <auto-value.version>1.7</auto-value.version>
+    <animal-sniffer-maven-plugin.version>1.18</animal-sniffer-maven-plugin.version>
+    <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
     <maven-deploy-plugin.version>3.0.0-M1</maven-deploy-plugin.version>
-    <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
-    <maven-javadoc-plugin.version>3.1.0</maven-javadoc-plugin.version>
-    <license-maven-plugin.version>3.0</license-maven-plugin.version>
-    <maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+    <maven-install-plugin.version>3.0.0-M1</maven-install-plugin.version>
     <maven-release-plugin.version>2.5.3</maven-release-plugin.version>
+    <maven-source-plugin.version>3.1.0</maven-source-plugin.version>
+    <maven-javadoc-plugin.version>3.1.1</maven-javadoc-plugin.version>
+    <license-maven-plugin.version>3.0</license-maven-plugin.version>
+    <maven-jar-plugin.version>3.1.2</maven-jar-plugin.version>
     <maven-shade-plugin.version>3.2.1</maven-shade-plugin.version>
     <maven-failsafe-plugin.version>3.0.0-M3</maven-failsafe-plugin.version>
     <maven-enforcer-plugin.version>3.0.0-M2</maven-enforcer-plugin.version>
-    <zipkin-layout-factory.version>0.0.4</zipkin-layout-factory.version>
+    <git-commit-id.version>3.0.1</git-commit-id.version>
   </properties>
 
   <name>Zipkin (Parent)</name>
@@ -153,7 +148,6 @@
     <system>Github</system>
     <url>https://github.com/openzipkin/zipkin/issues</url>
   </issueManagement>
-
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -169,12 +163,12 @@
       </dependency>
 
       <dependency>
-        <groupId>com.linecorp.armeria</groupId>
+        <groupId>${armeria.groupId}</groupId>
         <artifactId>armeria-spring-boot-autoconfigure</artifactId>
         <version>${armeria.version}</version>
         <exclusions>
           <exclusion>
-            <groupId>com.linecorp.armeria</groupId>
+            <groupId>${armeria.groupId}</groupId>
             <artifactId>armeria-logback</artifactId>
           </exclusion>
           <exclusion>
@@ -184,26 +178,12 @@
         </exclusions>
       </dependency>
 
-      <dependency>
-        <groupId>com.linecorp.armeria</groupId>
-        <artifactId>armeria-tomcat</artifactId>
-        <version>${armeria.version}</version>
-      </dependency>
-
       <!-- Makes sure spring doesn't eagerly bind tomcat or slf4j -->
       <dependency>
         <groupId>org.springframework.boot</groupId>
-        <artifactId>spring-boot-starter-web</artifactId>
+        <artifactId>spring-boot-starter</artifactId>
         <version>${spring-boot.version}</version>
         <exclusions>
-          <exclusion>
-            <groupId>org.hibernate.validator</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-          <exclusion>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-tomcat</artifactId>
-          </exclusion>
           <exclusion>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-logging</artifactId>
@@ -224,30 +204,6 @@
       <!-- End spring-boot-dependencies overrides -->
 
       <dependency>
-        <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>okhttp</artifactId>
-        <version>${okhttp.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.squareup.okhttp3</groupId>
-        <artifactId>mockwebserver</artifactId>
-        <version>${okhttp.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.squareup.okio</groupId>
-        <artifactId>okio</artifactId>
-        <version>${okio.version}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>com.squareup.moshi</groupId>
-        <artifactId>moshi</artifactId>
-        <version>1.8.0</version>
-      </dependency>
-
-      <dependency>
         <groupId>com.google.auto.value</groupId>
         <artifactId>auto-value-annotations</artifactId>
         <version>${auto-value.version}</version>
@@ -259,36 +215,24 @@
       </dependency>
 
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-api</artifactId>
-        <version>${log4j.version}</version>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>${slf4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-core</artifactId>
-        <version>${log4j.version}</version>
+        <groupId>org.slf4j</groupId>
+        <artifactId>jul-to-slf4j</artifactId>
+        <version>${slf4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-jul</artifactId>
-        <version>${log4j.version}</version>
-      </dependency>
-      <!-- used by our non-spring boot tests who have a slf4j dependency -->
-      <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-slf4j-impl</artifactId>
-        <version>${log4j.version}</version>
-      </dependency>
-      <!-- used by zipkin-server and zipkin-autoconfigure due to Spring Boot using slf4j -->
-      <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-to-slf4j</artifactId>
-        <version>${log4j.version}</version>
+        <groupId>org.slf4j</groupId>
+        <artifactId>log4j-over-slf4j</artifactId>
+        <version>${slf4j.version}</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.logging.log4j</groupId>
-        <artifactId>log4j-1.2-api</artifactId>
-        <version>${log4j.version}</version>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-simple</artifactId>
+        <version>${slf4j.version}</version>
       </dependency>
 
       <!-- for testing flink -->
@@ -312,9 +256,44 @@
       </dependency>
 
       <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.junit.vintage</groupId>
+        <artifactId>junit-vintage-engine</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+
+      <!--
+      Current versions of JUnit5 provide the above junit-jupiter artifact for convenience but we may
+      still have transitive dependencies on these older artifacts and have to make sure they're all
+      using the same version.
+      -->
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-api</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.junit.jupiter</groupId>
+        <artifactId>junit-jupiter-engine</artifactId>
+        <version>${junit.jupiter.version}</version>
+      </dependency>
+
+      <dependency>
         <groupId>org.assertj</groupId>
         <artifactId>assertj-core</artifactId>
         <version>${assertj.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>org.awaitility</groupId>
+        <artifactId>awaitility</artifactId>
+        <version>${awaitility.version}</version>
       </dependency>
 
       <dependency>
@@ -347,24 +326,10 @@
         <version>${HikariCP.version}</version>
       </dependency>
 
-      <!-- Don't bring in brave's transitive dep on zipkin -->
-      <dependency>
-        <groupId>io.zipkin.brave</groupId>
-        <artifactId>brave</artifactId>
-        <version>${brave.version}</version>
-        <exclusions>
-          <!-- TODO: this exclusion will drift when brave switches to apache zipkin -->
-          <exclusion>
-            <groupId>io.zipkin.zipkin2</groupId>
-            <artifactId>zipkin</artifactId>
-          </exclusion>
-        </exclusions>
-      </dependency>
-
       <dependency>
         <groupId>io.zipkin.proto3</groupId>
         <artifactId>zipkin-proto3</artifactId>
-        <version>0.1.0</version>
+        <version>0.2.2</version>
       </dependency>
       <dependency>
         <groupId>com.squareup.wire</groupId>
@@ -382,6 +347,18 @@
     </dependency>
 
     <dependency>
+      <groupId>org.junit.jupiter</groupId>
+      <artifactId>junit-jupiter</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.junit.vintage</groupId>
+      <artifactId>junit-vintage-engine</artifactId>
+      <scope>test</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
       <scope>test</scope>
@@ -395,9 +372,9 @@
         <plugin>
           <groupId>io.takari</groupId>
           <artifactId>maven</artifactId>
-          <version>0.7.5</version>
+          <version>0.7.6</version>
           <configuration>
-            <maven>3.6.1</maven>
+            <maven>3.6.2</maven>
           </configuration>
         </plugin>
 
@@ -416,18 +393,13 @@
         </plugin>
 
         <plugin>
-          <groupId>org.springframework.boot</groupId>
-          <artifactId>spring-boot-maven-plugin</artifactId>
-          <version>${spring-boot.version}</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>repackage</goal>
-              </goals>
-            </execution>
-          </executions>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${maven-javadoc-plugin.version}</version>
           <configuration>
-            <mainClass>${start-class}</mainClass>
+            <failOnError>false</failOnError>
+            <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
+            <!-- hush pedantic warnings: we don't put param and return on everything! -->
+            <doclint>none</doclint>
           </configuration>
         </plugin>
 
@@ -451,7 +423,7 @@
         <plugin>
           <groupId>org.apache.felix</groupId>
           <artifactId>maven-bundle-plugin</artifactId>
-          <version>4.1.0</version>
+          <version>4.2.1</version>
           <configuration>
             <obrRepository>NONE</obrRepository>
             <instructions>
@@ -496,24 +468,6 @@
           </configuration>
         </plugin>
 
-        <plugin>
-          <groupId>net.orfjackal.retrolambda</groupId>
-          <artifactId>retrolambda-maven-plugin</artifactId>
-          <version>2.5.6</version>
-          <executions>
-            <execution>
-              <goals>
-                <goal>process-main</goal>
-              </goals>
-              <configuration>
-                <target>${main.java.version}</target>
-                <fork>true</fork>
-                <quiet>true</quiet>
-              </configuration>
-            </execution>
-          </executions>
-        </plugin>
-
         <!-- The below plugins compile protobuf stubs in the indicated source tree -->
         <plugin>
           <artifactId>maven-dependency-plugin</artifactId>
@@ -556,12 +510,8 @@
     </pluginManagement>
 
     <plugins>
-      <!-- Explicitly disable when using java version 1.8+ or not using java -->
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
-      </plugin>
-
+      <!-- Top-level to ensure our server can use JDK 1.8
+             (by checking we don't accidentally use later apis) -->
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>animal-sniffer-maven-plugin</artifactId>
@@ -627,27 +577,57 @@
           <mapping>
             <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
             <java>SLASHSTAR_STYLE</java>
+            <kt>SLASHSTAR_STYLE</kt>
+            <jsx>SLASHSTAR_STYLE</jsx>
+            <bnd>SCRIPT_STYLE</bnd>
+            <ejs>XML_STYLE</ejs>
+            <scss>DOUBLESLASH_STYLE</scss>
           </mapping>
           <excludes>
+            <exclude>**/simplelogger.properties</exclude>
             <exclude>.travis.yml</exclude>
+            <exclude>**/docker*.yml</exclude>
+            <exclude>**/*.dockerignore</exclude>
             <exclude>.editorconfig</exclude>
             <exclude>.gitattributes</exclude>
             <exclude>.gitignore</exclude>
             <exclude>.mvn/**</exclude>
             <exclude>mvnw*</exclude>
             <exclude>etc/header.txt</exclude>
+            <exclude>docker/**/*_profile</exclude>
+            <exclude>hooks/**</exclude>
+            <exclude>**/nginx.conf</exclude>
             <exclude>**/.idea/**</exclude>
-            <exclude>LICENSE</exclude>
+            <exclude>**/node_modules/**</exclude>
+            <exclude>**/.babelrc</exclude>
+            <exclude>**/.bowerrc</exclude>
+            <exclude>**/.editorconfig</exclude>
+            <exclude>**/.eslintrc</exclude>
+            <exclude>**/.eslintrc</exclude>
+            <exclude>**/.eslintrc.js</exclude>
+            <exclude>**/testdata/**/*.json</exclude>
+            <exclude>**/test/data/**/*.json</exclude>
+            <exclude>LICENSE</exclude>&gt;
             <exclude>**/*.md</exclude>
-            <exclude>bnd.bnd</exclude>
-            <exclude>apache-cassandra-*/**</exclude>
-            <exclude>elasticsearch-*/**</exclude>
+            <exclude>**/src/main/resources/zipkin.txt</exclude>
+            <exclude>**/src/main/resources/*.yml</exclude>
+            <exclude>**/spring.factories</exclude>
+            <!-- Cassandra integration tests break when license headers are present -->
+            <exclude>**/src/main/resources/*.cql</exclude>
             <exclude>kafka_*/**</exclude>
+            <exclude>**/nohup.out</exclude>
             <exclude>src/test/resources/**</exclude>
-            <exclude>src/main/resources/**</exclude>
+            <exclude>**/generated/**</exclude>
           </excludes>
           <strictCheck>true</strictCheck>
         </configuration>
+        <dependencies>
+          <dependency>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin-git</artifactId>
+            <version>${license-maven-plugin.version}</version>
+          </dependency>
+        </dependencies>
         <executions>
           <execution>
             <goals>
@@ -673,7 +653,7 @@
       <plugin>
         <groupId>io.zipkin.centralsync-maven-plugin</groupId>
         <artifactId>centralsync-maven-plugin</artifactId>
-        <version>0.1.0</version>
+        <version>0.1.1</version>
         <configuration>
           <packageName>zipkin</packageName>
         </configuration>
@@ -691,7 +671,8 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <version>[1.8,12)</version>
+                  <!-- don't JDK 12 until https://github.com/google/error-prone/issues/1106 -->
+                  <version>[11,12)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -703,47 +684,15 @@
 
   <profiles>
     <profile>
-      <id>error-prone-1.8</id>
+      <id>include-lens</id>
       <activation>
-        <jdk>1.8</jdk>
-        <activeByDefault>false</activeByDefault>
+        <property>
+          <name>!skipLens</name>
+        </property>
       </activation>
-      <build>
-        <plugins>
-          <plugin>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <executions>
-              <execution>
-                <!-- only use errorprone on main source tree -->
-                <id>default-compile</id>
-                <phase>compile</phase>
-                <goals>
-                  <goal>compile</goal>
-                </goals>
-                <configuration>
-                  <compilerId>javac-with-errorprone</compilerId>
-                  <forceJavacCompilerUse>true</forceJavacCompilerUse>
-                  <compilerArgs>
-                    <arg>${errorprone.args}</arg>
-                  </compilerArgs>
-                </configuration>
-              </execution>
-            </executions>
-            <dependencies>
-              <dependency>
-                <groupId>org.codehaus.plexus</groupId>
-                <artifactId>plexus-compiler-javac-errorprone</artifactId>
-                <version>2.8.5</version>
-              </dependency>
-              <dependency>
-                <groupId>com.google.errorprone</groupId>
-                <artifactId>error_prone_core</artifactId>
-                <version>${errorprone.version}</version>
-              </dependency>
-            </dependencies>
-          </plugin>
-        </plugins>
-      </build>
+      <modules>
+        <module>zipkin-lens</module>
+      </modules>
     </profile>
     <profile>
       <id>error-prone-9+</id>

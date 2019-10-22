@@ -1,29 +1,24 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage;
 
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
 import zipkin2.Annotation;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
@@ -186,7 +181,8 @@ public final class QueryRequest {
     }
 
     /**
-     * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error"
+     * Corresponds to query parameter "annotationQuery". Ex. "http.method=GET and error". Parameter keys and values are
+     * trimmed.
      *
      * @see QueryRequest#annotationQueryString()
      */
@@ -196,10 +192,14 @@ public final class QueryRequest {
       for (String ann : annotationQuery.split(" and ", 100)) {
         int idx = ann.indexOf('=');
         if (idx == -1) {
-          map.put(ann, "");
+          // put the annotation only if there is no key present already, prevents overriding more specific tags
+          ann = ann.trim();
+          if (!map.containsKey(ann)) map.put(ann, "");
         } else {
+          // tag
           String[] keyValue = ann.split("=", 2);
-          map.put(ann.substring(0, idx), keyValue.length < 2 ? "" : ann.substring(idx + 1));
+          // tags are put regardless, i.e. last tag wins
+          map.put(ann.substring(0, idx).trim(), keyValue.length < 2 ? "" : ann.substring(idx + 1).trim());
         }
       }
       return annotationQuery(map);

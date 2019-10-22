@@ -7,7 +7,7 @@ and the server listens on port 9411.
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
 
 ```bash
 $ curl -sSL https://zipkin.io/quickstart.sh | bash -s
@@ -25,8 +25,7 @@ The following endpoints are defined under the base url http://your_host:9411
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
 * /metrics - Includes collector metrics broken down by transport type
-
-There are more [built-in endpoints](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html) provided by Spring Boot, such as `/metrics`. To comprehensively list endpoints, `GET /mappings`.
+* /prometheus - Prometheus scrape endpoint
 
 The [legacy /api/v1 Api](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
 HTTP api via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
@@ -58,8 +57,8 @@ Under the covers, the server uses [Spring Boot - Logback integration](http://doc
 
 ## Metrics
 
-Metrics are exported to the path `/metrics` and extend [defaults reported by spring-boot](https://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-metrics.html).
-They are also exported to the path `/prometheus`.
+Collector Metrics are exported to the path `/metrics`. These and additional metrics are exported
+to the path `/prometheus`.
 
 ### Example Prometheus configuration
 Here's an example `/prometheus` configuration, using the Prometheus
@@ -125,7 +124,7 @@ When the UI loads, it reads default configuration from the `/config.json` endpoi
 Attribute | Property | Description
 --- | --- | ---
 environment | zipkin.ui.environment | The value here becomes a label in the top-right corner. Not required.
-defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 3600000 (1 hour in millis).
+defaultLookback | zipkin.ui.default-lookback | Default duration in millis to look back when finding traces. Affects the "Start time" element in the UI. Defaults to 900000 (15 minutes in millis).
 searchEnabled | zipkin.ui.search-enabled | If the Find Traces screen is enabled. Defaults to true.
 queryLimit | zipkin.ui.query-limit | Default limit for Find Traces. Defaults to 10.
 instrumented | zipkin.ui.instrumented | Which sites this Zipkin UI covers. Regex syntax. e.g. `http:\/\/example.com\/.*` Defaults to match all websites (`.*`).
@@ -154,8 +153,30 @@ Defaults to true
 * `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 24 hours (two daily buckets: one for today and one for yesterday)
 * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
 * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
-* `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint
-* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr)
+* `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint; Tag keys should be comma separated e.g. "instance_id,user_id,env"
+* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr) 
+
+### In-Memory Storage
+Zipkin's [In-Memory Storage](../zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) holds all
+data in memory, purging older data upon a span limit. It applies when `STORAGE_TYPE` is unset or
+set to the value `mem`.
+
+    * `MEM_MAX_SPANS`: Oldest traces (and their spans) will be purged first when this limit is exceeded. Default 500000
+
+Example usage:
+```bash
+$ java -jar zipkin.jar
+```
+
+Note: this storage component was primarily developed for testing and as a means to get Zipkin server
+up and running quickly without external dependencies. It is not viable for high work loads. That
+said, if you encounter out-of-memory errors, try decreasing `MEM_MAX_SPANS` or increasing the heap
+size (-Xmx).
+
+Exampled of doubling the amount of spans held in memory:
+```bash
+$ MEM_MAX_SPANS=1000000 java -Xmx1G -jar zipkin.jar
+```
 
 ### Cassandra Storage
 Zipkin's [Cassandra storage component](../zipkin-storage/cassandra)
@@ -183,18 +204,15 @@ $ STORAGE_TYPE=cassandra3 java -jar zipkin.jar --logging.level.zipkin=trace --lo
 
 ### Elasticsearch Storage
 Zipkin's [Elasticsearch storage component](../zipkin-storage/elasticsearch)
-supports versions 2-6.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
+supports versions 5-7.x and applies when `STORAGE_TYPE` is set to `elasticsearch`
 
 The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
 
     * `ES_HOSTS`: A comma separated list of elasticsearch base urls to connect to ex. http://host:9200.
                   Defaults to "http://localhost:9200".
-    * `ES_PIPELINE`: Only valid when the destination is Elasticsearch 5+. Indicates the ingest
-                     pipeline used before spans are indexed. No default.
+    * `ES_PIPELINE`: Indicates the ingest pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
                     Elasticsearch Api. Defaults to 10000 (10 seconds)
-    * `ES_MAX_REQUESTS`: Only valid when the transport is http. Sets maximum in-flight requests from
-                         this process to any Elasticsearch host. Defaults to 64.
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_DATE_SEPARATOR`: The date separator to use when generating daily index names. Defaults to '-'.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
@@ -223,6 +241,29 @@ To log Elasticsearch api requests:
 ```bash
 $ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
 ```
+
+#### Using a custom Key Store or Trust Store (SSL)
+If your Elasticsearch endpoint customized SSL configuration (for example self-signed) certificates,
+you can use any of the following [subset of JSSE properties](https://docs.oracle.com/javase/8/docs/technotes/guides/security/jsse/JSSERefGuide.html#T6) to connect.
+
+ * javax.net.ssl.keyStore
+ * javax.net.ssl.keyStorePassword
+ * javax.net.ssl.keyStoreType
+ * javax.net.ssl.trustStore
+ * javax.net.ssl.trustStorePassword
+ * javax.net.ssl.trustStoreType
+
+Usage example:
+```bash
+$ JAVA_OPTS='-Djavax.net.ssl.keyStore=keystore.p12 -Djavax.net.ssl.keyStorePassword=keypassword -Djavax.net.ssl.keyStoreType=PKCS12 -Djavax.net.ssl.trustStore=truststore.p12 -Djavax.net.ssl.trustStorePassword=trustpassword -Djavax.net.ssl.trustStoreType=PKCS12'
+$ STORAGE_TYPE=elasticsearch java $JAVA_OPTS -jar zipkin.jar
+```
+
+Under the scenes, these map to properties prefixed `zipkin.storage.elasticsearch.ssl.`, which affect
+the Armeria client used to connect to Elasticsearch.
+
+The above properties allow the most common SSL setup to work out of box. If you need more
+customization, please make a comment in [this issue](https://github.com/openzipkin/zipkin/issues/2774).
 
 ### Legacy (v1) storage components
 The following components are no longer encouraged, but exist to help aid
@@ -268,6 +309,17 @@ Example usage:
 $ STORAGE_TYPE=cassandra java -jar zipkin.jar
 ```
 
+### Throttled Storage (Experimental)
+These settings can be used to help tune the rate at which Zipkin flushes data to another, underlying
+`StorageComponent` (such as Elasticsearch):
+
+    * `STORAGE_THROTTLE_ENABLED`: Enables throttling
+    * `STORAGE_THROTTLE_MIN_CONCURRENCY`: Minimum number of Threads to use for writing to storage.
+    * `STORAGE_THROTTLE_MAX_CONCURRENCY`: Maximum number of Threads to use for writing to storage.
+    * `STORAGE_THROTTLE_MAX_QUEUE_SIZE`: How many messages to buffer while all Threads are writing data before abandoning a message (0 = no buffering).
+
+As this feature is experimental, it is not recommended to run this in production environments.
+
 #### Service and Span names query
 The [Zipkin Api](https://zipkin.io/zipkin-api/#/default/get_services) does not include
 a parameter for how far back to look for service or span names. In order
@@ -281,11 +333,37 @@ The HTTP collector supports the following configuration:
 
 Property | Environment Variable | Description
 --- | --- | ---
-`zipkin.collector.http.enabled` | `HTTP_COLLECTOR_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
+`zipkin.collector.http.enabled` | `COLLECTOR_HTTP_ENABLED` | `false` disables the HTTP collector. Defaults to `true`.
 
 ### Scribe (Legacy) Collector
-A collector supporting Scribe is available as an external module. See
-[zipkin-autoconfigure/collector-scribe](../zipkin-autoconfigure/collector-scribe/).
+A collector supporting Scribe is enabled when `COLLECTOR_SCRIBE_ENABLED=true`. New
+sites are discouraged from using this collector as Scribe is an archived
+technology.
+
+Environment Variable | Property | Description
+--- | --- | ---
+`COLLECTOR_PORT` | `zipkin.collector.scribe.port` | The port to listen for thrift RPC scribe requests. Defaults to 9410
+`SCRIBE_CATEGORY` | `zipkin.collector.scribe.category` | Category zipkin spans will be consumed from. Defaults to `zipkin`
+
+
+### ActiveMQ Collector
+The [ActiveMQ Collector](../zipkin-collector/activemq) is enabled when `ACTIVEMQ_URL` is set to a v5.x broker. The following settings apply in this case.
+
+Environment Variable | Property | Description
+--- | --- | ---
+`COLLECTOR_ACTIVEMQ_ENABLED` | `zipkin.collector.activemq.enabled` | `false` disables the ActiveMQ collector. Defaults to `true`.
+`ACTIVEMQ_URL` | `zipkin.collector.activemq.url` | [Connection URL](https://activemq.apache.org/uri-protocols) to the ActiveMQ broker, ex. `tcp://localhost:61616` or `failover:(tcp://localhost:61616,tcp://remotehost:61616)`
+`ACTIVEMQ_QUEUE` | `zipkin.collector.activemq.queue` | Queue from which to collect span messages. Defaults to `zipkin`
+`ACTIVEMQ_CLIENT_ID_PREFIX` | `zipkin.collector.activemq.client-id-prefix` | Client ID prefix for queue consumers. Defaults to `zipkin`
+`ACTIVEMQ_CONCURRENCY` | `zipkin.collector.activemq.concurrency` | Number of concurrent span consumers. Defaults to `1`
+`ACTIVEMQ_USER` | `zipkin.collector.activemq.user` | Optional username to connect to the broker
+`ACTIVEMQ_PASSWORD`| `zipkin.collector.activemq.password` | Optional password to connect to the broker
+
+Example usage:
+
+```bash
+$ ACTIVEMQ_URL=tcp://localhost:61616 java -jar zipkin.jar
+```
 
 ### Kafka Collector
 The Kafka collector is enabled when `KAFKA_BOOTSTRAP_SERVERS` is set to
@@ -294,6 +372,7 @@ correspond to "New Consumer Configs" in [Kafka documentation](https://kafka.apac
 
 Variable | New Consumer Config | Description
 --- | --- | ---
+`COLLECTOR_KAFKA_ENABLED` | N/A | `false` disables the Kafka collector. Defaults to `true`.
 `KAFKA_BOOTSTRAP_SERVERS` | bootstrap.servers | Comma-separated list of brokers, ex. 127.0.0.1:9092. No default
 `KAFKA_GROUP_ID` | group.id | The consumer group this process is consuming on behalf of. Defaults to `zipkin`
 `KAFKA_TOPIC` | N/A | Comma-separated list of topics that zipkin spans will be consumed from. Defaults to `zipkin`
@@ -302,7 +381,8 @@ Variable | New Consumer Config | Description
 Example usage:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+    java -jar zipkin.jar
 ```
 
 #### Other Kafka consumer properties
@@ -316,7 +396,8 @@ For example, to override `auto.offset.reset`, you can set a system property name
 `zipkin.collector.kafka.overrides.auto.offset.reset`:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
+    java -Dzipkin.collector.kafka.overrides.auto.offset.reset=largest -jar zipkin.jar
 ```
 
 #### Detailed examples
@@ -337,7 +418,8 @@ $ java -jar zipkin.jar
 Multiple bootstrap servers:
 
 ```bash
-$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 java -jar zipkin.jar
+$ KAFKA_BOOTSTRAP_SERVERS=broker1.local:9092,broker2.local:9092 \
+    java -jar zipkin.jar
 ```
 
 Alternate topic name(s):
@@ -350,16 +432,9 @@ $ KAFKA_BOOTSTRAP_SERVERS=127.0.0.1:9092 \
 Specifying bootstrap servers as a system property, instead of an environment variable:
 
 ```bash
-$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 -jar zipkin.jar
+$ java -Dzipkin.collector.kafka.bootstrap-servers=127.0.0.1:9092 \
+    -jar zipkin.jar
 ```
-
-#### Migration from Kafka < 0.8.1
-
-As explained [on kafka wiki](https://cwiki.apache.org/confluence/display/KAFKA/Committing+and+fetching+consumer+offsets+in+Kafka), offsets were stored in ZooKeeper. This has changed and offsets are now stored directly in Kafka. You need to update offsets in Kafka 0.10 by following the instructions.
-
-#### Kafka (Legacy) Collector
-The default collector is for Kafka 0.10.x+ brokers. You can use Kafka
-0.8 brokers via an external module. See [zipkin-autoconfigure/collector-kafka08](../zipkin-autoconfigure/collector-kafka08/).
 
 ### RabbitMQ collector
 The [RabbitMQ collector](../zipkin-collector/rabbitmq) will be enabled when the `addresses` or `uri` for the RabbitMQ server(s) is set.
@@ -369,6 +444,19 @@ Example usage:
 ```bash
 $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 ```
+
+### gRPC Collector (Experimental)
+You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED=true`. The
+`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal http (9411).
+
+
+Example usage:
+
+```bash
+$ COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
+```
+
+As this service is experimental, it is not recommended to run this in production environments.
 
 ### 128-bit trace IDs
 
@@ -434,7 +522,9 @@ See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
 To build and run the server from the currently checked out source, enter the following.
 ```bash
 # Build the server and also make its dependencies
-$ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
+$ ./mvnw -Dlicense.skip=true -DskipTests --also-make -pl zipkin-server clean install
 # Run the server
 $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
+# or Run the slim server
+$ java -jar ./zipkin-server/target/zipkin-server-*slim.jar
 ```

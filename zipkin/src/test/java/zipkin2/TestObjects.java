@@ -1,36 +1,33 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2;
 
-import java.nio.charset.Charset;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Random;
 import java.util.TimeZone;
 import java.util.concurrent.TimeUnit;
+import zipkin2.storage.QueryRequest;
 
 import static java.util.Arrays.asList;
 
+// re-declared in zipkin-tests to avoid having to move most tests out of this module
 public final class TestObjects {
-  public static final Charset UTF_8 = Charset.forName("UTF-8");
   /** Notably, the cassandra implementation has day granularity */
   public static final long DAY = TimeUnit.MILLISECONDS.convert(1, TimeUnit.DAYS);
 
-  public static final TimeZone UTC = TimeZone.getTimeZone("UTC");
+  static final TimeZone UTC = TimeZone.getTimeZone("UTC");
 
   // Use real time, as most span-stores have TTL logic which looks back several days.
   public static final long TODAY = midnightUTC(System.currentTimeMillis());
@@ -102,7 +99,6 @@ public final class TestObjects {
   // storage query units are milliseconds, while trace data is microseconds
   public static final long TRACE_DURATION = TRACE.get(0).durationAsLong() / 1000;
   public static final long TRACE_STARTTS = TRACE.get(0).timestampAsLong() / 1000;
-  public static final long TRACE_ENDTS = TRACE_STARTTS + TRACE_DURATION;
 
   static final Span.Builder spanBuilder = spanBuilder();
 
@@ -126,5 +122,9 @@ public final class TestObjects {
 
   public static Span span(long traceId) {
     return spanBuilder.traceId(Long.toHexString(traceId)).id(traceId).build();
+  }
+
+  public static QueryRequest.Builder requestBuilder() {
+    return QueryRequest.newBuilder().endTs(TODAY + DAY).lookback(DAY * 2).limit(100);
   }
 }

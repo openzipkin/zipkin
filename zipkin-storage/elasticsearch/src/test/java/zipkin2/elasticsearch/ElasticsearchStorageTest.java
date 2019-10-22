@@ -1,145 +1,198 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.elasticsearch;
 
-import java.util.concurrent.TimeUnit;
-import okhttp3.OkHttpClient;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.ResponseTimeoutException;
+import com.linecorp.armeria.client.UnprocessedRequestException;
+import com.linecorp.armeria.client.endpoint.EndpointGroupException;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
+import java.util.concurrent.RejectedExecutionException;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.CheckResult;
+import zipkin2.Component;
+import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
-import static java.util.Arrays.asList;
-import static okhttp3.tls.internal.TlsUtil.localhost;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static zipkin2.TestObjects.DAY;
 
-public class ElasticsearchStorageTest {
-  @Rule public MockWebServer es = new MockWebServer();
+class ElasticsearchStorageTest {
 
-  ElasticsearchStorage storage =
-      ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
+  static final AggregatedHttpResponse SUCCESS_RESPONSE =
+    AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
 
-  @After
-  public void close() {
+  @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
+
+  ElasticsearchStorage storage;
+
+  @BeforeEach void setUp() {
+    storage = ElasticsearchStorage.newBuilder(new LazyHttpClient() {
+      @Override public HttpClient get() {
+        return HttpClient.of(server.httpUri("/"));
+      }
+
+      @Override public String toString() {
+        return server.httpUri("/");
+      }
+    }).build();
+  }
+
+  @AfterEach void tearDown() {
     storage.close();
   }
 
-  @Test
-  public void memoizesIndexTemplate() throws Exception {
-    es.enqueue(new MockResponse().setBody("{\"version\":{\"number\":\"2.4.0\"}}"));
-    es.enqueue(new MockResponse()); // get span template
-    es.enqueue(new MockResponse()); // get dependency template
-    es.enqueue(new MockResponse()); // get tags template
-    es.enqueue(new MockResponse()); // dependencies request
-    es.enqueue(new MockResponse()); // dependencies request
+  @Test void memoizesIndexTemplate() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"6.7.0\"}}"));
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get tags template
+    server.enqueue(SUCCESS_RESPONSE); // dependencies request
+    server.enqueue(SUCCESS_RESPONSE); // dependencies request
 
     long endTs = storage.indexNameFormatter().parseDate("2016-10-02");
     storage.spanStore().getDependencies(endTs, DAY).execute();
     storage.spanStore().getDependencies(endTs, DAY).execute();
 
-    es.takeRequest(); // get version
-    es.takeRequest(); // get span template
-    es.takeRequest(); // get dependency template
-    es.takeRequest(); // get tags template
+    server.takeRequest(); // get version
+    server.takeRequest(); // get span template
+    server.takeRequest(); // get dependency template
+    server.takeRequest(); // get tags template
 
-    assertThat(es.takeRequest().getPath())
-        .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
-    assertThat(es.takeRequest().getPath())
-        .startsWith("/zipkin:dependency-2016-10-01,zipkin:dependency-2016-10-02/_search");
+    assertThat(server.takeRequest().request().path())
+      .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
+    assertThat(server.takeRequest().request().path())
+      .startsWith("/zipkin*dependency-2016-10-01,zipkin*dependency-2016-10-02/_search");
   }
 
-  String healthResponse =
-      "{\n"
-          + "  \"cluster_name\": \"elasticsearch_zipkin\",\n"
-          + "  \"status\": \"yellow\",\n"
-          + "  \"timed_out\": false,\n"
-          + "  \"number_of_nodes\": 1,\n"
-          + "  \"number_of_data_nodes\": 1,\n"
-          + "  \"active_primary_shards\": 5,\n"
-          + "  \"active_shards\": 5,\n"
-          + "  \"relocating_shards\": 0,\n"
-          + "  \"initializing_shards\": 0,\n"
-          + "  \"unassigned_shards\": 5,\n"
-          + "  \"delayed_unassigned_shards\": 0,\n"
-          + "  \"number_of_pending_tasks\": 0,\n"
-          + "  \"number_of_in_flight_fetch\": 0,\n"
-          + "  \"task_max_waiting_in_queue_millis\": 0,\n"
-          + "  \"active_shards_percent_as_number\": 50\n"
-          + "}";
+  static final AggregatedHttpResponse HEALTH_RESPONSE = AggregatedHttpResponse.of(
+    HttpStatus.OK,
+    MediaType.JSON_UTF_8,
+    "{\n"
+      + "  \"cluster_name\": \"elasticsearch_zipkin\",\n"
+      + "  \"status\": \"yellow\",\n"
+      + "  \"timed_out\": false,\n"
+      + "  \"number_of_nodes\": 1,\n"
+      + "  \"number_of_data_nodes\": 1,\n"
+      + "  \"active_primary_shards\": 5,\n"
+      + "  \"active_shards\": 5,\n"
+      + "  \"relocating_shards\": 0,\n"
+      + "  \"initializing_shards\": 0,\n"
+      + "  \"unassigned_shards\": 5,\n"
+      + "  \"delayed_unassigned_shards\": 0,\n"
+      + "  \"number_of_pending_tasks\": 0,\n"
+      + "  \"number_of_in_flight_fetch\": 0,\n"
+      + "  \"task_max_waiting_in_queue_millis\": 0,\n"
+      + "  \"active_shards_percent_as_number\": 50\n"
+      + "}");
 
-  @Test
-  public void check() {
-    es.enqueue(new MockResponse().setBody(healthResponse));
+  static final AggregatedHttpResponse RESPONSE_UNAUTHORIZED = AggregatedHttpResponse.of(
+    HttpStatus.UNAUTHORIZED,
+    MediaType.JSON_UTF_8, // below is actual message from Amazon
+    "{\"Message\":\"User: anonymous is not authorized to perform: es:ESHttpGet\"}}");
+
+  static final AggregatedHttpResponse RESPONSE_VERSION_6 = AggregatedHttpResponse.of(
+    HttpStatus.OK, MediaType.JSON_UTF_8, "{\"version\":{\"number\":\"6.7.0\"}}");
+
+  @Test void check_ensuresIndexTemplates_memozied() {
+    server.enqueue(RESPONSE_VERSION_6);
+    server.enqueue(SUCCESS_RESPONSE); // get span template
+    server.enqueue(SUCCESS_RESPONSE); // get dependency template
+    server.enqueue(SUCCESS_RESPONSE); // get tags template
+
+    server.enqueue(HEALTH_RESPONSE);
+
+    assertThat(storage.check()).isEqualTo(CheckResult.OK);
+
+    // Later checks do not redo index template requests
+    server.enqueue(HEALTH_RESPONSE);
 
     assertThat(storage.check()).isEqualTo(CheckResult.OK);
   }
 
-  @Test
-  public void check_oneHostDown() {
-    storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder().connectTimeout(100, TimeUnit.MILLISECONDS).build();
-    storage =
-        ElasticsearchStorage.newBuilder(client)
-            .hosts(asList("http://1.2.3.4:" + es.getPort(), es.url("").toString()))
-            .build();
+  // makes sure we don't NPE
+  @Test void check_ensuresIndexTemplates_fail_onNoContent() {
+    server.enqueue(SUCCESS_RESPONSE); // empty instead of version json
 
-    es.enqueue(new MockResponse().setBody(healthResponse));
-
-    assertThat(storage.check()).isEqualTo(CheckResult.OK);
+    CheckResult result = storage.check();
+    assertThat(result.ok()).isFalse();
+    assertThat(result.error().getMessage())
+      .isEqualTo("No content reading Elasticsearch version");
   }
 
-  @Test
-  public void check_ssl() throws Exception {
-    storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder()
-            .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
-            .hostnameVerifier((host, session) -> true)
-            .build();
-    es.useHttps(localhost().sslSocketFactory(), false);
+  // makes sure we don't NPE
+  @Test void check_fail_onNoContent() {
+    storage.indexTemplates = mock(IndexTemplates.class); // assume index templates called before
 
-    storage = ElasticsearchStorage.newBuilder(client).hosts(asList(es.url("").toString())).build();
+    server.enqueue(SUCCESS_RESPONSE); // empty instead of success response
 
-    es.enqueue(new MockResponse().setBody(healthResponse));
-
-    assertThat(storage.check()).isEqualTo(CheckResult.OK);
-
-    assertThat(es.takeRequest().getTlsVersion()).isNotNull();
+    CheckResult result = storage.check();
+    assertThat(result.ok()).isFalse();
+    assertThat(result.error().getMessage())
+      .isEqualTo("No content reading cluster health");
   }
 
-  @Test
-  public void multipleSslNotYetSupported() {
-    storage.close();
-    OkHttpClient client =
-        new OkHttpClient.Builder()
-          .sslSocketFactory(localhost().sslSocketFactory(), localhost().trustManager())
-            .build();
-    es.useHttps(localhost().sslSocketFactory(), false);
+  // TODO: when Armeria's mock server supports it, add a test for IOException
 
-    storage =
-        ElasticsearchStorage.newBuilder(client)
-            .hosts(asList("https://1.2.3.4:" + es.getPort(), es.url("").toString()))
-            .build();
+  @Test void check_unauthorized() {
+    server.enqueue(RESPONSE_UNAUTHORIZED);
 
-    assertThat(storage.check().error())
-      .isInstanceOf(IllegalArgumentException.class);
+    CheckResult result = storage.check();
+    assertThat(result.ok()).isFalse();
+    assertThat(result.error().getMessage())
+      .isEqualTo("User: anonymous is not authorized to perform: es:ESHttpGet");
+  }
+
+  /**
+   * See {@link HttpCallTest#unprocessedRequest()} which shows {@link UnprocessedRequestException}
+   * are re-wrapped as {@link RejectedExecutionException}.
+   */
+  @Test void isOverCapacity() {
+    // timeout
+    assertThat(storage.isOverCapacity(ResponseTimeoutException.get())).isTrue();
+
+    // top-level
+    assertThat(storage.isOverCapacity(new RejectedExecutionException(
+      "{\"status\":429,\"error\":{\"type\":\"es_rejected_execution_exception\"}}"))).isTrue();
+
+    // re-wrapped
+    assertThat(storage.isOverCapacity(
+      new RejectedExecutionException("Rejected execution: No endpoints.",
+        new EndpointGroupException("No endpoints")))).isTrue();
+
+    // not applicable
+    assertThat(storage.isOverCapacity(new IllegalStateException("Rejected execution"))).isFalse();
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test void toStringContainsOnlySummaryInformation() {
+    assertThat(storage).hasToString(
+      String.format("ElasticsearchStorage{initialEndpoints=%s, index=zipkin}",
+        server.httpUri("/")));
   }
 }

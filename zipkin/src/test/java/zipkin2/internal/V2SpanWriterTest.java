@@ -1,36 +1,33 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.TODAY;
 
 public class V2SpanWriterTest {
   V2SpanWriter writer = new V2SpanWriter();
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
+  byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
@@ -40,21 +37,21 @@ public class V2SpanWriterTest {
       .isEqualTo(buf.pos());
   }
 
-  @Test public void writes128BitTraceId() throws UnsupportedEncodingException {
+  @Test public void writes128BitTraceId() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .startsWith("{\"traceId\":\"" + CLIENT_SPAN.traceId() + "\"");
   }
 
-  @Test public void writesAnnotationWithoutEndpoint() throws IOException {
+  @Test public void writesAnnotationWithoutEndpoint() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .contains("{\"timestamp\":" + (TODAY + 100) * 1000L + ",\"value\":\"foo\"}");
   }
 
-  @Test public void omitsEmptySpanName() throws IOException {
+  @Test public void omitsEmptySpanName() {
     Span span = Span.newBuilder()
       .traceId("7180c278b62e8f6a216a2aea45d08fc9")
       .parentId("6b221d5bc9e6496c")
@@ -63,25 +60,25 @@ public class V2SpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .doesNotContain("name");
   }
 
-  @Test public void omitsEmptyServiceName() throws IOException {
+  @Test public void omitsEmptyServiceName() {
     Span span = CLIENT_SPAN.toBuilder()
       .localEndpoint(Endpoint.newBuilder().ip("127.0.0.1").build())
       .build();
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .contains("\"localEndpoint\":{\"ipv4\":\"127.0.0.1\"}");
   }
 
-  @Test public void tagsAreAMap() throws IOException {
+  @Test public void tagsAreAMap() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
       .contains("\"tags\":{\"clnt/finagle.version\":\"6.45.0\",\"http.path\":\"/api\"}");
   }
 }

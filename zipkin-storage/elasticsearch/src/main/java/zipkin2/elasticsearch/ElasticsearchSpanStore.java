@@ -1,24 +1,23 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.elasticsearch;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import zipkin2.Call;
 import zipkin2.DependencyLink;
 import zipkin2.Span;
@@ -32,13 +31,13 @@ import zipkin2.storage.QueryRequest;
 import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StrictTraceId;
+import zipkin2.storage.Traces;
 
 import static java.util.Arrays.asList;
+import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_DEPENDENCY;
+import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_SPAN;
 
-final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
-
-  static final String SPAN = "span";
-  static final String DEPENDENCY = "dependency";
+final class ElasticsearchSpanStore implements SpanStore, Traces, ServiceAndSpanNames {
 
   /** To not produce unnecessarily long queries, we don't look back further than first ES support */
   static final long EARLIEST_MS = 1456790400000L; // March 2016
@@ -53,7 +52,7 @@ final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
   ElasticsearchSpanStore(ElasticsearchStorage es) {
     this.search = new SearchCallFactory(es.http());
     this.groupByTraceId = GroupByTraceId.create(es.strictTraceId());
-    this.allSpanIndices = new String[] {es.indexNameFormatter().formatType(SPAN)};
+    this.allSpanIndices = new String[] {es.indexNameFormatter().formatType(TYPE_SPAN)};
     this.indexNameFormatter = es.indexNameFormatter();
     this.strictTraceId = es.strictTraceId();
     this.searchEnabled = es.searchEnabled();
@@ -105,7 +104,7 @@ final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
         .addSubAggregation(Aggregation.min("timestamp_millis"))
         .orderBy("timestamp_millis", "desc");
 
-    List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    List<String> indices = indexNameFormatter.formatTypeAndRange(TYPE_SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest esRequest =
@@ -132,13 +131,31 @@ final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
     return search.newCall(request, BodyConverters.SPANS);
   }
 
+  @Override public Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
+    Set<String> normalizedTraceIds = new LinkedHashSet<>();
+    for (String traceId : traceIds) {
+      // make sure we have a 16 or 32 character trace ID
+      traceId = Span.normalizeTraceId(traceId);
+
+      // Unless we are strict, truncate the trace ID to 64bit (encoded as 16 characters)
+      if (!strictTraceId && traceId.length() == 32) traceId = traceId.substring(16);
+
+      normalizedTraceIds.add(traceId);
+    }
+
+    if (normalizedTraceIds.isEmpty()) return Call.emptyList();
+    SearchRequest request =
+      SearchRequest.create(asList(allSpanIndices)).terms("traceId", normalizedTraceIds);
+    return search.newCall(request, BodyConverters.SPANS).map(groupByTraceId);
+  }
+
   @Override public Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
 
     long endMillis = System.currentTimeMillis();
     long beginMillis = endMillis - namesLookback;
 
-    List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    List<String> indices = indexNameFormatter.formatTypeAndRange(TYPE_SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     SearchRequest request = SearchRequest.create(indices)
@@ -161,7 +178,7 @@ final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
     long endMillis = System.currentTimeMillis();
     long beginMillis = endMillis - namesLookback;
 
-    List<String> indices = indexNameFormatter.formatTypeAndRange(SPAN, beginMillis, endMillis);
+    List<String> indices = indexNameFormatter.formatTypeAndRange(TYPE_SPAN, beginMillis, endMillis);
     if (indices.isEmpty()) return Call.emptyList();
 
     // A span name is only valid on a local endpoint, as a span name is defined locally
@@ -184,7 +201,8 @@ final class ElasticsearchSpanStore implements SpanStore, ServiceAndSpanNames {
 
     // We just return all dependencies in the days that fall within endTs and lookback as
     // dependency links themselves don't have timestamps.
-    List<String> indices = indexNameFormatter.formatTypeAndRange(DEPENDENCY, beginMillis, endTs);
+    List<String> indices =
+      indexNameFormatter.formatTypeAndRange(TYPE_DEPENDENCY, beginMillis, endTs);
     if (indices.isEmpty()) return Call.emptyList();
 
     return search.newCall(SearchRequest.create(indices), BodyConverters.DEPENDENCY_LINKS);

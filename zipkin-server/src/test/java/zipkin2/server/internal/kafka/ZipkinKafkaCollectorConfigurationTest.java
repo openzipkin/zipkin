@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.server.internal.kafka;
 
@@ -24,13 +21,8 @@ import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import zipkin2.collector.CollectorMetrics;
-import zipkin2.collector.CollectorSampler;
 import zipkin2.collector.kafka.KafkaCollector;
-import zipkin2.storage.InMemoryStorage;
-import zipkin2.storage.StorageComponent;
+import zipkin2.server.internal.InMemoryConfiguration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -38,70 +30,58 @@ public class ZipkinKafkaCollectorConfigurationTest {
 
   @Rule public ExpectedException thrown = ExpectedException.none();
 
-  AnnotationConfigApplicationContext context;
+  AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
-  @After
-  public void close() {
-    if (context != null) {
-      context.close();
-    }
+  @After public void close() {
+    context.close();
   }
 
-  @Test
-  public void doesNotProvideCollectorComponent_whenBootstrapServersUnset() {
-    context = new AnnotationConfigApplicationContext();
+  @Test public void doesNotProvideCollectorComponent_whenBootstrapServersUnset() {
     context.register(
-        PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorConfiguration.class,
-        InMemoryConfiguration.class);
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinKafkaCollectorConfiguration.class,
+      InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
     context.getBean(KafkaCollector.class);
   }
 
-  @Test
-  public void providesCollectorComponent_whenBootstrapServersEmptyString() {
-    context = new AnnotationConfigApplicationContext();
+  @Test public void providesCollectorComponent_whenBootstrapServersEmptyString() {
     TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:").applyTo(context);
     context.register(
-        PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorConfiguration.class,
-        InMemoryConfiguration.class);
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinKafkaCollectorConfiguration.class,
+      InMemoryConfiguration.class);
     context.refresh();
 
     thrown.expect(NoSuchBeanDefinitionException.class);
     context.getBean(KafkaCollector.class);
   }
 
-  @Test
-  public void providesCollectorComponent_whenBootstrapServersSet() {
-    context = new AnnotationConfigApplicationContext();
-    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9091").applyTo(context);
+  @Test public void providesCollectorComponent_whenBootstrapServersSet() {
+    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
+      .applyTo(context);
     context.register(
-        PropertyPlaceholderAutoConfiguration.class,
-        ZipkinKafkaCollectorConfiguration.class,
-        InMemoryConfiguration.class);
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinKafkaCollectorConfiguration.class,
+      InMemoryConfiguration.class);
     context.refresh();
 
     assertThat(context.getBean(KafkaCollector.class)).isNotNull();
   }
 
-  @Configuration
-  static class InMemoryConfiguration {
-    @Bean
-    CollectorSampler sampler() {
-      return CollectorSampler.ALWAYS_SAMPLE;
-    }
+  @Test public void doesNotProvidesCollectorComponent_whenBootstrapServersSetAndDisabled() {
+    TestPropertyValues.of("zipkin.collector.kafka.bootstrap-servers:localhost:9092")
+      .applyTo(context);
+    TestPropertyValues.of("zipkin.collector.kafka.enabled:false").applyTo(context);
+    context.register(
+      PropertyPlaceholderAutoConfiguration.class,
+      ZipkinKafkaCollectorConfiguration.class,
+      InMemoryConfiguration.class);
+    context.refresh();
 
-    @Bean
-    CollectorMetrics metrics() {
-      return CollectorMetrics.NOOP_METRICS;
-    }
-
-    @Bean
-    StorageComponent storage() {
-      return InMemoryStorage.newBuilder().build();
-    }
+    thrown.expect(NoSuchBeanDefinitionException.class);
+    context.getBean(KafkaCollector.class);
   }
 }

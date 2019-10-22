@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra.v1;
 
@@ -22,6 +19,7 @@ import com.google.common.cache.CacheBuilderSpec;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
@@ -30,7 +28,9 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
 import zipkin2.storage.cassandra.internal.call.DeduplicatingVoidCallFactory;
+import zipkin2.storage.cassandra.internal.call.ResultSetFutureCall;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
@@ -43,7 +43,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * <p>Redundant requests to store service or span names are ignored for an hour to reduce load. This
  * feature is implemented by {@link DeduplicatingVoidCallFactory}.
  *
- * <p>Schema is installed by default from "/cassandra-schema-cql3.txt"
+ * <p>Schema is installed by default from "/cassandra-schema.cql"
  */
 public class CassandraStorage extends StorageComponent { // not final for mocking
 
@@ -153,7 +153,7 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
 
     /**
      * Ensures that schema exists, if enabled tries to execute script
-     * io.zipkin:zipkin-cassandra-core/cassandra-schema-cql3.txt. Defaults to true.
+     * io.zipkin:zipkin-cassandra-core/cassandra-schema.cql. Defaults to true.
      */
     public Builder ensureSchema(boolean ensureSchema) {
       this.ensureSchema = ensureSchema;
@@ -346,6 +346,10 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     return spanStore;
   }
 
+  @Override public Traces traces() {
+    return (Traces) spanStore();
+  }
+
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
     return (ServiceAndSpanNames) spanStore();
   }
@@ -374,12 +378,21 @@ public class CassandraStorage extends StorageComponent { // not final for mockin
     return spanConsumer;
   }
 
+  @Override public boolean isOverCapacity(Throwable e) {
+    return ResultSetFutureCall.isOverCapacity(e);
+  }
+
+  @Override public final String toString() {
+    return "CassandraStorage{contactPoints=" + contactPoints + ", keyspace=" + keyspace + "}";
+  }
+
   @Override
   public CheckResult check() {
     if (closeCalled) throw new IllegalStateException("closed");
     try {
       session.get().execute(QueryBuilder.select("trace_id").from("traces").limit(1));
-    } catch (RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
     return CheckResult.OK;

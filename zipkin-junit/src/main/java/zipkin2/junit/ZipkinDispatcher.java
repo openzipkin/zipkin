@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.junit;
 
@@ -66,8 +63,8 @@ final class ZipkinDispatcher extends Dispatcher {
   }
 
   MockResponse acceptSpans(RecordedRequest request, SpanBytesDecoder decoder) {
-    metrics.incrementMessages();
     byte[] body = request.getBody().readByteArray();
+    metrics.incrementMessages();
     String encoding = request.getHeader("Content-Encoding");
     if (encoding != null && encoding.contains("gzip")) {
       try {
@@ -80,23 +77,21 @@ final class ZipkinDispatcher extends Dispatcher {
         return new MockResponse().setResponseCode(400).setBody("Cannot gunzip spans");
       }
     }
+    metrics.incrementBytes(body.length);
 
     final MockResponse result = new MockResponse();
-    consumer.acceptSpans(
-        body,
-        decoder,
-        new Callback<Void>() {
-          @Override
-          public void onSuccess(Void value) {
-            result.setResponseCode(202);
-          }
+    if (body.length == 0) return result.setResponseCode(202); // lenient on empty
 
-          @Override
-          public void onError(Throwable t) {
-            String message = t.getMessage();
-            result.setBody(message).setResponseCode(message.startsWith("Cannot store") ? 500 : 400);
-          }
-        });
+    consumer.acceptSpans(body, decoder, new Callback<Void>() {
+      @Override public void onSuccess(Void value) {
+        result.setResponseCode(202);
+      }
+
+      @Override public void onError(Throwable t) {
+        String message = t.getMessage();
+        result.setBody(message).setResponseCode(message.startsWith("Cannot store") ? 500 : 400);
+      }
+    });
     return result;
   }
 }

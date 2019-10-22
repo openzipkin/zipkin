@@ -1,32 +1,28 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.collector.kafka;
 
+import java.time.Duration;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigException;
@@ -34,6 +30,7 @@ import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.collector.Collector;
 import zipkin2.collector.CollectorComponent;
@@ -178,7 +175,8 @@ public final class KafkaCollector extends CollectorComponent {
       KafkaFuture<String> maybeClusterId = getAdminClient().describeCluster().clusterId();
       maybeClusterId.get(1, TimeUnit.SECONDS);
       return CheckResult.OK;
-    } catch (Exception e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
   }
@@ -197,7 +195,14 @@ public final class KafkaCollector extends CollectorComponent {
   @Override
   public void close() {
     kafkaWorkers.close();
-    if (adminClient != null) adminClient.close(1, TimeUnit.SECONDS);
+    if (adminClient != null) adminClient.close(Duration.ofSeconds(1));
+  }
+
+  @Override public final String toString() {
+    return "KafkaCollector{"
+      + "bootstrapServers=" + properties.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG)
+      + ", topic=" + kafkaWorkers.builder.topic
+      + "}";
   }
 
   static final class LazyKafkaWorkers {
@@ -226,7 +231,7 @@ public final class KafkaCollector extends CollectorComponent {
     void close() {
       ExecutorService maybePool = pool;
       if (maybePool == null) return;
-      for(KafkaCollectorWorker worker: workers) {
+      for (KafkaCollectorWorker worker : workers) {
         worker.stop();
       }
       maybePool.shutdown();
@@ -247,6 +252,8 @@ public final class KafkaCollector extends CollectorComponent {
               : Executors.newFixedThreadPool(streams);
 
       for (int i = 0; i < streams; i++) {
+        // TODO: bad idea to lazy reference properties from a mutable builder
+        // copy them here and then pass this to the KafkaCollectorWorker ctor instead
         KafkaCollectorWorker worker = new KafkaCollectorWorker(builder);
         workers.add(worker);
         pool.execute(guardFailures(worker));

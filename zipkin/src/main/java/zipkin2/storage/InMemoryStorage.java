@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage;
 
@@ -29,7 +26,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import zipkin2.Call;
+import zipkin2.Callback;
 import zipkin2.DependencyLink;
 import zipkin2.Endpoint;
 import zipkin2.Span;
@@ -67,7 +66,7 @@ import zipkin2.internal.DependencyLinker;
  * }</pre>
  */
 public final class InMemoryStorage extends StorageComponent implements SpanStore, SpanConsumer,
-  AutocompleteTags, ServiceAndSpanNames {
+  AutocompleteTags, ServiceAndSpanNames, Traces {
 
   public static Builder newBuilder() {
     return new Builder();
@@ -113,7 +112,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   /**
    * Primary source of data is this map, which includes spans ordered descending by timestamp. All
    * other maps are derived from the span values here. This uses a list for the spans, so that it is
-   * visible (via /api/v2/trace/id?raw) when instrumentation report the same spans multiple times.
+   * visible (via /api/v2/trace/{traceId}) when instrumentation report the same spans multiple times.
    */
   private final SortedMultimap<TraceIdTimestamp, Span> spansByTraceIdTimeStamp =
     new SortedMultimap(TIMESTAMP_DESCENDING) {
@@ -165,7 +164,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   final int maxSpanCount;
   final Call<List<String>> autocompleteKeysCall;
   final Set<String> autocompleteKeys;
-  volatile int acceptedSpanCount;
+  final AtomicInteger acceptedSpanCount = new AtomicInteger();
 
   InMemoryStorage(Builder builder) {
     this.strictTraceId = builder.strictTraceId;
@@ -176,11 +175,11 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   }
 
   public int acceptedSpanCount() {
-    return acceptedSpanCount;
+    return acceptedSpanCount.get();
   }
 
   public synchronized void clear() {
-    acceptedSpanCount = 0;
+    acceptedSpanCount.set(0);
     traceIdToTraceIdTimeStamps.clear();
     spansByTraceIdTimeStamp.clear();
     serviceToTraceIds.clear();
@@ -189,9 +188,14 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     autocompleteTags.clear();
   }
 
-  @Override
-  public synchronized Call<Void> accept(List<Span> spans) {
+  @Override public Call<Void> accept(List<Span> spans) {
+    return new StoreSpansCall(spans);
+  }
+
+  synchronized void doAccept(List<Span> spans) {
     int delta = spans.size();
+    acceptedSpanCount.addAndGet(delta);
+
     int spansToRecover = (spansByTraceIdTimeStamp.size() + delta) - maxSpanCount;
     evictToRecoverSpans(spansToRecover);
     for (Span span : spans) {
@@ -200,7 +204,6 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       TraceIdTimestamp traceIdTimeStamp = new TraceIdTimestamp(lowTraceId, timestamp);
       spansByTraceIdTimeStamp.put(traceIdTimeStamp, span);
       traceIdToTraceIdTimeStamps.put(lowTraceId, traceIdTimeStamp);
-      acceptedSpanCount++;
 
       if (!searchEnabled) continue;
       String serviceName = span.localServiceName();
@@ -221,7 +224,36 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
         }
       }
     }
-    return Call.create(null /* Void == null */);
+  }
+
+  final class StoreSpansCall extends Call.Base<Void> {
+    final List<Span> spans;
+
+    StoreSpansCall(List<Span> spans) {
+      this.spans = spans;
+    }
+
+    @Override protected Void doExecute() {
+      doAccept(spans);
+      return null;
+    }
+
+    @Override protected void doEnqueue(Callback<Void> callback) {
+      try {
+        callback.onSuccess(doExecute());
+      } catch (Throwable t) {
+        propagateIfFatal(t);
+        callback.onError(t);
+      }
+    }
+
+    @Override public Call<Void> clone() {
+      return new StoreSpansCall(spans);
+    }
+
+    @Override public String toString() {
+      return "StoreSpansCall{" + spans + "}";
+    }
   }
 
   /** Returns the count of spans evicted. */
@@ -255,8 +287,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return spansEvicted;
   }
 
-  @Override
-  public synchronized Call<List<List<Span>>> getTraces(QueryRequest request) {
+  @Override public Call<List<List<Span>>> getTraces(QueryRequest request) {
     return getTraces(request, strictTraceId);
   }
 
@@ -310,7 +341,7 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
   }
 
   /** Used for testing. Returns all dependency links unconditionally. */
-  public synchronized List<DependencyLink> getDependencies() {
+  public List<DependencyLink> getDependencies() {
     return LinkDependencies.INSTANCE.map(getTraces());
   }
 
@@ -332,11 +363,10 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
         result.add(traceIdTimestamp.lowTraceId);
       }
     }
-    return result;
+    return Collections.unmodifiableSet(result);
   }
 
-  @Override
-  public synchronized Call<List<Span>> getTrace(String traceId) {
+  @Override public synchronized Call<List<Span>> getTrace(String traceId) {
     traceId = Span.normalizeTraceId(traceId);
     List<Span> spans = spansByTraceId(lowTraceId(traceId));
     if (spans == null || spans.isEmpty()) return Call.emptyList();
@@ -352,26 +382,53 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return Call.create(filtered);
   }
 
-  @Override public Call<List<String>> getServiceNames() {
+  @Override public synchronized Call<List<List<Span>>> getTraces(Iterable<String> traceIds) {
+    Set<String> normalized = new LinkedHashSet<>();
+    for (String traceId : traceIds) {
+      normalized.add(Span.normalizeTraceId(traceId));
+    }
+
+    // Our index is by lower-64 bit trace ID, so let's build trace IDs to fetch
+    Set<String> lower64Bit = new LinkedHashSet<>();
+    for (String traceId : normalized) {
+      lower64Bit.add(lowTraceId(traceId));
+    }
+
+    List<List<Span>> result = new ArrayList<>();
+    for (String lowTraceId : lower64Bit) {
+      List<Span> sameTraceId = spansByTraceId(lowTraceId);
+      if (strictTraceId) {
+        for (List<Span> trace : strictByTraceId(sameTraceId)) {
+          if (normalized.contains(trace.get(0).traceId())) {
+            result.add(trace);
+          }
+        }
+      } else {
+        result.add(sameTraceId);
+      }
+    }
+
+    return Call.create(result);
+  }
+
+  @Override public synchronized Call<List<String>> getServiceNames() {
     if (!searchEnabled) return Call.emptyList();
     return Call.create(new ArrayList<>(serviceToTraceIds.keySet()));
   }
 
-  @Override public Call<List<String>> getRemoteServiceNames(String service) {
+  @Override public synchronized Call<List<String>> getRemoteServiceNames(String service) {
     if (service.isEmpty() || !searchEnabled) return Call.emptyList();
     service = service.toLowerCase(Locale.ROOT); // service names are always lowercase!
     return Call.create(new ArrayList<>(serviceToRemoteServiceNames.get(service)));
   }
 
-  @Override
-  public synchronized Call<List<String>> getSpanNames(String service) {
+  @Override public synchronized Call<List<String>> getSpanNames(String service) {
     if (service.isEmpty() || !searchEnabled) return Call.emptyList();
     service = service.toLowerCase(Locale.ROOT); // service names are always lowercase!
     return Call.create(new ArrayList<>(serviceToSpanNames.get(service)));
   }
 
-  @Override
-  public synchronized Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
+  @Override public Call<List<DependencyLink>> getDependencies(long endTs, long lookback) {
     QueryRequest request =
       QueryRequest.newBuilder().endTs(endTs).lookback(lookback).limit(Integer.MAX_VALUE).build();
 
@@ -381,12 +438,12 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return getTracesCall.map(LinkDependencies.INSTANCE);
   }
 
-  @Override public Call<List<String>> getKeys() {
+  @Override public synchronized Call<List<String>> getKeys() {
     if (!searchEnabled) return Call.emptyList();
     return autocompleteKeysCall.clone();
   }
 
-  @Override public Call<List<String>> getValues(String key) {
+  @Override public synchronized Call<List<String>> getValues(String key) {
     if (key == null) throw new NullPointerException("key == null");
     if (key.isEmpty()) throw new IllegalArgumentException("key was empty");
     if (!searchEnabled) return Call.emptyList();
@@ -528,6 +585,10 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
     return traceId.length() == 32 ? traceId.substring(16) : traceId;
   }
 
+  @Override public InMemoryStorage traces() {
+    return this;
+  }
+
   @Override public InMemoryStorage spanStore() {
     return this;
   }
@@ -573,5 +634,9 @@ public final class InMemoryStorage extends StorageComponent implements SpanStore
       h$ ^= (int) ((timestamp >>> 32) ^ timestamp);
       return h$;
     }
+  }
+
+  @Override public String toString() {
+    return "InMemoryStorage{}";
   }
 }

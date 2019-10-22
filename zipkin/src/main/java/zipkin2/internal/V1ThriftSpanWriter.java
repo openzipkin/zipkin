@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -24,7 +21,6 @@ import zipkin2.v1.V1BinaryAnnotation;
 import zipkin2.v1.V1Span;
 import zipkin2.v1.V2SpanConverter;
 
-import static zipkin2.internal.Buffer.utf8SizeInBytes;
 import static zipkin2.internal.ThriftField.TYPE_BOOL;
 import static zipkin2.internal.ThriftField.TYPE_I32;
 import static zipkin2.internal.ThriftField.TYPE_I64;
@@ -32,11 +28,11 @@ import static zipkin2.internal.ThriftField.TYPE_LIST;
 import static zipkin2.internal.ThriftField.TYPE_STOP;
 import static zipkin2.internal.ThriftField.TYPE_STRING;
 import static zipkin2.internal.ThriftField.TYPE_STRUCT;
+import static zipkin2.internal.WriteBuffer.utf8SizeInBytes;
 
 /** This type isn't thread-safe: it re-uses state to avoid re-allocations in conversion loops. */
 // @Immutable
-public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
-
+public final class V1ThriftSpanWriter implements WriteBuffer.Writer<Span> {
   static final ThriftField TRACE_ID = new ThriftField(TYPE_I64, 1);
   static final ThriftField TRACE_ID_HIGH = new ThriftField(TYPE_I64, 12);
   static final ThriftField NAME = new ThriftField(TYPE_STRING, 3);
@@ -52,8 +48,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
 
   final V2SpanConverter converter = V2SpanConverter.create();
 
-  @Override
-  public int sizeInBytes(Span value) {
+  @Override public int sizeInBytes(Span value) {
     V1Span v1Span = converter.convert(value);
 
     int endpointSize =
@@ -94,8 +89,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     return sizeInBytes;
   }
 
-  @Override
-  public void write(Span value, Buffer buffer) {
+  @Override public void write(Span value, WriteBuffer buffer) {
     V1Span v1Span = converter.convert(value);
     byte[] endpointBytes = legacyEndpointBytes(value.localEndpoint());
 
@@ -142,7 +136,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     buffer.writeByte(TYPE_STOP);
   }
 
-  static void writeAnnotations(Buffer buffer, V1Span v1Span, byte[] endpointBytes) {
+  static void writeAnnotations(WriteBuffer buffer, V1Span v1Span, byte[] endpointBytes) {
     int annotationCount = v1Span.annotations().size();
     ThriftCodec.writeListBegin(buffer, annotationCount);
     for (int i = 0; i < annotationCount; i++) {
@@ -151,7 +145,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     }
   }
 
-  static void writeBinaryAnnotations(Buffer buffer, V1Span v1Span, byte[] endpointBytes) {
+  static void writeBinaryAnnotations(WriteBuffer buffer, V1Span v1Span, byte[] endpointBytes) {
     int binaryAnnotationCount = v1Span.binaryAnnotations().size();
     ThriftCodec.writeListBegin(buffer, binaryAnnotationCount);
     for (int i = 0; i < binaryAnnotationCount; i++) {
@@ -161,8 +155,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     }
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "Span";
   }
 
@@ -170,22 +163,22 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return EMPTY_ARRAY;
 
-    Buffer result = Buffer.allocate(ThriftCodec.listSizeInBytes(this, spans));
-    ThriftCodec.writeList(this, spans, result);
-    return result.toByteArray();
+    byte[] result = new byte[ThriftCodec.listSizeInBytes(this, spans)];
+    ThriftCodec.writeList(this, spans, WriteBuffer.wrap(result));
+    return result;
   }
 
   public byte[] write(Span onlySpan) {
-    Buffer result = Buffer.allocate(sizeInBytes(onlySpan));
-    write(onlySpan, result);
-    return result.toByteArray();
+    byte[] result = new byte[sizeInBytes(onlySpan)];
+    write(onlySpan, WriteBuffer.wrap(result));
+    return result;
   }
 
   public int writeList(List<Span> spans, byte[] out, int pos) {
     int lengthOfSpans = spans.size();
     if (lengthOfSpans == 0) return 0;
 
-    Buffer result = Buffer.wrap(out, pos);
+    WriteBuffer result = WriteBuffer.wrap(out, pos);
     ThriftCodec.writeList(this, spans, result);
 
     return result.pos() - pos;
@@ -193,9 +186,9 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
 
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
-    Buffer buffer = Buffer.allocate(ThriftEndpointCodec.sizeInBytes(localEndpoint));
-    ThriftEndpointCodec.write(localEndpoint, buffer);
-    return buffer.toByteArray();
+    byte[] result = new byte[ThriftEndpointCodec.sizeInBytes(localEndpoint)];
+    ThriftEndpointCodec.write(localEndpoint, WriteBuffer.wrap(result));
+    return result;
   }
 
   static class ThriftAnnotationWriter {
@@ -213,7 +206,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
       return sizeInBytes;
     }
 
-    static void write(long timestamp, String value, byte[] endpointBytes, Buffer buffer) {
+    static void write(long timestamp, String value, byte[] endpointBytes, WriteBuffer buffer) {
       TIMESTAMP.write(buffer);
       ThriftCodec.writeLong(buffer, timestamp);
 
@@ -245,7 +238,7 @@ public final class V1ThriftSpanWriter implements Buffer.Writer<Span> {
       return sizeInBytes;
     }
 
-    static void write(String key, String stringValue, byte[] endpointBytes, Buffer buffer) {
+    static void write(String key, String stringValue, byte[] endpointBytes, WriteBuffer buffer) {
       KEY.write(buffer);
       ThriftCodec.writeLengthPrefixed(buffer, key);
 

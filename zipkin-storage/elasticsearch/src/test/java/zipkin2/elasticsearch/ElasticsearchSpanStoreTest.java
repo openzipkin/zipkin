@@ -1,121 +1,122 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.elasticsearch;
 
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.ResponseHeaders;
+import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import okhttp3.mockwebserver.RecordedRequest;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.TestObjects;
 import zipkin2.storage.QueryRequest;
 
-import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.DAY;
 import static zipkin2.TestObjects.TODAY;
-import static zipkin2.elasticsearch.ElasticsearchSpanStore.SPAN;
+import static zipkin2.elasticsearch.VersionSpecificTemplates.TYPE_SPAN;
 
-public class ElasticsearchSpanStoreTest {
-  @Rule public MockWebServer es = new MockWebServer();
+class ElasticsearchSpanStoreTest {
+  static final AggregatedHttpResponse EMPTY_RESPONSE =
+    AggregatedHttpResponse.of(ResponseHeaders.of(HttpStatus.OK), HttpData.EMPTY_DATA);
 
-  ElasticsearchStorage storage =
-      ElasticsearchStorage.newBuilder().hosts(asList(es.url("").toString())).build();
-  ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
+  @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
-  @After
-  public void close() {
+  @BeforeEach void setUp() {
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/"))).build();
+    spanStore = new ElasticsearchSpanStore(storage);
+  }
+
+  @AfterEach void tearDown() throws IOException {
     storage.close();
   }
 
-  @Test
-  public void doesntTruncateTraceIdByDefault() throws Exception {
-    es.enqueue(new MockResponse());
+  ElasticsearchStorage storage;
+  ElasticsearchSpanStore spanStore;
+
+  @Test void doesntTruncateTraceIdByDefault() throws Exception {
+    server.enqueue(EMPTY_RESPONSE);
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
-    assertThat(es.takeRequest().getBody().readUtf8())
-        .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
+    assertThat(server.takeRequest().request().contentUtf8())
+      .contains("\"traceId\":\"48fec942f3e78b893041d36dc43227fd\"");
   }
 
-  @Test
-  public void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
+  @Test void truncatesTraceIdTo16CharsWhenNotStrict() throws Exception {
+    storage.close();
     storage = storage.toBuilder().strictTraceId(false).build();
     spanStore = new ElasticsearchSpanStore(storage);
 
-    es.enqueue(new MockResponse());
+    server.enqueue(EMPTY_RESPONSE);
     spanStore.getTrace("48fec942f3e78b893041d36dc43227fd").execute();
 
-    assertThat(es.takeRequest().getBody().readUtf8()).contains("\"traceId\":\"3041d36dc43227fd\"");
+    assertThat(server.takeRequest().request().contentUtf8())
+      .contains("\"traceId\":\"3041d36dc43227fd\"");
   }
 
-  @Test
-  public void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
-    es.enqueue(new MockResponse().setBody(TestResponses.SERVICE_NAMES));
+  @Test void serviceNames_defaultsTo24HrsAgo_6x() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, TestResponses.SERVICE_NAMES));
     spanStore.getServiceNames().execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }
 
-  @Test
-  public void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
-    es.enqueue(new MockResponse().setBody(TestResponses.SPAN_NAMES));
+  @Test void spanNames_defaultsTo24HrsAgo_6x() throws Exception {
+    server.enqueue(AggregatedHttpResponse.of(
+      HttpStatus.OK, MediaType.JSON_UTF_8, TestResponses.SPAN_NAMES));
     spanStore.getSpanNames("foo").execute();
 
     requestLimitedTo2DaysOfIndices_singleTypeIndex();
   }
 
-  @Test
-  public void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
-    try (ElasticsearchStorage storage =
-        ElasticsearchStorage.newBuilder()
-            .hosts(this.storage.hostsSupplier().get())
-            .searchEnabled(false)
-            .build()) {
+  @Test void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
+    storage.close();
+    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
+      .searchEnabled(false)
+      .build();
 
-      // skip template check
-      ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
+    // skip template check
+    ElasticsearchSpanStore spanStore = new ElasticsearchSpanStore(storage);
 
-      assertThat(
-              spanStore
-                  .getTraces(
-                      QueryRequest.newBuilder().endTs(TODAY).lookback(10000L).limit(10).build())
-                  .execute())
-          .isEmpty();
-      assertThat(spanStore.getServiceNames().execute()).isEmpty();
-      assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
+    QueryRequest request = QueryRequest.newBuilder().endTs(TODAY).lookback(DAY).limit(10).build();
+    assertThat(spanStore.getTraces(request).execute()).isEmpty();
+    assertThat(spanStore.getServiceNames().execute()).isEmpty();
+    assertThat(spanStore.getSpanNames("icecream").execute()).isEmpty();
 
-      assertThat(es.getRequestCount()).isZero();
-    }
+    assertThat(server.takeRequest(100, TimeUnit.MILLISECONDS)).isNull();
   }
 
-  private void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {
+  void requestLimitedTo2DaysOfIndices_singleTypeIndex() throws Exception {
     long today = TestObjects.midnightUTC(System.currentTimeMillis());
     long yesterday = today - TimeUnit.DAYS.toMillis(1);
 
     // 24 hrs ago always will fall into 2 days (ex. if it is 4:00pm, 24hrs ago is a different day)
-    String indexesToSearch =
-        ""
-            + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, yesterday)
-            + ","
-            + storage.indexNameFormatter().formatTypeAndTimestamp(SPAN, today);
+    String indexesToSearch = ""
+      + storage.indexNameFormatter().formatTypeAndTimestamp(TYPE_SPAN, yesterday)
+      + ","
+      + storage.indexNameFormatter().formatTypeAndTimestamp(TYPE_SPAN, today);
 
-    RecordedRequest request = es.takeRequest();
-    assertThat(request.getPath()).startsWith("/" + indexesToSearch + "/_search");
+    AggregatedHttpRequest request = server.takeRequest().request();
+    assertThat(request.path()).startsWith("/" + indexesToSearch + "/_search");
   }
 }

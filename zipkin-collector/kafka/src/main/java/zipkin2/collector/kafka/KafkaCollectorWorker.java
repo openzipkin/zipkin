@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.collector.kafka;
 
@@ -31,7 +28,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.InterruptException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Callback;
@@ -89,21 +85,25 @@ final class KafkaCollectorWorker implements Runnable {
         final ConsumerRecords<byte[], byte[]> consumerRecords = kafkaConsumer.poll(Duration.of(1000, ChronoUnit.MILLIS));
         LOG.debug("Kafka polling returned batch of {} messages.", consumerRecords.count());
         for (ConsumerRecord<byte[], byte[]> record : consumerRecords) {
-          metrics.incrementMessages();
           final byte[] bytes = record.value();
+          metrics.incrementMessages();
+          metrics.incrementBytes(bytes.length);
+
+          if (bytes.length == 0) continue; // lenient on empty messages
 
           if (bytes.length < 2) { // need two bytes to check if protobuf
             metrics.incrementMessagesDropped();
           } else {
             // If we received legacy single-span encoding, decode it into a singleton list
             if (!protobuf3(bytes) && bytes[0] <= 16 && bytes[0] != 12 /* thrift, but not list */) {
-              metrics.incrementBytes(bytes.length);
+              Span span;
               try {
-                Span span = SpanBytesDecoder.THRIFT.decodeOne(bytes);
-                collector.accept(Collections.singletonList(span), NOOP);
+                span = SpanBytesDecoder.THRIFT.decodeOne(bytes);
               } catch (RuntimeException e) {
                 metrics.incrementMessagesDropped();
+                continue;
               }
+              collector.accept(Collections.singletonList(span), NOOP);
             } else {
               collector.acceptSpans(bytes, NOOP);
             }

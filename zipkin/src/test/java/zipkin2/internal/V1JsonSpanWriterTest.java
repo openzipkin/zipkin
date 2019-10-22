@@ -1,33 +1,30 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 import zipkin2.Endpoint;
 import zipkin2.Span;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.CLIENT_SPAN;
+import static zipkin2.internal.JsonCodec.UTF_8;
 
 public class V1JsonSpanWriterTest {
   V1JsonSpanWriter writer = new V1JsonSpanWriter();
-  Buffer buf = Buffer.allocate(2048); // bigger than needed to test sizeOf
+  byte[] bytes = new byte[2048]; // bigger than needed to test sizeInBytes
+  WriteBuffer buf = WriteBuffer.wrap(bytes);
 
   @Test
   public void sizeInBytes() {
@@ -37,153 +34,149 @@ public class V1JsonSpanWriterTest {
   }
 
   @Test
-  public void writesCoreAnnotations_client() throws IOException {
+  public void writesCoreAnnotations_client() {
     writer.write(CLIENT_SPAN, buf);
 
     writesCoreAnnotations("cs", "cr");
   }
 
   @Test
-  public void writesCoreAnnotations_server() throws IOException {
+  public void writesCoreAnnotations_server() {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).build(), buf);
 
     writesCoreAnnotations("sr", "ss");
   }
 
   @Test
-  public void writesCoreAnnotations_producer() throws IOException {
+  public void writesCoreAnnotations_producer() {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.PRODUCER).build(), buf);
 
     writesCoreAnnotations("ms", "ws");
   }
 
   @Test
-  public void writesCoreAnnotations_consumer() throws IOException {
+  public void writesCoreAnnotations_consumer() {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.CONSUMER).build(), buf);
 
     writesCoreAnnotations("wr", "mr");
   }
 
-  void writesCoreAnnotations(String begin, String end) throws UnsupportedEncodingException {
-    String json = new String(buf.toByteArray(), "UTF-8");
+  void writesCoreAnnotations(String begin, String end) {
+    String json = new String(bytes, UTF_8);
 
     assertThat(json)
         .contains("{\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"value\":\"" + begin + "\"");
     assertThat(json)
-        .contains(
-            "{\"timestamp\":"
-                + (CLIENT_SPAN.timestamp() + CLIENT_SPAN.duration())
-                + ",\"value\":\""
-                + end
-                + "\"");
+        .contains("{\"timestamp\":"
+          + (CLIENT_SPAN.timestampAsLong() + CLIENT_SPAN.durationAsLong())
+          + ",\"value\":\"" + end + "\"");
   }
 
   @Test
-  public void writesCoreSendAnnotations_client() throws IOException {
+  public void writesCoreSendAnnotations_client() {
     writer.write(CLIENT_SPAN.toBuilder().duration(null).build(), buf);
 
     writesCoreSendAnnotations("cs");
   }
 
   @Test
-  public void writesCoreSendAnnotations_server() throws IOException {
+  public void writesCoreSendAnnotations_server() {
     writer.write(CLIENT_SPAN.toBuilder().duration(null).kind(Span.Kind.SERVER).build(), buf);
 
     writesCoreSendAnnotations("sr");
   }
 
   @Test
-  public void writesCoreSendAnnotations_producer() throws IOException {
+  public void writesCoreSendAnnotations_producer() {
     writer.write(CLIENT_SPAN.toBuilder().duration(null).kind(Span.Kind.PRODUCER).build(), buf);
 
     writesCoreSendAnnotations("ms");
   }
 
   @Test
-  public void writesCoreSendAnnotations_consumer() throws IOException {
+  public void writesCoreSendAnnotations_consumer() {
     writer.write(CLIENT_SPAN.toBuilder().duration(null).kind(Span.Kind.CONSUMER).build(), buf);
 
     writesCoreSendAnnotations("mr");
   }
 
-  void writesCoreSendAnnotations(String begin) throws UnsupportedEncodingException {
-    String json = new String(buf.toByteArray(), "UTF-8");
+  void writesCoreSendAnnotations(String begin) {
+    String json = new String(bytes, UTF_8);
 
     assertThat(json)
         .contains("{\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"value\":\"" + begin + "\"");
   }
 
   @Test
-  public void writesAddressBinaryAnnotation_client() throws IOException {
+  public void writesAddressBinaryAnnotation_client() {
     writer.write(CLIENT_SPAN.toBuilder().build(), buf);
 
     writesAddressBinaryAnnotation("sa");
   }
 
   @Test
-  public void writesAddressBinaryAnnotation_server() throws IOException {
+  public void writesAddressBinaryAnnotation_server() {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).build(), buf);
 
     writesAddressBinaryAnnotation("ca");
   }
 
   @Test
-  public void writesAddressBinaryAnnotation_producer() throws IOException {
+  public void writesAddressBinaryAnnotation_producer() {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.PRODUCER).build(), buf);
 
     writesAddressBinaryAnnotation("ma");
   }
 
   @Test
-  public void writesAddressBinaryAnnotation_consumer() throws IOException {
+  public void writesAddressBinaryAnnotation_consumer() {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.CONSUMER).build(), buf);
 
     writesAddressBinaryAnnotation("ma");
   }
 
-  void writesAddressBinaryAnnotation(String address) throws UnsupportedEncodingException {
-    String json = new String(buf.toByteArray(), "UTF-8");
-
-    assertThat(json).contains("{\"key\":\"" + address + "\",\"value\":true,\"endpoint\":");
+  void writesAddressBinaryAnnotation(String address) {
+    assertThat(new String(bytes, UTF_8))
+      .contains("{\"key\":\"" + address + "\",\"value\":true,\"endpoint\":");
   }
 
   @Test
-  public void writes128BitTraceId() throws UnsupportedEncodingException {
+  public void writes128BitTraceId() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
         .startsWith("{\"traceId\":\"" + CLIENT_SPAN.traceId() + "\"");
   }
 
   @Test
-  public void annotationsHaveEndpoints() throws IOException {
+  public void annotationsHaveEndpoints() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
         .contains(
             "\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}");
   }
 
   @Test
-  public void writesTimestampAndDuration() throws IOException {
+  public void writesTimestampAndDuration() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
         .contains(
             "\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"duration\":" + CLIENT_SPAN.duration());
   }
 
   @Test
-  public void skipsTimestampAndDuration_shared() throws IOException {
+  public void skipsTimestampAndDuration_shared() {
     writer.write(CLIENT_SPAN.toBuilder().kind(Span.Kind.SERVER).shared(true).build(), buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
         .doesNotContain(
             "\"timestamp\":" + CLIENT_SPAN.timestamp() + ",\"duration\":" + CLIENT_SPAN.duration());
   }
 
   @Test
-  public void writesEmptySpanName() throws IOException {
+  public void writesEmptySpanName() {
     Span span =
         Span.newBuilder()
             .traceId("7180c278b62e8f6a216a2aea45d08fc9")
@@ -193,11 +186,11 @@ public class V1JsonSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8")).contains("\"name\":\"\"");
+    assertThat(new String(bytes, UTF_8)).contains("\"name\":\"\"");
   }
 
   @Test
-  public void writesEmptyServiceName() throws IOException {
+  public void writesEmptyServiceName() {
     Span span =
         CLIENT_SPAN
             .toBuilder()
@@ -206,15 +199,15 @@ public class V1JsonSpanWriterTest {
 
     writer.write(span, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
         .contains("\"value\":\"foo\",\"endpoint\":{\"serviceName\":\"\",\"ipv4\":\"127.0.0.1\"}");
   }
 
   @Test
-  public void tagsAreBinaryAnnotations() throws IOException {
+  public void tagsAreBinaryAnnotations() {
     writer.write(CLIENT_SPAN, buf);
 
-    assertThat(new String(buf.toByteArray(), "UTF-8"))
+    assertThat(new String(bytes, UTF_8))
         .contains(
             "\"binaryAnnotations\":["
                 + "{\"key\":\"clnt/finagle.version\",\"value\":\"6.45.0\",\"endpoint\":{\"serviceName\":\"frontend\",\"ipv4\":\"127.0.0.1\"}},"

@@ -1,24 +1,22 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra.v1;
 
 import com.datastax.driver.core.Session;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.cache.CacheBuilderSpec;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -102,7 +100,7 @@ final class CassandraSpanConsumer implements SpanConsumer {
       long ts_micro = v2.timestampAsLong();
       if (ts_micro == 0L) ts_micro = guessTimestamp(v2);
 
-      insertTraces.add(insertTrace.newInput(span, encoder.write(v2), ts_micro));
+      insertTraces.add(insertTrace.newInput(span, ByteBuffer.wrap(encoder.write(v2)), ts_micro));
 
       if (!searchEnabled) continue;
 
@@ -148,10 +146,10 @@ final class CassandraSpanConsumer implements SpanConsumer {
   /** Clears any caches */
   @VisibleForTesting
   void clear() {
-    insertServiceName.clear();
+    if (insertServiceName != null) insertServiceName.clear();
     if (insertRemoteServiceName != null) insertRemoteServiceName.clear();
-    insertSpanName.clear();
-    indexer.clear();
+    if (insertSpanName != null) insertSpanName.clear();
+    if (indexer != null) indexer.clear();
     if (insertAutocompleteValue != null) insertAutocompleteValue.clear();
   }
 

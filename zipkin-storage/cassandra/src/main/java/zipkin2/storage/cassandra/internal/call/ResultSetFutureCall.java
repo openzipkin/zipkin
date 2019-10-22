@@ -1,25 +1,25 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra.internal.call;
 
 import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
+import com.datastax.driver.core.exceptions.BusyConnectionException;
+import com.datastax.driver.core.exceptions.BusyPoolException;
 import com.datastax.driver.core.exceptions.DriverException;
 import com.datastax.driver.core.exceptions.DriverInternalError;
+import com.datastax.driver.core.exceptions.QueryConsistencyException;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.Uninterruptibles;
 import java.util.concurrent.ExecutionException;
@@ -51,17 +51,18 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
       public void run() {
         try {
           callback.onSuccess(map(getUninterruptibly(future)));
-        } catch (RuntimeException | Error e) {
-          propagateIfFatal(e);
-          callback.onError(e);
+        } catch (Throwable t) {
+          propagateIfFatal(t);
+          callback.onError(t);
         }
       }
     }
     try {
       (future = newFuture()).addListener(new CallbackListener(), DirectExecutor.INSTANCE);
-    } catch (RuntimeException | Error e) {
-      callback.onError(e);
-      throw e;
+    } catch (Throwable t) {
+      propagateIfFatal(t);
+      callback.onError(t);
+      throw t;
     }
   }
 
@@ -75,6 +76,13 @@ public abstract class ResultSetFutureCall<V> extends Call.Base<V>
   protected final boolean doIsCanceled() {
     ListenableFuture<ResultSet> maybeFuture = future;
     return maybeFuture != null && maybeFuture.isCancelled();
+  }
+
+  /** @see zipkin2.storage.StorageComponent#isOverCapacity(java.lang.Throwable) */
+  public static boolean isOverCapacity(Throwable e) {
+    return e instanceof QueryConsistencyException ||
+      e instanceof BusyConnectionException ||
+      e instanceof BusyPoolException;
   }
 
   static ResultSet getUninterruptibly(ListenableFuture<ResultSet> future) {

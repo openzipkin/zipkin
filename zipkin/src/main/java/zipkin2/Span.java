@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2;
 
@@ -32,10 +29,11 @@ import java.util.logging.Logger;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.Platform;
 
 import static java.lang.String.format;
 import static java.util.logging.Level.FINEST;
-import static zipkin2.Endpoint.HEX_DIGITS;
+import static zipkin2.internal.HexCodec.HEX_DIGITS;
 
 /**
  * A span is a single-host view of an operation. A trace is a series of spans (often RPC calls)
@@ -415,14 +413,14 @@ public final class Span implements Serializable { // for Spark and Flink jobs
      */
     public Builder traceId(long high, long low) {
       if (high == 0L && low == 0L) throw new IllegalArgumentException("empty trace ID");
-      char[] result = new char[high != 0L ? 32 : 16];
+      char[] data = Platform.shortStringBuffer();
       int pos = 0;
       if (high != 0L) {
-        writeHexLong(result, pos, high);
+        writeHexLong(data, pos, high);
         pos += 16;
       }
-      writeHexLong(result, pos, low);
-      this.traceId = new String(result);
+      writeHexLong(data, pos, low);
+      this.traceId = new String(data, 0, high != 0L ? 32 : 16);
       return this;
     }
 
@@ -658,19 +656,28 @@ public final class Span implements Serializable { // for Spark and Flink jobs
     }
   }
 
-  static String padLeft(String id, int desiredLength) {
-    StringBuilder builder = new StringBuilder(desiredLength);
-    int offset = desiredLength - id.length();
+  static final String THIRTY_TWO_ZEROS;
+  static {
+    char[] zeros = new char[32];
+    Arrays.fill(zeros, '0');
+    THIRTY_TWO_ZEROS = new String(zeros);
+  }
 
-    for (int i = 0; i < offset; i++) builder.append('0');
-    builder.append(id);
-    return builder.toString();
+  static String padLeft(String id, int desiredLength) {
+    int length = id.length();
+    int numZeros = desiredLength - length;
+
+    char[] data = Platform.shortStringBuffer();
+    THIRTY_TWO_ZEROS.getChars(0, numZeros, data, 0);
+    id.getChars(0, length, data, numZeros);
+
+    return new String(data, 0, desiredLength);
   }
 
   static String toLowerHex(long v) {
-    char[] data = new char[16];
+    char[] data = Platform.shortStringBuffer();
     writeHexLong(data, 0, v);
-    return new String(data);
+    return new String(data, 0, 16);
   }
 
   /** Inspired by {@code okio.Buffer.writeLong} */

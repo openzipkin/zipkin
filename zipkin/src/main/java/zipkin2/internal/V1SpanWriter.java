@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -21,18 +18,17 @@ import zipkin2.v1.V1Annotation;
 import zipkin2.v1.V1BinaryAnnotation;
 import zipkin2.v1.V1Span;
 
-import static zipkin2.internal.Buffer.asciiSizeInBytes;
 import static zipkin2.internal.JsonEscaper.jsonEscape;
 import static zipkin2.internal.JsonEscaper.jsonEscapedSizeInBytes;
 import static zipkin2.internal.V2SpanWriter.endpointSizeInBytes;
 import static zipkin2.internal.V2SpanWriter.writeAnnotation;
+import static zipkin2.internal.WriteBuffer.asciiSizeInBytes;
 
 /** This type is only used to backport the v1 read api as it returns v1 json. */
 // @Immutable
-public final class V1SpanWriter implements Buffer.Writer<V1Span> {
+public final class V1SpanWriter implements WriteBuffer.Writer<V1Span> {
 
-  @Override
-  public int sizeInBytes(V1Span value) {
+  @Override public int sizeInBytes(V1Span value) {
     int sizeInBytes = 29; // {"traceId":"xxxxxxxxxxxxxxxx"
     if (value.traceIdHigh() != 0L) sizeInBytes += 16;
     if (value.parentId() != 0L) {
@@ -103,8 +99,7 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
     return ++sizeInBytes; // }
   }
 
-  @Override
-  public void write(V1Span value, Buffer b) {
+  @Override public void write(V1Span value, WriteBuffer b) {
     b.writeAscii("{\"traceId\":\"");
     if (value.traceIdHigh() != 0L) b.writeLongHex(value.traceIdHigh());
     b.writeLongHex(value.traceId());
@@ -186,16 +181,15 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
     b.writeByte('}');
   }
 
-  @Override
-  public String toString() {
+  @Override public String toString() {
     return "Span";
   }
 
   static byte[] legacyEndpointBytes(@Nullable Endpoint localEndpoint) {
     if (localEndpoint == null) return null;
-    Buffer buffer = Buffer.allocate(endpointSizeInBytes(localEndpoint, true));
-    V2SpanWriter.writeEndpoint(localEndpoint, buffer, true);
-    return buffer.toByteArray();
+    byte[] result = new byte[endpointSizeInBytes(localEndpoint, true)];
+    V2SpanWriter.writeEndpoint(localEndpoint, WriteBuffer.wrap(result), true);
+    return result;
   }
 
   static int binaryAnnotationSizeInBytes(String key, String value, int endpointSize) {
@@ -209,7 +203,8 @@ public final class V1SpanWriter implements Buffer.Writer<V1Span> {
     return sizeInBytes;
   }
 
-  static void writeBinaryAnnotation(String key, String value, @Nullable byte[] endpoint, Buffer b) {
+  static void writeBinaryAnnotation(String key, String value, @Nullable byte[] endpoint,
+    WriteBuffer b) {
     b.writeAscii("{\"key\":\"");
     b.writeUtf8(jsonEscape(key));
     b.writeAscii("\",\"value\":\"");

@@ -8,14 +8,13 @@ dist: trusty
 
 cache:
   directories:
-  # zipkin-ui gets dependencies via NPM
+  # zipkin-lens gets dependencies via NPM
   - $HOME/.npm
   - $HOME/.m2
 
 language: java
 
-jdk:
-  - oraclejdk8
+jdk: openjdk11
 
 services:
   - docker
@@ -26,27 +25,56 @@ before_install:
   # Required for Elasticsearch 5 (See https://github.com/docker-library/docs/tree/master/elasticsearch#host-setup)
   - sudo sysctl -w vm.max_map_count=262144
 
-  # Manually install and run zk+kafka as it isn't an available service
-  - curl -SL https://archive.apache.org/dist/kafka/0.8.2.2/kafka_2.11-0.8.2.2.tgz | tar xz
-  - nohup bash -c "cd kafka_* && bin/zookeeper-server-start.sh config/zookeeper.properties >/dev/null 2>&1 &"
-  - nohup bash -c "cd kafka_* && bin/kafka-server-start.sh config/server.properties >/dev/null 2>&1 &"
-
   # Quiet Maven invoker logs (Downloading... when running zipkin-server/src/it)
   - echo "MAVEN_OPTS='-Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn'" > ~/.mavenrc
 
-  # Override default travis to use the maven wrapper
-install: ./mvnw install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-script: ./mvnw clean verify -B
+  # Disable testcontainers checks
+  - echo checks.disable=true > ~/.testcontainers.properties
+  # allocate commits to CI, not the owner of the deploy key
+  - git config user.name "zipkinci"
+  - git config user.email "zipkinci+zipkin-dev@googlegroups.com"
+  # setup https authentication credentials, used by ./mvnw release:prepare
+  - git config credential.helper "store --file=.git/credentials"
+  - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
-# Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
-# See https://github.com/travis-ci/travis-ci/issues/1532
+# Override default travis to use the maven wrapper; skip license on travis due to #1512
+install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V
+script: ./travis/publish.sh
+
 branches:
   except:
+    # Don't build release tags. This avoids publish conflicts because the version commit exists both on master and the release tag.
+    # See https://github.com/travis-ci/travis-ci/issues/1532
     - /^[0-9]/
+    # Don't build docker- tags with Travis. Docker Hub will pick up and run the build. docker- tags are used to recreate
+    # docker images without rebuilding Zipkin so we don't need to run here.
+    - /^docker-/
 
 notifications:
   webhooks:
     urls:
-      - https://webhooks.gitter.im/e/637e968b45032d16ee26
+      - https://webhooks.gitter.im/e/ead3c37d57527214e9f2
+      - https://webhooks.gitter.im/e/e57478303f87ecd7bffc
     on_success: change
     on_failure: always
+
+env:
+  global:
+    # Ex. travis encrypt BINTRAY_USER=your_github_account
+    - secure: "HvCQa4ZC7dexW8Iddbwtox4NY4yvoZtyYtkwlRG5Jh/h7MY1rFwghpqv42WunOnq+hgpVUWCJPM2sM1WY+JQQXSRFFfkUxSnVGfyqIRW3oHf6uK4Sw4rtX+Q/nthliu5QNqReMcg0+rr/UD2Nxat4QZqtnlVm2MQJNu8oxcm0hw="
+    # Ex. travis encrypt BINTRAY_KEY=xxx-https://bintray.com/profile/edit-xxx
+    - secure: "JC8sJHol2tGQT8QK00L8YQZjeo8gUnGS3x+kuYwF4UknJrJbz4+UU4uz2VDQJNdomjROngO6qLZrZmHOuV9l2LswZ7atlvMdEA16lxwKUQKK9xq4Qs5RxdZsz+zJwmEW5QcocjM1bRAQv+y4MPY9rHmoWEjtFQzfEovBpwFjafM="
+    # Ex. travis encrypt GH_TOKEN=XXX-https://github.com/settings/tokens-XXX
+    - secure: "MHpcpzQD/IVIDYtqK8DTJZ8qRsOUjUQhMqgLRCUtgOJUT/viM4QyrTZ1Yy+RkMsk5yO1+0wzteUuKJdni6Qo9PGBKU6arNPovf3/6vBZIeGPzFSeW+Mv9f83xLtvmneactNUBshJVr9jERycBy0/CRRWZqHwlWxXm9AfIZWzIDA="
+    # Ex. travis encrypt SONATYPE_USER=your_sonatype_account
+    - secure: "RF2kzoNPeQO6As/2VcNAxb8HDptXLf3dejJBiZHNNTSYTDWeAIjGQeW0edu908+OQwuhC1y94oXWADzuaAgLTg32YU8rwU0esNjTp4e2QL7EsELVzoTUPJrvoG2DasF8wOXd+Vr2nPEIZiuUonrFQR75Bb7OWq1FQjtXemfVksI="
+    # Ex. travis encrypt SONATYPE_PASSWORD=your_sonatype_password
+    - secure: "SJHHBfEu2iTyz1zvdJBi21NvJlBrN2ATZBV6ko2qhotOqc0CgUSAg7i6+7F4R/DjvI42/ufwQTCcy0bYKj+xCb6JXjLa8l28sfprv8thM7eExg9Fq4qWVgQUVX4BSHSYd1kBxod5kj/S+esRiREbbjfNAOhuQZXxjzrsjyRlzWc="
+
+    # To trigger Docker image publication, we need the Trigger Url from https://cloud.docker.com/u/openzipkin/repository/docker/openzipkin/zipkin/builds/edit
+    # However, this is too big for travis encrypt. Instead, we decompose it into
+    # two variables: https://cloud.docker.com/api/build/v1/source/${DOCKER_HUB_SERVICE_UUID}/trigger/${DOCKER_HUB_TRIGGER_UUID}/call/
+    # Ex. travis encrypt DOCKER_HUB_SERVICE_UUID=https://cloud.docker.com/api/build/v1/source/XXX/trigger/...
+    - secure: "iXCKU7rbBqBYZKCmF/VQNE/vFypM07+n4fv/RwwaL9XTrZJEF0TdLQDJzI5ekh/j7sWMlhEtGRvIKokNy3LRk+yTxFGSEOlqtsPv3QVVoO2z63DVEg5noeUteq3FgCKx/Dzj7eSukC13nE4acI7ShGCzzNn2ItYJiVT349YGqYM="
+    # Ex. travis encrypt DOCKER_HUB_TRIGGER_UUID=https://cloud.docker.com/api/build/v1/source/.../trigger/XXX
+    - secure: "HL9NVPuc9SZhWP2CSmv+LLc9y8rERr6alTuSTkURrbmemonmUH5aegVtegoeRus2Lxph4fW5NgIr44goquFNqe9905EAH5/P5E39P4z+tGfBAi3EvsuGn07oXaft96obCocc3TXMQND5bKJL46f0UGnQPiOffpXvM9/92qYYlRE="

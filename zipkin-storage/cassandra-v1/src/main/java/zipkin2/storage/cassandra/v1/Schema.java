@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra.v1;
 
@@ -28,17 +25,17 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Charsets.UTF_8;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static zipkin2.storage.cassandra.v1.Tables.AUTOCOMPLETE_TAGS;
 import static zipkin2.storage.cassandra.v1.Tables.REMOTE_SERVICE_NAMES;
 
 final class Schema {
   private static final Logger LOG = LoggerFactory.getLogger(Schema.class);
 
-  static final String SCHEMA = "/cassandra-schema-cql3.txt";
-  static final String UPGRADE_1 = "/cassandra-schema-cql3-upgrade-1.txt";
-  static final String UPGRADE_2 = "/cassandra-schema-cql3-upgrade-2.txt";
-  static final String UPGRADE_3 = "/cassandra-schema-cql3-upgrade-3.txt";
+  static final String SCHEMA = "/cassandra-schema.cql";
+  static final String UPGRADE_1 = "/cassandra-schema-upgrade-1.cql";
+  static final String UPGRADE_2 = "/cassandra-schema-upgrade-2.cql";
+  static final String UPGRADE_3 = "/cassandra-schema-upgrade-3.cql";
 
   private Schema() {
   }
@@ -148,7 +145,7 @@ final class Schema {
 
   static void applyCqlFile(String keyspace, Session session, String resource) {
     try (Reader reader = new InputStreamReader(Schema.class.getResourceAsStream(resource), UTF_8)) {
-      for (String cmd : CharStreams.toString(reader).split(";")) {
+      for (String cmd : CharStreams.toString(reader).split(";", 100)) {
         cmd = cmd.trim().replace(" zipkin", " " + keyspace);
         if (!cmd.isEmpty()) {
           session.execute(cmd);

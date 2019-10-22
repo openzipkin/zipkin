@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.cassandra.v1;
 
@@ -21,8 +18,8 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
 import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -37,30 +34,18 @@ import zipkin2.Annotation;
 import zipkin2.Call;
 import zipkin2.Span;
 import zipkin2.internal.Nullable;
+import zipkin2.internal.Platform;
 import zipkin2.storage.QueryRequest;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static zipkin2.internal.Platform.SHORT_STRING_LENGTH;
 
 final class CassandraUtil {
-  static final Charset UTF_8 = Charset.forName("UTF-8");
-
-  static final List<String> CORE_ANNOTATIONS =
-      ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
-
-  /**
-   * Zipkin's {@link QueryRequest#annotationQuery()} are equals match. Not all tags are lookup keys.
-   * For example, sql query isn't something that is likely to be looked up by value and indexing
-   * that could add a potentially kilobyte partition key on {@link Tables#ANNOTATIONS_INDEX}
-   */
-  static final int LONGEST_VALUE_TO_INDEX = 256;
+  static final ImmutableList<String> CORE_ANNOTATIONS =
+    ImmutableList.of("cs", "cr", "ss", "sr", "ms", "mr", "ws", "wr");
 
   private static final ThreadLocal<CharsetEncoder> UTF8_ENCODER =
-      new ThreadLocal<CharsetEncoder>() {
-        @Override
-        protected CharsetEncoder initialValue() {
-          return UTF_8.newEncoder();
-        }
-      };
+    ThreadLocal.withInitial(StandardCharsets.UTF_8::newEncoder);
 
   static ByteBuffer toByteBuffer(String string) {
     try {
@@ -73,22 +58,29 @@ final class CassandraUtil {
   /**
    * Returns keys that concatenate the serviceName associated with an annotation or tag.
    *
+   * <p>Values over {@link Platform#SHORT_STRING_LENGTH} are not considered. Zipkin's {@link
+   * QueryRequest#annotationQuery()} are equals match. Not all values are lookup values. For
+   * example, {@code sql.query} isn't something that is likely to be looked up by value and indexing
+   * that could add a potentially kilobyte partition key on {@link Tables#ANNOTATIONS_INDEX}
+   *
    * @see QueryRequest#annotationQuery()
    */
   static Set<String> annotationKeys(Span span) {
     Set<String> annotationKeys = new LinkedHashSet<>();
     String localServiceName = span.localServiceName();
-    if (localServiceName == null) return Collections.emptySet();
+    if (localServiceName == null) return annotationKeys;
     for (Annotation a : span.annotations()) {
+      if (a.value().length() > SHORT_STRING_LENGTH) continue;
+
       // don't index core annotations as they aren't queryable
       if (CORE_ANNOTATIONS.contains(a.value())) continue;
       annotationKeys.add(localServiceName + ":" + a.value());
     }
     for (Map.Entry<String, String> e : span.tags().entrySet()) {
-      if (e.getValue().length() <= LONGEST_VALUE_TO_INDEX) {
-        annotationKeys.add(localServiceName + ":" + e.getKey());
-        annotationKeys.add(localServiceName + ":" + e.getKey() + ":" + e.getValue());
-      }
+      if (e.getValue().length() > SHORT_STRING_LENGTH) continue;
+
+      annotationKeys.add(localServiceName + ":" + e.getKey());
+      annotationKeys.add(localServiceName + ":" + e.getKey() + ":" + e.getValue());
     }
     return annotationKeys;
   }

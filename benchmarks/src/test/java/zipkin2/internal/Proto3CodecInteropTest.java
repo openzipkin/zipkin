@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -156,10 +153,10 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    Buffer zipkinBytes = Buffer.allocate(ANNOTATION.sizeInBytes(zipkinAnnotation));
-    ANNOTATION.write(zipkinBytes, zipkinAnnotation);
+    byte[] zipkinBytes = new byte[ANNOTATION.sizeInBytes(zipkinAnnotation)];
+    ANNOTATION.write(WriteBuffer.wrap(zipkinBytes, 0), zipkinAnnotation);
 
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes)
       .containsExactly(wireSpan.encode());
   }
 
@@ -167,7 +164,7 @@ public class Proto3CodecInteropTest {
     zipkin2.Annotation zipkinAnnotation = ZIPKIN_SPAN.annotations().get(0);
     Span wireSpan = new Span.Builder().annotations(PROTO_SPAN.annotations).build();
 
-    Buffer wireBytes = Buffer.wrap(wireSpan.encode(), 0);
+    ReadBuffer wireBytes = ReadBuffer.wrap(wireSpan.encode());
     assertThat(wireBytes.readVarint32())
       .isEqualTo(ANNOTATION.key);
 
@@ -179,7 +176,7 @@ public class Proto3CodecInteropTest {
 
   @Test public void endpoint_sizeInBytes_matchesWireEncodingWithTag() {
     assertThat(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint())).isEqualTo(
-        Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.fieldNumber, PROTO_SPAN.local_endpoint)
+      Endpoint.ADAPTER.encodedSizeWithTag(LOCAL_ENDPOINT.fieldNumber, PROTO_SPAN.local_endpoint)
     );
 
     assertThat(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint())).isEqualTo(
@@ -188,20 +185,20 @@ public class Proto3CodecInteropTest {
   }
 
   @Test public void localEndpoint_write_matchesWire() {
-    Buffer zipkinBytes = Buffer.allocate(LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint()));
-    LOCAL_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.localEndpoint());
+    byte[] zipkinBytes = new byte[LOCAL_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.localEndpoint())];
+    LOCAL_ENDPOINT.write(WriteBuffer.wrap(zipkinBytes, 0), ZIPKIN_SPAN.localEndpoint());
     Span wireSpan = new Span.Builder().local_endpoint(PROTO_SPAN.local_endpoint).build();
 
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes)
       .containsExactly(wireSpan.encode());
   }
 
   @Test public void remoteEndpoint_write_matchesWire() {
-    Buffer zipkinBytes = Buffer.allocate(REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint()));
-    REMOTE_ENDPOINT.write(zipkinBytes, ZIPKIN_SPAN.remoteEndpoint());
+    byte[] zipkinBytes = new byte[REMOTE_ENDPOINT.sizeInBytes(ZIPKIN_SPAN.remoteEndpoint())];
+    REMOTE_ENDPOINT.write(WriteBuffer.wrap(zipkinBytes, 0), ZIPKIN_SPAN.remoteEndpoint());
     Span wireSpan = new Span.Builder().remote_endpoint(PROTO_SPAN.remote_endpoint).build();
 
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes)
       .containsExactly(wireSpan.encode());
   }
 
@@ -216,22 +213,22 @@ public class Proto3CodecInteropTest {
   @Test public void writeTagField_matchesWire() {
     MapEntry<String, String> entry = entry("clnt/finagle.version", "6.45.0");
     TagField field = new TagField(TAG_KEY);
-    Buffer zipkinBytes = Buffer.allocate(field.sizeInBytes(entry));
-    field.write(zipkinBytes, entry);
+    byte[] zipkinBytes = new byte[field.sizeInBytes(entry)];
+    field.write(WriteBuffer.wrap(zipkinBytes, 0), entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes)
       .containsExactly(oneField.encode());
   }
 
   @Test public void writeTagField_matchesWire_emptyValue() {
     MapEntry<String, String> entry = entry("error", "");
     TagField field = new TagField(TAG_KEY);
-    Buffer zipkinBytes = Buffer.allocate(field.sizeInBytes(entry));
-    field.write(zipkinBytes, entry);
+    byte[] zipkinBytes = new byte[field.sizeInBytes(entry)];
+    field.write(WriteBuffer.wrap(zipkinBytes, 0), entry);
 
     Span oneField = new Span.Builder().tags(singletonMap(entry.key, entry.value)).build();
-    assertThat(zipkinBytes.toByteArray())
+    assertThat(zipkinBytes)
       .containsExactly(oneField.encode());
   }
 

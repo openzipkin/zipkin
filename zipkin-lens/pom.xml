@@ -1,29 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Licensed to the Apache Software Foundation (ASF) under one or more
-    contributor license agreements.  See the NOTICE file distributed with
-    this work for additional information regarding copyright ownership.
-    The ASF licenses this file to You under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with
-    the License.  You may obtain a copy of the License at
+    Copyright 2015-2019 The OpenZipkin Authors
 
-        http://www.apache.org/licenses/LICENSE-2.0
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache.zipkin</groupId>
-    <artifactId>parent</artifactId>
-    <version>2.13.0-SNAPSHOT</version>
+    <groupId>io.zipkin</groupId>
+    <artifactId>zipkin-parent</artifactId>
+    <version>2.18.4-SNAPSHOT</version>
   </parent>
 
   <artifactId>zipkin-lens</artifactId>
@@ -32,7 +29,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <frontend-maven-plugin.version>1.7.5</frontend-maven-plugin.version>
+    <frontend-maven-plugin.version>1.7.6</frontend-maven-plugin.version>
   </properties>
 
   <dependencies>
@@ -47,7 +44,7 @@
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
-          <nodeVersion>v10.15.1</nodeVersion>
+          <nodeVersion>v10.16.2</nodeVersion>
         </configuration>
         <executions>
           <execution>
@@ -94,26 +91,6 @@
             <configuration>
               <arguments>run test</arguments>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <!-- TODO: decide how we want to handle this -->
-            <phase>none</phase>
-          </execution>
-        </executions>
-      </plugin>
-      <!-- disable retrolambda as this module doesn't include Java -->
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>none</phase>
           </execution>
         </executions>
       </plugin>

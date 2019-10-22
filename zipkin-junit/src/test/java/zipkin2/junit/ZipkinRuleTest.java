@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.junit;
 
@@ -30,6 +27,7 @@ import okio.GzipSink;
 import org.junit.AssumptionViolatedException;
 import org.junit.Rule;
 import org.junit.Test;
+import org.slf4j.bridge.SLF4JBridgeHandler;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 
@@ -40,6 +38,12 @@ import static zipkin2.TestObjects.CLIENT_SPAN;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
 
 public class ZipkinRuleTest {
+
+  static {
+    // ensure jul-to-slf4j works
+    SLF4JBridgeHandler.removeHandlersForRootLogger();
+    SLF4JBridgeHandler.install();
+  }
 
   @Rule public ZipkinRule zipkin = new ZipkinRule();
 
@@ -178,14 +182,11 @@ public class ZipkinRuleTest {
     gzipSink.close();
     ByteString gzippedJson = sink.readByteString();
 
-    client
-        .newCall(
-            new Request.Builder()
-                .url(zipkin.httpUrl() + "/api/v1/spans")
-                .addHeader("Content-Encoding", "gzip")
-                .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson))
-                .build())
-        .execute();
+    client.newCall(new Request.Builder()
+      .url(zipkin.httpUrl() + "/api/v1/spans")
+      .addHeader("Content-Encoding", "gzip")
+      .post(RequestBody.create(MediaType.parse("application/json"), gzippedJson))
+      .build()).execute();
 
     assertThat(zipkin.collectorMetrics().bytes()).isEqualTo(spansInJson.length);
   }

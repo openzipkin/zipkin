@@ -1,0 +1,28 @@
+[
+  {
+    "traceId": "978883983d506fa5",
+    "id": "978883983d506fa5",
+    "kind": "SERVER",
+    "name": "localhost:10000",
+    "timestamp": 1570523661059232,
+    "duration": 127115,
+    "localEndpoint": {
+      "ipv4": "169.254.65.45"
+    },
+    "tags": {
+      "component": "proxy",
+      "downstream_cluster": "-",
+      "guid:x-request-id": "d709b78f-583e-988e-b581-25b72c63852d",
+      "http.method": "GET",
+      "http.protocol": "HTTP/1.1",
+      "http.status_code": "200",
+      "http.url": "http://www.google.com/",
+      "request_size": "0",
+      "response_flags": "-",
+      "response_size": "67342",
+      "upstream_cluster": "service_google",
+      "user_agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/77.0.3865.90 Safari/537.36"
+    },
+    "shared": true
+  }
+]

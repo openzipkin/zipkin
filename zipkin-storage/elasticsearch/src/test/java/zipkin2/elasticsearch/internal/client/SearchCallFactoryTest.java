@@ -1,51 +1,34 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.elasticsearch.internal.client;
 
-import java.io.IOException;
-import okhttp3.OkHttpClient;
-import okhttp3.mockwebserver.MockResponse;
-import okhttp3.mockwebserver.MockWebServer;
-import org.junit.After;
-import org.junit.Rule;
+import com.linecorp.armeria.client.HttpClient;
 import org.junit.Test;
+import org.mockito.Mock;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SearchCallFactoryTest {
-  @Rule
-  public MockWebServer es = new MockWebServer();
 
-  SearchCallFactory client =
-    new SearchCallFactory(new HttpCall.Factory(new OkHttpClient(), es.url("")));
+  @Mock HttpClient httpClient;
 
-  @After
-  public void close() {
-    client.http.ok.dispatcher().executorService().shutdownNow();
-  }
+  SearchCallFactory client = new SearchCallFactory(new HttpCall.Factory(httpClient));
 
   /** Declaring queries alphabetically helps simplify amazon signature logic */
-  @Test
-  public void lenientSearchOrdersQueryAlphabetically() {
-    es.enqueue(new MockResponse());
-
-    assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null)
-        .queryParameterNames())
-        .containsExactly("allow_no_indices", "expand_wildcards", "ignore_unavailable");
+  @Test public void lenientSearchOrdersQueryAlphabetically() {
+    assertThat(client.lenientSearch(asList("zipkin:span-2016-10-01"), null))
+        .endsWith("/_search?allow_no_indices=true&expand_wildcards=open&ignore_unavailable=true");
   }
 }

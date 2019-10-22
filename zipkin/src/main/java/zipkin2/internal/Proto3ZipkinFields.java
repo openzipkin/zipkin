@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -69,14 +66,14 @@ final class Proto3ZipkinFields {
       return result;
     }
 
-    @Override void writeValue(Buffer b, Endpoint value) {
+    @Override void writeValue(WriteBuffer b, Endpoint value) {
       SERVICE_NAME.write(b, value.serviceName());
       IPV4.write(b, value.ipv4Bytes());
       IPV6.write(b, value.ipv6Bytes());
       PORT.write(b, value.portAsInt());
     }
 
-    @Override Endpoint readValue(Buffer buffer, int length) {
+    @Override Endpoint readValue(ReadBuffer buffer, int length) {
       int endPos = buffer.pos() + length;
 
       // now, we are in the endpoint fields
@@ -111,11 +108,11 @@ final class Proto3ZipkinFields {
       super(key);
     }
 
-    @Override final T readValue(Buffer b, int length) {
+    @Override final T readValue(ReadBuffer b, int length) {
       throw new UnsupportedOperationException();
     }
 
-    abstract boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder);
+    abstract boolean readLengthPrefixAndValue(ReadBuffer b, Span.Builder builder);
   }
 
   static class AnnotationField extends SpanBuilderField<Annotation> {
@@ -133,13 +130,13 @@ final class Proto3ZipkinFields {
       return TIMESTAMP.sizeInBytes(value.timestamp()) + VALUE.sizeInBytes(value.value());
     }
 
-    @Override void writeValue(Buffer b, Annotation value) {
+    @Override void writeValue(WriteBuffer b, Annotation value) {
       TIMESTAMP.write(b, value.timestamp());
       VALUE.write(b, value.value());
     }
 
-    @Override boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder) {
-      int length = readLengthPrefix(b);
+    @Override boolean readLengthPrefixAndValue(ReadBuffer b, Span.Builder builder) {
+      int length = b.readVarint32();
       if (length == 0) return false;
       int endPos = b.pos() + length;
 
@@ -181,13 +178,13 @@ final class Proto3ZipkinFields {
       return KEY.sizeInBytes(value.getKey()) + VALUE.sizeInBytes(value.getValue());
     }
 
-    @Override void writeValue(Buffer b, Map.Entry<String, String> value) {
+    @Override void writeValue(WriteBuffer b, Map.Entry<String, String> value) {
       KEY.write(b, value.getKey());
       VALUE.write(b, value.getValue());
     }
 
-    @Override boolean readLengthPrefixAndValue(Buffer b, Span.Builder builder) {
-      int length = readLengthPrefix(b);
+    @Override boolean readLengthPrefixAndValue(ReadBuffer b, Span.Builder builder) {
+      int length = b.readVarint32();
       if (length == 0) return false;
       int endPos = b.pos() + length;
 
@@ -276,7 +273,7 @@ final class Proto3ZipkinFields {
       return sizeOfSpan;
     }
 
-    @Override void writeValue(Buffer b, Span value) {
+    @Override void writeValue(WriteBuffer b, Span value) {
       TRACE_ID.write(b, value.traceId());
       PARENT_ID.write(b, value.parentId());
       ID.write(b, value.id());
@@ -309,12 +306,13 @@ final class Proto3ZipkinFields {
       return kind != null ? kind.ordinal() + 1 : 0;
     }
 
-    public Span read(Buffer buffer) {
+    public Span read(ReadBuffer buffer) {
       buffer.readVarint32(); // toss the key
       return readLengthPrefixAndValue(buffer);
     }
 
-    @Override Span readValue(Buffer buffer, int length) {
+    @Override Span readValue(ReadBuffer buffer, int length) {
+      buffer.require(length); // more convenient to check up-front vs partially read
       int endPos = buffer.pos() + length;
 
       // now, we are in the span fields
@@ -372,7 +370,7 @@ final class Proto3ZipkinFields {
     }
   }
 
-  static void logAndSkip(Buffer buffer, int nextKey) {
+  static void logAndSkip(ReadBuffer buffer, int nextKey) {
     int nextWireType = wireType(nextKey, buffer.pos());
     if (LOG.isLoggable(FINE)) {
       int nextFieldNumber = fieldNumber(nextKey, buffer.pos());

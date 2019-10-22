@@ -1,123 +1,219 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.server.internal.elasticsearch;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.logging.Logger;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.convert.DurationUnit;
 import zipkin2.elasticsearch.ElasticsearchStorage;
+import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
+/**
+ * Settings for Elasticsearch client connection
+ * <pre>{@code
+ * zipkin.storage.elasticsearch:
+ *   hosts: localhost:9200
+ *   pipeline: my_pipeline
+ *   timeout: 10000
+ *   index: zipkin
+ *   date-separator: -
+ *   index-shards: 5
+ *   index-replicas: 1
+ *   username: username
+ *   password: password
+ *   http-logging: HEADERS
+ *   ssl:
+ *     key-store: keystore.p12
+ *     key-store-password: changeme
+ *     key-store-type: PKCS12
+ *     trust-store: truststore.p12
+ *     trust-store-password: changeme
+ *     trust-store-type: PKCS12
+ *   health-check:
+ *     enabled: true
+ *     interval: 3s
+ * }</pre>
+ */
 @ConfigurationProperties("zipkin.storage.elasticsearch")
 class ZipkinElasticsearchStorageProperties implements Serializable { // for Spark jobs
+  /**
+   * Sets the level of logging for HTTP requests made by the Elasticsearch client. If not set or
+   * none, logging will be disabled.
+   */
+  enum HttpLogging {
+    NONE,
+    BASIC,
+    HEADERS,
+    BODY
+  }
+
+  public static class Ssl {
+    private String keyStore = emptyToNull(System.getProperty("javax.net.ssl.keyStore"));
+    private String keyStorePassword = emptyToNull(System.getProperty("javax.net.ssl.keyStorePassword"));
+    private String keyStoreType = emptyToNull(System.getProperty("javax.net.ssl.keyStoreType"));
+    private String trustStore = emptyToNull(System.getProperty("javax.net.ssl.trustStore"));
+    private String trustStorePassword = emptyToNull(System.getProperty("javax.net.ssl.trustStorePassword"));
+    private String trustStoreType = emptyToNull(System.getProperty("javax.net.ssl.trustStoreType"));
+
+    public String getKeyStore() {
+      return keyStore;
+    }
+
+    public void setKeyStore(String keyStore) {
+      this.keyStore = keyStore;
+    }
+
+    public String getKeyStorePassword() {
+      return keyStorePassword;
+    }
+
+    public void setKeyStorePassword(String keyStorePassword) {
+      this.keyStorePassword = keyStorePassword;
+    }
+
+    public String getKeyStoreType() {
+      return keyStoreType;
+    }
+
+    public void setKeyStoreType(String keyStoreType) {
+      this.keyStoreType = keyStoreType;
+    }
+
+    public String getTrustStore() {
+      return trustStore;
+    }
+
+    public void setTrustStore(String trustStore) {
+      this.trustStore = trustStore;
+    }
+
+    public String getTrustStorePassword() {
+      return trustStorePassword;
+    }
+
+    public void setTrustStorePassword(String trustStorePassword) {
+      this.trustStorePassword = trustStorePassword;
+    }
+
+    public String getTrustStoreType() {
+      return trustStoreType;
+    }
+
+    public void setTrustStoreType(String trustStoreType) {
+      this.trustStoreType = trustStoreType;
+    }
+  }
+
+  /**
+   * Configures the health-checking of endpoints by the Elasticsearch client.
+   */
+  public static class HealthCheck {
+    /** Indicates health checking is enabled. */
+    private boolean enabled = true;
+
+    /** The time to wait between sending health check requests. */
+    @DurationUnit(ChronoUnit.MILLIS)
+    private Duration interval = Duration.ofSeconds(3);
+
+    public boolean isEnabled() {
+      return enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+      this.enabled = enabled;
+    }
+
+    public Duration getInterval() {
+      return interval;
+    }
+
+    public void setInterval(Duration interval) {
+      this.interval = interval;
+    }
+  }
+
   static final Logger log = Logger.getLogger(ZipkinElasticsearchStorageProperties.class.getName());
 
   private static final long serialVersionUID = 0L;
 
-  /** Indicates the ingest pipeline used before spans are indexed. no default */
+  /** Indicates the ingest pipeline used before spans are indexed. */
   private String pipeline;
-  /** A List of base urls to connect to. Defaults to http://localhost:9300 */
-  private List<String> hosts; // initialize to null to defer default to transport
-  /** The index prefix to use when generating daily index names. Defaults to zipkin. */
-  private String index = "zipkin";
-  /** The date separator used to create the index name. Default to -. */
-  private String dateSeparator = "-";
-  /** Sets maximum in-flight requests from this process to any Elasticsearch host. Defaults to 64 */
-  private int maxRequests = 64;
-  /** Number of shards (horizontal scaling factor) per index. Defaults to 5. */
-  private int indexShards = 5;
-  /** Number of replicas (redundancy factor) per index. Defaults to 1.` */
-  private int indexReplicas = 1;
+  /** A comma separated list of base urls to connect to. */
+  private String hosts = "http://localhost:9200";
+  /** The index prefix to use when generating daily index names. */
+  private String index;
+  /** The date separator used to create the index name. */
+  private String dateSeparator;
+  /** Number of shards (horizontal scaling factor) per index. */
+  private Integer indexShards;
+  /** Number of replicas (redundancy factor) per index. */
+  private Integer indexReplicas;
   /** username used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String username;
   /** password used for basic auth. Needed when Shield or X-Pack security is enabled */
   private String password;
-  /**
-   * When set, controls the volume of HTTP logging of the Elasticsearch Api. Options are BASIC,
-   * HEADERS, BODY
-   */
-  private HttpLoggingInterceptor.Level httpLogging;
-  /**
-   * Controls the connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api
-   * requests. Defaults to 10000 (10 seconds)
-   */
-  private int timeout = 10_000;
+  /** When set, controls the volume of HTTP logging of the Elasticsearch Api. */
+  private HttpLogging httpLogging = HttpLogging.NONE;
+  /** Connect, read and write socket timeouts (in milliseconds) for Elasticsearch Api requests. */
+  private Integer timeout = 10_000;
+  /** Overrides ssl configuration relating to the Elasticsearch client connection. */
+  private Ssl ssl = new Ssl();
+
+  private Integer maxRequests; // unused
+
+  private HealthCheck healthCheck = new HealthCheck();
 
   public String getPipeline() {
     return pipeline;
   }
 
   public void setPipeline(String pipeline) {
-    if (pipeline != null && !pipeline.isEmpty()) {
-      this.pipeline = pipeline;
-    }
+    this.pipeline = emptyToNull(pipeline);
   }
 
-  public List<String> getHosts() {
+  public String getHosts() {
     return hosts;
   }
 
-  public void setHosts(List<String> hosts) {
-    if (hosts != null && !hosts.isEmpty()) {
-      List<String> converted = new ArrayList<>();
-      for (String host : hosts) {
-        if (host.startsWith("http://") || host.startsWith("https://")) {
-          converted.add(host);
-          continue;
-        }
-        int port = HttpUrl.parse("http://" + host).port();
-        if (port == 80) {
-          host += ":9200";
-        } else if (port == 9300) {
-          log.warning(
-              "Native transport no longer supported. Changing " + host + " to http port 9200");
-          host = host.replace(":9300", ":9200");
-        }
-        converted.add("http://" + host);
-      }
-      this.hosts = converted;
-    }
+  public void setHosts(String hosts) {
+    this.hosts = emptyToNull(hosts);
   }
 
   public String getIndex() {
     return index;
   }
 
-  public int getMaxRequests() {
+  public Integer getMaxRequests() {
     return maxRequests;
   }
 
-  public void setMaxRequests(int maxRequests) {
+  public void setMaxRequests(Integer maxRequests) {
     this.maxRequests = maxRequests;
   }
 
   public void setIndex(String index) {
-    this.index = index;
+    this.index = emptyToNull(index);
   }
 
-  public int getIndexShards() {
+  public Integer getIndexShards() {
     return indexShards;
   }
 
-  public void setIndexShards(int indexShards) {
+  public void setIndexShards(Integer indexShards) {
     this.indexShards = indexShards;
   }
 
@@ -133,11 +229,11 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
     this.dateSeparator = dateSeparator;
   }
 
-  public int getIndexReplicas() {
+  public Integer getIndexReplicas() {
     return indexReplicas;
   }
 
-  public void setIndexReplicas(int indexReplicas) {
+  public void setIndexReplicas(Integer indexReplicas) {
     this.indexReplicas = indexReplicas;
   }
 
@@ -146,7 +242,7 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   }
 
   public void setUsername(String username) {
-    this.username = username;
+    this.username = emptyToNull(username);
   }
 
   public String getPassword() {
@@ -154,34 +250,59 @@ class ZipkinElasticsearchStorageProperties implements Serializable { // for Spar
   }
 
   public void setPassword(String password) {
-    this.password = password;
+    this.password = emptyToNull(password);
   }
 
-  public HttpLoggingInterceptor.Level getHttpLogging() {
+  public HttpLogging getHttpLogging() {
     return httpLogging;
   }
 
-  public void setHttpLogging(HttpLoggingInterceptor.Level httpLogging) {
+  public void setHttpLogging(HttpLogging httpLogging) {
     this.httpLogging = httpLogging;
   }
 
-  public int getTimeout() {
+  public Integer getTimeout() {
     return timeout;
   }
 
-  public void setTimeout(int timeout) {
+  public void setTimeout(Integer timeout) {
     this.timeout = timeout;
   }
 
-  public ElasticsearchStorage.Builder toBuilder(OkHttpClient client) {
-    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder(client);
-    if (hosts != null) builder.hosts(hosts);
-    return builder
-        .index(index)
-        .dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0))
-        .pipeline(pipeline)
-        .maxRequests(maxRequests)
-        .indexShards(indexShards)
-        .indexReplicas(indexReplicas);
+  public HealthCheck getHealthCheck() {
+    return healthCheck;
+  }
+
+  public void setHealthCheck(
+    HealthCheck healthCheck) {
+    this.healthCheck = healthCheck;
+  }
+
+  public Ssl getSsl() {
+    return ssl;
+  }
+
+  public void setSsl(Ssl ssl) {
+    this.ssl = ssl;
+  }
+
+  public ElasticsearchStorage.Builder toBuilder(LazyHttpClient httpClient) {
+    ElasticsearchStorage.Builder builder = ElasticsearchStorage.newBuilder(httpClient);
+    if (index != null) builder.index(index);
+    if (dateSeparator != null) {
+      builder.dateSeparator(dateSeparator.isEmpty() ? 0 : dateSeparator.charAt(0));
+    }
+    if (pipeline != null) builder.pipeline(pipeline);
+    if (indexShards != null) builder.indexShards(indexShards);
+    if (indexReplicas != null) builder.indexReplicas(indexReplicas);
+
+    if (maxRequests != null) {
+      log.warning("ES_MAX_REQUESTS is no longer honored. Use STORAGE_THROTTLE_ENABLED instead");
+    }
+    return builder;
+  }
+
+  private static String emptyToNull(String s) {
+    return "".equals(s) ? null : s;
   }
 }

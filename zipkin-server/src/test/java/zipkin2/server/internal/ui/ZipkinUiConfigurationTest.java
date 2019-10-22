@@ -1,37 +1,32 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.server.internal.ui;
 
-import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.HttpMethod;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.MediaType;
+import com.linecorp.armeria.common.RequestHeaders;
+import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import io.netty.handler.codec.http.cookie.ClientCookieEncoder;
 import io.netty.handler.codec.http.cookie.Cookie;
 import io.netty.handler.codec.http.cookie.DefaultCookie;
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import org.junit.After;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -40,8 +35,7 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.core.io.ClassPathResource;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.CoreMatchers.isA;
-import static org.junit.internal.matchers.ThrowableCauseMatcher.hasCause;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class ZipkinUiConfigurationTest {
 
@@ -54,17 +48,6 @@ public class ZipkinUiConfigurationTest {
     }
   }
 
-  @Rule
-  public ExpectedException thrown = ExpectedException.none();
-
-  @Test
-  public void indexHtmlFromClasspath() {
-    context = createContext();
-
-    assertThat(context.getBean(ZipkinUiConfiguration.class).indexHtml)
-      .isNotNull();
-  }
-
   @Test
   public void indexContentType() {
     context = createContext();
@@ -74,18 +57,23 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void invalidIndexHtml() {
-    // I failed to make Jsoup barf, even on nonsense like: "<head wait no I changed my mind this HTML is totally invalid <<<<<<<<<<<"
-    // So let's just run with a case where the file doesn't exist
-    context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
-    ZipkinUiConfiguration ui = context.getBean(ZipkinUiConfiguration.class);
-    ui.indexHtml = new ClassPathResource("does-not-exist.html");
+  public void indexHtml() throws Exception {
+    // Instantiate directly so that spring doesn't cache it
+    ZipkinUiConfiguration ui = new ZipkinUiConfiguration();
+    ui.ui = new ZipkinUiProperties();
 
-    thrown.expect(RuntimeException.class);
-    // There's a BeanInstantiationException nested in between BeanCreationException and IOException,
-    // so we go one level deeper about causes. There's no `expectRootCause`.
-    thrown.expectCause(hasCause(hasCause(isA(BeanCreationException.class))));
-    serveIndex();
+    ui.classicIndexHtml = new ClassPathResource("zipkin-ui/index.html");
+    ui.lensIndexHtml = new ClassPathResource("zipkin-lens/index.html");
+    assertThat(ui.indexService())
+      .isInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
+
+    ui.classicIndexHtml = new ClassPathResource("does-not-exist.html");
+    assertThat(ui.indexService())
+      .isNotInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
+
+    ui.lensIndexHtml = new ClassPathResource("does-not-exist.html");
+    assertThatThrownBy(ui::indexService)
+      .isInstanceOf(BeanCreationException.class);
   }
 
   @Test
@@ -149,7 +137,7 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void defaultBaseUrl_doesNotChangeResource() throws IOException {
+  public void defaultBaseUrl_doesNotChangeResource() throws Exception {
     context = createContext();
 
     assertThat(new ByteArrayInputStream(serveIndex().content().array()))
@@ -161,7 +149,7 @@ public class ZipkinUiConfigurationTest {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/foo/bar/\">");
+      .contains("<base href=\"/foo/bar/\" />");
   }
 
   @Test
@@ -173,22 +161,22 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void canOverideProperty_specialCaseRoot() {
+  public void canOverrideProperty_specialCaseRoot() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/");
 
     assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/\">");
+      .contains("<base href=\"/\" />");
   }
 
-  private AggregatedHttpMessage serveIndex(Cookie... cookies) {
-    HttpHeaders headers = HttpHeaders.of(HttpMethod.GET, "/");
+  AggregatedHttpResponse serveIndex(Cookie... cookies) {
+    RequestHeaders headers = RequestHeaders.of(HttpMethod.GET, "/");
     String encodedCookies = ClientCookieEncoder.LAX.encode(cookies);
     if (encodedCookies != null) {
-      headers.set(HttpHeaderNames.COOKIE, encodedCookies);
+      headers = headers.toBuilder().set(HttpHeaderNames.COOKIE, encodedCookies).build();
     }
     HttpRequest req = HttpRequest.of(headers);
     try {
-      return context.getBean(ZipkinUiConfiguration.class).indexSwitchingService()
+      return context.getBean(HttpService.class)
         .serve(ServiceRequestContext.of(req), req).aggregate()
         .get();
     } catch (Exception e) {

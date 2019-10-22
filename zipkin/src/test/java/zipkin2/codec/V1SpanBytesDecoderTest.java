@@ -1,22 +1,20 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.codec;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Ignore;
@@ -25,7 +23,6 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import zipkin2.Endpoint;
 import zipkin2.Span;
-import zipkin2.TestObjects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.BACKEND;
@@ -41,6 +38,31 @@ public class V1SpanBytesDecoderTest {
   Span span = SPAN;
 
   @Rule public ExpectedException thrown = ExpectedException.none();
+
+  @Test public void niceErrorOnTruncatedSpans_THRIFT() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Truncated: length 8 > bytes available 2 reading List<Span> from TBinary");
+
+    byte[] encoded = SpanBytesEncoder.THRIFT.encodeList(TRACE);
+    SpanBytesDecoder.THRIFT.decodeList(Arrays.copyOfRange(encoded, 0, 10));
+  }
+
+  @Test public void niceErrorOnTruncatedSpan_THRIFT() {
+    thrown.expect(IllegalArgumentException.class);
+    thrown.expectMessage("Truncated: length 8 > bytes available 7 reading Span from TBinary");
+
+    byte[] encoded = SpanBytesEncoder.THRIFT.encode(SPAN);
+    SpanBytesDecoder.THRIFT.decodeOne(Arrays.copyOfRange(encoded, 0, 10));
+  }
+
+  @Test public void emptyListOk_THRIFT() {
+    assertThat(SpanBytesDecoder.THRIFT.decodeList(new byte[0]))
+      .isEmpty(); // instead of throwing an exception
+
+    byte[] emptyListLiteral = {12 /* TYPE_STRUCT */, 0, 0, 0, 0 /* zero length */};
+    assertThat(SpanBytesDecoder.THRIFT.decodeList(emptyListLiteral))
+      .isEmpty(); // instead of throwing an exception
+  }
 
   @Test
   public void spanRoundTrip_JSON_V1() {
@@ -136,8 +158,7 @@ public class V1SpanBytesDecoderTest {
   @Test
   public void niceErrorOnMalformed_inputSpans_THRIFT() {
     thrown.expect(IllegalArgumentException.class);
-    thrown.expectMessage(
-        "Truncated: length 1701604463 > bytes remaining 0 reading List<Span> from TBinary");
+    thrown.expectMessage("Truncated: length 1 > bytes available 0 reading List<Span> from TBinary");
 
     SpanBytesDecoder.THRIFT.decodeList(new byte[] {'h', 'e', 'l', 'l', 'o'});
   }

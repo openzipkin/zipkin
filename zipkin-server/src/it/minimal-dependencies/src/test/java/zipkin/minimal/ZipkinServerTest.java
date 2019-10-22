@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin.minimal;
 
@@ -37,14 +34,31 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
-  properties = {"spring.config.name=zipkin-server", "server.port=0"}
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
+  properties = {
+    "server.port=0",
+    "spring.config.name=zipkin-server"
+  }
 )
 @RunWith(SpringRunner.class)
 public class ZipkinServerTest {
 
   @Autowired Server server;
   OkHttpClient client = new OkHttpClient.Builder().followRedirects(false).build();
+
+  /** Tests admin endpoints work eventhough actuator is no longer a strict dependency. */
+  @Test public void adminEndpoints() throws Exception {
+    // Documented as supported in our zipkin-server/README.md
+    assertThat(get("/health").isSuccessful()).isTrue();
+    assertThat(get("/info").isSuccessful()).isTrue();
+    assertThat(get("/metrics").isSuccessful()).isTrue();
+    assertThat(get("/prometheus").isSuccessful()).isTrue();
+
+    // Check endpoints we formerly redirected to. Note we never redirected to /actuator/metrics
+    assertThat(get("/actuator/health").isSuccessful()).isTrue();
+    assertThat(get("/actuator/info").isSuccessful()).isTrue();
+    assertThat(get("/actuator/prometheus").isSuccessful()).isTrue();
+  }
 
   @Test public void readsBackNames() throws Exception {
     String service = "web";

@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.elasticsearch.internal;
 
@@ -21,7 +18,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
@@ -31,6 +27,44 @@ import zipkin2.internal.Nullable;
 
 import static java.lang.String.format;
 
+/**
+ * <h3>Index-Prefix/type delimiter</h3>
+ * When Elasticsearch dropped support for multiple type indexes, we introduced a delimited naming
+ * convention to distinguish between span, dependency and autocomplete documents. Originally, this
+ * was a colon prefix pattern. In version 7, Elasticsearch dropped support for colons in indexes. To
+ * keep existing writes consistent, we still use colon in versions prior to ES 7, eventhough
+ * starting at version 7, we change to hyphens. {@code zipkin2.elasticsearch.IndexTemplates} is
+ * responsible for this decision.
+ *
+ * <p><h3>Creating indexes</h3>
+ * Using the default index prefix of "zipkin", when indexes are created, they look like the
+ * following, based on the version.
+ *
+ * <ul>
+ *   <li>ES up to v6: zipkin:span-2019-05-03 zipkin:dependency-2019-05-03 zipkin:autocomplete-2019-05-03</li>
+ *   <li>ES v7: zipkin-span-2019-05-03 zipkin-dependency-2019-05-03 zipkin-autocomplete-2019-05-03</li>
+ * </ul>
+ *
+ * <p>We can allow an index prefix of up to 231 UTF-8 encoded bytes, subject to the index naming
+ * constraints. This is the normal 255 limit minus the longest suffix (ex. -autocomplete-2019-05-03).
+ *
+ * <p><h3>Reading indexes</h3>
+ * While ES 7 cannot write new indexes with a colons, it can read them. Upon upgrade, some sites
+ * will have a mixed read state where some indexes delimit types with a colon and others a hyphen.
+ * Accordingly, we use * in read patterns in place of a type delimiter. We use * because there is no
+ * support for single character wildcards in ES.
+ *
+ * <p><h3>Elasticsearch 7 naming constraints</h3>
+ * According to a <a href="https://github.com/elastic/elasticsearch/blob/83e9d0b9c63589f1dc5bda8abb6b10b27502ef71/server/src/main/java/org/elasticsearch/cluster/metadata/MetaDataCreateIndexService.java#L162">recent
+ * reference</a>, the following index naming constraints apply to index names as of ES 7:
+ *
+ * <ul>
+ *   <li>No more than 255 UTF-8 encoded bytes</li>
+ *   <li>Cannot be . or ..</li>
+ *   <li>Cannot contain : or #</li>
+ *   <li>Cannot start with _ - or +</li>
+ * </ul>
+ */
 @AutoValue
 public abstract class IndexNameFormatter {
   public static Builder newBuilder() {
@@ -58,19 +92,13 @@ public abstract class IndexNameFormatter {
     abstract char dateSeparator();
 
     public final IndexNameFormatter build() {
-      return dateFormat(
-              new ThreadLocal<SimpleDateFormat>() {
-                @Override
-                protected SimpleDateFormat initialValue() {
-                  char separator = dateSeparator();
-                  SimpleDateFormat result =
-                      new SimpleDateFormat(
-                          separator == 0 ? "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator));
-                  result.setTimeZone(UTC);
-                  return result;
-                }
-              })
-          .autoBuild();
+      char separator = dateSeparator();
+      String format = separator == 0 ? "yyyyMMdd" : "yyyy-MM-dd".replace('-', separator);
+      return dateFormat(ThreadLocal.withInitial(() -> {
+        SimpleDateFormat result = new SimpleDateFormat(format);
+        result.setTimeZone(UTC);
+        return result;
+      })).autoBuild();
     }
 
     abstract IndexNameFormatter autoBuild();
@@ -86,9 +114,6 @@ public abstract class IndexNameFormatter {
   public List<String> formatTypeAndRange(@Nullable String type, long beginMillis, long endMillis) {
     GregorianCalendar current = midnightUTC(beginMillis);
     GregorianCalendar end = midnightUTC(endMillis);
-    if (current.equals(end)) {
-      return Collections.singletonList(formatTypeAndTimestamp(type, current.getTimeInMillis()));
-    }
 
     String prefix = prefix(type);
     List<String> indices = new ArrayList<>();
@@ -157,12 +182,21 @@ public abstract class IndexNameFormatter {
     return result;
   }
 
+  /** On insert, require a version-specific index-type delimiter as ES 7+ dropped colons */
+  public String formatTypeAndTimestampForInsert(String type, char indexTypeDelimiter,
+    long timestampMillis) {
+    return index() + indexTypeDelimiter + type + '-' + dateFormat().get()
+      .format(new Date(timestampMillis));
+  }
+
   public String formatTypeAndTimestamp(@Nullable String type, long timestampMillis) {
     return prefix(type) + "-" + dateFormat().get().format(new Date(timestampMillis));
   }
 
   private String prefix(@Nullable String type) {
-    return type != null ? index() + ":" + type : index();
+    // We use single-character wildcard here in order to read both : and - as starting in ES 7, :
+    // is no longer permitted.
+    return type != null ? index() + "*" + type : index();
   }
 
   // for testing

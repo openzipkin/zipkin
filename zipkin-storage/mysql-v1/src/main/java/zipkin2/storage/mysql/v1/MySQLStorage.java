@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.mysql.v1;
 
@@ -24,6 +21,7 @@ import java.util.concurrent.Executor;
 import javax.sql.DataSource;
 import org.jooq.ExecuteListenerProvider;
 import org.jooq.conf.Settings;
+import zipkin2.Call;
 import zipkin2.CheckResult;
 import zipkin2.internal.Nullable;
 import zipkin2.storage.AutocompleteTags;
@@ -31,6 +29,7 @@ import zipkin2.storage.ServiceAndSpanNames;
 import zipkin2.storage.SpanConsumer;
 import zipkin2.storage.SpanStore;
 import zipkin2.storage.StorageComponent;
+import zipkin2.storage.Traces;
 
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinAnnotations.ZIPKIN_ANNOTATIONS;
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
@@ -92,7 +91,8 @@ public final class MySQLStorage extends StorageComponent {
       return new MySQLStorage(this);
     }
 
-    Builder() {}
+    Builder() {
+    }
   }
 
   static {
@@ -139,8 +139,12 @@ public final class MySQLStorage extends StorageComponent {
     return new MySQLSpanStore(this, schema());
   }
 
+  @Override public Traces traces() {
+    return (Traces) spanStore();
+  }
+
   @Override public ServiceAndSpanNames serviceAndSpanNames() {
-    return new MySQLSpanStore(this, schema());
+    return (ServiceAndSpanNames) spanStore();
   }
 
   @Override public AutocompleteTags autocompleteTags() {
@@ -154,10 +158,15 @@ public final class MySQLStorage extends StorageComponent {
   @Override public CheckResult check() {
     try (Connection conn = datasource.getConnection()) {
       context.get(conn).select(ZIPKIN_SPANS.TRACE_ID).from(ZIPKIN_SPANS).limit(1).execute();
-    } catch (SQLException | RuntimeException e) {
+    } catch (Throwable e) {
+      Call.propagateIfFatal(e);
       return CheckResult.failed(e);
     }
     return CheckResult.OK;
+  }
+
+  @Override public final String toString() {
+    return "MySQLStorage{datasource=" + datasource + "}";
   }
 
   @Override public void close() {

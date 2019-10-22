@@ -27,6 +27,20 @@ http://localhost:9000/zipkin
 $ npm run build
 ```
 
+## Testing
+
+To run the test suite,
+
+```
+npm run test
+```
+
+To check code coverage,
+
+```
+npm run coverage
+```
+
 ## Authentication / Authorization
 
 Zipkin Lens can be secured by running it behind an authenticating proxy like [Apache HTTPD](https://httpd.apache.org/docs/current/howto/auth.html), [Nginx](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) or similar.

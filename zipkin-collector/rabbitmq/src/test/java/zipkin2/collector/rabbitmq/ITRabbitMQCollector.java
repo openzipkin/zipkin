@@ -1,47 +1,47 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.collector.rabbitmq;
 
+import com.rabbitmq.client.Channel;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeoutException;
-
-import com.rabbitmq.client.Channel;
 import org.junit.After;
 import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+import zipkin2.Component;
 import zipkin2.Span;
 import zipkin2.codec.SpanBytesEncoder;
 import zipkin2.collector.CollectorMetrics;
 import zipkin2.storage.InMemoryStorage;
 
-import static org.assertj.core.api.Java6Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 import static zipkin2.TestObjects.LOTS_OF_SPANS;
+import static zipkin2.TestObjects.UTF_8;
+import static zipkin2.codec.SpanBytesEncoder.THRIFT;
 import static zipkin2.collector.rabbitmq.RabbitMQCollector.builder;
 
 public class ITRabbitMQCollector {
   List<Span> spans = Arrays.asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1]);
 
   @ClassRule
-  public static RabbitMQCollectorRule rabbit = new RabbitMQCollectorRule("rabbitmq:3.6-alpine");
+  public static RabbitMQCollectorRule rabbit = new RabbitMQCollectorRule("rabbitmq:3.7-alpine");
 
   @After
   public void clear() {
@@ -62,8 +62,8 @@ public class ITRabbitMQCollector {
     String notRabbitMqAddress = "localhost:80";
     try (RabbitMQCollector collector =
         builder().addresses(Collections.singletonList(notRabbitMqAddress)).build()) {
-      thrown.expect(IllegalStateException.class);
-      thrown.expectMessage("Unable to establish connection to RabbitMQ server");
+      thrown.expect(UncheckedIOException.class);
+      thrown.expectMessage("Unable to establish connection to RabbitMQ server: Connection refused");
       collector.start();
     }
   }
@@ -71,15 +71,7 @@ public class ITRabbitMQCollector {
   /** Ensures list encoding works: a json encoded list of spans */
   @Test
   public void messageWithMultipleSpans_json() throws Exception {
-    byte[] message = SpanBytesEncoder.JSON_V1.encodeList(spans);
-    rabbit.publish(message);
-
-    Thread.sleep(1000);
-    assertThat(rabbit.storage.acceptedSpanCount()).isEqualTo(spans.size());
-
-    assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(1);
-    assertThat(rabbit.rabbitmqMetrics.bytes()).isEqualTo(message.length);
-    assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
+    messageWithMultipleSpans(SpanBytesEncoder.JSON_V1);
   }
 
   /** Ensures list encoding works: a version 2 json list of spans */
@@ -94,9 +86,7 @@ public class ITRabbitMQCollector {
     messageWithMultipleSpans(SpanBytesEncoder.PROTO3);
   }
 
-  void messageWithMultipleSpans(SpanBytesEncoder encoder)
-      throws IOException, TimeoutException, InterruptedException {
-
+  void messageWithMultipleSpans(SpanBytesEncoder encoder) throws Exception {
     byte[] message = encoder.encodeList(spans);
     rabbit.publish(message);
 
@@ -104,22 +94,31 @@ public class ITRabbitMQCollector {
     assertThat(rabbit.storage.acceptedSpanCount()).isEqualTo(spans.size());
 
     assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(1);
+    assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isZero();
     assertThat(rabbit.rabbitmqMetrics.bytes()).isEqualTo(message.length);
     assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size());
+    assertThat(rabbit.rabbitmqMetrics.spansDropped()).isZero();
   }
 
   /** Ensures malformed spans don't hang the collector */
   @Test
   public void skipsMalformedData() throws Exception {
-    rabbit.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
+    byte[] malformed1 = "[\"='".getBytes(UTF_8); // screwed up json
+    byte[] malformed2 = "malformed".getBytes(UTF_8);
+    rabbit.publish(THRIFT.encodeList(spans));
     rabbit.publish(new byte[0]);
-    rabbit.publish("[\"='".getBytes()); // screwed up json
-    rabbit.publish("malformed".getBytes());
-    rabbit.publish(SpanBytesEncoder.JSON_V2.encodeList(spans));
+    rabbit.publish(malformed1);
+    rabbit.publish(malformed2);
+    rabbit.publish(THRIFT.encodeList(spans));
 
     Thread.sleep(1000);
+
     assertThat(rabbit.rabbitmqMetrics.messages()).isEqualTo(5);
-    assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isEqualTo(3);
+    assertThat(rabbit.rabbitmqMetrics.messagesDropped()).isEqualTo(2); // only malformed, not empty
+    assertThat(rabbit.rabbitmqMetrics.bytes())
+      .isEqualTo(THRIFT.encodeList(spans).length * 2 + malformed1.length + malformed2.length);
+    assertThat(rabbit.rabbitmqMetrics.spans()).isEqualTo(spans.size() * 2);
+    assertThat(rabbit.rabbitmqMetrics.spansDropped()).isZero();
   }
 
   /** See GitHub issue #2068 */
@@ -139,6 +138,18 @@ public class ITRabbitMQCollector {
       channel.queueDelete("zipkin-test2");
       channel.close();
     }
+  }
+
+  /**
+   * The {@code toString()} of {@link Component} implementations appear in health check endpoints.
+   * Since these are likely to be exposed in logs and other monitoring tools, care should be taken
+   * to ensure {@code toString()} output is a reasonable length and does not contain sensitive
+   * information.
+   */
+  @Test public void toStringContainsOnlySummaryInformation() {
+    assertThat(rabbit.collector).hasToString(
+      String.format("RabbitMQCollector{addresses=[%s], queue=%s}", rabbit.address(), rabbit.queue)
+    );
   }
 
   /** Guards against errors that leak from storage, such as InvalidQueryException */

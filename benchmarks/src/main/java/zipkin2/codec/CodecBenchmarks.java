@@ -1,25 +1,18 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.codec;
 
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.serializers.JavaSerializer;
 import com.google.common.io.ByteStreams;
 import java.io.IOException;
 import java.util.Collections;
@@ -54,144 +47,120 @@ import zipkin2.Span;
 @Measurement(iterations = 5, time = 1)
 @Warmup(iterations = 10, time = 1)
 @Fork(3)
-@BenchmarkMode(Mode.AverageTime)
+@BenchmarkMode(Mode.SampleTime)
 @OutputTimeUnit(TimeUnit.MICROSECONDS)
 @State(Scope.Thread)
 @Threads(1)
 public class CodecBenchmarks {
   static final byte[] clientSpanJsonV2 = read("/zipkin2-client.json");
   static final Span clientSpan = SpanBytesDecoder.JSON_V2.decodeOne(clientSpanJsonV2);
+  static final byte[] clientSpanJsonV1 = SpanBytesEncoder.JSON_V1.encode(clientSpan);
   static final byte[] clientSpanProto3 = SpanBytesEncoder.PROTO3.encode(clientSpan);
-  static final zipkin2.proto3.Span clientSpan_wire;
+  static final byte[] clientSpanThrift = SpanBytesEncoder.THRIFT.encode(clientSpan);
   static final List<Span> tenClientSpans = Collections.nCopies(10, clientSpan);
   static final byte[] tenClientSpansJsonV2 = SpanBytesEncoder.JSON_V2.encodeList(tenClientSpans);
-  static final Kryo kryo = new Kryo();
-  static final byte[] clientSpanSerialized;
 
-  static {
-    kryo.register(Span.class, new JavaSerializer());
-    Output output = new Output(4096);
-    kryo.writeObject(output, clientSpan);
-    output.flush();
-    clientSpanSerialized = output.getBuffer();
-    try {
-      clientSpan_wire = zipkin2.proto3.Span.ADAPTER.decode(clientSpanProto3);
-    } catch (IOException e) {
-      throw new AssertionError(e);
-    }
-  }
-
-  /** manually implemented with json so not as slow as normal java */
   @Benchmark
-  public Span readClientSpan_kryo() {
-    return kryo.readObject(new Input(clientSpanSerialized), Span.class);
+  public Span readClientSpan_JSON_V1() {
+    return SpanBytesDecoder.JSON_V1.decodeOne(clientSpanJsonV1);
   }
 
   @Benchmark
-  public byte[] writeClientSpan_kryo() {
-    Output output = new Output(clientSpanSerialized.length);
-    kryo.writeObject(output, clientSpan);
-    output.flush();
-    return output.getBuffer();
-  }
-
-  @Benchmark
-  public Span readClientSpan_json() {
+  public Span readClientSpan_JSON_V2() {
     return SpanBytesDecoder.JSON_V2.decodeOne(clientSpanJsonV2);
   }
 
   @Benchmark
-  public Span readClientSpan_proto3() {
+  public Span readClientSpan_PROTO3() {
     return SpanBytesDecoder.PROTO3.decodeOne(clientSpanProto3);
   }
 
   @Benchmark
-  public zipkin2.proto3.Span readClientSpan_proto3_wire() throws Exception {
-    return zipkin2.proto3.Span.ADAPTER.decode(clientSpanProto3);
+  public Span readClientSpan_THRIFT() {
+    return SpanBytesDecoder.THRIFT.decodeOne(clientSpanThrift);
   }
 
   @Benchmark
-  public List<Span> readTenClientSpans_json() {
-    return SpanBytesDecoder.JSON_V2.decodeList(tenClientSpansJsonV2);
-  }
-
-  @Benchmark
-  public byte[] writeClientSpan_json() {
+  public byte[] writeClientSpan_JSON_V2() {
     return SpanBytesEncoder.JSON_V2.encode(clientSpan);
   }
 
   @Benchmark
-  public byte[] writeTenClientSpans_json() {
-    return SpanBytesEncoder.JSON_V2.encodeList(tenClientSpans);
-  }
-
-  @Benchmark
-  public byte[] writeClientSpan_json_v1() {
+  public byte[] writeClientSpan_JSON_V1() {
     return SpanBytesEncoder.JSON_V1.encode(clientSpan);
   }
 
   @Benchmark
-  public byte[] writeTenClientSpans_json_v1() {
-    return SpanBytesEncoder.JSON_V1.encodeList(tenClientSpans);
-  }
-
-  @Benchmark
-  public byte[] writeClientSpan_proto3() {
+  public byte[] writeClientSpan_PROTO3() {
     return SpanBytesEncoder.PROTO3.encode(clientSpan);
   }
 
   @Benchmark
-  public byte[] writeClientSpan_proto3_wire() {
-    return clientSpan_wire.encode();
+  public byte[] writeClientSpan_THRIFT() {
+    return SpanBytesEncoder.THRIFT.encode(clientSpan);
+  }
+
+  @Benchmark
+  public List<Span> readTenClientSpans_JSON_V2() {
+    return SpanBytesDecoder.JSON_V2.decodeList(tenClientSpansJsonV2);
+  }
+
+  @Benchmark
+  public byte[] writeTenClientSpans_JSON_V2() {
+    return SpanBytesEncoder.JSON_V2.encodeList(tenClientSpans);
   }
 
   static final byte[] chineseSpanJsonV2 = read("/zipkin2-chinese.json");
   static final Span chineseSpan = SpanBytesDecoder.JSON_V2.decodeOne(chineseSpanJsonV2);
-  static final zipkin2.proto3.Span chineseSpan_wire;
   static final byte[] chineseSpanProto3 = SpanBytesEncoder.PROTO3.encode(chineseSpan);
+  static final byte[] chineseSpanJsonV1 = SpanBytesEncoder.JSON_V1.encode(chineseSpan);
+  static final byte[] chineseSpanThrift = SpanBytesEncoder.THRIFT.encode(chineseSpan);
 
-  static {
-    try {
-      chineseSpan_wire = zipkin2.proto3.Span.ADAPTER.decode(chineseSpanProto3);
-    } catch (IOException e) {
-      throw new AssertionError(e);
-    }
+  @Benchmark
+  public Span readChineseSpan_JSON_V1() {
+    return SpanBytesDecoder.JSON_V1.decodeOne(chineseSpanJsonV1);
   }
 
   @Benchmark
-  public Span readChineseSpan_json() {
+  public Span readChineseSpan_JSON_V2() {
     return SpanBytesDecoder.JSON_V2.decodeOne(chineseSpanJsonV2);
   }
 
   @Benchmark
-  public Span readChineseSpan_proto3() {
+  public Span readChineseSpan_PROTO3() {
     return SpanBytesDecoder.PROTO3.decodeOne(chineseSpanProto3);
   }
 
   @Benchmark
-  public zipkin2.proto3.Span readChineseSpan_proto3_wire() throws Exception {
-    return zipkin2.proto3.Span.ADAPTER.decode(chineseSpanProto3);
+  public Span readChineseSpan_THRIFT() {
+    return SpanBytesDecoder.THRIFT.decodeOne(chineseSpanThrift);
   }
 
   @Benchmark
-  public byte[] writeChineseSpan_json() {
+  public byte[] writeChineseSpan_JSON_V2() {
     return SpanBytesEncoder.JSON_V2.encode(chineseSpan);
   }
 
   @Benchmark
-  public byte[] writeChineseSpan_proto3() {
+  public byte[] writeChineseSpan_JSON_V1() {
+    return SpanBytesEncoder.JSON_V1.encode(chineseSpan);
+  }
+
+  @Benchmark
+  public byte[] writeChineseSpan_PROTO3() {
     return SpanBytesEncoder.PROTO3.encode(chineseSpan);
   }
 
   @Benchmark
-  public byte[] writeChineseSpan_proto3_wire() {
-    return chineseSpan_wire.encode();
+  public byte[] writeChineseSpan_THRIFT() {
+    return SpanBytesEncoder.THRIFT.encode(chineseSpan);
   }
 
   // Convenience main entry-point
   public static void main(String[] args) throws RunnerException {
     Options opt = new OptionsBuilder()
-      .include(".*" + CodecBenchmarks.class.getSimpleName())
+      .include(".*" + CodecBenchmarks.class.getSimpleName() +".*read.*Span_.*")
+      .addProfiler("gc")
       .build();
 
     new Runner(opt).run();

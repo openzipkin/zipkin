@@ -1,158 +1,287 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.elasticsearch.internal.client;
 
-import java.io.Closeable;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.linecorp.armeria.client.Clients;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.UnprocessedRequestException;
+import com.linecorp.armeria.common.AggregatedHttpRequest;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
+import com.linecorp.armeria.common.HttpData;
+import com.linecorp.armeria.common.HttpHeaders;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpRequestWriter;
+import com.linecorp.armeria.common.HttpResponse;
+import com.linecorp.armeria.common.HttpStatus;
+import com.linecorp.armeria.common.HttpStatusClass;
+import com.linecorp.armeria.common.RequestContext;
+import com.linecorp.armeria.common.RequestHeaders;
+import com.linecorp.armeria.common.util.Exceptions;
+import com.linecorp.armeria.common.util.SafeCloseable;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufHolder;
+import io.netty.util.AttributeKey;
+import io.netty.util.ReferenceCountUtil;
+import io.netty.util.concurrent.EventExecutor;
+import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.concurrent.Semaphore;
-import okhttp3.HttpUrl;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
-import okhttp3.ResponseBody;
-import okhttp3.internal.http.HttpHeaders;
-import okio.BufferedSource;
-import okio.GzipSource;
-import okio.Okio;
+import java.io.InputStream;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.function.Supplier;
 import zipkin2.Call;
 import zipkin2.Callback;
 
-public final class HttpCall<V> extends Call<V> {
+import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
+import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
+
+public final class HttpCall<V> extends Call.Base<V> {
+  public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
-    V convert(BufferedSource content) throws IOException;
+    /**
+     * Prefer using the {@code parser} for request-scoped conversions. Typically, {@code
+     * contentString} is only for an unexpected failure.
+     */
+    V convert(JsonParser parser, Supplier<String> contentString) throws IOException;
   }
 
-  public static class Factory implements Closeable {
-    final OkHttpClient ok;
-    final Semaphore semaphore;
-    public final HttpUrl baseUrl;
+  /**
+   * A request stream which can have {@link HttpData} of the request body written to it.
+   */
+  public interface RequestStream {
+    /**
+     * Writes the {@link HttpData} to the stream. Returns {@code false} if the stream has been
+     * aborted (e.g., the request timed out while writing), or {@code true} otherwise.
+     */
+    boolean tryWrite(HttpData obj);
+  }
 
-    public Factory(OkHttpClient ok, HttpUrl baseUrl) {
-      this.ok = ok;
-      this.semaphore = new Semaphore(ok.dispatcher().getMaxRequests());
-      this.baseUrl = baseUrl;
+  /**
+   * A supplier of {@linkplain HttpHeaders headers} and {@linkplain HttpData body} of a request
+   * to Elasticsearch.
+   */
+  public interface RequestSupplier {
+    /**
+     * Returns the {@linkplain HttpHeaders headers} for this request.
+     */
+    RequestHeaders headers();
+
+    /**
+     * Writes the body of this request into the {@link RequestStream}.
+     * {@link RequestStream#tryWrite(HttpData)} can be called any number of times to publish any
+     * number of payload objects. It can be useful to split up a large payload into smaller chunks
+     * instead of buffering everything as one payload.
+     */
+    void writeBody(RequestStream requestStream);
+  }
+
+  static class AggregatedRequestSupplier implements RequestSupplier {
+
+    final AggregatedHttpRequest request;
+
+    AggregatedRequestSupplier(AggregatedHttpRequest request) {
+      if (request.content() instanceof ByteBufHolder) {
+        // Unfortunately it's not possible to use pooled objects in requests and support clone()
+        // after sending the request.
+        ByteBuf buf = ((ByteBufHolder) request.content()).content();
+        try {
+          this.request = AggregatedHttpRequest.of(
+            request.headers(), HttpData.copyOf(buf), request.trailers());
+        } finally {
+          buf.release();
+        }
+      } else {
+        this.request = request;
+      }
     }
 
-    public <V> HttpCall<V> newCall(Request request, BodyConverter<V> bodyConverter) {
-      return new HttpCall<>(this, request, bodyConverter);
+    @Override public RequestHeaders headers() {
+      return request.headers();
     }
 
-    @Override public void close() {
-      ok.dispatcher().executorService().shutdownNow();
+    @Override public void writeBody(RequestStream requestStream) {
+      requestStream.tryWrite(request.content());
     }
   }
 
-  public final okhttp3.Call call;
-  public final BodyConverter<V> bodyConverter;
-  final Semaphore semaphore;
+  public static class Factory {
+    final HttpClient httpClient;
 
+    public Factory(HttpClient httpClient) {
+      this.httpClient = httpClient;
+    }
 
-  HttpCall(Factory factory, Request request, BodyConverter<V> bodyConverter) {
-    this(
-      factory.ok.newCall(request),
-      factory.semaphore,
-      bodyConverter
-    );
+    public <V> HttpCall<V> newCall(
+      AggregatedHttpRequest request, BodyConverter<V> bodyConverter, String name) {
+      return new HttpCall<>(
+        httpClient, new AggregatedRequestSupplier(request), bodyConverter, name);
+    }
+
+    public <V> HttpCall<V> newCall(
+      RequestSupplier request, BodyConverter<V> bodyConverter, String name) {
+      return new HttpCall<>(httpClient, request, bodyConverter, name);
+    }
   }
 
-  HttpCall(okhttp3.Call call, Semaphore semaphore, BodyConverter<V> bodyConverter) {
-    this.call = call;
-    this.semaphore = semaphore;
+  // Visible for benchmarks
+  public final RequestSupplier request;
+  final BodyConverter<V> bodyConverter;
+  final String name;
+
+  final HttpClient httpClient;
+
+  volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
+
+  HttpCall(HttpClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
+    String name) {
+    this.httpClient = httpClient;
+    this.name = name;
+    this.request = request;
+
     this.bodyConverter = bodyConverter;
   }
 
-  @Override public V execute() throws IOException {
-    if (!semaphore.tryAcquire()) throw new IllegalStateException("over capacity");
+  @Override protected V doExecute() throws IOException {
+    // TODO: testme
+    for (EventExecutor eventLoop : httpClient.factory().eventLoopGroup()) {
+      if (eventLoop.inEventLoop()) {
+        throw new RuntimeException("Attempting to make a blocking request from an event loop. "
+          + "Either use doEnqueue() or run this in a separate thread.");
+      }
+    }
+    final AggregatedHttpResponse response;
     try {
-      return parseResponse(call.execute(), bodyConverter);
-    } finally {
-      semaphore.release();
+      response = sendRequest().join();
+    } catch (CompletionException e) {
+      propagateIfFatal(e);
+      Exceptions.throwUnsafely(e.getCause());
+      return null;  // Unreachable
     }
+    return parseResponse(response, bodyConverter);
   }
 
-  @Override public void enqueue(Callback<V> delegate) {
-    if (!semaphore.tryAcquire()) {
-      delegate.onError(new IllegalStateException("over capacity"));
-      return;
+  @SuppressWarnings("FutureReturnValueIgnored")
+  // TODO: errorprone wants us to check this future before returning, but what would be a sensible
+  // check? Say it is somehow canceled, would we take action? Would callback.onError() be redundant?
+  @Override protected void doEnqueue(Callback<V> callback) {
+    sendRequest().handle((response, t) -> {
+      if (t != null) {
+        callback.onError(t);
+      } else {
+        try {
+          V value = parseResponse(response, bodyConverter);
+          callback.onSuccess(value);
+        } catch (Throwable t1) {
+          propagateIfFatal(t1);
+          callback.onError(t1);
+        }
+      }
+      return null;
+    });
+  }
+
+  @Override protected void doCancel() {
+    CompletableFuture<AggregatedHttpResponse> responseFuture = this.responseFuture;
+    if (responseFuture != null) {
+      responseFuture.cancel(false);
     }
-    call.enqueue(new V2CallbackAdapter<>(semaphore, bodyConverter, delegate));
-  }
-
-  @Override public void cancel() {
-    call.cancel();
-  }
-
-  @Override public boolean isCanceled() {
-    return call.isCanceled();
   }
 
   @Override public HttpCall<V> clone() {
-    return new HttpCall<V>(call.clone(), semaphore, bodyConverter);
+    return new HttpCall<>(httpClient, request, bodyConverter, name);
   }
 
-  static class V2CallbackAdapter<V> implements okhttp3.Callback {
-    final Semaphore semaphore;
-    final BodyConverter<V> bodyConverter;
-    final Callback<V> delegate;
+  @Override public String toString() {
+    return "HttpCall(" + request + ")";
+  }
 
-    V2CallbackAdapter(Semaphore semaphore, BodyConverter<V> bodyConverter, Callback<V> delegate) {
-      this.semaphore = semaphore;
-      this.bodyConverter = bodyConverter;
-      this.delegate = delegate;
+  CompletableFuture<AggregatedHttpResponse> sendRequest() {
+    final HttpResponse response;
+    try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(NAME).set(name))) {
+      HttpRequestWriter httpRequest = HttpRequest.streaming(request.headers());
+      response = httpClient.execute(httpRequest);
+      request.writeBody(httpRequest::tryWrite);
+      httpRequest.close();
     }
+    CompletableFuture<AggregatedHttpResponse> responseFuture =
+      RequestContext.mapCurrent(
+        ctx -> response.aggregateWithPooledObjects(ctx.eventLoop(), ctx.alloc()),
+        // This should never be used in practice since the module runs in an Armeria server.
+        response::aggregate);
+    responseFuture = responseFuture.exceptionally(t -> {
+      if (t instanceof UnprocessedRequestException) {
+        Throwable cause = t.getCause();
+        // Go ahead and reduce the output in logs since this is usually a configuration or
+        // infrastructure issue and the Armeria stack trace won't help debugging that.
+        Exceptions.clearTrace(cause);
 
-    @Override public void onFailure(okhttp3.Call call, IOException e) {
-      semaphore.release();
-      delegate.onError(e);
-    }
-
-    /** Note: this runs on the {@link okhttp3.OkHttpClient#dispatcher() dispatcher} thread! */
-    @Override public void onResponse(okhttp3.Call call, Response response) {
-      semaphore.release();
-      try {
-        delegate.onSuccess(parseResponse(response, bodyConverter));
-      } catch (Throwable e) {
-        propagateIfFatal(e);
-        delegate.onError(e);
+        String message = cause.getMessage();
+        if (message == null) message = cause.getClass().getSimpleName();
+        throw new RejectedExecutionException(message, cause);
+      } else {
+        Exceptions.throwUnsafely(t);
       }
-    }
+      return null;
+    });
+    this.responseFuture = responseFuture;
+    return responseFuture;
   }
 
-  public static <V> V parseResponse(Response response, BodyConverter<V> bodyConverter)
+  V parseResponse(AggregatedHttpResponse response, BodyConverter<V> bodyConverter)
     throws IOException {
-    if (!HttpHeaders.hasBody(response)) {
-      if (response.isSuccessful()) {
+    // Handle the case where there is no content, as that means we have no resources to release.
+    HttpStatus status = response.status();
+    if (response.content().isEmpty()) {
+      if (status.codeClass().equals(HttpStatusClass.SUCCESS)) {
         return null;
+      } else if (status.code() == 404) {
+        throw new FileNotFoundException(request.headers().path());
       } else {
-        throw new IllegalStateException("response failed: " + response);
+        throw new RuntimeException(
+          "response for " + request.headers().path() + " failed: " + response.status());
       }
     }
-    try (ResponseBody responseBody = response.body()) {
-      BufferedSource content = responseBody.source();
-      if ("gzip".equalsIgnoreCase(response.header("Content-Encoding"))) {
-        content = Okio.buffer(new GzipSource(responseBody.source()));
-      }
-      if (response.isSuccessful()) {
-        return bodyConverter.convert(content);
-      } else {
-        throw new IllegalStateException(
-          "response for " + response.request().tag() + " failed: " + content.readUtf8());
-      }
+
+    // If this is a client or server error, we look for a json message.
+    if ((status.codeClass().equals(HttpStatusClass.CLIENT_ERROR)
+      || status.codeClass().equals(HttpStatusClass.SERVER_ERROR))) {
+      bodyConverter = (parser, contentString) -> {
+        String message = null;
+        try {
+          JsonNode root = OBJECT_MAPPER.readTree(parser);
+          message = root.findPath("reason").textValue();
+          if (message == null) message = root.at("/Message").textValue();
+        } catch (RuntimeException | IOException possiblyParseException) {
+        }
+        throw new RuntimeException(message != null ? message
+          : "response for " + request.headers().path() + " failed: " + contentString.get());
+      };
+    }
+
+    HttpData content = response.content();
+    try (InputStream stream = content.toInputStream();
+         JsonParser parser = JSON_FACTORY.createParser(stream)) {
+
+      if (status.code() == 404) throw new FileNotFoundException(request.headers().path());
+
+      return bodyConverter.convert(parser, content::toStringUtf8);
+    } finally {
+      ReferenceCountUtil.safeRelease(content);
     }
   }
 }

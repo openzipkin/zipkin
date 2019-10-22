@@ -1,32 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Licensed to the Apache Software Foundation (ASF) under one or more
-    contributor license agreements.  See the NOTICE file distributed with
-    this work for additional information regarding copyright ownership.
-    The ASF licenses this file to You under the Apache License, Version 2.0
-    (the "License"); you may not use this file except in compliance with
-    the License.  You may obtain a copy of the License at
+    Copyright 2015-2019 The OpenZipkin Authors
 
-        http://www.apache.org/licenses/LICENSE-2.0
+    Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+    in compliance with the License. You may obtain a copy of the License at
 
-    Unless required by applicable law or agreed to in writing, software
-    distributed under the License is distributed on an "AS IS" BASIS,
-    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-    See the License for the specific language governing permissions and
-    limitations under the License.
+    http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software distributed under the License
+    is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+    or implied. See the License for the specific language governing permissions and limitations under
+    the License.
 
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.apache.zipkin</groupId>
-    <artifactId>parent</artifactId>
-    <version>2.13.0-SNAPSHOT</version>
+    <groupId>io.zipkin</groupId>
+    <artifactId>zipkin-parent</artifactId>
+    <version>2.18.4-SNAPSHOT</version>
   </parent>
 
-  <groupId>org.apache.zipkin.zipkin2</groupId>
+  <groupId>io.zipkin.zipkin2</groupId>
   <artifactId>zipkin-collector-parent</artifactId>
   <name>Collector</name>
   <packaging>pom</packaging>
@@ -39,10 +36,10 @@
 
   <modules>
     <module>core</module>
+    <module>activemq</module>
     <module>kafka</module>
     <module>rabbitmq</module>
     <module>scribe</module>
-    <module>kafka08</module>
   </modules>
 
   <dependencies>
@@ -52,52 +49,17 @@
       <version>${project.version}</version>
     </dependency>
 
-    <!-- For test objects and integration tests -->
-    <dependency>
-      <groupId>${project.groupId}</groupId>
-      <artifactId>zipkin</artifactId>
-      <version>${project.version}</version>
-      <type>test-jar</type>
-      <scope>test</scope>
-    </dependency>
-    <!-- While gson is handled by shade, there's an edge case when ./mvnw test
-         is used in this multi-module build (ex via travis). This adds the dep
-         so that tests execute properly. Explanation below.
-
-         We shade the internal classes used in the test jar, and use optional
-         scope to prevent other modules from accidentally pulling in gson. This
-         works except that the test-jar when used here via ./mvnw test. Unlike
-         3rd party usage, which would resolve to zipkin2:zipkin's shaded dep,
-         ./mvnw test here will result in a project reference, and ignore the
-         gson dependency because it is set as optional. Note this doesn't occur
-         when ./mvnw install is used, only ./mvnw test. This may be a bug in
-         the way dependencies resolve, where some paths consider the shade
-         plugin and others don't.
-
-         This problem is actually more that we didn't initially create a -tests
-         jar, like we do in Brave. Before we release into apache, we should
-         remove the test-jar and make a zipkin-tests artifact instead, which
-         eliminates this edge case and follows recommended practice.
-      -->
+    <!-- Our json codec is shaded, but Intellij doesn't understand that when running tests. -->
     <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>zipkin-tests</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
-
-  <build>
-    <plugins>
-      <!-- disable retrolambda as zipkin-server is language level 1.8 -->
-      <plugin>
-        <groupId>net.orfjackal.retrolambda</groupId>
-        <artifactId>retrolambda-maven-plugin</artifactId>
-        <executions>
-          <execution>
-            <phase>none</phase>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

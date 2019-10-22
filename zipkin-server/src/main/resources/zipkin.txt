@@ -1,0 +1,28 @@
+${AnsiOrange}
+                  oo
+                 oooo
+                oooooo
+               oooooooo
+              oooooooooo
+             oooooooooooo
+           ooooooo  ooooooo
+          oooooo     ooooooo
+         oooooo       ooooooo
+        oooooo   o  o   oooooo
+       oooooo   oo  oo   oooooo
+     ooooooo  oooo  oooo  ooooooo
+    oooooo   ooooo  ooooo  ooooooo
+   oooooo   oooooo  oooooo  ooooooo
+  oooooooo      oo  oo      oooooooo
+  ooooooooooooo oo  oo ooooooooooooo
+      oooooooooooo  oooooooooooo
+          oooooooo  oooooooo
+              oooo  oooo
+${AnsiNormal}
+     ________ ____  _  _____ _   _
+    |__  /_ _|  _ \| |/ /_ _| \ | |
+      / / | || |_) | ' / | ||  \| |
+     / /_ | ||  __/| . \ | || |\  |
+    |____|___|_|   |_|\_\___|_| \_|
+
+:: version @project.version@ :: commit @git.commit.id.abbrev@ ::

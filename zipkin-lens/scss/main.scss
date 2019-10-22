@@ -1,6 +1,24 @@
-@import '../node_modules/rc-calendar/assets/index.css';
-@import '../node_modules/rc-time-picker/assets/index.css';
-@import '../node_modules/react-table/react-table.css';
+//
+// Copyright 2015-2019 The OpenZipkin Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+// in compliance with the License. You may obtain a copy of the License at
+//
+// http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software distributed under the License
+// is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+// or implied. See the License for the specific language governing permissions and limitations under
+// the License.
+//
+
+@import '~rc-slider/assets/index.css';
+@import '~react-table/react-table.css';
+
+$fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
+@import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
+@import '~@fortawesome/fontawesome-free/scss/brands.scss';
+@import '~@fortawesome/fontawesome-free/scss/solid.scss';
 
 @import 'variables';
 @import 'variables-dark';
@@ -8,38 +26,9 @@
 @import 'base/base';
 @import 'base/form';
 
-@import 'custom/rc-calendar';
-@import 'custom/rc-time-picker';
-@import 'custom/react-modal';
-@import 'custom/react-select';
+@import 'custom/rc-slider';
 @import 'custom/vizceral';
 
-@import 'components/app';
-@import 'components/browser';
-@import 'components/browser-header';
-@import 'components/browser-results';
-@import 'components/condition-duration';
-@import 'components/condition-lookback';
-@import 'components/condition-name';
-@import 'components/condition-tags';
-@import 'components/date-picker';
 @import 'components/dependencies-sidebar';
 @import 'components/dependencies';
-@import 'components/detailed-trace-summary';
-@import 'components/global-dropdown-menu';
-@import 'components/global-search';
 @import 'components/loading-overlay';
-@import 'components/mini-timeline';
-@import 'components/search-condition';
-@import 'components/service-name-badge';
-@import 'components/sidebar';
-@import 'components/timeline';
-@import 'components/timeline-header';
-@import 'components/timeline-span';
-@import 'components/timeline-span-data';
-@import 'components/trace-page';
-@import 'components/trace-summary';
-@import 'components/trace-summary-bar';
-@import 'components/trace-summary-buttons';
-@import 'components/trace-summary-upper-bar';
-@import 'components/trace-viewer';

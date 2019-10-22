@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage;
 
@@ -20,7 +17,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import zipkin2.Call;
+import zipkin2.Call.Mapper;
 import zipkin2.Span;
 import zipkin2.internal.FilterTraces;
 
@@ -30,7 +27,7 @@ import zipkin2.internal.FilterTraces;
  */
 public final class StrictTraceId {
 
-  public static Call.Mapper<List<Span>, List<Span>> filterSpans(String traceId) {
+  public static Mapper<List<Span>, List<Span>> filterSpans(String traceId) {
     return new FilterSpans(traceId);
   }
 
@@ -39,12 +36,12 @@ public final class StrictTraceId {
    *
    * @see FilterTraces
    */
-  public static Call.Mapper<List<List<Span>>, List<List<Span>>> filterTraces(QueryRequest request) {
+  public static Mapper<List<List<Span>>, List<List<Span>>> filterTraces(QueryRequest request) {
     return new FilterTracesIfClashOnLowerTraceId(request);
   }
 
   static final class FilterTracesIfClashOnLowerTraceId
-    implements Call.Mapper<List<List<Span>>, List<List<Span>>> {
+    implements Mapper<List<List<Span>>, List<List<Span>>> {
     final QueryRequest request;
 
     FilterTracesIfClashOnLowerTraceId(QueryRequest request) {
@@ -58,8 +55,7 @@ public final class StrictTraceId {
       return input;
     }
 
-    @Override
-    public String toString() {
+    @Override public String toString() {
       return "FilterTracesIfClashOnLowerTraceId{request=" + request + "}";
     }
   }
@@ -91,16 +87,14 @@ public final class StrictTraceId {
     return traceId.length() == 16 ? traceId : traceId.substring(16);
   }
 
-  static final class FilterSpans implements Call.Mapper<List<Span>, List<Span>> {
-
+  static final class FilterSpans implements Mapper<List<Span>, List<Span>> {
     final String traceId;
 
     FilterSpans(String traceId) {
       this.traceId = traceId;
     }
 
-    @Override
-    public List<Span> map(List<Span> input) {
+    @Override public List<Span> map(List<Span> input) {
       Iterator<Span> i = input.iterator();
       while (i.hasNext()) { // Not using removeIf as that's java 8+
         Span next = i.next();
@@ -109,9 +103,46 @@ public final class StrictTraceId {
       return input;
     }
 
+    @Override public String toString() {
+      return "FilterSpans{traceId=" + traceId + "}";
+    }
+  }
+
+  /**
+   * Returns a function that filters its mutable input when it contains a trace not matching the
+   * specified trace IDs.
+   *
+   * <p>Make sure the input IDs are unique and {@link Span#normalizeTraceId(String) normalized}.
+   */
+  public static Mapper<List<List<Span>>, List<List<Span>>> filterTraces(Iterable<String> traceIds) {
+    return new FilterTracesByIds(traceIds);
+  }
+
+  static final class FilterTracesByIds implements Mapper<List<List<Span>>, List<List<Span>>> {
+    final Set<String> traceIds;
+
+    FilterTracesByIds(Iterable<String> sanitizedIds) {
+      traceIds = new LinkedHashSet<>();
+      for (String traceId : sanitizedIds) {
+        traceIds.add(traceId);
+      }
+    }
+
+    @Override
+    public List<List<Span>> map(List<List<Span>> input) {
+      Iterator<List<Span>> i = input.iterator();
+      while (i.hasNext()) { // Not using removeIf as that's java 8+
+        List<Span> next = i.next();
+        if (!traceIds.contains(next.get(0).traceId())) {
+          i.remove();
+        }
+      }
+      return input;
+    }
+
     @Override
     public String toString() {
-      return "FilterSpans{traceId=" + traceId + "}";
+      return "FilterTracesByIds{traceIds=" + traceIds + "}";
     }
   }
 

@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.internal;
 
@@ -31,12 +28,13 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class DependencyLinkerTest {
+  // in reverse order as reporting is more likely to occur this way
   static final List<Span> TRACE = asList(
-    span2("a", null, "a", Kind.SERVER, "web", null, false),
-    span2("a", "a", "b", Kind.CLIENT, "web", "app", false),
+    span2("a", "b", "c", Kind.CLIENT, "app", "db", true),
     span2("a", "a", "b", Kind.SERVER, "app", "web", false)
       .toBuilder().shared(true).build(),
-    span2("a", "b", "c", Kind.CLIENT, "app", "db", true)
+    span2("a", "a", "b", Kind.CLIENT, "web", "app", false),
+    span2("a", null, "a", Kind.SERVER, "web", null, false)
   );
 
   List<String> messages = new ArrayList<>();
@@ -95,6 +93,37 @@ public class DependencyLinkerTest {
 
     assertThat(messages)
       .contains("building trace tree: traceId=000000000000000a");
+  }
+
+  /**
+   * This test shows that if a parent ID is stored late (ex because it wasn't propagated), the span
+   * can resolve once it is.
+   */
+  @Test
+  public void lateParentIdInSharedSpan() {
+    List<Span> withLateParent = new ArrayList<>(TRACE);
+    withLateParent.set(2, TRACE.get(2).toBuilder().parentId(null).build());
+
+    assertThat(new DependencyLinker().putTrace(withLateParent).link()).containsExactly(
+      DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build(),
+      DependencyLink.newBuilder().parent("app").child("db").callCount(1L).errorCount(1L).build()
+    );
+  }
+
+  /**
+   * This test shows that if a parent ID is stored late (ex because it wasn't propagated), the span
+   * can resolve even if the client side is never sent
+   */
+  @Test
+  public void lostChildAndNoParentIdInSharedSpan() {
+    List<Span> lostClientOrphan = new ArrayList<>(TRACE);
+    lostClientOrphan.set(2, TRACE.get(2).toBuilder().parentId(null).build());
+    lostClientOrphan.remove(1); // client span never sent
+
+    assertThat(new DependencyLinker().putTrace(lostClientOrphan).link()).containsExactly(
+      DependencyLink.newBuilder().parent("web").child("app").callCount(1L).build(),
+      DependencyLink.newBuilder().parent("app").child("db").callCount(1L).errorCount(1L).build()
+    );
   }
 
   @Test

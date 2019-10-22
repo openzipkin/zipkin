@@ -1,13 +1,35 @@
-[![Gitter chat](http://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin) [![Build Status](https://travis-ci.org/openzipkin/zipkin.svg?branch=master)](https://travis-ci.org/openzipkin/zipkin) [![Download](https://api.bintray.com/packages/openzipkin/maven/zipkin/images/download.svg) ](https://bintray.com/openzipkin/maven/zipkin/_latestVersion)
+[![Gitter chat](https://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg)](https://gitter.im/openzipkin/zipkin)
+[![Build Status](https://travis-ci.org/openzipkin/zipkin.svg?branch=master)](https://travis-ci.org/openzipkin/zipkin) [![Download](https://api.bintray.com/packages/openzipkin/maven/zipkin/images/download.svg) ](https://bintray.com/openzipkin/maven/zipkin/_latestVersion)
+[![Maven Central](https://img.shields.io/maven-central/v/io.zipkin/zipkin-server.svg)](https://search.maven.org/search?q=g:io.zipkin%20AND%20a:zipkin-server)
 
 # zipkin
-[Zipkin](http://zipkin.io) is a distributed tracing system. It helps gather timing data needed to troubleshoot latency problems in microservice architectures. It manages both the collection and lookup of this data. Zipkin’s design is based on the [Google Dapper paper](http://research.google.com/pubs/pub36356.html).
+[Zipkin](https://zipkin.io) is a distributed tracing system. It helps gather
+timing data needed to troubleshoot latency problems in service architectures.
+Features include both the collection and lookup of this data.
 
-This project includes a dependency-free library and a [spring-boot](http://projects.spring.io/spring-boot/) server. Storage options include in-memory, JDBC (mysql), Cassandra, and Elasticsearch.
+If you have a trace ID in a log file, you can jump directly to it. Otherwise,
+you can query based on attributes such as service, operation name, tags and
+duration. Some interesting data will be summarized for you, such as the
+percentage of time spent in a service, and whether or not operations failed.
+
+<img src="https://zipkin.io/public/img/web-screenshot.png" alt="Trace view screenshot" />
+
+The Zipkin UI also presents a dependency diagram showing how many traced
+requests went through each application. This can be helpful for identifying
+aggregate behavior including error paths or calls to deprecated services.
+
+<img src="https://zipkin.io/public/img/dependency-graph.png" alt="Dependency graph screenshot" />
+
+Application’s need to be “instrumented” to report trace data to Zipkin. This
+usually means configuration of a [tracer or instrumentation library](https://zipkin.io/pages/tracers_instrumentation.html). The most
+popular ways to report data to Zipkin are via http or Kafka, though many other
+options exist, such as Apache ActiveMQ, gRPC and RabbitMQ. The data served to
+the UI is stored in-memory, or persistently with a supported backend such as
+Apache Cassandra or Elasticsearch.
 
 ## Quick-start
 
-The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin.java&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
+The quickest way to get started is to fetch the [latest released server](https://search.maven.org/remote_content?g=io.zipkin&a=zipkin-server&v=LATEST&c=exec) as a self-contained executable jar. Note that the Zipkin server requires minimum JRE 8. For example:
 
 ```bash
 curl -sSL https://zipkin.io/quickstart.sh | bash -s
@@ -26,7 +48,7 @@ If your applications aren't sending traces, yet, configure them with [Zipkin ins
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [`docker-zipkin`](https://github.com/openzipkin/docker-zipkin) for how to use docker-compose.
 
 ## Core Library
-The [core library](zipkin2/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
+The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
 
 This includes built-in codec for Zipkin's v1 and v2 json formats. A direct dependency on gson (json library) is avoided by minifying and repackaging classes used. The result is a 155k jar which won't conflict with any library you use.
 
@@ -51,8 +73,7 @@ Note: The above is just an example, most likely you'll want to use an existing t
 
 ## Storage Component
 Zipkin includes a [StorageComponent](zipkin/src/main/java/zipkin2/storage/StorageComponent.java), used to store and query spans and
-dependency links. This is used by the server and those making custom
-servers, collectors, or span reporters. For this reason, storage
+dependency links. This is used by the server and those making collectors, or span reporters. For this reason, storage
 components have minimal dependencies, but most require Java 8+
 
 Ex.
@@ -72,23 +93,29 @@ storage.close();
 ```
 
 ### In-Memory
-The [InMemoryStorage](zipkin2/src/main/java/zipkin2/storage/InMemoryStorage.java) component is packaged in zipkin's core library. It
+The [InMemoryStorage](zipkin-server#in-memory-storage) component is packaged in zipkin's core library. It
 is neither persistent, nor viable for realistic work loads. Its purpose
 is for testing, for example starting a server on your laptop without any
 database needed.
 
 ### Cassandra
-The [Cassandra](zipkin-storage/cassandra) component is tested against
-Cassandra 3.11.3+. It stores spans using UDTs, such that they appear like
-the v2 Zipkin model in cqlsh. It is designed for scale. For example, it
-uses a combination of SASI and manually implemented indexes to make
-querying larger data more performant.
+The [Cassandra](zipkin-server#cassandra-storage) component uses Cassandra
+3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.
 
-Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
+This is the second generation of our Cassandra schema. It stores spans
+using UDTs, such that they appear like Zipkin v2 json in cqlsh. It is
+designed for scale, and uses a combination of SASI and manually
+implemented indexes to make querying larger data more performant.
+
+Note: This store requires a [job to aggregate](https://github.com/openzipkin/zipkin-dependencies) dependency links.
 
 ### Elasticsearch
-The [Elasticsearch](zipkin-storage/elasticsearch) component is tested against Elasticsearch 2-6.x.
-It stores spans as json and has been designed for larger scale.
+The [Elasticsearch](zipkin-server#elasticsearch-storage) component uses
+Elasticsearch 5+ features, but is tested against Elasticsearch 6-7.x.
+
+It stores spans as Zipkin v2 json so that integration with other tools is
+straightforward. To help with scale, this uses a combination of custom
+and manually implemented indexing.
 
 Note: This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate dependency links.
 
@@ -118,27 +145,37 @@ data layouts based on Zipkin's V1 Thrift model, as opposed to the
 simpler v2 data model currently used.
 
 #### MySQL
-The [MySQL v1](zipkin-storage/mysql-v1) component currently is only
-tested with MySQL 5.6-7. It is designed to be easy to understand, and
-get started with. For example, it deconstructs spans into columns, so
+The [MySQL v1](zipkin-storage/mysql-v1) component uses MySQL 5.6+
+features, but is tested against MariaDB 10.3.
+
+The schema was designed to be easy to understand and get started with;
+it was not designed for performance. Ex spans fields are columns, so
 you can perform ad-hoc queries using SQL. However, this component has
 [known performance issues](https://github.com/openzipkin/zipkin/issues/1233): queries will eventually take seconds to return
 if you put a lot of data into it.
 
+This store does not require a [job to aggregate](https://github.com/openzipkin/zipkin-dependencies) dependency links.
+However, running the job will improve performance of dependencies
+queries.
+
 #### Cassandra
-The [Cassandra v1](zipkin-storage/cassandra-v1) component is tested
-against Cassandra 2.2+. It stores spans as opaque thrifts which means
-you can't read them in cqlsh. However, it is designed for scale. For
-example, it has manually implemented indexes to make querying larger
-data more performant. This store requires a [spark job](https://github.com/openzipkin/zipkin-dependencies) to aggregate
-dependency links.
+The [Cassandra v1](zipkin-storage/cassandra-v1) component uses Cassandra
+2.2+ features, but is tested against the latest patch of Cassandra 3.11.
+
+The CQL was written in 2015, based on the original Cassandra schema from
+Twitter, and since been extended. Spans are stored as opaque thrifts,
+which means you cannot query fields in cqlsh. The schema was designed
+for scale, including manually implemented indexes to make querying
+larger data more performant.
+
+Note: This store requires a [job to aggregate](https://github.com/openzipkin/zipkin-dependencies) dependency links.
 
 ## Running the server from source
 The [Zipkin server](zipkin-server) receives spans via HTTP POST and respond to queries
 from its UI. It can also run collectors, such as RabbitMQ or Kafka.
 
 To run the server from the currently checked out source, enter the
-following. JDK 8 is required.
+following. JDK 11 is required to compile the source.
 ```bash
 # Build the server and also make its dependencies
 $ ./mvnw -DskipTests --also-make -pl zipkin-server clean install
@@ -147,13 +184,16 @@ $ java -jar ./zipkin-server/target/zipkin-server-*exec.jar
 ```
 
 ## Artifacts
+Server artifacts are under the maven group id `io.zipkin`
+Library artifacts are under the maven group id `io.zipkin.zipkin2`
+
 ### Library Releases
-Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin).
+Releases are uploaded to [Bintray](https://bintray.com/openzipkin/maven/zipkin) and synchronized to [Maven Central](https://search.maven.org/#search%7Cga%7C1%7Cg%3A%22io.zipkin%22)
 ### Library Snapshots
-Snapshots are uploaded to [JFrog](http://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
+Snapshots are uploaded to [JFrog](https://oss.jfrog.org/artifactory/oss-snapshot-local) after commits to master.
 ### Docker Images
 Released versions of zipkin-server are published to Docker Hub as `openzipkin/zipkin`.
 See [docker-zipkin](https://github.com/openzipkin/docker-zipkin) for details.
 ### Javadocs
-http://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
+https://zipkin.io/zipkin contains versioned folders with JavaDocs published on each (non-PR) build, as well
 as releases.

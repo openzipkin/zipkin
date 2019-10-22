@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage.mysql.v1;
 
@@ -22,74 +19,79 @@ import java.util.ArrayList;
 import java.util.List;
 import org.jooq.DSLContext;
 import org.jooq.Query;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
+import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import zipkin2.DependencyLink;
 import zipkin2.storage.StorageComponent;
 
 import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependencies.ZIPKIN_DEPENDENCIES;
 
-@RunWith(Enclosed.class)
-public class ITMySQLStorage {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class ITMySQLStorage {
 
-  static LazyMySQLStorage classRule() {
-    return new LazyMySQLStorage("2.12.7");
-  }
+  @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
+    "openzipkin/zipkin-mysql:2.18.2");
 
-  public static class ITSpanStore extends zipkin2.storage.ITSpanStore {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected StorageComponent storage() {
-      return storage.get();
+  @Nested
+  class ITTraces extends zipkin2.storage.ITTraces<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
     }
 
-    @Override @Test @Ignore("No consumer-side span deduplication") public void deduplicates() {
-    }
-
-    @Override public void clear() {
-      storage.get().clear();
-    }
-  }
-
-  public static class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse {
-    @ClassRule public static LazyMySQLStorage storageRule = classRule();
-
-    MySQLStorage storage;
-
-    @Override protected StorageComponent storage() {
-      return storage;
+    @Override @Test @Disabled("No consumer-side span deduplication")
+    public void getTrace_deduplicates() {
     }
 
     @Override public void clear() {
-      storage = storageRule.computeStorageBuilder().strictTraceId(false).build();
       storage.clear();
     }
   }
 
-  public static class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse {
-    @ClassRule public static LazyMySQLStorage storageRule = classRule();
-
-    MySQLStorage storage;
-
-    @Override protected StorageComponent storage() {
-      return storage;
+  @Nested
+  class ITSpanStore extends zipkin2.storage.ITSpanStore<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
-      storage = storageRule.computeStorageBuilder().searchEnabled(false).build();
       storage.clear();
     }
   }
 
-  public static class ITDependenciesPreAggregated extends zipkin2.storage.ITDependencies {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
+  @Nested
+  class ITStrictTraceIdFalse extends zipkin2.storage.ITStrictTraceIdFalse<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
+    }
 
-    @Override protected StorageComponent storage() {
-      return storage.get();
+    @Override public void clear() {
+      storage.clear();
+    }
+  }
+
+  @Nested
+  class ITSearchEnabledFalse extends zipkin2.storage.ITSearchEnabledFalse<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
+    }
+
+    @Override public void clear() {
+      storage.clear();
+    }
+  }
+
+  @Nested
+  class ITDependenciesPreAggregated extends zipkin2.storage.ITDependencies<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
+    }
+
+    @Override public void clear() {
+      storage.clear();
     }
 
     /**
@@ -97,8 +99,8 @@ public class ITMySQLStorage {
      * pre-aggregated links, usually made via zipkin-dependencies
      */
     @Override protected void processDependencies(List<zipkin2.Span> spans) throws Exception {
-      try (Connection conn = storage.get().datasource.getConnection()) {
-        DSLContext context = storage.get().context.get(conn);
+      try (Connection conn = storage.datasource.getConnection()) {
+        DSLContext context = storage.context.get(conn);
 
         // batch insert the rows at timestamp midnight
         List<Query> inserts = new ArrayList<>();
@@ -117,45 +119,38 @@ public class ITMySQLStorage {
         context.batch(inserts).execute();
       }
     }
-
-    @Override public void clear() {
-      storage.get().clear();
-    }
   }
 
-  public static class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected StorageComponent storage() {
-      return storage.get();
+  @Nested
+  class ITServiceAndSpanNames extends zipkin2.storage.ITServiceAndSpanNames<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
-      storage.get().clear();
+      storage.clear();
     }
   }
 
-  public static class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected StorageComponent.Builder storageBuilder() {
-      return storage.computeStorageBuilder();
-    }
-
-    @Before @Override public void clear() {
-      storage.get().clear();
-    }
-  }
-
-  public static class ITDependenciesOnDemand extends zipkin2.storage.ITDependencies {
-    @ClassRule public static LazyMySQLStorage storage = classRule();
-
-    @Override protected StorageComponent storage() {
-      return storage.get();
+  @Nested
+  class ITAutocompleteTags extends zipkin2.storage.ITAutocompleteTags<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
     }
 
     @Override public void clear() {
-      storage.get().clear();
+      storage.clear();
+    }
+  }
+
+  @Nested
+  class ITDependenciesOnDemand extends zipkin2.storage.ITDependencies<MySQLStorage> {
+    @Override protected StorageComponent.Builder newStorageBuilder(TestInfo testInfo) {
+      return backend.computeStorageBuilder();
+    }
+
+    @Override public void clear() {
+      storage.clear();
     }
   }
 }

@@ -1,29 +1,27 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
 import com.linecorp.armeria.client.HttpClient;
-import com.linecorp.armeria.common.AggregatedHttpMessage;
+import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.server.Server;
-import io.netty.handler.ssl.util.InsecureTrustManagerFactory;
+import com.linecorp.armeria.spring.ArmeriaSettings;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,18 +30,27 @@ import org.springframework.test.context.junit4.SpringRunner;
 import zipkin.server.ZipkinServer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.server.internal.elasticsearch.Access.configureSsl;
 
 /**
- * This code ensures you can setup SSL.
+ * This code ensures you can setup SSL. Look at {@link ArmeriaSettings} for property names.
  *
  * <p>This is inspired by com.linecorp.armeria.spring.ArmeriaSslConfigurationTest
  */
 @SpringBootTest(
   classes = ZipkinServer.class,
-  webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+  webEnvironment = SpringBootTest.WebEnvironment.NONE, // RANDOM_PORT requires spring-web
   properties = {
+    "server.port=0",
     "spring.config.name=zipkin-server",
+    // TODO: use normal spring.server properties after https://github.com/line/armeria/issues/1834
     "armeria.ssl.enabled=true",
+    "armeria.ssl.key-store=classpath:keystore.p12",
+    "armeria.ssl.key-store-password=password",
+    "armeria.ssl.key-store-type=PKCS12",
+    "armeria.ssl.trust-store=classpath:keystore.p12",
+    "armeria.ssl.trust-store-password=password",
+    "armeria.ssl.trust-store-type=PKCS12",
     "armeria.ports[1].port=0",
     "armeria.ports[1].protocols[0]=https",
     // redundant in zipkin-server-shared https://github.com/spring-projects/spring-boot/issues/16394
@@ -53,11 +60,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(SpringRunner.class)
 public class ITZipkinServerSsl {
   @Autowired Server server;
+  @Autowired ArmeriaSettings armeriaSettings;
 
-  // We typically use OkHttp in our tests, but Armeria bundles a handy insecure trust manager
-  final ClientFactory clientFactory = new ClientFactoryBuilder()
-    .sslContextCustomizer(b -> b.trustManager(InsecureTrustManagerFactory.INSTANCE))
-    .build();
+  ClientFactory clientFactory;
+
+  @Before public void configureClientFactory() {
+    clientFactory = configureSsl(new ClientFactoryBuilder(), armeriaSettings.getSsl()).build();
+  }
 
   @Test public void callHealthEndpoint_HTTP() {
     callHealthEndpoint(SessionProtocol.HTTP);
@@ -68,7 +77,7 @@ public class ITZipkinServerSsl {
   }
 
   void callHealthEndpoint(SessionProtocol http) {
-    AggregatedHttpMessage response = HttpClient.of(clientFactory, baseUrl(server, http))
+    AggregatedHttpResponse response = HttpClient.of(clientFactory, baseUrl(server, http))
       .get("/health")
       .aggregate().join();
 
@@ -78,7 +87,7 @@ public class ITZipkinServerSsl {
   static String baseUrl(Server server, SessionProtocol protocol) {
     return server.activePorts().values().stream()
       .filter(p -> p.hasProtocol(protocol)).findAny()
-      .map(p -> protocol.uriText() + "://127.0.0.1:" + p.localAddress().getPort())
+      .map(p -> protocol.uriText() + "://localhost:" + p.localAddress().getPort())
       .orElseThrow(() -> new AssertionError(protocol + " port not open"));
   }
 }

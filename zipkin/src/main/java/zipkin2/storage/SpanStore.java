@@ -1,18 +1,15 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
  */
 package zipkin2.storage;
 
@@ -49,8 +46,9 @@ public interface SpanStore {
    * <p>Implementations should use {@link Span#normalizeTraceId(String)} to ensure consistency.
    *
    * @param traceId the {@link Span#traceId() trace ID}
+   * @deprecated use {@link Traces#getTrace(String)}
    */
-  Call<List<Span>> getTrace(String traceId);
+  @Deprecated Call<List<Span>> getTrace(String traceId);
 
   /**
    * Retrieves all {@link Span#localEndpoint() local} and {@link Span#remoteEndpoint() remote}
@@ -78,8 +76,8 @@ public interface SpanStore {
    * was 25 hours, the implementation would query against 2 buckets.
    *
    * <p>Some implementations parse spans from storage and call {@link
-   * DependencyLinker} to aggregate links. The reason is certain graph
-   * logic, such as skipping up the tree is difficult to implement as a storage query.
+   * DependencyLinker} to aggregate links. The reason is certain graph logic, such as skipping up
+   * the tree is difficult to implement as a storage query.
    *
    * <p>Spans are grouped by the right-most 16 characters of the trace ID. This ensures call counts
    * are not incremented twice due to one hop downgrading from 128 to 64-bit trace IDs.

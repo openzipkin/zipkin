@@ -1,10 +1,11 @@
 # storage-cassandra
 
-This CQL-based Cassandra 3.9+ storage component, built upon the [Zipkin v2 api and model](http://zipkin.io/zipkin-api/#/default/post_spans).
+This is a CQL-based Cassandra storage component, built upon the [Zipkin v2 api and model](https://zipkin.io/zipkin-api/#/default/post_spans).
+This uses Cassandra 3.11.3+ features, but is tested against the latest patch of Cassandra 3.11.
 
 `CassandraSpanStore.getDependencies()` returns pre-aggregated dependency links (ex via [zipkin-dependencies](https://github.com/openzipkin/zipkin-dependencies)).
 
-The implementation uses the [Datastax Java Driver 3.1.x](https://github.com/datastax/java-driver).
+The implementation uses the [Datastax Java Driver 3.x](https://github.com/datastax/java-driver).
 
 `zipkin2.storage.cassandra.CassandraStorage.Builder` includes defaults that will operate against a local Cassandra installation.
 
@@ -46,7 +47,7 @@ That said, all integration tests run on pull request via Travis.
 To run a single integration test, use the following syntax:
 
 ```bash
-$ ./mvnw -Dit.test='ITCassandraStorage$SpanStoreTest#getTraces_duration' -pl zipkin-storage/zipkin2_cassandra clean verify
+$ ./mvnw -Dit.test='ITCassandraStorage$ITSpanStore#getTraces_duration' -pl zipkin-storage/cassandra clean verify
 ```
 
 ## Strict trace ID
