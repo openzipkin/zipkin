@@ -96,7 +96,7 @@ const GlobalSearchConditionKey = ({
       },
       cursor: 'pointer',
     }),
-    menuPortal: base => ({
+    menu: base => ({
       ...base,
       zIndex: 10000,
       width: '15rem',
