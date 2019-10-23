@@ -1,0 +1,30 @@
+# This runs zipkin against an Amazon Elasticsearch Service
+#
+# Note that this file is meant for learning Zipkin, not production deployments.
+
+version: '2'
+
+services:
+  zipkin:
+    image: openzipkin/zipkin-aws
+    container_name: zipkin
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      # This is an alternative to ES_HOSTS=https://search-zipkin-2rlyh66ibw43ftlk4342ceeewu.ap-southeast-1.es.amazonaws.com
+      - ES_AWS_DOMAIN=zipkin
+      # When ES backs up it doesn't always error, sometimes it will timeout
+      - ES_TIMEOUT=20000
+      # - ES_HTTP_LOGGING=HEADERS
+    volumes:
+      # Share your credentials with your docker image so it can access your Elasticsearch domain
+      - ~/.aws:/zipkin/.aws:ro
+    ports:
+      # Port used for the Zipkin UI and HTTP Api
+      - 9411:9411
+
+  # disable storage as we're using the cloud!
+  storage:
+    image: hello-world
+    container_name: storage-disabled
+    logging:
+      driver: none

@@ -1,0 +1,30 @@
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml to run the
+# zipkin-elasticsearch container instead of the zipkin-mysql container.
+
+version: '2'
+
+services:
+  # Run Elasticsearch instead of MySQL
+  storage:
+    image: openzipkin/zipkin-elasticsearch7
+    container_name: elasticsearch
+    # Uncomment to expose the storage port for testing
+    # ports:
+    #   - 9200:9200
+
+  # Switch storage type to Elasticsearch
+  zipkin:
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      # Point the zipkin at the storage backend
+      - ES_HOSTS=elasticsearch:9200
+      # Uncomment to see requests to and from elasticsearch
+      # - ES_HTTP_LOGGING=BODY
+
+  dependencies:
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=elasticsearch
