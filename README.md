@@ -47,6 +47,21 @@ If your applications aren't sending traces, yet, configure them with [Zipkin ins
 
 Check out the [`zipkin-server`](/zipkin-server) documentation for configuration details, or [Docker examples](docker/examples) for how to use docker-compose.
 
+### Zipkin Slim
+
+The slim build of Zipkin is smaller and starts faster. It supports in-memory and Elasticsearch storage, but doesn't support messaging transports like Kafka or RabbitMQ. If these constraints match your needs, you can try slim like below:
+
+Running via Java:
+```bash
+curl -sSL https://zipkin.io/quickstart.sh | bash -s io.zipkin:zipkin-server:LATEST:slim zipkin.jar
+java -jar zipkin.jar
+```
+
+Running via Docker:
+```bash
+docker run -d -p 9411:9411 openzipkin/zipkin-slim
+```
+
 ## Core Library
 The [core library](zipkin/src/main/java/zipkin2) is used by both Zipkin instrumentation and the Zipkin server. Its minimum Java language level is 6, in efforts to support those writing agent instrumentation.
 
