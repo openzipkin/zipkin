@@ -45,5 +45,5 @@ queries:
     cql: SELECT DISTINCT service FROM span_by_service
     fields: samerow
    select_spans:
-    cql: SELECT span FROM span_by_service WHERE service = ? LIMIT 1000
+    cql: SELECT span FROM span_by_service WHERE service = ? LIMIT 10000
     fields: samerow

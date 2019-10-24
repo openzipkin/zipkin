@@ -61,7 +61,7 @@ final class SelectRemoteServiceNames extends ResultSetFutureCall<ResultSet> {
     return factory.session.executeAsync(factory.preparedStatement
       .bind()
       .setString("service", service)
-      .setInt("limit_", 1000)); // no one is ever going to browse so many span names
+      .setInt("limit_", 1000)); // no one is ever going to browse so many service names
   }
 
   @Override public ResultSet map(ResultSet input) {
