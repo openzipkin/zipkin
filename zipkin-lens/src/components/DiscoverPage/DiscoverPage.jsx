@@ -20,22 +20,17 @@ import queryString from 'query-string';
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
 import { makeStyles } from '@material-ui/styles';
-import AppBar from '@material-ui/core/AppBar';
 import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
-import Tab from '@material-ui/core/Tab';
-import Tabs from '@material-ui/core/Tabs';
 import Typography from '@material-ui/core/Typography';
 
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TracesTab from './TracesTab';
-import DependenciesTab from './DependenciesTab';
 import GlobalSearch from '../GlobalSearch';
 import {
   buildCommonQueryParameters,
   buildTracesApiQueryParameters,
-  buildDependenciesApiQueryParameters,
   extractConditionsFromQueryParameters,
 } from './api';
 import { buildQueryParameters } from '../../util/api';
@@ -45,7 +40,6 @@ import { fetchServices } from '../../actions/services-action';
 import { fetchRemoteServices } from '../../actions/remote-services-action';
 import { fetchSpans } from '../../actions/spans-action';
 import { fetchAutocompleteKeys } from '../../actions/autocomplete-keys-action';
-import { fetchDependencies } from '../../actions/dependencies-action';
 import { setConditions, setLookbackCondition, setLimitCondition } from '../../actions/global-search-action';
 
 const propTypes = {
@@ -73,14 +67,9 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const tracesTab = 0;
-const dependenciesTab = 1;
-
 const DiscoverPage = ({ history, location }) => {
   const classes = useStyles();
-
   const dispatch = useDispatch();
-
   const lastQueryParams = useSelector(state => state.traces.lastQueryParams);
   const conditions = useSelector(state => state.globalSearch.conditions);
   const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
@@ -88,7 +77,6 @@ const DiscoverPage = ({ history, location }) => {
 
   const findTraces = useCallback(() => {
     const currentTs = moment().valueOf();
-
     const queryParameters = buildQueryParameters(buildCommonQueryParameters(
       conditions,
       lookbackCondition,
@@ -96,7 +84,6 @@ const DiscoverPage = ({ history, location }) => {
       currentTs,
     ));
     history.push({ pathname: '/zipkin', search: queryParameters });
-
     dispatch(loadTraces(buildTracesApiQueryParameters(
       conditions,
       lookbackCondition,
@@ -105,88 +92,11 @@ const DiscoverPage = ({ history, location }) => {
     )));
   }, [conditions, lookbackCondition, limitCondition, dispatch, history]);
 
-  const findDependencies = useCallback(() => {
-    const currentTs = moment().valueOf();
-
-    const queryParameters = buildQueryParameters(buildCommonQueryParameters(
-      conditions,
-      lookbackCondition,
-      limitCondition,
-      currentTs,
-    ));
-    history.push({ pathname: '/zipkin/dependency', search: queryParameters });
-
-    dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
-      lookbackCondition,
-      currentTs,
-    )));
-  }, [conditions, lookbackCondition, limitCondition, dispatch, history]);
-
-  const [tabValue, setTabValue] = React.useState(tracesTab);
-
-  const findData = useCallback(() => {
-    switch (tabValue) {
-      case tracesTab:
-        findTraces();
-        break;
-      case dependenciesTab:
-        findDependencies();
-        break;
-      default:
-    }
-  }, [findDependencies, findTraces, tabValue]);
-
-  const handleTabChange = useCallback((event, newTabValue) => {
-    setTabValue(newTabValue);
-
-    // If there are not any query parameters in the address bar, don't
-    // fetch any data.
-    if (location.search) {
-      switch (newTabValue) {
-        case tracesTab:
-          // Fetch traces only if one or more conditions are set.
-          if (!isEmpty(conditions)
-            || !isEmpty(lookbackCondition)
-            || !!limitCondition
-          ) {
-            findTraces();
-          }
-          break;
-        case dependenciesTab:
-          if (!isEmpty(conditions) || !isEmpty(lookbackCondition)) {
-            findDependencies();
-          }
-          break;
-        default:
-        // Do nothing
-      }
-    } else {
-      switch (newTabValue) {
-        case tracesTab:
-          history.push({ pathname: '/zipkin' });
-          break;
-        case dependenciesTab:
-          history.push({ pathname: '/zipkin/dependency' });
-          break;
-        default:
-        // Do nothing
-      }
-    }
-  }, [
-    findTraces,
-    findDependencies,
-    conditions,
-    lookbackCondition,
-    limitCondition,
-    location.search,
-    history,
-  ]);
-
   const handleKeyDown = useCallback((event) => {
     if (document.activeElement.tagName === 'BODY' && event.key === 'Enter') {
-      findData();
+      findTraces();
     }
-  }, [findData]);
+  }, [findTraces]);
 
   useEffect(() => {
     window.addEventListener('keydown', handleKeyDown);
@@ -226,40 +136,20 @@ const DiscoverPage = ({ history, location }) => {
 
     const currentTs = lookbackConditionFromUrl.endTs || moment().valueOf();
 
-    // Finally fetch traces-data or dependencies-data according to location.pathname.
-    switch (location.pathname) {
-      case '/zipkin':
-      case '/zipkin/':
-        setTabValue(tracesTab);
-        // Fetch traces only if one or more conditions are set.
-        if (!isEmpty(conditionsFromUrl)
-          || !isEmpty(lookbackConditionFromUrl)
-          || !!limitConditionFromUrl
-        ) {
-          const apiQueryParams = buildTracesApiQueryParameters(
-            conditionsFromUrl,
-            lookbackConditionFromUrl,
-            limitConditionFromUrl,
-            currentTs,
-          );
-          if (!isEqual(apiQueryParams, lastQueryParams)) {
-            dispatch(loadTraces(apiQueryParams));
-          }
-        }
-        break;
-      case '/zipkin/dependency':
-        setTabValue(dependenciesTab);
-
-        if (!isEmpty(conditionsFromUrl) || !isEmpty(lookbackConditionFromUrl)) {
-          dispatch(fetchDependencies(buildDependenciesApiQueryParameters(
-            lookbackConditionFromUrl,
-            currentTs,
-          )));
-        }
-        break;
-      default:
-        setTabValue(-1);
-        break;
+    // Fetch traces only if one or more conditions are set.
+    if (!isEmpty(conditionsFromUrl)
+      || !isEmpty(lookbackConditionFromUrl)
+      || !!limitConditionFromUrl
+    ) {
+      const apiQueryParams = buildTracesApiQueryParameters(
+        conditionsFromUrl,
+        lookbackConditionFromUrl,
+        limitConditionFromUrl,
+        currentTs,
+      );
+      if (!isEqual(apiQueryParams, lastQueryParams)) {
+        dispatch(loadTraces(apiQueryParams));
+      }
     }
   });
 
@@ -277,7 +167,7 @@ const DiscoverPage = ({ history, location }) => {
             <TraceIdSearchInput />
           </Box>
         </Box>
-        <GlobalSearch findData={findData} />
+        <GlobalSearch findData={findTraces} />
       </Box>
       <Box
         flex="0 1 100%"
@@ -288,20 +178,7 @@ const DiscoverPage = ({ history, location }) => {
       >
         <Paper className={classes.contentPaper}>
           <Box display="flex" flexDirection="column" overflow="auto" width="100%" height="100%">
-            <AppBar position="static">
-              <Tabs
-                value={tabValue}
-                onChange={handleTabChange}
-                className={classes.tabs}
-              >
-                <Tab label="Traces" className={classes.tab} />
-                <Tab label="Dependencies" className={classes.tab} />
-              </Tabs>
-            </AppBar>
-            <Box height="100%">
-              {tabValue === tracesTab && <TracesTab />}
-              {tabValue === dependenciesTab && <DependenciesTab />}
-            </Box>
+            <TracesTab />
           </Box>
         </Paper>
       </Box>
