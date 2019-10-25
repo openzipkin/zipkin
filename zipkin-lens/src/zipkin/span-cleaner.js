@@ -11,7 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import _ from 'lodash';
+import isEqual from 'lodash/isEqual';
+import sortBy from 'lodash/sortBy';
+import unionWith from 'lodash/unionWith';
 
 export function normalizeTraceId(traceId) {
   if (traceId.length > 16) {
@@ -52,8 +54,7 @@ export function clean(span) {
 
   res.annotations = span.annotations ? span.annotations.slice(0) : [];
   if (res.annotations.length > 1) {
-    res.annotations = _(_.unionWith(res.annotations, _.isEqual))
-      .sortBy('timestamp', 'value').value();
+    res.annotations = sortBy(unionWith(res.annotations, isEqual), ['timestamp', 'value']);
   }
 
   res.tags = span.tags || {};
@@ -96,8 +97,8 @@ export function merge(left, right) {
   } else if (right.annotations.length === 0) {
     res.annotations = left.annotations;
   } else {
-    res.annotations = _(_.unionWith(left.annotations, right.annotations, _.isEqual))
-      .sortBy('timestamp', 'value').value();
+    res.annotations = sortBy(unionWith(left.annotations, right.annotations, isEqual),
+      ['timestamp', 'value']);
   }
 
   res.tags = Object.assign({}, left.tags, right.tags);
