@@ -1,0 +1,360 @@
+[
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "f5f268651b2a2b34",
+    "id": "15fc03927f0f68df",
+    "kind": "CLIENT",
+    "name": "post",
+    "timestamp": 1571896375322000,
+    "duration": 14000,
+    "localEndpoint": {
+      "serviceName": "mobile_api"
+    },
+    "remoteEndpoint": {
+      "serviceName": "blt",
+      "port": 31882
+    },
+    "tags": {
+      "client_status_code": "200",
+      "http.uri.client": "/visits",
+      "request_budget": "9980",
+      "tracer": "syslog2scribe.haproxy-synapse"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "f5f268651b2a2b34",
+    "id": "7a778764a0d0b594",
+    "kind": "CLIENT",
+    "name": "get",
+    "timestamp": 1571896375310000,
+    "duration": 3000,
+    "localEndpoint": {
+      "serviceName": "mobile_api"
+    },
+    "remoteEndpoint": {
+      "serviceName": "spectre",
+      "port": 31286
+    },
+    "tags": {
+      "client_status_code": "200",
+      "http.uri.client": "/visits",
+      "request_budget": "9989",
+      "tracer": "syslog2scribe.haproxy-synapse"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "f5f268651b2a2b34",
+    "id": "7a778764a0d0b594",
+    "kind": "SERVER",
+    "name": "get",
+    "timestamp": 1571896375310740,
+    "duration": 1490,
+    "localEndpoint": {
+      "serviceName": "spectre"
+    },
+    "tags": {
+      "ecosystem": "prod",
+      "habitat": "uswest1aprod",
+      "http.uri.client": "/token/abcdefgh123456",
+      "region": "uswest1-prod"
+    },
+    "shared": true
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "f5f268651b2a2b34",
+    "id": "6a65182ea4f684c3",
+    "kind": "CLIENT",
+    "name": "set mobile_api_nonce",
+    "timestamp": 1571896375302030,
+    "duration": 1026,
+    "localEndpoint": {
+      "serviceName": "mobile_api",
+      "port": 31049
+    },
+    "remoteEndpoint": {
+      "serviceName": "memcache"
+    },
+    "tags": {
+      "driver": "yelp_memcache",
+      "method": "set",
+      "requests": "1",
+      "system": "mobile_api_nonce",
+      "ttl": ""
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "f5f268651b2a2b34",
+    "id": "cb4d73f31cd90cae",
+    "kind": "CLIENT",
+    "name": "get_multi mobile_api_nonce",
+    "timestamp": 1571896375300642,
+    "duration": 1066,
+    "localEndpoint": {
+      "serviceName": "mobile_api",
+      "port": 31049
+    },
+    "remoteEndpoint": {
+      "serviceName": "memcache"
+    },
+    "tags": {
+      "driver": "yelp_memcache",
+      "hits": "0",
+      "method": "get_multi",
+      "requests": "1",
+      "system": "mobile_api_nonce"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "2e8cfb154b59a41f",
+    "id": "f5f268651b2a2b34",
+    "kind": "SERVER",
+    "name": "post /location/update/v4",
+    "timestamp": 1571896375297103,
+    "duration": 41740,
+    "localEndpoint": {
+      "serviceName": "mobile_api",
+      "port": 31049
+    },
+    "tags": {
+      "ecosystem": "prod",
+      "habitat": "uswest1bprod",
+      "http.route": "/location/update/v4",
+      "http.uri": "/location/update/v4",
+      "http.uri.qs": "/location/update/v4",
+      "region": "uswest1-prod",
+      "response_status_code": "200",
+      "version_SHA": "6535284b1699df0a766384a648dc95c462a7313d"
+    },
+    "shared": true
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "2e8cfb154b59a41f",
+    "id": "f5f268651b2a2b34",
+    "kind": "CLIENT",
+    "name": "post",
+    "timestamp": 1571896375287000,
+    "duration": 56000,
+    "localEndpoint": {
+      "serviceName": "yelp-main"
+    },
+    "remoteEndpoint": {
+      "serviceName": "mobile_api",
+      "port": 31049
+    },
+    "tags": {
+      "client_status_code": "200",
+      "http.uri.client": "/location/update/v4",
+      "request_budget": "10003",
+      "tracer": "syslog2scribe.haproxy-synapse"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "241cea1aa4cb2884",
+    "id": "0facde7c9130fd93",
+    "kind": "CLIENT",
+    "name": "get_multi my_cache_name_v1",
+    "timestamp": 1571896375272125,
+    "duration": 233,
+    "localEndpoint": {
+      "serviceName": "yelp-main",
+      "port": 31523
+    },
+    "remoteEndpoint": {
+      "serviceName": "memcache"
+    },
+    "tags": {
+      "driver": "core_memcache",
+      "hits": "1",
+      "method": "get_multi",
+      "requests": "1"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "241cea1aa4cb2884",
+    "id": "50b57281525a99d8",
+    "kind": "CLIENT",
+    "name": "commit",
+    "timestamp": 1571896375272604,
+    "duration": 374,
+    "localEndpoint": {
+      "serviceName": "yelp-main",
+      "port": 31523
+    },
+    "remoteEndpoint": {
+      "serviceName": "mysql"
+    },
+    "tags": {
+      "query": "COMMIT"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "241cea1aa4cb2884",
+    "id": "2b68987704862c4f",
+    "kind": "CLIENT",
+    "name": "get user_details_cache-20150901",
+    "timestamp": 1571896375270438,
+    "duration": 1068,
+    "localEndpoint": {
+      "serviceName": "yelp-main",
+      "port": 31523
+    },
+    "remoteEndpoint": {
+      "serviceName": "memcache"
+    },
+    "tags": {
+      "driver": "core_memcache",
+      "hits": "1",
+      "method": "get",
+      "requests": "1"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "668ed78ad94b35a1",
+    "id": "241cea1aa4cb2884",
+    "name": "txn: user_get_basic_and_scout_info",
+    "timestamp": 1571896375269210,
+    "duration": 3884,
+    "localEndpoint": {
+      "serviceName": "yelp-main",
+      "port": 31523
+    },
+    "tags": {
+      "calling_method": "src/logic/db/user.py:1234:get_user"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "241cea1aa4cb2884",
+    "id": "b593cd7513dc736e",
+    "kind": "CLIENT",
+    "name": "begin",
+    "timestamp": 1571896375269732,
+    "duration": 445,
+    "localEndpoint": {
+      "serviceName": "yelp-main",
+      "port": 31523
+    },
+    "remoteEndpoint": {
+      "serviceName": "mysql"
+    },
+    "tags": {
+      "query": "************"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "668ed78ad94b35a1",
+    "id": "e7d1a2d5a788ac81",
+    "kind": "CLIENT",
+    "name": "get my_cache_name_v2",
+    "timestamp": 1571896375268015,
+    "duration": 993,
+    "localEndpoint": {
+      "serviceName": "yelp-main",
+      "port": 31523
+    },
+    "remoteEndpoint": {
+      "serviceName": "memcache"
+    },
+    "tags": {
+      "driver": "core_memcache",
+      "hits": "1",
+      "method": "get",
+      "requests": "1"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "2e8cfb154b59a41f",
+    "id": "668ed78ad94b35a1",
+    "kind": "SERVER",
+    "name": "post api proxy proxy",
+    "timestamp": 1571896375264995,
+    "duration": 88935,
+    "localEndpoint": {
+      "serviceName": "yelp_main/api_proxy",
+      "port": 31523
+    },
+    "annotations": [
+      {
+        "timestamp": 1571896375355436,
+        "value": "py_zipkin.logging_end"
+      }
+    ],
+    "tags": {
+      "cprofile_enabled": "False",
+      "datacenter": "us-west-1",
+      "ecosystem": "prod",
+      "habitat": "uswest1aprod",
+      "host": "<host>",
+      "http.route": "/*path",
+      "http.uri": "/location/update/v4",
+      "http.uri.qs": "/location/update/v4",
+      "locale": "en_US",
+      "logged_in": "False",
+      "natural": "False",
+      "owner_email": "",
+      "paasta": "True",
+      "region": "uswest1-prod",
+      "request_budget": "10003",
+      "request_budget_soft": "5003",
+      "response_status_code": "200",
+      "servlet": "proxy",
+      "servlet_action": "proxy",
+      "site": "api",
+      "version_SHA": "5e83958d2c"
+    },
+    "shared": true
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "parentId": "2e8cfb154b59a41f",
+    "id": "668ed78ad94b35a1",
+    "kind": "CLIENT",
+    "name": "post",
+    "timestamp": 1571896375239000,
+    "duration": 125000,
+    "localEndpoint": {
+      "serviceName": "unknown"
+    },
+    "remoteEndpoint": {
+      "serviceName": "yelp-main.mobile_api",
+      "port": 31523
+    },
+    "tags": {
+      "client_status_code": "200",
+      "http.uri.client": "/location/update/v4",
+      "request_budget": "10003",
+      "tracer": "syslog2scribe.envoy"
+    }
+  },
+  {
+    "traceId": "a03ee8fff1dcd9b9",
+    "id": "2e8cfb154b59a41f",
+    "kind": "SERVER",
+    "name": "post /location/update/v4",
+    "timestamp": 1571896375237354,
+    "duration": 131848,
+    "localEndpoint": {
+      "serviceName": "routing"
+    },
+    "tags": {
+      "ecosystem": "prod",
+      "habitat": "uswest1aprod",
+      "http.uri.client": "/location/update/v4",
+      "region": "uswest1-prod",
+      "response_status_code": "200"
+    },
+    "shared": true
+  }
+]
