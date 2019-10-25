@@ -13,7 +13,6 @@
  */
 package zipkin2.server.internal.ui;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
@@ -78,14 +77,14 @@ import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 @EnableConfigurationProperties({ZipkinUiProperties.class, CompressionProperties.class})
 @ConditionalOnProperty(name = "zipkin.ui.enabled", matchIfMissing = true)
 public class ZipkinUiConfiguration {
-  static final JsonFactory JSON_FACTORY = new JsonFactory();
-
   @Autowired ZipkinUiProperties ui;
   @Value("classpath:zipkin-ui/index.html") Resource classicIndexHtml;
   @Value("classpath:zipkin-lens/index.html") Resource lensIndexHtml;
 
-  @Bean HttpService indexService() throws IOException {
+  @Bean
+  HttpService indexService(@Value("${zipkin.ui.use-lens:false}") boolean useLens) throws Exception {
     HttpService lensIndex = maybeIndexService(ui.getBasepath(), lensIndexHtml);
+    if (useLens) return ensureLensIndex(lensIndex);
     HttpService classicIndex = maybeIndexService(ui.getBasepath(), classicIndexHtml);
 
     if (lensIndex != null && classicIndex != null) {
@@ -94,6 +93,10 @@ public class ZipkinUiConfiguration {
       // file to point to the correct files.
       return new IndexSwitchingService(classicIndex, lensIndex);
     }
+    return ensureLensIndex(lensIndex);
+  }
+
+  HttpService ensureLensIndex(HttpService lensIndex) {
     if (lensIndex != null) return lensIndex;
     throw new BeanCreationException("Could not load Lens UI from " + lensIndexHtml);
   }

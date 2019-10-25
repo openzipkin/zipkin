@@ -64,15 +64,22 @@ public class ZipkinUiConfigurationTest {
 
     ui.classicIndexHtml = new ClassPathResource("zipkin-ui/index.html");
     ui.lensIndexHtml = new ClassPathResource("zipkin-lens/index.html");
-    assertThat(ui.indexService())
+    assertThat(ui.indexService(false))
       .isInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
+    assertThat(ui.indexService(true))
+      .isNotInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
 
     ui.classicIndexHtml = new ClassPathResource("does-not-exist.html");
-    assertThat(ui.indexService())
+    assertThat(ui.indexService(false))
+      .isNotInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
+    assertThat(ui.indexService(true))
       .isNotInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
 
     ui.lensIndexHtml = new ClassPathResource("does-not-exist.html");
-    assertThatThrownBy(ui::indexService)
+    assertThatThrownBy(() -> ui.indexService(true))
+      .isInstanceOf(BeanCreationException.class);
+    ui.lensIndexHtml = new ClassPathResource("does-not-exist.html");
+    assertThatThrownBy(() -> ui.indexService(false))
       .isInstanceOf(BeanCreationException.class);
   }
 
@@ -137,7 +144,7 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void defaultBaseUrl_doesNotChangeResource() throws Exception {
+  public void defaultBaseUrl_doesNotChangeResource() {
     context = createContext();
 
     assertThat(new ByteArrayInputStream(serveIndex().content().array()))
@@ -145,11 +152,19 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void canOverideProperty_basePath() {
+  public void canOverrideProperty_basePath() {
     context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
 
     assertThat(serveIndex().contentUtf8())
       .contains("<base href=\"/foo/bar/\" />");
+  }
+
+  @Test
+  public void useLensOverridesIndex() {
+    context = createContextWithOverridenProperty("zipkin.ui.use-lens:true");
+
+    assertThat(serveIndex().contentUtf8())
+      .contains("zipkin-lens");
   }
 
   @Test
