@@ -21,7 +21,6 @@ import { makeStyles } from '@material-ui/styles';
 import DoughnutGraph from './DoughnutGraph';
 import EdgeData from './EdgeData';
 
-
 const useStyles = makeStyles(theme => ({
   root: {
     width: '100%',
@@ -75,7 +74,6 @@ const NodeDetail = ({
   minHeight,
 }) => {
   const classes = useStyles();
-
   const usesEdgeNames = useMemo(
     () => targetEdges.map(edge => edge.target),
     [targetEdges],
@@ -116,6 +114,7 @@ const NodeDetail = ({
                 {
                   targetEdges.map(edge => (
                     <EdgeData
+                      key={edge.target}
                       nodeName={edge.target}
                       normalCount={edge.metrics.normal}
                       errorCount={edge.metrics.danger}
@@ -146,6 +145,7 @@ const NodeDetail = ({
                 {
                   sourceEdges.map(edge => (
                     <EdgeData
+                      key={edge.source}
                       nodeName={edge.source}
                       normalCount={edge.metrics.normal}
                       errorCount={edge.metrics.danger}
