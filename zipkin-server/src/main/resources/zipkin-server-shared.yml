@@ -188,6 +188,8 @@ zipkin:
     base-path: /zipkin
     # When false, disables the "Try Lens UI" button in the navigation page
     suggest-lens: true
+    # When true, the classic UI will not be mounted
+    use-lens: false
 
 # We are using Armeria instead of Tomcat. Have it inherit the default configuration from Spring
 spring.main.web-application-type: none

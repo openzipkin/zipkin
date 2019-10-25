@@ -133,6 +133,7 @@ dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of erro
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"
 suggestLens | zipkin.ui.suggest-lens | When true, a button will appear on the navigation bar, when pressed switches to the Lens Ui (for Beta testing). Default true
+useLens | zipkin.ui.use-lens | When true, disables the "classic UI" in favor of Lens. Irrelevant in zipkin-slim as it does not package the classic UI. Defaults to false.
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
@@ -154,7 +155,7 @@ Defaults to true
 * `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
 * `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
 * `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint; Tag keys should be comma separated e.g. "instance_id,user_id,env"
-* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr) 
+* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr)
 
 ### In-Memory Storage
 Zipkin's [In-Memory Storage](../zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) holds all
@@ -286,7 +287,7 @@ Note: This module is not recommended for production usage. Before using this,
 you must [apply the schema](../zipkin-storage/mysql-v1#applying-the-schema).
 
 Alternatively you can use `MYSQL_JDBC_URL` and specify the complete JDBC url yourself. Note that the URL constructed by
-using the separate settings above will also include the following parameters: 
+using the separate settings above will also include the following parameters:
 `?autoReconnect=true&useSSL=false&useUnicode=yes&characterEncoding=UTF-8`. If you specify the JDBC url yourself, add
 these parameters as well.
 

@@ -29,6 +29,7 @@ class ZipkinUiProperties {
   private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
   private boolean suggestLens = true;
+  private boolean useLens = false;
   private Dependency dependency = new Dependency();
 
   public int getDefaultLookback() {
@@ -103,6 +104,14 @@ class ZipkinUiProperties {
 
   public void setSuggestLens(boolean suggestLens) {
     this.suggestLens = suggestLens;
+  }
+
+  public boolean isUseLens() {
+    return useLens;
+  }
+
+  public void setUseLens(boolean useLens) {
+    this.useLens = useLens;
   }
 
   public static class Dependency {
