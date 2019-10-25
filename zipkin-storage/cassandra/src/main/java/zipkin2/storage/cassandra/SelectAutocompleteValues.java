@@ -57,7 +57,7 @@ final class SelectAutocompleteValues extends ResultSetFutureCall<ResultSet> {
   @Override protected ResultSetFuture newFuture() {
     return factory.session.executeAsync(factory.preparedStatement.bind()
       .setString("key", key)
-      .setInt("limit_", 1000)); // no one is ever going to browse so many tag values
+      .setInt("limit_", 10000));
   }
 
   @Override public ResultSet map(ResultSet input) {
