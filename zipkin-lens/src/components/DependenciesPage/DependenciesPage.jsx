@@ -107,6 +107,14 @@ export const DependenciesPageImpl = React.memo(({
     startTime: moment().subtract(1, 'days'),
     endTime: moment(),
   });
+  const targetEdges = useMemo(
+    () => (nodeName ? graph.getTargetEdges(nodeName) : []),
+    [nodeName, graph],
+  );
+  const sourceEdges = useMemo(
+    () => (nodeName ? graph.getSourceEdges(nodeName) : []),
+    [nodeName, graph],
+  );
 
   const handleStartTimeChange = useCallback((startTime) => {
     setTimeRange({ ...timeRange, startTime });
@@ -185,8 +193,8 @@ export const DependenciesPageImpl = React.memo(({
                       <NodeDetail
                         serviceName={nodeName}
                         minHeight={height}
-                        targetEdges={graph.getTargetEdges(nodeName)}
-                        sourceEdges={graph.getSourceEdges(nodeName)}
+                        targetEdges={targetEdges}
+                        sourceEdges={sourceEdges}
                       />
                     </Box>
                   )
