@@ -39,8 +39,8 @@ describe('<Sidebar />', () => {
   it('should render internal links', () => {
     const wrapper = shallow(<Sidebar />);
     const list = wrapper.find('[data-testid="internal-links"]');
-    // Only discover page is the internal link (links routed in JavaScript).
-    expect(list.find(SidebarMenuItem).length).toBe(1);
+    // Only discover page and dependencies page are the internal link (links routed in JavaScript).
+    expect(list.find(SidebarMenuItem).length).toBe(2);
   });
 
   it('should render external links', () => {

@@ -12,11 +12,11 @@
  * the License.
  */
 import React from 'react';
-import { render, cleanup } from '@testing-library/react';
-import { ThemeProvider } from '@material-ui/styles';
+import moment from 'moment';
+import { cleanup } from '@testing-library/react';
 
 import NodeDetail from './NodeDetail';
-import { theme } from '../../colors';
+import render from '../../test/util/render-with-default-settings';
 
 describe('<NodeDetail />', () => {
   const commonProps = {
@@ -32,6 +32,8 @@ describe('<NodeDetail />', () => {
     ],
     minHeight: 100,
     classes: {},
+    startTime: moment(),
+    endTime: moment(),
   };
 
   afterEach(() => {
@@ -40,9 +42,7 @@ describe('<NodeDetail />', () => {
 
   it('should render "Not found" message when targetEdges is empty', () => {
     const { queryAllByText } = render(
-      <ThemeProvider theme={theme}>
-        <NodeDetail {...commonProps} targetEdges={[]} />
-      </ThemeProvider>,
+      <NodeDetail {...commonProps} targetEdges={[]} />,
     );
     const notFoundMessages = queryAllByText('Not found...');
     expect(notFoundMessages.length).toBe(1);
@@ -50,9 +50,7 @@ describe('<NodeDetail />', () => {
 
   it('should render "Not found" message when sourceEdges is empty', () => {
     const { queryAllByText } = render(
-      <ThemeProvider theme={theme}>
-        <NodeDetail {...commonProps} sourceEdges={[]} />
-      </ThemeProvider>,
+      <NodeDetail {...commonProps} sourceEdges={[]} />,
     );
     const notFoundMessages = queryAllByText('Not found...');
     expect(notFoundMessages.length).toBe(1);
@@ -60,9 +58,7 @@ describe('<NodeDetail />', () => {
 
   it('should not render "Not found" message when targetEdges and sourceEdges are not empty', () => {
     const { queryAllByText } = render(
-      <ThemeProvider theme={theme}>
-        <NodeDetail {...commonProps} />
-      </ThemeProvider>,
+      <NodeDetail {...commonProps} />,
     );
     const notFoundMessages = queryAllByText('Not found...');
     expect(notFoundMessages.length).toBe(0);

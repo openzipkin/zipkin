@@ -27,6 +27,7 @@ jest.mock('./VizceralExt', () => jest.fn(({ objectHighlighted }) => (
     {
       ['serviceA', 'serviceB', 'serviceC', 'serviceD', 'serviceE', 'serviceF', 'serviceG'].map(nodeName => (
         <button
+          key={nodeName}
           type="button"
           data-testid={`${nodeName}-button`}
           onClick={() => objectHighlighted({ type: 'node', getName: () => nodeName })}

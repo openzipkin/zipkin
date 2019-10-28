@@ -67,10 +67,14 @@ const vizStyle = {
 };
 
 const propTypes = {
-  selectedNodeName: PropTypes.string.isRequired,
+  selectedNodeName: PropTypes.string,
   onNodeClick: PropTypes.func.isRequired,
   edges: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   nodes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+};
+
+const defaultProps = {
+  selectedNodeName: '',
 };
 
 const DependenciesGraph = React.memo(({
@@ -82,7 +86,7 @@ const DependenciesGraph = React.memo(({
   const classes = useStyles();
   const [filter, selectFilter] = useReducer((_, selected) => (selected ? selected.value : ''), '');
 
-  // A hack that forces a reload vizceral graph...
+  // A hack that forces to reload vizceral graph...
   const [reloading, setReloading] = useState(false);
   useEffect(() => { setReloading(true); }, [filter]);
   useEffect(() => { setReloading(false); }, [reloading]);
@@ -163,5 +167,6 @@ const DependenciesGraph = React.memo(({
 });
 
 DependenciesGraph.propTypes = propTypes;
+DependenciesGraph.defaultProps = defaultProps;
 
 export default DependenciesGraph;
