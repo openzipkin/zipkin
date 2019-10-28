@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import _ from 'lodash';
+import orderBy from 'lodash/orderBy';
 import moment from 'moment';
 import { compare } from './span-cleaner';
 import { getErrorType, newSpanRow } from './span-row';
@@ -95,9 +95,9 @@ export function traceSummary(root) {
 //
 // This is used to create servicePercentage for index.mustache when a service is selected
 export function totalDuration(timestampAndDurations) {
-  const filtered = _(timestampAndDurations)
-    .filter(s => s.duration) // filter out anything we can't make an interval out of
-    .sortBy('timestamp').value(); // to merge intervals, we need the input sorted
+  const filtered = timestampAndDurations
+    .filter(s => !!s.duration) // filter out anything we can't make an interval out of
+    .sort((a, b) => a.timestamp - b.timestamp);
 
   if (filtered.length === 0) {
     return 0;
@@ -153,19 +153,18 @@ export function mkDurationStr(duration) {
 
 // maxSpanDurationStr is only used in index.mustache
 export function getServiceSummaries(groupedTimestamps) {
-  return _(groupedTimestamps).toPairs()
+  const services = Object.entries(groupedTimestamps)
     .map(([serviceName, sts]) => ({
       serviceName,
       spanCount: sts.length,
       maxSpanDuration: Math.max(...sts.map(t => t.duration)),
-    }))
-    .orderBy(['maxSpanDuration', 'serviceName'], ['desc', 'asc'])
+    }));
+  return orderBy(services, ['maxSpanDuration', 'serviceName'], ['desc', 'asc'])
     .map(summary => ({
       serviceName: summary.serviceName,
       spanCount: summary.spanCount,
       maxSpanDurationStr: mkDurationStr(summary.maxSpanDuration),
-    }))
-    .value();
+    }));
 }
 
 export function traceSummaries(serviceName, summaries, utc = false) {

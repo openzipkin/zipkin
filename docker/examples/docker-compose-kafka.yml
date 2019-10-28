@@ -1,0 +1,42 @@
+#
+# Copyright 2015-2019 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml to add a test
+# kafka server, which is used as a span transport.
+
+version: '2'
+
+services:
+  kafka-zookeeper:
+    image: openzipkin/zipkin-kafka
+    container_name: kafka-zookeeper
+    # If using docker machine, uncomment the below and set your bootstrap
+    # server list to 192.168.99.100:19092
+    # environment:
+      # - KAFKA_ADVERTISED_HOST_NAME=192.168.99.100
+    ports:
+      - 2181:2181
+      - 9092:9092
+      # port 19092 is listening on localhost by default. In normal Docker,
+      # you can set your bootstrap server list to localhost:19092
+      - 19092:19092
+
+  zipkin:
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka-zookeeper:9092
+    depends_on:
+      - kafka-zookeeper

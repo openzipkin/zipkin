@@ -1,0 +1,52 @@
+#
+# Copyright 2015-2019 The OpenZipkin Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+# in compliance with the License. You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the License
+# is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+# or implied. See the License for the specific language governing permissions and limitations under
+# the License.
+#
+
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# This runs the zipkin and zipkin-mysql containers, using docker-compose's
+# default networking to wire the containers together.
+#
+# Note that this file is meant for learning Zipkin, not production deployments.
+
+version: '2'
+
+services:
+  # The zipkin process services the UI, and also exposes a POST endpoint that
+  # instrumentation can send trace data to.
+  zipkin:
+    image: openzipkin/zipkin-slim
+    container_name: zipkin
+    # Environment settings are defined here https://github.com/openzipkin/zipkin/blob/master/zipkin-server/README.md#environment-variables
+    environment:
+      - STORAGE_TYPE=mem
+      # Uncomment to enable self-tracing
+      # - SELF_TRACING_ENABLED=true
+      # Uncomment to enable debug logging
+      # - JAVA_OPTS=-Dorg.slf4j.simpleLogger.log.zipkin2=debug
+    ports:
+      # Port used for the Zipkin UI and HTTP Api
+      - 9411:9411
+    depends_on:
+      - storage
+
+  # Fake services allow us to compose with docker-compose-elasticsearch.yml
+  # BusyBox is pinned to prevent repetitive image pulls for no-op services
+  storage:
+    image: busybox:1.31.0
+    container_name: fake_storage
+
+  dependencies:
+    image: busybox:1.31.0
+    container_name: fake_dependencies

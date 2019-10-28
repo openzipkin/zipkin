@@ -45,5 +45,5 @@ queries:
     cql: SELECT DISTINCT key FROM autocomplete_tags
     fields: samerow
    select_values:
-    cql: SELECT value FROM autocomplete_tags WHERE key = ? LIMIT 1000
+    cql: SELECT value FROM autocomplete_tags WHERE key = ? LIMIT 10000
     fields: samerow

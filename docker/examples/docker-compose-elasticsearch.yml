@@ -12,45 +12,33 @@
 # the License.
 #
 
-version: "3.6"
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml to run the
+# zipkin-elasticsearch container instead of the zipkin-mysql container.
+
+version: '2'
+
 services:
-  elasticsearch6:
-    build:
-      context: ..
-      dockerfile: docker/storage/elasticsearch6/Dockerfile
-    networks:
-      default:
-        aliases:
-          - elasticsearch
+  # Run Elasticsearch instead of MySQL
+  storage:
+    image: openzipkin/zipkin-elasticsearch7
+    container_name: elasticsearch
     # Uncomment to expose the storage port for testing
     # ports:
     #   - 9200:9200
+
+  # Switch storage type to Elasticsearch
   zipkin:
-    build:
-      context: ..
-      dockerfile: "${DOCKERFILE_PATH:-docker/Dockerfile}"
-      args:
-        source_branch: "${SOURCE_BRANCH:-master}"
-    networks:
-      default:
-        aliases:
-        - zipkin
     environment:
       - STORAGE_TYPE=elasticsearch
       # Point the zipkin at the storage backend
       - ES_HOSTS=elasticsearch:9200
       # Uncomment to see requests to and from elasticsearch
       # - ES_HTTP_LOGGING=BODY
-    ports:
-      # Port used for the Zipkin UI and HTTP Api
-      - 9411:9411
-    depends_on:
-      - elasticsearch6
-  # Docker Hub automated test service - https://docs.docker.com/docker-hub/builds/automated-testing/
-  sut:
-    image: appropriate/curl
-    networks:
-    - default
-    command: -v --connect-timeout 5 --retry 30 --retry-connrefused --retry-delay 5 http://zipkin:9411/health
-    depends_on:
-    - zipkin
+
+  dependencies:
+    environment:
+      - STORAGE_TYPE=elasticsearch
+      - ES_HOSTS=elasticsearch

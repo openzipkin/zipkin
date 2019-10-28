@@ -12,29 +12,25 @@
 # the License.
 #
 
-version: "3.6"
+# This file uses the version 2 docker-compose file format, described here:
+# https://docs.docker.com/compose/compose-file/#version-2
+#
+# It extends the default configuration from docker-compose.yml to run the
+# zipkin-cassandra container instead of the zipkin-mysql container.
+
+version: '2'
+
 services:
-  cassandra:
-    build:
-      context: ..
-      dockerfile: docker/storage/cassandra/Dockerfile
-    networks:
-      default:
-        aliases:
-          - cassandra
-        # Uncomment to expose the storage port for testing
+  # Run Cassandra instead of MySQL
+  storage:
+    image: openzipkin/zipkin-cassandra
+    container_name: cassandra
+    # Uncomment to expose the storage port for testing
     # ports:
     #   - 9042:9042
+
+  # Switch storage type to Cassandra
   zipkin:
-    build:
-      context: ..
-      dockerfile: "${DOCKERFILE_PATH:-docker/Dockerfile}"
-      args:
-        source_branch: "${SOURCE_BRANCH:-master}"
-    networks:
-      default:
-        aliases:
-        - zipkin
     environment:
       - STORAGE_TYPE=cassandra3
       # When using the test docker image, or have schema pre-installed, you don't need to re-install it
@@ -42,16 +38,10 @@ services:
       # When overriding this value, note the minimum supported version is 3.9
       # If you you cannot run 3.9+, but can run 2.2+, set STORAGE_TYPE=cassandra
       - CASSANDRA_CONTACT_POINTS=cassandra
-    ports:
-      # Port used for the Zipkin UI and HTTP Api
-      - 9411:9411
     depends_on:
-      - cassandra
-  # Docker Hub automated test service - https://docs.docker.com/docker-hub/builds/automated-testing/
-  sut:
-    image: appropriate/curl
-    networks:
-    - default
-    command: -v --connect-timeout 5 --retry 30 --retry-connrefused --retry-delay 5 http://zipkin:9411/health
-    depends_on:
-    - zipkin
+      - storage
+
+  dependencies:
+    environment:
+      - STORAGE_TYPE=cassandra3
+      - CASSANDRA_CONTACT_POINTS=cassandra
