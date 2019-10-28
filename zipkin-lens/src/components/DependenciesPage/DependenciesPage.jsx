@@ -197,6 +197,8 @@ export const DependenciesPageImpl = React.memo(({
                         minHeight={height}
                         targetEdges={targetEdges}
                         sourceEdges={sourceEdges}
+                        startTime={timeRange.startTime}
+                        endTime={timeRange.endTime}
                       />
                     </Box>
                   )

@@ -12,14 +12,17 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
+import { withRouter } from 'react-router';
 import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/styles';
 
 import DoughnutGraph from './DoughnutGraph';
 import EdgeData from './EdgeData';
+import { buildQueryParameters } from '../../util/api';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -28,6 +31,10 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.grey[100],
   },
   serviceName: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
     borderBottom: `1px solid ${theme.palette.grey[300]}`,
     textTransform: 'uppercase',
     paddingTop: theme.spacing(1.5),
@@ -65,6 +72,9 @@ const propTypes = {
     source: PropTypes.string.isRequired,
   })).isRequired,
   minHeight: PropTypes.number.isRequired,
+  startTime: PropTypes.shape({}).isRequired,
+  endTime: PropTypes.shape({}).isRequired,
+  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
 const NodeDetail = React.memo(({
@@ -72,6 +82,9 @@ const NodeDetail = React.memo(({
   targetEdges,
   sourceEdges,
   minHeight,
+  startTime,
+  endTime,
+  history,
 }) => {
   const classes = useStyles();
   const outputEdgeNames = useMemo(
@@ -91,11 +104,28 @@ const NodeDetail = React.memo(({
     [sourceEdges],
   );
 
+  const handleSearchTracesButtonClick = useCallback(() => {
+    history.push({
+      pathname: '/zipkin',
+      search: buildQueryParameters({
+        serviceName,
+        startTs: startTime.valueOf(),
+        endTs: endTime.valueOf(),
+        lookback: 'custom',
+      }),
+    });
+  }, [serviceName, startTime, endTime, history]);
+
   return (
     <Box minHeight={minHeight} className={classes.root}>
-      <Typography variant="h5" className={classes.serviceName}>
-        {serviceName}
-      </Typography>
+      <Box className={classes.serviceName}>
+        <Typography variant="h5">
+          {serviceName}
+        </Typography>
+        <Button color="primary" variant="contained" onClick={handleSearchTracesButtonClick}>
+          Search Traces
+        </Button>
+      </Box>
       <Box className={classes.relatedServicesBox}>
         <Box className={classes.subtitle}>
           <Typography variant="h6">
@@ -164,4 +194,4 @@ const NodeDetail = React.memo(({
 
 NodeDetail.propTypes = propTypes;
 
-export default NodeDetail;
+export default withRouter(NodeDetail);
