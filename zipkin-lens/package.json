@@ -68,6 +68,7 @@
     "chart.js": "^2.7.2",
     "classnames": "^2.2.6",
     "core-js": "^3.1.4",
+    "history": "^4.10.1",
     "js-cookie": "^2.2.0",
     "lodash": "^4.17.14",
     "moment": "^2.24.0",

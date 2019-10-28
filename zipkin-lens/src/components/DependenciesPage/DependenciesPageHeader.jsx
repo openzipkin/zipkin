@@ -64,8 +64,8 @@ const useStyles = makeStyles(theme => ({
 }));
 
 const propTypes = {
-  startTime: PropTypes.number.isRequired,
-  endTime: PropTypes.number.isRequired,
+  startTime: PropTypes.shape({}).isRequired,
+  endTime: PropTypes.shape({}).isRequired,
   onStartTimeChange: PropTypes.func.isRequired,
   onEndTimeChange: PropTypes.func.isRequired,
   onFindButtonClick: PropTypes.func.isRequired,

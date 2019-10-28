@@ -148,20 +148,20 @@ export const DependenciesPageImpl = ({
   let content;
   if (isLoading) {
     content = (
-      <Box className={classes.loadingIndicatorWrapper}>
+      <Box className={classes.loadingIndicatorWrapper} data-testid="loading-indicator">
         <CircularProgress />
       </Box>
     );
   } else if (!isGraphExists) {
     content = (
-      <Box className={classes.explainBoxWrapper}>
+      <Box className={classes.explainBoxWrapper} data-testid="explain-box">
         <ExplainBox />
       </Box>
     );
   } else {
     content = (
       <Box className={classes.content}>
-        <Box width={nodeName ? '70%' : '100%'} className={classes.graphWrapper}>
+        <Box width={nodeName ? '70%' : '100%'} className={classes.graphWrapper} data-testid="dependencies-graph">
           <AutoSizer>
             {
               ({ width, height }) => (
@@ -179,7 +179,7 @@ export const DependenciesPageImpl = ({
         </Box>
         {
           nodeName ? (
-            <Box className={classes.nodeDetailWrapper}>
+            <Box className={classes.nodeDetailWrapper} data-testid="node-detail">
               <AutoSizer>
                 {
                   ({ width, height }) => (
