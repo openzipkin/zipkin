@@ -12,9 +12,8 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useReducer } from 'react';
 import ReactSelect from 'react-select';
-import _ from 'lodash';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/styles';
 
@@ -75,7 +74,7 @@ const DependenciesGraph = React.memo(({
   nodes,
 }) => {
   const classes = useStyles();
-  const [filter, setFilter] = useState('');
+  const [filter, selectFilter] = useReducer((_, selected) => (selected ? selected.value : ''), '');
 
   const handleObjectHighlight = useCallback((highlightedObject) => {
     if (!highlightedObject) {
@@ -89,11 +88,8 @@ const DependenciesGraph = React.memo(({
 
   const maxVolume = useMemo(() => {
     if (edges.length > 0) {
-      const maxVolumeEdge = _.maxBy(
-        edges,
-        edge => edge.metrics.normal + edge.metrics.danger,
-      );
-      return maxVolumeEdge.metrics.normal + maxVolumeEdge.metrics.danger;
+      return edges.map(edge => edge.metrics.normal + edge.metrics.danger)
+        .reduce((a, b) => Math.max(a, b));
     }
     return 0;
   }, [edges]);
@@ -102,14 +98,6 @@ const DependenciesGraph = React.memo(({
     value: node.name,
     label: node.name,
   })), [nodes]);
-
-  const handleFilterChange = useCallback((selected) => {
-    if (!selected) {
-      setFilter('');
-    } else {
-      setFilter(selected.value);
-    }
-  }, []);
 
   return (
     <Box className={classes.root}>
@@ -133,7 +121,7 @@ const DependenciesGraph = React.memo(({
         <ReactSelect
           isClearable
           options={filterOptions}
-          onChange={handleFilterChange}
+          onChange={selectFilter}
           value={!filter ? undefined : { value: filter, label: filter }}
           styles={reactSelectStyles}
         />
