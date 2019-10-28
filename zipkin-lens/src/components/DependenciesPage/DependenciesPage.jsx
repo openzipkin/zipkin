@@ -16,6 +16,7 @@ import React, {
   useMemo,
   useCallback,
   useState,
+  useEffect,
 } from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
@@ -31,7 +32,6 @@ import DependenciesPageHeader from './DependenciesPageHeader';
 import NodeDetail from './NodeDetail';
 import * as dependenciesActionCreators from '../../actions/dependencies-action';
 import Graph from '../../util/dependencies-graph';
-import { useMount, useUnmount } from '../../hooks';
 import ExplainBox from './ExplainBox';
 import { buildQueryParameters } from '../../util/api';
 
@@ -130,7 +130,7 @@ export const DependenciesPageImpl = React.memo(({
     setNodeName(newNodeName);
   }, []);
 
-  useMount(() => {
+  useEffect(() => {
     const queryParams = queryString.parse(location.search);
     if (queryParams.startTs && queryParams.endTs) {
       setTimeRange({
@@ -139,11 +139,9 @@ export const DependenciesPageImpl = React.memo(({
       });
       fetchDependencies(queryParams);
     }
-  });
-
-  useUnmount(() => {
-    clearDependencies();
-  });
+    return clearDependencies;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   let content;
   if (isLoading) {
