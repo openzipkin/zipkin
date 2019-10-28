@@ -11,21 +11,39 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-const presets = [
-  [
-    '@babel/env',
-    {
-      targets: {
-        edge: '17',
-        firefox: '60',
-        chrome: '67',
-        safari: '11.1',
-      },
-      useBuiltIns: 'usage',
-      corejs: 3,
-    },
-  ],
-  '@babel/react',
-];
 
-module.exports = { presets };
+module.exports = api => {
+  const isTest = api.env('test');
+  const targets = isTest ? { node: 'current' } : [
+    'last 2 edge version',
+    'last 2 firefox version',
+    'last 2 chrome version',
+    'last 2 safari version',
+  ];
+  const presets = [
+    [
+      '@babel/env',
+      {
+        modules: isTest ? 'commonjs' : false,
+        useBuiltIns: 'usage',
+        corejs: 3,
+        targets,
+      },
+    ],
+    '@babel/react',
+  ];
+
+  const plugins = [
+    [
+      '@babel/plugin-transform-runtime',
+      {
+        corejs: 3,
+        useESModules: !isTest,
+      },
+    ],
+  ];
+  return {
+    presets,
+    plugins,
+  };
+};

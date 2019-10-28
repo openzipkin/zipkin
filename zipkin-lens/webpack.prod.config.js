@@ -19,6 +19,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const TerserJSPlugin = require('terser-webpack-plugin');
 const OptimizeCSSAssetsPlugin = require('optimize-css-assets-webpack-plugin');
+const Visualizer = require('webpack-visualizer-plugin');
 
 module.exports = {
   target: 'web',
@@ -108,6 +109,9 @@ module.exports = {
         NODE_ENV: JSON.stringify(process.env.NODE_ENV),
         API_BASE: JSON.stringify(process.env.API_BASE),
       },
+    }),
+    new Visualizer({
+      filename: '../../stats.html',
     }),
   ],
 };
