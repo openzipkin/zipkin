@@ -12,7 +12,13 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useCallback, useMemo, useReducer } from 'react';
+import React, {
+  useCallback,
+  useMemo,
+  useReducer,
+  useState,
+  useEffect,
+} from 'react';
 import ReactSelect from 'react-select';
 import Box from '@material-ui/core/Box';
 import { makeStyles } from '@material-ui/styles';
@@ -76,6 +82,29 @@ const DependenciesGraph = React.memo(({
   const classes = useStyles();
   const [filter, selectFilter] = useReducer((_, selected) => (selected ? selected.value : ''), '');
 
+  // A hack that forces a reload vizceral graph...
+  const [reloading, setReloading] = useState(false);
+  useEffect(() => { setReloading(true); }, [filter]);
+  useEffect(() => { setReloading(false); }, [reloading]);
+
+  const shownConnections = useMemo(() => {
+    if (filter) {
+      return edges.filter(edge => edge.source === filter || edge.target === filter);
+    }
+    return edges;
+  }, [edges, filter]);
+
+  const shownNodes = useMemo(() => {
+    if (filter) {
+      return nodes.filter(
+        node => shownConnections.find(
+          edge => edge.source === node.name || edge.target === node.name,
+        ),
+      );
+    }
+    return nodes;
+  }, [filter, nodes, shownConnections]);
+
   const handleObjectHighlight = useCallback((highlightedObject) => {
     if (!highlightedObject) {
       onNodeClick(null);
@@ -99,6 +128,10 @@ const DependenciesGraph = React.memo(({
     label: node.name,
   })), [nodes]);
 
+  if (reloading) {
+    return null; // Now reloading Vizceral...
+  }
+
   return (
     <Box className={classes.root}>
       <VizceralExt
@@ -110,11 +143,10 @@ const DependenciesGraph = React.memo(({
           name: 'dependencies-graph',
           updated: new Date().getTime(),
           maxVolume: maxVolume * 50,
-          nodes,
-          connections: edges,
+          nodes: shownNodes,
+          connections: shownConnections,
         }}
         objectHighlighted={handleObjectHighlight}
-        match={filter}
         styles={vizStyle}
       />
       <Box className={classes.selectWrapper}>
