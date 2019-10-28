@@ -126,7 +126,7 @@ export const DependenciesPageImpl = ({
     });
   }, [fetchDependencies, timeRange, history]);
 
-  const handleClickNode = useCallback((newNodeName) => {
+  const handleNodeClick = useCallback((newNodeName) => {
     setNodeName(newNodeName);
   }, []);
 
@@ -168,7 +168,7 @@ export const DependenciesPageImpl = ({
                 <Box width={width} height={height}>
                   <DependenciesGraph
                     selectedNodeName={nodeName}
-                    onClickNode={handleClickNode}
+                    onNodeClick={handleNodeClick}
                     edges={graph.allEdges()}
                     nodes={graph.allNodes()}
                   />

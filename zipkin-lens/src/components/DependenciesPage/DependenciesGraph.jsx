@@ -63,14 +63,14 @@ const vizStyle = {
 
 const propTypes = {
   selectedNodeName: PropTypes.string.isRequired,
-  onClickNode: PropTypes.func.isRequired,
+  onNodeClick: PropTypes.func.isRequired,
   edges: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   nodes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
 const DependenciesGraph = ({
   selectedNodeName,
-  onClickNode,
+  onNodeClick,
   edges,
   nodes,
 }) => {
@@ -79,13 +79,13 @@ const DependenciesGraph = ({
 
   const handleObjectHighlight = useCallback((highlightedObject) => {
     if (typeof highlightedObject === 'undefined') {
-      onClickNode(null);
+      onNodeClick(null);
       return;
     }
     if (highlightedObject.type === 'node' && highlightedObject.getName() !== selectedNodeName) {
-      onClickNode(highlightedObject.getName());
+      onNodeClick(highlightedObject.getName());
     }
-  }, [onClickNode, selectedNodeName]);
+  }, [onNodeClick, selectedNodeName]);
 
   const maxVolume = useMemo(() => {
     if (edges.length > 0) {
