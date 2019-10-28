@@ -74,19 +74,19 @@ const NodeDetail = React.memo(({
   minHeight,
 }) => {
   const classes = useStyles();
-  const usesEdgeNames = useMemo(
+  const outputEdgeNames = useMemo(
     () => targetEdges.map(edge => edge.target),
     [targetEdges],
   );
-  const usesEdgeData = useMemo(
+  const outputEdgeData = useMemo(
     () => targetEdges.map(edge => edge.metrics.normal + edge.metrics.danger),
     [targetEdges],
   );
-  const usedEdgeNames = useMemo(
+  const inputEdgeNames = useMemo(
     () => sourceEdges.map(edge => edge.source),
     [sourceEdges],
   );
-  const usedEdgeData = useMemo(
+  const inputEdgeData = useMemo(
     () => sourceEdges.map(edge => edge.metrics.normal + edge.metrics.danger),
     [sourceEdges],
   );
@@ -121,7 +121,7 @@ const NodeDetail = React.memo(({
                     />
                   ))
                 }
-                <DoughnutGraph edgeNames={usesEdgeNames} edgeData={usesEdgeData} />
+                <DoughnutGraph edgeNames={outputEdgeNames} edgeData={outputEdgeData} />
               </>
             )
           }
@@ -152,7 +152,7 @@ const NodeDetail = React.memo(({
                     />
                   ))
                 }
-                <DoughnutGraph edgeNames={usedEdgeNames} edgeData={usedEdgeData} />
+                <DoughnutGraph edgeNames={inputEdgeNames} edgeData={inputEdgeData} />
               </>
             )
           }
