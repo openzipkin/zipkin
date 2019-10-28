@@ -91,7 +91,7 @@ const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-export const DependenciesPageImpl = ({
+export const DependenciesPageImpl = React.memo(({
   isLoading,
   dependencies,
   fetchDependencies,
@@ -101,7 +101,7 @@ export const DependenciesPageImpl = ({
 }) => {
   const classes = useStyles();
   const graph = useMemo(() => new Graph(dependencies), [dependencies]);
-  const isGraphExists = useMemo(() => graph.allNodes().length !== 0, [graph]);
+  const isGraphExists = graph.allNodes().length !== 0;
   const [nodeName, setNodeName] = useState(null);
   const [timeRange, setTimeRange] = useState({
     startTime: moment().subtract(1, 'days'),
@@ -213,7 +213,7 @@ export const DependenciesPageImpl = ({
       {content}
     </>
   );
-};
+});
 
 DependenciesPageImpl.propTypes = propTypes;
 

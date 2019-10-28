@@ -68,7 +68,7 @@ const propTypes = {
   nodes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
 };
 
-const DependenciesGraph = ({
+const DependenciesGraph = React.memo(({
   selectedNodeName,
   onNodeClick,
   edges,
@@ -78,7 +78,7 @@ const DependenciesGraph = ({
   const [filter, setFilter] = useState('');
 
   const handleObjectHighlight = useCallback((highlightedObject) => {
-    if (typeof highlightedObject === 'undefined') {
+    if (!highlightedObject) {
       onNodeClick(null);
       return;
     }
@@ -140,7 +140,7 @@ const DependenciesGraph = ({
       </Box>
     </Box>
   );
-};
+});
 
 DependenciesGraph.propTypes = propTypes;
 

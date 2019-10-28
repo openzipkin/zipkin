@@ -33,7 +33,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const ExplainBox = () => {
+const ExplainBox = React.memo(() => {
   const classes = useStyles();
 
   return (
@@ -51,6 +51,6 @@ const ExplainBox = () => {
       </Typography>
     </Box>
   );
-};
+});
 
 export default ExplainBox;

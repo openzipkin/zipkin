@@ -40,7 +40,7 @@ const propTypes = {
   edgeData: PropTypes.arrayOf(PropTypes.number).isRequired,
 };
 
-const DoughnutGraph = ({ edgeNames, edgeData }) => {
+const DoughnutGraph = React.memo(({ edgeNames, edgeData }) => {
   const classes = useStyles();
   const data = useMemo(() => edgeNames.map((name, index) => ({
     name,
@@ -78,7 +78,7 @@ const DoughnutGraph = ({ edgeNames, edgeData }) => {
       </Box>
     </Box>
   );
-};
+});
 
 DoughnutGraph.propTypes = propTypes;
 

@@ -71,7 +71,7 @@ const propTypes = {
   onFindButtonClick: PropTypes.func.isRequired,
 };
 
-const DependenciesPageHeader = ({
+const DependenciesPageHeader = React.memo(({
   startTime,
   endTime,
   onStartTimeChange,
@@ -120,7 +120,7 @@ const DependenciesPageHeader = ({
       </Box>
     </Box>
   );
-};
+});
 
 DependenciesPageHeader.propTypes = propTypes;
 

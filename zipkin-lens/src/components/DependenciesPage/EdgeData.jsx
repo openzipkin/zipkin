@@ -38,7 +38,7 @@ const propTypes = {
   errorCount: PropTypes.number.isRequired,
 };
 
-const EdgeData = ({
+const EdgeData = React.memo(({
   nodeName,
   normalCount,
   errorCount,
@@ -72,7 +72,7 @@ const EdgeData = ({
       </Paper>
     </Box>
   );
-};
+});
 
 EdgeData.propTypes = propTypes;
 

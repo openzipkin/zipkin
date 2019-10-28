@@ -67,7 +67,7 @@ const propTypes = {
   minHeight: PropTypes.number.isRequired,
 };
 
-const NodeDetail = ({
+const NodeDetail = React.memo(({
   serviceName,
   targetEdges,
   sourceEdges,
@@ -160,7 +160,7 @@ const NodeDetail = ({
       </Box>
     </Box>
   );
-};
+});
 
 NodeDetail.propTypes = propTypes;
 
