@@ -21,7 +21,6 @@ import React, {
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
 import { AutoSizer } from 'react-virtualized';
-import queryString from 'query-string';
 import moment from 'moment';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -139,13 +138,16 @@ export const DependenciesPageImpl = React.memo(({
   }, []);
 
   useEffect(() => {
-    const queryParams = queryString.parse(location.search);
-    if (queryParams.startTs && queryParams.endTs) {
+    const queryParams = new URLSearchParams(location.search);
+
+    const startTs = queryParams.get('startTs');
+    const endTs = queryParams.get('endTs');
+    if (startTs && endTs) {
       setTimeRange({
-        startTime: moment(parseInt(queryParams.startTs, 10)),
-        endTime: moment(parseInt(queryParams.endTs, 10)),
+        startTime: moment(parseInt(startTs, 10)),
+        endTime: moment(parseInt(endTs, 10)),
       });
-      fetchDependencies(queryParams);
+      fetchDependencies({ startTs, endTs });
     }
     return clearDependencies;
     // eslint-disable-next-line react-hooks/exhaustive-deps
