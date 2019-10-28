@@ -31,8 +31,6 @@
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
 
-    <okhttp.version>4.2.2</okhttp.version>
-
     <!-- Sometimes we need to override Armeria's Brave version -->
     <brave.version>5.8.0</brave.version>
 
@@ -290,7 +288,6 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
-      <version>${okhttp.version}</version>
       <scope>test</scope>
       <exclusions>
         <!-- let wire control the okio version -->
