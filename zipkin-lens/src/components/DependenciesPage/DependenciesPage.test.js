@@ -71,7 +71,7 @@ describe('<DependenciesPage />', () => {
     expect(loadingIndicators.length).toBe(1);
   });
 
-  it('should render a explain box if there is not graph yet', () => {
+  it('should render an explain box if there is no graph, yet', () => {
     const { queryAllByTestId } = render(
       <DependenciesPageImpl {...commonProps} dependencies={[]} />,
     );
@@ -79,7 +79,7 @@ describe('<DependenciesPage />', () => {
     expect(explainBoxes.length).toBe(1);
   });
 
-  it('should render a dependencies graph when isLoading is false and there is a graph data', () => {
+  it('should render a dependency graph when isLoading is false and there is graph data', () => {
     const { queryAllByTestId } = render(
       <DependenciesPageImpl
         {...commonProps}
@@ -90,7 +90,7 @@ describe('<DependenciesPage />', () => {
     expect(dependenciesGraphs.length).toBe(1);
   });
 
-  it('should render a node detail when nodes are clicked', () => {
+  it('should render node details when nodes are clicked', () => {
     const { getByTestId, queryAllByTestId } = render(
       <DependenciesPageImpl
         {...commonProps}
@@ -102,14 +102,14 @@ describe('<DependenciesPage />', () => {
     let nodeDetails = queryAllByTestId('node-detail');
     expect(nodeDetails.length).toBe(1);
 
-    // And remove the node detail when graph's background is clicked.
+    // When the graph's background is clicked, the node detail should be removed.
     const graphBackground = getByTestId('graph-background');
     fireEvent.click(graphBackground);
     nodeDetails = queryAllByTestId('node-detail');
     expect(nodeDetails.length).toBe(0);
   });
 
-  it('should fetch dependencies when mounted by using query parameters', () => {
+  it('should fetch dependencies when mounted using query parameters', () => {
     const fetchDependencies = jest.fn();
     render(
       <DependenciesPageImpl
@@ -120,7 +120,7 @@ describe('<DependenciesPage />', () => {
     expect(fetchDependencies.mock.calls.length).toBe(1);
   });
 
-  it('should not fetch dependencies when query parameters is not set', () => {
+  it('should not fetch dependencies when query parameters are missing', () => {
     const fetchDependencies = jest.fn();
     render(
       <DependenciesPageImpl

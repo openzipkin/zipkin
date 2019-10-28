@@ -45,9 +45,9 @@ const ExplainBox = React.memo(() => {
         Search Dependencies
       </Typography>
       <Typography variant="body1" className={classes.description}>
-        Please select the start time and the end time,
+        Please select the start and end time.
         <br />
-        and click the search button.
+        Then, click the search button.
       </Typography>
     </Box>
   );

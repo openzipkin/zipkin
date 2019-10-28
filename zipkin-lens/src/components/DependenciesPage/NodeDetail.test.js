@@ -56,7 +56,7 @@ describe('<NodeDetail />', () => {
     expect(notFoundMessages.length).toBe(1);
   });
 
-  it('should not render "Not found" message when targetEdges and sourceEdges are not empty', () => {
+  it('should render "Not found" message only when targetEdges or sourceEdges are present', () => {
     const { queryAllByText } = render(
       <NodeDetail {...commonProps} />,
     );
