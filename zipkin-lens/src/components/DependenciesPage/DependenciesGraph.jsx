@@ -16,8 +16,6 @@ import React, {
   useCallback,
   useMemo,
   useReducer,
-  useState,
-  useEffect,
 } from 'react';
 import ReactSelect from 'react-select';
 import Box from '@material-ui/core/Box';
@@ -25,6 +23,27 @@ import { makeStyles } from '@material-ui/styles';
 
 import VizceralExt from './VizceralExt';
 import { theme } from '../../colors';
+
+const filterConnections = (object, value) => {
+  if (!value) {
+    return true;
+  }
+  if (object.name === value) {
+    return true;
+  }
+  return object.source.name === value || object.target.name === value;
+};
+
+const filterNodes = (object, value) => {
+  if (!value) {
+    return true;
+  }
+  if (object.name === value) {
+    return true;
+  }
+  return object.incomingConnections.find(conn => conn.source.name === value)
+    || object.outgoingConnections.find(conn => conn.target.name === value);
+};
 
 const useStyles = makeStyles({
   root: {
@@ -85,27 +104,6 @@ const DependenciesGraph = React.memo(({
 }) => {
   const classes = useStyles();
   const [filter, selectFilter] = useReducer((_, selected) => (selected ? selected.value : ''), '');
-
-  const filterConnections = useCallback((object, value) => {
-    if (!value) {
-      return true;
-    }
-    if (object.name === value) {
-      return true;
-    }
-    return object.source.name === value || object.target.name === value;
-  }, []);
-
-  const filterNodes = useCallback((object, value) => {
-    if (!value) {
-      return true;
-    }
-    if (object.name === value) {
-      return true;
-    }
-    return object.incomingConnections.find(conn => conn.source.name === value)
-      || object.outgoingConnections.find(conn => conn.target.name === value);
-  }, []);
 
   const handleObjectHighlight = useCallback((highlightedObject) => {
     if (!highlightedObject) {
