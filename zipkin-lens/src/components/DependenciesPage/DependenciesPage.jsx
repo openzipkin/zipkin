@@ -126,7 +126,8 @@ export const DependenciesPageImpl = React.memo(({
   const handleFindButtonClick = useCallback(() => {
     const startTs = timeRange.startTime.valueOf();
     const endTs = timeRange.endTime.valueOf();
-    fetchDependencies({ startTs, endTs });
+    const lookback = endTs - startTs;
+    fetchDependencies({ lookback, endTs });
     history.push({
       pathname: '/zipkin/dependency',
       search: buildQueryParameters({ startTs, endTs }),
@@ -147,7 +148,8 @@ export const DependenciesPageImpl = React.memo(({
         startTime: moment(parseInt(startTs, 10)),
         endTime: moment(parseInt(endTs, 10)),
       });
-      fetchDependencies({ startTs, endTs });
+      const lookback = endTs - startTs;
+      fetchDependencies({ lookback, endTs });
     }
     return clearDependencies;
     // eslint-disable-next-line react-hooks/exhaustive-deps
