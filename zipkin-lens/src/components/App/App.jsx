@@ -20,6 +20,7 @@ import MomentUtils from '@date-io/moment';
 
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
+import DependenciesPage from '../DependenciesPage';
 import TracePage from '../TracePage';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
@@ -35,8 +36,13 @@ const App = () => {
             <Layout>
               <Route
                 exact
-                path={['/zipkin', '/zipkin/dependency']}
+                path="/zipkin"
                 component={DiscoverPage}
+              />
+              <Route
+                exact
+                path="/zipkin/dependency"
+                component={DependenciesPage}
               />
               <Route
                 exact

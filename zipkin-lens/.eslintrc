@@ -2,6 +2,9 @@
   "extends": "airbnb",
   "rules": {
     "import/prefer-default-export": "off",
+    "import/no-extraneous-dependencies": ["error", {
+      "devDependencies": ["**/test/**", "**/*.test.js", "**/*.spec.js"]
+    }],
     "react/jsx-filename-extension": [1, { "extensions": [".js", ".jsx"] }],
     "react/no-array-index-key": "off",
     "react-hooks/rules-of-hooks": "error",
@@ -12,7 +15,7 @@
     "prefer-destructuring": ["error", {
       "AssignmentExpression": {"array": false, "object": false},
       "VariableDeclarator": {"array": true, "object": true}
-    }],
+    }]
   },
   "plugins": [
     "jest",

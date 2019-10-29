@@ -22,6 +22,7 @@ import MomentUtils from '@date-io/moment';
 import App from './App';
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
+import DependenciesPage from '../DependenciesPage';
 import TracePage from '../TracePage';
 import { theme } from '../../colors';
 
@@ -67,7 +68,7 @@ describe('<App />', () => {
     const layout = wrapper.find(Layout);
     expect(layout.length).toBe(1);
     // In order to share Layout, the Route components must be defined under Layout.
-    expect(layout.find(Route).length).toBe(2);
+    expect(layout.find(Route).length).toBe(3);
     // Since the Layout component is wrapped with withRouter, it needs to be defined
     // under BrowserRouter.
     expect(layout.parent().type()).toEqual(BrowserRouter);
@@ -77,10 +78,13 @@ describe('<App />', () => {
     const wrapper = shallow(<App />);
     const routes = wrapper.find(Route);
     // Check routes that use the same global search bar.
-    expect(routes.at(0).props().path).toEqual(['/zipkin', '/zipkin/dependency']);
+    expect(routes.at(0).props().path).toEqual('/zipkin');
     expect(routes.at(0).props().component).toEqual(DiscoverPage);
+    // Check routes for dependencies page.
+    expect(routes.at(1).props().path).toEqual('/zipkin/dependency');
+    expect(routes.at(1).props().component).toEqual(DependenciesPage);
     // Check routes that use a single trace as input.
-    expect(routes.at(1).props().path).toEqual(['/zipkin/traces/:traceId', '/zipkin/traceViewer']);
-    expect(routes.at(1).props().component).toEqual(TracePage);
+    expect(routes.at(2).props().path).toEqual(['/zipkin/traces/:traceId', '/zipkin/traceViewer']);
+    expect(routes.at(2).props().component).toEqual(TracePage);
   });
 });

@@ -14,6 +14,7 @@
 
 @import '~rc-slider/assets/index.css';
 @import '~react-table/react-table.css';
+@import '~vizceral-react/dist/vizceral.css';
 
 $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import '~@fortawesome/fontawesome-free/scss/fontawesome.scss';
@@ -24,11 +25,3 @@ $fa-font-path: "~@fortawesome/fontawesome-free/webfonts";
 @import 'variables-dark';
 
 @import 'base/base';
-@import 'base/form';
-
-@import 'custom/rc-slider';
-@import 'custom/vizceral';
-
-@import 'components/dependencies-sidebar';
-@import 'components/dependencies';
-@import 'components/loading-overlay';
