@@ -147,10 +147,12 @@ const DependenciesGraph = React.memo(({
         objectHighlighted={handleObjectHighlight}
         styles={vizStyle}
         key={
-          // For some reason, when updating `filters`, vizceral does not rerender the graph
-          // correctly in place. So instead of rerendering in place, we replace the `key`,
-          // which causes react to completely destroy and reconstruct the component, effectively
-          // rerendering the graph from scratch.
+          // Normally, when updating filters, Vizsceral will show and hide nodes without relaying
+          // them out. For a large dependency graph, this often won't let us see well the
+          // information about the filtered nodes, so we prefer to force a relayout any time we
+          // update the filter. Changing the key based on the filter like this causes react to
+          // destroy and reconstruct the component from scratch, which will have a layout zooming
+          // in on the filtered nodes.
           filter
         }
         filters={[
