@@ -28,6 +28,9 @@
   <name>Zipkin Core Library</name>
 
   <properties>
+    <!-- Matches Export-Package in bnd.bnd -->
+    <module.name>zipkin2</module.name>
+
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.6</main.java.version>
     <main.signature.artifact>java16</main.signature.artifact>
@@ -71,16 +74,6 @@
 
   <build>
     <plugins>
-      <!-- Need to block import of shaded packages in bnd.bnd as maven bundle plugin analyzes the unshaded jar -->
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <configuration>
-          <instructions>
-            <_include>-bnd.bnd</_include>
-          </instructions>
-        </configuration>
-      </plugin>
       <!-- Rewrites bytecode back down to java 1.6 -->
       <plugin>
         <groupId>net.orfjackal.retrolambda</groupId>
@@ -131,29 +124,11 @@
               <transformers>
                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                   <manifestEntries>
-                    <Automatic-Module-Name>zipkin2</Automatic-Module-Name>
+                    <Automatic-Module-Name>${module.name}</Automatic-Module-Name>
                   </manifestEntries>
                 </transformer>
               </transformers>
             </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-jar-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>default-jar</id>
-            <configuration>
-              <archive>
-                <!-- prevents huge pom file from also being added to the jar under META-INF/maven -->
-                <addMavenDescriptor>false</addMavenDescriptor>
-                <manifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</manifestFile>
-              </archive>
-            </configuration>
-            <goals>
-              <goal>jar</goal>
-            </goals>
           </execution>
         </executions>
       </plugin>
