@@ -90,6 +90,7 @@ const propTypes = {
   onNodeClick: PropTypes.func.isRequired,
   edges: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   nodes: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  updated: PropTypes.number.isRequired,
 };
 
 const defaultProps = {
@@ -101,6 +102,7 @@ const DependenciesGraph = React.memo(({
   onNodeClick,
   edges,
   nodes,
+  updated,
 }) => {
   const classes = useStyles();
   const [filter, selectFilter] = useReducer((_, selected) => (selected ? selected.value : ''), '');
@@ -140,6 +142,7 @@ const DependenciesGraph = React.memo(({
           maxVolume: maxVolume * 50,
           nodes,
           connections: edges,
+          updated,
         }}
         objectHighlighted={handleObjectHighlight}
         styles={vizStyle}

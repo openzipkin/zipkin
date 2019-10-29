@@ -181,6 +181,7 @@ export const DependenciesPageImpl = React.memo(({
                     onNodeClick={handleNodeClick}
                     edges={graph.allEdges()}
                     nodes={graph.allNodes()}
+                    updated={graph.createdTs()}
                   />
                 </Box>
               )

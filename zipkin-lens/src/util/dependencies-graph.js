@@ -11,10 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import moment from 'moment';
+
 class Graph {
   constructor(rawDependencies) {
     this.nodes = [];
     this.edges = [];
+    this._createdTs = moment().valueOf();
 
     rawDependencies.forEach(
       edge => this.addEdge(edge),
@@ -52,6 +55,10 @@ class Graph {
 
   allEdges() {
     return this.edges;
+  }
+
+  createdTs() {
+    return this._createdTs;
   }
 
   getTargetEdges(serviceName) {
