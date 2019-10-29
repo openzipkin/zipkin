@@ -391,17 +391,6 @@
         </plugin>
 
         <plugin>
-          <artifactId>maven-javadoc-plugin</artifactId>
-          <version>${maven-javadoc-plugin.version}</version>
-          <configuration>
-            <failOnError>false</failOnError>
-            <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
-            <!-- hush pedantic warnings: we don't put param and return on everything! -->
-            <doclint>none</doclint>
-          </configuration>
-        </plugin>
-
-        <plugin>
           <artifactId>maven-jar-plugin</artifactId>
           <version>${maven-jar-plugin.version}</version>
           <configuration>
@@ -648,8 +637,7 @@
             <configuration>
               <rules>
                 <requireJavaVersion>
-                  <!-- don't JDK 12 until https://github.com/google/error-prone/issues/1106 -->
-                  <version>[11,12)</version>
+                  <version>[1.8,14)</version>
                 </requireJavaVersion>
               </rules>
             </configuration>
@@ -672,9 +660,10 @@
       </modules>
     </profile>
     <profile>
+      <!-- don't JDK 13 until https://github.com/google/error-prone/issues/1106 -->
       <id>error-prone-9+</id>
       <activation>
-        <jdk>[9,)</jdk>
+        <jdk>[9,12)</jdk>
         <activeByDefault>false</activeByDefault>
       </activation>
       <build>
@@ -750,8 +739,12 @@
             <artifactId>maven-javadoc-plugin</artifactId>
             <version>${maven-javadoc-plugin.version}</version>
             <configuration>
+              <sourceFileExcludes>
+                <exclude>**/internal/*.java</exclude>
+                <exclude>**/Internal*.java</exclude>
+              </sourceFileExcludes>
+              <excludePackageNames>*.internal.*</excludePackageNames>
               <failOnError>false</failOnError>
-              <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
               <!-- hush pedantic warnings: we don't put param and return on everything! -->
               <doclint>none</doclint>
               <!-- While we publish modules, our source is pre-Java9 so tell javadoc that. -->
