@@ -757,6 +757,8 @@
               <excludePackageNames>zipkin2.internal,zipkin2.internal.*</excludePackageNames>
               <!-- hush pedantic warnings: we don't put param and return on everything! -->
               <doclint>none</doclint>
+              <!-- While we publish modules, our source is pre-Java9 so tell javadoc that. -->
+              <source>8</source>
             </configuration>
             <executions>
               <execution>
