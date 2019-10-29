@@ -19,6 +19,7 @@ import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.ResponseHeadersBuilder;
+import com.linecorp.armeria.server.annotation.Blocking;
 import com.linecorp.armeria.server.annotation.Default;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.Get;
@@ -76,6 +77,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/dependencies")
+  @Blocking
   public AggregatedHttpResponse getDependencies(
     @Param("endTs") long endTs,
     @Param("lookback") Optional<Long> lookback) throws IOException {
@@ -85,6 +87,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/services")
+  @Blocking
   public AggregatedHttpResponse getServiceNames() throws IOException {
     List<String> serviceNames = storage.serviceAndSpanNames().getServiceNames().execute();
     serviceCount = serviceNames.size();
@@ -92,6 +95,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/spans")
+  @Blocking
   public AggregatedHttpResponse getSpanNames(@Param("serviceName") String serviceName)
     throws IOException {
     List<String> spanNames = storage.serviceAndSpanNames().getSpanNames(serviceName).execute();
@@ -99,6 +103,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/remoteServices")
+  @Blocking
   public AggregatedHttpResponse getRemoteServiceNames(@Param("serviceName") String serviceName)
     throws IOException {
     List<String> remoteServiceNames =
@@ -107,6 +112,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/traces")
+  @Blocking
   public AggregatedHttpResponse getTraces(
     @Param("serviceName") Optional<String> serviceName,
     @Param("remoteServiceName") Optional<String> remoteServiceName,
@@ -136,6 +142,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/trace/{traceId}")
+  @Blocking
   public AggregatedHttpResponse getTrace(@Param("traceId") String traceId) throws IOException {
     traceId = Span.normalizeTraceId(traceId);
     List<Span> trace = storage.traces().getTrace(traceId).execute();
@@ -146,6 +153,7 @@ public class ZipkinQueryApiV2 {
   }
 
   @Get("/api/v2/traceMany")
+  @Blocking
   public AggregatedHttpResponse getTraces(@Param("traceIds") String traceIds) throws IOException {
     if (traceIds.isEmpty()) {
       return AggregatedHttpResponse.of(BAD_REQUEST, ANY_TEXT_TYPE, "traceIds parameter is empty");
@@ -185,11 +193,13 @@ public class ZipkinQueryApiV2 {
   };
 
   @Get("/api/v2/autocompleteKeys")
+  @Blocking
   public AggregatedHttpResponse getAutocompleteKeys() {
     return maybeCacheNames(true, autocompleteKeys);
   }
 
   @Get("/api/v2/autocompleteValues")
+  @Blocking
   public AggregatedHttpResponse getAutocompleteValues(@Param("key") String key) throws IOException {
     List<String> values = storage.autocompleteTags().getValues(key).execute();
     return maybeCacheNames(values.size() > 3, values);
