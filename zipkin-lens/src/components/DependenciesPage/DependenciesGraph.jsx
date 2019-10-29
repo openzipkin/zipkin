@@ -86,28 +86,26 @@ const DependenciesGraph = React.memo(({
   const classes = useStyles();
   const [filter, selectFilter] = useReducer((_, selected) => (selected ? selected.value : ''), '');
 
-  // A hack that forces to reload vizceral graph...
-  const [reloading, setReloading] = useState(false);
-  useEffect(() => { setReloading(true); }, [filter]);
-  useEffect(() => { setReloading(false); }, [reloading]);
-
-  const shownConnections = useMemo(() => {
-    if (filter) {
-      return edges.filter(edge => edge.source === filter || edge.target === filter);
+  const filterConnections = useCallback((object, value) => {
+    if (!value) {
+      return true;
     }
-    return edges;
-  }, [edges, filter]);
-
-  const shownNodes = useMemo(() => {
-    if (filter) {
-      return nodes.filter(
-        node => shownConnections.find(
-          edge => edge.source === node.name || edge.target === node.name,
-        ),
-      );
+    if (object.name === value) {
+      return true;
     }
-    return nodes;
-  }, [filter, nodes, shownConnections]);
+    return object.source.name === value || object.target.name === value;
+  }, []);
+
+  const filterNodes = useCallback((object, value) => {
+    if (!value) {
+      return true;
+    }
+    if (object.name === value) {
+      return true;
+    }
+    return object.incomingConnections.find(conn => conn.source.name === value)
+      || object.outgoingConnections.find(conn => conn.target.name === value);
+  }, []);
 
   const handleObjectHighlight = useCallback((highlightedObject) => {
     if (!highlightedObject) {
@@ -132,10 +130,6 @@ const DependenciesGraph = React.memo(({
     label: node.name,
   })), [nodes]);
 
-  if (reloading) {
-    return null; // Now reloading Vizceral...
-  }
-
   return (
     <Box className={classes.root}>
       <VizceralExt
@@ -145,13 +139,27 @@ const DependenciesGraph = React.memo(({
           renderer: 'region',
           layout: 'ltrTree',
           name: 'dependencies-graph',
-          updated: new Date().getTime(),
           maxVolume: maxVolume * 50,
-          nodes: shownNodes,
-          connections: shownConnections,
+          nodes,
+          connections: edges,
         }}
         objectHighlighted={handleObjectHighlight}
         styles={vizStyle}
+        key={filter}
+        filters={[
+          {
+            name: 'shownConnections',
+            type: 'connection',
+            passes: filterConnections,
+            value: filter,
+          },
+          {
+            name: 'shownNodes',
+            type: 'node',
+            passes: filterNodes,
+            value: filter,
+          },
+        ]}
       />
       <Box className={classes.selectWrapper}>
         <ReactSelect
