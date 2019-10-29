@@ -146,7 +146,13 @@ const DependenciesGraph = React.memo(({
         }}
         objectHighlighted={handleObjectHighlight}
         styles={vizStyle}
-        key={filter}
+        key={
+          // For some reason, when updating `filters`, vizceral does not rerender the graph
+          // correctly in place. So instead of rerendering in place, we replace the `key`,
+          // which causes react to completely destroy and reconstruct the component, effectively
+          // rerendering the graph from scratch.
+          filter
+        }
         filters={[
           {
             name: 'shownConnections',
