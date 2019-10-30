@@ -51,6 +51,21 @@ const propTypes = {
 };
 
 const useStyles = makeStyles(theme => ({
+  header: {
+    paddingRight: theme.spacing(3),
+    paddingLeft: theme.spacing(3),
+  },
+  titleRow: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  upperRightBox: {
+    paddingRight: theme.spacing(3),
+    display: 'flex',
+    alignItems: 'center',
+  },
   tabs: {
     color: theme.palette.text.primary,
     backgroundColor: theme.palette.common.white,
@@ -62,6 +77,16 @@ const useStyles = makeStyles(theme => ({
     minHeight: '2rem',
   },
   contentPaper: {
+    height: '100%',
+    marginTop: theme.spacing(2),
+    marginRight: theme.spacing(3),
+    marginBottom: theme.spacing(2),
+    marginLeft: theme.spacing(3),
+  },
+  content: {
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'auto',
     width: '100%',
     height: '100%',
   },
@@ -155,33 +180,23 @@ const DiscoverPage = ({ history, location }) => {
 
   return (
     <>
-      <Box pl={3} pr={3}>
-        <Box width="100%" display="flex" justifyContent="space-between">
-          <Box display="flex" alignItems="center">
-            <Typography variant="h5">
-              Discover
-            </Typography>
-          </Box>
-          <Box pr={3} display="flex" alignItems="center">
+      <Box className={classes.header}>
+        <Box className={classes.titleRow}>
+          <Typography variant="h5">
+            Discover
+          </Typography>
+          <Box className={classes.upperRightBox}>
             <TraceJsonUploader />
             <TraceIdSearchInput />
           </Box>
         </Box>
         <GlobalSearch findData={findTraces} />
       </Box>
-      <Box
-        flex="0 1 100%"
-        marginTop={1.5}
-        marginBottom={1}
-        marginRight={3}
-        marginLeft={3}
-      >
-        <Paper className={classes.contentPaper}>
-          <Box display="flex" flexDirection="column" overflow="auto" width="100%" height="100%">
-            <TracesTab />
-          </Box>
-        </Paper>
-      </Box>
+      <Paper className={classes.contentPaper}>
+        <Box className={classes.content}>
+          <TracesTab />
+        </Box>
+      </Paper>
     </>
   );
 };
