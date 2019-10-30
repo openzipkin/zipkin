@@ -21,6 +21,7 @@ import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.client.metric.MetricCollectingClient;
+import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpHeaders;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.logging.LogLevel;
@@ -55,7 +56,13 @@ public class HttpClientFactory implements Function<Endpoint, HttpClient>, Closea
     if (httpLogging != HttpLogging.NONE) {
       LoggingClientBuilder loggingBuilder = new LoggingClientBuilder()
         .requestLogLevel(LogLevel.INFO)
-        .successfulResponseLogLevel(LogLevel.INFO);
+        .successfulResponseLogLevel(LogLevel.INFO)
+        .requestHeadersSanitizer(headers -> {
+          if (!headers.contains(HttpHeaderNames.AUTHORIZATION)) {
+            return headers;
+          }
+          return headers.toBuilder().set(HttpHeaderNames.AUTHORIZATION, "****").build();
+        });
       switch (httpLogging) {
         case HEADERS:
           loggingBuilder.contentSanitizer(unused -> "");
