@@ -103,7 +103,7 @@ const useStyles = makeStyles(theme => ({
 
 const propTypes = {
   isLoading: PropTypes.bool.isRequired,
-  traces: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
+  traces: PropTypes.arrayOf(PropTypes.any).isRequired,
   lastQueryParams: PropTypes.shape({}).isRequired,
   conditions: globalSearchConditionsPropTypes.isRequired,
   lookbackCondition: globalSearchLookbackConditionPropTypes.isRequired,
