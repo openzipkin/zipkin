@@ -19,10 +19,11 @@ import moment from 'moment';
 import queryString from 'query-string';
 import isEmpty from 'lodash/isEmpty';
 import isEqual from 'lodash/isEqual';
-import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
+import { makeStyles } from '@material-ui/styles';
 
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
@@ -42,6 +43,7 @@ import * as spansActionCreators from '../../actions/spans-action';
 import * as autocompleteKeysActionCreators from '../../actions/autocomplete-keys-action';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import { globalSearchLookbackConditionPropTypes, globalSearchConditionsPropTypes } from '../../prop-types';
+import ExplainBox from './ExplainBox';
 
 const useStyles = makeStyles(theme => ({
   header: {
@@ -69,6 +71,20 @@ const useStyles = makeStyles(theme => ({
     height: '2rem',
     minHeight: '2rem',
   },
+  loadingIndicatorWrapper: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  explainBoxWrapper: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   contentPaper: {
     height: '100%',
     marginTop: theme.spacing(2),
@@ -87,6 +103,7 @@ const useStyles = makeStyles(theme => ({
 
 const propTypes = {
   isLoading: PropTypes.bool.isRequired,
+  traces: PropTypes.arrayOf(PropTypes.shape({})).isRequired,
   lastQueryParams: PropTypes.shape({}).isRequired,
   conditions: globalSearchConditionsPropTypes.isRequired,
   lookbackCondition: globalSearchLookbackConditionPropTypes.isRequired,
@@ -108,6 +125,7 @@ const propTypes = {
 
 const DiscoverPageImpl = ({
   isLoading,
+  traces,
   lastQueryParams,
   conditions,
   lookbackCondition,
@@ -203,6 +221,29 @@ const DiscoverPageImpl = ({
     }
   });
 
+  let content;
+  if (isLoading) {
+    content = (
+      <Box className={classes.loadingIndicatorWrapper} data-testid="loading-indicator">
+        <CircularProgress />
+      </Box>
+    );
+  } else if (traces.length === 0) {
+    content = (
+      <Box className={classes.explainBoxWrapper} data-testid="explain-box">
+        <ExplainBox />
+      </Box>
+    );
+  } else {
+    content = (
+      <Paper className={classes.contentPaper}>
+        <Box className={classes.content}>
+          <TracesTab />
+        </Box>
+      </Paper>
+    );
+  }
+
   return (
     <>
       <Box className={classes.header}>
@@ -217,11 +258,7 @@ const DiscoverPageImpl = ({
         </Box>
         <GlobalSearch findData={findTraces} />
       </Box>
-      <Paper className={classes.contentPaper}>
-        <Box className={classes.content}>
-          <TracesTab />
-        </Box>
-      </Paper>
+      {content}
     </>
   );
 };
@@ -229,6 +266,7 @@ const DiscoverPageImpl = ({
 DiscoverPageImpl.propTypes = propTypes;
 
 const mapStateToProps = state => ({
+  traces: state.traces.traces,
   isLoading: state.traces.isLoading,
   lastQueryParams: state.traces.lastQueryParams,
   conditions: state.globalSearch.conditions,
