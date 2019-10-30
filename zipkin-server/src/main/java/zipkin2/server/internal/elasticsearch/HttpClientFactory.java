@@ -61,6 +61,7 @@ public class HttpClientFactory implements Function<Endpoint, HttpClient>, Closea
           if (!headers.contains(HttpHeaderNames.AUTHORIZATION)) {
             return headers;
           }
+          // TODO(anuraaga): Add unit tests after https://github.com/line/armeria/issues/2220
           return headers.toBuilder().set(HttpHeaderNames.AUTHORIZATION, "****").build();
         });
       switch (httpLogging) {
