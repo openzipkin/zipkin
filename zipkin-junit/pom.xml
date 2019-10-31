@@ -30,6 +30,8 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
+
+    <okhttp.version>4.2.2</okhttp.version>
   </properties>
 
   <dependencies>
@@ -47,7 +49,7 @@
     <dependency>
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>mockwebserver</artifactId>
-      <version>3.14.4</version>
+      <version>${okhttp.version}</version>
     </dependency>
 
     <dependency>
