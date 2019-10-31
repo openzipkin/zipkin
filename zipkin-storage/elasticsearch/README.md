@@ -2,7 +2,7 @@
 
 This is is a plugin to the Elasticsearch storage component, which uses
 HTTP by way of [Armeria](https://github.com/line/armeria) and
-[Moshi](https://github.com/square/moshi). This uses Elasticsearch 5+
+[Jackson](https://github.com/FasterXML/jackson). This uses Elasticsearch 5+
 features, but is tested against Elasticsearch 6-7.x.
 
 ## Multiple hosts

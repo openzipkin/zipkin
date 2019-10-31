@@ -18,6 +18,7 @@ import com.datastax.driver.core.Authenticator;
 import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.Host;
 import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.PlainTextAuthProvider;
 import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.policies.DCAwareRoundRobinPolicy;
 import com.datastax.driver.core.policies.LatencyAwarePolicy;
@@ -99,12 +100,14 @@ public class SessionFactoryTest {
 
   @Test
   public void usernamePassword_impliesNullDelimitedUtf8Bytes() {
+    PlainTextAuthProvider authProvider = (PlainTextAuthProvider) buildCluster(
+      CassandraStorage.newBuilder().username("bob").password("secret").build())
+      .getConfiguration()
+      .getProtocolOptions()
+      .getAuthProvider();
+
     Authenticator authenticator =
-        buildCluster(CassandraStorage.newBuilder().username("bob").password("secret").build())
-            .getConfiguration()
-            .getProtocolOptions()
-            .getAuthProvider()
-            .newAuthenticator(new InetSocketAddress("localhost", 8080), null);
+      authProvider.newAuthenticator(() -> new InetSocketAddress("localhost", 8080), null);
 
     byte[] SASLhandshake = {0, 'b', 'o', 'b', 0, 's', 'e', 'c', 'r', 'e', 't'};
     assertThat(authenticator.initialResponse()).isEqualTo(SASLhandshake);
