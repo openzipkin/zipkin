@@ -16,7 +16,7 @@ import { clean } from './span-cleaner';
 
 // bad traces from https://github.com/openzipkin/zipkin/issues/2829
 import malformedTrace from '../test/data/malformed'; // Many data problems from Kong
-import envoyTrace from '../test/data/envoy'; // Slight problem: it is missing the local service name
+import envoyTrace from '../../testdata/envoy'; // Slight problem: missing the local service name
 
 // endpoints from zipkin2.TestObjects
 const frontend = {

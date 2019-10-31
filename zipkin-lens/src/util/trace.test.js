@@ -12,7 +12,7 @@
  * the License.
  */
 import { ensureV2TraceData } from './trace';
-import v2Trace from '../test/data/netflix';
+import v2Trace from '../../testdata/netflix';
 
 describe('ensureV2', () => {
   it('does not throw on v2 format', () => {
