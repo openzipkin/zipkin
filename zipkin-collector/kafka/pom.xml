@@ -47,7 +47,7 @@
 
     <dependency>
       <groupId>com.github.charithe</groupId>
-        <artifactId>kafka-junit</artifactId>
+      <artifactId>kafka-junit</artifactId>
       <!-- This version is tightly coupled to the version of kafka-clients being used.
        https://github.com/charithe/kafka-junit -->
       <version>4.1.6</version>
