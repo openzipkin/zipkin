@@ -121,11 +121,32 @@ public class ITZipkinMetrics {
 
   @Test public void forwardedRoute_prometheus() throws Exception {
     assertThat(get("/zipkin/api/v2/services").isSuccessful())
-      .isTrue();
+        .isTrue();
 
     assertThat(scrape())
-      .contains("uri=\"/api/v2/services\"")
-      .doesNotContain("uri=\"/zipkin/api/v2/services\"");
+        .contains("uri=\"/api/v2/services\"")
+        .doesNotContain("uri=\"/zipkin/api/v2/services\"");
+  }
+
+  @Test public void jvmMetrics_prometheus() throws Exception {
+    assertThat(scrape())
+        .contains("jvm_memory_max_bytes")
+        .contains("jvm_memory_used_bytes")
+        .contains("jvm_memory_committed_bytes")
+        .contains("jvm_buffer_count_buffers")
+        .contains("jvm_buffer_memory_used_bytes")
+        .contains("jvm_buffer_total_capacity_bytes")
+        .contains("jvm_classes_loaded_classes")
+        .contains("jvm_classes_unloaded_classes_total")
+        .contains("jvm_threads_live_threads")
+        .contains("jvm_threads_states_threads")
+        .contains("jvm_threads_peak_threads")
+        .contains("jvm_threads_daemon_threads")
+        .contains("jvm_gc_pause_seconds_count")
+        .contains("jvm_gc_pause_seconds_sum")
+        .contains("jvm_gc_pause_seconds_max")
+        .contains("jvm_gc_memory_allocated_bytes_total")
+    ;
   }
 
   String scrape() throws InterruptedException {
@@ -133,7 +154,9 @@ public class ITZipkinMetrics {
     return registry.scrape();
   }
 
-  /** Makes sure the prometheus filter doesn't count twice */
+  /**
+   * Makes sure the prometheus filter doesn't count twice
+   */
   @Test public void writeSpans_updatesPrometheusMetrics() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0], LOTS_OF_SPANS[1], LOTS_OF_SPANS[2]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);

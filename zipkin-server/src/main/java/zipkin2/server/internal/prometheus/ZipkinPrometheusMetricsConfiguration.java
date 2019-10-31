@@ -29,6 +29,11 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Timer;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.netty.util.AttributeKey;
@@ -75,7 +80,13 @@ public class ZipkinPrometheusMetricsConfiguration {
 
   @Bean @ConditionalOnMissingBean public PrometheusMeterRegistry prometheusMeterRegistry(
     PrometheusConfig config, CollectorRegistry registry, Clock clock) {
-    return new PrometheusMeterRegistry(config, registry, clock);
+    PrometheusMeterRegistry meterRegistry = new PrometheusMeterRegistry(config, registry, clock);
+    new JvmMemoryMetrics().bindTo(meterRegistry);
+    new JvmGcMetrics().bindTo(meterRegistry);
+    new JvmThreadMetrics().bindTo(meterRegistry);
+    new ClassLoaderMetrics().bindTo(meterRegistry);
+    new ProcessorMetrics().bindTo(meterRegistry);
+    return meterRegistry;
   }
 
   // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
