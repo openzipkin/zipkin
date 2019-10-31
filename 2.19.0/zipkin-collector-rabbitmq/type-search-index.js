@@ -1,0 +1,1 @@
+typeSearchIndex = [{"l":"All Classes","url":"allclasses-index.html"},{"p":"zipkin2.collector.rabbitmq","l":"RabbitMQCollector.Builder"},{"p":"zipkin2.collector.rabbitmq","l":"RabbitMQCollector"}]
