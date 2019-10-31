@@ -30,8 +30,6 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-
-    <okhttp.version>4.2.2</okhttp.version>
   </properties>
 
   <dependencies>

@@ -91,8 +91,8 @@ public class ResultSetFutureCallTest {
   @Test public void isOverCapacity() {
     InetSocketAddress sa = InetSocketAddress.createUnresolved("host", 9402);
 
-    assertThat(ResultSetFutureCall.isOverCapacity(new BusyPoolException(sa, 100))).isTrue();
-    assertThat(ResultSetFutureCall.isOverCapacity(new BusyConnectionException(sa))).isTrue();
+    assertThat(ResultSetFutureCall.isOverCapacity(new BusyPoolException(() -> sa, 100))).isTrue();
+    assertThat(ResultSetFutureCall.isOverCapacity(new BusyConnectionException(() -> sa))).isTrue();
     assertThat(ResultSetFutureCall.isOverCapacity(mock(QueryConsistencyException.class))).isTrue();
 
     // not applicable
