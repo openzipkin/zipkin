@@ -142,6 +142,11 @@ public class ITZipkinMetrics {
         .contains("jvm_threads_states_threads")
         .contains("jvm_threads_peak_threads")
         .contains("jvm_threads_daemon_threads")
+        // TODO check gc causes test issue
+        //.contains("jvm_gc_pause_seconds_count")
+        //.contains("jvm_gc_pause_seconds_sum")
+        //.contains("jvm_gc_pause_seconds_max")
+        //.contains("jvm_gc_memory_allocated_bytes_total")
     ;
   }
 
