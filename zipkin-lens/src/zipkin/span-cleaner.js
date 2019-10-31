@@ -264,5 +264,15 @@ export function mergeV2ById(spans) {
     result[i] = span;
   }
 
-  return result.sort(spanComparator);
+  const sorted = result.sort(spanComparator);
+
+  // Look to see if there is a root span, in case we need to correct its shared flag
+  if (sorted[0].parentId || !sorted[0].shared) return sorted;
+
+  // Sorting puts root spans first. If there's only one root, and it has shared flag, remove it.
+  if (sorted.length === 1 || !sorted[1].shared) {
+    delete sorted[0].shared;
+  }
+
+  return sorted;
 }

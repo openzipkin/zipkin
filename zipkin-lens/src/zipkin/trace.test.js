@@ -21,7 +21,7 @@ import {
 import { SpanNode } from './span-node';
 import { clean } from './span-cleaner';
 import { treeCorrectedForClockSkew } from './clock-skew';
-import netflixTrace from '../test/data/netflix';
+import netflixTrace from '../../testdata/netflix';
 
 const frontend = {
   serviceName: 'frontend',

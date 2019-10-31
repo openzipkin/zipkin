@@ -17,6 +17,7 @@ import {
   merge,
   mergeV2ById,
 } from './span-cleaner';
+import yelpTrace from '../../testdata/yelp';
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
@@ -992,6 +993,37 @@ describe('mergeV2ById', () => {
       'client',
       'server',
     ]);
+  });
+
+  // If instrumentation accidentally added shared flag on a server root span, delete it so that
+  // downstream code can process the tree properly
+  it('should delete accidental shared flag', () => {
+    const spans = mergeV2ById(yelpTrace);
+
+    expect(spans.length).toEqual(yelpTrace.length);
+    expect(spans[0].parentId).toBeUndefined();
+    expect(spans[0].shared).toBeUndefined();
+  });
+
+  it('should not delete valid shared flag on root span', () => {
+    const spans = mergeV2ById([
+      {
+        traceId: '1111111111111111',
+        id: '0000000000000001',
+        kind: 'SERVER',
+        timestamp: 2,
+        shared: true,
+      },
+      {
+        traceId: '1111111111111111',
+        id: '0000000000000001',
+        kind: 'CLIENT',
+        timestamp: 1,
+      },
+    ]);
+
+    expect(spans.length).toEqual(2);
+    expect(spans[1].shared).toEqual(true);
   });
 });
 
