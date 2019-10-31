@@ -40,11 +40,22 @@ const GlobalSearchConditionValue = ({
   onBlur,
 }) => {
   const dispatch = useDispatch();
-
-  const services = useSelector(state => state.services.services);
-  const remoteServices = useSelector(state => state.remoteServices.remoteServices);
-  const spans = useSelector(state => state.spans.spans);
-  const autocompleteValues = useSelector(state => state.autocompleteValues.autocompleteValues);
+  const {
+    services,
+    isLoading: isLoadingServices,
+  } = useSelector(state => state.services);
+  const {
+    remoteServices,
+    isLoading: isLoadingRemoteServices,
+  } = useSelector(state => state.remoteServices);
+  const {
+    spans,
+    isLoading: isLoadingSpans,
+  } = useSelector(state => state.spans);
+  const {
+    autocompleteValues,
+    isLoading: isLoadingAutocompleteValues,
+  } = useSelector(state => state.autocompleteValues);
   const conditions = useSelector(state => state.globalSearch.conditions);
 
   const { key: conditionKey, value: conditionValue } = conditions[conditionIndex];
@@ -72,13 +83,23 @@ const GlobalSearchConditionValue = ({
     case 'remoteServiceName':
     case 'spanName': {
       let opts;
+      let isLoading;
       switch (conditionKey) {
-        case 'serviceName': opts = services; break;
-        case 'remoteServiceName': opts = remoteServices; break;
-        case 'spanName': opts = spans; break;
+        case 'serviceName':
+          opts = services;
+          isLoading = isLoadingServices;
+          break;
+        case 'remoteServiceName':
+          opts = remoteServices;
+          isLoading = isLoadingRemoteServices;
+          break;
+        case 'spanName':
+          opts = spans;
+          isLoading = isLoadingSpans;
+          break;
         default: break;
       }
-      return (<NameCondition {...commonProps} options={opts} />);
+      return (<NameCondition {...commonProps} options={opts} isLoading={isLoading} />);
     }
     case 'minDuration':
     case 'maxDuration':
@@ -86,7 +107,13 @@ const GlobalSearchConditionValue = ({
     case 'tags':
       return (<TagCondition {...commonProps} />);
     default: // autocompleteTags
-      return (<NameCondition {...commonProps} options={autocompleteValues} />);
+      return (
+        <NameCondition
+          {...commonProps}
+          options={autocompleteValues}
+          isLoading={isLoadingAutocompleteValues}
+        />
+      );
   }
 };
 

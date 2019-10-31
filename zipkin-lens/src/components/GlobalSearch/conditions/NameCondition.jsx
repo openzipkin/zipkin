@@ -26,6 +26,7 @@ const propTypes = {
   isFocused: PropTypes.bool.isRequired,
   valueRef: PropTypes.shape({}).isRequired,
   addCondition: PropTypes.func.isRequired,
+  isLoading: PropTypes.bool.isRequired,
 };
 
 const defaultProps = {
@@ -41,6 +42,7 @@ const NameCondition = ({
   onChange,
   valueRef,
   addCondition,
+  isLoading,
 }) => {
   const styles = useMemo(() => ({
     control: base => ({
@@ -87,6 +89,7 @@ const NameCondition = ({
       ref={valueRef}
       value={{ value, label: value }}
       options={options.map(opt => ({ value: opt, label: opt }))}
+      isLoading={isLoading}
       styles={styles}
       onFocus={onFocus}
       onBlur={onBlur}
