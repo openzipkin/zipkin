@@ -33,6 +33,7 @@ import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.logging.Log4j2Metrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -86,6 +87,7 @@ public class ZipkinPrometheusMetricsConfiguration {
     new JvmThreadMetrics().bindTo(meterRegistry);
     new ClassLoaderMetrics().bindTo(meterRegistry);
     new ProcessorMetrics().bindTo(meterRegistry);
+    new Log4j2Metrics().bindTo(meterRegistry);
     return meterRegistry;
   }
 
