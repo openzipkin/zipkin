@@ -141,7 +141,8 @@ public class ITZipkinMetrics {
         .contains("jvm_threads_live_threads")
         .contains("jvm_threads_states_threads")
         .contains("jvm_threads_peak_threads")
-        .contains("jvm_threads_daemon_threads");
+        .contains("jvm_threads_daemon_threads")
+        .contains("log4j2_events_total");
     // gc metrics are not tested as are not present during test running
   }
 
