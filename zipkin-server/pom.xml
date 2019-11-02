@@ -515,7 +515,7 @@
               <classifier>slim</classifier>
               <!-- https://github.com/spring-projects/spring-boot/issues/3426 transitive exclude doesn't work -->
               <excludeGroupIds>
-                com.google.auto.value,com.google.guava,io.dropwizard.metrics,com.datastax.cassandra,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,com.zaxxer,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift,org.apache.logging.log4j
+                com.google.auto.value,com.google.guava,io.dropwizard.metrics,com.datastax.cassandra,com.github.jnr,org.ow2.asm,org.jooq,javax.xml.bind,org.mariadb.jdbc,com.zaxxer,org.apache.activemq,org.apache.geronimo.specs,org.fusesource.hawtbuf,org.apache.kafka,com.github.luben,org.lz4,org.xerial.snappy,com.rabbitmq,jakarta.annotation,org.apache.thrift
               </excludeGroupIds>
               <excludes>
                 <!-- Actuator -->
