@@ -61,6 +61,8 @@ zipkin:
       port: ${COLLECTOR_PORT:9410}
   query:
     enabled: ${QUERY_ENABLED:true}
+    # Timeout for requests to the query API
+    timeout: ${QUERY_TIMEOUT:11s}
     # 1 day in millis
     lookback: ${QUERY_LOOKBACK:86400000}
     # The Cache-Control max-age (seconds) for /api/v2/services, /api/v2/remoteServices and /api/v2/spans

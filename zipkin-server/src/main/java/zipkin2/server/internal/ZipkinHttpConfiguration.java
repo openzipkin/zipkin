@@ -15,8 +15,11 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
+import com.linecorp.armeria.common.HttpRequest;
+import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.HttpService;
+import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
@@ -26,6 +29,7 @@ import io.micrometer.core.instrument.config.MeterFilter;
 import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,11 +48,17 @@ public class ZipkinHttpConfiguration {
     Optional<ZipkinHealthController> healthController,
     Optional<ZipkinMetricsController> metricsController,
     Optional<MeterRegistry> meterRegistry,
-    Optional<CollectorRegistry> collectorRegistry) {
+    Optional<CollectorRegistry> collectorRegistry,
+    @Value("${zipkin.query.timeout:11s}") Duration queryTimeout) {
     return sb -> {
       httpQuery.ifPresent(h -> {
-        sb.annotatedService(httpQuery.get());
-        sb.annotatedService("/zipkin", httpQuery.get()); // For UI.
+        Function<Service<HttpRequest, HttpResponse>, Service<HttpRequest, HttpResponse>>
+          timeoutDecorator = service -> (ctx, req) -> {
+          ctx.setRequestTimeout(queryTimeout);
+          return service.serve(ctx, req);
+        };
+        sb.annotatedService(httpQuery.get(), timeoutDecorator);
+        sb.annotatedService("/zipkin", httpQuery.get(), timeoutDecorator); // For UI.
       });
       httpCollector.ifPresent(sb::annotatedService);
       healthController.ifPresent(sb::annotatedService);
