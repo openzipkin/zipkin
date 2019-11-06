@@ -21,10 +21,12 @@ import org.junit.After;
 import org.junit.Test;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
+import org.springframework.boot.convert.ApplicationConversionService;
 import org.springframework.boot.test.util.TestPropertyValues;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.convert.ConversionService;
 import zipkin2.server.internal.brave.ZipkinSelfTracingConfiguration;
 import zipkin2.storage.StorageComponent;
 
@@ -98,6 +100,10 @@ public class ZipkinHttpConfigurationTest {
   public static class Config {
     @Bean MeterRegistry registry() {
       return new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+    }
+
+    @Bean ConversionService conversionService() {
+      return ApplicationConversionService.getSharedInstance();
     }
   }
 
