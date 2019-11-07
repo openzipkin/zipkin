@@ -21,10 +21,10 @@ import com.linecorp.armeria.common.Response;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
 import com.linecorp.armeria.server.Route;
+import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.SimpleDecoratingService;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -40,6 +40,7 @@ import io.netty.util.AttributeKey;
 import io.prometheus.client.CollectorRegistry;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -90,20 +91,17 @@ public class ZipkinPrometheusMetricsConfiguration {
   }
 
   // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
-  @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator(MeterRegistry registry) {
-    return serverBuilder -> serverBuilder.decorator(
-      s -> new MetricCollectingService<>(s, registry, metricName));
+  @Bean Consumer<ServerBuilder> httpRequestDurationConfigurator(MeterRegistry registry) {
+    return sb -> sb.decorator(s -> new MetricCollectingService<>(s, registry, metricName));
   }
 
   // We need to make sure not-found requests are still handled by a service to be decorated for
   // adding metrics. We add a lower precedence path mapping so anything not mapped by another
   // service is handled by this.
-  @Bean
-  @Order(1)
-  ArmeriaServerConfigurator notFoundMetricCollector() {
+  @Bean @Order(1) Consumer<ServerBuilder> notFoundMetricCollector() {
     // Use glob instead of catch-all to avoid adding it to the trie router.
     return sb -> sb.service(Route.builder().glob("/**").build(),
-      (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
+        (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
   }
 
   static final class MetricCollectingService<I extends Request, O extends Response>

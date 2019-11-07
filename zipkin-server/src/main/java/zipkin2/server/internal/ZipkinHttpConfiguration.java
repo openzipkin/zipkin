@@ -19,16 +19,17 @@ import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.HttpService;
+import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -42,7 +43,7 @@ public class ZipkinHttpConfiguration {
   public static final MediaType MEDIA_TYPE_ACTUATOR =
     MediaType.parse("application/vnd.spring-boot.actuator.v2+json;charset=UTF-8");
 
-  @Bean ArmeriaServerConfigurator serverConfigurator(
+  @Bean Consumer<ServerBuilder> serverConfigurator(
     Optional<ZipkinQueryApiV2> httpQuery,
     Optional<ZipkinHttpCollector> httpCollector,
     Optional<ZipkinHealthController> healthController,
@@ -92,7 +93,7 @@ public class ZipkinHttpConfiguration {
   }
 
   /** Configures the server at the last because of the specified {@link Order} annotation. */
-  @Order @Bean ArmeriaServerConfigurator corsConfigurator(
+  @Order @Bean Consumer<ServerBuilder> corsConfigurator(
     @Value("${zipkin.query.allowed-origins:*}") String allowedOrigins) {
     CorsServiceBuilder corsBuilder = CorsServiceBuilder.forOrigins(allowedOrigins.split(","))
       // NOTE: The property says query, and the UI does not use POST, but we allow POST?

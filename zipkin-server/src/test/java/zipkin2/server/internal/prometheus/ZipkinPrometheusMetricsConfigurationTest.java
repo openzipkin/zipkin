@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal.prometheus;
 
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
+import java.util.function.Consumer;
 import org.junit.After;
 import org.junit.Test;
 import org.springframework.boot.autoconfigure.context.PropertyPlaceholderAutoConfiguration;
@@ -40,7 +40,7 @@ public class ZipkinPrometheusMetricsConfigurationTest {
   @Test public void providesHttpRequestDurationCustomizer() {
     refresh();
 
-    context.getBeansOfType(ArmeriaServerConfigurator.class);
+    context.getBeansOfType(Consumer.class);
   }
 
   @Test public void defaultMetricName() {

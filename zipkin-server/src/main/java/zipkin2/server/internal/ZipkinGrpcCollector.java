@@ -15,12 +15,13 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.common.CommonPools;
 import com.linecorp.armeria.common.grpc.protocol.AbstractUnsafeUnaryGrpcService;
+import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServiceRequestContext;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import zipkin2.Callback;
@@ -34,7 +35,7 @@ import zipkin2.storage.StorageComponent;
 @ConditionalOnProperty(name = "zipkin.collector.grpc.enabled") // disabled by default
 final class ZipkinGrpcCollector {
 
-  @Bean ArmeriaServerConfigurator grpcCollectorConfigurator(StorageComponent storage,
+  @Bean Consumer<ServerBuilder> grpcCollectorConfigurator(StorageComponent storage,
     CollectorSampler sampler, CollectorMetrics metrics) {
     CollectorMetrics grpcMetrics = metrics.forTransport("grpc");
     Collector collector = Collector.newBuilder(getClass())

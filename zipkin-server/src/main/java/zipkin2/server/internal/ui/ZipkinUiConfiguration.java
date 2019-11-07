@@ -25,10 +25,10 @@ import com.linecorp.armeria.common.ServerCacheControlBuilder;
 import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
+import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.netty.handler.codec.http.cookie.Cookie;
@@ -39,6 +39,7 @@ import java.io.StringWriter;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -101,7 +102,7 @@ public class ZipkinUiConfiguration {
     throw new BeanCreationException("Could not load Lens UI from " + lensIndexHtml);
   }
 
-  @Bean ArmeriaServerConfigurator uiServerConfigurator(
+  @Bean Consumer<ServerBuilder> uiServerConfigurator(
     HttpService indexService,
     Optional<MeterRegistry> meterRegistry
   ) throws IOException {

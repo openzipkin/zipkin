@@ -23,11 +23,12 @@ import brave.sampler.BoundarySampler;
 import brave.sampler.RateLimitingSampler;
 import brave.sampler.Sampler;
 import com.linecorp.armeria.common.brave.RequestContextCurrentTraceContext;
+import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.brave.BraveService;
-import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -126,8 +127,8 @@ public class ZipkinSelfTracingConfiguration {
       .build();
   }
 
-  @Bean ArmeriaServerConfigurator tracingConfigurator(HttpTracing tracing) {
-    return server -> server.decorator(BraveService.newDecorator(tracing));
+  @Bean Consumer<ServerBuilder> tracingConfigurator(HttpTracing tracing) {
+    return sb -> sb.decorator(BraveService.newDecorator(tracing));
   }
 
   /** Lazily looks up the storage component in order to to avoid proxying. */
