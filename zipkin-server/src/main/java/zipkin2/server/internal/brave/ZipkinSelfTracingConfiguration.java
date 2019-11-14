@@ -103,7 +103,7 @@ public class ZipkinSelfTracingConfiguration {
   /** Controls aspects of tracing such as the name that shows up in the UI */
   @Bean Tracing tracing(Reporter<Span> reporter, CurrentTraceContext currentTraceContext) {
     return Tracing.newBuilder()
-      .localServiceName("zipkin-\tserver")
+      .localServiceName("zipkin-server")
       .sampler(Sampler.NEVER_SAMPLE) // don't sample traces at this abstraction
       .currentTraceContext(currentTraceContext)
       // Reduce the impact on untraced downstream http services such as Elasticsearch

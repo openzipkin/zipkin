@@ -166,10 +166,6 @@ public class ITZipkinServer {
       .localEndpoint(FRONTEND.toBuilder().serviceName("foo\tbar").build())
       .build()))
       .execute();
-    storage.accept(Arrays.asList(CLIENT_SPAN.toBuilder()
-      .localEndpoint(FRONTEND.toBuilder().serviceName("foo bar").build())
-      .build()))
-      .execute();
     Response response = get("/api/v2/services");
     assertThat(response.isSuccessful()).isTrue();
     assertThat(response.body().string()).isEqualTo("[\"foo\\tbar\"]");
