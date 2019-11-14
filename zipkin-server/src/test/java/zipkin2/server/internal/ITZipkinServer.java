@@ -17,6 +17,7 @@ import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
@@ -37,6 +38,8 @@ import zipkin2.storage.InMemoryStorage;
 
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static zipkin2.TestObjects.CLIENT_SPAN;
+import static zipkin2.TestObjects.FRONTEND;
 import static zipkin2.TestObjects.TODAY;
 import static zipkin2.TestObjects.UTF_8;
 
@@ -156,6 +159,20 @@ public class ITZipkinServer {
   @Test public void remoteServiceNameQueryWorksWithNonAsciiServiceName() throws Exception {
     assertThat(get("/api/v2/remoteServices?serviceName=个人信息服务").code())
       .isEqualTo(200);
+  }
+
+  @Test public void remoteServiceNameReturnsCorrectJsonForEscapedWhitespaceInName() throws Exception {
+    storage.accept(Arrays.asList(CLIENT_SPAN.toBuilder()
+      .localEndpoint(FRONTEND.toBuilder().serviceName("foo\tbar").build())
+      .build()))
+      .execute();
+    storage.accept(Arrays.asList(CLIENT_SPAN.toBuilder()
+      .localEndpoint(FRONTEND.toBuilder().serviceName("foo bar").build())
+      .build()))
+      .execute();
+    Response response = get("/api/v2/services");
+    assertThat(response.isSuccessful()).isTrue();
+    assertThat(response.body().string()).isEqualTo("[\"foo\\tbar\"]");
   }
 
   @Test public void setsCacheControlOnNameEndpointsWhenMoreThan3Services() throws Exception {
