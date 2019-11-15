@@ -75,3 +75,25 @@ export const selectServiceTheme = (serviceName) => {
 export const selectServiceColor = serviceName => selectServiceTheme(
   serviceName,
 ).palette.primary.dark;
+
+export const selectColorByErrorType = (errorType) => {
+  switch (errorType) {
+    case 'transient':
+      return colors.red[500];
+    case 'critical':
+      return colors.red[500];
+    default:
+      return theme.palette.primary.main;
+  }
+};
+
+export const selectColorByInfoClass = (infoClass) => {
+  switch (infoClass) {
+    case 'trace-error-transient':
+      return selectColorByErrorType('transient');
+    case 'trace-error-critical':
+      return selectColorByErrorType('critical');
+    default:
+      return selectColorByErrorType('none');
+  }
+};

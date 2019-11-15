@@ -20,12 +20,11 @@ import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
-import { fade } from '@material-ui/core/styles/colorManipulator';
 
 import ServiceBadge from '../../Common/ServiceBadge';
 import { getServiceName } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
-import { theme } from '../../../colors';
+import { theme, selectColorByInfoClass } from '../../../colors';
 
 export function rootServiceAndSpanName(root) {
   const { span } = root;
@@ -61,7 +60,7 @@ const useStyles = makeStyles({
     borderBottom: `1px solid ${grey[200]}`,
   },
   durationBar: {
-    backgroundColor: fade(theme.palette.primary.light, 0.4),
+    opacity: 0.4,
   },
   dataCell: {
     display: 'flex',
@@ -111,6 +110,9 @@ export const TracesTableRowImpl = ({
           width={`${traceSummary.width}%`}
           height="100%"
           className={classes.durationBar}
+          style={{
+            backgroundColor: selectColorByInfoClass(traceSummary.infoClass),
+          }}
           data-test="duration-bar"
         />
         <Grid item xs={3} className={classes.dataCell}>

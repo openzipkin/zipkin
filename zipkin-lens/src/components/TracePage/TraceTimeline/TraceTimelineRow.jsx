@@ -28,6 +28,7 @@ import {
   spanBarHeight,
 } from '../sizing';
 import { detailedSpanPropTypes } from '../../../prop-types';
+import { selectColorByErrorType } from '../../../colors';
 
 const minWidth = 0.25;
 
@@ -48,7 +49,6 @@ const style = theme => ({
   },
   bar: {
     opacity: 0.8,
-    fill: theme.palette.primary.main,
   },
   row: {
     opacity: 0,
@@ -125,6 +125,9 @@ const TraceTimelineRow = React.memo(({
         rx={4}
         ry={4}
         className={classes.bar}
+        style={{
+          fill: selectColorByErrorType(span.errorType),
+        }}
       />
       {
         isTextLeft ? (
