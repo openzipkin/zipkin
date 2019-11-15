@@ -13,24 +13,25 @@
  */
 package zipkin2.server.internal;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.ResponseHeadersBuilder;
-import com.linecorp.armeria.server.DecoratingServiceFunction;
-import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.annotation.Blocking;
 import com.linecorp.armeria.server.annotation.Default;
 import com.linecorp.armeria.server.annotation.ExceptionHandler;
 import com.linecorp.armeria.server.annotation.Get;
 import com.linecorp.armeria.server.annotation.Param;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.buffer.ByteBufOutputStream;
 import java.io.IOException;
-import java.time.Duration;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -43,8 +44,6 @@ import zipkin2.DependencyLink;
 import zipkin2.Span;
 import zipkin2.codec.DependencyLinkBytesEncoder;
 import zipkin2.codec.SpanBytesEncoder;
-import zipkin2.internal.JsonCodec;
-import zipkin2.internal.WriteBuffer;
 import zipkin2.storage.QueryRequest;
 import zipkin2.storage.StorageComponent;
 
@@ -94,27 +93,29 @@ public class ZipkinQueryApiV2 {
 
   @Get("/api/v2/services")
   @Blocking
-  public AggregatedHttpResponse getServiceNames() throws IOException {
+  public AggregatedHttpResponse getServiceNames(ServiceRequestContext ctx) throws IOException {
     List<String> serviceNames = storage.serviceAndSpanNames().getServiceNames().execute();
     serviceCount = serviceNames.size();
-    return maybeCacheNames(serviceCount > 3, serviceNames);
+    return maybeCacheNames(serviceCount > 3, serviceNames, ctx.alloc());
   }
 
   @Get("/api/v2/spans")
   @Blocking
-  public AggregatedHttpResponse getSpanNames(@Param("serviceName") String serviceName)
+  public AggregatedHttpResponse getSpanNames(
+    @Param("serviceName") String serviceName, ServiceRequestContext ctx)
     throws IOException {
     List<String> spanNames = storage.serviceAndSpanNames().getSpanNames(serviceName).execute();
-    return maybeCacheNames(serviceCount > 3, spanNames);
+    return maybeCacheNames(serviceCount > 3, spanNames, ctx.alloc());
   }
 
   @Get("/api/v2/remoteServices")
   @Blocking
-  public AggregatedHttpResponse getRemoteServiceNames(@Param("serviceName") String serviceName)
+  public AggregatedHttpResponse getRemoteServiceNames(
+    @Param("serviceName") String serviceName, ServiceRequestContext ctx)
     throws IOException {
     List<String> remoteServiceNames =
       storage.serviceAndSpanNames().getRemoteServiceNames(serviceName).execute();
-    return maybeCacheNames(serviceCount > 3, remoteServiceNames);
+    return maybeCacheNames(serviceCount > 3, remoteServiceNames, ctx.alloc());
   }
 
   @Get("/api/v2/traces")
@@ -186,29 +187,18 @@ public class ZipkinQueryApiV2 {
       .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length).build(), HttpData.wrap(body));
   }
 
-  static final WriteBuffer.Writer<String> QUOTED_STRING_WRITER = new WriteBuffer.Writer<String>() {
-    @Override public int sizeInBytes(String value) {
-      return WriteBuffer.utf8SizeInBytes(value) + 2; // quotes
-    }
-
-    @Override public void write(String value, WriteBuffer buffer) {
-      buffer.writeByte('"');
-      buffer.writeUtf8(value);
-      buffer.writeByte('"');
-    }
-  };
-
   @Get("/api/v2/autocompleteKeys")
   @Blocking
-  public AggregatedHttpResponse getAutocompleteKeys() {
-    return maybeCacheNames(true, autocompleteKeys);
+  public AggregatedHttpResponse getAutocompleteKeys(ServiceRequestContext ctx) {
+    return maybeCacheNames(true, autocompleteKeys, ctx.alloc());
   }
 
   @Get("/api/v2/autocompleteValues")
   @Blocking
-  public AggregatedHttpResponse getAutocompleteValues(@Param("key") String key) throws IOException {
+  public AggregatedHttpResponse getAutocompleteValues(
+    @Param("key") String key, ServiceRequestContext ctx) throws IOException {
     List<String> values = storage.autocompleteTags().getValues(key).execute();
-    return maybeCacheNames(values.size() > 3, values);
+    return maybeCacheNames(values.size() > 3, values, ctx.alloc());
   }
 
   /**
@@ -216,16 +206,34 @@ public class ZipkinQueryApiV2 {
    * empty results, users have more questions. We assume caching becomes a concern when zipkin is in
    * active use, and active use usually implies more than 3 services.
    */
-  AggregatedHttpResponse maybeCacheNames(boolean shouldCacheControl, List<String> values) {
+  AggregatedHttpResponse maybeCacheNames(
+    boolean shouldCacheControl, List<String> values, ByteBufAllocator alloc) {
     Collections.sort(values);
-    byte[] body = JsonCodec.writeList(QUOTED_STRING_WRITER, values);
+    int sizeEstimate = 2; // Two brackets.
+    for (String value : values) {
+      sizeEstimate += value.length() + 1 /* comma */;
+    }
+    sizeEstimate -= 1; // Last element doesn't have a comma.
+    // If the values don't require escaping, this buffer will not be resized.
+    ByteBuf buf = alloc.buffer(sizeEstimate);
+    try (JsonGenerator gen =
+           JsonUtil.JSON_FACTORY.createGenerator((OutputStream) new ByteBufOutputStream(buf))) {
+      gen.writeStartArray(values.size());
+      for (String value : values) {
+        gen.writeString(value);
+      }
+      gen.writeEndArray();
+    } catch (IOException e) {
+      buf.release();
+      throw new UncheckedIOException(e);
+    }
     ResponseHeadersBuilder headers = ResponseHeaders.builder(200)
       .contentType(MediaType.JSON)
-      .setInt(HttpHeaderNames.CONTENT_LENGTH, body.length);
+      .setInt(HttpHeaderNames.CONTENT_LENGTH, buf.readableBytes());
     if (shouldCacheControl) {
       headers = headers.add(CACHE_CONTROL, "max-age=" + namesMaxAge + ", must-revalidate");
     }
-    return AggregatedHttpResponse.of(headers.build(), HttpData.wrap(body));
+    return AggregatedHttpResponse.of(headers.build(), HttpData.wrap(buf));
   }
 
   // This is inlined here as there isn't enough re-use to warrant it being in the zipkin2 library
