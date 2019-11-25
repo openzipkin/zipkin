@@ -77,17 +77,6 @@ public class ZipkinHttpConfiguration {
       // and default to a slightly longer timeout on the server to be able to handle these with
       // better error messages where possible.
       sb.requestTimeout(Duration.ofSeconds(11));
-
-      // don't add metrics for admin endpoints
-      meterRegistry.ifPresent(m -> m.config().meterFilter(MeterFilter.deny(id -> {
-        String uri = id.getTag("uri");
-        return uri != null && (
-          uri.startsWith("/actuator")
-            || uri.startsWith("/health")
-            || uri.startsWith("/info")
-            || uri.startsWith("/metrics")
-            || uri.startsWith("/prometheus"));
-      })));
     };
   }
 
