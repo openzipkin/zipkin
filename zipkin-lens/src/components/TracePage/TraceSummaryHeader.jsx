@@ -32,84 +32,102 @@ const defaultProps = {
 };
 
 const useStyles = makeStyles(theme => ({
-  headerTop: {
-    borderColor: theme.palette.grey[300],
+  root: {
+    paddingLeft: theme.spacing(3),
+    paddingRight: theme.spacing(3),
+  },
+  upperBox: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
+  },
+  serviceNameAndSpanName: {
+    display: 'flex',
+    alignItems: 'center',
   },
   serviceName: {
     textTransform: 'uppercase',
   },
   spanName: {
-    color: theme.palette.text.hint,
+    color: theme.palette.text.secondary,
+  },
+  jsonUploaderAndSearchInput: {
+    display: 'flex',
+    alignItems: 'center',
+    paddingRight: theme.spacing(4),
+  },
+  lowerBox: {
+    display: 'flex',
+    marginTop: theme.spacing(0.5),
+    marginBottom: theme.spacing(0.5),
+    alignItems: 'center',
+  },
+  traceInfoEntry: {
+    marginRight: theme.spacing(1),
+    display: 'flex',
+  },
+  traceInfoLabel: {
+    fontWeight: 'bold',
+    color: theme.palette.grey[600],
+  },
+  traceInfoValue: {
+    fontWeight: 'bold',
+    marginLeft: theme.spacing(0.8),
   },
 }));
 
 const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const classes = useStyles();
 
+  const traceInfo = traceSummary ? (
+    [
+      { label: 'Duration', value: traceSummary.durationStr },
+      { label: 'Services', value: traceSummary.serviceNameAndSpanCounts.length },
+      { label: 'Depth', value: traceSummary.depth },
+      { label: 'Total Spans', value: traceSummary.spans.length },
+      {
+        label: 'Trace ID',
+        value: rootSpanIndex === 0
+          ? traceSummary.traceId
+          : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
+      },
+    ].map(entry => (
+      <Box key={entry.label} className={classes.traceInfoEntry}>
+        <Box className={classes.traceInfoLabel}>
+          {`${entry.label}:`}
+        </Box>
+        <Box className={classes.traceInfoValue}>
+          {entry.value}
+        </Box>
+      </Box>
+    ))
+  ) : <div />;
+
   return (
-    <Box pl={3} pr={3}>
-      <Box
-        width="100%"
-        display="flex"
-        justifyContent="space-between"
-        borderBottom={1}
-        className={classes.headerTop}
-      >
-        <Box display="flex" alignItems="center">
+    <Box className={classes.root}>
+      <Box className={classes.upperBox}>
+        <Box className={classes.serviceNameAndSpanName}>
           {
             traceSummary ? (
               <>
-                <Box className={classes.serviceName}>
-                  <Typography variant="h5">
-                    {traceSummary.rootSpan.serviceName}
-                  </Typography>
-                </Box>
-                <Box className={classes.spanName}>
-                  <Typography variant="h5">
-                    {`: ${traceSummary.rootSpan.spanName}`}
-                  </Typography>
-                </Box>
+                <Typography variant="h5" className={classes.serviceName}>
+                  {traceSummary.rootSpan.serviceName}
+                </Typography>
+                <Typography variant="h5" className={classes.spanName}>
+                  {` : ${traceSummary.rootSpan.spanName}`}
+                </Typography>
               </>
             ) : null
           }
         </Box>
-        <Box pr={4} display="flex" alignItems="center">
+        <Box className={classes.jsonUploaderAndSearchInput}>
           <TraceJsonUploader />
           <TraceIdSearchInput />
         </Box>
       </Box>
-      <Box
-        display="flex"
-        mt={0.5}
-        mb={0.5}
-        alignItems="center"
-        fontSize="1rem"
-      >
-        {
-          traceSummary ? (
-            [
-              { label: 'Duration', value: traceSummary.durationStr },
-              { label: 'Services', value: traceSummary.serviceNameAndSpanCounts.length },
-              { label: 'Depth', value: traceSummary.depth },
-              { label: 'Total Spans', value: traceSummary.spans.length },
-              {
-                label: 'Trace ID',
-                value: rootSpanIndex === 0
-                  ? traceSummary.traceId
-                  : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
-              },
-            ].map(e => (
-              <Box key={e.label} mr={1} display="flex">
-                <Box fontWeight="bold" color="grey.600">
-                  {`${e.label}:`}
-                </Box>
-                <Box fontWeight="bold" ml={0.8}>
-                  {e.value}
-                </Box>
-              </Box>
-            ))
-          ) : null
-        }
+      <Box className={classes.lowerBox}>
+        {traceInfo}
       </Box>
     </Box>
   );
