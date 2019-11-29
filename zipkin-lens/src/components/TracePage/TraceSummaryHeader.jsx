@@ -12,14 +12,17 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
+import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
 
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
+import * as api from '../../constants/api';
+
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
@@ -59,8 +62,12 @@ const useStyles = makeStyles(theme => ({
   },
   lowerBox: {
     display: 'flex',
+    justifyContent: 'space-between',
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
+  },
+  traceInfo: {
+    display: 'flex',
     alignItems: 'center',
   },
   traceInfoEntry: {
@@ -75,33 +82,58 @@ const useStyles = makeStyles(theme => ({
     fontWeight: 'bold',
     marginLeft: theme.spacing(0.8),
   },
+  saveButton: {
+    fontSize: '0.5rem',
+    lineHeight: 0.8,
+  },
+  saveButtonIcon: {
+    marginRight: theme.spacing(1),
+  },
 }));
 
 const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const classes = useStyles();
 
+  const handleSaveButtonClick = useCallback(() => {
+    if (!traceSummary || !traceSummary.traceId) {
+      return;
+    }
+    fetch(`${api.TRACE}/${traceSummary.traceId}`)
+      .then(resp => resp.blob())
+      .then((blob) => {
+        const a = document.createElement('a');
+        a.href = window.URL.createObjectURL(blob);
+        a.download = `${traceSummary.traceId}.json`;
+        a.click();
+      });
+  }, [traceSummary]);
+
   const traceInfo = traceSummary ? (
-    [
-      { label: 'Duration', value: traceSummary.durationStr },
-      { label: 'Services', value: traceSummary.serviceNameAndSpanCounts.length },
-      { label: 'Depth', value: traceSummary.depth },
-      { label: 'Total Spans', value: traceSummary.spans.length },
+    <Box className={classes.traceInfo}>
       {
-        label: 'Trace ID',
-        value: rootSpanIndex === 0
-          ? traceSummary.traceId
-          : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
-      },
-    ].map(entry => (
-      <Box key={entry.label} className={classes.traceInfoEntry}>
-        <Box className={classes.traceInfoLabel}>
-          {`${entry.label}:`}
-        </Box>
-        <Box className={classes.traceInfoValue}>
-          {entry.value}
-        </Box>
-      </Box>
-    ))
+        [
+          { label: 'Duration', value: traceSummary.durationStr },
+          { label: 'Services', value: traceSummary.serviceNameAndSpanCounts.length },
+          { label: 'Depth', value: traceSummary.depth },
+          { label: 'Total Spans', value: traceSummary.spans.length },
+          {
+            label: 'Trace ID',
+            value: rootSpanIndex === 0
+              ? traceSummary.traceId
+              : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
+          },
+        ].map(entry => (
+          <Box key={entry.label} className={classes.traceInfoEntry}>
+            <Box className={classes.traceInfoLabel}>
+              {`${entry.label}:`}
+            </Box>
+            <Box className={classes.traceInfoValue}>
+              {entry.value}
+            </Box>
+          </Box>
+        ))
+      }
+    </Box>
   ) : <div />;
 
   return (
@@ -128,6 +160,10 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
       </Box>
       <Box className={classes.lowerBox}>
         {traceInfo}
+        <Button variant="outlined" className={classes.saveButton} onClick={handleSaveButtonClick}>
+          <Box component="span" className={`${classes.saveButtonIcon} fas fa-download`} />
+          Save JSON
+        </Button>
       </Box>
     </Box>
   );
