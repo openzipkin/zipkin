@@ -33,7 +33,6 @@ const useStyles = makeStyles(theme => ({
     backgroundColor: theme.palette.grey[100],
   },
   serviceNameAndSpanName: {
-    borderBottom: `1px solid ${theme.palette.grey[300]}`,
     paddingTop: theme.spacing(2),
     paddingLeft: theme.spacing(2),
     paddingBottom: theme.spacing(1.5),
@@ -55,10 +54,56 @@ const useStyles = makeStyles(theme => ({
     fontWeight: 'bold',
     marginBottom: theme.spacing(0.5),
   },
+  spanIds: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    paddingLeft: theme.spacing(2),
+    paddingRight: theme.spacing(2),
+    paddingTop: theme.spacing(0.1),
+    paddingBottom: theme.spacing(0.1),
+    fontSize: '0.8rem',
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
+  },
+  spanIdEntry: {
+    display: 'flex',
+  },
+  spanIdLabel: {
+    color: theme.palette.grey[700],
+    marginRight: theme.spacing(0.25),
+  },
+  spanIdValue: {
+    color: theme.palette.grey[800],
+    marginRight: theme.spacing(1),
+  },
 }));
 
 const SpanDetail = React.memo(({ span, minHeight }) => {
   const classes = useStyles();
+
+  const spanIds = (
+    <Box className={classes.spanIds}>
+      {
+        [
+          { label: 'Span ID', value: span.spanId },
+          { label: 'Parent ID', value: span.parentId },
+        ].map((entry) => {
+          if (!entry.value) {
+            return null;
+          }
+          return (
+            <Box className={classes.spanIdEntry}>
+              <Box className={classes.spanIdLabel}>
+                {`${entry.label}:`}
+              </Box>
+              <Box className={classes.spanIdValue}>
+                {entry.value}
+              </Box>
+            </Box>
+          );
+        })
+      }
+    </Box>
+  );
 
   return (
     <Box minHeight={minHeight} className={classes.root}>
@@ -70,6 +115,7 @@ const SpanDetail = React.memo(({ span, minHeight }) => {
           {span.spanName}
         </Typography>
       </Box>
+      {spanIds}
       <Box className={classes.annotationsAndTagsBox}>
         <Typography variant="h6" className={classes.annotationsAndTagsTitle}>
           Annotations
