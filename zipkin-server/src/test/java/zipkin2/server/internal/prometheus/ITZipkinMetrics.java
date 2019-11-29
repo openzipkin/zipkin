@@ -82,25 +82,6 @@ public class ITZipkinMetrics {
       .doesNotContain("uri=\"/\"");
   }
 
-  @Test public void notFound_prometheus() throws Exception {
-    assertThat(get("/doo-wop").isSuccessful())
-      .isFalse();
-
-    assertThat(scrape())
-      .contains("uri=\"NOT_FOUND\"")
-      .doesNotContain("uri=\"/doo-wop");
-  }
-
-  @Test public void redirected_prometheus() throws Exception {
-    assertThat(get("/").isSuccessful())
-      .isTrue(); // follows redirects
-
-    assertThat(scrape())
-      .contains("uri=\"REDIRECTION\"")
-      .contains("uri=\"/zipkin/index.html\"")
-      .doesNotContain("uri=\"/\"");
-  }
-
   @Test public void apiTemplate_prometheus() throws Exception {
     List<Span> spans = asList(LOTS_OF_SPANS[0]);
     byte[] body = SpanBytesEncoder.JSON_V2.encodeList(spans);

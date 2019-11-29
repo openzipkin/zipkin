@@ -91,8 +91,10 @@ public class ZipkinPrometheusMetricsConfiguration {
 
   // https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#production-ready-metrics-spring-mvc
   @Bean ArmeriaServerConfigurator httpRequestDurationConfigurator(MeterRegistry registry) {
-    return serverBuilder -> serverBuilder.decorator(
-      s -> new MetricCollectingService<>(s, registry, metricName));
+    return serverBuilder -> serverBuilder.routeDecorator()
+      .pathPrefix("/zipkin/api")
+      .pathPrefix("/api")
+      .build(s -> new MetricCollectingService<>(s, registry, metricName));
   }
 
   // We need to make sure not-found requests are still handled by a service to be decorated for

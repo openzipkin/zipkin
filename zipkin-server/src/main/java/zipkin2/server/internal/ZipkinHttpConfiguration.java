@@ -25,7 +25,6 @@ import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.config.MeterFilter;
 import io.prometheus.client.CollectorRegistry;
 import java.time.Duration;
 import java.util.Optional;
@@ -77,17 +76,6 @@ public class ZipkinHttpConfiguration {
       // and default to a slightly longer timeout on the server to be able to handle these with
       // better error messages where possible.
       sb.requestTimeout(Duration.ofSeconds(11));
-
-      // don't add metrics for admin endpoints
-      meterRegistry.ifPresent(m -> m.config().meterFilter(MeterFilter.deny(id -> {
-        String uri = id.getTag("uri");
-        return uri != null && (
-          uri.startsWith("/actuator")
-            || uri.startsWith("/health")
-            || uri.startsWith("/info")
-            || uri.startsWith("/metrics")
-            || uri.startsWith("/prometheus"));
-      })));
     };
   }
 
