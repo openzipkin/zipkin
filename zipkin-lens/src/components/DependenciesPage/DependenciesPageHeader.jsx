@@ -13,6 +13,8 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
@@ -115,7 +117,7 @@ const DependenciesPageHeader = React.memo(({
           onClick={onFindButtonClick}
           className={classes.findButton}
         >
-          <Box component="span" className="fas fa-search" />
+          <FontAwesomeIcon icon={faSearch} />
         </Button>
       </Box>
     </Box>
