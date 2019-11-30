@@ -14,8 +14,9 @@
 import PropTypes from 'prop-types';
 import React, { useState, useRef, useCallback } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
-import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Paper from '@material-ui/core/Paper';
 
@@ -156,7 +157,7 @@ const GlobalSearchCondition = ({ conditionIndex, addCondition }) => {
         onClick={handleDeleteButtonClick}
         className={classes.deleteButton}
       >
-        <Box component="span" className="fas fa-times" />
+        <FontAwesomeIcon icon={faTimes} />
       </Button>
     </Paper>
   );

@@ -13,6 +13,8 @@
  */
 import React, { useMemo, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -96,7 +98,7 @@ const GlobalSearchConditionList = () => {
             onClick={handleAddButtonClick}
             className={classes.addButton}
           >
-            <Box component="span" className="fas fa-plus" />
+            <FontAwesomeIcon icon={faPlus} />
           </Button>
         </Box>
       </Box>
