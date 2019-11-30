@@ -15,8 +15,9 @@ import PropTypes from 'prop-types';
 import React, { useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
+import { faUpload } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
-import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
 
@@ -39,16 +40,14 @@ const useStyles = makeStyles({
 
 const TraceJsonUploader = ({ history }) => {
   const classes = useStyles();
-
   const dispatch = useDispatch();
-
   const inputRef = useRef(null);
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (inputRef.current) {
       inputRef.current.click();
     }
-  };
+  }, []);
 
   const handleFileChange = useCallback((event) => {
     const fileReader = new FileReader();
@@ -98,12 +97,8 @@ const TraceJsonUploader = ({ history }) => {
         onChange={handleFileChange}
       />
       <Tooltip title="Upload JSON">
-        <Button
-          variant="outlined"
-          className={classes.button}
-          onClick={handleClick}
-        >
-          <Box component="span" className="fas fa-upload" />
+        <Button variant="outlined" className={classes.button} onClick={handleClick}>
+          <FontAwesomeIcon icon={faUpload} />
         </Button>
       </Tooltip>
     </>
