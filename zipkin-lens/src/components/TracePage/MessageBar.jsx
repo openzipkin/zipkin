@@ -13,6 +13,8 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { faExclamation } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import SnackbarContent from '@material-ui/core/SnackbarContent';
@@ -30,6 +32,9 @@ const useStyles = makeStyles(theme => ({
   info: {
     backgroundColor: theme.palette.primary.dark,
   },
+  icon: {
+    marginRight: theme.spacing(2),
+  },
 }));
 
 const MessageBar = React.memo(({ variant, message }) => {
@@ -41,7 +46,7 @@ const MessageBar = React.memo(({ variant, message }) => {
         className={classes[variant]}
         message={(
           <Box component="span">
-            <Box component="span" mr={2} className="fas fa-exclamation" />
+            <FontAwesomeIcon icon={faExclamation} className={classes.icon} />
             {message}
           </Box>
         )}
