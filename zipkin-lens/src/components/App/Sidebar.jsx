@@ -12,6 +12,8 @@
  * the License.
  */
 import React from 'react';
+import { faSearch, faProjectDiagram, faHome } from '@fortawesome/free-solid-svg-icons';
+import { faGithub, faTwitter, faGitter } from '@fortawesome/free-brands-svg-icons';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Drawer from '@material-ui/core/Drawer';
@@ -30,7 +32,12 @@ const useStyles = makeStyles({
     flexDirection: 'column',
     justifyContent: 'space-between',
   },
-  logo: {
+  zipkinLogoWrapper: {
+    display: 'flex',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  zipkinLogo: {
     marginTop: '0.8rem',
     marginBottom: '0.35rem',
     width: '2.2rem',
@@ -45,25 +52,21 @@ const Sidebar = () => {
   const classes = useStyles();
 
   return (
-    <Drawer
-      open
-      variant="permanent"
-      classes={{ paper: classes.paper }}
-    >
+    <Drawer open variant="permanent" classes={{ paper: classes.paper }}>
       <Box>
-        <Box display="flex" justifyContent="center" width="100%">
-          <Logo className={classes.logo} />
+        <Box className={classes.zipkinLogoWrapper}>
+          <Logo className={classes.zipkinLogo} />
         </Box>
         <List data-testid="internal-links">
-          <SidebarMenuItem title="Discover Page" links={['/zipkin']} logo="fas fa-search" />
-          <SidebarMenuItem title="Dependencies Page" links={['/zipkin/dependency']} logo="fas fa-project-diagram" />
+          <SidebarMenuItem title="Discover Page" path="/zipkin" icon={faSearch} />
+          <SidebarMenuItem title="Dependencies Page" path="/zipkin/dependency" icon={faProjectDiagram} />
         </List>
       </Box>
       <List data-testid="external-links">
-        <SidebarMenuItem isExternal title="Zipkin Home" links={['https://zipkin.io/']} logo="fas fa-home" />
-        <SidebarMenuItem isExternal title="Repository" links={['https://github.com/openzipkin/zipkin']} logo="fab fa-github" />
-        <SidebarMenuItem isExternal title="Twitter" links={['https://twitter.com/zipkinproject']} logo="fab fa-twitter" />
-        <SidebarMenuItem isExternal title="Gitter" links={['https://gitter.im/openzipkin/zipkin/']} logo="fab fa-gitter" />
+        <SidebarMenuItem title="Zipkin Home" path="https://zipkin.io/" icon={faHome} />
+        <SidebarMenuItem title="Repository" path="https://github.com/openzipkin/zipkin" icon={faGithub} />
+        <SidebarMenuItem title="Twitter" path="https://twitter.com/zipkinproject" icon={faTwitter} />
+        <SidebarMenuItem title="Gitter" path="https://gitter.im/openzipkin/zipkin/" icon={faGitter} />
       </List>
     </Drawer>
   );
