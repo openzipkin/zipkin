@@ -60,15 +60,6 @@ module.exports = {
         },
       },
       {
-        test: /\.(svg|woff|woff2|ttf|eot)$/,
-        include: /webfonts/,
-        loader: 'file-loader',
-        options: {
-          outputPath: 'webfonts',
-          name: '[name]-[hash].[ext]',
-        },
-      },
-      {
         test: /\.(jpg|png)$/,
         loader: 'url-loader',
       },
