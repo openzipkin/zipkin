@@ -44,7 +44,7 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export const SidebarMenuItemImpl = ({
+export const SidebarMenuImpl = ({
   location,
   title,
   path,
@@ -71,6 +71,6 @@ export const SidebarMenuItemImpl = ({
   );
 };
 
-SidebarMenuItemImpl.propTypes = propTypes;
+SidebarMenuImpl.propTypes = propTypes;
 
-export default withRouter(SidebarMenuItemImpl);
+export default withRouter(SidebarMenuImpl);
