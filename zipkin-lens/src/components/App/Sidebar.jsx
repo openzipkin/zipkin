@@ -57,12 +57,12 @@ const Sidebar = () => {
         <Box className={classes.zipkinLogoWrapper}>
           <Logo className={classes.zipkinLogo} />
         </Box>
-        <List data-testid="internal-links">
+        <List>
           <SidebarMenuItem title="Discover Page" path="/zipkin" icon={faSearch} />
           <SidebarMenuItem title="Dependencies Page" path="/zipkin/dependency" icon={faProjectDiagram} />
         </List>
       </Box>
-      <List data-testid="external-links">
+      <List>
         <SidebarMenuItem title="Zipkin Home" path="https://zipkin.io/" icon={faHome} />
         <SidebarMenuItem title="Repository" path="https://github.com/openzipkin/zipkin" icon={faGithub} />
         <SidebarMenuItem title="Twitter" path="https://twitter.com/zipkinproject" icon={faTwitter} />
