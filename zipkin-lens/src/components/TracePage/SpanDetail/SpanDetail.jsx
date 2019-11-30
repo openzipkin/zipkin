@@ -92,7 +92,7 @@ const SpanDetail = React.memo(({ span, minHeight }) => {
               {`${entry.label}:`}
             </Box>
             <Box className={classes.spanIdValue}>
-              {entry.value || '--'}
+              {entry.value || 'None'}
             </Box>
           </Box>
         ))
