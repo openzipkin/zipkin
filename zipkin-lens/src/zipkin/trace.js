@@ -310,8 +310,7 @@ export function detailedTraceSummary(root, logsUrl) {
     // If we are the deepest span, mark the trace accordingly
     if (depth > modelview.depth) modelview.depth = depth;
 
-    const isLeafSpan = children.length === 0;
-    const spanRow = newSpanRow(spansToMerge, isLeafSpan);
+    const spanRow = newSpanRow(spansToMerge);
 
     addLayoutDetails(spanRow, timestamp, duration, depth, childIds);
     // NOTE: This will increment both the local and remote service name

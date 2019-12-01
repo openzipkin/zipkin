@@ -293,7 +293,7 @@ function isNullOrUndefined(ref) {
 }
 
 // Merges the data into a single span row, which is lacking presentation information
-export function newSpanRow(spansToMerge, isLeafSpan) {
+export function newSpanRow(spansToMerge) {
   const [first] = spansToMerge;
   const res = {
     spanId: first.id,
@@ -323,8 +323,7 @@ export function newSpanRow(spansToMerge, isLeafSpan) {
     const nextRemoteServiceName = getServiceName(next.remoteEndpoint);
     if (nextLocalServiceName && next.kind === 'SERVER') {
       res.serviceName = nextLocalServiceName; // prefer the server's service name
-    } else if (isLeafSpan && nextRemoteServiceName && next.kind === 'CLIENT' && !res.serviceName) {
-      // use the client's remote service name only on leaf spans
+    } else if (nextRemoteServiceName && next.kind === 'CLIENT' && !res.serviceName) {
       res.serviceName = nextRemoteServiceName;
     } else if (nextLocalServiceName && !res.serviceName) {
       res.serviceName = nextLocalServiceName;

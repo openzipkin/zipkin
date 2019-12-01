@@ -186,12 +186,12 @@ describe('SPAN v2 -> spanRow Conversion', () => {
           value: '192.168.99.101:9000 (backend)',
         },
       ],
-      serviceName: 'frontend', // prefer the local address vs remote
+      serviceName: 'backend', // prefer the local address vs remote
       serviceNames: ['backend', 'frontend'],
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   it('should not duplicate service names', () => {
@@ -200,7 +200,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       id: '3',
       localEndpoint: frontend,
       remoteEndpoint: frontend,
-    })], false);
+    })]);
 
     expect(converted.serviceNames).toEqual(['frontend']);
   });
@@ -244,7 +244,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.client_kindInferredFromAnnotation
@@ -286,7 +286,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_cr
@@ -316,12 +316,12 @@ describe('SPAN v2 -> spanRow Conversion', () => {
         },
       ],
       tags: [{ key: 'Server Address', value: '192.168.99.101:9000 (backend)' }],
-      serviceName: 'frontend',
+      serviceName: 'backend',
       serviceNames: ['backend', 'frontend'],
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_sa
@@ -333,7 +333,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       remoteEndpoint: backend,
     });
 
-    const converted = newSpanRow([v2], false);
+    const converted = newSpanRow([v2]);
     expect(converted.tags)
       .toEqual([{ key: 'Server Address', value: '192.168.99.101:9000 (backend)' }]);
     expect(converted.serviceName).toEqual('unknown');
@@ -369,7 +369,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.server
@@ -419,7 +419,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.missingEndpoints
@@ -446,7 +446,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    const expected = newSpanRow([v2], false);
+    const expected = newSpanRow([v2]);
     expect(spanRow).toEqual(expected);
   });
 
@@ -481,7 +481,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    const expected = newSpanRow([v2], false);
+    const expected = newSpanRow([v2]);
     expect(spanRow).toEqual(expected);
   });
 
@@ -525,7 +525,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    const expected = newSpanRow([v2], false);
+    const expected = newSpanRow([v2]);
     expect(spanRow).toEqual(expected);
   });
 
@@ -562,7 +562,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    const expected = newSpanRow([v2], false);
+    const expected = newSpanRow([v2]);
     expect(spanRow).toEqual(expected);
   });
 
@@ -596,7 +596,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.lateRemoteEndpoint_ca
@@ -608,7 +608,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       remoteEndpoint: frontend,
     });
 
-    const converted = newSpanRow([v2], false);
+    const converted = newSpanRow([v2]);
     expect(converted.tags)
       .toEqual([{ key: 'Client Address', value: '127.0.0.1:8080 (frontend)' }]);
     expect(converted.serviceName).toEqual('unknown');
@@ -638,7 +638,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_remote
@@ -673,7 +673,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.producer_duration
@@ -715,7 +715,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer
@@ -750,7 +750,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_remote
@@ -786,7 +786,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   // originally zipkin2.v1.SpanConverterTest.consumer_duration
@@ -828,7 +828,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], false)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 
   it('should prefer ipv6', () => {
@@ -845,7 +845,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       localEndpoint,
     });
 
-    const spanRow = newSpanRow([v2], false);
+    const spanRow = newSpanRow([v2]);
     expect(spanRow.tags.map(s => s.value)).toEqual(['[2001:db8::c001]:80 (there)']);
   });
 
@@ -860,7 +860,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       },
     });
 
-    const spanRow = newSpanRow([v2], false);
+    const spanRow = newSpanRow([v2]);
     expect(spanRow.annotations.map(s => s.endpoint)).toEqual(['[2001:db8::c001]']);
   });
 
@@ -938,7 +938,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
       errorType: 'none',
     };
 
-    expect(newSpanRow([v2], true)).toEqual(spanRow);
+    expect(newSpanRow([v2])).toEqual(spanRow);
   });
 });
 
@@ -1003,13 +1003,13 @@ describe('newSpanRow', () => {
   };
 
   it('should merge server and client span', () => {
-    const spanRow = newSpanRow([serverSpan, clientSpan], false);
+    const spanRow = newSpanRow([serverSpan, clientSpan]);
 
     expect(spanRow).toEqual(expectedSpanRow);
   });
 
   it('should merge client and server span', () => {
-    const spanRow = newSpanRow([clientSpan, serverSpan], false);
+    const spanRow = newSpanRow([clientSpan, serverSpan]);
 
     expect(spanRow).toEqual(expectedSpanRow);
   });
@@ -1020,7 +1020,7 @@ describe('newSpanRow', () => {
       traceId: '1',
       id: '3',
       remoteEndpoint: backend,
-    })], false);
+    })]);
 
     expect(spanRow.tags).toEqual(
       [{ key: 'Server Address', value: '192.168.99.101:9000 (backend)' }],
@@ -1037,7 +1037,7 @@ describe('newSpanRow', () => {
       kind: 'SERVER',
       localEndpoint: backend,
       shared: true,
-    })], false);
+    })]);
 
     expect(spanRow.spanName).toBe('get /users/:userId');
   });
@@ -1072,8 +1072,8 @@ describe('newSpanRow', () => {
       shared: true,
     });
 
-    const leftFirst = newSpanRow([leftSpan, rightSpan], false);
-    const rightFirst = newSpanRow([rightSpan, leftSpan], false);
+    const leftFirst = newSpanRow([leftSpan, rightSpan]);
+    const rightFirst = newSpanRow([rightSpan, leftSpan]);
 
     [leftFirst, rightFirst].forEach((completeSpan) => {
       expect(completeSpan.timestamp).toEqual(leftTimestamp);
@@ -1092,7 +1092,7 @@ describe('newSpanRow', () => {
       kind: 'SERVER',
       localEndpoint: backend,
       shared: true,
-    })], false);
+    })]);
 
     expect(spanRow.spanName).toBe(clientSpan.name);
   });
@@ -1115,7 +1115,7 @@ describe('newSpanRow', () => {
         localEndpoint: frontend,
         annotations: [{ timestamp: 1, value: 'hit' }],
       }),
-    ], false);
+    ]);
 
     expect(spanRow.annotations).toEqual([
       {
@@ -1143,7 +1143,7 @@ describe('newSpanRow', () => {
         localEndpoint: backend,
         tags: { 'http.path': '/foo' },
       }),
-    ], false);
+    ]);
 
     expect(spanRow.tags).toEqual([
       {
@@ -1173,7 +1173,7 @@ describe('newSpanRow', () => {
         localEndpoint: backend,
         tags: { 'http.path': '/foo/redirected' },
       }),
-    ], false);
+    ]);
 
     expect(spanRow.tags).toEqual([
       { key: 'http.path', value: '/foo', endpoints: ['127.0.0.1:8080 (frontend)'] },
@@ -1184,7 +1184,7 @@ describe('newSpanRow', () => {
   // This prevents white screens due to failed required property tests downstream
   it('should backfill data in malformed trace', () => {
     malformedTrace.concat(envoyTrace).forEach((span) => {
-      const spanRow = newSpanRow([clean(span)], false);
+      const spanRow = newSpanRow([clean(span)]);
       expect(spanRow.duration).toBeDefined();
       expect(spanRow.serviceName).toBeDefined();
       expect(spanRow.spanName).toBeDefined();
