@@ -13,6 +13,8 @@
  */
 import PropTypes from 'prop-types';
 import React, { useState, useCallback } from 'react';
+import { faFilter } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Badge from '@material-ui/core/Badge';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -39,7 +41,7 @@ const ServiceFilter = ({ filters, ...props }) => {
         data-test="badge"
       >
         <Button onClick={handleButtonClick} data-test="button">
-          <Box component="span" className="fas fa-filter" />
+          <FontAwesomeIcon icon={faFilter} />
           <Box ml={0.2} data-test="button-text">
             {`${filters.length === 0 ? 'Filter' : filters[0]}`}
           </Box>

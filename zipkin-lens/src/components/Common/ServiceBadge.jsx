@@ -13,6 +13,8 @@
  */
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles, ThemeProvider } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
@@ -91,7 +93,7 @@ const ServiceBadgeImpl = ({
               onClick={onDelete}
               data-test="delete-button"
             >
-              <Box component="span" className="fas fa-times" />
+              <FontAwesomeIcon icon={faTimes} />
             </Box>
           ) : null
         }

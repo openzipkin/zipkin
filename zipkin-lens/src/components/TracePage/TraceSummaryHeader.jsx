@@ -13,6 +13,8 @@
  */
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
+import { faDownload } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -22,7 +24,6 @@ import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import * as api from '../../constants/api';
-
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
@@ -161,7 +162,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
       <Box className={classes.lowerBox}>
         {traceInfo}
         <Button variant="outlined" className={classes.saveButton} onClick={handleSaveButtonClick}>
-          <Box component="span" className={`${classes.saveButtonIcon} fas fa-download`} />
+          <FontAwesomeIcon icon={faDownload} className={classes.saveButtonIcon} />
           Save JSON
         </Button>
       </Box>

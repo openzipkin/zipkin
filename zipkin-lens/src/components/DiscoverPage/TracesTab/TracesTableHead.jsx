@@ -13,8 +13,9 @@
  */
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
+import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
-import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 
@@ -91,8 +92,8 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
       >
         Start Time
         &nbsp;
-        {sortingMethod === sortingMethods.OLDEST_FIRST && <Box component="span" className="fas fa-arrow-up" />}
-        {sortingMethod === sortingMethods.NEWEST_FIRST && <Box component="span" className="fas fa-arrow-down" />}
+        {sortingMethod === sortingMethods.OLDEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
+        {sortingMethod === sortingMethods.NEWEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}
       </Grid>
       <Grid
         item
@@ -103,8 +104,8 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
       >
         Duration
         &nbsp;
-        {sortingMethod === sortingMethods.LONGEST_FIRST && <Box component="span" className="fas fa-arrow-up" />}
-        {sortingMethod === sortingMethods.SHORTEST_FIRST && <Box component="span" className="fas fa-arrow-down" />}
+        {sortingMethod === sortingMethods.LONGEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
+        {sortingMethod === sortingMethods.SHORTEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}
       </Grid>
     </Grid>
   );

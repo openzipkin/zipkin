@@ -12,6 +12,8 @@
  * the License.
  */
 import React from 'react';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/styles';
@@ -39,7 +41,7 @@ const ExplainBox = React.memo(() => {
   return (
     <Box className={classes.root}>
       <Box className={classes.iconWrapper}>
-        <Box className="fas fa-search" />
+        <FontAwesomeIcon icon={faSearch} />
       </Box>
       <Typography variant="h4">
         Search Traces

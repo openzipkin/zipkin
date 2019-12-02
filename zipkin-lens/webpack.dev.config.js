@@ -49,10 +49,6 @@ module.exports = {
         loader: 'html-loader',
       },
       {
-        test: /webfonts\/.*\.(png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot)(\?.*$|$)/,
-        loader: 'file-loader',
-      },
-      {
         test: /\.(jpg|png)$/,
         loader: 'url-loader',
       },

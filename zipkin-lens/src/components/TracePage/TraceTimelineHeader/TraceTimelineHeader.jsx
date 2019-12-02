@@ -13,7 +13,13 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import classnames from 'classnames';
+import {
+  faAngleUp,
+  faAngleDown,
+  faAngleDoubleRight,
+  faAngleDoubleLeft,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
@@ -67,14 +73,14 @@ const TraceTimelineHeader = React.memo(({
             disabled={!isRootedTrace}
             onClick={onCollapseButtonClick}
           >
-            <Box component="span" className="fas fa-angle-up" />
+            <FontAwesomeIcon icon={faAngleUp} />
           </Button>
           <Button
             className={classes.textButton}
             disabled={!isRootedTrace}
             onClick={onExpandButtonClick}
           >
-            <Box component="span" className="fas fa-angle-down" />
+            <FontAwesomeIcon icon={faAngleDown} />
           </Button>
         </ButtonGroup>
         {
@@ -88,12 +94,8 @@ const TraceTimelineHeader = React.memo(({
         }
       </Box>
       <Button className={classes.textButton} onClick={onSpanDetailToggle}>
-        <Box
-          component="span"
-          className={classnames('fas', {
-            'fa-angle-double-right': isSpanDetailOpened,
-            'fa-angle-double-left': !isSpanDetailOpened,
-          })}
+        <FontAwesomeIcon
+          icon={isSpanDetailOpened ? faAngleDoubleRight : faAngleDoubleLeft}
         />
       </Button>
     </Box>
