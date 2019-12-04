@@ -163,7 +163,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
         {traceInfo}
         <Button variant="outlined" className={classes.saveButton} onClick={handleSaveButtonClick}>
           <FontAwesomeIcon icon={faDownload} className={classes.saveButtonIcon} />
-          Save JSON
+          Download JSON
         </Button>
       </Box>
     </Box>
