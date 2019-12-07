@@ -13,7 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatus;
@@ -101,7 +101,7 @@ class VersionSpecificTemplatesTest {
   @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
   @BeforeEach void setUp() {
-    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/"))).build();
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/"))).build();
   }
 
   @AfterEach void tearDown() {
@@ -223,7 +223,7 @@ class VersionSpecificTemplatesTest {
 
   @Test void searchEnabled_minimalSpanIndexing_6x() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 
@@ -245,7 +245,7 @@ class VersionSpecificTemplatesTest {
   }
 
   @Test void searchEnabled_minimalSpanIndexing_7x() throws Exception {
-    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 
@@ -275,7 +275,7 @@ class VersionSpecificTemplatesTest {
 
   @Test void strictTraceId_false_includesAnalysisForMixedLengthTraceId() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/")))
       .strictTraceId(false)
       .build();
 

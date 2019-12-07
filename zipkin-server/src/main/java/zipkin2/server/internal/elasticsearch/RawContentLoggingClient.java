@@ -13,9 +13,9 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
-import com.linecorp.armeria.client.SimpleDecoratingClient;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.SimpleDecoratingHttpClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
@@ -27,9 +27,9 @@ import java.util.concurrent.CompletableFuture;
  */
 // TODO: move upstream https://github.com/line/armeria/issues/1997
 // TODO: unit test coverage
-final class RawContentLoggingClient extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
+final class RawContentLoggingClient extends SimpleDecoratingHttpClient {
 
-  RawContentLoggingClient(Client<HttpRequest, HttpResponse> delegate) {
+  RawContentLoggingClient(HttpClient delegate) {
     super(delegate);
   }
 

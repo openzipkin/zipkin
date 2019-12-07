@@ -18,7 +18,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import zipkin2.collector.activemq.ActiveMQCollector;
-import zipkin2.server.internal.activemq.ZipkinActiveMQCollectorProperties;
 
 /** opens package access for testing */
 public final class Access {

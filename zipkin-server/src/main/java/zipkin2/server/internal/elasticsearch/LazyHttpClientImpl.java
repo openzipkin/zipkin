@@ -14,7 +14,7 @@
 package zipkin2.server.internal.elasticsearch;
 
 import com.linecorp.armeria.client.Endpoint;
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
@@ -37,7 +37,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
   final int timeoutMillis;
   final MeterRegistry meterRegistry;
 
-  volatile HttpClient result;
+  volatile WebClient result;
 
   LazyHttpClientImpl(HttpClientFactory factory, SessionProtocol protocol,
     Supplier<EndpointGroup> initialEndpoints, ZipkinElasticsearchStorageProperties es,
@@ -58,7 +58,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     }
   }
 
-  @Override public HttpClient get() {
+  @Override public WebClient get() {
     if (result == null) {
       synchronized (this) {
         if (result == null) {

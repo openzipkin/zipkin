@@ -17,7 +17,7 @@ import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientOptions;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.Endpoint;
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.encoding.HttpDecodingClient;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.client.metric.MetricCollectingClient;
@@ -33,7 +33,7 @@ import java.util.function.Function;
 import zipkin2.server.internal.elasticsearch.ZipkinElasticsearchStorageProperties.HttpLogging;
 
 // Exposed as a bean so that zipkin-aws can use this for api requests to get initial endpoints.
-public class HttpClientFactory implements Function<Endpoint, HttpClient>, Closeable {
+public class HttpClientFactory implements Function<Endpoint, WebClient>, Closeable {
   final SessionProtocol protocol;
   final ClientOptions options;
   final ClientFactory delegate;
@@ -84,8 +84,8 @@ public class HttpClientFactory implements Function<Endpoint, HttpClient>, Closea
     this.options = configureOptionsExceptLogging(options).build();
   }
 
-  @Override public HttpClient apply(Endpoint endpoint) {
-    return HttpClient.of(delegate, protocol, endpoint, options);
+  @Override public WebClient apply(Endpoint endpoint) {
+    return WebClient.of(delegate, protocol, endpoint, options);
   }
 
   @Override public void close() {

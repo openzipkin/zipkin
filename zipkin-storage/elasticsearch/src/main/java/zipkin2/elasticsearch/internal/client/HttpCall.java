@@ -16,8 +16,8 @@ package zipkin2.elasticsearch.internal.client;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.linecorp.armeria.client.Clients;
-import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.UnprocessedRequestException;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -120,9 +120,9 @@ public final class HttpCall<V> extends Call.Base<V> {
   }
 
   public static class Factory {
-    final HttpClient httpClient;
+    final WebClient httpClient;
 
-    public Factory(HttpClient httpClient) {
+    public Factory(WebClient httpClient) {
       this.httpClient = httpClient;
     }
 
@@ -143,11 +143,11 @@ public final class HttpCall<V> extends Call.Base<V> {
   final BodyConverter<V> bodyConverter;
   final String name;
 
-  final HttpClient httpClient;
+  final WebClient httpClient;
 
   volatile CompletableFuture<AggregatedHttpResponse> responseFuture;
 
-  HttpCall(HttpClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
+  HttpCall(WebClient httpClient, RequestSupplier request, BodyConverter<V> bodyConverter,
     String name) {
     this.httpClient = httpClient;
     this.name = name;

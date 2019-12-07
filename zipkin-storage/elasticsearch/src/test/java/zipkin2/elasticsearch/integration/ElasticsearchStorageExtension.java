@@ -13,10 +13,10 @@
  */
 package zipkin2.elasticsearch.integration;
 
-import com.linecorp.armeria.client.ClientFactoryBuilder;
-import com.linecorp.armeria.client.HttpClient;
-import com.linecorp.armeria.client.HttpClientBuilder;
-import com.linecorp.armeria.client.logging.LoggingClientBuilder;
+import com.linecorp.armeria.client.ClientFactory;
+import com.linecorp.armeria.client.WebClient;
+import com.linecorp.armeria.client.WebClientBuilder;
+import com.linecorp.armeria.client.logging.LoggingClient;
 import com.linecorp.armeria.common.logging.LogLevel;
 import java.io.IOException;
 import org.junit.jupiter.api.TestInfo;
@@ -101,19 +101,19 @@ class ElasticsearchStorageExtension implements BeforeAllCallback, AfterAllCallba
   }
 
   Builder computeStorageBuilder() {
-    HttpClientBuilder builder = new HttpClientBuilder(baseUrl())
+    WebClientBuilder builder = WebClient.builder(baseUrl())
       // Elasticsearch 7 never returns a response when receiving an HTTP/2 preface instead of the
       // more valid behavior of returning a bad request response, so we can't use the preface.
       //
       // TODO: find or raise a bug with Elastic
-      .factory(new ClientFactoryBuilder().useHttp2Preface(false).build());
+      .factory(ClientFactory.builder().useHttp2Preface(false).build());
 
-    if (Boolean.valueOf(System.getenv("ES_DEBUG"))) {
-      builder.decorator(c -> new LoggingClientBuilder()
+    if (Boolean.parseBoolean(System.getenv("ES_DEBUG"))) {
+      builder.decorator(c -> LoggingClient.builder()
         .requestLogLevel(LogLevel.INFO)
         .successfulResponseLogLevel(LogLevel.INFO).build(c));
     }
-    HttpClient client = builder.build();
+    WebClient client = builder.build();
     return ElasticsearchStorage.newBuilder(() -> client)
       .index("zipkin-test")
       .flushOnWrites(true);

@@ -15,11 +15,8 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.server.HttpService;
-import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.cors.CorsServiceBuilder;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.metric.PrometheusExpositionService;
@@ -51,7 +48,7 @@ public class ZipkinHttpConfiguration {
     @Value("${zipkin.query.timeout:11s}") Duration queryTimeout) {
     return sb -> {
       httpQuery.ifPresent(h -> {
-        Function<Service<HttpRequest, HttpResponse>, Service<HttpRequest, HttpResponse>>
+        Function<HttpService, HttpService>
           timeoutDecorator = service -> (ctx, req) -> {
           ctx.setRequestTimeout(queryTimeout);
           return service.serve(ctx, req);
