@@ -13,7 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpStatus;
@@ -40,7 +40,7 @@ class ElasticsearchAutocompleteTagsTest {
   ElasticsearchAutocompleteTags tagStore;
 
   @BeforeEach void setUp() {
-    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/")))
       .autocompleteKeys(asList("http#host", "http-url", "http.method")).build();
     tagStore = new ElasticsearchAutocompleteTags(storage);
   }

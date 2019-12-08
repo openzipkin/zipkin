@@ -15,7 +15,7 @@ package zipkin2.server.internal;
 
 import com.linecorp.armeria.client.ClientFactory;
 import com.linecorp.armeria.client.ClientFactoryBuilder;
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.SessionProtocol;
@@ -77,7 +77,7 @@ public class ITZipkinServerSsl {
   }
 
   void callHealthEndpoint(SessionProtocol http) {
-    AggregatedHttpResponse response = HttpClient.of(clientFactory, baseUrl(server, http))
+    AggregatedHttpResponse response = WebClient.of(clientFactory, baseUrl(server, http))
       .get("/health")
       .aggregate().join();
 

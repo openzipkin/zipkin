@@ -13,7 +13,7 @@
  */
 package zipkin2.elasticsearch.internal.client;
 
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import org.junit.Test;
 import org.mockito.Mock;
 
@@ -22,7 +22,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public class SearchCallFactoryTest {
 
-  @Mock HttpClient httpClient;
+  @Mock WebClient httpClient;
 
   SearchCallFactory client = new SearchCallFactory(new HttpCall.Factory(httpClient));
 

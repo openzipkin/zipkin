@@ -13,9 +13,9 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.client.Client;
 import com.linecorp.armeria.client.ClientRequestContext;
-import com.linecorp.armeria.client.SimpleDecoratingClient;
+import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.SimpleDecoratingHttpClient;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
@@ -26,11 +26,11 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 /**
  * Adds basic auth username and password to every request per https://www.elastic.co/guide/en/x-pack/current/how-security-works.html
  */
-final class BasicAuthInterceptor extends SimpleDecoratingClient<HttpRequest, HttpResponse> {
+final class BasicAuthInterceptor extends SimpleDecoratingHttpClient {
 
   final String basicCredentials;
 
-  BasicAuthInterceptor(Client<HttpRequest, HttpResponse> client, String username, String password) {
+  BasicAuthInterceptor(HttpClient client, String username, String password) {
     super(client);
     if (username == null) throw new NullPointerException("username == null");
     if (password == null) throw new NullPointerException("password == null");

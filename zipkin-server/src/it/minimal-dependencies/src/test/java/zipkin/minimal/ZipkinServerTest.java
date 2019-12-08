@@ -13,9 +13,9 @@
  */
 package zipkin.minimal;
 
+import com.linecorp.armeria.server.Server;
 import java.io.IOException;
 import java.util.Collections;
-import com.linecorp.armeria.server.Server;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;

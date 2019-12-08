@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal.ui;
 
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpHeaderNames;
 import com.linecorp.armeria.common.HttpMethod;
@@ -143,7 +143,7 @@ public class ITZipkinUiConfiguration {
 
   private String getContentEncodingFromRequestThatAcceptsGzip(String path) {
     // We typically use OkHttp in our tests, but that automatically unzips..
-    AggregatedHttpResponse response = HttpClient.of(url(server, "/"))
+    AggregatedHttpResponse response = WebClient.of(url(server, "/"))
       .execute(RequestHeaders.of(HttpMethod.GET, path, HttpHeaderNames.ACCEPT_ENCODING, "gzip"))
       .aggregate().join();
 

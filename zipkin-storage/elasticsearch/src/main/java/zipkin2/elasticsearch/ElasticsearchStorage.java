@@ -16,8 +16,8 @@ package zipkin2.elasticsearch;
 import com.fasterxml.jackson.core.JsonParser;
 import com.google.auto.value.AutoValue;
 import com.google.auto.value.extension.memoized.Memoized;
-import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.ResponseTimeoutException;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpMethod;
@@ -56,16 +56,16 @@ import static zipkin2.elasticsearch.internal.JsonReaders.enterPath;
 public abstract class ElasticsearchStorage extends zipkin2.storage.StorageComponent {
 
   /**
-   * This defers creation of an {@link HttpClient}. This is needed because routinely, I/O occurs in
+   * This defers creation of an {@link WebClient}. This is needed because routinely, I/O occurs in
    * constructors and this can delay or cause startup to crash. For example, an underlying {@link
    * EndpointGroup} could be delayed due to DNS, implicit api calls or health checks.
    */
-  public interface LazyHttpClient extends Supplier<HttpClient>, Closeable {
+  public interface LazyHttpClient extends Supplier<WebClient>, Closeable {
     /**
      * Lazily creates an instance of the http client configured to the correct elasticsearch host or
      * cluster. The same value should always be returned.
      */
-    @Override HttpClient get();
+    @Override WebClient get();
 
     @Override default void close() {
     }

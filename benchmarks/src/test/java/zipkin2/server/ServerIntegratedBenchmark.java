@@ -15,7 +15,7 @@ package zipkin2.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.io.Closer;
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import io.netty.handler.codec.http.QueryStringEncoder;
 import java.io.File;
 import java.nio.file.Files;
@@ -207,7 +207,7 @@ class ServerIntegratedBenchmark {
     System.out.println("Benchmark complete, wrk output:");
     System.out.println(wrk.getLogs().replace("\n\n", "\n"));
 
-    HttpClient prometheusClient = HttpClient.of(
+    WebClient prometheusClient = WebClient.of(
       "h1c://" + prometheus.getContainerIpAddress() + ":" + prometheus.getFirstMappedPort());
 
     System.out.println(String.format("Messages received: %s", prometheusValue(
@@ -321,14 +321,14 @@ class ServerIntegratedBenchmark {
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))));
   }
 
-  static void printQuartiles(HttpClient prometheus, String metric) throws Exception {
+  static void printQuartiles(WebClient prometheus, String metric) throws Exception {
     for (double quantile : Arrays.asList(0.0, 0.25, 0.5, 0.75, 1.0)) {
       String value = prometheusValue(prometheus, "quantile(" + quantile + ", " + metric + ")");
       System.out.println(String.format("%s[%s] = %s", metric, quantile, value));
     }
   }
 
-  static void printHistogram(HttpClient prometheus, String metric) throws Exception {
+  static void printHistogram(WebClient prometheus, String metric) throws Exception {
     for (double quantile : Arrays.asList(0.5, 0.9, 0.99)) {
       String value =
         prometheusValue(prometheus, "histogram_quantile(" + quantile + ", " + metric + ")");
@@ -336,7 +336,7 @@ class ServerIntegratedBenchmark {
     }
   }
 
-  static String prometheusValue(HttpClient prometheus, String query) throws Exception {
+  static String prometheusValue(WebClient prometheus, String query) throws Exception {
     QueryStringEncoder encoder = new QueryStringEncoder("/api/v1/query");
     encoder.addParam("query", query);
     String response = prometheus.get(encoder.toString()).aggregate().join().contentUtf8();

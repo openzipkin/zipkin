@@ -13,7 +13,7 @@
  */
 package zipkin2.elasticsearch;
 
-import com.linecorp.armeria.client.HttpClient;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -42,7 +42,7 @@ class ElasticsearchSpanStoreTest {
   @RegisterExtension static MockWebServerExtension server = new MockWebServerExtension();
 
   @BeforeEach void setUp() {
-    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/"))).build();
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/"))).build();
     spanStore = new ElasticsearchSpanStore(storage);
   }
 
@@ -91,7 +91,7 @@ class ElasticsearchSpanStoreTest {
 
   @Test void searchDisabled_doesntMakeRemoteQueryRequests() throws Exception {
     storage.close();
-    storage = ElasticsearchStorage.newBuilder(() -> HttpClient.of(server.httpUri("/")))
+    storage = ElasticsearchStorage.newBuilder(() -> WebClient.of(server.httpUri("/")))
       .searchEnabled(false)
       .build();
 

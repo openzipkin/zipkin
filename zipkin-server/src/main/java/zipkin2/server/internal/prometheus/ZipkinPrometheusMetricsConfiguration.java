@@ -13,17 +13,16 @@
  */
 package zipkin2.server.internal.prometheus;
 
+import com.linecorp.armeria.common.HttpRequest;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
-import com.linecorp.armeria.common.Request;
 import com.linecorp.armeria.common.RequestContext;
-import com.linecorp.armeria.common.Response;
 import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogAvailability;
+import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.Route;
-import com.linecorp.armeria.server.Service;
 import com.linecorp.armeria.server.ServiceRequestContext;
-import com.linecorp.armeria.server.SimpleDecoratingService;
+import com.linecorp.armeria.server.SimpleDecoratingHttpService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -94,7 +93,7 @@ public class ZipkinPrometheusMetricsConfiguration {
     return serverBuilder -> serverBuilder.routeDecorator()
       .pathPrefix("/zipkin/api")
       .pathPrefix("/api")
-      .build(s -> new MetricCollectingService<>(s, registry, metricName));
+      .build(s -> new MetricCollectingService(s, registry, metricName));
   }
 
   // We need to make sure not-found requests are still handled by a service to be decorated for
@@ -108,19 +107,18 @@ public class ZipkinPrometheusMetricsConfiguration {
       (ctx, req) -> HttpResponse.of(HttpStatus.NOT_FOUND));
   }
 
-  static final class MetricCollectingService<I extends Request, O extends Response>
-    extends SimpleDecoratingService<I, O> {
+  static final class MetricCollectingService extends SimpleDecoratingHttpService {
     final MeterRegistry registry;
     final String metricName;
 
-    MetricCollectingService(Service<I, O> delegate, MeterRegistry registry, String metricName) {
+    MetricCollectingService(HttpService delegate, MeterRegistry registry, String metricName) {
       super(delegate);
       this.registry = registry;
       this.metricName = metricName;
     }
 
     @Override
-    public O serve(ServiceRequestContext ctx, I req) throws Exception {
+    public HttpResponse serve(ServiceRequestContext ctx, HttpRequest req) throws Exception {
       setup(ctx, registry, metricName);
       return delegate().serve(ctx, req);
     }

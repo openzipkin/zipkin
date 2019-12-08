@@ -13,15 +13,9 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.client.Client;
+import com.linecorp.armeria.client.ClientOption;
 import com.linecorp.armeria.client.ClientOptionsBuilder;
-import com.linecorp.armeria.client.ClientRequestContext;
-import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpMethod;
-import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
-import com.linecorp.armeria.common.HttpStatus;
-import com.linecorp.armeria.common.RequestHeaders;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.common.SessionProtocol;
 import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
@@ -38,13 +32,6 @@ import org.springframework.context.annotation.Configuration;
 import zipkin2.elasticsearch.ElasticsearchStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 public class ZipkinElasticsearchStorageConfigurationTest {
   final AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
@@ -288,8 +275,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
   }
 
   @Test
-  public void doesntProvideBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured()
-    throws Exception {
+  public void doesntProvideBasicAuthInterceptor_whenBasicAuthUserNameandPasswordNotConfigured() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234")
@@ -298,29 +284,13 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     context.refresh();
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
-
-    Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
-    Client<HttpRequest, HttpResponse> decorated =
-      factory.options.decoration().decorate(HttpRequest.class, HttpResponse.class, delegate);
-
-    HttpRequest req = HttpRequest.of(RequestHeaders.builder()
-      .method(HttpMethod.GET)
-      .scheme("http")
-      .authority("localhost")
-      .path("/")
-      .build()
-    );
-    // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
-    ClientRequestContext ctx = spy(ClientRequestContext.of(req));
-    when(delegate.execute(any(), any())).thenReturn(HttpResponse.of(HttpStatus.OK));
-
-    decorated.execute(ctx, req);
-
-    verify(ctx, never()).addAdditionalRequestHeader(eq(HttpHeaderNames.AUTHORIZATION), any());
+    WebClient client = WebClient.builder("http://127.0.0.1:1234")
+      .option(ClientOption.DECORATION, factory.options.decoration())
+      .build();
+    assertThat(client.as(BasicAuthInterceptor.class)).isEmpty();
   }
 
-  @Test public void providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured()
-    throws Exception {
+  @Test public void providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured() {
     TestPropertyValues.of(
       "zipkin.storage.type:elasticsearch",
       "zipkin.storage.elasticsearch.hosts:127.0.0.1:1234",
@@ -332,24 +302,10 @@ public class ZipkinElasticsearchStorageConfigurationTest {
 
     HttpClientFactory factory = context.getBean(HttpClientFactory.class);
 
-    Client<HttpRequest, HttpResponse> delegate = mock(Client.class);
-    Client<HttpRequest, HttpResponse> decorated = factory.options.decoration()
-      .decorate(HttpRequest.class, HttpResponse.class, delegate);
-
-    HttpRequest req = HttpRequest.of(RequestHeaders.builder()
-      .method(HttpMethod.GET)
-      .scheme("http")
-      .authority("localhost")
-      .path("/")
-      .build()
-    );
-    // TODO(anuraaga): This can be cleaner after https://github.com/line/armeria/issues/1883
-    ClientRequestContext ctx = spy(ClientRequestContext.of(req));
-    when(delegate.execute(any(), any())).thenReturn(HttpResponse.of(HttpStatus.OK));
-
-    decorated.execute(ctx, req);
-
-    verify(ctx).addAdditionalRequestHeader(eq(HttpHeaderNames.AUTHORIZATION), any());
+    WebClient client = WebClient.builder("http://127.0.0.1:1234")
+      .option(ClientOption.DECORATION, factory.options.decoration())
+      .build();
+    assertThat(client.as(BasicAuthInterceptor.class)).isPresent();
   }
 
   @Test public void searchEnabled_false() {

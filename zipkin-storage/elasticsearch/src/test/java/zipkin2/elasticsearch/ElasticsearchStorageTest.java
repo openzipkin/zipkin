@@ -13,9 +13,9 @@
  */
 package zipkin2.elasticsearch;
 
-import com.linecorp.armeria.client.HttpClient;
 import com.linecorp.armeria.client.ResponseTimeoutException;
 import com.linecorp.armeria.client.UnprocessedRequestException;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroupException;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
 import com.linecorp.armeria.common.HttpData;
@@ -47,8 +47,8 @@ class ElasticsearchStorageTest {
 
   @BeforeEach void setUp() {
     storage = ElasticsearchStorage.newBuilder(new LazyHttpClient() {
-      @Override public HttpClient get() {
-        return HttpClient.of(server.httpUri("/"));
+      @Override public WebClient get() {
+        return WebClient.of(server.httpUri("/"));
       }
 
       @Override public String toString() {

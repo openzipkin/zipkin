@@ -14,9 +14,8 @@
 package zipkin2.elasticsearch.internal.client; // to access package-private stuff
 
 import com.google.common.util.concurrent.SimpleTimeLimiter;
-import com.linecorp.armeria.client.HttpClient;
-import com.linecorp.armeria.client.HttpClientBuilder;
 import com.linecorp.armeria.client.UnprocessedRequestException;
+import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroupException;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.AggregatedHttpResponse;
@@ -71,7 +70,7 @@ class HttpCallTest {
   HttpCall.Factory http;
 
   @BeforeEach void setUp() {
-    http = new HttpCall.Factory(HttpClient.of(server.httpUri("/")));
+    http = new HttpCall.Factory(WebClient.of(server.httpUri("/")));
   }
 
   @Test void emptyContent() throws Exception {
@@ -222,7 +221,7 @@ class HttpCallTest {
     server.enqueue(SUCCESS_RESPONSE);
 
     AtomicReference<RequestLog> log = new AtomicReference<>();
-    http = new HttpCall.Factory(new HttpClientBuilder(server.httpUri("/"))
+    http = new HttpCall.Factory(WebClient.builder(server.httpUri("/"))
       .decorator((client, ctx, req) -> {
         ctx.log().addListener(log::set, RequestLogAvailability.COMPLETE);
         return client.execute(ctx, req);
@@ -239,7 +238,7 @@ class HttpCallTest {
   @Test void wrongScheme() {
     server.enqueue(SUCCESS_RESPONSE);
 
-    http = new HttpCall.Factory(new HttpClientBuilder("https://localhost:" + server.httpPort())
+    http = new HttpCall.Factory(WebClient.builder("https://localhost:" + server.httpPort())
       .build());
 
     assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
@@ -250,7 +249,7 @@ class HttpCallTest {
   @Test void unprocessedRequest() {
     server.enqueue(SUCCESS_RESPONSE);
 
-    http = new HttpCall.Factory(new HttpClientBuilder(server.httpUri("/"))
+    http = new HttpCall.Factory(WebClient.builder(server.httpUri("/"))
       .decorator((client, ctx, req) -> {
         throw new UnprocessedRequestException("Could not process request.",
           new EndpointGroupException("No endpoints"));
