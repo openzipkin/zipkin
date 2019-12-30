@@ -18,21 +18,34 @@ const useServiceBadge = (serviceName) => {
   const textEl = React.useRef();
   const [maxWidth, setMaxWidth] = React.useState();
 
-  React.useEffect(() => {
-    // getBBox().width will be 0 unless the first rendering is completed.
-    // Therefore, use setTimeout.
-    setTimeout(() => setMaxWidth(rectEl.current.getBBox().width));
+  const resizeObserver = React.useRef();
 
-    const observer = new ResizeObserver(() => {
+  const handleIntersect = React.useCallback((entries) => {
+    const [entry] = entries;
+    if (entry.isIntersecting) {
       setMaxWidth(rectEl.current.getBBox().width);
+      resizeObserver.current = new ResizeObserver(() => {
+        setMaxWidth(rectEl.current.getBBox().width);
+      });
+      resizeObserver.current.observe(rectEl.current);
+    } else if (resizeObserver.current) {
+      resizeObserver.current.unobserve(rectEl.current);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    const intersectionObserver = new IntersectionObserver(handleIntersect, {
+      rootMargin: '200px',
     });
 
     // If rectEl.current is directly used in the cleanup function, eslint issues a warning.
     // To avoid this warning, assign rectEl.current into a local variable.
-    const el = rectEl.current;
-    observer.observe(el);
-    return () => observer.unobserve(el);
-  }, []);
+    const el = textEl.current;
+    setTimeout(() => {
+      intersectionObserver.observe(el);
+    });
+    return () => intersectionObserver.unobserve(el);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     let textContent = serviceName;
