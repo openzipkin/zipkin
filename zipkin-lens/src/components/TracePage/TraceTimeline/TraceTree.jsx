@@ -28,6 +28,7 @@ import {
 } from '../sizing';
 import { detailedSpansPropTypes } from '../../../prop-types';
 import { selectServiceColor } from '../../../colors';
+import ServiceBadge from './ServiceBadge';
 
 export const buildTraceTree = (spans, childrenHiddenSpanIds) => {
   const stack = [];
@@ -271,32 +272,13 @@ const TraceTree = React.memo(({
       {
         serviceNameDataList.map(({ x, y, serviceName }) => (
           <g transform={serviceNameBadgeTranslate} key={`${x}-${y}`}>
-            <svg
-              x={`${x * spanTreeLineWidthPercentPerDepth(depth)}%`}
-              y={spanBarLinePosY(y)}
-              width={`${serviceNameBadgeWidth}%`}
-              height={serviceNameBadgeHeight}
-            >
-              <rect
-                rx={3}
-                ry={3}
-                x={0}
-                y={0}
-                width="100%"
-                height="100%"
-                fill={selectServiceColor(serviceName)}
-              />
-              <text
-                x="50%"
-                y="50%"
-                textAnchor="middle"
-                dominantBaseline="central"
-                fill="white"
-                className={classes.serviceBadgeText}
-              >
-                {serviceName}
-              </text>
-            </svg>
+            <ServiceBadge
+              xPercent={x * spanTreeLineWidthPercentPerDepth(depth)}
+              yPixel={spanBarLinePosY(y)}
+              widthPercent={serviceNameBadgeWidth}
+              heightPixel={serviceNameBadgeHeight}
+              serviceName={serviceName}
+            />
           </g>
         ))
       }
