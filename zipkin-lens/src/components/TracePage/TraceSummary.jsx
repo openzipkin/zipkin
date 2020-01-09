@@ -82,21 +82,18 @@ const TraceSummary = React.memo(({ traceSummary }) => {
     return spans;
   }, [isRootedTrace, rootSpanIndex, traceSummary.spans]);
 
+  // shownTree is a list of spans excluding hidden spans from rerootedTree.
   const shownTree = useMemo(() => {
-    let depth = 0;
-    let skip = false;
-
-    return rerootedTree.reduce((acc, cur) => {
-      if (cur.depth > depth && skip) {
+    let childrenHiddenSpanDepth;
+    return rerootedTree.reduce((acc, span) => {
+      if (!!childrenHiddenSpanDepth && span.depth > childrenHiddenSpanDepth) {
         return acc;
       }
-      acc.push(cur);
-
-      depth = cur.depth;
-      skip = false;
-      const spanIndex = findSpanIndex(traceSummary.spans, cur.spanId);
+      childrenHiddenSpanDepth = null;
+      acc.push(span);
+      const spanIndex = findSpanIndex(traceSummary.spans, span.spanId);
       if (childrenHiddenSpanIndices[spanIndex]) {
-        skip = true;
+        childrenHiddenSpanDepth = span.depth;
       }
       return acc;
     }, []);
