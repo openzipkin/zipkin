@@ -106,7 +106,9 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
         a.href = window.URL.createObjectURL(blob);
         a.download = `${traceSummary.traceId}.json`;
         a.click();
-        window.URL.revokeObjectURL(a.href);
+        setTimeout(() => {
+          window.URL.revokeObjectURL(a.href);
+        }, 100);
       });
   }, [traceSummary]);
 
