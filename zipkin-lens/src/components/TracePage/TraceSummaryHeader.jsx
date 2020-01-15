@@ -106,6 +106,10 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
         a.href = window.URL.createObjectURL(blob);
         a.download = `${traceSummary.traceId}.json`;
         a.click();
+        // See: https://stackoverflow.com/questions/30694453/blob-createobjecturl-download-not-working-in-firefox-but-works-when-debugging
+        setTimeout(() => {
+          window.URL.revokeObjectURL(a.href);
+        }, 100);
       });
   }, [traceSummary]);
 
