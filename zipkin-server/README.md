@@ -359,7 +359,7 @@ Environment Variable | Property | Description
 `ACTIVEMQ_QUEUE` | `zipkin.collector.activemq.queue` | Queue from which to collect span messages. Defaults to `zipkin`
 `ACTIVEMQ_CLIENT_ID_PREFIX` | `zipkin.collector.activemq.client-id-prefix` | Client ID prefix for queue consumers. Defaults to `zipkin`
 `ACTIVEMQ_CONCURRENCY` | `zipkin.collector.activemq.concurrency` | Number of concurrent span consumers. Defaults to `1`
-`ACTIVEMQ_USER` | `zipkin.collector.activemq.user` | Optional username to connect to the broker
+`ACTIVEMQ_USERNAME` | `zipkin.collector.activemq.username` | Optional username to connect to the broker
 `ACTIVEMQ_PASSWORD`| `zipkin.collector.activemq.password` | Optional password to connect to the broker
 
 Example usage:
