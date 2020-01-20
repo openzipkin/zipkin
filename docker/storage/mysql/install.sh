@@ -17,6 +17,8 @@ set -eux
 
 echo "*** Installing MySQL"
 apk add --update --no-cache mysql mysql-client
+# Fake auth tools install as 10.4.0 install dies otherwise
+mkdir -p /auth_pam_tool_dir/auth_pam_tool
 mysql_install_db --user=mysql --basedir=/usr/ --datadir=/mysql/data --force
 mkdir -p /run/mysqld/
 chown -R mysql /mysql /run/mysqld/
