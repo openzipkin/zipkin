@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,8 @@ set -eux
 
 echo "*** Installing MySQL"
 apk add --update --no-cache mysql mysql-client
+# Fake auth tools install as 10.4.0 install dies otherwise
+mkdir -p /auth_pam_tool_dir/auth_pam_tool
 mysql_install_db --user=mysql --basedir=/usr/ --datadir=/mysql/data --force
 mkdir -p /run/mysqld/
 chown -R mysql /mysql /run/mysqld/
