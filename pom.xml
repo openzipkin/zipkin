@@ -53,6 +53,9 @@
     <!-- This should only be used in tests, and be careful to avoid >= v20 apis -->
     <guava.version>28.1-jre</guava.version>
 
+    <!-- It's easy for Jackson dependencies to get misaligned, so we manage it ourselves. -->
+    <jackson.version>2.10.1</jackson.version>
+
     <!-- only used for proto interop testing -->
     <wire.version>3.0.1</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
@@ -232,6 +235,14 @@
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-simple</artifactId>
         <version>${slf4j.version}</version>
+      </dependency>
+
+      <dependency>
+        <groupId>com.fasterxml.jackson</groupId>
+        <artifactId>jackson-bom</artifactId>
+        <version>${jackson.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
       </dependency>
 
       <!-- for testing flink -->
