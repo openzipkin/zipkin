@@ -57,7 +57,7 @@
     <jackson.version>2.10.2</jackson.version>
 
     <!-- only used for proto interop testing -->
-    <wire.version>3.0.3</wire.version>
+    <wire.version>3.0.2</wire.version>
     <unpack-proto.directory>${project.build.directory}/test/proto</unpack-proto.directory>
 
     <cassandra-driver-core.version>3.8.0</cassandra-driver-core.version>
