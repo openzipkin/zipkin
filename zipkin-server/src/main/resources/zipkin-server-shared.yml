@@ -234,7 +234,7 @@ spring:
       - org.springframework.boot.actuate.autoconfigure.endpoint.jmx.JmxEndpointAutoConfiguration
       # /health and /actuator/health served directly by Armeria
       - org.springframework.boot.actuate.autoconfigure.health.HealthEndpointAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.health.HealthIndicatorAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.health.HealthContributorAutoConfiguration
       # /info and /actuator/info served directly by Armeria (content is /info.json)
       - org.springframework.boot.autoconfigure.info.ProjectInfoAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.info.InfoContributorAutoConfiguration

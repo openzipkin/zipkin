@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2019 The OpenZipkin Authors
+    Copyright 2015-2020 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -30,7 +30,7 @@
     <main.basedir>${project.basedir}/../..</main.basedir>
 
     <!-- error-prone doesn't like generated code and it wants you to depend on guava! -->
-    <errorprone.args>-XepDisableWarningsInGeneratedCode -Xep:AutoValueImmutableFields:OFF</errorprone.args>
+    <errorprone.args>-XepDisableWarningsInGeneratedCode -Xep:AutoValueImmutableFields:OFF -Xep:ExtendsAutoValue:OFF</errorprone.args>
   </properties>
 
   <dependencies>

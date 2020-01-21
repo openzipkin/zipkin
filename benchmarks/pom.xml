@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2019 The OpenZipkin Authors
+    Copyright 2015-2020 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -31,7 +31,7 @@
     <main.basedir>${project.basedir}/..</main.basedir>
     <main.java.version>1.8</main.java.version>
     <main.signature.artifact>java18</main.signature.artifact>
-    <jmh.version>1.21</jmh.version>
+    <jmh.version>1.22</jmh.version>
     <unpack-proto.directory>${project.build.directory}/main/proto</unpack-proto.directory>
   </properties>
 
@@ -49,7 +49,7 @@
     <dependency>
       <groupId>com.squareup.moshi</groupId>
       <artifactId>moshi</artifactId>
-      <version>1.9.0</version>
+      <version>1.9.2</version>
       <exclusions>
         <!-- let wire control the okio version -->
         <exclusion>
@@ -80,7 +80,7 @@
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
-      <version>3.10.0</version>
+      <version>3.11.1</version>
     </dependency>
 
     <dependency>

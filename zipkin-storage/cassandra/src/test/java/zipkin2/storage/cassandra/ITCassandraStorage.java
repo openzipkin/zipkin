@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -45,7 +45,7 @@ import static zipkin2.storage.cassandra.InternalForTests.writeDependencyLinks;
 class ITCassandraStorage {
 
   @RegisterExtension CassandraStorageExtension backend = new CassandraStorageExtension(
-    "openzipkin/zipkin-cassandra:2.18.2");
+    "openzipkin/zipkin-cassandra:2.19.2");
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<CassandraStorage> {

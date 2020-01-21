@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ import static zipkin2.storage.mysql.v1.internal.generated.tables.ZipkinDependenc
 class ITMySQLStorage {
 
   @RegisterExtension MySQLStorageExtension backend = new MySQLStorageExtension(
-    "openzipkin/zipkin-mysql:2.18.2");
+    "openzipkin/zipkin-mysql:2.19.2");
 
   @Nested
   class ITTraces extends zipkin2.storage.ITTraces<MySQLStorage> {
