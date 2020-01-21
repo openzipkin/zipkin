@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright 2015-2019 The OpenZipkin Authors
+    Copyright 2015-2020 The OpenZipkin Authors
 
     Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
     in compliance with the License. You may obtain a copy of the License at
@@ -29,7 +29,7 @@
 
   <properties>
     <main.basedir>${project.basedir}/..</main.basedir>
-    <frontend-maven-plugin.version>1.8.0</frontend-maven-plugin.version>
+    <frontend-maven-plugin.version>1.9.1</frontend-maven-plugin.version>
     <maven-clean-plugin.version>3.1.0</maven-clean-plugin.version>
   </properties>
 
@@ -66,7 +66,7 @@
         <version>${frontend-maven-plugin.version}</version>
         <configuration>
           <installDirectory>target</installDirectory>
-          <nodeVersion>v10.16.2</nodeVersion>
+          <nodeVersion>v10.18.1</nodeVersion>
         </configuration>
         <executions>
           <execution>
