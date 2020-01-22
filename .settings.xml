@@ -40,14 +40,4 @@
       <password>${env.GH_TOKEN}</password>
     </server>
   </servers>
-  <mirrors>
-    <!-- Ensure we use maven central, not google as the latter is often behind
-         https://travis-ci.community/t/disable-google-maven-central/5301/2 -->
-    <mirror>
-      <id>maven-central</id>
-      <name>Maven Central</name>
-      <url>https://repo1.maven.org/maven2</url>
-      <mirrorOf>central</mirrorOf>
-    </mirror>
-  </mirrors>
 </settings>
