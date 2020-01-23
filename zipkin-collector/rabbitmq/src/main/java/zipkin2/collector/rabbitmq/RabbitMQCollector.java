@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -57,6 +57,7 @@ public final class RabbitMQCollector extends CollectorComponent {
     ConnectionFactory connectionFactory = new ConnectionFactory();
     Address[] addresses;
     int concurrency = 1;
+    int prefetchCount = 0;
 
     @Override
     public Builder storage(StorageComponent storage) {
@@ -85,6 +86,11 @@ public final class RabbitMQCollector extends CollectorComponent {
 
     public Builder concurrency(int concurrency) {
       this.concurrency = concurrency;
+      return this;
+    }
+
+    public Builder prefetchCount(int prefetchCount) {
+      this.prefetchCount = prefetchCount;
       return this;
     }
 
@@ -198,6 +204,7 @@ public final class RabbitMQCollector extends CollectorComponent {
           // this sets up a channel for each consumer thread.
           // We don't track channels, as the connection will close its channels implicitly
           Channel channel = connection.createChannel();
+          channel.basicQos(builder.prefetchCount);
           RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
           channel.basicConsume(builder.queue, true, consumerTag, consumer);
         } catch (IOException e) {

@@ -31,6 +31,8 @@ class ZipkinRabbitMQCollectorProperties {
   private List<String> addresses;
   /** Number of concurrent consumers */
   private Integer concurrency = 1;
+  /** Channel prefetch count */
+  private Integer prefetchCount = 0;
   /** TCP connection timeout in milliseconds */
   private Integer connectionTimeout;
   /** RabbitMQ user password */
@@ -63,6 +65,14 @@ class ZipkinRabbitMQCollectorProperties {
 
   public void setConcurrency(int concurrency) {
     this.concurrency = concurrency;
+  }
+
+  public int getPrefetchCount() {
+    return prefetchCount;
+  }
+
+  public void setPrefetchCount(int prefetchCount) {
+    this.prefetchCount = prefetchCount;
   }
 
   public Integer getConnectionTimeout() {
@@ -127,6 +137,7 @@ class ZipkinRabbitMQCollectorProperties {
     final RabbitMQCollector.Builder result = RabbitMQCollector.builder();
     ConnectionFactory connectionFactory = new ConnectionFactory();
     if (concurrency != null) result.concurrency(concurrency);
+    if (prefetchCount != null) result.prefetchCount(prefetchCount);
     if (connectionTimeout != null) connectionFactory.setConnectionTimeout(connectionTimeout);
     if (queue != null) result.queue(queue);
 

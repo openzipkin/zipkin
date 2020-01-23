@@ -47,6 +47,7 @@ zipkin:
       # RabbitMQ server address list (comma-separated list of host:port)
       addresses: ${RABBIT_ADDRESSES:}
       concurrency: ${RABBIT_CONCURRENCY:1}
+      prefetchCount: ${RABBIT_PREFETCH_COUNT:1}
       # TCP connection timeout in milliseconds
       connection-timeout: ${RABBIT_CONNECTION_TIMEOUT:60000}
       password: ${RABBIT_PASSWORD:guest}
