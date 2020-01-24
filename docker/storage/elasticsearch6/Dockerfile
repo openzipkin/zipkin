@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 
 FROM alpine
 
-ENV ELASTICSEARCH_VERSION 6.8.3
+ENV ELASTICSEARCH_VERSION 6.8.6
 
 RUN apk add --update curl
 
@@ -25,7 +25,7 @@ RUN curl -sSL https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch
 
 COPY docker/storage/elasticsearch6/config /elasticsearch/config
 
-FROM openzipkin/jre-full:11.0.4-11.33
+FROM openzipkin/jre-full:11.0.5-11.35
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # https://github.com/elastic/elasticsearch/pull/31003 was closed won't fix
