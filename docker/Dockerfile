@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -63,7 +63,7 @@ CMD ["/usr/local/bin/nginx.sh"]
 # zipkin-slim - An image containing the slim distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:11.0.4-11.33 as zipkin-slim
+FROM openzipkin/jre-full:11.0.5-11.35 as zipkin-slim
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.
@@ -114,7 +114,7 @@ ENTRYPOINT ["/busybox/sh", "run.sh"]
 # zipkin-server - An image containing the full distribution of Zipkin server.
 #####
 
-FROM openzipkin/jre-full:11.0.4-11.33 as zipkin-server
+FROM openzipkin/jre-full:11.0.5-11.35 as zipkin-server
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 # Use to set heap, trust store or other system properties.

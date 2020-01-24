@@ -1,5 +1,5 @@
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -26,7 +26,7 @@ COPY docker/storage/cassandra/install.sh /usr/local/bin/install
 FROM openzipkin/jre-full:1.8.0_212
 MAINTAINER OpenZipkin "http://zipkin.io/"
 
-ENV CASSANDRA_VERSION=3.11.4 \
+ENV CASSANDRA_VERSION=3.11.5 \
     JAVA=/usr/local/java/jre/bin/java \
     JVM_OPTS="-Dcassandra -Djava.net.preferIPv4Stack=true"
 

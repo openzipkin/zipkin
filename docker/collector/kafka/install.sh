@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright 2015-2019 The OpenZipkin Authors
+# Copyright 2015-2020 The OpenZipkin Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
 # in compliance with the License. You may obtain a copy of the License at
@@ -20,7 +20,7 @@ apk add --update --no-cache jq curl
 
 APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?as_json\=1 | jq -r '.preferred')
 
-curl -sSL $APACHE_MIRROR/zookeeper/zookeeper-$ZOOKEEPER_VERSION/zookeeper-$ZOOKEEPER_VERSION.tar.gz | tar xz
+curl -sSL $APACHE_MIRROR/zookeeper/zookeeper-$ZOOKEEPER_VERSION/apache-zookeeper-$ZOOKEEPER_VERSION.tar.gz | tar xz
 mkdir zookeeper
 mv zookeeper-$ZOOKEEPER_VERSION/conf zookeeper/
 
