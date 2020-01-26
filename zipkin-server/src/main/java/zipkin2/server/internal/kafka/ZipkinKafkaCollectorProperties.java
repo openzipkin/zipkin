@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,6 +28,8 @@ class ZipkinKafkaCollectorProperties {
   private String topic;
   /** Number of Kafka consumer threads to run. */
   private Integer streams;
+  /** Execution mode for span collector */
+  private Boolean asyncExecution = true;
   /** Additional Kafka consumer configuration. */
   private Map<String, String> overrides = new LinkedHashMap<>();
 
@@ -63,6 +65,14 @@ class ZipkinKafkaCollectorProperties {
     this.streams = streams;
   }
 
+  public Boolean getAsyncExecution() {
+    return asyncExecution;
+  }
+
+  public void setAsyncExecution(Boolean asyncExecution) {
+    this.asyncExecution = asyncExecution;
+  }
+
   public Map<String, String> getOverrides() {
     return overrides;
   }
@@ -77,6 +87,7 @@ class ZipkinKafkaCollectorProperties {
     if (groupId != null) result.groupId(groupId);
     if (topic != null) result.topic(topic);
     if (streams != null) result.streams(streams);
+    if (asyncExecution != null) result.asyncExecution(asyncExecution);
     if (overrides != null) result.overrides(overrides);
     return result;
   }

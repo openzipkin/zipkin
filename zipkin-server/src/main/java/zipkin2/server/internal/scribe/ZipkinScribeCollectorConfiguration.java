@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -35,12 +35,14 @@ public class ZipkinScribeCollectorConfiguration {
   ScribeCollector scribe(
     @Value("${zipkin.collector.scribe.category:zipkin}") String category,
     @Value("${zipkin.collector.scribe.port:9410}") int port,
+    @Value("${zipkin.collector.scribe.asyncExecution:true}") boolean asyncExecution,
     CollectorSampler sampler,
     CollectorMetrics metrics,
     StorageComponent storage) {
     return ScribeCollector.newBuilder()
       .category(category)
       .port(port)
+      .asyncExecution(asyncExecution)
       .sampler(sampler)
       .metrics(metrics)
       .storage(storage)

@@ -14,18 +14,7 @@
 package zipkin2.collector.rabbitmq;
 
 import com.rabbitmq.client.AMQP.BasicProperties;
-import com.rabbitmq.client.Address;
-import com.rabbitmq.client.Channel;
-import com.rabbitmq.client.Connection;
-import com.rabbitmq.client.ConnectionFactory;
-import com.rabbitmq.client.DefaultConsumer;
-import com.rabbitmq.client.Envelope;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicReference;
+import com.rabbitmq.client.*;
 import zipkin2.Call;
 import zipkin2.Callback;
 import zipkin2.CheckResult;
@@ -35,15 +24,15 @@ import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.CollectorSampler;
 import zipkin2.storage.StorageComponent;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicReference;
+
 /** This collector consumes encoded binary messages from a RabbitMQ queue. */
 public final class RabbitMQCollector extends CollectorComponent {
-  static final Callback<Void> NOOP = new Callback<Void>() {
-    @Override public void onSuccess(Void value) {
-    }
-
-    @Override public void onError(Throwable t) {
-    }
-  };
 
   public static Builder builder() {
     return new Builder();
@@ -53,6 +42,7 @@ public final class RabbitMQCollector extends CollectorComponent {
   public static final class Builder extends CollectorComponent.Builder {
     Collector.Builder delegate = Collector.newBuilder(RabbitMQCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
+    boolean asyncExecution = true;
     String queue = "zipkin";
     ConnectionFactory connectionFactory = new ConnectionFactory();
     Address[] addresses;
@@ -76,6 +66,12 @@ public final class RabbitMQCollector extends CollectorComponent {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("rabbitmq");
       this.delegate.metrics(this.metrics);
+      return this;
+    }
+
+    @Override
+    public Builder asyncExecution(boolean asyncExecution) {
+      this.asyncExecution = asyncExecution;
       return this;
     }
 
@@ -205,7 +201,7 @@ public final class RabbitMQCollector extends CollectorComponent {
           // We don't track channels, as the connection will close its channels implicitly
           Channel channel = connection.createChannel();
           channel.basicQos(builder.prefetchCount);
-          RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
+          RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics, builder.asyncExecution);
           channel.basicConsume(builder.queue, true, consumerTag, consumer);
         } catch (IOException e) {
           throw new IllegalStateException("Failed to start RabbitMQ consumer " + consumerTag, e);
@@ -240,11 +236,13 @@ public final class RabbitMQCollector extends CollectorComponent {
   static class RabbitMQSpanConsumer extends DefaultConsumer {
     final Collector collector;
     final CollectorMetrics metrics;
+    final boolean asyncExecution;
 
-    RabbitMQSpanConsumer(Channel channel, Collector collector, CollectorMetrics metrics) {
+    RabbitMQSpanConsumer(Channel channel, Collector collector, CollectorMetrics metrics, boolean asyncExecution) {
       super(channel);
       this.collector = collector;
       this.metrics = metrics;
+      this.asyncExecution = asyncExecution;
     }
 
     @Override
@@ -254,7 +252,7 @@ public final class RabbitMQCollector extends CollectorComponent {
 
       if (body.length == 0) return; // lenient on empty messages
 
-      collector.acceptSpans(body, NOOP);
+      collector.acceptSpans(body, new MessageAckCallback(getChannel(), envelope), asyncExecution);
     }
   }
 
@@ -271,5 +269,34 @@ public final class RabbitMQCollector extends CollectorComponent {
       addressArray[i] = (port != null) ? new Address(host, port) : new Address(host);
     }
     return addressArray;
+  }
+
+  static class MessageAckCallback implements Callback<Void> {
+
+    private final Channel channel;
+    private final Envelope envelope;
+
+    public MessageAckCallback(Channel channel, Envelope envelope) {
+      this.channel = channel;
+      this.envelope = envelope;
+    }
+
+    @Override
+    public void onSuccess(Void value) {
+      sendAck();
+    }
+
+    @Override
+    public void onError(Throwable t) {
+      sendAck();
+    }
+
+    private void sendAck() {
+      try {
+        channel.basicAck(envelope.getDeliveryTag(), false);
+      } catch (IOException e) {
+        throw new UncheckedIOException("Unable to ack a message", e);
+      }
+    }
   }
 }

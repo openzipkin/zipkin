@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,11 +31,13 @@ final class ScribeSpanConsumer implements Scribe.AsyncIface {
   final Collector collector;
   final CollectorMetrics metrics;
   final String category;
+  final boolean asyncExecution;
 
-  ScribeSpanConsumer(Collector collector, CollectorMetrics metrics, String category) {
+  ScribeSpanConsumer(Collector collector, CollectorMetrics metrics, String category, boolean asyncExecution) {
     this.collector = collector;
     this.metrics = metrics;
     this.category = category;
+    this.asyncExecution = asyncExecution;
   }
 
   @Override
@@ -68,6 +70,6 @@ final class ScribeSpanConsumer implements Scribe.AsyncIface {
         Exception error = t instanceof Exception ? (Exception) t : new RuntimeException(t);
         resultHandler.onError(error);
       }
-    });
+    }, asyncExecution);
   }
 }

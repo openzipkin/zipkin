@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -54,16 +54,18 @@ final class ActiveMQSpanConsumer implements TransportListener, MessageListener, 
 
   final Collector collector;
   final CollectorMetrics metrics;
+  final boolean asyncExecution;
 
   final ActiveMQConnection connection;
   final Map<QueueSession, QueueReceiver> sessionToReceiver = new LinkedHashMap<>();
 
   volatile CheckResult checkResult = CheckResult.OK;
 
-  ActiveMQSpanConsumer(Collector collector, CollectorMetrics metrics, ActiveMQConnection conn) {
+  ActiveMQSpanConsumer(Collector collector, CollectorMetrics metrics, ActiveMQConnection conn, boolean asyncExecution) {
     this.collector = collector;
     this.metrics = metrics;
     this.connection = conn;
+    this.asyncExecution = asyncExecution;
     connection.addTransportListener(this);
   }
 
@@ -115,7 +117,7 @@ final class ActiveMQSpanConsumer implements TransportListener, MessageListener, 
 
     metrics.incrementBytes(serialized.length);
     if (serialized.length == 0) return; // lenient on empty messages
-    collector.acceptSpans(serialized, NOOP);
+    collector.acceptSpans(serialized, NOOP, asyncExecution);
   }
 
   @Override public void close() {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,6 @@
  */
 package zipkin2.collector;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import zipkin2.Callback;
@@ -28,8 +22,16 @@ import zipkin2.codec.BytesDecoder;
 import zipkin2.codec.SpanBytesDecoder;
 import zipkin2.storage.StorageComponent;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
+
 import static java.lang.String.format;
-import static java.util.logging.Level.FINE;
 import static zipkin2.Call.propagateIfFatal;
 
 /**
@@ -105,17 +107,19 @@ public class Collector { // not final for mock
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
   }
 
-  public void accept(List<Span> spans, Callback<Void> callback) {
-    accept(spans, callback, Runnable::run);
+  public void accept(List<Span> spans, Callback<Void> callback, boolean async) {
+    accept(spans, callback, Runnable::run, async);
   }
 
   /**
-   * @param executor the executor used to enqueue the storage request.
+   *  Based on the async indicator collect spans synchronously or asynchronously
    *
-   * <p>Calls to get the storage component could be blocking. This ensures requests that block
-   * callers (such as http or gRPC) do not add additional load during such events.
+   * @param spans spans to store
+   * @param callback callback function to invoke on success or error
+   * @param executor the executor used to enqueue the storage request.
+   * @param async indicator used to determine whether to collect spans async or sync
    */
-  public void accept(List<Span> spans, Callback<Void> callback, Executor executor) {
+  public void accept(List<Span> spans, Callback<Void> callback, Executor executor, boolean async) {
     if (spans.isEmpty()) {
       callback.onSuccess(null);
       return;
@@ -128,20 +132,30 @@ public class Collector { // not final for mock
       return;
     }
 
-    // In order to ensure callers are not blocked, we swap callbacks when we get to the storage
-    // phase of this process. Here, we create a callback whose sole purpose is classifying later
-    // errors on this bundle of spans in the same log category. This allows people to only turn on
-    // debug logging in one place.
-    try {
-      executor.execute(new StoreSpans(sampledSpans));
-      callback.onSuccess(null);
-    } catch (Throwable unexpected) { // ensure if a future is supplied we always set value or error
-      callback.onError(unexpected);
-      throw unexpected;
+    if (async) {
+      try {
+        // In order to ensure callers are not blocked, we swap callbacks when we get to the storage
+        // phase of this process. Here, we create a callback whose sole purpose is classifying later
+        // errors on this bundle of spans in the same log category. This allows people to only turn on
+        // debug logging in one place.
+        executor.execute(new AsyncStoreSpans(spans));
+        callback.onSuccess(null);
+      } catch (Throwable unexpected) { // ensure if a future is supplied we always set value or error
+        callback.onError(unexpected);
+        throw unexpected;
+      }
+    } else {
+      try {
+        new SyncStoreSpans(spans);
+        callback.onSuccess(null);
+      } catch (Throwable unexpected) {
+        callback.onError(unexpected);
+        throw unexpected;
+      }
     }
   }
 
-  /** Like {@link #acceptSpans(byte[], BytesDecoder, Callback)}, except using a byte buffer. */
+  /** Like {@link #acceptSpans(byte[], BytesDecoder, Callback, boolean)}, except using a byte buffer. */
   public void acceptSpans(ByteBuffer encoded, SpanBytesDecoder decoder, Callback<Void> callback,
     Executor executor) {
     List<Span> spans;
@@ -151,7 +165,7 @@ public class Collector { // not final for mock
       handleDecodeError(e, callback);
       return;
     }
-    accept(spans, callback, executor);
+    accept(spans, callback, executor, true);
   }
 
   /**
@@ -161,7 +175,7 @@ public class Collector { // not final for mock
    *
    * @param serialized not empty message
    */
-  public void acceptSpans(byte[] serialized, Callback<Void> callback) {
+  public void acceptSpans(byte[] serialized, Callback<Void> callback, boolean async) {
     BytesDecoder<Span> decoder;
     try {
       decoder = SpanBytesDecoderDetector.decoderForListMessage(serialized);
@@ -169,7 +183,7 @@ public class Collector { // not final for mock
       handleDecodeError(e, callback);
       return;
     }
-    acceptSpans(serialized, decoder, callback);
+    acceptSpans(serialized, decoder, callback, async);
   }
 
   /**
@@ -180,7 +194,7 @@ public class Collector { // not final for mock
    * @param serializedSpans not empty message
    */
   public void acceptSpans(
-    byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
+    byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback, boolean async) {
     List<Span> spans;
     try {
       spans = decodeList(decoder, serializedSpans);
@@ -188,17 +202,13 @@ public class Collector { // not final for mock
       handleDecodeError(e, callback);
       return;
     }
-    accept(spans, callback);
+    accept(spans, callback, async);
   }
 
   List<Span> decodeList(BytesDecoder<Span> decoder, byte[] serialized) {
     List<Span> out = new ArrayList<>();
     decoder.decodeList(serialized, out);
     return out;
-  }
-
-  void store(List<Span> sampledSpans, Callback<Void> callback) {
-    storage.spanConsumer().accept(sampledSpans).enqueue(callback);
   }
 
   String idString(Span span) {
@@ -218,16 +228,16 @@ public class Collector { // not final for mock
     return sampled;
   }
 
-  class StoreSpans implements Callback<Void>, Runnable {
+  class AsyncStoreSpans implements Callback<Void>, Runnable {
     final List<Span> spans;
 
-    StoreSpans(List<Span> spans) {
+    AsyncStoreSpans(List<Span> spans) {
       this.spans = spans;
     }
 
     @Override public void run() {
       try {
-        store(spans, this);
+        storage.spanConsumer().accept(spans).enqueue(this);
       } catch (RuntimeException | Error e) {
         // While unexpected, invoking the storage command could raise an error synchronously. When
         // that's the case, we wouldn't have invoked callback.onSuccess, so we need to handle the
@@ -236,11 +246,32 @@ public class Collector { // not final for mock
       }
     }
 
-    @Override public void onSuccess(Void value) {
-    }
+    @Override public void onSuccess(Void value) {}
 
     @Override public void onError(Throwable t) {
       handleStorageError(spans, t, NOOP_CALLBACK);
+    }
+
+    @Override public String toString() {
+      return appendSpanIds(spans, new StringBuilder("StoreSpans(")) + ")";
+    }
+  }
+
+  class SyncStoreSpans implements Runnable {
+
+    final List<Span> spans;
+
+    SyncStoreSpans(List<Span> spans) {
+      this.spans = spans;
+    }
+
+    @Override public void run() {
+      try {
+        storage.spanConsumer().accept(spans).execute();
+      } catch (IOException e) {
+        handleStorageError(spans, e, NOOP_CALLBACK);
+        throw new UncheckedIOException(e.getMessage(), e);
+      }
     }
 
     @Override public String toString() {

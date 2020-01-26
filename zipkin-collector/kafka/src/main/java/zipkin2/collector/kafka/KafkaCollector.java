@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -63,6 +63,7 @@ public final class KafkaCollector extends CollectorComponent {
     final Properties properties = new Properties();
     Collector.Builder delegate = Collector.newBuilder(KafkaCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
+    boolean asyncExecution = true;
     String topic = "zipkin";
     int streams = 1;
 
@@ -83,6 +84,12 @@ public final class KafkaCollector extends CollectorComponent {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("kafka");
       delegate.metrics(this.metrics);
+      return this;
+    }
+
+    @Override
+    public Builder asyncExecution(boolean asyncExecution) {
+      this.asyncExecution = asyncExecution;
       return this;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,6 +34,7 @@ public final class ActiveMQCollector extends CollectorComponent {
   public static final class Builder extends CollectorComponent.Builder {
     Collector.Builder delegate = Collector.newBuilder(ActiveMQCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
+    boolean asyncExecution = true;
     ActiveMQConnectionFactory connectionFactory;
     String queue = "zipkin";
     int concurrency = 1;
@@ -52,6 +53,12 @@ public final class ActiveMQCollector extends CollectorComponent {
       if (metrics == null) throw new NullPointerException("metrics == null");
       this.metrics = metrics.forTransport("activemq");
       this.delegate.metrics(this.metrics);
+      return this;
+    }
+
+    @Override
+    public Builder asyncExecution(boolean asyncExecution) {
+      this.asyncExecution = asyncExecution;
       return this;
     }
 

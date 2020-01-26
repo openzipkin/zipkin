@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -28,6 +28,7 @@ import static zipkin2.collector.activemq.ActiveMQCollector.uncheckedException;
 final class LazyInit {
   final Collector collector;
   final CollectorMetrics metrics;
+  final boolean asyncExecution;
   final ActiveMQConnectionFactory connectionFactory;
   final String queue;
   final int concurrency;
@@ -37,6 +38,7 @@ final class LazyInit {
   LazyInit(ActiveMQCollector.Builder builder) {
     collector = builder.delegate.build();
     metrics = builder.metrics;
+    asyncExecution = builder.asyncExecution;
     connectionFactory = builder.connectionFactory;
     queue = builder.queue;
     concurrency = builder.concurrency;
@@ -68,7 +70,7 @@ final class LazyInit {
     }
 
     try {
-      ActiveMQSpanConsumer result = new ActiveMQSpanConsumer(collector, metrics, connection);
+      ActiveMQSpanConsumer result = new ActiveMQSpanConsumer(collector, metrics, connection, asyncExecution);
 
       for (int i = 0; i < concurrency; i++) {
         result.registerInNewSession(connection, queue);
