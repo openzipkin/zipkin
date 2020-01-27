@@ -22,7 +22,7 @@ zipkin:
       # Number of concurrent span consumers.
       concurrency: ${ACTIVEMQ_CONCURRENCY:1}
       # Execution mode for span collector.
-      asyncExecution: ${ASYNC_EXECUTION:true}
+      asyncExecution: ${ACTIVEMQ_ASYNC_EXECUTION:true}
       # Optional username to connect to the broker
       username: ${ACTIVEMQ_USERNAME:}
       # Optional password to connect to the broker
@@ -45,7 +45,7 @@ zipkin:
       # Count of consumer threads consuming the topic
       streams: ${KAFKA_STREAMS:1}
       # Execution mode for span collector.
-      asyncExecution: ${ASYNC_EXECUTION:true}
+      asyncExecution: ${KAFKA_ASYNC_EXECUTION:true}
     rabbitmq:
       enabled: ${COLLECTOR_RABBITMQ_ENABLED:true}
       # RabbitMQ server address list (comma-separated list of host:port)
@@ -53,7 +53,7 @@ zipkin:
       concurrency: ${RABBIT_CONCURRENCY:1}
       prefetchCount: ${RABBIT_PREFETCH_COUNT:0}
       # Execution mode for span collector.
-      asyncExecution: ${ASYNC_EXECUTION:true}
+      asyncExecution: ${RABBIT_ASYNC_EXECUTION:true}
       # TCP connection timeout in milliseconds
       connection-timeout: ${RABBIT_CONNECTION_TIMEOUT:60000}
       password: ${RABBIT_PASSWORD:guest}
@@ -67,7 +67,7 @@ zipkin:
       category: ${SCRIBE_CATEGORY:zipkin}
       port: ${COLLECTOR_PORT:9410}
       # Execution mode for span collector.
-      asyncExecution: ${ASYNC_EXECUTION:true}
+      asyncExecution: ${SCRIBE_ASYNC_EXECUTION:true}
   query:
     enabled: ${QUERY_ENABLED:true}
     # Timeout for requests to the query API
