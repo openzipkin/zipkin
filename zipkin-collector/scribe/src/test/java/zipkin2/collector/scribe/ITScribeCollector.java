@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -55,11 +55,11 @@ public class ITScribeCollector {
       Callback<Void> callback = invocation.getArgument(1);
       callback.onSuccess(null);
       return null;
-    }).when(collector).accept(any(), any(), any());
+    }).when(collector).accept(any(), any());
 
     metrics = mock(CollectorMetrics.class);
 
-    server = new NettyScribeServer(0, new ScribeSpanConsumer(collector, metrics, "zipkin", true));
+    server = new NettyScribeServer(0, new ScribeSpanConsumer(collector, metrics, "zipkin"));
     server.start();
   }
 
@@ -89,7 +89,7 @@ public class ITScribeCollector {
       transport.close();
     }
 
-    verify(collector, times(2)).accept(eq(TestObjects.TRACE), any(), any());
+    verify(collector, times(2)).accept(eq(TestObjects.TRACE), any());
     verify(metrics, times(2)).incrementMessages();
   }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -36,7 +36,6 @@ public final class ScribeCollector extends CollectorComponent {
   public static final class Builder extends CollectorComponent.Builder {
     Collector.Builder delegate = Collector.newBuilder(ScribeCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
-    boolean asyncExecution = true;
     String category = "zipkin";
     int port = 9410;
 
@@ -54,12 +53,6 @@ public final class ScribeCollector extends CollectorComponent {
 
     @Override public Builder sampler(CollectorSampler sampler) {
       delegate.sampler(sampler);
-      return this;
-    }
-
-    @Override
-    public Builder asyncExecution(boolean asyncExecution) {
-      this.asyncExecution = asyncExecution;
       return this;
     }
 
@@ -85,7 +78,7 @@ public final class ScribeCollector extends CollectorComponent {
 
   ScribeCollector(Builder builder) {
     server = new NettyScribeServer(builder.port, new ScribeSpanConsumer(
-      builder.delegate.build(), builder.metrics, builder.category, builder.asyncExecution));
+      builder.delegate.build(), builder.metrics, builder.category));
   }
 
   /** Will throw an exception if the {@link Builder#port(int) port} is already in use. */

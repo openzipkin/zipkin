@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -52,7 +52,6 @@ final class KafkaCollectorWorker implements Runnable {
   final List<String> topics;
   final Collector collector;
   final CollectorMetrics metrics;
-  final boolean asyncExecution;
   /** Kafka topic partitions currently assigned to this worker. List is not modifiable. */
   final AtomicReference<List<TopicPartition>> assignedPartitions =
       new AtomicReference<>(Collections.emptyList());
@@ -63,7 +62,6 @@ final class KafkaCollectorWorker implements Runnable {
     topics = Arrays.asList(builder.topic.split(","));
     collector = builder.delegate.build();
     metrics = builder.metrics;
-    asyncExecution = builder.asyncExecution;
   }
 
   @Override
@@ -105,9 +103,9 @@ final class KafkaCollectorWorker implements Runnable {
                 metrics.incrementMessagesDropped();
                 continue;
               }
-              collector.accept(Collections.singletonList(span), NOOP, asyncExecution);
+              collector.accept(Collections.singletonList(span), NOOP);
             } else {
-              collector.acceptSpans(bytes, NOOP, asyncExecution);
+              collector.acceptSpans(bytes, NOOP);
             }
           }
         }

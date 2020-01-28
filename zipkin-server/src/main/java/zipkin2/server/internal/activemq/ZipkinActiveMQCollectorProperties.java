@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2020 The OpenZipkin Authors
+ * Copyright 2015-2019 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,9 +34,6 @@ class ZipkinActiveMQCollectorProperties {
 
   /** Number of concurrent span consumers */
   private Integer concurrency;
-
-  /** Execution mode for span collector */
-  private Boolean asyncExecution = true;
 
   /** Login user of the broker. */
   private String username;
@@ -84,14 +81,6 @@ class ZipkinActiveMQCollectorProperties {
     this.concurrency = concurrency;
   }
 
-  public Boolean getAsyncExecution() {
-    return asyncExecution;
-  }
-
-  public void setAsyncExecution(Boolean asyncExecution) {
-    this.asyncExecution = asyncExecution;
-  }
-
   public String getUsername() {
     return username;
   }
@@ -111,7 +100,6 @@ class ZipkinActiveMQCollectorProperties {
   public ActiveMQCollector.Builder toBuilder() {
     final ActiveMQCollector.Builder result = ActiveMQCollector.builder();
     if (concurrency != null) result.concurrency(concurrency);
-    if (asyncExecution != null) result.asyncExecution(asyncExecution);
     if (queue != null) result.queue(queue);
 
     ActiveMQConnectionFactory connectionFactory;
