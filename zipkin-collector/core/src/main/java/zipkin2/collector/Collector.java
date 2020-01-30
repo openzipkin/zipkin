@@ -176,14 +176,7 @@ public class Collector { // not final for mock
    * @param serialized not empty message
    */
   public void acceptSpans(byte[] serialized, Callback<Void> callback) {
-    BytesDecoder<Span> decoder;
-    try {
-      decoder = SpanBytesDecoderDetector.decoderForListMessage(serialized);
-    } catch (RuntimeException | Error e) {
-      handleDecodeError(e, callback);
-      return;
-    }
-    acceptSpans(serialized, decoder, callback);
+    acceptSpans(serialized, callback, true);
   }
 
   /**
@@ -214,14 +207,7 @@ public class Collector { // not final for mock
    */
   public void acceptSpans(
     byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
-    List<Span> spans;
-    try {
-      spans = decodeList(decoder, serializedSpans);
-    } catch (RuntimeException | Error e) {
-      handleDecodeError(e, callback);
-      return;
-    }
-    accept(spans, callback);
+      acceptSpans(serializedSpans, decoder, callback, true);
   }
 
   /**
@@ -240,7 +226,7 @@ public class Collector { // not final for mock
       handleDecodeError(e, callback);
       return;
     }
-    accept(spans, callback, null, async);
+    accept(spans, callback, Runnable::run, async);
   }
 
   List<Span> decodeList(BytesDecoder<Span> decoder, byte[] serialized) {

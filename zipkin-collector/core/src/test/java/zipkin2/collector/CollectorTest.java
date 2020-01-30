@@ -90,7 +90,7 @@ public class CollectorTest {
     byte[] bytes = SpanBytesEncoder.JSON_V2.encodeList(TRACE);
     collector.acceptSpans(bytes, callback);
 
-    verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback);
+    verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V2, callback, true);
 
     verify(callback).onSuccess(null);
     assertThat(testLogger.getLoggingEvents()).isEmpty();
@@ -131,7 +131,7 @@ public class CollectorTest {
     byte[] bytes = new byte[] {'[', ']'};
     collector.acceptSpans(bytes, callback);
 
-    verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V1, callback);
+    verify(collector).acceptSpans(bytes, SpanBytesDecoder.JSON_V1, callback, true);
 
     verify(callback).onSuccess(null);
     assertThat(testLogger.getLoggingEvents()).isEmpty();
