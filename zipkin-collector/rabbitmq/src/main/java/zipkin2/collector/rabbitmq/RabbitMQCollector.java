@@ -69,12 +69,6 @@ public final class RabbitMQCollector extends CollectorComponent {
       return this;
     }
 
-    @Override
-    public Builder asyncExecution(boolean asyncExecution) {
-      this.asyncExecution = asyncExecution;
-      return this;
-    }
-
     public Builder addresses(List<String> addresses) {
       this.addresses = convertAddresses(addresses);
       return this;
@@ -87,6 +81,11 @@ public final class RabbitMQCollector extends CollectorComponent {
 
     public Builder prefetchCount(int prefetchCount) {
       this.prefetchCount = prefetchCount;
+      return this;
+    }
+
+    public Builder asyncExecution(boolean asyncExecution) {
+      this.asyncExecution = asyncExecution;
       return this;
     }
 
@@ -202,7 +201,7 @@ public final class RabbitMQCollector extends CollectorComponent {
           Channel channel = connection.createChannel();
           channel.basicQos(builder.prefetchCount);
           RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics, builder.asyncExecution);
-          channel.basicConsume(builder.queue, true, consumerTag, consumer);
+          channel.basicConsume(builder.queue, false, consumerTag, consumer);
         } catch (IOException e) {
           throw new IllegalStateException("Failed to start RabbitMQ consumer " + consumerTag, e);
         }

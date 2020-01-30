@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -143,13 +143,13 @@ public class CollectorTest {
     Span span2 = CLIENT_SPAN.toBuilder().id("3").build();
     when(collector.idString(span2)).thenReturn("3");
 
-    assertThat(collector.new StoreSpans(asList(CLIENT_SPAN, span2)))
+    assertThat(collector.new AsyncStoreSpans(asList(CLIENT_SPAN, span2)))
       .hasToString("StoreSpans([1, 3])");
   }
 
   @Test
   public void storeSpansCallback_toStringIncludesSpanIds_noMoreThan3() {
-    assertThat(unprefixIdString(collector.new StoreSpans(TRACE).toString()))
+    assertThat(unprefixIdString(collector.new AsyncStoreSpans(TRACE).toString()))
       .hasToString("StoreSpans([1, 1, 2, ...])");
   }
 
@@ -157,7 +157,7 @@ public class CollectorTest {
   public void storeSpansCallback_onErrorWithNullMessage() {
     RuntimeException error = new RuntimeException();
 
-    Callback<Void> callback = collector.new StoreSpans(TRACE);
+    Callback<Void> callback = collector.new AsyncStoreSpans(TRACE);
     callback.onError(error);
 
     assertDebugLogIs("Cannot store spans [1, 1, 2, ...] due to RuntimeException()");
@@ -167,7 +167,7 @@ public class CollectorTest {
   @Test
   public void storeSpansCallback_onErrorWithMessage() {
     IllegalArgumentException error = new IllegalArgumentException("no beer");
-    Callback<Void> callback = collector.new StoreSpans(TRACE);
+    Callback<Void> callback = collector.new AsyncStoreSpans(TRACE);
     callback.onError(error);
 
     assertDebugLogIs("Cannot store spans [1, 1, 2, ...] due to IllegalArgumentException(no beer)");

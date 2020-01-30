@@ -107,8 +107,8 @@ public class Collector { // not final for mock
     this.sampler = builder.sampler == null ? CollectorSampler.ALWAYS_SAMPLE : builder.sampler;
   }
 
-  public void accept(List<Span> spans, Callback<Void> callback, boolean async) {
-    accept(spans, callback, Runnable::run, async);
+  public void accept(List<Span> spans, Callback<Void> callback) {
+    accept(spans, callback, Runnable::run, true);
   }
 
   /**
@@ -175,6 +175,25 @@ public class Collector { // not final for mock
    *
    * @param serialized not empty message
    */
+  public void acceptSpans(byte[] serialized, Callback<Void> callback) {
+    BytesDecoder<Span> decoder;
+    try {
+      decoder = SpanBytesDecoderDetector.decoderForListMessage(serialized);
+    } catch (RuntimeException | Error e) {
+      handleDecodeError(e, callback);
+      return;
+    }
+    acceptSpans(serialized, decoder, callback);
+  }
+
+  /**
+   * Before calling this, call {@link CollectorMetrics#incrementMessages()}, and {@link
+   * CollectorMetrics#incrementBytes(int)}. Do not call any other metrics callbacks as those are
+   * handled internal to this method.
+   *
+   * @param serialized not empty message
+   * @param async indicator used to determine whether to collect spans async or sync
+   */
   public void acceptSpans(byte[] serialized, Callback<Void> callback, boolean async) {
     BytesDecoder<Span> decoder;
     try {
@@ -194,7 +213,7 @@ public class Collector { // not final for mock
    * @param serializedSpans not empty message
    */
   public void acceptSpans(
-    byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback, boolean async) {
+    byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback) {
     List<Span> spans;
     try {
       spans = decodeList(decoder, serializedSpans);
@@ -202,7 +221,26 @@ public class Collector { // not final for mock
       handleDecodeError(e, callback);
       return;
     }
-    accept(spans, callback, async);
+    accept(spans, callback);
+  }
+
+  /**
+   * Before calling this, call {@link CollectorMetrics#incrementMessages()}, and {@link
+   * CollectorMetrics#incrementBytes(int)}. Do not call any other metrics callbacks as those are
+   * handled internal to this method.
+   *
+   * @param serializedSpans not empty message
+   * @param async indicator used to determine whether to collect spans async or sync
+   */
+  public void acceptSpans(byte[] serializedSpans, BytesDecoder<Span> decoder, Callback<Void> callback, boolean async) {
+    List<Span> spans;
+    try {
+      spans = decodeList(decoder, serializedSpans);
+    } catch (RuntimeException | Error e) {
+      handleDecodeError(e, callback);
+      return;
+    }
+    accept(spans, callback, null, async);
   }
 
   List<Span> decodeList(BytesDecoder<Span> decoder, byte[] serialized) {
