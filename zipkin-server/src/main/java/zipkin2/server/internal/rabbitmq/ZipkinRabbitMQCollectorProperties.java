@@ -33,8 +33,6 @@ class ZipkinRabbitMQCollectorProperties {
   private Integer concurrency = 1;
   /** Channel prefetch count */
   private Integer prefetchCount = 0;
-  /** Execution mode for span collector */
-  private Boolean asyncExecution = true;
   /** TCP connection timeout in milliseconds */
   private Integer connectionTimeout;
   /** RabbitMQ user password */
@@ -75,14 +73,6 @@ class ZipkinRabbitMQCollectorProperties {
 
   public void setPrefetchCount(int prefetchCount) {
     this.prefetchCount = prefetchCount;
-  }
-
-  public Boolean getAsyncExecution() {
-    return asyncExecution;
-  }
-
-  public void setAsyncExecution(Boolean asyncExecution) {
-    this.asyncExecution = asyncExecution;
   }
 
   public Integer getConnectionTimeout() {
@@ -148,7 +138,6 @@ class ZipkinRabbitMQCollectorProperties {
     ConnectionFactory connectionFactory = new ConnectionFactory();
     if (concurrency != null) result.concurrency(concurrency);
     if (prefetchCount != null) result.prefetchCount(prefetchCount);
-    if (asyncExecution != null) result.asyncExecution(asyncExecution);
     if (connectionTimeout != null) connectionFactory.setConnectionTimeout(connectionTimeout);
     if (queue != null) result.queue(queue);
 

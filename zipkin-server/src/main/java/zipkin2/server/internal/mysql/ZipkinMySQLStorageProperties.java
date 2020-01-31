@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,6 +30,7 @@ class ZipkinMySQLStorageProperties implements Serializable { // for Spark jobs
   private String password;
   private String db = "zipkin";
   private int maxActive = 10;
+  private boolean asyncStorage = true;
   private boolean useSsl;
 
   public String getJdbcUrl() {
@@ -86,6 +87,14 @@ class ZipkinMySQLStorageProperties implements Serializable { // for Spark jobs
 
   public void setMaxActive(int maxActive) {
     this.maxActive = maxActive;
+  }
+
+  public boolean isAsyncStorage() {
+    return asyncStorage;
+  }
+
+  public void setAsyncStorage(boolean asyncStorage) {
+    this.asyncStorage = asyncStorage;
   }
 
   public boolean isUseSsl() {

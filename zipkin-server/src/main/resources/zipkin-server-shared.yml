@@ -48,8 +48,6 @@ zipkin:
       addresses: ${RABBIT_ADDRESSES:}
       concurrency: ${RABBIT_CONCURRENCY:1}
       prefetchCount: ${RABBIT_PREFETCH_COUNT:0}
-      # Execution mode for span collector.
-      asyncExecution: ${RABBIT_ASYNC_EXECUTION:true}
       # TCP connection timeout in milliseconds
       connection-timeout: ${RABBIT_CONNECTION_TIMEOUT:60000}
       password: ${RABBIT_PASSWORD:guest}
@@ -170,6 +168,7 @@ zipkin:
       password: ${MYSQL_PASS:}
       db: ${MYSQL_DB:zipkin}
       max-active: ${MYSQL_MAX_CONNECTIONS:10}
+      async-storage: ${MYSQL_ASYNC_STORAGE:true}
       use-ssl: ${MYSQL_USE_SSL:false}
   ui:
     enabled: ${QUERY_ENABLED:true}

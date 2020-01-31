@@ -42,7 +42,6 @@ public final class RabbitMQCollector extends CollectorComponent {
   public static final class Builder extends CollectorComponent.Builder {
     Collector.Builder delegate = Collector.newBuilder(RabbitMQCollector.class);
     CollectorMetrics metrics = CollectorMetrics.NOOP_METRICS;
-    boolean asyncExecution = true;
     String queue = "zipkin";
     ConnectionFactory connectionFactory = new ConnectionFactory();
     Address[] addresses;
@@ -81,11 +80,6 @@ public final class RabbitMQCollector extends CollectorComponent {
 
     public Builder prefetchCount(int prefetchCount) {
       this.prefetchCount = prefetchCount;
-      return this;
-    }
-
-    public Builder asyncExecution(boolean asyncExecution) {
-      this.asyncExecution = asyncExecution;
       return this;
     }
 
@@ -200,7 +194,7 @@ public final class RabbitMQCollector extends CollectorComponent {
           // We don't track channels, as the connection will close its channels implicitly
           Channel channel = connection.createChannel();
           channel.basicQos(builder.prefetchCount);
-          RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics, builder.asyncExecution);
+          RabbitMQSpanConsumer consumer = new RabbitMQSpanConsumer(channel, collector, metrics);
           channel.basicConsume(builder.queue, false, consumerTag, consumer);
         } catch (IOException e) {
           throw new IllegalStateException("Failed to start RabbitMQ consumer " + consumerTag, e);
@@ -235,13 +229,11 @@ public final class RabbitMQCollector extends CollectorComponent {
   static class RabbitMQSpanConsumer extends DefaultConsumer {
     final Collector collector;
     final CollectorMetrics metrics;
-    final boolean asyncExecution;
 
-    RabbitMQSpanConsumer(Channel channel, Collector collector, CollectorMetrics metrics, boolean asyncExecution) {
+    RabbitMQSpanConsumer(Channel channel, Collector collector, CollectorMetrics metrics) {
       super(channel);
       this.collector = collector;
       this.metrics = metrics;
-      this.asyncExecution = asyncExecution;
     }
 
     @Override
@@ -251,7 +243,7 @@ public final class RabbitMQCollector extends CollectorComponent {
 
       if (body.length == 0) return; // lenient on empty messages
 
-      collector.acceptSpans(body, new MessageAckCallback(getChannel(), envelope), asyncExecution);
+      collector.acceptSpans(body, new MessageAckCallback(getChannel(), envelope));
     }
   }
 
