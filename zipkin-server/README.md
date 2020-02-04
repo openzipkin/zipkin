@@ -117,7 +117,7 @@ SELF_TRACING_SAMPLE_RATE`: Percentage of self-traces to retain, defaults to alwa
 SELF_TRACING_FLUSH_INTERVAL | zipkin.self-tracing.flush-interval | Interval in seconds to flush self-tracing data to storage. Defaults to 1
 
 ## Configuration for the UI
-Zipkin has a web UI, which is enabled by default when you depend on `io.zipkin:zipkin-ui`. This UI is automatically included in the exec jar, and is hosted by default on port 9411.
+Zipkin has a web UI, automatically included in the exec jar, and is hosted by default on port 9411.
 
 When the UI loads, it reads default configuration from the `/config.json` endpoint. These values can be overridden by system properties or any other alternative [supported by Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html).
 
@@ -132,8 +132,6 @@ logsUrl | zipkin.ui.logs-url | Logs query service url pattern. If specified, a b
 dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of error calls on a dependency link that turns it yellow. Defaults to 0.5 (50%) set to >1 to disable.
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"
-suggestLens | zipkin.ui.suggest-lens | When true, a button will appear on the navigation bar, when pressed switches to the Lens Ui (for Beta testing). Default true
-useLens | zipkin.ui.use-lens | When true, disables the "classic UI" in favor of Lens. Irrelevant in zipkin-slim as it does not package the classic UI. Defaults to false.
 
 For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 

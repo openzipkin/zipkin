@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -55,7 +55,6 @@ public class ITZipkinUiConfiguration {
     assertThat(get("/zipkin/config.json").body().string()).isEqualTo(""
       + "{\n"
       + "  \"environment\" : \"\",\n"
-      + "  \"suggestLens\" : true,\n"
       + "  \"queryLimit\" : 10,\n"
       + "  \"defaultLookback\" : 900000,\n"
       + "  \"searchEnabled\" : true,\n"
@@ -67,7 +66,7 @@ public class ITZipkinUiConfiguration {
     );
   }
 
-  /** The zipkin-ui is a single-page app. This prevents reloading all resources on each click. */
+  /** The zipkin-lens is a single-page app. This prevents reloading all resources on each click. */
   @Test public void setsMaxAgeOnUiResources() throws Exception {
     assertThat(get("/zipkin/config.json").header("Cache-Control"))
       .isEqualTo("max-age=600");
@@ -120,14 +119,14 @@ public class ITZipkinUiConfiguration {
    */
   @Test public void replacesBaseTag() throws Exception {
     assertThat(get("/zipkin/index.html").body().string())
-      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-ui/index.html")
+      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-lens/index.html")
         .replace("<base href=\"/\" />", "<base href=\"/foozipkin/\" />"));
   }
 
   /** index.html is served separately. This tests other content is also loaded from the classpath. */
   @Test public void servesOtherContentFromClasspath() throws Exception {
     assertThat(get("/zipkin/test.txt").body().string())
-      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-ui/test.txt"));
+      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-lens/test.txt"));
   }
 
   private Response get(String path) throws IOException {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,17 +19,17 @@ import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("zipkin.ui")
 class ZipkinUiProperties {
+  // TODO: this isn't honored in lens https://github.com/openzipkin/zipkin/issues/2519
   static final String DEFAULT_BASEPATH = "/zipkin";
 
   private String environment = "";
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
+  // TODO: this isn't honored in lens https://github.com/openzipkin/zipkin/issues/2491
   private String logsUrl = null;
   private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
-  private boolean suggestLens = true;
-  private boolean useLens = false;
   private Dependency dependency = new Dependency();
 
   public int getDefaultLookback() {
@@ -96,22 +96,6 @@ class ZipkinUiProperties {
 
   public void setBasepath(String basepath) {
     this.basepath = basepath;
-  }
-
-  public boolean isSuggestLens() {
-    return suggestLens;
-  }
-
-  public void setSuggestLens(boolean suggestLens) {
-    this.suggestLens = suggestLens;
-  }
-
-  public boolean isUseLens() {
-    return useLens;
-  }
-
-  public void setUseLens(boolean useLens) {
-    this.useLens = useLens;
   }
 
   public static class Dependency {
