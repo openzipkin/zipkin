@@ -142,7 +142,7 @@
     <dependency>
       <groupId>io.zipkin.classic</groupId>
       <artifactId>zipkin-ui</artifactId>
-      <version>2.12.12</version>
+      <version>2.12.13</version>
     </dependency>
 
     <!-- Optional, but packaged in the supported distribution -->
