@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "extract-messages": "extract-messages -l=en,zh-CN --flat -o src/translations src/**/messages.js",
+    "extract-messages": "extract-messages -l=en,zh-cn --flat -o src/translations src/**/messages.js",
     "test": "jest --ci --reporters=jest-standard-reporter",
     "test-dev": "jest",
     "coverage": "jest --coverage",

@@ -29,7 +29,7 @@ import { useDocumentTitle } from '../../hooks';
 
 const translations = {
   en: require('../../translations/en.json'),
-  'zh-CN': require('../../translations/zh-CN.json'),
+  'zh-cn': require('../../translations/zh-cn.json'),
 };
 
 // TODO(anuraaga): Add the ability to manually select locale, saving to local storage and then use
