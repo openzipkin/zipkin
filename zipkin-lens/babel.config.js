@@ -41,6 +41,7 @@ module.exports = api => {
         useESModules: !isTest,
       },
     ],
+    'babel-plugin-react-intl-auto',
   ];
   return {
     presets,

@@ -17,6 +17,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/styles';
+import { FormattedMessage } from 'react-intl';
+
+import messages from './messages';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -32,6 +35,7 @@ const useStyles = makeStyles(theme => ({
   description: {
     marginTop: theme.spacing(1.4),
     textAlign: 'center',
+    whiteSpace: 'pre-line',
   },
 }));
 
@@ -44,12 +48,10 @@ const ExplainBox = React.memo(() => {
         <FontAwesomeIcon icon={faSearch} />
       </Box>
       <Typography variant="h4">
-        Search Traces
+        <FormattedMessage {...messages.searchTracesHeader} />
       </Typography>
       <Typography variant="body1" className={classes.description}>
-        Please select criteria in the search bar.
-        <br />
-        Then, click the search button.
+        <FormattedMessage {...messages.searchTracesDescription} />
       </Typography>
     </Box>
   );

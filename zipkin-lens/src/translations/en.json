@@ -1,0 +1,8 @@
+{
+  "src.components.DiscoverPage.searchTracesDescription": "Please select criteria in the search bar. Then, click the search button.",
+  "src.components.DiscoverPage.searchTracesHeader": "Search Traces",
+  "src.components.TracePage.depth": "Depth",
+  "src.components.TracePage.duration": "Duration",
+  "src.components.TracePage.services": "Services",
+  "src.components.TracePage.totalSpans": "Total Spans"
+}

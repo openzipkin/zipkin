@@ -19,11 +19,14 @@ import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
+import { useIntl } from 'react-intl';
 
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import * as api from '../../constants/api';
+
+import messages from './messages';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
@@ -94,6 +97,7 @@ const useStyles = makeStyles(theme => ({
 
 const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const classes = useStyles();
+  const intl = useIntl();
 
   const handleSaveButtonClick = useCallback(() => {
     if (!traceSummary || !traceSummary.traceId) {
@@ -117,10 +121,10 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
     <Box className={classes.traceInfo}>
       {
         [
-          { label: 'Duration', value: traceSummary.durationStr },
-          { label: 'Services', value: traceSummary.serviceNameAndSpanCounts.length },
-          { label: 'Depth', value: traceSummary.depth },
-          { label: 'Total Spans', value: traceSummary.spans.length },
+          { label: intl.formatMessage(messages.duration), value: traceSummary.durationStr },
+          { label: intl.formatMessage(messages.services), value: traceSummary.serviceNameAndSpanCounts.length },
+          { label: intl.formatMessage(messages.depth), value: traceSummary.depth },
+          { label: intl.formatMessage(messages.totalSpans), value: traceSummary.spans.length },
           {
             label: 'Trace ID',
             value: rootSpanIndex === 0
