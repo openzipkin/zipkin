@@ -1,0 +1,8 @@
+{
+  "src.components.DiscoverPage.searchTracesDescription": "",
+  "src.components.DiscoverPage.searchTracesHeader": "",
+  "src.components.TracePage.depth": "深度",
+  "src.components.TracePage.duration": "持续时间",
+  "src.components.TracePage.services": "服务",
+  "src.components.TracePage.totalSpans": "Span总数"
+}
