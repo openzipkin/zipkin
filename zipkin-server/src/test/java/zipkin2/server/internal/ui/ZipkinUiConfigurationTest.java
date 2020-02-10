@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -61,25 +61,8 @@ public class ZipkinUiConfigurationTest {
     // Instantiate directly so that spring doesn't cache it
     ZipkinUiConfiguration ui = new ZipkinUiConfiguration();
     ui.ui = new ZipkinUiProperties();
-
-    ui.classicIndexHtml = new ClassPathResource("zipkin-ui/index.html");
-    ui.lensIndexHtml = new ClassPathResource("zipkin-lens/index.html");
-    assertThat(ui.indexService(false))
-      .isInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
-    assertThat(ui.indexService(true))
-      .isNotInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
-
-    ui.classicIndexHtml = new ClassPathResource("does-not-exist.html");
-    assertThat(ui.indexService(false))
-      .isNotInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
-    assertThat(ui.indexService(true))
-      .isNotInstanceOf(ZipkinUiConfiguration.IndexSwitchingService.class);
-
     ui.lensIndexHtml = new ClassPathResource("does-not-exist.html");
-    assertThatThrownBy(() -> ui.indexService(true))
-      .isInstanceOf(BeanCreationException.class);
-    ui.lensIndexHtml = new ClassPathResource("does-not-exist.html");
-    assertThatThrownBy(() -> ui.indexService(false))
+    assertThatThrownBy(ui::indexService)
       .isInstanceOf(BeanCreationException.class);
   }
 
@@ -148,7 +131,7 @@ public class ZipkinUiConfigurationTest {
     context = createContext();
 
     assertThat(new ByteArrayInputStream(serveIndex().content().array()))
-      .hasSameContentAs(getClass().getResourceAsStream("/zipkin-ui/index.html"));
+      .hasSameContentAs(getClass().getResourceAsStream("/zipkin-lens/index.html"));
   }
 
   @Test
@@ -157,14 +140,6 @@ public class ZipkinUiConfigurationTest {
 
     assertThat(serveIndex().contentUtf8())
       .contains("<base href=\"/foo/bar/\" />");
-  }
-
-  @Test
-  public void useLensOverridesIndex() {
-    context = createContextWithOverridenProperty("zipkin.ui.use-lens:true");
-
-    assertThat(serveIndex().contentUtf8())
-      .contains("zipkin-lens");
   }
 
   @Test
