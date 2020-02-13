@@ -128,7 +128,7 @@ public class ZipkinPrometheusMetricsConfiguration {
     AttributeKey.valueOf(Boolean.class, "PROMETHEUS_METRICS_SET");
 
   public static void setup(RequestContext ctx, MeterRegistry registry, String metricName) {
-    if (ctx.attr(PROMETHEUS_METRICS_SET) == null) {
+    if (ctx.attr(PROMETHEUS_METRICS_SET) != null) {
       return;
     }
     ctx.setAttr(PROMETHEUS_METRICS_SET, true);
