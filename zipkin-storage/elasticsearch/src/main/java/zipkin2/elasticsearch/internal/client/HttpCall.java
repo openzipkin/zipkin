@@ -50,7 +50,6 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 public final class HttpCall<V> extends Call.Base<V> {
-  public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
     /**
@@ -212,7 +211,8 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
-    try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(NAME).set(name))) {
+    try (SafeCloseable ignored =
+           Clients.withContextCustomizer(ctx -> ctx.logBuilder().name(name))) {
       HttpRequestWriter httpRequest = HttpRequest.streaming(request.headers());
       response = httpClient.execute(httpRequest);
       request.writeBody(httpRequest::tryWrite);

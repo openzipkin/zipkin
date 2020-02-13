@@ -246,7 +246,7 @@ public class ITZipkinServer {
   }
 
   public static String url(Server server, String path) {
-    return "http://localhost:" + server.activePort().get().localAddress().getPort() + path;
+    return "http://localhost:" + server.activePort().localAddress().getPort() + path;
   }
 
   public static String stringFromClasspath(Class<?> thisClass, String path) throws IOException {

@@ -43,10 +43,11 @@ class ITElasticsearchAuth {
 
       final KeyManagerFactory keyManagerFactory = SslUtil.getKeyManagerFactory(ssl);
       final TrustManagerFactory trustManagerFactory = SslUtil.getTrustManagerFactory(ssl);
-      sb.tls(keyManagerFactory, sslContextBuilder -> {
-        sslContextBuilder.keyManager(keyManagerFactory);
-        sslContextBuilder.trustManager(trustManagerFactory);
-      });
+      sb.tls(keyManagerFactory)
+        .tlsCustomizer(sslContextBuilder -> {
+          sslContextBuilder.keyManager(keyManagerFactory);
+          sslContextBuilder.trustManager(trustManagerFactory);
+        });
     }
   };
 

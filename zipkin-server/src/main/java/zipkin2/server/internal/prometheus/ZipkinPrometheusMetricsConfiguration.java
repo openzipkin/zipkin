@@ -18,7 +18,6 @@ import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.RequestContext;
 import com.linecorp.armeria.common.logging.RequestLog;
-import com.linecorp.armeria.common.logging.RequestLogAvailability;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.Route;
 import com.linecorp.armeria.server.ServiceRequestContext;
@@ -129,23 +128,13 @@ public class ZipkinPrometheusMetricsConfiguration {
     AttributeKey.valueOf(Boolean.class, "PROMETHEUS_METRICS_SET");
 
   public static void setup(RequestContext ctx, MeterRegistry registry, String metricName) {
-    if (ctx.hasAttr(PROMETHEUS_METRICS_SET)) {
+    if (ctx.attr(PROMETHEUS_METRICS_SET) == null) {
       return;
     }
-    ctx.attr(PROMETHEUS_METRICS_SET).set(true);
+    ctx.setAttr(PROMETHEUS_METRICS_SET, true);
 
-    ctx.log().addListener(log -> onRequest(log, registry, metricName),
-      RequestLogAvailability.REQUEST_HEADERS,
-      RequestLogAvailability.REQUEST_CONTENT);
-  }
-
-  private static void onRequest(RequestLog log, MeterRegistry registry, String metricName) {
-    Clock clock = registry.config().clock();
-    long startTime = clock.monotonicTime();
-    log.addListener(requestLog -> {
-      getTimeBuilder(requestLog, metricName).register(registry)
-        .record(clock.monotonicTime() - startTime, TimeUnit.NANOSECONDS);
-    }, RequestLogAvailability.COMPLETE);
+    ctx.log().whenComplete().thenAccept(log -> getTimeBuilder(log, metricName).register(registry)
+      .record(log.totalDurationNanos(), TimeUnit.NANOSECONDS));
   }
 
   private static Timer.Builder getTimeBuilder(RequestLog requestLog, String metricName) {
@@ -156,15 +145,15 @@ public class ZipkinPrometheusMetricsConfiguration {
   }
 
   private static Iterable<Tag> getTags(RequestLog requestLog) {
-    return Arrays.asList(Tag.of("method", requestLog.method().toString())
+    return Arrays.asList(Tag.of("method", requestLog.requestHeaders().method().toString())
       , uri(requestLog)
-      , Tag.of("status", Integer.toString(requestLog.statusCode()))
+      , Tag.of("status", Integer.toString(requestLog.responseHeaders().status().code()))
     );
   }
 
   /** Ensure metrics cardinality doesn't blow up on variables */
   private static Tag uri(RequestLog requestLog) {
-    int status = requestLog.statusCode();
+    int status = requestLog.responseHeaders().status().code();
     if (status > 299 && status < 400) return URI_REDIRECTION;
     if (status == 404) return URI_NOT_FOUND;
 
@@ -189,7 +178,7 @@ public class ZipkinPrometheusMetricsConfiguration {
 
   // from io.micrometer.spring.web.servlet.WebMvcTags
   static String getPathInfo(RequestLog requestLog) {
-    String uri = requestLog.path();
+    String uri = requestLog.requestHeaders().path();
     if (!StringUtils.hasText(uri)) return "/";
     return uri.replaceAll("//+", "/")
       .replaceAll("/$", "");

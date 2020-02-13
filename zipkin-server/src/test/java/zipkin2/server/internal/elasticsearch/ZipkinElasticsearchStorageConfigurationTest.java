@@ -287,7 +287,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     WebClient client = WebClient.builder("http://127.0.0.1:1234")
       .option(ClientOption.DECORATION, factory.options.decoration())
       .build();
-    assertThat(client.as(BasicAuthInterceptor.class)).isEmpty();
+    assertThat(client.as(BasicAuthInterceptor.class)).isNull();
   }
 
   @Test public void providesBasicAuthInterceptor_whenBasicAuthUserNameAndPasswordConfigured() {
@@ -305,7 +305,7 @@ public class ZipkinElasticsearchStorageConfigurationTest {
     WebClient client = WebClient.builder("http://127.0.0.1:1234")
       .option(ClientOption.DECORATION, factory.options.decoration())
       .build();
-    assertThat(client.as(BasicAuthInterceptor.class)).isPresent();
+    assertThat(client.as(BasicAuthInterceptor.class)).isNotNull();
   }
 
   @Test public void searchEnabled_false() {

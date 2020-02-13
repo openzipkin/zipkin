@@ -14,8 +14,8 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.common.CommonPools;
-import com.linecorp.armeria.common.grpc.protocol.AbstractUnsafeUnaryGrpcService;
 import com.linecorp.armeria.server.ServiceRequestContext;
+import com.linecorp.armeria.server.grpc.protocol.AbstractUnsafeUnaryGrpcService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;

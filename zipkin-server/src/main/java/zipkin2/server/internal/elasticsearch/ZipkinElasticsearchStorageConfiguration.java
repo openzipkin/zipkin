@@ -22,6 +22,8 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.SessionProtocol;
+import com.linecorp.armeria.common.logging.RequestLogAccess;
+import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +43,6 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
@@ -150,9 +151,13 @@ public class ZipkinElasticsearchStorageConfiguration {
 
     return client -> {
       client.decorator((delegate, ctx, req) -> {
-        String name = ctx.attr(HttpCall.NAME).get();
-        if (name != null) { // override the span name if set
-          spanCustomizer.name(name);
+        RequestLogAccess log = ctx.log();
+        if (log.isAvailable(RequestLogProperty.NAME)) {
+          String name = log.partial().name();
+          if (name != null) {
+            // override the span name if set
+            spanCustomizer.name(name);
+          }
         }
         return delegate.execute(ctx, req);
       });

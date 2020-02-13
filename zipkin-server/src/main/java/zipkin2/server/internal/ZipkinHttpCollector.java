@@ -13,7 +13,7 @@
  */
 package zipkin2.server.internal;
 
-import com.linecorp.armeria.client.encoding.GzipStreamDecoderFactory;
+import com.linecorp.armeria.client.encoding.StreamDecoderFactory;
 import com.linecorp.armeria.common.AggregatedHttpRequest;
 import com.linecorp.armeria.common.HttpData;
 import com.linecorp.armeria.common.HttpHeaderNames;
@@ -241,14 +241,13 @@ final class CompletableCallback extends CompletableFuture<HttpResponse>
 }
 
 final class UnzippingBytesRequestConverter {
-  static final GzipStreamDecoderFactory GZIP_DECODER_FACTORY = new GzipStreamDecoderFactory();
 
   static HttpData convertRequest(ServiceRequestContext ctx, AggregatedHttpRequest request) {
     ZipkinHttpCollector.metrics.incrementMessages();
     String encoding = request.headers().get(HttpHeaderNames.CONTENT_ENCODING);
     HttpData content = request.content();
     if (!content.isEmpty() && encoding != null && encoding.contains("gzip")) {
-      content = GZIP_DECODER_FACTORY.newDecoder(ctx.alloc()).decode(content);
+      content = StreamDecoderFactory.gzip().newDecoder(ctx.alloc()).decode(content);
       // The implementation of the armeria decoder is to return an empty body on failure
       if (content.isEmpty()) {
         ZipkinHttpCollector.maybeLog("Malformed gzip body", ctx, request);

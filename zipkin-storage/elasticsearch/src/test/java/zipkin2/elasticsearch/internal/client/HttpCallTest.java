@@ -26,7 +26,6 @@ import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.RequestHeaders;
 import com.linecorp.armeria.common.ResponseHeaders;
 import com.linecorp.armeria.common.logging.RequestLog;
-import com.linecorp.armeria.common.logging.RequestLogAvailability;
 import com.linecorp.armeria.testing.junit.server.mock.MockWebServerExtension;
 import com.linecorp.armeria.unsafe.ByteBufHttpData;
 import io.netty.buffer.ByteBuf;
@@ -223,7 +222,7 @@ class HttpCallTest {
     AtomicReference<RequestLog> log = new AtomicReference<>();
     http = new HttpCall.Factory(WebClient.builder(server.httpUri("/"))
       .decorator((client, ctx, req) -> {
-        ctx.log().addListener(log::set, RequestLogAvailability.COMPLETE);
+        ctx.log().whenComplete().thenAccept(log::set);
         return client.execute(ctx, req);
       })
       .build());
@@ -231,8 +230,7 @@ class HttpCallTest {
     http.newCall(REQUEST, NULL, "custom-name").execute();
 
     await().untilAsserted(() -> assertThat(log).doesNotHaveValue(null));
-    assertThat(log.get().context().attr(HttpCall.NAME).get())
-      .isEqualTo("custom-name");
+    assertThat(log.get().name()).isEqualTo("custom-name");
   }
 
   @Test void wrongScheme() {

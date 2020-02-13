@@ -16,18 +16,13 @@ package zipkin2.server.internal.elasticsearch;
 import com.linecorp.armeria.client.Endpoint;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
-import com.linecorp.armeria.client.endpoint.EndpointGroupRegistry;
 import com.linecorp.armeria.client.endpoint.healthcheck.HealthCheckedEndpointGroup;
 import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.metric.MeterIdPrefixFunction;
 import io.micrometer.core.instrument.MeterRegistry;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
-import zipkin2.elasticsearch.internal.client.HttpCall;
-
-import static com.linecorp.armeria.client.endpoint.EndpointSelectionStrategy.ROUND_ROBIN;
 
 final class LazyHttpClientImpl implements LazyHttpClient {
   final HttpClientFactory factory;
@@ -50,14 +45,6 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     this.meterRegistry = meterRegistry;
   }
 
-  @Override public void close() {
-    EndpointGroup endpointGroup = EndpointGroupRegistry.get("elasticsearch");
-    if (endpointGroup != null) {
-      endpointGroup.close();
-      EndpointGroupRegistry.unregister("elasticsearch");
-    }
-  }
-
   @Override public WebClient get() {
     if (result == null) {
       synchronized (this) {
@@ -69,10 +56,10 @@ final class LazyHttpClientImpl implements LazyHttpClient {
     return result;
   }
 
-  Endpoint getEndpoint() {
+  EndpointGroup getEndpoint() {
     EndpointGroup initial = initialEndpoints.get();
     // Only health-check when there are alternative endpoints. There aren't when instanceof Endpoint
-    if (initial instanceof Endpoint) return (Endpoint) initial;
+    if (initial instanceof Endpoint) return initial;
 
     // Wrap the result when health checking is enabled.
     EndpointGroup result = initial;
@@ -86,7 +73,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       //
       // We are blocking up to the connection timeout which should be enough time for any DNS
       // resolution that hasn't happened yet to finish.
-      empty = result.awaitInitialEndpoints(timeoutMillis, TimeUnit.MILLISECONDS).isEmpty();
+      empty = result.whenReady().get().isEmpty();
     } catch (Exception e) {
       thrown = e;
     }
@@ -97,10 +84,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       throw new IllegalStateException("couldn't connect any of " + initial.endpoints(), thrown);
     }
 
-    // Currently, there's no alternative to static registries when using Endpoint.ofGroup
-    // https://github.com/line/armeria/issues/1084
-    EndpointGroupRegistry.register("elasticsearch", result, ROUND_ROBIN);
-    return Endpoint.ofGroup("elasticsearch");
+    return result;
   }
 
   // Enables health-checking of an endpoint group, so we only send requests to endpoints that are up
@@ -109,13 +93,13 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       HealthCheckedEndpointGroup.builder(endpointGroup, "/_cluster/health")
         .protocol(protocol)
         .useGet(true)
-        .clientFactory(factory.delegate)
+        .clientFactory(factory.clientFactory)
         .withClientOptions(options -> {
           factory.configureOptionsExceptLogging(options);
           options.decorator(MetricCollectingClient.newDecorator(
             MeterIdPrefixFunction.ofDefault("elasticsearch-healthcheck")));
           options.decorator((delegate, ctx, req) -> {
-            ctx.attr(HttpCall.NAME).set("health-check");
+            ctx.logBuilder().name("health-check");
             return delegate.execute(ctx, req);
           });
           return options;

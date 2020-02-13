@@ -83,7 +83,7 @@ public class ITZipkinServerTimeout {
   }
 
   static String url(Server server, String path) {
-    return "http://localhost:" + server.activePort().get().localAddress().getPort() + path;
+    return "http://localhost:" + server.activePort().localAddress().getPort() + path;
   }
 
   static class SlowSpanStore implements SpanStore {
