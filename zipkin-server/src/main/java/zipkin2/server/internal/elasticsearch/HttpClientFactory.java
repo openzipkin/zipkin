@@ -19,6 +19,7 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.WebClient;
 import com.linecorp.armeria.client.encoding.DecodingClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
+import com.linecorp.armeria.client.logging.ContentPreviewingClient;
 import com.linecorp.armeria.client.logging.LoggingClient;
 import com.linecorp.armeria.client.logging.LoggingClientBuilder;
 import com.linecorp.armeria.client.metric.MetricCollectingClient;
@@ -79,7 +80,7 @@ public class HttpClientFactory implements Function<EndpointGroup, WebClient>, Cl
       }
       options.decorator(loggingBuilder.newDecorator());
       if (httpLogging == HttpLogging.BODY) {
-        options.decorator(RawContentLoggingClient::new);
+        options.decorator(ContentPreviewingClient.newDecorator(Integer.MAX_VALUE));
       }
     }
     this.options = configureOptionsExceptLogging(options).build();

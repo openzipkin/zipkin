@@ -75,7 +75,7 @@ public class ZipkinElasticsearchStorageConfiguration {
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean ClientFactory esClientFactory(
     ZipkinElasticsearchStorageProperties es,
     MeterRegistry meterRegistry) throws Exception {
-    ClientFactoryBuilder builder = new ClientFactoryBuilder();
+    ClientFactoryBuilder builder = ClientFactory.builder();
 
     // Allow use of a custom KeyStore or TrustStore when connecting to Elasticsearch
     Ssl ssl = es.getSsl();
@@ -181,7 +181,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     final KeyManagerFactory keyManagerFactory = SslUtil.getKeyManagerFactory(ssl);
     final TrustManagerFactory trustManagerFactory = SslUtil.getTrustManagerFactory(ssl);
 
-    return builder.sslContextCustomizer(sslContextBuilder -> {
+    return builder.tlsCustomizer(sslContextBuilder -> {
       sslContextBuilder.keyManager(keyManagerFactory);
       sslContextBuilder.trustManager(trustManagerFactory);
     });
