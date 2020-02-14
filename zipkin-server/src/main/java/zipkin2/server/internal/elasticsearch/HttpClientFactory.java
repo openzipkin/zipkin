@@ -88,7 +88,6 @@ public class HttpClientFactory implements Function<EndpointGroup, WebClient>, Cl
 
   @Override public WebClient apply(EndpointGroup endpoint) {
     return WebClient.builder(protocol, endpoint)
-      .factory(clientFactory)
       .options(options)
       .build();
   }
@@ -99,7 +98,7 @@ public class HttpClientFactory implements Function<EndpointGroup, WebClient>, Cl
 
   /** This takes care to not expose health checks into wire level logging */
   ClientOptionsBuilder configureOptionsExceptLogging(ClientOptionsBuilder options) {
-    options.responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
+    options.factory(clientFactory).responseTimeoutMillis(timeout).writeTimeoutMillis(timeout);
     customizers.forEach(c -> c.accept(options));
     return options;
   }
