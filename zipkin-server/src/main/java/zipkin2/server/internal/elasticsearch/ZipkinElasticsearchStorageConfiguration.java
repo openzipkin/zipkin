@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,7 +22,7 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.SessionProtocol;
-import com.linecorp.armeria.common.logging.RequestLogAccess;
+import com.linecorp.armeria.common.logging.RequestLog;
 import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
@@ -151,9 +151,10 @@ public class ZipkinElasticsearchStorageConfiguration {
 
     return client -> {
       client.decorator((delegate, ctx, req) -> {
-        RequestLogAccess log = ctx.log();
+        // We only need the name if it's available and can unsafely access the partially filled log.
+        RequestLog log = ctx.log().partial();
         if (log.isAvailable(RequestLogProperty.NAME)) {
-          String name = log.partial().name();
+          String name = log.name();
           if (name != null) {
             // override the span name if set
             spanCustomizer.name(name);

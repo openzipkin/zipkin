@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -128,10 +128,9 @@ public class ZipkinPrometheusMetricsConfiguration {
     AttributeKey.valueOf(Boolean.class, "PROMETHEUS_METRICS_SET");
 
   public static void setup(RequestContext ctx, MeterRegistry registry, String metricName) {
-    if (ctx.attr(PROMETHEUS_METRICS_SET) != null) {
+    if (ctx.setAttrIfAbsent(PROMETHEUS_METRICS_SET, true) != null) {
       return;
     }
-    ctx.setAttr(PROMETHEUS_METRICS_SET, true);
 
     ctx.log().whenComplete().thenAccept(log -> getTimeBuilder(log, metricName).register(registry)
       .record(log.totalDurationNanos(), TimeUnit.NANOSECONDS));

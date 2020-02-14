@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import com.linecorp.armeria.client.metric.MetricCollectingClient;
 import com.linecorp.armeria.common.SessionProtocol;
 import com.linecorp.armeria.common.metric.MeterIdPrefixFunction;
 import io.micrometer.core.instrument.MeterRegistry;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import zipkin2.elasticsearch.ElasticsearchStorage.LazyHttpClient;
 
@@ -73,7 +74,7 @@ final class LazyHttpClientImpl implements LazyHttpClient {
       //
       // We are blocking up to the connection timeout which should be enough time for any DNS
       // resolution that hasn't happened yet to finish.
-      empty = result.whenReady().get().isEmpty();
+      empty = result.whenReady().get(timeoutMillis, TimeUnit.MILLISECONDS).isEmpty();
     } catch (Exception e) {
       thrown = e;
     }
