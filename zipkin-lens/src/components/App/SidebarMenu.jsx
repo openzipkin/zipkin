@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { withRouter } from 'react-router';
+import { useLocation } from 'react-router';
 import classNames from 'classnames';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
@@ -21,10 +21,10 @@ import ListItem from '@material-ui/core/ListItem';
 import Tooltip from '@material-ui/core/Tooltip';
 
 const propTypes = {
-  location: PropTypes.shape({ pathname: PropTypes.string.isRequired }).isRequired,
   title: PropTypes.string.isRequired,
   path: PropTypes.string.isRequired,
   icon: PropTypes.shape({}).isRequired,
+  onClick: PropTypes.func,
 };
 
 const useStyles = makeStyles(theme => ({
@@ -44,13 +44,14 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-export const SidebarMenuImpl = ({
-  location,
+export const SidebarMenuImpl = React.forwardRef(({
   title,
   path,
   icon,
-}) => {
+  onClick,
+}, ref) => {
   const classes = useStyles();
+  const location = useLocation();
 
   return (
     <Tooltip title={title} placement="right">
@@ -58,6 +59,8 @@ export const SidebarMenuImpl = ({
         button
         component="a"
         href={path}
+        ref={ref}
+        onClick={onClick}
         className={
           classNames(
             classes.item,
@@ -69,8 +72,8 @@ export const SidebarMenuImpl = ({
       </ListItem>
     </Tooltip>
   );
-};
+});
 
 SidebarMenuImpl.propTypes = propTypes;
 
-export default withRouter(SidebarMenuImpl);
+export default SidebarMenuImpl;
