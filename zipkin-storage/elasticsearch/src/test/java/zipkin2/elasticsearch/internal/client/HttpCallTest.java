@@ -241,7 +241,7 @@ class HttpCallTest {
 
     assertThatThrownBy(() -> http.newCall(REQUEST, NULL, "test").execute())
       .isInstanceOf(RejectedExecutionException.class)
-      .hasMessage("ClosedSessionException");
+      .hasMessageContaining("OPENSSL_internal");
   }
 
   @Test void unprocessedRequest() {
