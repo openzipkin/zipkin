@@ -23,9 +23,12 @@ export function getLocale() {
   // Strip browser language to what we support.
   if (browserLanguage === 'en' || browserLanguage.startsWith('en-')) {
     return 'en';
-  } else if (browserLanguage === 'zh-cn') {
+  }
+  if (browserLanguage === 'zh-cn') {
     return 'zh-cn';
   }
+
+  return browserLanguage;
 }
 
 export function setLocale(locale) {
