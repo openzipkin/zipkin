@@ -9,7 +9,7 @@ Here are a couple example screen shots:
 
 ## Quick start
 
-Zipkin-lens required nodejs 13.8.0 to start. You could easily try Zipkin-lens at local using any zipkin deployment using below command:
+Zipkin-lens required nodejs 10.2.0 to start. You could easily try Zipkin-lens at local using any zipkin deployment using below command:
 
 ```
 $ npm install --dev
