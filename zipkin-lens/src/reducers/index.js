@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -19,22 +19,22 @@ import trace from './trace';
 import traces from './traces';
 import services from './services';
 import dependencies from './dependencies';
-import globalSearch from './global-search';
+import createGlobalSearch from './global-search';
 import autocompleteKeys from './autocomplete-keys';
 import autocompleteValues from './autocomplete-values';
 import traceViewer from './trace-viewer';
 
-const reducer = combineReducers({
+const createReducer = config => combineReducers({
   remoteServices,
   spans,
   trace,
   traces,
   services,
   dependencies,
-  globalSearch,
+  globalSearch: createGlobalSearch(config),
   autocompleteKeys,
   autocompleteValues,
   traceViewer,
 });
 
-export default reducer;
+export default createReducer;

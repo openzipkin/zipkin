@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,13 +11,14 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import moment from 'moment';
 import * as actions from './global-search-action';
 import * as types from '../constants/action-types';
 
 describe('global search actions', () => {
   it('should create an action to set the lookback condition', () => {
     const lookbackCondition = {
-      value: '15m',
+      value: moment.duration('15m').asMilliseconds(),
       endTs: 1,
       startTs: 1,
     };
