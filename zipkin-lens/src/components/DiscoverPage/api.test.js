@@ -151,7 +151,7 @@ describe('buildTracesApiQueryParameters', () => {
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
       ], {
-        value: '1h',
+        value: 3600000,
       },
       15,
       1547098357716,
@@ -205,7 +205,7 @@ describe('buildTracesApiQueryParameters', () => {
         { key: 'minDuration', value: 10 },
         { key: 'maxDuration', value: 100 },
       ], {
-        value: '1h',
+        value: 3600000,
         endTs: 1547098357716,
       },
       15,
@@ -229,7 +229,7 @@ describe('buildTracesApiQueryParameters', () => {
           key: 'tags', value: 'key1=value1 and key2 and key3=value3',
         },
       ], {
-        value: '1h',
+        value: 3600000,
       },
       15,
       1547098357716,
@@ -247,7 +247,7 @@ describe('buildDependenciesApiQueryParameters', () => {
   it('should return right query parameters', () => {
     const apiQueryParameters = buildDependenciesApiQueryParameters(
       {
-        value: '1h',
+        value: 3600000,
       },
       1547098357716,
     );
@@ -275,7 +275,7 @@ describe('buildDependenciesApiQueryParameters', () => {
   it('should return right query parameters when the currentTs is not specified', () => {
     const apiQueryParameters = buildDependenciesApiQueryParameters(
       {
-        value: '1h',
+        value: 3600000,
         endTs: 1547098357716,
       },
     );
@@ -339,11 +339,11 @@ describe('extractConditionsFromQueryParameters', () => {
 
   it('should return the right lookback condition', () => {
     const { lookbackCondition } = extractConditionsFromQueryParameters({
-      lookback: '1h',
+      lookback: 3600000,
       endTs: '1547098357716',
     });
     expect(lookbackCondition).toEqual({
-      value: '1h',
+      value: 3600000,
       endTs: 1547098357716,
     });
   });

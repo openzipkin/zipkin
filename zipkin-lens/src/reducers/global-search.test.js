@@ -11,8 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import reducer from './global-search';
+import createReducer from './global-search';
 import * as types from '../constants/action-types';
+
+const reducer = createReducer({});
 
 describe('global search reducer', () => {
   it('should handle GLOBAL_SEARCH_SET_LOOKBACK_CONDITION', () => {

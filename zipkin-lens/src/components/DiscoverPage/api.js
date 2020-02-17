@@ -168,11 +168,12 @@ export const extractConditionsFromQueryParameters = (queryParameters) => {
         limitCondition = parseInt(conditionValue, 10);
         break;
       case 'lookback':
-        lookbackCondition.value = parseInt(conditionValue, 10);
         if (conditionValue === 'custom') {
+          lookbackCondition.value = 'custom';
           lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
           lookbackCondition.startTs = parseInt(queryParameters.startTs, 10);
         } else {
+          lookbackCondition.value = parseInt(conditionValue, 10);
           lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
         }
         break;

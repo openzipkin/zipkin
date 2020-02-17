@@ -11,15 +11,17 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import useFetch from 'fetch-suspense';
 import React from 'react';
 
 import { UI_CONFIG } from '../../constants/api';
+import fetchResource from '../../util/fetch-resource';
 
 const ConfigContext = React.createContext();
 
+const configResource = fetchResource(fetch(UI_CONFIG).then(response => response.json()));
+
 export const UiConfig = ({ children }) => {
-  const response = useFetch(UI_CONFIG, { lifespan: 1 });
+  const response = configResource.read();
   return (
     <ConfigContext.Provider value={response}>
       {children}
