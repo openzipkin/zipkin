@@ -24,7 +24,6 @@ const propTypes = {
   title: PropTypes.string.isRequired,
   path: PropTypes.string.isRequired,
   icon: PropTypes.shape({}).isRequired,
-  onClick: PropTypes.func,
 };
 
 const useStyles = makeStyles(theme => ({
@@ -48,7 +47,7 @@ export const SidebarMenuImpl = React.forwardRef(({
   title,
   path,
   icon,
-  onClick,
+  ...others
 }, ref) => {
   const classes = useStyles();
   const location = useLocation();
@@ -60,13 +59,13 @@ export const SidebarMenuImpl = React.forwardRef(({
         component="a"
         href={path}
         ref={ref}
-        onClick={onClick}
         className={
           classNames(
             classes.item,
             { [classes['item--selected']]: path === location.pathname },
           )
         }
+        {...others}
       >
         <FontAwesomeIcon icon={icon} />
       </ListItem>

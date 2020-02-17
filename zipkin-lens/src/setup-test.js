@@ -11,8 +11,29 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 /* eslint-disable import/no-extraneous-dependencies */
+
+import '@testing-library/jest-dom';
+
 const Enzyme = require('enzyme');
 const EnzymeAdapter = require('enzyme-adapter-react-16');
 
 Enzyme.configure({ adapter: new EnzymeAdapter() });
+
+// Set english as browser locale by default.
+Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true });
+
+// Mock out browser refresh.
+const { reload } = window.location;
+
+beforeAll(() => {
+  Object.defineProperty(window.location, 'reload', {
+    configurable: true,
+  });
+  window.location.reload = jest.fn();
+});
+
+afterAll(() => {
+  window.location.reload = reload;
+});

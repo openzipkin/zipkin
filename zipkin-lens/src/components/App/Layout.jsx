@@ -12,20 +12,17 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, {useCallback, useReducer, useRef} from 'react';
+import React, { useCallback, useReducer, useRef } from 'react';
 import { faSearch, faProjectDiagram, faHome } from '@fortawesome/free-solid-svg-icons';
 import { faGithub, faTwitter, faGitter } from '@fortawesome/free-brands-svg-icons';
 import Box from '@material-ui/core/Box';
 import Drawer from '@material-ui/core/Drawer';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import List from '@material-ui/core/List';
-import ListItem from '@material-ui/core/ListItem';
-import ListItemText from '@material-ui/core/ListItemText';
-import Popover from '@material-ui/core/Popover';
 import { makeStyles } from '@material-ui/styles';
-import { faGlobe } from '@fortawesome/free-solid-svg-icons';
 import { useIntl } from 'react-intl';
 
+import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
 import Logo from '../../img/zipkin-logo.svg';
 import { setLocale } from '../../util/locale';
@@ -74,17 +71,6 @@ const propTypes = {
   children: PropTypes.arrayOf(PropTypes.element).isRequired,
 };
 
-const LANGUAGES = [
-  {
-    locale: 'en',
-    name: 'English',
-  },
-  {
-    locale: 'zh-cn',
-    name: '中文 (简体)',
-  },
-];
-
 const Layout = ({ children }) => {
   const classes = useStyles();
   const changeLanguageLink = useRef(null);
@@ -123,38 +109,12 @@ const Layout = ({ children }) => {
           <SidebarMenu title="Repository" path="https://github.com/openzipkin/zipkin" icon={faGithub} />
           <SidebarMenu title="Twitter" path="https://twitter.com/zipkinproject" icon={faTwitter} />
           <SidebarMenu title="Gitter" path="https://gitter.im/openzipkin/zipkin/" icon={faGitter} />
-          <SidebarMenu
-            title="Change Language"
-            path=""
-            icon={faGlobe}
-            ref={changeLanguageLink}
-            onClick={onChangeLanguageClick}
-          />
+          <LanguageSelector />
         </List>
       </Drawer>
       <Box component="main" className={classes.childrenWrapper}>
         {children}
       </Box>
-      <Popover
-        anchorEl={changeLanguageLink.current}
-        open={languageSelectOpen}
-        onClose={toggleLanguageSelectOpen}
-        anchorOrigin={{vertical: 'top', horizontal: 'right'}}
-      >
-        <List>
-          {LANGUAGES.map((language) => (
-            <ListItem
-              button
-              key={language.locale}
-              selected={intl.locale === language.locale}
-              onClick={onLanguageClick}
-              data-locale={language.locale}
-            >
-              <ListItemText primary={language.name} />
-            </ListItem>
-          ))}
-        </List>
-      </Popover>
     </Box>
   );
 };

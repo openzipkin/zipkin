@@ -1,4 +1,5 @@
 {
+  "src.components.App.changeLanguage": "Change Language",
   "src.components.DiscoverPage.searchTracesDescription": "Please select criteria in the search bar. Then, click the search button.",
   "src.components.DiscoverPage.searchTracesHeader": "Search Traces",
   "src.components.TracePage.depth": "Depth",
