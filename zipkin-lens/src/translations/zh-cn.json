@@ -1,4 +1,5 @@
 {
+  "src.components.App.changeLanguage": "改变语言",
   "src.components.DiscoverPage.searchTracesDescription": "",
   "src.components.DiscoverPage.searchTracesHeader": "",
   "src.components.TracePage.depth": "深度",

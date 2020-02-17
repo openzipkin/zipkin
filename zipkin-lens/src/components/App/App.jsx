@@ -26,17 +26,15 @@ import TracePage from '../TracePage';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
 import { useDocumentTitle } from '../../hooks';
+import { DEFAULT_LOCALE, getLocale } from '../../util/locale';
 
 const translations = {
   en: require('../../translations/en.json'),
   'zh-cn': require('../../translations/zh-cn.json'),
 };
 
-// TODO(anuraaga): Add the ability to manually select locale, saving to local storage and then use
-// navigator.language as a default when there has been no manual selection.
-const locale = 'en';
-const defaultLocale = 'en';
-const messages = translations[locale] || translations[defaultLocale];
+const locale = getLocale();
+const messages = translations[locale] || translations[DEFAULT_LOCALE];
 
 const App = () => {
   useDocumentTitle('Zipkin');
@@ -47,7 +45,7 @@ const App = () => {
           <IntlProvider
             locale={locale}
             messages={messages}
-            defaultLocale={defaultLocale}
+            defaultLocale={DEFAULT_LOCALE}
           >
             <BrowserRouter>
               <Layout>

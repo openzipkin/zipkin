@@ -50,9 +50,9 @@ Zipkin Lens design includes facets of old and new designs. Here are
 some notable new aspects borrowed or adapted from others.
 
 ### Overall Design
-Zipkin Lens was originally an internal Ui to LINE called IMON. One driving feature was to
+Zipkin Lens was originally an internal UI at LINE called IMON. One driving feature was to
 allow site-specific tags like "Phase" and "Instance Id" to be choices for trace queries.
-The Ui was originally matching color schemes of other tools like Grafana and fit in with
+The UI was originally matching color schemes of other tools like Grafana and fit in with
 the Observability ecosystem of LINE engineering. IMON was created by Igarashi Takuma and
 Huy Do who later contributed it as the initial version of Zipkin Lens.
 
