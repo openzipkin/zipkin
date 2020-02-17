@@ -21,19 +21,24 @@ const EnzymeAdapter = require('enzyme-adapter-react-16');
 
 Enzyme.configure({ adapter: new EnzymeAdapter() });
 
-// Set english as browser locale by default.
-Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true });
-
 // Mock out browser refresh.
 const { reload } = window.location;
 
+// Allow redefining browser language.
+const { language } = window.navigator;
+
 beforeAll(() => {
-  Object.defineProperty(window.location, 'reload', {
-    configurable: true,
-  });
+  Object.defineProperty(window.location, 'reload', { configurable: true });
   window.location.reload = jest.fn();
 });
 
+beforeEach(() => {
+  // Set english as browser locale by default.
+  Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true });
+});
+
 afterAll(() => {
+  // Restore overrides for good measure.
+  Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
   window.location.reload = reload;
 });
