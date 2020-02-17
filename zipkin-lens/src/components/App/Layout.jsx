@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useCallback, useReducer, useRef } from 'react';
+import React from 'react';
 import { faSearch, faProjectDiagram, faHome } from '@fortawesome/free-solid-svg-icons';
 import { faGithub, faTwitter, faGitter } from '@fortawesome/free-brands-svg-icons';
 import Box from '@material-ui/core/Box';
@@ -25,7 +25,6 @@ import { useIntl } from 'react-intl';
 import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
 import Logo from '../../img/zipkin-logo.svg';
-import { setLocale } from '../../util/locale';
 
 const drawerWidth = '3.2rem';
 
@@ -73,23 +72,7 @@ const propTypes = {
 
 const Layout = ({ children }) => {
   const classes = useStyles();
-  const changeLanguageLink = useRef(null);
   const intl = useIntl();
-
-  const [languageSelectOpen, toggleLanguageSelectOpen] = useReducer(value => !value, false);
-  const onChangeLanguageClick = useCallback((e) => {
-    e.preventDefault();
-    toggleLanguageSelectOpen();
-  });
-
-  const onLanguageClick = useCallback((e) => {
-    const locale = e.currentTarget.dataset.locale;
-    if (locale === intl.locale) {
-      return;
-    }
-    setLocale(locale);
-    window.location.reload();
-  });
 
   return (
     <Box className={classes.root}>
