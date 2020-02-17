@@ -20,7 +20,6 @@ import Drawer from '@material-ui/core/Drawer';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import List from '@material-ui/core/List';
 import { makeStyles } from '@material-ui/styles';
-import { useIntl } from 'react-intl';
 
 import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
@@ -72,7 +71,6 @@ const propTypes = {
 
 const Layout = ({ children }) => {
   const classes = useStyles();
-  const intl = useIntl();
 
   return (
     <Box className={classes.root}>
