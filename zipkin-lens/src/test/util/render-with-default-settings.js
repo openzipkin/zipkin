@@ -19,6 +19,7 @@ import { ThemeProvider } from '@material-ui/styles';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { render } from '@testing-library/react';
+import { IntlProvider } from 'react-intl';
 
 import { theme } from '../../colors';
 import configureStore from '../../store/configure-store';
@@ -26,18 +27,21 @@ import configureStore from '../../store/configure-store';
 export default (ui, {
   route = '/',
   history = createMemoryHistory({ initialEntries: [route] }),
+  locale = 'en',
 } = {}) => {
   const store = configureStore({});
 
   const wrapper = ({ children }) => ( // eslint-disable-line react/prop-types
     <Provider store={store}>
-      <Router history={history}>
-        <MuiPickersUtilsProvider utils={MomentUtils}>
-          <ThemeProvider theme={theme}>
-            {children}
-          </ThemeProvider>
-        </MuiPickersUtilsProvider>
-      </Router>
+      <IntlProvider locale={locale}>
+        <Router history={history}>
+          <MuiPickersUtilsProvider utils={MomentUtils}>
+            <ThemeProvider theme={theme}>
+              {children}
+            </ThemeProvider>
+          </MuiPickersUtilsProvider>
+        </Router>
+      </IntlProvider>
     </Provider>
   );
   return {

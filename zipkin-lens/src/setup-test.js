@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,8 +11,34 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+
 /* eslint-disable import/no-extraneous-dependencies */
+
+import '@testing-library/jest-dom';
+
 const Enzyme = require('enzyme');
 const EnzymeAdapter = require('enzyme-adapter-react-16');
 
 Enzyme.configure({ adapter: new EnzymeAdapter() });
+
+// Mock out browser refresh.
+const { reload } = window.location;
+
+// Allow redefining browser language.
+const { language } = window.navigator;
+
+beforeAll(() => {
+  Object.defineProperty(window.location, 'reload', { configurable: true });
+  window.location.reload = jest.fn();
+});
+
+beforeEach(() => {
+  // Set english as browser locale by default.
+  Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true });
+});
+
+afterAll(() => {
+  // Restore overrides for good measure.
+  Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
+  window.location.reload = reload;
+});

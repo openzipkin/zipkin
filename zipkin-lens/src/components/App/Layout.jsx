@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -21,6 +21,7 @@ import CssBaseline from '@material-ui/core/CssBaseline';
 import List from '@material-ui/core/List';
 import { makeStyles } from '@material-ui/styles';
 
+import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
 import Logo from '../../img/zipkin-logo.svg';
 
@@ -89,6 +90,7 @@ const Layout = ({ children }) => {
           <SidebarMenu title="Repository" path="https://github.com/openzipkin/zipkin" icon={faGithub} />
           <SidebarMenu title="Twitter" path="https://twitter.com/zipkinproject" icon={faTwitter} />
           <SidebarMenu title="Gitter" path="https://gitter.im/openzipkin/zipkin/" icon={faGitter} />
+          <LanguageSelector />
         </List>
       </Drawer>
       <Box component="main" className={classes.childrenWrapper}>

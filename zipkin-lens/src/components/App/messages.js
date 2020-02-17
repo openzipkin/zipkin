@@ -11,10 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-module.exports = {
-  setupFilesAfterEnv: ['./src/setup-test.js', 'jest-localstorage-mock'],
-  modulePaths: ['./jest'],
-  moduleNameMapper: {
-    '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$': 'file-mock.js',
-  },
-};
+import { defineMessages } from 'react-intl';
+
+export default defineMessages({
+  changeLanguage: 'Change Language',
+});
