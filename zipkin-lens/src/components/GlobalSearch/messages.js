@@ -14,7 +14,6 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
-  discover: 'Discover',
-  searchTracesHeader: 'Search Traces',
-  searchTracesDescription: 'Please select criteria in the search bar. Then, click the search button.',
+  limit: 'Limit',
+  pleaseSelectCriteria: 'Please select the criteria for your trace lookup',
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,6 +12,7 @@
  * the License.
  */
 import React, { useState, useRef, useCallback } from 'react';
+import { useIntl } from 'react-intl';
 import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import InputBase from '@material-ui/core/InputBase';
@@ -19,6 +20,8 @@ import Tooltip from '@material-ui/core/Tooltip';
 
 import { setLimitCondition } from '../../../actions/global-search-action';
 import { useMount } from '../../../hooks';
+
+import messages from '../messages';
 
 const useStyles = makeStyles(theme => ({
   input: {
@@ -37,6 +40,7 @@ const useStyles = makeStyles(theme => ({
 
 const LimitCondition = () => {
   const classes = useStyles();
+  const intl = useIntl();
 
   const dispatch = useDispatch();
 
@@ -69,7 +73,7 @@ const LimitCondition = () => {
   }, []);
 
   return (
-    <Tooltip title="Limit">
+    <Tooltip title={intl.formatMessage(messages.limit)}>
       <InputBase
         inputRef={inputRef}
         value={value}

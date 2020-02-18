@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,6 +12,7 @@
  * the License.
  */
 import React, { useMemo, useCallback } from 'react';
+import { FormattedMessage } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -22,6 +23,8 @@ import Button from '@material-ui/core/Button';
 import { retrieveNextConditionKey, retrieveDefaultConditionValue } from './util';
 import GlobalSearchCondition from './GlobalSearchCondition';
 import { addCondition } from '../../actions/global-search-action';
+
+import messages from './messages';
 
 const useStyles = makeStyles({
   root: {
@@ -78,7 +81,7 @@ const GlobalSearchConditionList = () => {
           conditions.length === 0
             ? (
               <Box>
-                Please select the criteria for your trace lookup
+                <FormattedMessage {...messages.pleaseSelectCriteria} />
               </Box>
             )
             : conditions.map((condition, conditionIndex) => (

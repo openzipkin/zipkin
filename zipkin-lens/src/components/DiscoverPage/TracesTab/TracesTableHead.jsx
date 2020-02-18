@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,12 +13,14 @@
  */
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
+import { FormattedMessage } from 'react-intl';
 import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 
+import messages from './messages';
 import { sortingMethods } from './util';
 
 const useStyles = makeStyles({
@@ -78,10 +80,10 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
   return (
     <Grid container spacing={0} className={classes.root}>
       <Grid item xs={3} className={classes.cell}>
-        Root
+        <FormattedMessage {...messages.root} />
       </Grid>
       <Grid item xs={3} className={classes.cell}>
-        Trace ID
+        <FormattedMessage {...messages.traceId} />
       </Grid>
       <Grid
         item
@@ -90,7 +92,7 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
         onClick={handleStartTimeClick}
         data-test="start-time"
       >
-        Start Time
+        <FormattedMessage {...messages.startTime} />
         &nbsp;
         {sortingMethod === sortingMethods.OLDEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
         {sortingMethod === sortingMethods.NEWEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}
@@ -102,7 +104,7 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
         onClick={handleDurationClick}
         data-test="duration"
       >
-        Duration
+        <FormattedMessage {...messages.duration} />
         &nbsp;
         {sortingMethod === sortingMethods.LONGEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
         {sortingMethod === sortingMethods.SHORTEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}

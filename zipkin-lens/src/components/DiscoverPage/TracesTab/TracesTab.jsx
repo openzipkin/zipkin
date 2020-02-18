@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
+import { FormattedMessage } from 'react-intl';
 import { connect } from 'react-redux';
 import Box from '@material-ui/core/Box';
 import { withStyles } from '@material-ui/styles';
@@ -26,6 +27,8 @@ import {
 import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
 import { traceSummariesPropTypes } from '../../../prop-types';
+
+import messages from './messages';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
@@ -70,7 +73,7 @@ export const TracesTab = ({ traceSummaries, classes }) => { // Export for testin
     <Box height="100%" display="flex" flexDirection="column">
       <Box borderBottom={1} display="flex" justifyContent="space-between" p={1} className={classes.header}>
         <Box display="flex" alignItems="center" fontSize="1.05rem" data-test="count-results">
-          {`${traceSummaries.length} Results`}
+          <FormattedMessage {...messages.numResults} values={{num: traceSummaries.length}} />
         </Box>
         <Box mr={2}>
           <ServiceFilter

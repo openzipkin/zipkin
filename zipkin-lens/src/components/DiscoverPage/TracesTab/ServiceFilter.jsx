@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useState, useCallback } from 'react';
+import { useIntl } from 'react-intl';
 import { faFilter } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Badge from '@material-ui/core/Badge';
@@ -21,12 +22,15 @@ import Button from '@material-ui/core/Button';
 
 import ServiceFilterPopover from './ServiceFilterPopover';
 
+import messages from './messages';
+
 const propTypes = {
   filters: PropTypes.arrayOf(PropTypes.string).isRequired,
 };
 
 const ServiceFilter = ({ filters, ...props }) => {
   const [anchorEl, setAnchorEl] = useState(null);
+  const intl = useIntl();
 
   const handleButtonClick = useCallback(event => setAnchorEl(event.currentTarget), []);
 
@@ -43,7 +47,7 @@ const ServiceFilter = ({ filters, ...props }) => {
         <Button onClick={handleButtonClick} data-test="button">
           <FontAwesomeIcon icon={faFilter} />
           <Box ml={0.2} data-test="button-text">
-            {`${filters.length === 0 ? 'Filter' : filters[0]}`}
+            {`${filters.length === 0 ? intl.formatMessage(messages.filter) : filters[0]}`}
           </Box>
         </Button>
       </Badge>
