@@ -17,6 +17,17 @@ import * as types from '../constants/action-types';
 const reducer = createReducer({});
 
 describe('global search reducer', () => {
+  it('should default to 15 minutes lookback', () => {
+    const newState = reducer(undefined, { type: 'unknown' });
+    expect(newState.lookbackCondition.value).toEqual(900000);
+  });
+
+  it('should override lookback from config', () => {
+    const overriddenReducer = createReducer({ defaultLookback: 6000 });
+    const newState = overriddenReducer(undefined, { type: 'unknown' });
+    expect(newState.lookbackCondition.value).toEqual(6000);
+  });
+
   it('should handle GLOBAL_SEARCH_SET_LOOKBACK_CONDITION', () => {
     const newState = reducer(undefined, {
       type: types.GLOBAL_SEARCH_SET_LOOKBACK_CONDITION,
