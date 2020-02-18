@@ -92,13 +92,13 @@ public class ZipkinServerTest {
 
   private Response get(String path) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + server.activePort().get().localAddress().getPort() + path)
+      .url("http://localhost:" + server.activeLocalPort() + path)
       .build()).execute();
   }
 
   private Response post(String path, byte[] body) throws IOException {
     return client.newCall(new Request.Builder()
-      .url("http://localhost:" + server.activePort().get().localAddress().getPort() + path)
+      .url("http://localhost:" + server.activeLocalPort() + path)
       .post(RequestBody.create(null, body))
       .build()).execute();
   }
