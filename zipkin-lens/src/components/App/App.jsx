@@ -11,9 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import React, { Suspense } from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { ThemeProvider } from '@material-ui/styles';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
@@ -23,6 +24,7 @@ import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
 import DependenciesPage from '../DependenciesPage';
 import TracePage from '../TracePage';
+import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
 import { useDocumentTitle } from '../../hooks';
@@ -39,37 +41,45 @@ const messages = translations[locale] || translations[DEFAULT_LOCALE];
 const App = () => {
   useDocumentTitle('Zipkin');
   return (
-    <MuiPickersUtilsProvider utils={MomentUtils}>
-      <ThemeProvider theme={theme}>
-        <Provider store={configureStore()}>
-          <IntlProvider
-            locale={locale}
-            messages={messages}
-            defaultLocale={DEFAULT_LOCALE}
-          >
-            <BrowserRouter>
-              <Layout>
-                <Route
-                  exact
-                  path="/zipkin"
-                  component={DiscoverPage}
-                />
-                <Route
-                  exact
-                  path="/zipkin/dependency"
-                  component={DependenciesPage}
-                />
-                <Route
-                  exact
-                  path={['/zipkin/traces/:traceId', '/zipkin/traceViewer']}
-                  component={TracePage}
-                />
-              </Layout>
-            </BrowserRouter>
-          </IntlProvider>
-        </Provider>
-      </ThemeProvider>
-    </MuiPickersUtilsProvider>
+    <Suspense fallback={<CircularProgress />}>
+      <UiConfig>
+        <MuiPickersUtilsProvider utils={MomentUtils}>
+          <ThemeProvider theme={theme}>
+            <UiConfigConsumer>
+              {(config) => (
+                <Provider store={configureStore(config)}>
+                  <IntlProvider
+                    locale={locale}
+                    messages={messages}
+                    defaultLocale={DEFAULT_LOCALE}
+                  >
+                    <BrowserRouter>
+                      <Layout>
+                        <Route
+                          exact
+                          path="/zipkin"
+                          component={DiscoverPage}
+                        />
+                        <Route
+                          exact
+                          path="/zipkin/dependency"
+                          component={DependenciesPage}
+                        />
+                        <Route
+                          exact
+                          path={['/zipkin/traces/:traceId', '/zipkin/traceViewer']}
+                          component={TracePage}
+                        />
+                      </Layout>
+                    </BrowserRouter>
+                  </IntlProvider>
+                </Provider>
+              )}
+            </UiConfigConsumer>
+          </ThemeProvider>
+        </MuiPickersUtilsProvider>
+      </UiConfig>
+    </Suspense>
   );
 };
 

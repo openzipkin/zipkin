@@ -11,14 +11,4 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { createStore, applyMiddleware } from 'redux';
-import thunk from 'redux-thunk';
-
-import createReducer from '../reducers';
-
-export default function configureStore(config) {
-  return createStore(
-    createReducer(config),
-    applyMiddleware(thunk),
-  );
-}
+export * from './UiConfig';

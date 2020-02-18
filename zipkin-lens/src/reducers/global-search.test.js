@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,10 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import reducer from './global-search';
+import createReducer from './global-search';
 import * as types from '../constants/action-types';
 
+const reducer = createReducer({});
+
 describe('global search reducer', () => {
+  it('should default to 15 minutes lookback', () => {
+    const newState = reducer(undefined, { type: 'unknown' });
+    expect(newState.lookbackCondition.value).toEqual(900000);
+  });
+
+  it('should override lookback from config', () => {
+    const overriddenReducer = createReducer({ defaultLookback: 6000 });
+    const newState = overriddenReducer(undefined, { type: 'unknown' });
+    expect(newState.lookbackCondition.value).toEqual(6000);
+  });
+
   it('should handle GLOBAL_SEARCH_SET_LOOKBACK_CONDITION', () => {
     const newState = reducer(undefined, {
       type: types.GLOBAL_SEARCH_SET_LOOKBACK_CONDITION,
