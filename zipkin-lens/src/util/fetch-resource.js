@@ -18,16 +18,16 @@
  * the result of the promise if it is already resolved. This allows React Suspense to continue
  * rendering work while the promise is being resolved.
  */
-export default promise => {
+export default (promise) => {
   let response;
   let error;
 
   // In Javascript, there is no way to synchronously know whether a promise is resolved. Even if
   // it's already resolved, we are guaranteed to suspend once. Since it's unlikely the promise has
   // resolved at this point anyways, it's not a huge deal though.
-  promise.then(resp => {
+  promise.then((resp) => {
     response = resp;
-  }, err => {
+  }, (err) => {
     error = err;
   });
 
@@ -41,6 +41,6 @@ export default promise => {
         // Throwing a promise is how to tell React to suspend rendering until it is resolved.
         throw promise;
       }
-    }
+    },
   };
 };
