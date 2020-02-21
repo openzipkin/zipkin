@@ -16,6 +16,7 @@ import { defineMessages } from 'react-intl';
 export default defineMessages({
   duration: 'Duration',
   filter: 'Filter',
+  // ICU syntax for defining translations for plurals - https://formatjs.io/guides/message-syntax/#plural-format
   numResults: `{num, number} {num, plural,
     one {Result}
     other {Results}
