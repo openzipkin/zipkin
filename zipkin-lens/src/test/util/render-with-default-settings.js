@@ -29,7 +29,7 @@ export default (ui, {
   history = createMemoryHistory({ initialEntries: [route] }),
   locale = 'en',
 } = {}) => {
-  const store = configureStore();
+  const store = configureStore({});
 
   const wrapper = ({ children }) => ( // eslint-disable-line react/prop-types
     <Provider store={store}>

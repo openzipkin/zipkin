@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -30,34 +30,35 @@ import { KeyboardDateTimePicker } from '@material-ui/pickers';
 
 import { setLookbackCondition } from '../../../actions/global-search-action';
 
+const nonCustomLookbackOptions = [
+  [moment.duration(1, 'minutes'), false],
+  [moment.duration(5, 'minutes'), true],
+  [moment.duration(15, 'minutes'), true],
+  [moment.duration(30, 'minutes'), false],
+  [moment.duration(1, 'hours'), true],
+  [moment.duration(2, 'hours'), true],
+  [moment.duration(6, 'hours'), true],
+  [moment.duration(12, 'hours'), true],
+  [moment.duration(1, 'days'), false],
+  [moment.duration(2, 'days'), false],
+  [moment.duration(7, 'days'), false],
+].map(([duration, quick]) => ({
+  value: duration.asMilliseconds(),
+  label: duration.humanize(),
+  quick,
+}));
+
 const lookbackOptions = [
-  { value: '1m', label: '1 Minute' },
-  { value: '5m', label: '5 Minutes' },
-  { value: '15m', label: '15 Minutes' },
-  { value: '30m', label: '30 Minutes' },
-  { value: '1h', label: '1 Hour' },
-  { value: '2h', label: '2 Hours' },
-  { value: '6h', label: '6 Hours' },
-  { value: '12h', label: '12 Hours' },
-  { value: '1d', label: '1 Day' },
-  { value: '2d', label: '2 Days' },
-  { value: '7d', label: '7 Days' },
+  ...nonCustomLookbackOptions,
   { value: 'custom', label: 'Custom' },
 ];
 
-// Create a map like { '1m': '1 Minute', '5m': '5 Minutes', ... }
-const lookbackOptionMap = lookbackOptions.reduce((acc, cur) => {
-  acc[cur.value] = cur.label;
-  return acc;
-}, {});
-
-const lookbackMenuOptions = ['5m', '15m', '1h', '2h', '6h', '12h'].map(value => ({
-  value,
-  label: lookbackOptionMap[value],
-})).concat([{
-  value: 'more',
-  label: 'More...',
-}]);
+const lookbackMenuOptions = nonCustomLookbackOptions
+  .filter((option) => option.quick)
+  .concat([{
+    value: 'more',
+    label: 'More...',
+  }]);
 
 const useStyles = makeStyles(theme => ({
   lookbackButton: {
@@ -85,7 +86,6 @@ const useStyles = makeStyles(theme => ({
 
 const LookbackCondition = () => {
   const classes = useStyles();
-
   const dispatch = useDispatch();
 
   const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
@@ -140,7 +140,7 @@ const LookbackCondition = () => {
     const endTimeStr = moment(lookbackCondition.endTs).format('MMM Do YY, hh:mm');
     lookbackButtonText = `${startTimeStr} - ${endTimeStr}`;
   } else {
-    lookbackButtonText = lookbackOptionMap[lookbackCondition.value];
+    lookbackButtonText = moment.duration(lookbackCondition.value).humanize();
   }
 
   const renderMenuItems = (lookbackOption) => {

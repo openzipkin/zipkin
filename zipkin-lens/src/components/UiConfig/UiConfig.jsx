@@ -11,14 +11,23 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { createStore, applyMiddleware } from 'redux';
-import thunk from 'redux-thunk';
+import React from 'react';
 
-import createReducer from '../reducers';
+import { UI_CONFIG } from '../../constants/api';
+import fetchResource from '../../util/fetch-resource';
 
-export default function configureStore(config) {
-  return createStore(
-    createReducer(config),
-    applyMiddleware(thunk),
+const ConfigContext = React.createContext();
+
+const configResource = fetchResource(fetch(UI_CONFIG).then(response => response.json()));
+
+export const UiConfig = ({ children }) => {
+  const response = configResource.read();
+  return (
+    <ConfigContext.Provider value={response}>
+      {children}
+    </ConfigContext.Provider>
   );
-}
+};
+
+export const UiConfigContext = ConfigContext;
+export const UiConfigConsumer = ConfigContext.Consumer;

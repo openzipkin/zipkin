@@ -188,11 +188,13 @@ const DiscoverPageImpl = ({
     } = extractConditionsFromQueryParameters(queryParams);
 
     setConditions(conditionsFromUrl);
-    setLookbackCondition({
-      value: lookbackConditionFromUrl.value || '15m',
-      endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
-      startTs: lookbackConditionFromUrl.startTs || moment().subtract(15, 'minutes').valueOf(),
-    });
+    if (lookbackConditionFromUrl.value) {
+      setLookbackCondition({
+        value: lookbackConditionFromUrl.value,
+        endTs: lookbackConditionFromUrl.endTs || moment().valueOf(),
+        startTs: lookbackConditionFromUrl.startTs || moment().subtract(15, 'minutes').valueOf(),
+      });
+    }
     setLimitCondition(limitConditionFromUrl || 10);
 
     // Next, fetch data which will be shown as conditions in GlobalSearch.

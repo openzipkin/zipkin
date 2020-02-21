@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,19 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-export const lookbackDurations = {
-  '1m': 60000,
-  '5m': 300000,
-  '15m': 900000,
-  '30m': 1800000,
-  '1h': 3600000,
-  '2h': 7200000,
-  '6h': 21600000,
-  '12h': 43200000,
-  '1d': 86400000,
-  '2d': 172800000,
-  '7d': 604800000,
-};
 
 export const buildCommonQueryParameters = (
   conditions,
@@ -110,10 +97,10 @@ export const buildTracesApiQueryParameters = (
     conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
   } else if (currentTs) {
     conditionMap.endTs = currentTs;
-    conditionMap.lookback = lookbackDurations[lookbackCondition.value];
+    conditionMap.lookback = lookbackCondition.value;
   } else {
     conditionMap.endTs = lookbackCondition.endTs;
-    conditionMap.lookback = lookbackDurations[lookbackCondition.value];
+    conditionMap.lookback = lookbackCondition.value;
   }
 
   return conditionMap;
@@ -129,10 +116,10 @@ export const buildDependenciesApiQueryParameters = (
     conditionMap.lookback = lookbackCondition.endTs - lookbackCondition.startTs;
   } else if (currentTs) {
     conditionMap.endTs = currentTs;
-    conditionMap.lookback = lookbackDurations[lookbackCondition.value];
+    conditionMap.lookback = lookbackCondition.value;
   } else {
     conditionMap.endTs = lookbackCondition.endTs;
-    conditionMap.lookback = lookbackDurations[lookbackCondition.value];
+    conditionMap.lookback = lookbackCondition.value;
   }
   return conditionMap;
 };
@@ -181,29 +168,13 @@ export const extractConditionsFromQueryParameters = (queryParameters) => {
         limitCondition = parseInt(conditionValue, 10);
         break;
       case 'lookback':
-        switch (conditionValue) {
-          case '1m':
-          case '5m':
-          case '15m':
-          case '30m':
-          case '1h':
-          case '2h':
-          case '6h':
-          case '12h':
-          case '1d':
-          case '2d':
-          case '7d': {
-            lookbackCondition.value = conditionValue;
-            lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
-            break;
-          }
-          case 'custom':
-            lookbackCondition.value = conditionValue;
-            lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
-            lookbackCondition.startTs = parseInt(queryParameters.startTs, 10);
-            break;
-          default:
-            break;
+        if (conditionValue === 'custom') {
+          lookbackCondition.value = 'custom';
+          lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
+          lookbackCondition.startTs = parseInt(queryParameters.startTs, 10);
+        } else {
+          lookbackCondition.value = parseInt(conditionValue, 10);
+          lookbackCondition.endTs = parseInt(queryParameters.endTs, 10);
         }
         break;
       default:
