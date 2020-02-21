@@ -12,13 +12,12 @@
  * the License.
  */
 import React from 'react';
-import { shallow } from 'enzyme';
+
+import render from '../../../test/util/render-with-default-settings';
 
 import { TracesTab } from './TracesTab';
 
 describe('<TracesTab />', () => {
-  let wrapper;
-
   const props = {
     traceSummaries: [
       {
@@ -43,13 +42,8 @@ describe('<TracesTab />', () => {
     classes: {},
   };
 
-  beforeEach(() => {
-    wrapper = shallow(
-      <TracesTab {...props} />,
-    );
-  });
-
   it('should render the number of results', () => {
-    expect(wrapper.find('[data-test="count-results"]').text()).toBe('2 Results');
+    const { getByText } = render(<TracesTab {...props} />);
+    expect(getByText('2 Results')).toBeInTheDocument();
   });
 });
