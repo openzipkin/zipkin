@@ -177,7 +177,7 @@ public class ZipkinPrometheusMetricsConfiguration {
 
   // from io.micrometer.spring.web.servlet.WebMvcTags
   static String getPathInfo(RequestLog requestLog) {
-    String uri = requestLog.requestHeaders().path();
+    String uri = requestLog.context().path();
     if (!StringUtils.hasText(uri)) return "/";
     return uri.replaceAll("//+", "/")
       .replaceAll("/$", "");
