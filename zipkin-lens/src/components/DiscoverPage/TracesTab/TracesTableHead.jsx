@@ -90,7 +90,7 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
         xs={3}
         className={`${classes.cell} ${classes.clickable}`}
         onClick={handleStartTimeClick}
-        data-test="start-time"
+        data-testid="start-time"
       >
         <FormattedMessage {...messages.startTime} />
         &nbsp;
@@ -102,7 +102,7 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
         xs={3}
         className={`${classes.cell} ${classes.clickable}`}
         onClick={handleDurationClick}
-        data-test="duration"
+        data-testid="duration"
       >
         <FormattedMessage {...messages.duration} />
         &nbsp;

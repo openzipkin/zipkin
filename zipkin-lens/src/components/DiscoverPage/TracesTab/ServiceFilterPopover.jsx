@@ -104,8 +104,9 @@ const ServiceFilterPopover = ({
       onClose={onClose}
       anchorOrigin={anchorOrigin}
       classes={{ paper: classes.paper }}
+      data-testid="service-filter-popover"
     >
-      <Box className={classes.label} data-test="label">
+      <Box className={classes.label} data-testid="label">
         <Typography variant="h5">
           <FormattedMessage {...messages.filter} />
         </Typography>
@@ -116,13 +117,13 @@ const ServiceFilterPopover = ({
           label={intl.formatMessage(messages.serviceName)}
           className={classes.textField}
           onChange={handleTextChange}
-          data-test="text-field"
+          data-testid="text-field"
         />
       </Box>
       {
         filters.length > 0
           ? (
-            <Box className={classes.filters} data-test="filters">
+            <Box className={classes.filters} data-testid="filters">
               {
                 filters.map(filter => (
                   <Box className={classes.badgeWrapper} key={filter}>

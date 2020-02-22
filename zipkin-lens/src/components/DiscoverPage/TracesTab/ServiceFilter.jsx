@@ -42,11 +42,11 @@ const ServiceFilter = ({ filters, ...props }) => {
         color="secondary"
         badgeContent={`+${filters.length - 1}`}
         invisible={filters.length <= 1}
-        data-test="badge"
+        data-testid="badge"
       >
-        <Button onClick={handleButtonClick} data-test="button">
+        <Button onClick={handleButtonClick} data-testid="button">
           <FontAwesomeIcon icon={faFilter} />
-          <Box ml={0.2} data-test="button-text">
+          <Box ml={0.2} data-testid="button-text">
             {`${filters.length === 0 ? intl.formatMessage(messages.filter) : filters[0]}`}
           </Box>
         </Button>
