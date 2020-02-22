@@ -13,8 +13,30 @@
  */
 const { API_BASE } = process.env;
 
-export const ZIPKIN_API = `${API_BASE || ''}/zipkin/api/v2`;
-export const UI_CONFIG = `${API_BASE || ''}/zipkin/config.json`;
+const inferBasePath = () => {
+  const { pathname } = window.location;
+  // Infer the path that zipkin is mounted on based on the current path.
+  if (pathname.endsWith('/dependency')) {
+    return pathname.substring(0, pathname.length - '/dependency'.length);
+  }
+  if (pathname.endsWith('/traceViewer')) {
+    return pathname.substring(0, pathname.length - '/traceViewer'.length);
+  }
+  const tracesIndex = pathname.lastIndexOf('/traces/');
+  if (tracesIndex !== -1) {
+    return pathname.substring(0, tracesIndex);
+  }
+
+  // Zipkin server always redirects from /zipkin to /zipkin/ but handle the non-redirected path too
+  // just in case.
+  return pathname.endsWith('/') ? pathname.substring(0, pathname.length - 1) : pathname;
+};
+
+export const BASE_PATH = inferBasePath();
+export const ZIPKIN_BASE = `${API_BASE || ''}${BASE_PATH}`;
+
+export const ZIPKIN_API = `${ZIPKIN_BASE}/api/v2`;
+export const UI_CONFIG = `${ZIPKIN_BASE}/config.json`;
 export const SERVICES = `${ZIPKIN_API}/services`;
 export const REMOTE_SERVICES = `${ZIPKIN_API}/remoteServices`;
 export const SPANS = `${ZIPKIN_API}/spans`;

@@ -20,6 +20,8 @@ import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
 import { IntlProvider } from 'react-intl';
 
+import { BASE_PATH } from '../../constants/api';
+
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
 import DependenciesPage from '../DependenciesPage';
@@ -40,6 +42,7 @@ const messages = translations[locale] || translations[DEFAULT_LOCALE];
 
 const App = () => {
   useDocumentTitle('Zipkin');
+
   return (
     <Suspense fallback={<CircularProgress />}>
       <UiConfig>
@@ -53,21 +56,25 @@ const App = () => {
                     messages={messages}
                     defaultLocale={DEFAULT_LOCALE}
                   >
-                    <BrowserRouter>
+                    {
+                      // NOTE: When adding a new route, also update constants/api.js to infer the base path
+                      // based on it.
+                    }
+                    <BrowserRouter basename={BASE_PATH}>
                       <Layout>
                         <Route
                           exact
-                          path="/zipkin"
+                          path="/"
                           component={DiscoverPage}
                         />
                         <Route
                           exact
-                          path="/zipkin/dependency"
+                          path="/dependency"
                           component={DependenciesPage}
                         />
                         <Route
                           exact
-                          path={['/zipkin/traces/:traceId', '/zipkin/traceViewer']}
+                          path={['/traces/:traceId', '/traceViewer']}
                           component={TracePage}
                         />
                       </Layout>
