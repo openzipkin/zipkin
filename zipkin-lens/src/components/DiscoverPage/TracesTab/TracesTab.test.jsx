@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,13 +12,18 @@
  * the License.
  */
 import React from 'react';
-import { shallow } from 'enzyme';
+
+import render from '../../../test/util/render-with-default-settings';
 
 import { TracesTab } from './TracesTab';
 
-describe('<TracesTab />', () => {
-  let wrapper;
+jest.mock("./TracesTable", () => () => (<div>TracesTable</div>));
 
+afterAll(() => {
+  jest.restoreAllMocks();
+});
+
+describe('<TracesTab />', () => {
   const props = {
     traceSummaries: [
       {
@@ -43,13 +48,8 @@ describe('<TracesTab />', () => {
     classes: {},
   };
 
-  beforeEach(() => {
-    wrapper = shallow(
-      <TracesTab {...props} />,
-    );
-  });
-
   it('should render the number of results', () => {
-    expect(wrapper.find('[data-test="count-results"]').text()).toBe('2 Results');
+    const { getByText } = render(<TracesTab {...props} />);
+    expect(getByText('2 Results')).toBeInTheDocument();
   });
 });

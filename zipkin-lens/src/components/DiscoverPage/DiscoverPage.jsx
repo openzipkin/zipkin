@@ -24,6 +24,7 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/styles';
+import { FormattedMessage } from 'react-intl';
 
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
@@ -43,7 +44,10 @@ import * as spansActionCreators from '../../actions/spans-action';
 import * as autocompleteKeysActionCreators from '../../actions/autocomplete-keys-action';
 import * as globalSearchActionCreators from '../../actions/global-search-action';
 import { globalSearchLookbackConditionPropTypes, globalSearchConditionsPropTypes } from '../../prop-types';
+
 import ExplainBox from './ExplainBox';
+
+import messages from './messages';
 
 const useStyles = makeStyles(theme => ({
   header: {
@@ -251,7 +255,7 @@ const DiscoverPageImpl = ({
       <Box className={classes.header}>
         <Box className={classes.titleRow}>
           <Typography variant="h5">
-            Discover
+            <FormattedMessage {...messages.discover} />
           </Typography>
           <Box className={classes.upperRightBox}>
             <TraceJsonUploader />

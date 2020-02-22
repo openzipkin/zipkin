@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
+import { FormattedMessage, useIntl } from 'react-intl';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Popover from '@material-ui/core/Popover';
@@ -24,6 +25,8 @@ import Typography from '@material-ui/core/Typography';
 import grey from '@material-ui/core/colors/grey';
 
 import ServiceBadge from '../../Common/ServiceBadge';
+
+import messages from './messages';
 
 const propTypes = {
   open: PropTypes.bool.isRequired,
@@ -81,6 +84,7 @@ const ServiceFilterPopover = ({
   onDeleteFilter,
 }) => {
   const classes = useStyles();
+  const intl = useIntl();
 
   const [filterText, setFilterText] = useState('');
 
@@ -100,25 +104,26 @@ const ServiceFilterPopover = ({
       onClose={onClose}
       anchorOrigin={anchorOrigin}
       classes={{ paper: classes.paper }}
+      data-testid="service-filter-popover"
     >
-      <Box className={classes.label} data-test="label">
+      <Box className={classes.label} data-testid="label">
         <Typography variant="h5">
-          Filter
+          <FormattedMessage {...messages.filter} />
         </Typography>
       </Box>
       <Box display="flex" justifyContent="center">
         <TextField
           value={filterText}
-          label="Service Name"
+          label={intl.formatMessage(messages.serviceName)}
           className={classes.textField}
           onChange={handleTextChange}
-          data-test="text-field"
+          data-testid="text-field"
         />
       </Box>
       {
         filters.length > 0
           ? (
-            <Box className={classes.filters} data-test="filters">
+            <Box className={classes.filters} data-testid="filters">
               {
                 filters.map(filter => (
                   <Box className={classes.badgeWrapper} key={filter}>

@@ -14,7 +14,15 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
-  discover: 'Discover',
-  searchTracesHeader: 'Search Traces',
-  searchTracesDescription: 'Please select criteria in the search bar. Then, click the search button.',
+  duration: 'Duration',
+  filter: 'Filter',
+  // ICU syntax for defining translations for plurals - https://formatjs.io/guides/message-syntax/#plural-format
+  numResults: `{num, number} {num, plural,
+    one {Result}
+    other {Results}
+  }`,
+  root: 'Root',
+  traceId: 'Trace ID',
+  serviceName: 'Service Name',
+  startTime: 'Start Time',
 });
