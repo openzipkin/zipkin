@@ -559,7 +559,7 @@
             <jsx>SLASHSTAR_STYLE</jsx>
             <bnd>SCRIPT_STYLE</bnd>
             <ejs>XML_STYLE</ejs>
-            <scss>DOUBLESLASH_STYLE</scss>
+            <css>SLASHSTAR_STYLE</css>
           </mapping>
           <excludes>
             <exclude>**/simplelogger.properties</exclude>

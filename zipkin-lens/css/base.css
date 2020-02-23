@@ -11,14 +11,22 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import ReactDOM from 'react-dom';
 
-import App from './components/App';
+html {
+  /* Include padding and border in the element's total width and height: */
+  box-sizing: border-box;
+  font-size: 14px;
+}
 
-import '../css/main.css';
+body {
+  font-family: 'Roboto', Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #686868;
+  background-color: #ffffff;
+  margin: 0;
+}
 
-ReactDOM.render(
-  <App />,
-  document.getElementById('app'),
-);
+[role="button"] {
+  cursor: pointer;
+}
