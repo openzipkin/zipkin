@@ -13,8 +13,7 @@
  */
 const { API_BASE } = process.env;
 
-// Exported for testing.
-export const inferBasePath = () => {
+const inferBasePath = () => {
   const { pathname } = window.location;
   // Infer the path that zipkin is mounted on based on the current path.
   if (pathname.endsWith('/dependency')) {
