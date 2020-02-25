@@ -11,14 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import ReactDOM from 'react-dom';
 
-import App from './components/App';
+@import '~rc-slider/assets/index.css';
+@import '~react-table/react-table.css';
+@import '~vizceral-react/dist/vizceral.css';
 
-import '../css/main.css';
-
-ReactDOM.render(
-  <App />,
-  document.getElementById('app'),
-);
+@import 'base.css';
