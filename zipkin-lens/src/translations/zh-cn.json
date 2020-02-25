@@ -13,7 +13,9 @@
   "src.components.GlobalSearch.limit": "数量",
   "src.components.GlobalSearch.pleaseSelectCriteria": "",
   "src.components.TracePage.depth": "深度",
+  "src.components.TracePage.downloadJson": "",
   "src.components.TracePage.duration": "持续时间",
   "src.components.TracePage.services": "服务",
-  "src.components.TracePage.totalSpans": "Span总数"
+  "src.components.TracePage.totalSpans": "Span总数",
+  "src.components.TracePage.viewLogs": ""
 }

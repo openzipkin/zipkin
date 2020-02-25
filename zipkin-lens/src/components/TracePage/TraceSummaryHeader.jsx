@@ -13,13 +13,16 @@
  */
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
-import { faDownload } from '@fortawesome/free-solid-svg-icons';
+import { faDownload, faFileAlt } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
+import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
-import { useIntl } from 'react-intl';
+import { FormattedMessage, useIntl } from 'react-intl';
+
+import { useUiConfig } from '../UiConfig';
 
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
@@ -65,8 +68,6 @@ const useStyles = makeStyles(theme => ({
     paddingRight: theme.spacing(4),
   },
   lowerBox: {
-    display: 'flex',
-    justifyContent: 'space-between',
     marginTop: theme.spacing(0.5),
     marginBottom: theme.spacing(0.5),
   },
@@ -86,11 +87,11 @@ const useStyles = makeStyles(theme => ({
     fontWeight: 'bold',
     marginLeft: theme.spacing(0.8),
   },
-  saveButton: {
+  actionButton: {
     fontSize: '0.5rem',
     lineHeight: 0.8,
   },
-  saveButtonIcon: {
+  actionButtonIcon: {
     marginRight: theme.spacing(1),
   },
 }));
@@ -98,6 +99,11 @@ const useStyles = makeStyles(theme => ({
 const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const classes = useStyles();
   const intl = useIntl();
+  const config = useUiConfig();
+
+  const logsUrl = (config.logsUrl && traceSummary)
+    ? config.logsUrl.replace('{traceId}', traceSummary.traceId)
+    : undefined;
 
   const handleSaveButtonClick = useCallback(() => {
     if (!traceSummary || !traceSummary.traceId) {
@@ -167,13 +173,27 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
           <TraceIdSearchInput />
         </Box>
       </Box>
-      <Box className={classes.lowerBox}>
-        {traceInfo}
-        <Button variant="outlined" className={classes.saveButton} onClick={handleSaveButtonClick}>
-          <FontAwesomeIcon icon={faDownload} className={classes.saveButtonIcon} />
-          Download JSON
-        </Button>
-      </Box>
+      <Grid container className={classes.lowerBox} justify="space-between">
+        <Grid item xs={8}>
+          {traceInfo}
+        </Grid>
+        <Grid container item xs={4} justify="flex-end" spacing={1}>
+          <Grid item>
+            <Button variant="outlined" className={classes.actionButton} onClick={handleSaveButtonClick}>
+              <FontAwesomeIcon icon={faDownload} className={classes.actionButtonIcon} />
+              <FormattedMessage {...messages.downloadJson} />
+            </Button>
+          </Grid>
+          {logsUrl && (
+            <Grid item>
+              <Button variant="outlined" className={classes.actionButton} href={logsUrl} target="_blank" rel="noopener" data-testid="view-logs-link">
+                <FontAwesomeIcon icon={faFileAlt} className={classes.actionButtonIcon} />
+                <FormattedMessage {...messages.viewLogs} />
+              </Button>
+            </Grid>
+          )}
+        </Grid>
+      </Grid>
     </Box>
   );
 });

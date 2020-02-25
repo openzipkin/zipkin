@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
+import React, { useContext } from 'react';
 
 import { UI_CONFIG } from '../../constants/api';
 import fetchResource from '../../util/fetch-resource';
@@ -31,3 +31,5 @@ export const UiConfig = ({ children }) => {
 
 export const UiConfigContext = ConfigContext;
 export const UiConfigConsumer = ConfigContext.Consumer;
+
+export const useUiConfig = () => useContext(UiConfigContext);

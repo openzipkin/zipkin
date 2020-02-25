@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,16 +12,20 @@
  * the License.
  */
 import React from 'react';
-import { shallow } from 'enzyme';
-import CircularProgress from '@material-ui/core/CircularProgress';
+
+import render from '../../test/util/render-with-default-settings';
 
 import { TracePageImpl } from './TracePage';
 import TraceSummary from './TraceSummary';
-import MessageBar from './MessageBar';
+
+jest.mock("./TraceSummary", () => () => (<div data-testid="trace-summary">TraceSummary</div>));
+afterAll(() => {
+  jest.restoreAllMocks();
+});
 
 describe('<TracePage />', () => {
   it('should render an error message when the page is traceViewer and malformed file is loaded', () => {
-    const wrapper = shallow(
+    const { getByText } = render(
       <TracePageImpl
         isTraceViewerPage
         isMalformedFile
@@ -29,50 +33,45 @@ describe('<TracePage />', () => {
         errorMessage="This is an error message"
       />,
     );
-    expect(wrapper.find(MessageBar).first().prop('message')).toBe(
-      'This is an error message',
-    );
+
+    expect(getByText('This is an error message')).toBeInTheDocument();
   });
 
   it('should render a loading indicator when the page is trace page and is loading trace', () => {
-    const wrapper = shallow(
+    const { getByTestId } = render(
       <TracePageImpl
         isTraceViewerPage={false}
         isLoading
         loadTrace={jest.fn()}
       />,
     );
-    expect(wrapper.find(CircularProgress).first().length).toBe(1);
+    expect(getByTestId('progress-indicator')).toBeInTheDocument();
   });
 
   it('should render an info message when the page is traceViewer and the trace has not loaded yet', () => {
-    const wrapper = shallow(
+    const { getByText } = render(
       <TracePageImpl
         isTraceViewerPage
         isMalformedFile={false}
         loadTrace={jest.fn()}
       />,
     );
-    expect(wrapper.find(MessageBar).first().prop('message')).toBe(
-      'You need to upload JSON...',
-    );
+    expect(getByText('You need to upload JSON...')).toBeInTheDocument();
   });
 
   it('should render an error message when the page is trace page and the trace is null', () => {
-    const wrapper = shallow(
+    const { getByText } = render(
       <TracePageImpl
         isTraceViewerPage={false}
         isLoading={false}
         loadTrace={jest.fn()}
       />,
     );
-    expect(wrapper.find(MessageBar).first().prop('message')).toBe(
-      'Trace not found',
-    );
+    expect(getByText('Trace not found')).toBeInTheDocument();
   });
 
   it('should render TraceSummary when the page is traceViewer and the trace has been loaded', () => {
-    const wrapper = shallow(
+    const { getByTestId } = render(
       <TracePageImpl
         isTraceViewerPage
         isMalformedFile={false}
@@ -90,11 +89,11 @@ describe('<TracePage />', () => {
         }}
       />,
     );
-    expect(wrapper.find(TraceSummary).first().length).toBe(1);
+    expect(getByTestId('trace-summary')).toBeInTheDocument();
   });
 
   it('should render TraceSummary when the page is trace page and the trace has been loaded', () => {
-    const wrapper = shallow(
+    const { getByTestId } = render(
       <TracePageImpl
         isTraceViewerPage={false}
         isLoading={false}
@@ -112,6 +111,6 @@ describe('<TracePage />', () => {
         }}
       />,
     );
-    expect(wrapper.find(TraceSummary).first().length).toBe(1);
+    expect(getByTestId('trace-summary')).toBeInTheDocument();
   });
 });

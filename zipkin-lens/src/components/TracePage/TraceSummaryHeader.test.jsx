@@ -1,0 +1,61 @@
+/*
+ * Copyright 2015-2020 The OpenZipkin Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ */
+
+import React from 'react';
+
+import render from '../../test/util/render-with-default-settings';
+
+import TraceSummaryHeader from './TraceSummaryHeader';
+
+describe('<TraceSummaryHeader />', () => {
+  it('does not render View Logs link with default config', () => {
+    const { queryByTestId } = render(
+      <TraceSummaryHeader
+        traceSummary={{
+          traceId: '1',
+          spans: [],
+          serviceNameAndSpanCounts: [],
+          duration: 1,
+          durationStr: '1μs',
+          rootSpan: {
+            serviceName: 'service-A',
+            spanName: 'span-A',
+          }}}
+      />);
+    expect(queryByTestId('view-logs-link')).not.toBeInTheDocument();
+  });
+
+  it('does render View Logs link when logs URL in config', () => {
+    const { queryByTestId } = render(
+      <TraceSummaryHeader
+        traceSummary={{
+          traceId: '1',
+          spans: [],
+          serviceNameAndSpanCounts: [],
+          duration: 1,
+          durationStr: '1μs',
+          rootSpan: {
+            serviceName: 'service-A',
+            spanName: 'span-A',
+          }}}
+      />,
+      { uiConfig: { logsUrl: 'http://zipkin.io/logs={traceId}' }});
+    const logsLink = queryByTestId('view-logs-link');
+    expect(logsLink).toBeInTheDocument();
+    expect(logsLink.href).toEqual('http://zipkin.io/logs=1');
+    // Make sure the link opens in a new tab
+    expect(logsLink.target).toEqual('_blank');
+    expect(logsLink.rel).toEqual('noopener');
+  });
+});

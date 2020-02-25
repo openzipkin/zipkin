@@ -15,29 +15,21 @@ package zipkin2.server.internal.ui;
 
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.linecorp.armeria.common.HttpData;
-import com.linecorp.armeria.common.HttpHeaderNames;
-import com.linecorp.armeria.common.HttpRequest;
-import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.common.HttpStatus;
 import com.linecorp.armeria.common.MediaType;
 import com.linecorp.armeria.common.ServerCacheControl;
 import com.linecorp.armeria.common.ServerCacheControlBuilder;
-import com.linecorp.armeria.server.AbstractHttpService;
 import com.linecorp.armeria.server.HttpService;
 import com.linecorp.armeria.server.RedirectService;
-import com.linecorp.armeria.server.ServiceRequestContext;
 import com.linecorp.armeria.server.file.HttpFileBuilder;
 import com.linecorp.armeria.server.file.HttpFileServiceBuilder;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.config.MeterFilter;
-import io.netty.handler.codec.http.cookie.Cookie;
-import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.springframework.beans.factory.BeanCreationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -129,7 +121,6 @@ public class ZipkinUiConfiguration {
     };
   }
 
-  // TODO: This is not read by lens https://github.com/openzipkin/zipkin/issues/2969
   //
   // environment: '',
   // queryLimit: 10,
@@ -148,6 +139,7 @@ public class ZipkinUiConfiguration {
       generator.writeNumberField("queryLimit", ui.getQueryLimit());
       generator.writeNumberField("defaultLookback", ui.getDefaultLookback());
       generator.writeBooleanField("searchEnabled", ui.isSearchEnabled());
+      generator.writeStringField("logsUrl", ui.getLogsUrl());
       generator.writeObjectFieldStart("dependency");
       generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
       generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());

@@ -21,6 +21,8 @@ import MomentUtils from '@date-io/moment';
 import { render } from '@testing-library/react';
 import { IntlProvider } from 'react-intl';
 
+import { UiConfigContext } from '../../components/UiConfig';
+
 import { theme } from '../../colors';
 import configureStore from '../../store/configure-store';
 
@@ -28,6 +30,7 @@ export default (ui, {
   route = '/',
   history = createMemoryHistory({ initialEntries: [route] }),
   locale = 'en',
+  uiConfig = {},
 } = {}) => {
   const store = configureStore({});
 
@@ -37,7 +40,9 @@ export default (ui, {
         <Router history={history}>
           <MuiPickersUtilsProvider utils={MomentUtils}>
             <ThemeProvider theme={theme}>
-              {children}
+              <UiConfigContext.Provider value={uiConfig}>
+                {children}
+              </UiConfigContext.Provider>
             </ThemeProvider>
           </MuiPickersUtilsProvider>
         </Router>
