@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,7 +33,6 @@ import com.linecorp.armeria.common.util.Exceptions;
 import com.linecorp.armeria.common.util.SafeCloseable;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufHolder;
-import io.netty.util.AttributeKey;
 import io.netty.util.ReferenceCountUtil;
 import io.netty.util.concurrent.EventExecutor;
 import java.io.FileNotFoundException;
@@ -50,7 +49,6 @@ import static zipkin2.elasticsearch.internal.JsonSerializers.JSON_FACTORY;
 import static zipkin2.elasticsearch.internal.JsonSerializers.OBJECT_MAPPER;
 
 public final class HttpCall<V> extends Call.Base<V> {
-  public static final AttributeKey<String> NAME = AttributeKey.valueOf("name");
 
   public interface BodyConverter<V> {
     /**
@@ -212,7 +210,8 @@ public final class HttpCall<V> extends Call.Base<V> {
 
   CompletableFuture<AggregatedHttpResponse> sendRequest() {
     final HttpResponse response;
-    try (SafeCloseable ignored = Clients.withContextCustomizer(ctx -> ctx.attr(NAME).set(name))) {
+    try (SafeCloseable ignored =
+           Clients.withContextCustomizer(ctx -> ctx.logBuilder().name(name))) {
       HttpRequestWriter httpRequest = HttpRequest.streaming(request.headers());
       response = httpClient.execute(httpRequest);
       request.writeBody(httpRequest::tryWrite);

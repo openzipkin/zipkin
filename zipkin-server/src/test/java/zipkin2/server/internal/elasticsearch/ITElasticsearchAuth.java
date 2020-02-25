@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -43,10 +43,11 @@ class ITElasticsearchAuth {
 
       final KeyManagerFactory keyManagerFactory = SslUtil.getKeyManagerFactory(ssl);
       final TrustManagerFactory trustManagerFactory = SslUtil.getTrustManagerFactory(ssl);
-      sb.tls(keyManagerFactory, sslContextBuilder -> {
-        sslContextBuilder.keyManager(keyManagerFactory);
-        sslContextBuilder.trustManager(trustManagerFactory);
-      });
+      sb.tls(keyManagerFactory)
+        .tlsCustomizer(sslContextBuilder -> {
+          sslContextBuilder.keyManager(keyManagerFactory);
+          sslContextBuilder.trustManager(trustManagerFactory);
+        });
     }
   };
 

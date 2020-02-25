@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -22,6 +22,8 @@ import com.linecorp.armeria.client.ClientOptionsBuilder;
 import com.linecorp.armeria.client.brave.BraveClient;
 import com.linecorp.armeria.client.endpoint.EndpointGroup;
 import com.linecorp.armeria.common.SessionProtocol;
+import com.linecorp.armeria.common.logging.RequestLog;
+import com.linecorp.armeria.common.logging.RequestLogProperty;
 import io.micrometer.core.instrument.MeterRegistry;
 import java.util.List;
 import java.util.Optional;
@@ -41,7 +43,6 @@ import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.type.AnnotatedTypeMetadata;
 import zipkin2.elasticsearch.ElasticsearchStorage;
-import zipkin2.elasticsearch.internal.client.HttpCall;
 import zipkin2.server.internal.ConditionalOnSelfTracing;
 import zipkin2.storage.StorageComponent;
 
@@ -74,7 +75,7 @@ public class ZipkinElasticsearchStorageConfiguration {
   @Bean @Qualifier(QUALIFIER) @ConditionalOnMissingBean ClientFactory esClientFactory(
     ZipkinElasticsearchStorageProperties es,
     MeterRegistry meterRegistry) throws Exception {
-    ClientFactoryBuilder builder = new ClientFactoryBuilder();
+    ClientFactoryBuilder builder = ClientFactory.builder();
 
     // Allow use of a custom KeyStore or TrustStore when connecting to Elasticsearch
     Ssl ssl = es.getSsl();
@@ -150,9 +151,14 @@ public class ZipkinElasticsearchStorageConfiguration {
 
     return client -> {
       client.decorator((delegate, ctx, req) -> {
-        String name = ctx.attr(HttpCall.NAME).get();
-        if (name != null) { // override the span name if set
-          spanCustomizer.name(name);
+        // We only need the name if it's available and can unsafely access the partially filled log.
+        RequestLog log = ctx.log().partial();
+        if (log.isAvailable(RequestLogProperty.NAME)) {
+          String name = log.name();
+          if (name != null) {
+            // override the span name if set
+            spanCustomizer.name(name);
+          }
         }
         return delegate.execute(ctx, req);
       });
@@ -175,7 +181,7 @@ public class ZipkinElasticsearchStorageConfiguration {
     final KeyManagerFactory keyManagerFactory = SslUtil.getKeyManagerFactory(ssl);
     final TrustManagerFactory trustManagerFactory = SslUtil.getTrustManagerFactory(ssl);
 
-    return builder.sslContextCustomizer(sslContextBuilder -> {
+    return builder.tlsCustomizer(sslContextBuilder -> {
       sslContextBuilder.keyManager(keyManagerFactory);
       sslContextBuilder.trustManager(trustManagerFactory);
     });

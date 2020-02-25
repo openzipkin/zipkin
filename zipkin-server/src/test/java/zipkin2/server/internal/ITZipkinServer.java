@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -246,7 +246,7 @@ public class ITZipkinServer {
   }
 
   public static String url(Server server, String path) {
-    return "http://localhost:" + server.activePort().get().localAddress().getPort() + path;
+    return "http://localhost:" + server.activeLocalPort() + path;
   }
 
   public static String stringFromClasspath(Class<?> thisClass, String path) throws IOException {

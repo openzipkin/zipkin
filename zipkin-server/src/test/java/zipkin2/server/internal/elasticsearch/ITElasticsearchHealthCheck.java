@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,13 +13,13 @@
  */
 package zipkin2.server.internal.elasticsearch;
 
-import com.linecorp.armeria.common.ClosedSessionException;
 import com.linecorp.armeria.common.HttpResponse;
 import com.linecorp.armeria.server.ServerBuilder;
 import com.linecorp.armeria.server.healthcheck.HealthCheckService;
 import com.linecorp.armeria.server.healthcheck.SettableHealthChecker;
 import com.linecorp.armeria.testing.junit4.server.ServerRule;
 import java.util.concurrent.TimeUnit;
+import javax.net.ssl.SSLHandshakeException;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -110,7 +110,7 @@ public class ITElasticsearchHealthCheck {
       CheckResult result = storage.check();
       assertThat(result.ok()).isFalse();
       // Test this is not wrapped in a rejection exception, as health check is not throttled
-      assertThat(result.error()).isInstanceOf(ClosedSessionException.class);
+      assertThat(result.error()).isInstanceOf(SSLHandshakeException.class);
     }
   }
 

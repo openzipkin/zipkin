@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,8 +14,8 @@
 package zipkin2.server.internal;
 
 import com.linecorp.armeria.common.CommonPools;
-import com.linecorp.armeria.common.grpc.protocol.AbstractUnsafeUnaryGrpcService;
 import com.linecorp.armeria.server.ServiceRequestContext;
+import com.linecorp.armeria.server.grpc.protocol.AbstractUnsafeUnaryGrpcService;
 import com.linecorp.armeria.spring.ArmeriaServerConfigurator;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
