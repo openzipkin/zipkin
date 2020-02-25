@@ -135,14 +135,6 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void canOverrideProperty_basePath() {
-    context = createContextWithOverridenProperty("zipkin.ui.basepath:/foo/bar");
-
-    assertThat(serveIndex().contentUtf8())
-      .contains("<base href=\"/foo/bar/\" />");
-  }
-
-  @Test
   public void lensCookieOverridesIndex() {
     context = createContext();
 
