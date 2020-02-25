@@ -23,3 +23,11 @@ _site/
 
 # Maven Wrapper
 .mvn/wrapper/maven-wrapper.jar
+
+# This project does not use Gradle but some developers may use it to e.g., setup a Node environment.
+# It doesn't hurt to just exclude it here.
+.gradle
+
+# This project does not use Yarn but some developers may use it to e.g., start zipkin-lens dev server.
+# It doesn't hurt to just exclude it here.
+yarn.lock
