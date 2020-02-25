@@ -43,10 +43,6 @@ beforeEach(() => {
   Object.defineProperty(window.navigator, 'language', { value: 'en-US', configurable: true });
 });
 
-afterEach(() => {
-  fetchMock.restore();
-});
-
 afterAll(() => {
   // Restore overrides for good measure.
   Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
