@@ -19,8 +19,6 @@ import org.springframework.util.StringUtils;
 
 @ConfigurationProperties("zipkin.ui")
 class ZipkinUiProperties {
-  // TODO: this isn't honored in lens https://github.com/openzipkin/zipkin/issues/2519
-  static final String DEFAULT_BASEPATH = "/zipkin";
 
   private String environment = "";
   private int queryLimit = 10;
@@ -28,7 +26,6 @@ class ZipkinUiProperties {
   private String instrumented = ".*";
   // TODO: this isn't honored in lens https://github.com/openzipkin/zipkin/issues/2491
   private String logsUrl = null;
-  private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
 
@@ -88,14 +85,6 @@ class ZipkinUiProperties {
 
   public void setDependency(Dependency dependency) {
     this.dependency = dependency;
-  }
-
-  public String getBasepath() {
-    return basepath;
-  }
-
-  public void setBasepath(String basepath) {
-    this.basepath = basepath;
   }
 
   public static class Dependency {

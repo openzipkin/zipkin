@@ -42,7 +42,6 @@ import org.springframework.util.StreamUtils;
 import zipkin2.server.internal.JsonUtil;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static zipkin2.server.internal.ui.ZipkinUiProperties.DEFAULT_BASEPATH;
 
 /**
  * Zipkin-UI is a single-page application mounted at /zipkin. For simplicity, assume paths mentioned
@@ -74,7 +73,7 @@ public class ZipkinUiConfiguration {
 
   @Bean
   HttpService indexService() throws Exception {
-    HttpService lensIndex = maybeIndexService(ui.getBasepath(), lensIndexHtml);
+    HttpService lensIndex = maybeIndexService(lensIndexHtml);
     if (lensIndex != null) return lensIndex;
     throw new BeanCreationException("Could not load Lens UI from " + lensIndexHtml);
   }
@@ -149,8 +148,8 @@ public class ZipkinUiConfiguration {
     return writer.toString();
   }
 
-  static HttpService maybeIndexService(String basePath, Resource resource) throws IOException {
-    String maybeContent = maybeResource(basePath, resource);
+  static HttpService maybeIndexService(Resource resource) throws IOException {
+    String maybeContent = maybeResource(resource);
     if (maybeContent == null) return null;
 
     ServerCacheControl maxAgeMinute = new ServerCacheControlBuilder().maxAgeSeconds(60).build();
@@ -160,17 +159,11 @@ public class ZipkinUiConfiguration {
       .build().asService();
   }
 
-  static String maybeResource(String basePath, Resource resource) throws IOException {
+  static String maybeResource(Resource resource) throws IOException {
     if (!resource.isReadable()) return null;
 
     try (InputStream stream = resource.getInputStream()) {
-      String content = StreamUtils.copyToString(stream, UTF_8);
-      if (DEFAULT_BASEPATH.equals(basePath)) return content;
-
-      String baseTagValue = "/".equals(basePath) ? "/" : basePath + "/";
-      return content.replaceAll(
-        "base href=\"[^\"]+\"", "base href=\"" + baseTagValue + "\""
-      );
+      return StreamUtils.copyToString(stream, UTF_8);
     }
   }
 }
