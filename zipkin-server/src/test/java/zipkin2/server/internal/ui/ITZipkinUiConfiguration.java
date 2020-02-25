@@ -114,6 +114,16 @@ public class ITZipkinUiConfiguration {
       .isEqualTo("gzip");
   }
 
+  /**
+   * The test sets the property {@code zipkin.ui.base-path=/foozipkin}, which should reflect in
+   * index.html
+   */
+  @Test public void replacesBaseTag() throws Exception {
+    assertThat(get("/zipkin/index.html").body().string())
+      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-lens/index.html")
+        .replace("<base href=\"/\" />", "<base href=\"/foozipkin/\" />"));
+  }
+
   /** index.html is served separately. This tests other content is also loaded from the classpath. */
   @Test public void servesOtherContentFromClasspath() throws Exception {
     assertThat(get("/zipkin/test.txt").body().string())
