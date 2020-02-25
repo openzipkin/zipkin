@@ -13,7 +13,8 @@
  */
 const { API_BASE } = process.env;
 
-const inferBasePath = () => {
+// Exported for testing.
+export const inferBasePath = () => {
   const { pathname } = window.location;
   // Infer the path that zipkin is mounted on based on the current path.
   if (pathname.endsWith('/dependency')) {
@@ -28,7 +29,10 @@ const inferBasePath = () => {
   }
 
   // Zipkin server always redirects from /zipkin to /zipkin/ but handle the non-redirected path too
-  // just in case.
+  // just in case. Note that this is only to compute the base path, so we want to make sure we don't
+  // add extra sanitization as react-router will ignore when actually doing routing. For example, we
+  // while it looks weird, we are ok with such URLs as http://weirdserver.com/services////,
+  // http://weirdserver.com/services////dependency where the base path is /services///.
   return pathname.endsWith('/') ? pathname.substring(0, pathname.length - 1) : pathname;
 };
 
