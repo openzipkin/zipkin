@@ -58,6 +58,7 @@ public class ITZipkinUiConfiguration {
       + "  \"queryLimit\" : 10,\n"
       + "  \"defaultLookback\" : 900000,\n"
       + "  \"searchEnabled\" : true,\n"
+      + "  \"logsUrl\" : null,\n"
       + "  \"dependency\" : {\n"
       + "    \"lowErrorRate\" : 0.5,\n"
       + "    \"highErrorRate\" : 0.75\n"
@@ -111,16 +112,6 @@ public class ITZipkinUiConfiguration {
       .isNull(); // too small to compress
     assertThat(getContentEncodingFromRequestThatAcceptsGzip("/zipkin/config.json"))
       .isEqualTo("gzip");
-  }
-
-  /**
-   * The test sets the property {@code zipkin.ui.base-path=/foozipkin}, which should reflect in
-   * index.html
-   */
-  @Test public void replacesBaseTag() throws Exception {
-    assertThat(get("/zipkin/index.html").body().string())
-      .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-lens/index.html")
-        .replace("<base href=\"/\" />", "<base href=\"/foozipkin/\" />"));
   }
 
   /** index.html is served separately. This tests other content is also loaded from the classpath. */
