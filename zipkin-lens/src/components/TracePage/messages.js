@@ -14,8 +14,10 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
+  downloadJson: 'Download JSON',
   duration: 'Duration',
   services: 'Services',
   depth: 'Depth',
   totalSpans: 'Total Spans',
+  viewLogs: 'View Logs',
 });

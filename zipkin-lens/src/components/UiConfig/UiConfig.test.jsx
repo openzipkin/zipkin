@@ -45,29 +45,31 @@ const UiConfig = () => {
   );
 };
 
-test('fetches config and suspends', async () => {
-  const configPromise = new Promise(() => undefined);
-  fetchMock.mock('*', configPromise);
+describe('<UiConfig />', () => {
+  it('fetches config and suspends', async () => {
+    const configPromise = new Promise(() => undefined);
+    fetchMock.once(UI_CONFIG, configPromise, { overwriteRoutes: true });
 
-  const { getByText } = render(<UiConfig />);
-  expect(getByText('Suspended')).toBeInTheDocument();
+    const { getByText } = render(<UiConfig />);
+    expect(getByText('Suspended')).toBeInTheDocument();
 
-  fetchMock.called(UI_CONFIG);
-});
+    fetchMock.called(UI_CONFIG);
+  });
 
-test('provides config when resolved', async () => {
-  const config = { defaultLookback: 100 };
-  fetchMock.once('*', config);
+  it('provides config when resolved', async () => {
+    const config = { defaultLookback: 100 };
+    fetchMock.once(UI_CONFIG, config, { overwriteRoutes: true });
 
-  const { getByText, rerender } = render(<UiConfig />);
-  expect(getByText('Suspended')).toBeInTheDocument();
+    const { getByText, rerender } = render(<UiConfig />);
+    expect(getByText('Suspended')).toBeInTheDocument();
 
-  // We need to get off the processing loop to allow the promise to complete and resolve the
-  // config.
-  await new Promise(resolve => setTimeout(resolve, 1));
+    // We need to get off the processing loop to allow the promise to complete and resolve the
+    // config.
+    await new Promise(resolve => setTimeout(resolve, 1));
 
-  rerender(<UiConfig />);
-  expect(getByText(JSON.stringify(config))).toBeInTheDocument();
+    rerender(<UiConfig />);
+    expect(getByText(JSON.stringify(config))).toBeInTheDocument();
 
-  fetchMock.called(UI_CONFIG);
+    fetchMock.called(UI_CONFIG);
+  });
 });

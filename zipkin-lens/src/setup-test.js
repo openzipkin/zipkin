@@ -15,11 +15,17 @@
 /* eslint-disable import/no-extraneous-dependencies */
 
 import '@testing-library/jest-dom';
+import fetchMock from 'fetch-mock';
+
+import { UI_CONFIG } from './constants/api';
 
 const Enzyme = require('enzyme');
 const EnzymeAdapter = require('enzyme-adapter-react-16');
 
 Enzyme.configure({ adapter: new EnzymeAdapter() });
+
+// Mock out UI Config fetch with an empty config as a baseline, tests can remock as needed.
+fetchMock.mock(UI_CONFIG, {});
 
 // Mock out browser refresh.
 const { reload } = window.location;

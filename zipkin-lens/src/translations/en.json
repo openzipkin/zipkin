@@ -13,7 +13,9 @@
   "src.components.GlobalSearch.limit": "Limit",
   "src.components.GlobalSearch.pleaseSelectCriteria": "Please select the criteria for your trace lookup",
   "src.components.TracePage.depth": "Depth",
+  "src.components.TracePage.downloadJson": "Download JSON",
   "src.components.TracePage.duration": "Duration",
   "src.components.TracePage.services": "Services",
-  "src.components.TracePage.totalSpans": "Total Spans"
+  "src.components.TracePage.totalSpans": "Total Spans",
+  "src.components.TracePage.viewLogs": "View Logs"
 }

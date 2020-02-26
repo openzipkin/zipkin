@@ -58,6 +58,7 @@ public class ITZipkinUiConfiguration {
       + "  \"queryLimit\" : 10,\n"
       + "  \"defaultLookback\" : 900000,\n"
       + "  \"searchEnabled\" : true,\n"
+      + "  \"logsUrl\" : null,\n"
       + "  \"dependency\" : {\n"
       + "    \"lowErrorRate\" : 0.5,\n"
       + "    \"highErrorRate\" : 0.75\n"
