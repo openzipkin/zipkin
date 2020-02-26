@@ -12,6 +12,8 @@
  * the License.
  */
 
+/* eslint-disable global-require */
+
 describe('BASE_PATH', () => {
   afterEach(() => {
     jest.resetModules();
