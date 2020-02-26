@@ -13,8 +13,19 @@
  */
 const { API_BASE } = process.env;
 
-export const ZIPKIN_API = `${API_BASE || ''}/zipkin/api/v2`;
-export const UI_CONFIG = `${API_BASE || ''}/zipkin/config.json`;
+const extractBasePath = () => {
+  const base = document.getElementsByTagName('base');
+  if (base.length === 0) {
+    return '/zipkin';
+  }
+  return base[0].getAttribute('href').replace(/\/+$/, '');
+};
+
+export const BASE_PATH = extractBasePath();
+export const ZIPKIN_BASE = `${API_BASE || ''}${BASE_PATH}`;
+
+export const ZIPKIN_API = `${ZIPKIN_BASE}/api/v2`;
+export const UI_CONFIG = `${ZIPKIN_BASE}/config.json`;
 export const SERVICES = `${ZIPKIN_API}/services`;
 export const REMOTE_SERVICES = `${ZIPKIN_API}/remoteServices`;
 export const SPANS = `${ZIPKIN_API}/spans`;

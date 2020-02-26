@@ -30,6 +30,8 @@ import { theme } from '../../colors';
 import { useDocumentTitle } from '../../hooks';
 import { DEFAULT_LOCALE, getLocale } from '../../util/locale';
 
+import { BASE_PATH } from '../../constants/api';
+
 const translations = {
   en: require('../../translations/en.json'),
   'zh-cn': require('../../translations/zh-cn.json'),
@@ -53,21 +55,21 @@ const App = () => {
                     messages={messages}
                     defaultLocale={DEFAULT_LOCALE}
                   >
-                    <BrowserRouter>
+                    <BrowserRouter basename={BASE_PATH}>
                       <Layout>
                         <Route
                           exact
-                          path="/zipkin"
+                          path="/"
                           component={DiscoverPage}
                         />
                         <Route
                           exact
-                          path="/zipkin/dependency"
+                          path="/dependency"
                           component={DependenciesPage}
                         />
                         <Route
                           exact
-                          path={['/zipkin/traces/:traceId', '/zipkin/traceViewer']}
+                          path={['/traces/:traceId', '/traceViewer']}
                           component={TracePage}
                         />
                       </Layout>

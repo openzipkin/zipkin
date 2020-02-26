@@ -28,7 +28,7 @@ module.exports = {
   output: {
     path: path.join(__dirname, '/target/classes/zipkin-lens/'),
     filename: 'app-[hash].min.js',
-    publicPath: '/zipkin/',
+    publicPath: '',
   },
   optimization: {
     minimize: true,

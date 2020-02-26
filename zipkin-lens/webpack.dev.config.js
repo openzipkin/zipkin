@@ -22,6 +22,7 @@ module.exports = {
   entry: path.join(__dirname, './src/index.js'),
   output: {
     filename: 'bundle.js',
+    publicPath: '/zipkin',
   },
   module: {
     rules: [

@@ -81,8 +81,8 @@ const Layout = ({ children }) => {
             <Logo className={classes.zipkinLogo} />
           </Box>
           <List>
-            <SidebarMenu title="Discover Page" path="/zipkin" icon={faSearch} />
-            <SidebarMenu title="Dependencies Page" path="/zipkin/dependency" icon={faProjectDiagram} />
+            <SidebarMenu title="Discover Page" path="/" icon={faSearch} />
+            <SidebarMenu title="Dependencies Page" path="/dependency" icon={faProjectDiagram} />
           </List>
         </Box>
         <List>
