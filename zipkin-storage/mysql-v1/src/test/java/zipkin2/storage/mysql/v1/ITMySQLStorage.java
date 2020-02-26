@@ -14,7 +14,9 @@
 package zipkin2.storage.mysql.v1;
 
 import java.sql.Connection;
-import java.sql.Date;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import org.jooq.DSLContext;
@@ -105,7 +107,11 @@ class ITMySQLStorage {
         // batch insert the rows at timestamp midnight
         List<Query> inserts = new ArrayList<>();
         aggregateLinks(spans).forEach((midnight, links) -> {
-          Date day = new Date(midnight);
+
+          LocalDate day = Instant.ofEpochMilli(midnight)
+            .atZone(ZoneId.of("UTC"))
+            .toLocalDate();
+
           for (DependencyLink link : links) {
             inserts.add(context.insertInto(ZIPKIN_DEPENDENCIES)
               .set(ZIPKIN_DEPENDENCIES.DAY, day)
