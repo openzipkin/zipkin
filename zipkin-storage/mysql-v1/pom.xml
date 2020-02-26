@@ -29,8 +29,8 @@
   <properties>
     <main.basedir>${project.basedir}/../..</main.basedir>
 
-    <!-- error-prone doesn't like generated code -->
-    <errorprone.args>-XepDisableWarningsInGeneratedCode</errorprone.args>
+    <!-- jOOQ doesn't add the Generated annotation, so we have to explicitly disable rules -->
+    <errorprone.args>-Xep:InconsistentCapitalization:OFF</errorprone.args>
   </properties>
 
   <dependencies>

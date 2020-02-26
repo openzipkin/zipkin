@@ -43,7 +43,7 @@ COPY --from=built /root/.npm /root/.npm
 # zipkin-ui - An image containing the Zipkin web frontend only, served by NGINX
 #####
 
-FROM nginx:1.16-alpine as zipkin-ui
+FROM nginx:1.17-alpine as zipkin-ui
 LABEL MAINTAINER Zipkin "https://zipkin.io/"
 
 ENV ZIPKIN_BASE_URL=http://zipkin:9411
