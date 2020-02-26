@@ -121,7 +121,7 @@ public class ITZipkinUiConfiguration {
   @Test public void replacesBaseTag() throws Exception {
     assertThat(get("/zipkin/index.html").body().string())
       .isEqualToIgnoringWhitespace(stringFromClasspath(getClass(), "zipkin-lens/index.html")
-        .replace("<base href=\"/\" />", "<base href=\"/foozipkin/\" />"));
+        .replace("<base href=\"/\" />", "<base href=\"/foozipkin/\">"));
   }
 
   /** index.html is served separately. This tests other content is also loaded from the classpath. */

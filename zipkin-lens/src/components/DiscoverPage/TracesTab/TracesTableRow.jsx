@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -99,7 +99,7 @@ export const TracesTableRowImpl = ({
   const { spanName, serviceName } = rootServiceAndSpanName(correctedTrace);
 
   const handleClick = useCallback(() => {
-    history.push(`/zipkin/traces/${traceSummary.traceId}`);
+    history.push(`/traces/${traceSummary.traceId}`);
   }, [history, traceSummary.traceId]);
 
   return (

@@ -168,8 +168,10 @@ public class ZipkinUiConfiguration {
       if (DEFAULT_BASEPATH.equals(basePath)) return content;
 
       String baseTagValue = "/".equals(basePath) ? "/" : basePath + "/";
+      // html-webpack-plugin seems to strip out quotes from the base tag when compiling so be
+      // careful with this matcher.
       return content.replaceAll(
-        "base href=\"[^\"]+\"", "base href=\"" + baseTagValue + "\""
+        "<base href=[^>]+>", "<base href=\"" + baseTagValue + "\">"
       );
     }
   }

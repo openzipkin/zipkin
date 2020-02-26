@@ -155,7 +155,7 @@ const DiscoverPageImpl = ({
       limitCondition,
       currentTs,
     ));
-    history.push({ pathname: '/zipkin', search: queryParameters });
+    history.push({ search: queryParameters });
     loadTraces(buildTracesApiQueryParameters(
       conditions,
       lookbackCondition,
