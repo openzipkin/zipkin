@@ -110,7 +110,7 @@ TracePageImpl.defaultProps = defaultProps;
 const mapStateToProps = (state, ownProps) => {
   const { location, match } = ownProps;
 
-  const isTraceViewerPage = location.pathname === '/zipkin/traceViewer';
+  const isTraceViewerPage = location.pathname === '/traceViewer';
 
   const props = {};
 
