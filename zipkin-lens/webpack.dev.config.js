@@ -22,7 +22,7 @@ module.exports = {
   entry: path.join(__dirname, './src/index.js'),
   output: {
     filename: 'bundle.js',
-    publicPath: '/zipkin',
+    publicPath: '/zipkin/',
   },
   module: {
     rules: [
@@ -87,6 +87,10 @@ module.exports = {
     port: 9000,
     host: '0.0.0.0',
     disableHostCheck: true,
-    historyApiFallback: true,
+    historyApiFallback: {
+      rewrites: [
+        { from: /.*/, to: '/zipkin/index.html' },
+      ],
+    },
   },
 };
