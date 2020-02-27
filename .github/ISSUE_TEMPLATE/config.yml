@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question
+    url: https://gitter.im/openzipkin/zipkin
+    about: Please ask questions about how to do something or to understand why something isn't working on our Gitter chat - we'll be happy to respond there in detail. This issue tracker is not for questions.
