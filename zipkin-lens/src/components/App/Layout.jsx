@@ -57,8 +57,6 @@ const useStyles = makeStyles(theme => ({
     },
   },
   childrenWrapper: {
-    display: 'flex',
-    flexDirection: 'column',
     width: '100%',
     height: '100vh',
     overflow: 'auto',
