@@ -19,5 +19,5 @@ export default defineMessages({
   loadTraceFailureDoesNotContainJson: 'This file does not contain JSON',
   loadTraceFailureOnlyV2Supported: 'Only V2 format is supported',
   loadTraceFailureFailToLoad: 'Failed to load this file',
-  uploadJson: 'Upload JSON'
+  uploadJson: 'Upload JSON',
 });

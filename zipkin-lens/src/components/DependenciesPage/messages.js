@@ -18,5 +18,5 @@ export default defineMessages({
   startTime: 'Start Time',
   endTime: 'End Time',
   searchDependenciesHeader: 'Search Dependencies',
-  searchDependenciesDescription: 'Please select the start and end time. Then, click the search button.'
+  searchDependenciesDescription: 'Please select the start and end time. Then, click the search button.',
 });
