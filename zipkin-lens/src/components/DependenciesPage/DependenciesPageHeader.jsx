@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { useIntl } from 'react-intl'; 
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
@@ -22,6 +23,8 @@ import { KeyboardDateTimePicker } from '@material-ui/pickers';
 import { makeStyles } from '@material-ui/styles';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
+
+import messages from './messages';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -81,12 +84,13 @@ const DependenciesPageHeader = React.memo(({
   onFindButtonClick,
 }) => {
   const classes = useStyles();
+  const intl = useIntl();
 
   return (
     <Box className={classes.root}>
       <Box className={classes.upperBox}>
         <Typography variant="h5" className={classes.pageTitle}>
-          Dependencies
+          {intl.formatMessage(messages.dependencies)}
         </Typography>
         <Box className={classes.upperRightBox}>
           <TraceJsonUploader />
@@ -95,7 +99,7 @@ const DependenciesPageHeader = React.memo(({
       </Box>
       <Box className={classes.searchBox}>
         <KeyboardDateTimePicker
-          label="Start Time"
+          label={intl.formatMessage(messages.startTime)}
           inputVariant="outlined"
           value={startTime}
           onChange={onStartTimeChange}
@@ -104,7 +108,7 @@ const DependenciesPageHeader = React.memo(({
         />
         -
         <KeyboardDateTimePicker
-          label="End Time"
+          label={intl.formatMessage(messages.endTime)}
           inputVariant="outlined"
           value={endTime}
           onChange={onEndTimeChange}

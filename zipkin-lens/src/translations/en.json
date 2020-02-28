@@ -17,5 +17,11 @@
   "src.components.TracePage.duration": "Duration",
   "src.components.TracePage.services": "Services",
   "src.components.TracePage.totalSpans": "Total Spans",
-  "src.components.TracePage.viewLogs": "View Logs"
+  "src.components.TracePage.viewLogs": "View Logs",
+  "src.components.DependenciesPage.dependencies": "Dependencies",
+  "src.components.DependenciesPage.startTime": "Start Time",
+  "src.components.DependenciesPage.endTime": "End Time",
+  "src.components.DependenciesPage.searchDependenciesHeader": "Search Dependencies",
+  "src.components.DependenciesPage.searchDependenciesDescription": "Please select the start and end time. Then, click the search button."
+  
 }
