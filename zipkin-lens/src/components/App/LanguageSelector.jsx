@@ -35,6 +35,10 @@ export const LANGUAGES = [
     name: 'English',
   },
   {
+    locale: 'es',
+    name: 'Español',
+  },
+  {
     locale: 'zh-cn',
     name: '中文 (简体)',
   },
