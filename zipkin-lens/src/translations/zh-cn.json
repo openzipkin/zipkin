@@ -17,5 +17,10 @@
   "src.components.TracePage.duration": "持续时间",
   "src.components.TracePage.services": "服务",
   "src.components.TracePage.totalSpans": "Span总数",
-  "src.components.TracePage.viewLogs": ""
+  "src.components.TracePage.viewLogs": "",
+  "src.components.DependenciesPage.dependencies": "Dependencies",
+  "src.components.DependenciesPage.startTime": "Start Time",
+  "src.components.DependenciesPage.endTime": "End Time",
+  "src.components.DependenciesPage.searchDependenciesHeader": "Search Dependencies",
+  "src.components.DependenciesPage.searchDependenciesDescription": "Please select the start and end time. Then, click the search button."
 }
