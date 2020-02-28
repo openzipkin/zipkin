@@ -22,5 +22,11 @@
   "src.components.DependenciesPage.endTime": "Tiempo Final",
   "src.components.DependenciesPage.startTime": "Tiempo Inicial",
   "src.components.DependenciesPage.searchDependenciesHeader": "Buscar Dependencias",
-  "src.components.DependenciesPage.searchDependenciesDescription": "Por favor, selecciona el tiempo de inicio y fin. Luego, haz clic en el botón buscar."
+  "src.components.DependenciesPage.searchDependenciesDescription": "Por favor, selecciona el tiempo de inicio y fin. Luego, haz clic en el botón buscar.",
+  "src.components.Common.traceId": "ID de Traza",
+  "src.components.Common.traceIdPlaceholder": "id de traza...",
+  "src.components.Common.loadTraceFailureDoesNotContainJson": "Este archivo no contiene JSON",
+  "src.components.Common.loadTraceFailureOnlyV2Supported": "Solo el formato V2 está soportado",
+  "src.components.Common.loadTraceFailureFailToLoad": "Fallo al cargar este archivo",
+  "src.components.Common.uploadJson": "Subir JSON"
 }

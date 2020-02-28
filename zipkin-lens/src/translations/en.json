@@ -22,6 +22,11 @@
   "src.components.DependenciesPage.startTime": "Start Time",
   "src.components.DependenciesPage.endTime": "End Time",
   "src.components.DependenciesPage.searchDependenciesHeader": "Search Dependencies",
-  "src.components.DependenciesPage.searchDependenciesDescription": "Please select the start and end time. Then, click the search button."
-  
+  "src.components.DependenciesPage.searchDependenciesDescription": "Please select the start and end time. Then, click the search button.",
+  "src.components.Common.traceId": "Trace ID",
+  "src.components.Common.traceIdPlaceholder": "trace id...",
+  "src.components.Common.loadTraceFailureDoesNotContainJson": "This file does not contain JSON",
+  "src.components.Common.loadTraceFailureOnlyV2Supported": "Only V2 format is supported",
+  "src.components.Common.loadTraceFailureFailToLoad": "Failed to load this file",
+  "src.components.Common.uploadJson": "Upload JSON"
 }
