@@ -24,7 +24,7 @@
   "src.components.TracePage.viewLogs": "Ver Logs",
   "src.components.TracePage.traceId": "ID de Traza",
   "src.components.TracePage.SpanDetail.annotations": "Anotaciones",
-  "src.components.TracePage.SpanDetail.tags": "Tags",
+  "src.components.TracePage.SpanDetail.tags": "Etiquetas",
   "src.components.TracePage.SpanDetail.spanId": "ID de Tramo",
   "src.components.TracePage.SpanDetail.parentId": "ID de Traza Padre",
   "src.components.TracePage.SpanDetail.none": "Ninguno",
