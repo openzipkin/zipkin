@@ -15,4 +15,8 @@ import { defineMessages } from 'react-intl';
 
 export default defineMessages({
   changeLanguage: 'Change Language',
+  discoverPage: 'Discover Page',
+  dependenciesPage: 'Dependencies Page',
+  zipkinHome: 'Zipkin Home',
+  repository: 'Repository',
 });

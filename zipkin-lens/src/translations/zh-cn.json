@@ -1,5 +1,9 @@
 {
   "src.components.App.changeLanguage": "改变语言",
+  "src.components.App.discoverPage": "",
+  "src.components.App.dependenciesPage": "",
+  "src.components.App.zipkinHome": "",
+  "src.components.App.repository": "",
   "src.components.DiscoverPage.TracesTab.duration": "持续时间",
   "src.components.DiscoverPage.TracesTab.filter": "",
   "src.components.DiscoverPage.TracesTab.numResults": "",

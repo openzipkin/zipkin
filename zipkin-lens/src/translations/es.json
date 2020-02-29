@@ -1,5 +1,9 @@
 {
   "src.components.App.changeLanguage": "Cambiar Idioma",
+  "src.components.App.discoverPage": "Página de Descubrir",
+  "src.components.App.dependenciesPage": "Página de Dependencies",
+  "src.components.App.zipkinHome": "Zipkin Inicio",
+  "src.components.App.repository": "Repositorio",
   "src.components.DiscoverPage.TracesTab.duration": "Duración",
   "src.components.DiscoverPage.TracesTab.filter": "Filtro",
   "src.components.DiscoverPage.TracesTab.numResults": "{num, number} {num, plural,\n    one {Result}\n    other {Results}\n  }",
