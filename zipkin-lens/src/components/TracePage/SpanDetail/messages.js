@@ -14,11 +14,14 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
-  downloadJson: 'Download JSON',
-  duration: 'Duration',
-  services: 'Services',
-  depth: 'Depth',
-  totalSpans: 'Total Spans',
-  viewLogs: 'View Logs',
-  traceId: 'Trace ID',
+  annotations: 'Annotations',
+  tags: 'Tags',
+  spanId: 'Span ID',
+  parentId: 'Parent ID',
+  none: 'None',
+  startTime: 'Start Time',
+  relativeTime: 'Relative Time',
+  address: 'Address',
+  hideAnnotations: 'hide annotations',
+  showAllAnnotations: 'show all annotations',
 });

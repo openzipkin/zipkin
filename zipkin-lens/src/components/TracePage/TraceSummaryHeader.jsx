@@ -132,7 +132,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
           { label: intl.formatMessage(messages.depth), value: traceSummary.depth },
           { label: intl.formatMessage(messages.totalSpans), value: traceSummary.spans.length },
           {
-            label: 'Trace ID',
+            label: intl.formatMessage(messages.traceId),
             value: rootSpanIndex === 0
               ? traceSummary.traceId
               : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
