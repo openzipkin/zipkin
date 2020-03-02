@@ -12,7 +12,7 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import { useIntl } from 'react-intl'; 
+import { useIntl } from 'react-intl';
 import React, { useState, useCallback } from 'react';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
@@ -33,7 +33,7 @@ const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-const TraceIdSearchInput = ({ history }) => {
+export const TraceIdSearchInput = ({ history }) => {
   const classes = useStyles();
   const intl = useIntl();
 
@@ -69,6 +69,7 @@ const TraceIdSearchInput = ({ history }) => {
             input: classes.input,
           },
         }}
+        data-testid="search-input-text"
       />
     </Tooltip>
   );
