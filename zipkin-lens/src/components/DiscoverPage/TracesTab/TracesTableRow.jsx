@@ -12,9 +12,10 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import moment from 'moment';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
@@ -44,7 +45,6 @@ export function rootServiceAndSpanName(root) {
 const propTypes = {
   traceSummary: traceSummaryPropTypes.isRequired,
   onAddFilter: PropTypes.func.isRequired,
-  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
   correctedTraceMap: PropTypes.shape({}).isRequired,
 };
 
@@ -88,7 +88,6 @@ const useStyles = makeStyles({
 export const TracesTableRowImpl = ({
   traceSummary,
   onAddFilter,
-  history,
   correctedTraceMap,
 }) => {
   const classes = useStyles();
@@ -98,46 +97,44 @@ export const TracesTableRowImpl = ({
   const correctedTrace = correctedTraceMap[traceSummary.traceId];
   const { spanName, serviceName } = rootServiceAndSpanName(correctedTrace);
 
-  const handleClick = useCallback(() => {
-    history.push(`/traces/${traceSummary.traceId}`);
-  }, [history, traceSummary.traceId]);
-
   return (
-    <Box className={classes.root} onClick={handleClick} data-test="root">
-      <Grid container spacing={0} className={classes.data}>
-        <Box
-          position="absolute"
-          width={`${traceSummary.width}%`}
-          height="100%"
-          className={classes.durationBar}
-          style={{
-            backgroundColor: selectColorByInfoClass(traceSummary.infoClass),
-          }}
-          data-test="duration-bar"
-        />
-        <Grid item xs={3} className={classes.dataCell}>
-          <Box className={classes.serviceName} data-test="service-name">
-            {`${serviceName}`}
-          </Box>
-          <Box className={classes.subInfo} data-test="span-name">
-            {`(${spanName})`}
-          </Box>
+    <Box className={classes.root} data-test="root">
+      <Link to={`/traces/${traceSummary.traceId}`}>
+        <Grid container spacing={0} className={classes.data}>
+          <Box
+            position="absolute"
+            width={`${traceSummary.width}%`}
+            height="100%"
+            className={classes.durationBar}
+            style={{
+              backgroundColor: selectColorByInfoClass(traceSummary.infoClass),
+            }}
+            data-test="duration-bar"
+          />
+          <Grid item xs={3} className={classes.dataCell}>
+            <Box className={classes.serviceName} data-test="service-name">
+              {`${serviceName}`}
+            </Box>
+            <Box className={classes.subInfo} data-test="span-name">
+              {`(${spanName})`}
+            </Box>
+          </Grid>
+          <Grid item xs={3} className={classes.dataCell}>
+            {traceSummary.traceId}
+          </Grid>
+          <Grid item xs={3} className={classes.dataCell}>
+            <Box>
+              {startTime.format('MM/DD HH:mm:ss:SSS')}
+            </Box>
+            <Box className={classes.subInfo}>
+              {`(${startTime.fromNow()})`}
+            </Box>
+          </Grid>
+          <Grid item xs={3} className={classes.dataCell}>
+            {traceSummary.durationStr}
+          </Grid>
         </Grid>
-        <Grid item xs={3} className={classes.dataCell}>
-          {traceSummary.traceId}
-        </Grid>
-        <Grid item xs={3} className={classes.dataCell}>
-          <Box>
-            {startTime.format('MM/DD HH:mm:ss:SSS')}
-          </Box>
-          <Box className={classes.subInfo}>
-            {`(${startTime.fromNow()})`}
-          </Box>
-        </Grid>
-        <Grid item xs={3} className={classes.dataCell}>
-          {traceSummary.durationStr}
-        </Grid>
-      </Grid>
+      </Link>
       <Box display="flex" flexWrap="wrap" className={classes.badgeRow}>
         {
           traceSummary.serviceSummaries.map(serviceSummary => (
