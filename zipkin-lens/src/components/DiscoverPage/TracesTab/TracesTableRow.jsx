@@ -25,7 +25,7 @@ import grey from '@material-ui/core/colors/grey';
 import ServiceBadge from '../../Common/ServiceBadge';
 import { getServiceName } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
-import { theme, selectColorByInfoClass } from '../../../colors';
+import { selectColorByInfoClass } from '../../../colors';
 
 export function rootServiceAndSpanName(root) {
   const { span } = root;
@@ -48,12 +48,17 @@ const propTypes = {
   correctedTraceMap: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   root: {
     cursor: 'pointer',
     '&:hover': {
       backgroundColor: grey[100],
     },
+  },
+  anchor: {
+    color: theme.palette.text.primary,
+    textDecoration: 'none',
+    outline: 'none',
   },
   data: {
     position: 'relative',
@@ -83,7 +88,7 @@ const useStyles = makeStyles({
     marginLeft: '0.6rem',
     color: theme.palette.text.hint,
   },
-});
+}));
 
 export const TracesTableRowImpl = ({
   traceSummary,
@@ -99,7 +104,7 @@ export const TracesTableRowImpl = ({
 
   return (
     <Box className={classes.root} data-test="root">
-      <Link to={`/traces/${traceSummary.traceId}`}>
+      <Link to={`/traces/${traceSummary.traceId}`} className={classes.anchor}>
         <Grid container spacing={0} className={classes.data}>
           <Box
             position="absolute"
@@ -135,6 +140,8 @@ export const TracesTableRowImpl = ({
           </Grid>
         </Grid>
       </Link>
+      {/* In HTML5, anchor tag including interactive content is invalid.
+          So ServiceBadge which has onClick callback cannot be surrounded by Link. */}
       <Box display="flex" flexWrap="wrap" className={classes.badgeRow}>
         {
           traceSummary.serviceSummaries.map(serviceSummary => (
