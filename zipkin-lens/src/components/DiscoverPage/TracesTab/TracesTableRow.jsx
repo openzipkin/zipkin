@@ -20,7 +20,6 @@ import moment from 'moment';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
-import grey from '@material-ui/core/colors/grey';
 
 import ServiceBadge from '../../Common/ServiceBadge';
 import { getServiceName } from '../../../zipkin';
@@ -52,7 +51,7 @@ const useStyles = makeStyles(theme => ({
   root: {
     cursor: 'pointer',
     '&:hover': {
-      backgroundColor: grey[100],
+      backgroundColor: theme.palette.grey[100],
     },
   },
   anchor: {
@@ -62,7 +61,7 @@ const useStyles = makeStyles(theme => ({
   },
   data: {
     position: 'relative',
-    borderBottom: `1px solid ${grey[200]}`,
+    borderBottom: `1px solid ${theme.palette.grey[200]}`,
   },
   durationBar: {
     opacity: 0.4,
@@ -79,7 +78,7 @@ const useStyles = makeStyles(theme => ({
     paddingRight: '1rem',
     paddingTop: '0.6rem',
     paddingBottom: '0.6rem',
-    borderBottom: `1px solid ${grey[300]}`,
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
   },
   serviceName: {
     textTransform: 'uppercase',
