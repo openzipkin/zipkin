@@ -13,14 +13,12 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router-dom';
 import classNames from 'classnames';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import ListItem from '@material-ui/core/ListItem';
 import Tooltip from '@material-ui/core/Tooltip';
-
-import { BASE_PATH } from '../../constants/api';
 
 const propTypes = {
   title: PropTypes.string.isRequired,
@@ -54,14 +52,22 @@ export const SidebarMenuImpl = React.forwardRef(({
   const classes = useStyles();
   const location = useLocation();
 
+  const listItemProps = {};
+  if (path.startsWith('https://')) {
+    listItemProps.component = 'a'
+    listItemProps.href = path;
+    listItemProps.target = '_blank';
+    listItemProps.rel = 'no-opener';
+  } else {
+    listItemProps.component = Link;
+    listItemProps.to = path;
+  }
+
   return (
     <Tooltip title={title} placement="right">
       <ListItem
+        {...listItemProps}
         button
-        // TODO(anuraaga): Replace with react-router-dom Link for more smoothness after fixing state
-        // management. We need to make sure to clear traces when returning to the discovery page.
-        component="a"
-        href={`${BASE_PATH}${path}`}
         ref={ref}
         className={
           classNames(

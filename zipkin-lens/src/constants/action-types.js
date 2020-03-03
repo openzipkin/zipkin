@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -32,6 +32,7 @@ export const TRACE_LOAD_FAILURE = 'TRACE_LOAD_FAILURE';
 export const TRACES_LOAD_REQUEST = 'TRACES_LOAD_REQUEST';
 export const TRACES_LOAD_SUCCESS = 'TRACES_LOAD_SUCCESS';
 export const TRACES_LOAD_FAILURE = 'TRACES_LOAD_FAILURE';
+export const CLEAR_TRACES = 'TRACES_RESET';
 
 export const FETCH_DEPENDENCIES_REQUEST = 'FETCH_DEPENDENCIES_REQUEST';
 export const FETCH_DEPENDENCIES_SUCCESS = 'FETCH_DEPENDENCIES_SUCCESS';

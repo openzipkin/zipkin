@@ -139,6 +139,7 @@ const DiscoverPageImpl = ({
   fetchRemoteServices,
   fetchSpans,
   fetchAutocompleteKeys,
+  clearTraces,
   setConditions,
   setLookbackCondition,
   setLimitCondition,
@@ -225,6 +226,12 @@ const DiscoverPageImpl = ({
     }
   });
 
+  if (!location.search && traces.length > 0) {
+    // Previously loaded traces but now back to the beginning, reset state and re-render.
+    clearTraces();
+    return null;
+  }
+
   let content;
   if (isLoading) {
     content = (
@@ -281,6 +288,9 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
   loadTraces: params => dispatch(
     tracesActionCreators.loadTraces(params),
+  ),
+  clearTraces: parms => dispatch(
+    tracesActionCreators.clearTraces(),
   ),
   fetchServices: () => dispatch(
     servicesActionCreators.fetchServices(),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 import * as types from '../constants/action-types';
 
-const initialState = {
+export const initialState = {
   isLoading: false,
   traces: [],
   traceSummaries: [],
@@ -23,6 +23,8 @@ const initialState = {
 
 const traces = (state = initialState, action) => {
   switch (action.type) {
+    case types.CLEAR_TRACES:
+      return initialState;
     case types.TRACES_LOAD_REQUEST:
       return {
         ...state,
