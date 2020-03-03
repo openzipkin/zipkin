@@ -14,9 +14,10 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
-  changeLanguage: 'Change Language',
-  discoverPage: 'Discover Page',
-  dependenciesPage: 'Dependencies Page',
-  zipkinHome: 'Zipkin Home',
-  repository: 'Repository',
+  traceId: 'Trace ID',
+  traceIdPlaceholder: 'trace id...',
+  loadTraceFailureDoesNotContainJson: 'This file does not contain JSON',
+  loadTraceFailureOnlyV2Supported: 'Only V2 format is supported',
+  loadTraceFailureFailToLoad: 'Failed to load this file',
+  uploadJson: 'Upload JSON',
 });

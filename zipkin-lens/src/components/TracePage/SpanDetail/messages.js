@@ -14,9 +14,14 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
-  changeLanguage: 'Change Language',
-  discoverPage: 'Discover Page',
-  dependenciesPage: 'Dependencies Page',
-  zipkinHome: 'Zipkin Home',
-  repository: 'Repository',
+  annotations: 'Annotations',
+  tags: 'Tags',
+  spanId: 'Span ID',
+  parentId: 'Parent ID',
+  none: 'None',
+  startTime: 'Start Time',
+  relativeTime: 'Relative Time',
+  address: 'Address',
+  hideAnnotations: 'hide annotations',
+  showAllAnnotations: 'show all annotations',
 });

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,19 +12,14 @@
  * the License.
  */
 import React from 'react';
-import { createShallow } from '@material-ui/core/test-utils';
 
 import SpanAnnotation from './SpanAnnotation';
 
+import render from '../../../test/util/render-with-default-settings';
+
 describe('<SpanAnnotation />', () => {
-  let shallow;
-
-  beforeEach(() => {
-    shallow = createShallow();
-  });
-
   it('should render annotation data', () => {
-    const wrapper = shallow(
+    const { queryAllByTestId } = render(
       <SpanAnnotation.Naked
         annotation={{
           value: 'Server Start',
@@ -35,12 +30,13 @@ describe('<SpanAnnotation />', () => {
         classes={{}}
       />,
     );
-    const rows = wrapper.find('[data-testid="span-annotation--table-body"]');
-    expect(rows.childAt(0).find('[data-testid="span-annotation--label"]').text()).toBe('Start Time');
+    const labels = queryAllByTestId('span-annotation--label');
+    const values = queryAllByTestId('span-annotation--value');
+    expect(labels[0]).toHaveTextContent('Start Time');
     // We cannot test timestamp because of timezone problems.
-    expect(rows.childAt(1).find('[data-testid="span-annotation--label"]').text()).toBe('Relative Time');
-    expect(rows.childAt(1).find('[data-testid="span-annotation--value"]').text()).toBe('700ms');
-    expect(rows.childAt(2).find('[data-testid="span-annotation--label"]').text()).toBe('Address');
-    expect(rows.childAt(2).find('[data-testid="span-annotation--value"]').text()).toBe('127.0.0.1');
+    expect(labels[1]).toHaveTextContent('Relative Time');
+    expect(values[1]).toHaveTextContent('700ms');
+    expect(labels[2]).toHaveTextContent('Address');
+    expect(values[2]).toHaveTextContent('127.0.0.1');
   });
 });

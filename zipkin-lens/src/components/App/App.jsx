@@ -34,6 +34,7 @@ import { BASE_PATH } from '../../constants/api';
 
 const translations = {
   en: require('../../translations/en.json'),
+  es: require('../../translations/es.json'),
   'zh-cn': require('../../translations/zh-cn.json'),
 };
 

@@ -14,9 +14,9 @@
 import { defineMessages } from 'react-intl';
 
 export default defineMessages({
-  changeLanguage: 'Change Language',
-  discoverPage: 'Discover Page',
-  dependenciesPage: 'Dependencies Page',
-  zipkinHome: 'Zipkin Home',
-  repository: 'Repository',
+  dependencies: 'Dependencies',
+  startTime: 'Start Time',
+  endTime: 'End Time',
+  searchDependenciesHeader: 'Search Dependencies',
+  searchDependenciesDescription: 'Please select the start and end time. Then, click the search button.',
 });

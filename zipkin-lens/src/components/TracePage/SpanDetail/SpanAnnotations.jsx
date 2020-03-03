@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -17,6 +17,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
+import { useIntl } from 'react-intl'; 
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 
@@ -24,12 +25,14 @@ import { generateAnnotationKey } from './util';
 import SpanAnnotation from './SpanAnnotation';
 import SpanAnnotationGraph from './SpanAnnotationGraph';
 import { detailedSpanPropTypes } from '../../../prop-types';
+import messages from './messages'
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
 };
 
 const SpanAnnotations = React.memo(({ span }) => {
+  const intl = useIntl();
   const [currentAnnotationKey, setCurrentAnnotationKey] = useState();
   const [areAllAnnotationsOpened, setAreAllAnnotationsOpened] = useState(false);
 
@@ -88,7 +91,7 @@ const SpanAnnotations = React.memo(({ span }) => {
       }
       <Box width="100%" display="flex" justifyContent="flex-end" mt={2}>
         <Button variant="contained" onClick={handleExpandToggle} data-testid="span-annotations--toggle-button">
-          {areAllAnnotationsOpened ? 'hide annotations' : 'show all annotations'}
+          {areAllAnnotationsOpened ? intl.formatMessage(messages.hideAnnotations) : intl.formatMessage(messages.showAllAnnotations)}
         </Button>
       </Box>
     </>

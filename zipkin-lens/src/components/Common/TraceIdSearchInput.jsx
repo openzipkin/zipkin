@@ -12,11 +12,14 @@
  * the License.
  */
 import PropTypes from 'prop-types';
+import { useIntl } from 'react-intl';
 import React, { useState, useCallback } from 'react';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
+
+import messages from './messages'
 
 const useStyles = makeStyles({
   input: {
@@ -30,8 +33,9 @@ const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-const TraceIdSearchInput = ({ history }) => {
+export const TraceIdSearchInput = ({ history }) => {
   const classes = useStyles();
+  const intl = useIntl();
 
   const [traceId, setTraceId] = useState('');
 
@@ -50,13 +54,13 @@ const TraceIdSearchInput = ({ history }) => {
   return (
     <Tooltip title="Search by Trace ID">
       <TextField
-        label="Trace ID"
+        label={intl.formatMessage(messages.traceId)}
         value={traceId}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         margin="normal"
         variant="outlined"
-        placeholder="trace id..."
+        placeholder={intl.formatMessage(messages.traceIdPlaceholder)}
         InputLabelProps={{
           shrink: true,
         }}
@@ -65,6 +69,7 @@ const TraceIdSearchInput = ({ history }) => {
             input: classes.input,
           },
         }}
+        data-testid="search-input-text"
       />
     </Tooltip>
   );

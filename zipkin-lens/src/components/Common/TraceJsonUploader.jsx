@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useRef, useCallback } from 'react';
+import { useIntl } from 'react-intl'; 
 import { useDispatch } from 'react-redux';
 import { withRouter } from 'react-router';
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
@@ -20,6 +21,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import Button from '@material-ui/core/Button';
 import Tooltip from '@material-ui/core/Tooltip';
+
+import messages from './messages'
 
 import { ensureV2TraceData } from '../../util/trace';
 import { loadTrace, loadTraceFailure } from '../../actions/trace-viewer-action';
@@ -42,6 +45,7 @@ const TraceJsonUploader = ({ history }) => {
   const classes = useStyles();
   const dispatch = useDispatch();
   const inputRef = useRef(null);
+  const intl = useIntl();
 
   const handleClick = useCallback(() => {
     if (inputRef.current) {
@@ -63,7 +67,7 @@ const TraceJsonUploader = ({ history }) => {
       try {
         rawTraceData = JSON.parse(result);
       } catch (error) {
-        dispatch(loadTraceFailure('This file does not contain JSON'));
+        dispatch(loadTraceFailure(intl.formatMessage(messages.loadTraceFailureDoesNotContainJson)));
         goToTraceViewerPage();
         return;
       }
@@ -72,13 +76,13 @@ const TraceJsonUploader = ({ history }) => {
         ensureV2TraceData(rawTraceData);
         dispatch(loadTrace(rawTraceData));
       } catch (error) {
-        dispatch(loadTraceFailure('Only V2 format is supported'));
+        dispatch(loadTraceFailure(intl.formatMessage(messages.loadTraceFailureOnlyV2Supported)));
       }
       goToTraceViewerPage();
     };
 
     fileReader.onabort = () => {
-      dispatch(loadTraceFailure('Failed to load this file'));
+      dispatch(loadTraceFailure(intl.formatMessage(messages.loadTraceFailureFailToLoad)));
       goToTraceViewerPage();
     };
 
@@ -96,7 +100,7 @@ const TraceJsonUploader = ({ history }) => {
         ref={inputRef}
         onChange={handleFileChange}
       />
-      <Tooltip title="Upload JSON">
+      <Tooltip title={intl.formatMessage(messages.uploadJson)}>
         <Button variant="outlined" className={classes.button} onClick={handleClick}>
           <FontAwesomeIcon icon={faUpload} />
         </Button>

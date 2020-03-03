@@ -20,4 +20,5 @@ export default defineMessages({
   depth: 'Depth',
   totalSpans: 'Total Spans',
   viewLogs: 'View Logs',
+  traceId: 'Trace ID',
 });

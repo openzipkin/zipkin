@@ -28,14 +28,28 @@ Enzyme.configure({ adapter: new EnzymeAdapter() });
 fetchMock.mock(UI_CONFIG, {});
 
 // Mock out browser refresh.
-const { reload } = window.location;
+const location = { window };
 
 // Allow redefining browser language.
 const { language } = window.navigator;
 
+// Mock out createRange until jest-environment-jsdom is updated to latest jsdom
+// https://github.com/mui-org/material-ui/issues/15726
+global.document.createRange = () => ({
+  setStart: () => {},
+  setEnd: () => {},
+  commonAncestorContainer: {
+    nodeName: 'BODY',
+    ownerDocument: document,
+  },
+});
+
 beforeAll(() => {
-  Object.defineProperty(window.location, 'reload', { configurable: true });
-  window.location.reload = jest.fn();
+  delete window.location;
+  window.location = {
+    ...location,
+    reload: jest.fn(),
+  };
 });
 
 beforeEach(() => {
@@ -46,5 +60,5 @@ beforeEach(() => {
 afterAll(() => {
   // Restore overrides for good measure.
   Object.defineProperty(window.navigator, 'language', { value: language, configurable: true });
-  window.location.reload = reload;
+  window.location = location;
 });

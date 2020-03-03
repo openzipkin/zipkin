@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,6 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
+import { useIntl } from 'react-intl'; 
 import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Table from '@material-ui/core/Table';
@@ -23,6 +24,7 @@ import Paper from '@material-ui/core/Paper';
 
 import { spanAnnotationPropTypes } from '../../../prop-types';
 import { formatTimestampMicros } from '../../../util/timestamp';
+import messages from './messages'
 
 const propTypes = {
   annotation: spanAnnotationPropTypes.isRequired,
@@ -36,7 +38,10 @@ const style = theme => ({
   },
 });
 
-const SpanAnnotation = React.memo(({ annotation, classes }) => (
+const SpanAnnotation = React.memo(({ annotation, classes }) => {
+  const intl = useIntl();
+
+  return (
   <Box>
     <Box fontSize="1.1rem" mb={0.5}>
       {annotation.value}
@@ -46,9 +51,9 @@ const SpanAnnotation = React.memo(({ annotation, classes }) => (
         <TableBody data-testid="span-annotation--table-body">
           {
             [
-              { label: 'Start Time', value: formatTimestampMicros(annotation.timestamp) },
-              { label: 'Relative Time', value: annotation.relativeTime },
-              { label: 'Address', value: annotation.endpoint },
+              { label: intl.formatMessage(messages.startTime), value: formatTimestampMicros(annotation.timestamp) },
+              { label: intl.formatMessage(messages.relativeTime), value: annotation.relativeTime },
+              { label: intl.formatMessage(messages.address), value: annotation.endpoint },
             ].map(e => (
               <TableRow key={e.label}>
                 <TableCell className={classes.cell} data-testid="span-annotation--label">
@@ -64,7 +69,7 @@ const SpanAnnotation = React.memo(({ annotation, classes }) => (
       </Table>
     </Paper>
   </Box>
-));
+)});
 
 SpanAnnotation.propTypes = propTypes;
 

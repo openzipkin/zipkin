@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,21 +12,16 @@
  * the License.
  */
 import React from 'react';
-import { render, fireEvent, cleanup } from '@testing-library/react';
+import { fireEvent, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import { createShallow } from '@material-ui/core/test-utils';
 import { ThemeProvider } from '@material-ui/styles';
 
 import SpanAnnotations from './SpanAnnotations';
+
 import { theme } from '../../../colors';
+import render from '../../../test/util/render-with-default-settings';
 
 describe('<SpanAnnotations />', () => {
-  let shallow;
-
-  beforeEach(() => {
-    shallow = createShallow();
-  });
-
   afterEach(cleanup);
 
   const span = {
@@ -91,48 +86,40 @@ describe('<SpanAnnotations />', () => {
   };
 
   it('should not render annotation data when mounted', () => {
-    const wrapper = shallow(<SpanAnnotations span={span} />);
-    expect(wrapper.find('[data-testid="span-annotations--annotation"]').length).toBe(0);
+    const { queryByTestId } = render(<SpanAnnotations span={span} />);
+    expect(queryByTestId('span-annotations--annotation')).not.toBeInTheDocument();
   });
 
   it('should change the toggle button\'s text when the toggle button is clicked', () => {
-    const { getByTestId } = render(
-      <ThemeProvider theme={theme}>
-        <SpanAnnotations span={span} />
-      </ThemeProvider>,
-    );
-    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('show all annotations');
+    const { getByTestId } = render(<SpanAnnotations span={span} />);
+    expect(getByTestId('span-annotations--toggle-button'))
+      .toHaveTextContent('show all annotations');
     fireEvent.click(getByTestId('span-annotations--toggle-button'));
     expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('hide annotations');
     fireEvent.click(getByTestId('span-annotations--toggle-button'));
-    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('show all annotations');
+    expect(getByTestId('span-annotations--toggle-button'))
+      .toHaveTextContent('show all annotations');
   });
 
   it('should show the only one annotation data when an annotation circle is clicked', () => {
-    const { getByTestId, getAllByTestId, queryAllByTestId } = render(
-      <ThemeProvider theme={theme}>
-        <SpanAnnotations span={span} />
-      </ThemeProvider>,
-    );
+    const { getByTestId, getAllByTestId, queryAllByTestId } =
+      render(<SpanAnnotations span={span} />);
     fireEvent.click(getByTestId('span-annotations--toggle-button'));
-    expect(queryAllByTestId('span-annotations--annotation').length).toBe(4);
+    expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(4);
     expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('hide annotations');
 
     // Click an annotation circle.
     fireEvent.click(getAllByTestId('span-annotation-graph--circle')[0]);
-    expect(queryAllByTestId('span-annotations--annotation').length).toBe(1);
-    expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('show all annotations');
+    expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(1);
+    expect(getByTestId('span-annotations--toggle-button'))
+      .toHaveTextContent('show all annotations');
   });
 
   it('should unselect when the same circle is clicked twice', () => {
-    const { getAllByTestId, queryAllByTestId } = render(
-      <ThemeProvider theme={theme}>
-        <SpanAnnotations span={span} />
-      </ThemeProvider>,
-    );
+    const { getAllByTestId, queryAllByTestId } = render(<SpanAnnotations span={span} />);
     fireEvent.click(getAllByTestId('span-annotation-graph--circle')[0]);
-    expect(queryAllByTestId('span-annotations--annotation').length).toBe(1);
+    expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(1);
     fireEvent.click(getAllByTestId('span-annotation-graph--circle')[0]);
-    expect(queryAllByTestId('span-annotations--annotation').length).toBe(0);
+    expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(0);
   });
 });
