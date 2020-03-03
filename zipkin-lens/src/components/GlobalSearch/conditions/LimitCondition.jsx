@@ -11,8 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import React, { useState, useRef, useCallback } from 'react';
-import { useIntl } from 'react-intl';
 import { useSelector, useDispatch } from 'react-redux';
 import { makeStyles } from '@material-ui/styles';
 import InputBase from '@material-ui/core/InputBase';
@@ -20,8 +21,6 @@ import Tooltip from '@material-ui/core/Tooltip';
 
 import { setLimitCondition } from '../../../actions/global-search-action';
 import { useMount } from '../../../hooks';
-
-import messages from '../messages';
 
 const useStyles = makeStyles(theme => ({
   input: {
@@ -40,7 +39,7 @@ const useStyles = makeStyles(theme => ({
 
 const LimitCondition = () => {
   const classes = useStyles();
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   const dispatch = useDispatch();
 
@@ -73,7 +72,7 @@ const LimitCondition = () => {
   }, []);
 
   return (
-    <Tooltip title={intl.formatMessage(messages.limit)}>
+    <Tooltip title={i18n._(t`Limit`)}>
       <InputBase
         inputRef={inputRef}
         value={value}

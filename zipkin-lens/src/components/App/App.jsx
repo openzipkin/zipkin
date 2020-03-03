@@ -11,6 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { setupI18n } from '@lingui/core';
+import { I18nProvider } from '@lingui/react'
 import React, { Suspense } from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
@@ -18,7 +20,6 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import { ThemeProvider } from '@material-ui/styles';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';
 import MomentUtils from '@date-io/moment';
-import { IntlProvider } from 'react-intl';
 
 import Layout from './Layout';
 import DiscoverPage from '../DiscoverPage';
@@ -28,18 +29,22 @@ import { UiConfig, UiConfigConsumer } from '../UiConfig';
 import configureStore from '../../store/configure-store';
 import { theme } from '../../colors';
 import { useDocumentTitle } from '../../hooks';
-import { DEFAULT_LOCALE, getLocale } from '../../util/locale';
+import { getLocale } from '../../util/locale';
 
 import { BASE_PATH } from '../../constants/api';
 
-const translations = {
-  en: require('../../translations/en.json'),
-  es: require('../../translations/es.json'),
-  'zh-cn': require('../../translations/zh-cn.json'),
-};
+import enMessages from '../../translations/en/messages';
+import esMessages from '../../translations/es/messages';
+import zhCnMessages from '../../translations/zh-cn/messages';
 
-const locale = getLocale();
-const messages = translations[locale] || translations[DEFAULT_LOCALE];
+export const i18n = setupI18n({
+  catalogs: {
+    en: enMessages,
+    es: esMessages,
+    'zh-cn': zhCnMessages,
+  },
+  locale: getLocale()
+});
 
 const App = () => {
   useDocumentTitle('Zipkin');
@@ -51,11 +56,7 @@ const App = () => {
             <UiConfigConsumer>
               {(config) => (
                 <Provider store={configureStore(config)}>
-                  <IntlProvider
-                    locale={locale}
-                    messages={messages}
-                    defaultLocale={DEFAULT_LOCALE}
-                  >
+                  <I18nProvider i18n={i18n}>
                     <BrowserRouter basename={BASE_PATH}>
                       <Layout>
                         <Route
@@ -75,7 +76,7 @@ const App = () => {
                         />
                       </Layout>
                     </BrowserRouter>
-                  </IntlProvider>
+                  </I18nProvider>
                 </Provider>
               )}
             </UiConfigConsumer>

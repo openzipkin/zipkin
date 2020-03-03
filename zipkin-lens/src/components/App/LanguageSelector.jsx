@@ -11,22 +11,21 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { faGlobe } from "@fortawesome/free-solid-svg-icons";
+import { faGlobe } from '@fortawesome/free-solid-svg-icons';
+import { t } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import List from '@material-ui/core/List';
 import ListItem from '@material-ui/core/ListItem';
 import ListItemText from '@material-ui/core/ListItemText';
 import Popover from '@material-ui/core/Popover';
 import React, { useCallback, useRef, useState } from 'react';
-import { useIntl } from 'react-intl';
 
 import { setLocale } from '../../util/locale';
 
 import SidebarMenu from './SidebarMenu';
 
-import messages from './messages';
-
 // We want to display all the languages in native language, not current locale, so hard-code the
-// strings here instead of using react-intl.
+// strings here instead of using internationalization.
 //
 // Exported for testing
 export const LANGUAGES = [
@@ -46,7 +45,7 @@ export const LANGUAGES = [
 
 const LanguageSelector = () => {
   const changeLanguageLink = useRef(null);
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   const [languageSelectorOpen, setLanguageSelectorOpen] = useState(false);
   const closeLanguageSelector = useCallback(() => {
@@ -58,7 +57,7 @@ const LanguageSelector = () => {
     setLanguageSelectorOpen(true);
   }, []);
 
-  const currentLocale = intl.locale;
+  const currentLocale = i18n.locale;
 
   const onLanguageClick = useCallback((e) => {
     const locale = e.currentTarget.dataset.locale;
@@ -72,7 +71,7 @@ const LanguageSelector = () => {
   return (
     <>
       <SidebarMenu
-        title={intl.formatMessage(messages.changeLanguage)}
+        title={i18n._(t`Change Language`)}
         path=""
         icon={faGlobe}
         ref={changeLanguageLink}

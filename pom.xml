@@ -588,6 +588,7 @@
             <exclude>**/.eslintrc.js</exclude>
             <exclude>**/testdata/**/*.json</exclude>
             <exclude>**/test/data/**/*.json</exclude>
+            <exclude>**/src/translations/**</exclude>
             <exclude>LICENSE</exclude>&gt;
             <exclude>**/*.md</exclude>
             <exclude>**/*.bnd</exclude>

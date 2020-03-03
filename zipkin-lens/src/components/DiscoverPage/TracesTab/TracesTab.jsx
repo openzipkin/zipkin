@@ -11,9 +11,9 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { Plural } from '@lingui/macro';
 import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
-import { FormattedMessage } from 'react-intl';
 import { connect } from 'react-redux';
 import Box from '@material-ui/core/Box';
 import { withStyles } from '@material-ui/styles';
@@ -27,8 +27,6 @@ import {
 import TracesTable from './TracesTable';
 import ServiceFilter from './ServiceFilter';
 import { traceSummariesPropTypes } from '../../../prop-types';
-
-import messages from './messages';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
@@ -73,7 +71,11 @@ export const TracesTab = ({ traceSummaries, classes }) => { // Export for testin
     <Box height="100%" display="flex" flexDirection="column">
       <Box borderBottom={1} display="flex" justifyContent="space-between" p={1} className={classes.header}>
         <Box display="flex" alignItems="center" fontSize="1.05rem" data-test="count-results">
-          <FormattedMessage {...messages.numResults} values={{num: traceSummaries.length}} />
+          <Plural
+            value={traceSummaries.length}
+            one="# Result"
+            other="# Results"
+          />
         </Box>
         <Box mr={2}>
           <ServiceFilter

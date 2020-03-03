@@ -11,9 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t, Trans } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { useIntl } from 'react-intl'; 
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
@@ -24,7 +25,6 @@ import { makeStyles } from '@material-ui/styles';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 
-import messages from './messages';
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -84,13 +84,13 @@ const DependenciesPageHeader = React.memo(({
   onFindButtonClick,
 }) => {
   const classes = useStyles();
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   return (
     <Box className={classes.root}>
       <Box className={classes.upperBox}>
         <Typography variant="h5" className={classes.pageTitle}>
-          {intl.formatMessage(messages.dependencies)}
+          <Trans>Dependencies</Trans>
         </Typography>
         <Box className={classes.upperRightBox}>
           <TraceJsonUploader />
@@ -99,7 +99,7 @@ const DependenciesPageHeader = React.memo(({
       </Box>
       <Box className={classes.searchBox}>
         <KeyboardDateTimePicker
-          label={intl.formatMessage(messages.startTime)}
+          label={i18n._(t`Start Time`)}
           inputVariant="outlined"
           value={startTime}
           onChange={onStartTimeChange}
@@ -108,7 +108,7 @@ const DependenciesPageHeader = React.memo(({
         />
         -
         <KeyboardDateTimePicker
-          label={intl.formatMessage(messages.endTime)}
+          label={i18n._(t`End Time`)}
           inputVariant="outlined"
           value={endTime}
           onChange={onEndTimeChange}

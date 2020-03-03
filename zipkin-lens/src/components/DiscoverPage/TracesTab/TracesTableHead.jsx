@@ -11,16 +11,15 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { Trans } from '@lingui/macro';
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
-import { FormattedMessage } from 'react-intl';
 import { faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';
 import Grid from '@material-ui/core/Grid';
 import grey from '@material-ui/core/colors/grey';
 
-import messages from './messages';
 import { sortingMethods } from './util';
 
 const useStyles = makeStyles({
@@ -80,10 +79,10 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
   return (
     <Grid container spacing={0} className={classes.root}>
       <Grid item xs={3} className={classes.cell}>
-        <FormattedMessage {...messages.root} />
+        <Trans>Root</Trans>
       </Grid>
       <Grid item xs={3} className={classes.cell}>
-        <FormattedMessage {...messages.traceId} />
+        <Trans>Trace ID</Trans>
       </Grid>
       <Grid
         item
@@ -92,7 +91,7 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
         onClick={handleStartTimeClick}
         data-testid="start-time"
       >
-        <FormattedMessage {...messages.startTime} />
+        <Trans>Start Time</Trans>
         &nbsp;
         {sortingMethod === sortingMethods.OLDEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
         {sortingMethod === sortingMethods.NEWEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}
@@ -104,7 +103,7 @@ const TracesTableHead = ({ sortingMethod, onSortingMethodChange }) => {
         onClick={handleDurationClick}
         data-testid="duration"
       >
-        <FormattedMessage {...messages.duration} />
+        <Trans>Duration</Trans>
         &nbsp;
         {sortingMethod === sortingMethods.LONGEST_FIRST && <FontAwesomeIcon icon={faArrowUp} />}
         {sortingMethod === sortingMethods.SHORTEST_FIRST && <FontAwesomeIcon icon={faArrowDown} />}

@@ -11,9 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { useIntl } from 'react-intl'; 
 import { withStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Table from '@material-ui/core/Table';
@@ -24,7 +25,6 @@ import Paper from '@material-ui/core/Paper';
 
 import { spanAnnotationPropTypes } from '../../../prop-types';
 import { formatTimestampMicros } from '../../../util/timestamp';
-import messages from './messages'
 
 const propTypes = {
   annotation: spanAnnotationPropTypes.isRequired,
@@ -39,7 +39,7 @@ const style = theme => ({
 });
 
 const SpanAnnotation = React.memo(({ annotation, classes }) => {
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   return (
   <Box>
@@ -51,9 +51,9 @@ const SpanAnnotation = React.memo(({ annotation, classes }) => {
         <TableBody data-testid="span-annotation--table-body">
           {
             [
-              { label: intl.formatMessage(messages.startTime), value: formatTimestampMicros(annotation.timestamp) },
-              { label: intl.formatMessage(messages.relativeTime), value: annotation.relativeTime },
-              { label: intl.formatMessage(messages.address), value: annotation.endpoint },
+              { label: i18n._(t`Start Time`), value: formatTimestampMicros(annotation.timestamp) },
+              { label: i18n._(t`Relative Time`), value: annotation.relativeTime },
+              { label: i18n._(t`Address`), value: annotation.endpoint },
             ].map(e => (
               <TableRow key={e.label}>
                 <TableCell className={classes.cell} data-testid="span-annotation--label">

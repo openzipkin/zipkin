@@ -11,15 +11,15 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
-import { useIntl } from 'react-intl';
 import React, { useState, useCallback } from 'react';
 import { withRouter } from 'react-router';
 import { makeStyles } from '@material-ui/styles';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 
-import messages from './messages'
 
 const useStyles = makeStyles({
   input: {
@@ -35,7 +35,7 @@ const propTypes = {
 
 export const TraceIdSearchInput = ({ history }) => {
   const classes = useStyles();
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   const [traceId, setTraceId] = useState('');
 
@@ -54,13 +54,13 @@ export const TraceIdSearchInput = ({ history }) => {
   return (
     <Tooltip title="Search by Trace ID">
       <TextField
-        label={intl.formatMessage(messages.traceId)}
+        label={i18n._(t`Trace ID`)}
         value={traceId}
         onChange={handleChange}
         onKeyDown={handleKeyDown}
         margin="normal"
         variant="outlined"
-        placeholder={intl.formatMessage(messages.traceIdPlaceholder)}
+        placeholder={i18n._(t`trace id...`)}
         InputLabelProps={{
           shrink: true,
         }}
