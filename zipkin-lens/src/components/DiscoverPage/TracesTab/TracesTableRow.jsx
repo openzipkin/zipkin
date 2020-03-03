@@ -102,7 +102,7 @@ export const TracesTableRowImpl = ({
   const { spanName, serviceName } = rootServiceAndSpanName(correctedTrace);
 
   return (
-    <Box className={classes.root} data-test="root">
+    <Box className={classes.root}>
       <Link to={`/traces/${traceSummary.traceId}`} className={classes.anchor}>
         <Grid container spacing={0} className={classes.data}>
           <Box
@@ -110,16 +110,14 @@ export const TracesTableRowImpl = ({
             width={`${traceSummary.width}%`}
             height="100%"
             className={classes.durationBar}
-            style={{
-              backgroundColor: selectColorByInfoClass(traceSummary.infoClass),
-            }}
-            data-test="duration-bar"
+            style={{ backgroundColor: selectColorByInfoClass(traceSummary.infoClass) }}
+            data-testid="duration-bar"
           />
           <Grid item xs={3} className={classes.dataCell}>
-            <Box className={classes.serviceName} data-test="service-name">
+            <Box className={classes.serviceName} data-testid="service-name">
               {`${serviceName}`}
             </Box>
-            <Box className={classes.subInfo} data-test="span-name">
+            <Box className={classes.subInfo} data-testid="span-name">
               {`(${spanName})`}
             </Box>
           </Grid>
