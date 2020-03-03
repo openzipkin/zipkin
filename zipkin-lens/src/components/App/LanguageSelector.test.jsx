@@ -19,52 +19,54 @@ import { getLocale } from '../../util/locale';
 
 import LanguageSelector, { LANGUAGES } from './LanguageSelector';
 
-test('loads and displays button and no popover', async () => {
-  const { queryByTestId } = render(<LanguageSelector />);
+describe('<LanguageSelector />', () => {
+  it('loads and displays button and no popover', async () => {
+    const { container, queryByTestId } = render(<LanguageSelector />);
 
-  const changeLanguageButton = queryByTestId('change-language-button');
-  const languageList = queryByTestId('language-list');
+    const changeLanguageButton = queryByTestId('change-language-button');
+    const languageList = queryByTestId('language-list');
 
-  expect(changeLanguageButton).toBeInTheDocument();
-  expect(changeLanguageButton).toHaveAttribute('title', 'Change Language');
+    expect(changeLanguageButton).toBeInTheDocument();
+    expect(changeLanguageButton).toHaveAttribute('title', 'Change Language');
 
-  expect(languageList).not.toBeInTheDocument();
+    expect(languageList).not.toBeInTheDocument();
 
-  expect(getLocale()).toEqual('en');
-});
+    expect(getLocale()).toEqual('en');
+  });
 
-test('click displays popover', async () => {
-  const { queryByTestId } = render(<LanguageSelector />);
+  it('click displays popover', async () => {
+    const { queryByTestId } = render(<LanguageSelector />);
 
-  const changeLanguageButton = queryByTestId('change-language-button');
+    const changeLanguageButton = queryByTestId('change-language-button');
 
-  expect(changeLanguageButton).toBeInTheDocument();
+    expect(changeLanguageButton).toBeInTheDocument();
 
-  fireEvent.click(changeLanguageButton);
+    fireEvent.click(changeLanguageButton);
 
-  const languageList = await waitForElement(() => queryByTestId('language-list'));
+    const languageList = await waitForElement(() => queryByTestId('language-list'));
 
-  expect(changeLanguageButton).toBeInTheDocument();
-  expect(languageList).toBeInTheDocument();
-  expect(languageList.children).toHaveLength(LANGUAGES.length);
+    expect(changeLanguageButton).toBeInTheDocument();
+    expect(languageList).toBeInTheDocument();
+    expect(languageList.children).toHaveLength(LANGUAGES.length);
 
-  expect(getLocale()).toEqual('en');
-});
+    expect(getLocale()).toEqual('en');
+  });
 
-test('language select changes locale and refreshes', async () => {
-  const { queryByTestId } = render(<LanguageSelector />);
+  it('language select changes locale and refreshes', async () => {
+    const { queryByTestId } = render(<LanguageSelector />);
 
-  const changeLanguageButton = queryByTestId('change-language-button');
+    const changeLanguageButton = queryByTestId('change-language-button');
 
-  expect(changeLanguageButton).toBeInTheDocument();
+    expect(changeLanguageButton).toBeInTheDocument();
 
-  fireEvent.click(changeLanguageButton);
+    fireEvent.click(changeLanguageButton);
 
-  await waitForElement(() => queryByTestId('language-list'));
+    await waitForElement(() => queryByTestId('language-list'));
 
-  fireEvent.click(queryByTestId('language-list-item-zh-cn'));
+    fireEvent.click(queryByTestId('language-list-item-zh-cn'));
 
-  await expect(window.location.reload).toHaveBeenCalled();
+    await expect(window.location.reload).toHaveBeenCalled();
 
-  expect(getLocale()).toEqual('zh-cn');
+    expect(getLocale()).toEqual('zh-cn');
+  });
 });
