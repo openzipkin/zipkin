@@ -11,9 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t, Trans } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { FormattedMessage, useIntl } from 'react-intl'; 
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
@@ -21,7 +22,6 @@ import Typography from '@material-ui/core/Typography';
 import SpanTags from './SpanTags';
 import SpanAnnotations from './SpanAnnotations';
 import { detailedSpanPropTypes } from '../../../prop-types';
-import messages from './messages'
 
 const propTypes = {
   span: detailedSpanPropTypes.isRequired,
@@ -81,21 +81,21 @@ const useStyles = makeStyles(theme => ({
 
 const SpanDetail = React.memo(({ span, minHeight }) => {
   const classes = useStyles();
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   const spanIds = (
     <Box className={classes.spanIds}>
       {
         [
-          { label: intl.formatMessage(messages.spanId), value: span.spanId },
-          { label: intl.formatMessage(messages.parentId), value: span.parentId },
+          { label: i18n._(t`Span ID`), value: span.spanId },
+          { label: i18n._(t`Parent ID`), value: span.parentId },
         ].map(entry => (
           <Box className={classes.spanIdEntry}>
             <Box className={classes.spanIdLabel}>
               {`${entry.label}:`}
             </Box>
             <Box className={classes.spanIdValue}>
-              {entry.value || intl.formatMessage(messages.none)}
+              {entry.value || <Trans>None</Trans>}
             </Box>
           </Box>
         ))
@@ -116,13 +116,13 @@ const SpanDetail = React.memo(({ span, minHeight }) => {
       {spanIds}
       <Box className={classes.annotationsAndTagsBox}>
         <Typography variant="h6" className={classes.annotationsAndTagsTitle}>
-          <FormattedMessage {...messages.annotations} />
+          <Trans>Annotations</Trans>
         </Typography>
         <SpanAnnotations span={span} />
       </Box>
       <Box className={classes.annotationsAndTagsBox}>
         <Typography variant="h6" className={classes.annotationsAndTagsTitle}>
-          <FormattedMessage {...messages.tags} />
+          <Trans>Tags</Trans>
         </Typography>
         <SpanTags tags={span.tags} />
       </Box>

@@ -11,9 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { useIntl } from 'react-intl'; 
 import { faSearch, faProjectDiagram, faHome } from '@fortawesome/free-solid-svg-icons';
 import { faGithub, faTwitter, faGitter } from '@fortawesome/free-brands-svg-icons';
 import Box from '@material-ui/core/Box';
@@ -25,7 +26,6 @@ import { makeStyles } from '@material-ui/styles';
 import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
 import Logo from '../../img/zipkin-logo.svg';
-import messages from './messages'
 
 const drawerWidth = '3.2rem';
 
@@ -71,7 +71,7 @@ const propTypes = {
 
 const Layout = ({ children }) => {
   const classes = useStyles();
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   return (
     <Box className={classes.root}>
@@ -82,13 +82,13 @@ const Layout = ({ children }) => {
             <Logo className={classes.zipkinLogo} />
           </Box>
           <List>
-            <SidebarMenu title={intl.formatMessage(messages.discoverPage)} path="/" icon={faSearch} />
-            <SidebarMenu title={intl.formatMessage(messages.dependenciesPage)} path="/dependency" icon={faProjectDiagram} />
+            <SidebarMenu title={i18n._(t`Discover Page`)} path="/" icon={faSearch} />
+            <SidebarMenu title={i18n._(t`Dependencies Page`)} path="/dependency" icon={faProjectDiagram} />
           </List>
         </Box>
         <List>
-          <SidebarMenu title={intl.formatMessage(messages.zipkinHome)} path="https://zipkin.io/" icon={faHome} />
-          <SidebarMenu title={intl.formatMessage(messages.repository)} path="https://github.com/openzipkin/zipkin" icon={faGithub} />
+          <SidebarMenu title={i18n._(t`Zipkin Home`)} path="https://zipkin.io/" icon={faHome} />
+          <SidebarMenu title={i18n._(t`Repository`)} path="https://github.com/openzipkin/zipkin" icon={faGithub} />
           <SidebarMenu title="Twitter" path="https://twitter.com/zipkinproject" icon={faTwitter} />
           <SidebarMenu title="Gitter" path="https://gitter.im/openzipkin/zipkin/" icon={faGitter} />
           <LanguageSelector />

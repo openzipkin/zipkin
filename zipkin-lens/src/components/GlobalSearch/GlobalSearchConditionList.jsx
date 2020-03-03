@@ -11,8 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { Trans } from '@lingui/macro';
 import React, { useMemo, useCallback } from 'react';
-import { FormattedMessage } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -23,8 +23,6 @@ import Button from '@material-ui/core/Button';
 import { retrieveNextConditionKey, retrieveDefaultConditionValue } from './util';
 import GlobalSearchCondition from './GlobalSearchCondition';
 import { addCondition } from '../../actions/global-search-action';
-
-import messages from './messages';
 
 const useStyles = makeStyles({
   root: {
@@ -81,7 +79,7 @@ const GlobalSearchConditionList = () => {
           conditions.length === 0
             ? (
               <Box>
-                <FormattedMessage {...messages.pleaseSelectCriteria} />
+                <Trans>Please select the criteria for your trace lookup</Trans>
               </Box>
             )
             : conditions.map((condition, conditionIndex) => (

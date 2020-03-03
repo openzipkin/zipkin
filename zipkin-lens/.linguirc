@@ -1,0 +1,21 @@
+{
+  "locales": [
+    "en",
+    "es",
+    "zh-cn"
+  ],
+  "sourceLocale": "en",
+  "fallbackLocale": "en",
+  "catalogs": [
+    {
+      "path": "src/translations/{locale}/messages",
+      "include": [
+        "src/"
+      ],
+      "exclude": [
+        "*/node_modules/*"
+      ]
+    }
+  ],
+  "format": "minimal"
+}

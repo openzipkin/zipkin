@@ -14,8 +14,6 @@
 
 const localeStorageKey = 'localeOverride';
 
-export const DEFAULT_LOCALE = 'en';
-
 export function getLocale() {
   const override = localStorage.getItem(localeStorageKey);
   if (override) {

@@ -11,9 +11,10 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t, Trans } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React, { useMemo, useState } from 'react';
-import { FormattedMessage, useIntl } from 'react-intl';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Popover from '@material-ui/core/Popover';
@@ -25,8 +26,6 @@ import Typography from '@material-ui/core/Typography';
 import grey from '@material-ui/core/colors/grey';
 
 import ServiceBadge from '../../Common/ServiceBadge';
-
-import messages from './messages';
 
 const propTypes = {
   open: PropTypes.bool.isRequired,
@@ -84,7 +83,7 @@ const ServiceFilterPopover = ({
   onDeleteFilter,
 }) => {
   const classes = useStyles();
-  const intl = useIntl();
+  const { i18n } = useLingui();
 
   const [filterText, setFilterText] = useState('');
 
@@ -108,13 +107,13 @@ const ServiceFilterPopover = ({
     >
       <Box className={classes.label} data-testid="label">
         <Typography variant="h5">
-          <FormattedMessage {...messages.filter} />
+          <Trans>Filter</Trans>
         </Typography>
       </Box>
       <Box display="flex" justifyContent="center">
         <TextField
           value={filterText}
-          label={intl.formatMessage(messages.serviceName)}
+          label={i18n._(t`Service Name`)}
           className={classes.textField}
           onChange={handleTextChange}
           data-testid="text-field"

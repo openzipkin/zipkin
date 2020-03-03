@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { Trans } from "@lingui/macro";
 import PropTypes from 'prop-types';
 import React, { useEffect, useCallback } from 'react';
 import { connect } from 'react-redux';
@@ -24,7 +25,6 @@ import CircularProgress from '@material-ui/core/CircularProgress';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/styles';
-import { FormattedMessage } from 'react-intl';
 
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
@@ -46,8 +46,6 @@ import * as globalSearchActionCreators from '../../actions/global-search-action'
 import { globalSearchLookbackConditionPropTypes, globalSearchConditionsPropTypes } from '../../prop-types';
 
 import ExplainBox from './ExplainBox';
-
-import messages from './messages';
 
 const useStyles = makeStyles(theme => ({
   header: {
@@ -255,7 +253,7 @@ const DiscoverPageImpl = ({
       <Box className={classes.header}>
         <Box className={classes.titleRow}>
           <Typography variant="h5">
-            <FormattedMessage {...messages.discover} />
+            <Trans>Discover</Trans>
           </Typography>
           <Box className={classes.upperRightBox}>
             <TraceJsonUploader />

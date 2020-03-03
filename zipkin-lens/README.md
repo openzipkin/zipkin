@@ -41,6 +41,27 @@ To check code coverage,
 npm run coverage
 ```
 
+## Localization
+
+We use [LinguiJS](https://lingui.js.org/) for localization of the UI. Translations for strings are
+found in the JSON files under [here](./src/translations). The Javascript files in the directory are
+compiled from the JSON files. We're always excited to have help maintaining these translations - if
+you see a string in the UI that is not translated or mistranslated, please feel free to send a PR to
+the JSON file to fix it. If you can, please run `yarn run compile` to also compile the translation
+into the output. If it's tedious to set up an environment for it, though, don't worry we'll take care
+of it.
+
+### Adding a new locale
+
+To add a new translated locale, first edit [.linguirc](./.linguirc) and add the locale to the
+`locales` section. Next, run `yarn run extract` to extract a new file under `src/translations` for
+the locale. Translate as many strings in the JSON file as you can. Then run `yarn run compile` to
+compile the strings.
+
+Finally, edit [App.jsx](./src/components/App/App.jsx) and
+[LanguageSelector.jsx](./src/components/App/LanguageSelector.jsx) to import the new translation and
+add an entry to the language selector respectively.
+
 ## Authentication / Authorization
 
 Zipkin Lens can be secured by running it behind an authenticating proxy like [Apache HTTPD](https://httpd.apache.org/docs/current/howto/auth.html), [Nginx](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) or similar.

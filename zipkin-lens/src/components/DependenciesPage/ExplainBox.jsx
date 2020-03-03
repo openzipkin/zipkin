@@ -11,15 +11,13 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { Trans } from '@lingui/macro';
 import React from 'react';
-import { FormattedMessage } from 'react-intl';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import Box from '@material-ui/core/Box';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/styles';
-
-import messages from './messages'; 
 
 const useStyles = makeStyles(theme => ({
   root: {
@@ -47,10 +45,10 @@ const ExplainBox = React.memo(() => {
         <FontAwesomeIcon icon={faSearch} />
       </Box>
       <Typography variant="h4">
-        <FormattedMessage {...messages.searchDependenciesHeader} />
+        <Trans>Search Dependencies</Trans>
       </Typography>
       <Typography variant="body1" className={classes.description}>
-        <FormattedMessage {...messages.searchDependenciesDescription} />
+        <Trans>Please select the start and end time. Then, click the search button.</Trans>
       </Typography>
     </Box>
   );

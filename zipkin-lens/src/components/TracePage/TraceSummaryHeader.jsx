@@ -11,6 +11,8 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import { t, Trans } from '@lingui/macro';
+import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React, { useCallback } from 'react';
 import { faDownload, faFileAlt } from '@fortawesome/free-solid-svg-icons';
@@ -20,7 +22,6 @@ import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
 import Button from '@material-ui/core/Button';
 import Typography from '@material-ui/core/Typography';
-import { FormattedMessage, useIntl } from 'react-intl';
 
 import { useUiConfig } from '../UiConfig';
 
@@ -28,8 +29,6 @@ import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import { detailedTraceSummaryPropTypes } from '../../prop-types';
 import * as api from '../../constants/api';
-
-import messages from './messages';
 
 const propTypes = {
   traceSummary: detailedTraceSummaryPropTypes,
@@ -98,7 +97,7 @@ const useStyles = makeStyles(theme => ({
 
 const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
   const classes = useStyles();
-  const intl = useIntl();
+  const { i18n } = useLingui();
   const config = useUiConfig();
 
   const logsUrl = (config.logsUrl && traceSummary)
@@ -127,12 +126,12 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
     <Box className={classes.traceInfo}>
       {
         [
-          { label: intl.formatMessage(messages.duration), value: traceSummary.durationStr },
-          { label: intl.formatMessage(messages.services), value: traceSummary.serviceNameAndSpanCounts.length },
-          { label: intl.formatMessage(messages.depth), value: traceSummary.depth },
-          { label: intl.formatMessage(messages.totalSpans), value: traceSummary.spans.length },
+          { label: i18n._(t`Duration`), value: traceSummary.durationStr },
+          { label: i18n._(t`Services`), value: traceSummary.serviceNameAndSpanCounts.length },
+          { label: i18n._(t`Depth`), value: traceSummary.depth },
+          { label: i18n._(t`Total Spans`), value: traceSummary.spans.length },
           {
-            label: intl.formatMessage(messages.traceId),
+            label: i18n._(t`Trace ID`),
             value: rootSpanIndex === 0
               ? traceSummary.traceId
               : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
@@ -181,14 +180,14 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
           <Grid item>
             <Button variant="outlined" className={classes.actionButton} onClick={handleSaveButtonClick}>
               <FontAwesomeIcon icon={faDownload} className={classes.actionButtonIcon} />
-              <FormattedMessage {...messages.downloadJson} />
+              <Trans>Download JSON</Trans>
             </Button>
           </Grid>
           {logsUrl && (
             <Grid item>
               <Button variant="outlined" className={classes.actionButton} href={logsUrl} target="_blank" rel="noopener" data-testid="view-logs-link">
                 <FontAwesomeIcon icon={faFileAlt} className={classes.actionButtonIcon} />
-                <FormattedMessage {...messages.viewLogs} />
+                <Trans>View Logs</Trans>
               </Button>
             </Grid>
           )}
