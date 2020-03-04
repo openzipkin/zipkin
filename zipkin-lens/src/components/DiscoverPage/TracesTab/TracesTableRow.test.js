@@ -12,10 +12,12 @@
  * the License.
  */
 import React from 'react';
-import { mount } from 'enzyme';
+import { cleanup } from '@testing-library/react';
 
 import { TracesTableRowImpl, rootServiceAndSpanName } from './TracesTableRow';
 import { SpanNode } from '../../../zipkin/span-node';
+import render from '../../../test/util/render-with-default-settings';
+import { selectColorByInfoClass } from '../../../colors';
 
 describe('rootServiceAndSpanName', () => {
   it('should return serviceName and spanName of the span', () => {
@@ -80,72 +82,52 @@ describe('rootServiceAndSpanName', () => {
 });
 
 describe('<TracesTableRow />', () => {
-  let wrapper;
-  let history;
-  let onAddFilter;
-
-  const traceSummary = {
-    traceId: '12345',
-    timestamp: 1,
-    duration: 3,
-    durationStr: '3μs',
-    serviceSummaries: [
-      { serviceName: 'service-A', spanCount: 4 },
-      { serviceName: 'service-B', spanCount: 8 },
-      { serviceName: 'service-C', spanCount: 2 },
-    ],
-    spanCount: 14,
-    width: 80,
-  };
-
-  const correctedTraceMap = {
-    12345: {
-      span: {
-        localEndpoint: {
-          serviceName: 'service-A',
+  const commonProps = {
+    traceSummary: {
+      traceId: '12345',
+      timestamp: 1,
+      duration: 3,
+      durationStr: '3μs',
+      serviceSummaries: [
+        { serviceName: 'service-A', spanCount: 4 },
+        { serviceName: 'service-B', spanCount: 8 },
+        { serviceName: 'service-C', spanCount: 2 },
+      ],
+      spanCount: 14,
+      width: 80,
+    },
+    correctedTraceMap: {
+      12345: {
+        span: {
+          localEndpoint: {
+            serviceName: 'service-A',
+          },
+          name: 'span-A',
         },
-        name: 'span-A',
       },
     },
+    onAddFilter: () => {},
   };
 
-  beforeEach(() => {
-    history = {
-      push: jest.fn(),
-    };
-    onAddFilter = jest.fn();
-
-    wrapper = mount(
-      <TracesTableRowImpl
-        traceSummary={traceSummary}
-        history={history}
-        onAddFilter={onAddFilter}
-        correctedTraceMap={correctedTraceMap}
-      />,
-    );
-  });
+  afterEach(cleanup);
 
   it('should render duration bar', () => {
-    const item = wrapper.find('[data-test="duration-bar"]').first();
-    expect(item.prop('width')).toBe('80%');
+    const { getByTestId } = render(<TracesTableRowImpl {...commonProps} />);
+    const durationBar = getByTestId('duration-bar');
+    // width and background-color are changed by their props.
+    expect(durationBar).toHaveStyle('width: 80%');
+    expect(durationBar).toHaveStyle(
+      `background-color: ${selectColorByInfoClass(commonProps.traceSummary.infoClass)}`,
+    );
   });
 
   it('should render the service name', () => {
-    const item = wrapper.find('[data-test="service-name"]').first();
-    expect(item.text()).toBe('service-A');
+    const { getByTestId } = render(<TracesTableRowImpl {...commonProps} />);
+    expect(getByTestId('service-name')).toHaveTextContent('service-A');
   });
 
   it('should render the span name', () => {
-    const item = wrapper.find('[data-test="span-name"]').first();
-    expect(item.text()).toBe('(span-A)');
-  });
-
-  it('should push the history to the individual trace page', () => {
-    const item = wrapper.find('[data-test="root"]').first();
-    item.simulate('click');
-    expect(history.push.mock.calls.length).toBe(1);
-    expect(history.push.mock.calls[0][0]).toBe(
-      '/traces/12345',
-    );
+    const { getByTestId } = render(<TracesTableRowImpl {...commonProps} />);
+    expect(getByTestId('span-name')).toHaveTextContent('span-A');
   });
 });

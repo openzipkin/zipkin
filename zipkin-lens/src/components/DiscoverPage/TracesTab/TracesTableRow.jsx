@@ -12,19 +12,19 @@
  * the License.
  */
 import PropTypes from 'prop-types';
-import React, { useCallback } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 import { withRouter } from 'react-router';
+import { Link } from 'react-router-dom';
 import moment from 'moment';
 import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Grid from '@material-ui/core/Grid';
-import grey from '@material-ui/core/colors/grey';
 
 import ServiceBadge from '../../Common/ServiceBadge';
 import { getServiceName } from '../../../zipkin';
 import { traceSummaryPropTypes } from '../../../prop-types';
-import { theme, selectColorByInfoClass } from '../../../colors';
+import { selectColorByInfoClass } from '../../../colors';
 
 export function rootServiceAndSpanName(root) {
   const { span } = root;
@@ -44,20 +44,24 @@ export function rootServiceAndSpanName(root) {
 const propTypes = {
   traceSummary: traceSummaryPropTypes.isRequired,
   onAddFilter: PropTypes.func.isRequired,
-  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
   correctedTraceMap: PropTypes.shape({}).isRequired,
 };
 
-const useStyles = makeStyles({
+const useStyles = makeStyles(theme => ({
   root: {
     cursor: 'pointer',
     '&:hover': {
-      backgroundColor: grey[100],
+      backgroundColor: theme.palette.grey[100],
     },
+  },
+  anchor: {
+    color: theme.palette.text.primary,
+    textDecoration: 'none',
+    outline: 'none',
   },
   data: {
     position: 'relative',
-    borderBottom: `1px solid ${grey[200]}`,
+    borderBottom: `1px solid ${theme.palette.grey[200]}`,
   },
   durationBar: {
     opacity: 0.4,
@@ -74,7 +78,7 @@ const useStyles = makeStyles({
     paddingRight: '1rem',
     paddingTop: '0.6rem',
     paddingBottom: '0.6rem',
-    borderBottom: `1px solid ${grey[300]}`,
+    borderBottom: `1px solid ${theme.palette.grey[300]}`,
   },
   serviceName: {
     textTransform: 'uppercase',
@@ -83,12 +87,11 @@ const useStyles = makeStyles({
     marginLeft: '0.6rem',
     color: theme.palette.text.hint,
   },
-});
+}));
 
 export const TracesTableRowImpl = ({
   traceSummary,
   onAddFilter,
-  history,
   correctedTraceMap,
 }) => {
   const classes = useStyles();
@@ -98,46 +101,44 @@ export const TracesTableRowImpl = ({
   const correctedTrace = correctedTraceMap[traceSummary.traceId];
   const { spanName, serviceName } = rootServiceAndSpanName(correctedTrace);
 
-  const handleClick = useCallback(() => {
-    history.push(`/traces/${traceSummary.traceId}`);
-  }, [history, traceSummary.traceId]);
-
   return (
-    <Box className={classes.root} onClick={handleClick} data-test="root">
-      <Grid container spacing={0} className={classes.data}>
-        <Box
-          position="absolute"
-          width={`${traceSummary.width}%`}
-          height="100%"
-          className={classes.durationBar}
-          style={{
-            backgroundColor: selectColorByInfoClass(traceSummary.infoClass),
-          }}
-          data-test="duration-bar"
-        />
-        <Grid item xs={3} className={classes.dataCell}>
-          <Box className={classes.serviceName} data-test="service-name">
-            {`${serviceName}`}
-          </Box>
-          <Box className={classes.subInfo} data-test="span-name">
-            {`(${spanName})`}
-          </Box>
+    <Box className={classes.root}>
+      <Link to={`/traces/${traceSummary.traceId}`} className={classes.anchor}>
+        <Grid container spacing={0} className={classes.data}>
+          <Box
+            position="absolute"
+            width={`${traceSummary.width}%`}
+            height="100%"
+            className={classes.durationBar}
+            style={{ backgroundColor: selectColorByInfoClass(traceSummary.infoClass) }}
+            data-testid="duration-bar"
+          />
+          <Grid item xs={3} className={classes.dataCell}>
+            <Box className={classes.serviceName} data-testid="service-name">
+              {`${serviceName}`}
+            </Box>
+            <Box className={classes.subInfo} data-testid="span-name">
+              {`(${spanName})`}
+            </Box>
+          </Grid>
+          <Grid item xs={3} className={classes.dataCell}>
+            {traceSummary.traceId}
+          </Grid>
+          <Grid item xs={3} className={classes.dataCell}>
+            <Box>
+              {startTime.format('MM/DD HH:mm:ss:SSS')}
+            </Box>
+            <Box className={classes.subInfo}>
+              {`(${startTime.fromNow()})`}
+            </Box>
+          </Grid>
+          <Grid item xs={3} className={classes.dataCell}>
+            {traceSummary.durationStr}
+          </Grid>
         </Grid>
-        <Grid item xs={3} className={classes.dataCell}>
-          {traceSummary.traceId}
-        </Grid>
-        <Grid item xs={3} className={classes.dataCell}>
-          <Box>
-            {startTime.format('MM/DD HH:mm:ss:SSS')}
-          </Box>
-          <Box className={classes.subInfo}>
-            {`(${startTime.fromNow()})`}
-          </Box>
-        </Grid>
-        <Grid item xs={3} className={classes.dataCell}>
-          {traceSummary.durationStr}
-        </Grid>
-      </Grid>
+      </Link>
+      {/* In HTML5, anchor tag including interactive content is invalid.
+          So ServiceBadge which has onClick callback cannot be surrounded by Link. */}
       <Box display="flex" flexWrap="wrap" className={classes.badgeRow}>
         {
           traceSummary.serviceSummaries.map(serviceSummary => (
