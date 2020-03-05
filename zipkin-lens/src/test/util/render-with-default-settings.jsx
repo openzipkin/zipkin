@@ -40,13 +40,26 @@ export default (ui, {
 } = {}) => {
   const store = configureStore({});
 
+  const filledConfig = {
+    // Defaults copied from ZipkinUiCOnfiguration.java
+    environment: '',
+    queryLimit: 10,
+    defaultLookback: 15 * 60 * 1000,
+    searchEnabled: true,
+    dependency: {
+      lowErrorRate: 0.5,
+      highErrorRate: 0.75,
+    },
+    ...uiConfig,
+  };
+
   const wrapper = ({ children }) => ( // eslint-disable-line react/prop-types
     <Provider store={store}>
       <I18nProvider i18n={i18n}>
         <Router history={history}>
           <MuiPickersUtilsProvider utils={MomentUtils}>
             <ThemeProvider theme={theme}>
-              <UiConfigContext.Provider value={uiConfig}>
+              <UiConfigContext.Provider value={filledConfig}>
                 {children}
               </UiConfigContext.Provider>
             </ThemeProvider>
