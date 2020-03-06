@@ -32,7 +32,6 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -62,7 +61,7 @@ import org.testcontainers.utility.MountableFile;
  * session of benchmarks. Docker containers seem to have time get out of sync when a computer sleeps
  * until you restart the daemon - this causes Prometheus metrics to not scrape properly.
  */
-@Disabled  // Run manually
+// @Disabled  // Run manually
 class ServerIntegratedBenchmark {
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -130,9 +129,26 @@ class ServerIntegratedBenchmark {
     runBenchmark(mysql);
   }
 
-  void runBenchmark(@Nullable GenericContainer<?> storage) throws Exception {
-    GenericContainer<?> zipkin = createZipkinContainer(storage);
+  // Benchmark for zipkin-aws XRay UDP storage. As UDP does not actually need a server running to
+  // send to, we can reuse our benchmark logic here to check it. Note, this benchmark always uses
+  // a docker image and ignores RELEASED_ZIPKIN_SERVER.
+  @Test void xrayUdp() throws Exception {
+    GenericContainer<?> zipkin = new GenericContainer<>("openzipkin/zipkin-aws:0.20.0")
+      .withNetwork(Network.SHARED)
+      .withNetworkAliases("zipkin")
+      .withEnv("STORAGE_TYPE", "xray")
+      .withExposedPorts(9411);
+    closer.register(zipkin::stop);
 
+    runBenchmark(null, zipkin);
+  }
+
+  void runBenchmark(@Nullable GenericContainer<?> storage) throws Exception {
+    runBenchmark(storage, createZipkinContainer(storage));
+  }
+
+  void runBenchmark(@Nullable GenericContainer<?> storage, GenericContainer<?> zipkin)
+    throws Exception {
     GenericContainer<?> backend = new GenericContainer<>("openzipkin/example-sleuth-webmvc")
       .withNetwork(Network.SHARED)
       .withNetworkAliases("backend")
@@ -237,7 +253,8 @@ class ServerIntegratedBenchmark {
     }
   }
 
-  GenericContainer<?> createZipkinContainer(@Nullable GenericContainer<?> storage) throws Exception {
+  GenericContainer<?> createZipkinContainer(@Nullable GenericContainer<?> storage)
+    throws Exception {
     Map<String, String> env = new HashMap<>();
     if (storage != null) {
       String name = storage.getLabels().get("name");
