@@ -26,6 +26,7 @@ import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { makeStyles } from '@material-ui/styles';
 
+import { useUiConfig } from '../UiConfig';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 import TracesTab from './TracesTab';
@@ -125,7 +126,23 @@ const propTypes = {
   setLimitCondition: PropTypes.func.isRequired,
 };
 
-const DiscoverPageImpl = ({
+const DiscoverPageHeader = () => {
+  const classes = useStyles();
+
+  return (
+    <Box className={classes.titleRow}>
+      <Typography variant="h5">
+        <Trans>Discover</Trans>
+      </Typography>
+      <Box className={classes.upperRightBox}>
+        <TraceJsonUploader />
+        <TraceIdSearchInput />
+      </Box>
+    </Box>
+  );
+};
+
+const DiscoverPageContent = ({
   isLoading,
   traces,
   lastQueryParams,
@@ -145,6 +162,8 @@ const DiscoverPageImpl = ({
   setLimitCondition,
 }) => {
   const classes = useStyles();
+
+
 
   const findTraces = useCallback(() => {
     const currentTs = moment().valueOf();
@@ -231,7 +250,6 @@ const DiscoverPageImpl = ({
     clearTraces();
     return null;
   }
-
   let content;
   if (isLoading) {
     content = (
@@ -258,20 +276,36 @@ const DiscoverPageImpl = ({
   return (
     <>
       <Box className={classes.header}>
-        <Box className={classes.titleRow}>
-          <Typography variant="h5">
-            <Trans>Discover</Trans>
-          </Typography>
-          <Box className={classes.upperRightBox}>
-            <TraceJsonUploader />
-            <TraceIdSearchInput />
-          </Box>
-        </Box>
+        <DiscoverPageHeader />
         <GlobalSearch findData={findTraces} />
       </Box>
       {content}
     </>
   );
+};
+
+const DiscoverPageImpl = (props) => {
+  const classes = useStyles();
+  const config = useUiConfig();
+
+  if (!config.searchEnabled) {
+    return (
+      <Box className={classes.header}>
+        <DiscoverPageHeader />
+        <Box className={classes.explainBoxWrapper}>
+          <Typography variant="body1">
+            <Trans>
+              Searching has been disabled via the searchEnabled property. You can still view specific
+              traces of which you know the trace id by entering it in the "trace id..." textbox on
+              the top-right.
+            </Trans>
+          </Typography>
+        </Box>
+      </Box>
+    );
+  }
+
+  return <DiscoverPageContent {...props} />;
 };
 
 DiscoverPageImpl.propTypes = propTypes;
