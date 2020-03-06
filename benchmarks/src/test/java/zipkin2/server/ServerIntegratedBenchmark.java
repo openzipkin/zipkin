@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.Network;
@@ -61,7 +62,7 @@ import org.testcontainers.utility.MountableFile;
  * session of benchmarks. Docker containers seem to have time get out of sync when a computer sleeps
  * until you restart the daemon - this causes Prometheus metrics to not scrape properly.
  */
-// @Disabled  // Run manually
+@Disabled  // Run manually
 class ServerIntegratedBenchmark {
 
   static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
