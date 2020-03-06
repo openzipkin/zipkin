@@ -22,7 +22,7 @@ APACHE_MIRROR=$(curl --stderr /dev/null https://www.apache.org/dyn/closer.cgi\?a
 
 curl -sSL $APACHE_MIRROR/zookeeper/zookeeper-$ZOOKEEPER_VERSION/apache-zookeeper-$ZOOKEEPER_VERSION.tar.gz | tar xz
 mkdir zookeeper
-mv zookeeper-$ZOOKEEPER_VERSION/conf zookeeper/
+mv apache-zookeeper-$ZOOKEEPER_VERSION/conf zookeeper/
 
 # download kafka binaries
 curl -sSL $APACHE_MIRROR/kafka/$KAFKA_VERSION/kafka_$SCALA_VERSION-$KAFKA_VERSION.tgz | tar xz
@@ -43,6 +43,6 @@ EOF
 mkdir /kafka/logs
 
 echo "*** Cleaning Up"
-rm -rf zookeeper-$ZOOKEEPER_VERSION
+rm -rf apache-zookeeper-$ZOOKEEPER_VERSION
 
 echo "*** Image build complete"
