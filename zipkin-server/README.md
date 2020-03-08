@@ -1,9 +1,12 @@
 # zipkin-server
-zipkin-server is a highly customized [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) application, packaged as an executable jar. You need JRE 8+ to start zipkin-server.
+Zipkin Server a Java 1.8+ service, packaged as an executable jar.
 
-Span storage and collectors are configurable. By default, storage is
-in-memory, the http collector (POST /api/v2/spans endpoint) is enabled,
-and the server listens on port 9411.
+Span storage and collectors are [configurable](#configuration). By default, storage is in-memory,
+the http collector (POST /api/v2/spans endpoint) is enabled, and the server listens on port 9411.
+
+Zipkin Server is implemented with [Armeria](https://github.com/line/armeria) and uses [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
+internally for configuration. It should not be considered a normal Spring Boot application: custom
+servers are not supported.
 
 ## Quick-start
 
