@@ -484,7 +484,7 @@ When `zipkin.self-tracing.enabled=true`, Zipkin will self-trace calls to the api
 Variable | Property | Description
 --- | --- | ---
 SELF_TRACING_ENABLED | zipkin.self-tracing.enabled | Set to true to enable self-tracing. Defaults to false
-SELF_TRACING_SAMPLE_RATE`: Percentage of self-traces to retain, defaults to always sample (1.0).
+SELF_TRACING_SAMPLE_RATE: Percentage of self-traces to retain, defaults to always sample (1.0).
 SELF_TRACING_FLUSH_INTERVAL | zipkin.self-tracing.flush-interval | Interval in seconds to flush self-tracing data to storage. Defaults to 1
 
 ### 128-bit trace IDs
