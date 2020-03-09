@@ -2,11 +2,12 @@
 Zipkin Server is a Java 1.8+ service, packaged as an executable jar.
 
 Span storage and collectors are [configurable](#configuration). By default, storage is in-memory,
-the http collector (POST /api/v2/spans endpoint) is enabled, and the server listens on port 9411.
+the HTTP collector (POST /api/v2/spans endpoint) is enabled, and the server listens on port 9411.
 
-Zipkin Server is implemented with [Armeria](https://github.com/line/armeria) and uses [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
-internally for configuration. It should not be considered a normal Spring Boot application: custom
-servers are not supported.
+Zipkin Server is implemented with [Armeria](https://github.com/line/armeria). While it uses [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
+internally, Zipkin Server should not be considered a normal Spring Boot application.
+
+**Custom servers are not supported**
 
 ## Quick-start
 
@@ -24,14 +25,14 @@ Once you've started, browse to http://your_host:9411 to find traces!
 The following endpoints are defined under the base url http://your_host:9411
 * / - [UI](../zipkin-ui)
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
-* /api/v2 - [Api](https://zipkin.io/zipkin-api/#/)
+* /api/v2 - [API](https://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
 * /metrics - Includes collector metrics broken down by transport type
 * /prometheus - Prometheus scrape endpoint
 
-The [legacy /api/v1 Api](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
-HTTP api via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
+The [legacy /api/v1 API](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
+HTTP API via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
 `https://zipkin.io/zipkin-api/zipkin-api.yaml` into the explore box of the Swagger UI to view the old definition
 
 ### CORS (Cross-origin Resource Sharing)
@@ -49,7 +50,7 @@ ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 See [Configuration](#configuration) for more about how Zipkin is configured.
 
 ### Service and Span names query
-The [Zipkin Api](https://zipkin.io/zipkin-api/#/default/get_services) does not include
+The [Zipkin API](https://zipkin.io/zipkin-api/#/default/get_services) does not include
 a parameter for how far back to look for service or span names. In order
 to prevent excessive load, service and span name queries are limited by
 `QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
@@ -123,9 +124,9 @@ We support ENV variable configuration, such as `STORAGE_TYPE=cassandra3`, as the
 administrators and easy to use in runtime environments such as Docker.
 
 Here are the top-level configuration of Zipkin:
-* `QUERY_PORT`: Listen port for the http api and web ui; Defaults to 9411
+* `QUERY_PORT`: Listen port for the HTTP API and web UI; Defaults to 9411
 * `QUERY_ENABLED`: `false` disables the HTTP read endpoints under '/api/v2'. This also disables the
-UI, as it relies on the api. If your only goal is to restrict search, use `SEARCH_ENABLED` instead.
+UI, as it relies on the API. If your only goal is to restrict search, use `SEARCH_ENABLED` instead.
 Defaults to true
 * `SEARCH_ENABLED`: `false` disables searching in the query API and any indexing or post-processing
 in the collector to support search. This does not disable the entire UI, as trace by ID and
@@ -236,7 +237,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   Defaults to "http://localhost:9200".
     * `ES_PIPELINE`: Indicates the ingest pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
-                    Elasticsearch Api. Defaults to 10000 (10 seconds)
+                    Elasticsearch API. Defaults to 10000 (10 seconds)
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_DATE_SEPARATOR`: The date separator to use when generating daily index names. Defaults to '-'.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
@@ -252,7 +253,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                            to 0 as it would mean a machine failure results in data loss.
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication, which defaults to empty string.
                                        Use when X-Pack security (formerly Shield) is in place.
-    * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch Api.
+    * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch API.
                          Options are BASIC, HEADERS, BODY
 Example usage:
 
@@ -261,7 +262,7 @@ To connect normally:
 $ STORAGE_TYPE=elasticsearch ES_HOSTS=http://myhost:9200 java -jar zipkin.jar
 ```
 
-To log Elasticsearch api requests:
+To log Elasticsearch API requests:
 ```bash
 $ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
 ```
@@ -466,7 +467,7 @@ $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 
 ### gRPC Collector (Experimental)
 You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED=true`. The
-`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal http (9411).
+`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal HTTP (9411).
 
 
 Example usage:
@@ -482,7 +483,8 @@ Self tracing exists to help troubleshoot performance of the zipkin-server. Produ
 who enable self-tracing should lower the sample rate from 1.0 (100%) to a much smaller rate, like
 0.001 (0.1% or 1 out of 1000).
 
-When `zipkin.self-tracing.enabled=true`, Zipkin will self-trace calls to the api.
+When `zipkin.self-tracing.enabled=true`, Zipkin will self-trace calls to the API under the service
+name "zipkin-server".
 
 Variable | Property | Description
 --- | --- | ---
