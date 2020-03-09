@@ -1,9 +1,13 @@
 # zipkin-server
-zipkin-server is a [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/) application, packaged as an executable jar. You need JRE 8+ to start zipkin-server.
+Zipkin Server is a Java 1.8+ service, packaged as an executable jar.
 
-Span storage and collectors are configurable. By default, storage is
-in-memory, the http collector (POST /api/v2/spans endpoint) is enabled,
-and the server listens on port 9411.
+Span storage and collectors are [configurable](#configuration). By default, storage is in-memory,
+the HTTP collector (POST /api/v2/spans endpoint) is enabled, and the server listens on port 9411.
+
+Zipkin Server is implemented with [Armeria](https://github.com/line/armeria). While it uses [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
+internally, Zipkin Server should not be considered a normal Spring Boot application.
+
+**Custom servers are not supported**
 
 ## Quick-start
 
@@ -21,21 +25,21 @@ Once you've started, browse to http://your_host:9411 to find traces!
 The following endpoints are defined under the base url http://your_host:9411
 * / - [UI](../zipkin-ui)
 * /config.json - [Configuration for the UI](#configuration-for-the-ui)
-* /api/v2 - [Api](https://zipkin.io/zipkin-api/#/)
+* /api/v2 - [API](https://zipkin.io/zipkin-api/#/)
 * /health - Returns 200 status if OK
 * /info - Provides the version of the running instance
 * /metrics - Includes collector metrics broken down by transport type
 * /prometheus - Prometheus scrape endpoint
 
-The [legacy /api/v1 Api](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
-HTTP api via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
+The [legacy /api/v1 API](https://zipkin.io/zipkin-api/#/) is still supported. Backends are decoupled from the
+HTTP API via data conversion. This means you can still accept legacy data on new backends and visa versa. Enter
 `https://zipkin.io/zipkin-api/zipkin-api.yaml` into the explore box of the Swagger UI to view the old definition
 
 ### CORS (Cross-origin Resource Sharing)
 
 By default, all endpoints under `/api/v2` are configured to **allow** cross-origin requests.
 
-This can be changed by modifying the YAML configuration file (`zipkin.query.allowed-origins`) or by setting an environment variable.
+This can be changed by modifying the property `zipkin.query.allowed-origins`.
 
 For example, to allow CORS requests from `http://foo.bar.com`:
 
@@ -43,9 +47,19 @@ For example, to allow CORS requests from `http://foo.bar.com`:
 ZIPKIN_QUERY_ALLOWED_ORIGINS=http://foo.bar.com
 ```
 
+See [Configuration](#configuration) for more about how Zipkin is configured.
+
+### Service and Span names query
+The [Zipkin API](https://zipkin.io/zipkin-api/#/default/get_services) does not include
+a parameter for how far back to look for service or span names. In order
+to prevent excessive load, service and span name queries are limited by
+`QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
+today and one for yesterday)
+
 ## Logging
 
-By default, zipkin writes log messages to the console at INFO level and above. You can adjust categories using the `--logging.level.XXX` parameter, a `-Dlogging.level.XXX` system property, or by adjusting [yaml configuration](src/main/resources/zipkin-server-shared.yml).
+By default, zipkin writes log messages to the console at INFO level and above. You can adjust
+categories using the `logging.level.XXX` property.
 
 For example, if you want to enable debug logging for all zipkin categories, you can start the server like so:
 
@@ -53,7 +67,12 @@ For example, if you want to enable debug logging for all zipkin categories, you 
 $ java -jar zipkin.jar --logging.level.zipkin2=DEBUG
 ```
 
-Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging). For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces instead of truncated ones.
+See [Configuration](#configuration) for more about how Zipkin is configured.
+
+### Advanced Logging Configuration
+Under the covers, the server uses [Spring Boot - Logback integration](http://docs.spring.io/spring-boot/docs/current/reference/html/howto-logging.html#howto-configure-logback-for-logging).
+For example, you can add `--logging.exception-conversion-word=%wEx{full}` to dump full stack traces
+instead of truncated ones.
 
 ## Metrics
 
@@ -100,26 +119,50 @@ counter.zipkin_collector.spans_dropped.$transport | cumulative spans dropped; re
 gauge.zipkin_collector.message_spans.$transport | last count of spans in a message
 gauge.zipkin_collector.message_bytes.$transport | last count of bytes in a message
 
-## Self-Tracing
-Self tracing exists to help troubleshoot performance of the zipkin-server. Production deployments
-who enable self-tracing should lower the sample rate from 1.0 (100%) to a much smaller rate, like
-0.001 (0.1% or 1 out of 1000).
+## Configuration
+We support ENV variable configuration, such as `STORAGE_TYPE=cassandra3`, as they are familiar to
+administrators and easy to use in runtime environments such as Docker.
 
-When Brave dependencies are in the classpath, and `zipkin.self-tracing.enabled=true`,
-Zipkin will self-trace calls to the api.
+Here are the top-level configuration of Zipkin:
+* `QUERY_PORT`: Listen port for the HTTP API and web UI; Defaults to 9411
+* `QUERY_ENABLED`: `false` disables the HTTP read endpoints under '/api/v2'. This also disables the
+UI, as it relies on the API. If your only goal is to restrict search, use `SEARCH_ENABLED` instead.
+Defaults to true
+* `SEARCH_ENABLED`: `false` disables searching in the query API and any indexing or post-processing
+in the collector to support search. This does not disable the entire UI, as trace by ID and
+dependency queries still operate. Disable this when you use another service (such as logs) to find
+trace IDs. Defaults to true
+* `QUERY_TIMEOUT`: Sets the hard timeout for query requests. Accepts any duration string (e.g., 100ms).
+A value of 0 will disable the timeout completely. Defaults to 11s.
+* `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
+* `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 24 hours (two daily buckets: one for today and one for yesterday)
+* `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
+* `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
+* `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint; Tag keys should be comma separated e.g. "instance_id,user_id,env"
+* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr)
 
-[yaml configuration](src/main/resources/zipkin-server-shared.yml) binds the following environment variables to spring properties:
+### Configuration file overrides
+Under the scenes, all configuration are managed by Spring Boot. This means that properties may also
+be overridden by system properties or any other alternative [supported by Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html).
 
-Variable | Property | Description
---- | --- | ---
-SELF_TRACING_ENABLED | zipkin.self-tracing.enabled | Set to true to enable self-tracing. Defaults to false
-SELF_TRACING_SAMPLE_RATE`: Percentage of self-traces to retain, defaults to always sample (1.0).
-SELF_TRACING_FLUSH_INTERVAL | zipkin.self-tracing.flush-interval | Interval in seconds to flush self-tracing data to storage. Defaults to 1
+We use [yaml configuration](src/main/resources/zipkin-server-shared.yml) to bind shorter or more
+idiomatic ENV variables to the Spring properties ultimately in use. While most users should only use
+environment variables, some may desire a properties file approach to override settings. For example,
+knowing we set `spring.config.name=zipkin-server`, Spring Boot will automatically look for a file
+named `zipkin-server.properties` in the current directory, and the same properties we set in yaml
+can be overridden that way.
 
-## Configuration for the UI
+If you choose to use property-based configuration instead of ENV variables, you are choosing to
+self-support your configuration. This means you'll use [Spring Boot documentation](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html)
+or [StackOverflow](https://stackoverflow.com/questions/tagged/spring-boot) to resolve concerns
+related to property resolution as opposed to raising issues or using our chat support. We have to
+mention this because configuration of Spring implies vast responsibility and our resources must be
+conserved for Zipkin related tasks.
+
+## UI
 Zipkin has a web UI, automatically included in the exec jar, and is hosted by default on port 9411.
 
-When the UI loads, it reads default configuration from the `/config.json` endpoint. These values can be overridden by system properties or any other alternative [supported by Spring Boot](https://docs.spring.io/spring-boot/docs/current/reference/html/boot-features-external-config.html).
+When the UI loads, it reads default configuration from the `/config.json` endpoint.
 
 Attribute | Property | Description
 --- | --- | ---
@@ -133,29 +176,10 @@ dependency.lowErrorRate | zipkin.ui.dependency.low-error-rate | The rate of erro
 dependency.highErrorRate | zipkin.ui.dependency.high-error-rate | The rate of error calls on a dependency link that turns it red. Defaults to 0.75 (75%) set to >1 to disable.
 basePath | zipkin.ui.basepath | path prefix placed into the <base> tag in the UI HTML; useful when running behind a reverse proxy. Default "/zipkin"
 
-For example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
+To map properties to environment variables, change them to upper-underscore case format. For
+example, if using docker you can set `ZIPKIN_UI_QUERY_LIMIT=100` to affect `$.queryLimit` in `/config.json`.
 
-## Environment Variables
-zipkin-server is a drop-in replacement for the [scala query service](https://github.com/openzipkin/zipkin/tree/scala/zipkin-query-service).
-
-[yaml configuration](src/main/resources/zipkin-server-shared.yml) binds the following environment variables from zipkin-scala:
-
-* `QUERY_PORT`: Listen port for the http api and web ui; Defaults to 9411
-* `QUERY_ENABLED`: `false` disables the query api and UI assets. Search
-may also be disabled for the storage backend if it is not needed;
-Defaults to true
-* `SEARCH_ENABLED`: `false` disables trace search requests on the storage
-backend. Does not disable trace by ID or dependency queries. Disable this
-when you use another service (such as logs) to find trace IDs;
-Defaults to true
-* `QUERY_TIMEOUT`: Sets the hard timeout for query requests. Accepts any duration string (e.g., 100ms).
-A value of 0 will disable the timeout completely. Defaults to 11s.
-* `QUERY_LOG_LEVEL`: Log level written to the console; Defaults to INFO
-* `QUERY_LOOKBACK`: How many milliseconds queries can look back from endTs; Defaults to 24 hours (two daily buckets: one for today and one for yesterday)
-* `STORAGE_TYPE`: SpanStore implementation: one of `mem`, `mysql`, `cassandra`, `elasticsearch`
-* `COLLECTOR_SAMPLE_RATE`: Percentage of traces to retain, defaults to always sample (1.0).
-* `AUTOCOMPLETE_KEYS`: list of span tag keys which will be returned by the `/api/v2/autocompleteTags` endpoint; Tag keys should be comma separated e.g. "instance_id,user_id,env"
-* `AUTOCOMPLETE_TTL`: How long in milliseconds to suppress calls to write the same autocomplete key/value pair. Default 3600000 (1 hr)
+## Storage
 
 ### In-Memory Storage
 Zipkin's [In-Memory Storage](../zipkin/src/main/java/zipkin2/storage/InMemoryStorage.java) holds all
@@ -213,7 +237,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                   Defaults to "http://localhost:9200".
     * `ES_PIPELINE`: Indicates the ingest pipeline used before spans are indexed. No default.
     * `ES_TIMEOUT`: Controls the connect, read and write socket timeouts (in milliseconds) for
-                    Elasticsearch Api. Defaults to 10000 (10 seconds)
+                    Elasticsearch API. Defaults to 10000 (10 seconds)
     * `ES_INDEX`: The index prefix to use when generating daily index names. Defaults to zipkin.
     * `ES_DATE_SEPARATOR`: The date separator to use when generating daily index names. Defaults to '-'.
     * `ES_INDEX_SHARDS`: The number of shards to split the index into. Each shard and its replicas
@@ -229,7 +253,7 @@ The following apply when `STORAGE_TYPE` is set to `elasticsearch`:
                            to 0 as it would mean a machine failure results in data loss.
     * `ES_USERNAME` and `ES_PASSWORD`: Elasticsearch basic authentication, which defaults to empty string.
                                        Use when X-Pack security (formerly Shield) is in place.
-    * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch Api.
+    * `ES_HTTP_LOGGING`: When set, controls the volume of HTTP logging of the Elasticsearch API.
                          Options are BASIC, HEADERS, BODY
 Example usage:
 
@@ -238,7 +262,7 @@ To connect normally:
 $ STORAGE_TYPE=elasticsearch ES_HOSTS=http://myhost:9200 java -jar zipkin.jar
 ```
 
-To log Elasticsearch api requests:
+To log Elasticsearch API requests:
 ```bash
 $ STORAGE_TYPE=elasticsearch ES_HTTP_LOGGING=BASIC java -jar zipkin.jar
 ```
@@ -297,7 +321,7 @@ Example usage:
 $ STORAGE_TYPE=mysql MYSQL_USER=root java -jar zipkin.jar
 ```
 
-### Cassandra Storage
+#### Cassandra Storage
 Zipkin's [Legacy (v1) Cassandra storage component](../zipkin-storage/cassandra-v1)
 supports version 2.2+ and applies when `STORAGE_TYPE` is set to `cassandra`:
 
@@ -321,12 +345,7 @@ These settings can be used to help tune the rate at which Zipkin flushes data to
 
 As this feature is experimental, it is not recommended to run this in production environments.
 
-#### Service and Span names query
-The [Zipkin Api](https://zipkin.io/zipkin-api/#/default/get_services) does not include
-a parameter for how far back to look for service or span names. In order
-to prevent excessive load, service and span name queries are limited by
-`QUERY_LOOKBACK`, which defaults to 24hrs (two daily buckets: one for
-today and one for yesterday)
+## Collector
 
 ### HTTP Collector
 The HTTP collector is enabled by default. It accepts spans via `POST /api/v1/spans` and `POST /api/v2/spans`.
@@ -448,7 +467,7 @@ $ RABBIT_ADDRESSES=localhost java -jar zipkin.jar
 
 ### gRPC Collector (Experimental)
 You can enable a gRPC span collector endpoint by setting `COLLECTOR_GRPC_ENABLED=true`. The
-`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal http (9411).
+`zipkin.proto3.SpanService/Report` endpoint will run on the same port as normal HTTP (9411).
 
 
 Example usage:
@@ -458,6 +477,20 @@ $ COLLECTOR_GRPC_ENABLED=true java -jar zipkin.jar
 ```
 
 As this service is experimental, it is not recommended to run this in production environments.
+
+## Self-Tracing
+Self tracing exists to help troubleshoot performance of the zipkin-server. Production deployments
+who enable self-tracing should lower the sample rate from 1.0 (100%) to a much smaller rate, like
+0.001 (0.1% or 1 out of 1000).
+
+When `zipkin.self-tracing.enabled=true`, Zipkin will self-trace calls to the API under the service
+name "zipkin-server".
+
+Variable | Property | Description
+--- | --- | ---
+SELF_TRACING_ENABLED | zipkin.self-tracing.enabled | Set to true to enable self-tracing. Defaults to false
+SELF_TRACING_SAMPLE_RATE: Percentage of self-traces to retain, defaults to always sample (1.0).
+SELF_TRACING_FLUSH_INTERVAL | zipkin.self-tracing.flush-interval | Interval in seconds to flush self-tracing data to storage. Defaults to 1
 
 ### 128-bit trace IDs
 
