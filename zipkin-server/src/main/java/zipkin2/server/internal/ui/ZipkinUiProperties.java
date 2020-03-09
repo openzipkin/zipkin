@@ -26,8 +26,8 @@ class ZipkinUiProperties {
   private int queryLimit = 10;
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
-  // TODO: this isn't honored in lens https://github.com/openzipkin/zipkin/issues/2491
   private String logsUrl = null;
+  private String helpUrl = null;
   private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
@@ -71,6 +71,16 @@ class ZipkinUiProperties {
   public void setLogsUrl(String logsUrl) {
     if (!StringUtils.isEmpty(logsUrl)) {
       this.logsUrl = logsUrl;
+    }
+  }
+
+  public String getHelpUrl() {
+    return helpUrl;
+  }
+
+  public void setHelpUrl(String helpUrl) {
+    if (!StringUtils.isEmpty(helpUrl)) {
+      this.helpUrl = helpUrl;
     }
   }
 

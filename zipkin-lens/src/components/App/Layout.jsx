@@ -15,13 +15,14 @@ import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { faSearch, faProjectDiagram, faHome } from '@fortawesome/free-solid-svg-icons';
-import { faGithub, faTwitter, faGitter } from '@fortawesome/free-brands-svg-icons';
+import { faQuestionCircle, faSearch, faProjectDiagram, faHome } from '@fortawesome/free-solid-svg-icons';
 import Box from '@material-ui/core/Box';
 import Drawer from '@material-ui/core/Drawer';
 import CssBaseline from '@material-ui/core/CssBaseline';
 import List from '@material-ui/core/List';
 import { makeStyles } from '@material-ui/styles';
+
+import { useUiConfig } from '../UiConfig';
 
 import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
@@ -72,6 +73,7 @@ const propTypes = {
 const Layout = ({ children }) => {
   const classes = useStyles();
   const { i18n } = useLingui();
+  const config = useUiConfig();
 
   return (
     <Box className={classes.root}>
@@ -87,10 +89,10 @@ const Layout = ({ children }) => {
           </List>
         </Box>
         <List>
+          { config.helpUrl && (
+            <SidebarMenu title={i18n._(t`Help`)} path={config.helpUrl} icon={faQuestionCircle} />
+          )}
           <SidebarMenu title={i18n._(t`Zipkin Home`)} path="https://zipkin.io/" icon={faHome} />
-          <SidebarMenu title={i18n._(t`Repository`)} path="https://github.com/openzipkin/zipkin" icon={faGithub} />
-          <SidebarMenu title="Twitter" path="https://twitter.com/zipkinproject" icon={faTwitter} />
-          <SidebarMenu title="Gitter" path="https://gitter.im/openzipkin/zipkin/" icon={faGitter} />
           <LanguageSelector />
         </List>
       </Drawer>
