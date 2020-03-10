@@ -90,7 +90,7 @@ const TraceJsonUploader = ({ history }) => {
 
     const [file] = event.target.files;
     fileReader.readAsText(file);
-  }, [dispatch, history]);
+  }, [dispatch, history, i18n]);
 
   return (
     <>
