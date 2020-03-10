@@ -34,7 +34,10 @@ const propTypes = {
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
-  valueRef: PropTypes.shape({}).isRequired,
+  valueRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
+  ]).isRequired,
   addCondition: PropTypes.func.isRequired,
 };
 
