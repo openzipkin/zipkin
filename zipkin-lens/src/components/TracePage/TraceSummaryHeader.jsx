@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+/* eslint-disable no-alert */
 import { t, Trans } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
@@ -104,6 +105,67 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
     config.logsUrl && traceSummary
       ? config.logsUrl.replace(/{traceId}/g, traceSummary.traceId)
       : undefined;
+
+  const archivePostUrl =
+    config.archivePostUrl && traceSummary ? config.archivePostUrl : undefined;
+
+  const archiveUrl =
+    config.archiveUrl && traceSummary
+      ? config.archiveUrl.replace('{traceId}', traceSummary.traceId)
+      : undefined;
+
+  const archiveClick = useCallback(() => {
+    // We don't store the raw json in the browser yet, so we need to make an
+    // HTTP call to retrieve it again.
+    fetch(`${api.TRACE}/${traceSummary.traceId}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch trace from backend');
+        }
+        return response.json();
+      })
+      .then((json) => {
+        // Add zipkin.archived tag to root span
+        /* eslint-disable-next-line no-restricted-syntax */
+        for (const span of json) {
+          if ('parentId' in span === false) {
+            const tags = span.tags || {};
+            tags['zipkin.archived'] = 'true';
+            span.tags = tags;
+            break;
+          }
+        }
+
+        fetch(archivePostUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(json),
+        })
+          .then((response) => {
+            if (
+              !response.ok ||
+              (response.status !== 202 && response.status === 200)
+            ) {
+              throw new Error('Failed to archive the trace');
+            }
+            if (archiveUrl) {
+              alert(
+                `Archive successful! This trace is now accessible at ${archiveUrl}`,
+              );
+            } else {
+              alert(`Archive successful!`);
+            }
+          })
+          .catch(() => {
+            alert('Failed to archive the trace');
+          });
+      })
+      .catch(() => {
+        alert('Failed to fetch trace from backend');
+      });
+  }, [archivePostUrl, archiveUrl, traceSummary]);
 
   const handleSaveButtonClick = useCallback(() => {
     if (!traceSummary || !traceSummary.traceId) {
@@ -204,6 +266,24 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
                   className={classes.actionButtonIcon}
                 />
                 <Trans>View Logs</Trans>
+              </Button>
+            </Grid>
+          )}
+          {archivePostUrl && (
+            <Grid item>
+              <Button
+                variant="outlined"
+                className={classes.actionButton}
+                target="_blank"
+                rel="noopener"
+                data-testid="archive-trace-link"
+                onClick={archiveClick}
+              >
+                <FontAwesomeIcon
+                  icon={faFileAlt}
+                  className={classes.actionButtonIcon}
+                />
+                <Trans>Archive Trace</Trans>
               </Button>
             </Grid>
           )}

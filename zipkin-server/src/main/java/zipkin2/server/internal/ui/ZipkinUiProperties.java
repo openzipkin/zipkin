@@ -28,6 +28,8 @@ class ZipkinUiProperties {
   private String instrumented = ".*";
   private String logsUrl = null;
   private String supportUrl = null;
+  private String archivePostUrl = null;
+  private String archiveUrl = null;
   private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
@@ -68,6 +70,15 @@ class ZipkinUiProperties {
     return logsUrl;
   }
 
+  public String getArchivePostUrl() {
+    return archivePostUrl;
+  }
+
+
+  public String getArchiveUrl() {
+    return archiveUrl;
+  }
+
   public void setLogsUrl(String logsUrl) {
     if (!StringUtils.isEmpty(logsUrl)) {
       this.logsUrl = logsUrl;
@@ -81,6 +92,19 @@ class ZipkinUiProperties {
   public void setSupportUrl(String supportUrl) {
     if (!StringUtils.isEmpty(supportUrl)) {
       this.supportUrl = supportUrl;
+    }
+
+  }
+
+  public void setArchivePostUrl(String archivePostUrl) {
+    if (!StringUtils.isEmpty(archivePostUrl)) {
+      this.archivePostUrl = archivePostUrl;
+    }
+  }
+
+  public void setArchiveUrl(String archiveUrl) {
+    if (!StringUtils.isEmpty(archiveUrl)) {
+      this.archiveUrl = archiveUrl;
     }
   }
 

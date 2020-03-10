@@ -141,6 +141,8 @@ public class ZipkinUiConfiguration {
       generator.writeBooleanField("searchEnabled", ui.isSearchEnabled());
       generator.writeStringField("logsUrl", ui.getLogsUrl());
       generator.writeStringField("supportUrl", ui.getSupportUrl());
+      generator.writeStringField("archivePostUrl", ui.getArchivePostUrl());
+      generator.writeStringField("archiveUrl", ui.getArchiveUrl());
       generator.writeObjectFieldStart("dependency");
       generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
       generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());
