@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+import PropTypes from 'prop-types';
 import React, { useContext } from 'react';
 
 import { UI_CONFIG } from '../../constants/api';
@@ -20,6 +21,10 @@ const ConfigContext = React.createContext();
 
 const configResource = fetchResource(fetch(UI_CONFIG).then(response => response.json()));
 
+const propTypes = {
+  children: PropTypes.element.isRequired,
+};
+
 export const UiConfig = ({ children }) => {
   const response = configResource.read();
   return (
@@ -28,6 +33,8 @@ export const UiConfig = ({ children }) => {
     </ConfigContext.Provider>
   );
 };
+
+UiConfig.propTypes = propTypes;
 
 export const UiConfigContext = ConfigContext;
 export const UiConfigConsumer = ConfigContext.Consumer;
