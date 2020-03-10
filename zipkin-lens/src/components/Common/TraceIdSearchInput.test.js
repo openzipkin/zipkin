@@ -14,7 +14,7 @@
 import { fireEvent } from '@testing-library/react';
 import React from 'react';
 
-import render from '../../test/util/render-with-default-settings';;
+import render from '../../test/util/render-with-default-settings';
 
 import { TraceIdSearchInput } from './TraceIdSearchInput';
 
