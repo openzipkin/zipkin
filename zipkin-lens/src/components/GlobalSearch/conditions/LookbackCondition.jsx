@@ -54,7 +54,7 @@ const lookbackOptions = [
 ];
 
 const lookbackMenuOptions = nonCustomLookbackOptions
-  .filter((option) => option.quick)
+  .filter(option => option.quick)
   .concat([{
     value: 'more',
     label: 'More...',
