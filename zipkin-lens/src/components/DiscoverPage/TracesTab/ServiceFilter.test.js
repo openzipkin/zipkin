@@ -19,8 +19,6 @@ import render from '../../../test/util/render-with-default-settings';
 import ServiceFilter from './ServiceFilter';
 
 describe('<ServiceFilter />', () => {
-  let wrapper;
-
   const props = {
     filters: ['service-A', 'service-B'],
     allServiceNames: ['service-A', 'service-B', 'service-C', 'service-D'],
