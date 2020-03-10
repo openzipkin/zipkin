@@ -89,7 +89,11 @@ const SpanAnnotations = React.memo(({ span }) => {
       }
       <Box width="100%" display="flex" justifyContent="flex-end" mt={2}>
         <Button variant="contained" onClick={handleExpandToggle} data-testid="span-annotations--toggle-button">
-          {areAllAnnotationsOpened ? <Trans>hide annotations</Trans> : <Trans>show all annotations</Trans>}
+          {
+            areAllAnnotationsOpened
+              ? <Trans>hide annotations</Trans>
+              : <Trans>show all annotations</Trans>
+          }
         </Button>
       </Box>
     </>
