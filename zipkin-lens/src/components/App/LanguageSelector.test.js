@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { fireEvent, waitForElement } from '@testing-library/react'
+import { fireEvent, waitForElement } from '@testing-library/react';
 import React from 'react';
 
 import render from '../../test/util/render-with-default-settings';
@@ -21,7 +21,7 @@ import LanguageSelector, { LANGUAGES } from './LanguageSelector';
 
 describe('<LanguageSelector />', () => {
   it('loads and displays button and no popover', async () => {
-    const { container, queryByTestId } = render(<LanguageSelector />);
+    const { queryByTestId } = render(<LanguageSelector />);
 
     const changeLanguageButton = queryByTestId('change-language-button');
     const languageList = queryByTestId('language-list');
