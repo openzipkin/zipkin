@@ -20,14 +20,13 @@ import render from '../../../test/util/render-with-default-settings';
 describe('<SpanAnnotation />', () => {
   it('should render annotation data', () => {
     const { queryAllByTestId } = render(
-      <SpanAnnotation.Naked
+      <SpanAnnotation
         annotation={{
           value: 'Server Start',
           timestamp: 1543334627716006,
           relativeTime: '700ms',
           endpoint: '127.0.0.1',
         }}
-        classes={{}}
       />,
     );
     const labels = queryAllByTestId('span-annotation--label');
