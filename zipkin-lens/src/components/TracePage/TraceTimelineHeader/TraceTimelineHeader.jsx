@@ -20,7 +20,7 @@ import {
   faAngleDoubleLeft,
 } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
@@ -37,10 +37,9 @@ const propTypes = {
   onSpanDetailToggle: PropTypes.func.isRequired,
   onCollapseButtonClick: PropTypes.func.isRequired,
   onExpandButtonClick: PropTypes.func.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   root: {
     borderBottom: `1px solid ${theme.palette.grey[300]}`,
     backgroundColor: theme.palette.grey[100],
@@ -50,7 +49,7 @@ const style = theme => ({
     minWidth: '2rem',
     width: '2rem',
   },
-});
+}));
 
 const TraceTimelineHeader = React.memo(({
   startTs,
@@ -62,47 +61,50 @@ const TraceTimelineHeader = React.memo(({
   onSpanDetailToggle,
   onCollapseButtonClick,
   onExpandButtonClick,
-  classes,
-}) => (
-  <Box className={classes.root}>
-    <Box display="flex" justifyContent="space-between" mt={1} mr={1} ml={1}>
-      <Box display="flex" alignItems="center">
-        <ButtonGroup>
-          <Button
-            className={classes.textButton}
-            disabled={!isRootedTrace}
-            onClick={onCollapseButtonClick}
-          >
-            <FontAwesomeIcon icon={faAngleUp} />
-          </Button>
-          <Button
-            className={classes.textButton}
-            disabled={!isRootedTrace}
-            onClick={onExpandButtonClick}
-          >
-            <FontAwesomeIcon icon={faAngleDown} />
-          </Button>
-        </ButtonGroup>
-        {
-          (isRootedTrace && isRerooted) ? (
-            <Box ml={1}>
-              <Button variant="outlined" onClick={onResetRerootButtonClick}>
-                Reset root
-              </Button>
-            </Box>
-          ) : null
-        }
+}) => {
+  const classes = useStyles();
+
+  return (
+    <Box className={classes.root}>
+      <Box display="flex" justifyContent="space-between" mt={1} mr={1} ml={1}>
+        <Box display="flex" alignItems="center">
+          <ButtonGroup>
+            <Button
+              className={classes.textButton}
+              disabled={!isRootedTrace}
+              onClick={onCollapseButtonClick}
+            >
+              <FontAwesomeIcon icon={faAngleUp} />
+            </Button>
+            <Button
+              className={classes.textButton}
+              disabled={!isRootedTrace}
+              onClick={onExpandButtonClick}
+            >
+              <FontAwesomeIcon icon={faAngleDown} />
+            </Button>
+          </ButtonGroup>
+          {
+            (isRootedTrace && isRerooted) ? (
+              <Box ml={1}>
+                <Button variant="outlined" onClick={onResetRerootButtonClick}>
+                  Reset root
+                </Button>
+              </Box>
+            ) : null
+          }
+        </Box>
+        <Button className={classes.textButton} onClick={onSpanDetailToggle}>
+          <FontAwesomeIcon
+            icon={isSpanDetailOpened ? faAngleDoubleRight : faAngleDoubleLeft}
+          />
+        </Button>
       </Box>
-      <Button className={classes.textButton} onClick={onSpanDetailToggle}>
-        <FontAwesomeIcon
-          icon={isSpanDetailOpened ? faAngleDoubleRight : faAngleDoubleLeft}
-        />
-      </Button>
+      <TimeMarker startTs={startTs} endTs={endTs} />
     </Box>
-    <TimeMarker startTs={startTs} endTs={endTs} />
-  </Box>
-));
+  );
+});
 
 TraceTimelineHeader.propTypes = propTypes;
 
-export default withStyles(style)(TraceTimelineHeader);
+export default TraceTimelineHeader;
