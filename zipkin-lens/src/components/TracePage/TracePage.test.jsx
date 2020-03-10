@@ -16,9 +16,8 @@ import React from 'react';
 import render from '../../test/util/render-with-default-settings';
 
 import { TracePageImpl } from './TracePage';
-import TraceSummary from './TraceSummary';
 
-jest.mock("./TraceSummary", () => () => (<div data-testid="trace-summary">TraceSummary</div>));
+jest.mock('./TraceSummary', () => () => (<div data-testid="trace-summary">TraceSummary</div>));
 afterAll(() => {
   jest.restoreAllMocks();
 });
