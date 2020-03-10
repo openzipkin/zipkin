@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import classNames from 'classnames';
 
@@ -23,10 +23,9 @@ import { formatDuration } from '../../../util/timestamp';
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   marker: {
     height: '100%',
     width: '1px',
@@ -42,11 +41,12 @@ const style = theme => ({
     left: 'initial',
     right: '4px',
   },
-});
+}));
 
 const numTimeMarkers = 4;
 
-const TimeMarker = React.memo(({ startTs, endTs, classes }) => {
+const TimeMarker = React.memo(({ startTs, endTs }) => {
+  const classes = useStyles();
   const timeMarkers = [];
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
@@ -94,4 +94,4 @@ const TimeMarker = React.memo(({ startTs, endTs, classes }) => {
 
 TimeMarker.propTypes = propTypes;
 
-export default withStyles(style)(TimeMarker);
+export default TimeMarker;
