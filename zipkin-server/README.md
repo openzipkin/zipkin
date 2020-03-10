@@ -7,7 +7,11 @@ the HTTP collector (POST /api/v2/spans endpoint) is enabled, and the server list
 Zipkin Server is implemented with [Armeria](https://github.com/line/armeria). While it uses [Spring Boot](http://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/)
 internally, Zipkin Server should not be considered a normal Spring Boot application.
 
-**Custom servers are not supported**
+## Custom servers are not supported
+
+By Custom servers we mean trying to use/embed `zipkin` as part of _an application you package_ (e.g. adding `zipkin-server` dependency to a Spring-boot application) instead of the packaged application we release.
+
+For proper usage, see the guides below.
 
 ## Quick-start
 
