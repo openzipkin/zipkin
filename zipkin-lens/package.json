@@ -9,7 +9,7 @@
     "test": "jest --ci --reporters=jest-standard-reporter",
     "test-dev": "jest",
     "coverage": "jest --coverage",
-    "lint": "eslint src",
+    "lint": "eslint 'src/**/*.{js,jsx}'",
     "build": "cross-env NODE_ENV=production webpack -p --config ./webpack.prod.config.js",
     "start": "cross-env NODE_ENV=development webpack-dev-server -d --config ./webpack.dev.config.js"
   },
