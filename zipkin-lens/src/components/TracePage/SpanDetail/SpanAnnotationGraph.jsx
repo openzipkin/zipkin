@@ -14,7 +14,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import Box from '@material-ui/core/Box';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 import classnames from 'classnames';
 import minBy from 'lodash/minBy';
 import maxBy from 'lodash/maxBy';
@@ -89,14 +89,13 @@ const propTypes = {
   annotations: spanAnnotationsPropTypes.isRequired,
   onAnnotationCircleClick: PropTypes.func.isRequired,
   currentAnnotationKey: PropTypes.string,
-  classes: PropTypes.shape({}).isRequired,
 };
 
 const defaultProps = {
   currentAnnotationKey: '',
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   svg: {
     stroke: theme.palette.grey[500],
     strokeWidth: '1px',
@@ -112,15 +111,16 @@ const style = theme => ({
     fill: theme.palette.grey[400],
     strokeWidth: '3px',
   },
-});
+}));
 
 const SpanAnnotationGraph = React.memo(({
   serviceName,
   annotations,
   onAnnotationCircleClick,
   currentAnnotationKey,
-  classes,
 }) => {
+  const classes = useStyles();
+
   let minTs;
   let maxTs;
   if (annotations.length === 0) {
@@ -185,4 +185,4 @@ const SpanAnnotationGraph = React.memo(({
 SpanAnnotationGraph.propTypes = propTypes;
 SpanAnnotationGraph.defaultProps = defaultProps;
 
-export default withStyles(style)(SpanAnnotationGraph);
+export default SpanAnnotationGraph;
