@@ -74,6 +74,14 @@ public class ITZipkinServer {
       .containsExactly(SpanBytesEncoder.JSON_V2.encodeList(TRACE));
   }
 
+  @Test public void getTrace_notFound() throws Exception {
+    Response response = get("/api/v2/trace/" + TRACE.get(0).traceId());
+    assertThat(response.code()).isEqualTo(404);
+
+    assertThat(response.body().string())
+      .isEqualTo(TRACE.get(0).traceId() + " not found");
+  }
+
   @Test public void getTrace_malformed() throws Exception {
     storage.accept(TRACE).execute();
 
@@ -161,7 +169,8 @@ public class ITZipkinServer {
       .isEqualTo(200);
   }
 
-  @Test public void remoteServiceNameReturnsCorrectJsonForEscapedWhitespaceInName() throws Exception {
+  @Test public void remoteServiceNameReturnsCorrectJsonForEscapedWhitespaceInName()
+    throws Exception {
     storage.accept(Arrays.asList(CLIENT_SPAN.toBuilder()
       .localEndpoint(FRONTEND.toBuilder().serviceName("foo\tbar").build())
       .build()))

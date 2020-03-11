@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -126,14 +126,17 @@ public final class ZipkinRule implements TestRule {
     return storage.spanStore().getTraces();
   }
 
-  /** Retrieves a trace by ID which zipkin server has received, or null if not present. */
+  /** Retrieves a trace by ID which Zipkin server has received, or null if not present. */
   @Nullable
   public List<Span> getTrace(String traceId) {
+    List<Span> result;
     try {
-      return storage.traces().getTrace(traceId).execute();
+      result = storage.traces().getTrace(traceId).execute();
     } catch (IOException e) {
       throw Platform.get().assertionError("I/O exception in in-memory storage", e);
     }
+    // Note: this is a different behavior than Traces.getTrace() which is not nullable!
+    return result.isEmpty() ? null : result;
   }
 
   /** Retrieves all service links between traces this zipkin server has received. */

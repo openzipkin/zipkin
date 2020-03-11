@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -53,7 +53,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** This would only happen when the store layer is bootstrapping, or has been purged. */
-  @Test void allShouldWorkWhenEmpty() throws IOException {
+  @Test protected void allShouldWorkWhenEmpty() throws IOException {
     QueryRequest.Builder q = requestBuilder().serviceName("service");
     assertThat(store().getTraces(q.build()).execute()).isEmpty();
     assertThat(store().getTraces(q.remoteServiceName("remotey").build()).execute()).isEmpty();
@@ -63,13 +63,13 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** This is unlikely and means instrumentation sends empty spans by mistake. */
-  @Test void allShouldWorkWhenNoIndexableDataYet() throws IOException {
+  @Test protected void allShouldWorkWhenNoIndexableDataYet() throws IOException {
     accept(Span.newBuilder().traceId("1").id("1").build());
 
     allShouldWorkWhenEmpty();
   }
 
-  @Test void consumer_properlyImplementsCallContract_execute() throws IOException {
+  @Test protected void consumer_properlyImplementsCallContract_execute() throws IOException {
     Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
 
     // Ensure the implementation didn't accidentally do I/O at assembly time.
@@ -89,7 +89,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     call.clone().execute();
   }
 
-  @Test void consumer_properlyImplementsCallContract_submit() throws Exception {
+  @Test protected void consumer_properlyImplementsCallContract_submit() throws Exception {
     Call<Void> call = storage.spanConsumer().accept(asList(LOTS_OF_SPANS[0]));
     // Ensure the implementation didn't accidentally do I/O at assembly time.
     assertThat(traces().getTrace(LOTS_OF_SPANS[0].traceId()).execute()).isEmpty();
@@ -121,7 +121,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     call.clone().execute();
   }
 
-  @Test void getTraces_groupsTracesTogether() throws IOException {
+  @Test protected void getTraces_groupsTracesTogether() throws IOException {
     Span traceASpan1 = Span.newBuilder()
       .traceId("a")
       .id("1")
@@ -139,7 +139,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
         asList(traceBSpan1, traceBSpan2));
   }
 
-  @Test void getTraces_considersBitsAbove64bit() throws IOException {
+  @Test protected void getTraces_considersBitsAbove64bit() throws IOException {
     // 64-bit trace ID
     Span span1 = Span.newBuilder().traceId(CLIENT_SPAN.traceId().substring(16)).id("1")
       .putTag("foo", "1")
@@ -161,7 +161,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     }
   }
 
-  @Test void getTraces_filteringMatchesMostRecentTraces() throws Exception {
+  @Test protected void getTraces_filteringMatchesMostRecentTraces() throws Exception {
     List<Endpoint> endpoints = IntStream.rangeClosed(1, 10)
       .mapToObj(i -> Endpoint.newBuilder().serviceName("service" + i).ip("127.0.0.1").build())
       .collect(Collectors.toList());
@@ -202,7 +202,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .containsExactly(earlyTraces);
   }
 
-  @Test public void getTraces_serviceNames() throws Exception {
+  @Test protected void getTraces_serviceNames() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -228,7 +228,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test void getTraces_serviceNames_mixedTraceIdLength() throws Exception {
+  @Test protected void getTraces_serviceNames_mixedTraceIdLength() throws Exception {
     // add a trace with the same trace ID truncated to 64 bits, except different service names.
     accept(CLIENT_SPAN.toBuilder()
       .traceId(CLIENT_SPAN.traceId().substring(16))
@@ -239,7 +239,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     getTraces_serviceNames();
   }
 
-  @Test public void getTraces_spanName() throws Exception {
+  @Test protected void getTraces_spanName() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -265,7 +265,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test void getTraces_spanName_mixedTraceIdLength() throws Exception {
+  @Test protected void getTraces_spanName_mixedTraceIdLength() throws Exception {
     // add a trace with the same trace ID truncated to 64 bits, except the span name.
     accept(CLIENT_SPAN.toBuilder()
       .traceId(CLIENT_SPAN.traceId().substring(16))
@@ -275,7 +275,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     getTraces_spanName();
   }
 
-  @Test public void getTraces_tags() throws Exception {
+  @Test protected void getTraces_tags() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -287,7 +287,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build()).execute()).flatExtracting(l -> l).contains(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_minDuration() throws Exception {
+  @Test protected void getTraces_minDuration() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -300,7 +300,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   // pretend we had a late update of only timestamp/duration info
-  @Test public void getTraces_lateDuration() throws Exception {
+  @Test protected void getTraces_lateDuration() throws Exception {
     Span missingDuration = CLIENT_SPAN.toBuilder().duration(0L).build();
     Span lateDuration = Span.newBuilder()
       .traceId(CLIENT_SPAN.traceId())
@@ -321,7 +321,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .build()).execute()).flatExtracting(Trace::merge).containsExactly(CLIENT_SPAN);
   }
 
-  @Test public void getTraces_maxDuration() throws Exception {
+  @Test protected void getTraces_maxDuration() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -340,7 +340,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    *
    * <p>Notably this guards empty tag values work
    */
-  @Test void readback_minimalErrorSpan() throws Exception {
+  @Test protected void readback_minimalErrorSpan() throws Exception {
     String serviceName = "isao01";
     Span errorSpan = Span.newBuilder()
       .traceId("dc955a1d4768875d")
@@ -370,7 +370,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   /**
    * While large spans are discouraged, and maybe not indexed, we should be able to read them back.
    */
-  @Test void readsBackLargeValues() throws IOException {
+  @Test protected void readsBackLargeValues() throws IOException {
     char[] kilobyteOfText = new char[1024];
     Arrays.fill(kilobyteOfText, 'a');
 
@@ -397,7 +397,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    *   <li>tag with nested dots (can be confused as nested objects)</li>
    * </ul>
    */
-  @Test void spanWithProblematicData() throws IOException {
+  @Test protected void spanWithProblematicData() throws IOException {
     String json = "{\"foo\":\"bar\"}";
     Span spanWithProblematicData = CLIENT_SPAN.toBuilder().name(json)
       .putTag("http.path", "/api")
@@ -419,7 +419,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    * Formerly, a bug was present where cassandra didn't index more than bucket count traces per
    * millisecond. This stores a lot of spans to ensure indexes work under high-traffic scenarios.
    */
-  @Test void getTraces_manyTraces() throws IOException {
+  @Test protected void getTraces_manyTraces() throws IOException {
     int traceCount = 1000;
     Span span = LOTS_OF_SPANS[0];
     Map.Entry<String, String> tag = span.tags().entrySet().iterator().next();
@@ -449,7 +449,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** Shows that duration queries go against the root span, not the child */
-  @Test public void getTraces_duration() throws IOException {
+  @Test protected void getTraces_duration() throws IOException {
     setupDurationData();
 
     QueryRequest.Builder q = requestBuilder().endTs(TODAY).lookback(DAY); // instead of since epoch
@@ -490,7 +490,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
    * Spans and traces are meaningless unless they have a timestamp. While unlikely, this could
    * happen if a binary annotation is logged before a timestamped one is.
    */
-  @Test void getTraces_absentWhenNoTimestamp() throws IOException {
+  @Test protected void getTraces_absentWhenNoTimestamp() throws IOException {
     // Index the service name but no timestamp of any sort
     accept(Span.newBuilder()
       .traceId(CLIENT_SPAN.traceId())
@@ -540,7 +540,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     ).execute()).isNotEmpty();
   }
 
-  @Test void getTraces_annotation() throws IOException {
+  @Test protected void getTraces_annotation() throws IOException {
     accept(CLIENT_SPAN);
 
     // fetch by time based annotation, find trace
@@ -561,7 +561,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
     ).execute()).isNotEmpty();
   }
 
-  @Test void getTraces_multipleAnnotationsBecomeAndFilter() throws IOException {
+  @Test protected void getTraces_multipleAnnotationsBecomeAndFilter() throws IOException {
     Span foo = Span.newBuilder().traceId("1").name("call1").id(1)
       .timestamp((TODAY + 1) * 1000L)
       .localEndpoint(FRONTEND)
@@ -617,7 +617,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** This test makes sure that annotation queries pay attention to which host recorded data */
-  @Test void getTraces_differentiateOnServiceName() throws IOException {
+  @Test protected void getTraces_differentiateOnServiceName() throws IOException {
     Span trace1 = Span.newBuilder().traceId("1").name("1").id(1)
       .kind(Span.Kind.CLIENT)
       .timestamp((TODAY + 1) * 1000L)
@@ -716,7 +716,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** limit should apply to traces closest to endTs */
-  @Test void getTraces_limit() throws IOException {
+  @Test protected void getTraces_limit() throws IOException {
     Span span1 = Span.newBuilder()
       .traceId("a")
       .id("1")
@@ -733,7 +733,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** Traces whose root span has timestamps between (endTs - lookback) and endTs are returned */
-  @Test void getTraces_endTsAndLookback() throws IOException {
+  @Test protected void getTraces_endTsAndLookback() throws IOException {
     Span span1 = Span.newBuilder()
       .traceId("a")
       .id("1")
@@ -769,7 +769,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   // Bugs have happened in the past where trace limit was mistaken for span count.
-  @Test void traceWithManySpans() throws IOException {
+  @Test protected void traceWithManySpans() throws IOException {
     Span[] trace = new Span[101];
     trace[0] = Span.newBuilder().traceId("f66529c8cc356aa0").id("93288b4644570496").name("get")
       .timestamp(TODAY * 1000).duration(350 * 1000L)
@@ -793,7 +793,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
       .containsExactlyInAnyOrder(trace);
   }
 
-  @Test void names_goLowercase() throws IOException {
+  @Test protected void names_goLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(
@@ -809,7 +809,7 @@ public abstract class ITSpanStore<T extends StorageComponent> extends ITStorage<
   }
 
   /** Ensure complete traces are aggregated, even if they complete after endTs */
-  @Test void getTraces_endTsInsideTheTrace() throws IOException {
+  @Test protected void getTraces_endTsInsideTheTrace() throws IOException {
     accept(TRACE);
 
     assertThat(sortTraces(store().getTraces(

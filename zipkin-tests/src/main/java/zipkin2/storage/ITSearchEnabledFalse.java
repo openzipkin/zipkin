@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -31,7 +31,7 @@ public abstract class ITSearchEnabledFalse<T extends StorageComponent> extends I
     storage.searchEnabled(false);
   }
 
-  @Test void getTraces_indexDataReturnsNothing() throws Exception {
+  @Test protected void getTraces_indexDataReturnsNothing() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(store().getTraces(requestBuilder()
@@ -54,19 +54,19 @@ public abstract class ITSearchEnabledFalse<T extends StorageComponent> extends I
       .build()).execute()).isEmpty();
   }
 
-  @Test void getServiceNames_isEmpty() throws Exception {
+  @Test protected void getServiceNames_isEmpty() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(names().getServiceNames().execute()).isEmpty();
   }
 
-  @Test void getRemoteServiceNames_isEmpty() throws Exception {
+  @Test protected void getRemoteServiceNames_isEmpty() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(names().getRemoteServiceNames(CLIENT_SPAN.localServiceName()).execute()).isEmpty();
   }
 
-  @Test void getSpanNames_isEmpty() throws Exception {
+  @Test protected void getSpanNames_isEmpty() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(names().getSpanNames(CLIENT_SPAN.localServiceName()).execute()).isEmpty();

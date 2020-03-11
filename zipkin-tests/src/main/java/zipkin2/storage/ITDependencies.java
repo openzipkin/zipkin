@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -77,11 +77,11 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * Normally, the root-span is where trace id == span id and parent id == null. The default is to
    * look back one day from today.
    */
-  @Test void getDependencies() throws Exception {
+  @Test protected void getDependencies() throws Exception {
     processDependencies(TRACE);
 
     assertThat(store().getDependencies(TRACE_ENDTS, DAY).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
   }
 
   /**
@@ -89,7 +89,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * for dependency links. This allows environments with 64-bit instrumentation to participate in
    * the same trace as 128-bit instrumentation.
    */
-  @Test void getDependencies_strictTraceId() throws Exception {
+  @Test protected void getDependencies_strictTraceId() throws Exception {
     List<Span> mixedTrace = asList(
       Span.newBuilder().traceId("7180c278b62e8f6a216a2aea45d08fc9").id("1").name("get")
         .kind(Kind.SERVER)
@@ -120,16 +120,16 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
   }
 
   /** It should be safe to run dependency link jobs twice */
-  @Test void replayOverwrites() throws Exception {
+  @Test protected void replayOverwrites() throws Exception {
     processDependencies(TRACE);
     processDependencies(TRACE);
 
     assertThat(store().getDependencies(TRACE_ENDTS, DAY).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
   }
 
   /** Edge-case when there are no spans, or instrumentation isn't logging annotations properly. */
-  @Test void empty() throws Exception {
+  @Test protected void empty() throws Exception {
     assertThat(store().getDependencies(TRACE_ENDTS, DAY).execute())
       .isEmpty();
   }
@@ -139,21 +139,21 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * trace ids to help with collisions, or to encode information about the origin. This test makes
    * sure we don't rely on the trace id = root span id convention.
    */
-  @Test void traceIdIsOpaque() throws Exception {
+  @Test protected void traceIdIsOpaque() throws Exception {
     List<Span> differentTraceId = TRACE.stream()
       .map(s -> s.toBuilder().traceId("123").build())
       .collect(toList());
     processDependencies(differentTraceId);
 
     assertThat(store().getDependencies(TRACE_ENDTS, DAY).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
   }
 
   /**
    * When all servers are instrumented, they all record {@link Kind#SERVER} and the {@link
    * Span#localEndpoint()} indicates the service.
    */
-  @Test void getDependenciesAllInstrumented() throws Exception {
+  @Test protected void getDependenciesAllInstrumented() throws Exception {
     Endpoint one = Endpoint.newBuilder().serviceName("trace-producer-one").ip("127.0.0.1").build();
     Endpoint onePort3001 = one.toBuilder().port(3001).build();
     Endpoint two = Endpoint.newBuilder().serviceName("trace-producer-two").ip("127.0.0.2").build();
@@ -210,7 +210,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     );
   }
 
-  @Test void dependencies_loopback() throws Exception {
+  @Test protected void dependencies_loopback() throws Exception {
     List<Span> traceWithLoopback = asList(
       TRACE.get(0),
       TRACE.get(1).toBuilder().remoteEndpoint(TRACE.get(0).localEndpoint()).build()
@@ -227,38 +227,38 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * Some systems log a different trace id than the root span. This seems "headless", as we won't
    * see a span whose id is the same as the trace id.
    */
-  @Test void dependencies_headlessTrace() throws Exception {
+  @Test protected void dependencies_headlessTrace() throws Exception {
     ArrayList<Span> trace = new ArrayList<>(TRACE);
     trace.remove(0);
     processDependencies(trace);
 
     assertThat(store().getDependencies(TRACE_ENDTS, DAY).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
   }
 
-  @Test void looksBackIndefinitely() throws Exception {
+  @Test protected void looksBackIndefinitely() throws Exception {
     processDependencies(TRACE);
 
     assertThat(store().getDependencies(TRACE_ENDTS, TRACE_ENDTS).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
   }
 
   /** Ensure complete traces are aggregated, even if they complete after endTs */
-  @Test void endTsInsideTheTrace() throws Exception {
+  @Test protected void endTsInsideTheTrace() throws Exception {
     processDependencies(TRACE);
 
     assertThat(store().getDependencies(TRACE_STARTTS + 100, 200).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
   }
 
-  @Test void endTimeBeforeData() throws Exception {
+  @Test protected void endTimeBeforeData() throws Exception {
     processDependencies(TRACE);
 
     assertThat(store().getDependencies(TRACE_STARTTS - 1000L, 1000L).execute())
       .isEmpty();
   }
 
-  @Test void lookbackAfterData() throws Exception {
+  @Test protected void lookbackAfterData() throws Exception {
     processDependencies(TRACE);
 
     assertThat(store().getDependencies(TODAY + 2 * DAY, DAY).execute())
@@ -270,7 +270,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * endpoint. Specifically, this detects an uninstrumented client before the trace and an
    * uninstrumented server at the end of it.
    */
-  @Test void notInstrumentedClientAndServer() throws Exception {
+  @Test protected void notInstrumentedClientAndServer() throws Exception {
     Endpoint someClient = Endpoint.newBuilder().serviceName("some-client").ip("172.17.0.4").build();
 
     List<Span> trace = asList(
@@ -307,7 +307,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     );
   }
 
-  @Test void endTsAndLookbackMustBePositive() throws IOException {
+  @Test protected void endTsAndLookbackMustBePositive() throws IOException {
     try {
       store().getDependencies(0L, DAY).execute();
       failBecauseExceptionWasNotThrown(IllegalArgumentException.class);
@@ -323,7 +323,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     }
   }
 
-  @Test void instrumentedClientAndServer() throws Exception {
+  @Test protected void instrumentedClientAndServer() throws Exception {
     List<Span> trace = asList(
       Span.newBuilder().traceId("10").id("10").name("get")
         .timestamp((TODAY + 50L) * 1000L).duration(250L * 1000L)
@@ -351,7 +351,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     );
   }
 
-  @Test void instrumentedProducerAndConsumer() throws Exception {
+  @Test protected void instrumentedProducerAndConsumer() throws Exception {
     List<Span> trace = asList(
       Span.newBuilder().traceId("10").id("10").name("send")
         .timestamp((TODAY + 50L) * 1000L).duration(1)
@@ -376,7 +376,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
   }
 
   /** Ensure there's no query limit problem around links */
-  @Test void manyLinks() throws Exception {
+  @Test protected void manyLinks() throws Exception {
     int count = 1000; // Larger than 10, which is the default ES search limit that tripped this
     List<Span> spans = new ArrayList<>(count);
     for (int i = 1; i <= count; i++) {
@@ -415,7 +415,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
   }
 
   /** This shows a missing parent still results in a dependency link when local endpoints change */
-  @Test void missingIntermediateSpan() throws Exception {
+  @Test protected void missingIntermediateSpan() throws Exception {
     List<Span> trace = asList(
       Span.newBuilder().traceId("20").id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
@@ -441,7 +441,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * This test shows that dependency links can be filtered at daily granularity. This allows the UI
    * to look for dependency intervals besides TODAY.
    */
-  @Test void canSearchForIntervalsBesidesToday() throws Exception {
+  @Test protected void canSearchForIntervalsBesidesToday() throws Exception {
     // Let's pretend we have two days of data processed
     //  - Note: calling this twice allows test implementations to consider timestamps
     processDependencies(subtractDay(TRACE));
@@ -450,11 +450,11 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     // A user looks at today's links.
     //  - Note: Using the smallest lookback avoids bumping into implementation around windowing.
     assertThat(store().getDependencies(TRACE_ENDTS, TRACE_DURATION).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
 
     // A user compares the links from those a day ago.
     assertThat(store().getDependencies(TRACE_ENDTS - DAY, DAY).execute())
-      .containsOnlyElementsOf(LINKS);
+      .containsExactlyInAnyOrderElementsOf(LINKS);
 
     // A user looks at all links since data started
     assertThat(store().getDependencies(TRACE_ENDTS, TRACE_ENDTS).execute()).containsOnly(
@@ -463,7 +463,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     );
   }
 
-  @Test void spanKindIsNotRequiredWhenEndpointsArePresent() throws Exception {
+  @Test protected void spanKindIsNotRequiredWhenEndpointsArePresent() throws Exception {
     Endpoint someClient = Endpoint.newBuilder().serviceName("some-client").ip("172.17.0.4").build();
 
     List<Span> trace = asList(
@@ -490,7 +490,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
     );
   }
 
-  @Test void unnamedEndpointsAreSkipped() throws Exception {
+  @Test protected void unnamedEndpointsAreSkipped() throws Exception {
     List<Span> trace = asList(
       Span.newBuilder().traceId("20").id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
@@ -521,7 +521,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    *
    * span1: SR SS span2: intermediate call span3: CS SR SS CR: Dependency 1
    */
-  @Test void intermediateSpans() throws Exception {
+  @Test protected void intermediateSpans() throws Exception {
     List<Span> trace = asList(
       Span.newBuilder().traceId("20").id("20").name("get")
         .timestamp(TODAY * 1000L).duration(350L * 1000L)
@@ -567,7 +567,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    *
    * span1: SR SS span2: intermediate call span3: CS SR SS CR: Dependency 1
    */
-  @Test void duplicateAddress() throws Exception {
+  @Test protected void duplicateAddress() throws Exception {
     V1SpanConverter converter = V1SpanConverter.create();
     List<Span> trace = new ArrayList<>();
     converter.convert(V1Span.newBuilder().traceId("20").id("20").name("get")
@@ -594,7 +594,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
    * Span starts on one host and ends on the other. In both cases, a response is neither sent nor
    * received.
    */
-  @Test void oneway() throws Exception {
+  @Test protected void oneway() throws Exception {
     List<Span> trace = asList(
       Span.newBuilder().traceId("10").id("10")
         .timestamp((TODAY + 50) * 1000)
@@ -616,7 +616,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
   }
 
   /** A timeline annotation named error is not a failed span. A tag/binary annotation is. */
-  @Test void annotationNamedErrorIsntError() throws Exception {
+  @Test protected void annotationNamedErrorIsntError() throws Exception {
     List<Span> trace = asList(
       Span.newBuilder().traceId("10").id("10")
         .timestamp((TODAY + 50) * 1000)
@@ -639,7 +639,7 @@ public abstract class ITDependencies<T extends StorageComponent> extends ITStora
   }
 
   /** Async span starts from an uninstrumented source. */
-  @Test void oneway_noClient() throws Exception {
+  @Test protected void oneway_noClient() throws Exception {
     Endpoint kafka = Endpoint.newBuilder().serviceName("kafka").ip("172.17.0.4").build();
 
     List<Span> trace = asList(

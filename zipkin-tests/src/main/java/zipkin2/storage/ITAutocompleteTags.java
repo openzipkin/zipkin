@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -33,7 +33,7 @@ public abstract class ITAutocompleteTags<T extends StorageComponent> extends ITS
     storage.autocompleteKeys(asList("http.host"));
   }
 
-  @Test void Should_not_store_when_key_not_in_autocompleteTags() throws IOException {
+  @Test protected void should_not_store_when_key_not_in_autocompleteTags() throws IOException {
     accept(TestObjects.LOTS_OF_SPANS[0].toBuilder()
       .timestamp(Instant.now().toEpochMilli())
       .putTag("http.method", "GET")
@@ -44,7 +44,7 @@ public abstract class ITAutocompleteTags<T extends StorageComponent> extends ITS
     assertThat(storage.autocompleteTags().getValues("http.method").execute()).isEmpty();
   }
 
-  @Test void getTagsAndValues() throws IOException {
+  @Test protected void getTagsAndValues() throws IOException {
     for (int i = 0; i < 2; i++) {
       accept(TestObjects.LOTS_OF_SPANS[i].toBuilder()
         .putTag("http.method", "GET")
