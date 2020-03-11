@@ -21,7 +21,8 @@ import SidebarMenu from './SidebarMenu';
 describe('<SidebarMenu />', () => {
   it('renders relative link to be non-external', () => {
     const { getByTestId } = render(
-      <SidebarMenu title="tooltip" path="/traces" icon={faHome} data-testid="sidebar-menu-link" />);
+      <SidebarMenu title="tooltip" path="/traces" icon={faHome} data-testid="sidebar-menu-link" />,
+    );
     const link = getByTestId('sidebar-menu-link');
     expect(link.href).toEqual('http://localhost/traces');
     expect(link.target).toBeFalsy();
@@ -29,11 +30,11 @@ describe('<SidebarMenu />', () => {
 
   it('renders absolute link to be external', () => {
     const { getByTestId } = render(
-      <SidebarMenu title="tooltip" path="https://github.com/openzipkin" icon={faHome} data-testid="sidebar-menu-link" />
+      <SidebarMenu title="tooltip" path="https://github.com/openzipkin" icon={faHome} data-testid="sidebar-menu-link" />,
     );
     const link = getByTestId('sidebar-menu-link');
     expect(link.href).toEqual('https://github.com/openzipkin');
     expect(link.target).toEqual('_blank');
     expect(link.rel).toEqual('no-opener');
-  })
+  });
 });

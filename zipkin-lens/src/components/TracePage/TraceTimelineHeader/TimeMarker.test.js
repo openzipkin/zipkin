@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,51 +12,33 @@
  * the License.
  */
 import React from 'react';
-import { ThemeProvider } from '@material-ui/styles';
-import { createMount, createShallow } from '@material-ui/core/test-utils';
 
 import TimeMarker from './TimeMarker';
-import { theme } from '../../../colors';
+import render from '../../../test/util/render-with-default-settings';
 
 describe('<TimeMarker />', () => {
-  let shallow;
-
-  beforeEach(() => {
-    shallow = createShallow();
-  });
-
-  it('should mount render to increase test coverage...', () => {
-    const mount = createMount();
-    mount(
-      <ThemeProvider theme={theme}>
-        <TimeMarker startTs={10} endTs={100} classes={{}} />
-      </ThemeProvider>,
+  // |-----------|-----------|-----------|
+  // 10μs        40μs        70μs       100μs
+  it('should render time markers', () => {
+    const { queryAllByTestId } = render(
+      <TimeMarker startTs={10} endTs={100} />,
     );
-  });
-
-  it('should render markers correctly', () => {
-    // |-----------|-----------|-----------|
-    // 10μs        40μs        70μs       100μs
-    const wrapper = shallow(<TimeMarker.Naked startTs={10} endTs={100} classes={{}} />);
-
-    const markers = wrapper.find('[data-testid="time-marker--marker"]');
+    const markers = queryAllByTestId('TimeMarker-marker');
     expect(markers.length).toBe(4);
-    expect(markers.at(0).props().style.left).toBe('0%');
-    expect(Number(markers.at(1).props().style.left.slice(0, -1))).toBeCloseTo(100 / 3);
-    expect(Number(markers.at(2).props().style.left.slice(0, -1))).toBeCloseTo(200 / 3);
-    expect(markers.at(3).props().style.left).toBe('100%');
+    expect(markers[0]).toHaveStyle({ left: '0%' });
+    expect(markers[1]).toHaveStyle({ left: `${1 / 3 * 100}%` });
+    expect(markers[2]).toHaveStyle({ left: `${2 / 3 * 100}%` });
+    expect(markers[3]).toHaveStyle({ left: '100%' });
   });
-
   it('should render labels correctly', () => {
-    // |-----------|-----------|-----------|
-    // 10μs        40μs        70μs       100μs
-    const wrapper = shallow(<TimeMarker.Naked startTs={10} endTs={100} classes={{}} />);
-
-    const labels = wrapper.find('[data-testid="time-marker--label"]');
+    const { queryAllByTestId } = render(
+      <TimeMarker startTs={10} endTs={100} />,
+    );
+    const labels = queryAllByTestId('TimeMarker-label');
     expect(labels.length).toBe(4);
-    expect(labels.at(0).text()).toBe('10μs');
-    expect(labels.at(1).text()).toBe('40μs');
-    expect(labels.at(2).text()).toBe('70μs');
-    expect(labels.at(3).text()).toBe('100μs');
+    expect(labels[0]).toHaveTextContent('10μs');
+    expect(labels[1]).toHaveTextContent('40μs');
+    expect(labels[2]).toHaveTextContent('70μs');
+    expect(labels[3]).toHaveTextContent('100μs');
   });
 });

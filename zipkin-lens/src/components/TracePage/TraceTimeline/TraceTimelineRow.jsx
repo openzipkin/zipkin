@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -14,7 +14,7 @@
 import PropTypes from 'prop-types';
 import React, { useMemo, useCallback } from 'react';
 import classnames from 'classnames';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 
 import {
   spanBarRowOffsetY,
@@ -39,10 +39,9 @@ const propTypes = {
   isFocused: PropTypes.bool.isRequired,
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   line: {
     stroke: theme.palette.grey[400],
     strokeWidth: '1px',
@@ -64,7 +63,7 @@ const style = theme => ({
   text: {
     fontSize: '1.03rem',
   },
-});
+}));
 
 const calculateLeftAndWidth = (startTs, endTs, spanDuration, spanTimestamp) => {
   const duration = endTs - startTs;
@@ -98,8 +97,8 @@ const TraceTimelineRow = React.memo(({
   isFocused,
   startTs,
   endTs,
-  classes,
 }) => {
+  const classes = useStyles();
   const { left, width } = useMemo(
     () => calculateLeftAndWidth(startTs, endTs, span.duration, span.timestamp),
     [startTs, endTs, span.duration, span.timestamp],
@@ -163,4 +162,4 @@ const TraceTimelineRow = React.memo(({
 
 TraceTimelineRow.propTypes = propTypes;
 
-export default withStyles(style)(TraceTimelineRow);
+export default TraceTimelineRow;

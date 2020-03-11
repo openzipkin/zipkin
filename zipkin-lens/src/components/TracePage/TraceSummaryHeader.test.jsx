@@ -31,8 +31,10 @@ describe('<TraceSummaryHeader />', () => {
           rootSpan: {
             serviceName: 'service-A',
             spanName: 'span-A',
-          }}}
-      />);
+          },
+        }}
+      />,
+    );
     expect(queryByTestId('view-logs-link')).not.toBeInTheDocument();
   });
 
@@ -48,9 +50,11 @@ describe('<TraceSummaryHeader />', () => {
           rootSpan: {
             serviceName: 'service-A',
             spanName: 'span-A',
-          }}}
+          },
+        }}
       />,
-      { uiConfig: { logsUrl: 'http://zipkin.io/logs={traceId}' }});
+      { uiConfig: { logsUrl: 'http://zipkin.io/logs={traceId}' } },
+    );
     const logsLink = queryByTestId('view-logs-link');
     expect(logsLink).toBeInTheDocument();
     expect(logsLink.href).toEqual('http://zipkin.io/logs=1');

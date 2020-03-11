@@ -6,6 +6,10 @@
 sudo: required
 dist: trusty
 
+# Don't do a shallow clone to allow license plugin to correctly read git history.
+git:
+  depth: false
+
 cache:
   directories:
   # zipkin-lens gets dependencies via NPM
@@ -37,7 +41,7 @@ before_install:
   - git config credential.helper "store --file=.git/credentials"
   - echo "https://$GH_TOKEN:@github.com" > .git/credentials
 
-# Override default travis to use the maven wrapper; skip license on travis due to #1512
+# Override default travis to use the maven wrapper
 install: ./mvnw install -DskipTests=true -Dlicense.skip=true -Dmaven.javadoc.skip=true -B -V
 script: ./travis/publish.sh
 

@@ -32,7 +32,7 @@ describe('<TracesTableHead />', () => {
         <TracesTableHead
           sortingMethod={sortingMethods.LONGEST_FIRST}
           onSortingMethodChange={onSortingMethodChange}
-        />
+        />,
       );
 
       const startTimeCell = getByTestId('start-time');
@@ -46,7 +46,7 @@ describe('<TracesTableHead />', () => {
         <TracesTableHead
           sortingMethod={sortingMethods.NEWEST_FIRST}
           onSortingMethodChange={onSortingMethodChange}
-        />
+        />,
       );
 
       const startTimeCell = getByTestId('start-time');
@@ -60,7 +60,7 @@ describe('<TracesTableHead />', () => {
         <TracesTableHead
           sortingMethod={sortingMethods.LONGEST_FIRST}
           onSortingMethodChange={onSortingMethodChange}
-        />
+        />,
       );
 
       const durationCell = getByTestId('duration');
@@ -70,11 +70,11 @@ describe('<TracesTableHead />', () => {
     });
 
     it('StartTime cell -> Duration cell', () => {
-      const {getByTestId} = render(
+      const { getByTestId } = render(
         <TracesTableHead
-        sortingMethod={sortingMethods.NEWEST_FIRST}
-        onSortingMethodChange={onSortingMethodChange}
-        />
+          sortingMethod={sortingMethods.NEWEST_FIRST}
+          onSortingMethodChange={onSortingMethodChange}
+        />,
       );
 
       const durationCell = getByTestId('duration');

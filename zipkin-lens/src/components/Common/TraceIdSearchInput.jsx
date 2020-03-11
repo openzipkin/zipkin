@@ -20,7 +20,6 @@ import { makeStyles } from '@material-ui/styles';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';
 
-
 const useStyles = makeStyles({
   input: {
     fontSize: '1rem',
@@ -33,7 +32,7 @@ const propTypes = {
   history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
 };
 
-export const TraceIdSearchInput = ({ history }) => {
+export const TraceIdSearchInputImpl = ({ history }) => {
   const classes = useStyles();
   const { i18n } = useLingui();
 
@@ -75,6 +74,6 @@ export const TraceIdSearchInput = ({ history }) => {
   );
 };
 
-TraceIdSearchInput.propTypes = propTypes;
+TraceIdSearchInputImpl.propTypes = propTypes;
 
-export default withRouter(TraceIdSearchInput);
+export default withRouter(TraceIdSearchInputImpl);

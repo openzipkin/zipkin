@@ -19,8 +19,6 @@ import render from '../../../test/util/render-with-default-settings';
 import ServiceFilterPopover from './ServiceFilterPopover';
 
 describe('<ServiceFilterPopover />', () => {
-  let wrapper;
-
   const props = {
     open: true,
     anchorEl: document.createElement('div'),
@@ -39,12 +37,13 @@ describe('<ServiceFilterPopover />', () => {
   });
 
   it('should change text value when the TextField is changed', async () => {
-    let { getByTestId } = render(<ServiceFilterPopover {...props} />);
+    const { getByTestId } = render(<ServiceFilterPopover {...props} />);
     const input = within(getByTestId('text-field')).getByRole('textbox');
 
-    fireEvent.change(input, {target: {value: 'service-A'}});
+    fireEvent.change(input, { target: { value: 'service-A' } });
     const updatedInput = await waitForElement(
-      () => within(getByTestId('text-field')).getByRole('textbox'));
+      () => within(getByTestId('text-field')).getByRole('textbox'),
+    );
 
     expect(updatedInput.value).toEqual('service-A');
   });

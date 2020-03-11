@@ -28,19 +28,20 @@ beforeEach(() => {
 });
 
 const UiConfig = () => {
+  // eslint-disable-next-line global-require
   const UiConfigModule = require('./UiConfig');
-  const UiConfig = UiConfigModule.UiConfig;
-  const UiConfigConsumer = UiConfigModule.UiConfigConsumer;
+  const { UiConfig: RawUiConfig } = UiConfigModule;
+  const { UiConfigConsumer } = UiConfigModule;
 
   return (
     <Suspense fallback="Suspended">
-      <UiConfig>
+      <RawUiConfig>
         <UiConfigConsumer>
           {value => (
             <div>{JSON.stringify(value)}</div>
           )}
         </UiConfigConsumer>
-      </UiConfig>
+      </RawUiConfig>
     </Suspense>
   );
 };

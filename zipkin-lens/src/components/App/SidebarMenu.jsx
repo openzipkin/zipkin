@@ -54,7 +54,7 @@ export const SidebarMenuImpl = React.forwardRef(({
 
   const listItemProps = {};
   if (path.startsWith('https://') || path.startsWith('http://')) {
-    listItemProps.component = 'a'
+    listItemProps.component = 'a';
     listItemProps.href = path;
     listItemProps.target = '_blank';
     listItemProps.rel = 'no-opener';

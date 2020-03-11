@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useMemo } from 'react';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 
 import {
   spanBarLinePosY,
@@ -210,10 +210,9 @@ const propTypes = {
   depth: PropTypes.number.isRequired,
   childrenHiddenSpanIds: PropTypes.shape({}).isRequired,
   onChildrenToggle: PropTypes.func.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   line: {
     stroke: theme.palette.grey[400],
     strokeWidth: '1px',
@@ -238,15 +237,15 @@ const style = theme => ({
   serviceBadgeText: {
     textTransform: 'uppercase',
   },
-});
+}));
 
 const TraceTree = React.memo(({
   spans,
   depth,
   childrenHiddenSpanIds,
   onChildrenToggle,
-  classes,
 }) => {
+  const classes = useStyles();
   const {
     horizontalLineDataList,
     verticalLineDataList,
@@ -370,4 +369,4 @@ const TraceTree = React.memo(({
 
 TraceTree.propTypes = propTypes;
 
-export default withStyles(style)(TraceTree);
+export default TraceTree;

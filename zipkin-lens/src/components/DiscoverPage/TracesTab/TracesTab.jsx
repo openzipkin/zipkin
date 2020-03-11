@@ -12,11 +12,10 @@
  * the License.
  */
 import { Plural } from '@lingui/macro';
-import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
 import { connect } from 'react-redux';
 import Box from '@material-ui/core/Box';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 
 import {
   sortingMethods,
@@ -30,16 +29,16 @@ import { traceSummariesPropTypes } from '../../../prop-types';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   header: {
     borderColor: theme.palette.grey[300],
   },
-});
+}));
 
-export const TracesTab = ({ traceSummaries, classes }) => { // Export for testing.
+export const TracesTab = ({ traceSummaries }) => { // Export for testing.
+  const classes = useStyles();
   const allServiceNames = useMemo(() => extractAllServiceNames(traceSummaries), [traceSummaries]);
   const [sortingMethod, setSortingMethod] = useState(sortingMethods.LONGEST_FIRST);
 
@@ -108,4 +107,4 @@ const mapStateToProps = state => ({
 export default connect(
   mapStateToProps,
   null,
-)(withStyles(style)(TracesTab));
+)(TracesTab);

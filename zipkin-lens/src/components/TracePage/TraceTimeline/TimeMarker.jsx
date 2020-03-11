@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -11,26 +11,22 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import PropTypes from 'prop-types';
 import React from 'react';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 
 import { spanTreeWidthPercent, serviceNameWidthPercent, timelineWidthPercent } from '../sizing';
 
 const numTimeMarkers = 4;
 
-const propTypes = {
-  classes: PropTypes.shape({}).isRequired,
-};
-
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   line: {
     stroke: theme.palette.grey[300],
     strokeWidth: '1px',
   },
-});
+}));
 
-const TimeMarker = React.memo(({ classes }) => {
+const TimeMarker = React.memo(() => {
+  const classes = useStyles();
   const timeMarkers = [];
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
@@ -52,6 +48,4 @@ const TimeMarker = React.memo(({ classes }) => {
   return (<g>{timeMarkers}</g>);
 });
 
-TimeMarker.propTypes = propTypes;
-
-export default withStyles(style)(TimeMarker);
+export default TimeMarker;

@@ -11,7 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import { Trans } from "@lingui/macro";
+import { Trans } from '@lingui/macro';
 import PropTypes from 'prop-types';
 import React, { useEffect, useCallback } from 'react';
 import { connect } from 'react-redux';
@@ -104,28 +104,6 @@ const useStyles = makeStyles(theme => ({
   },
 }));
 
-const propTypes = {
-  isLoading: PropTypes.bool.isRequired,
-  traces: PropTypes.arrayOf(PropTypes.any).isRequired,
-  lastQueryParams: PropTypes.shape({}).isRequired,
-  conditions: globalSearchConditionsPropTypes.isRequired,
-  lookbackCondition: globalSearchLookbackConditionPropTypes.isRequired,
-  limitCondition: PropTypes.number.isRequired,
-  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
-  location: PropTypes.shape({
-    pathname: PropTypes.string.isRequired,
-    search: PropTypes.string.isRequired,
-  }).isRequired,
-  loadTraces: PropTypes.func.isRequired,
-  fetchServices: PropTypes.func.isRequired,
-  fetchRemoteServices: PropTypes.func.isRequired,
-  fetchSpans: PropTypes.func.isRequired,
-  fetchAutocompleteKeys: PropTypes.func.isRequired,
-  setConditions: PropTypes.func.isRequired,
-  setLookbackCondition: PropTypes.func.isRequired,
-  setLimitCondition: PropTypes.func.isRequired,
-};
-
 const DiscoverPageHeader = () => {
   const classes = useStyles();
 
@@ -162,8 +140,6 @@ const DiscoverPageContent = ({
   setLimitCondition,
 }) => {
   const classes = useStyles();
-
-
 
   const findTraces = useCallback(() => {
     const currentTs = moment().valueOf();
@@ -284,6 +260,29 @@ const DiscoverPageContent = ({
   );
 };
 
+DiscoverPageContent.propTypes = {
+  isLoading: PropTypes.bool.isRequired,
+  traces: PropTypes.arrayOf(PropTypes.any).isRequired,
+  lastQueryParams: PropTypes.shape({}).isRequired,
+  conditions: globalSearchConditionsPropTypes.isRequired,
+  lookbackCondition: globalSearchLookbackConditionPropTypes.isRequired,
+  limitCondition: PropTypes.number.isRequired,
+  history: PropTypes.shape({ push: PropTypes.func.isRequired }).isRequired,
+  location: PropTypes.shape({
+    pathname: PropTypes.string.isRequired,
+    search: PropTypes.string.isRequired,
+  }).isRequired,
+  loadTraces: PropTypes.func.isRequired,
+  fetchServices: PropTypes.func.isRequired,
+  fetchRemoteServices: PropTypes.func.isRequired,
+  fetchSpans: PropTypes.func.isRequired,
+  fetchAutocompleteKeys: PropTypes.func.isRequired,
+  clearTraces: PropTypes.func.isRequired,
+  setConditions: PropTypes.func.isRequired,
+  setLookbackCondition: PropTypes.func.isRequired,
+  setLimitCondition: PropTypes.func.isRequired,
+};
+
 const DiscoverPageImpl = (props) => {
   const classes = useStyles();
   const config = useUiConfig();
@@ -295,9 +294,9 @@ const DiscoverPageImpl = (props) => {
         <Box className={classes.explainBoxWrapper}>
           <Typography variant="body1">
             <Trans>
-              Searching has been disabled via the searchEnabled property. You can still view specific
-              traces of which you know the trace id by entering it in the "trace id..." textbox on
-              the top-right.
+              Searching has been disabled via the searchEnabled property.
+              You can still view specific traces of which you know the trace id
+              by entering it in the &quot;trace id...&quot; textbox on the top-right.
             </Trans>
           </Typography>
         </Box>
@@ -307,8 +306,6 @@ const DiscoverPageImpl = (props) => {
 
   return <DiscoverPageContent {...props} />;
 };
-
-DiscoverPageImpl.propTypes = propTypes;
 
 const mapStateToProps = state => ({
   traces: state.traces.traces,
@@ -323,7 +320,7 @@ const mapDispatchToProps = dispatch => ({
   loadTraces: params => dispatch(
     tracesActionCreators.loadTraces(params),
   ),
-  clearTraces: parms => dispatch(
+  clearTraces: () => dispatch(
     tracesActionCreators.clearTraces(),
   ),
   fetchServices: () => dispatch(
