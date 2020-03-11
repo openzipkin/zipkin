@@ -14,11 +14,9 @@
 import React from 'react';
 import { fireEvent, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/extend-expect';
-import { ThemeProvider } from '@material-ui/styles';
 
 import SpanAnnotations from './SpanAnnotations';
 
-import { theme } from '../../../colors';
 import render from '../../../test/util/render-with-default-settings';
 
 describe('<SpanAnnotations />', () => {
@@ -102,8 +100,9 @@ describe('<SpanAnnotations />', () => {
   });
 
   it('should show the only one annotation data when an annotation circle is clicked', () => {
-    const { getByTestId, getAllByTestId, queryAllByTestId } =
-      render(<SpanAnnotations span={span} />);
+    const { getByTestId, getAllByTestId, queryAllByTestId } = render(
+      <SpanAnnotations span={span} />,
+    );
     fireEvent.click(getByTestId('span-annotations--toggle-button'));
     expect(queryAllByTestId('span-annotations--annotation')).toHaveLength(4);
     expect(getByTestId('span-annotations--toggle-button')).toHaveTextContent('hide annotations');

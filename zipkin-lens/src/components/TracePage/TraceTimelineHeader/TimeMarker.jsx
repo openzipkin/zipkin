@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React from 'react';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import classNames from 'classnames';
 
@@ -23,10 +23,9 @@ import { formatDuration } from '../../../util/timestamp';
 const propTypes = {
   startTs: PropTypes.number.isRequired,
   endTs: PropTypes.number.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   marker: {
     height: '100%',
     width: '1px',
@@ -42,11 +41,12 @@ const style = theme => ({
     left: 'initial',
     right: '4px',
   },
-});
+}));
 
 const numTimeMarkers = 4;
 
-const TimeMarker = React.memo(({ startTs, endTs, classes }) => {
+const TimeMarker = React.memo(({ startTs, endTs }) => {
+  const classes = useStyles();
   const timeMarkers = [];
 
   for (let i = 0; i < numTimeMarkers; i += 1) {
@@ -59,7 +59,7 @@ const TimeMarker = React.memo(({ startTs, endTs, classes }) => {
         position="absolute"
         className={classes.marker}
         style={{ left: `${portion * 100}%` }}
-        data-testid="time-marker--marker"
+        data-testid="TimeMarker-marker"
       >
         <Box
           component="span"
@@ -70,7 +70,7 @@ const TimeMarker = React.memo(({ startTs, endTs, classes }) => {
               { [classes['label--last']]: portion >= 1 },
             )
           }
-          data-testid="time-marker--label"
+          data-testid="TimeMarker-label"
         >
           {formatDuration(label)}
         </Box>
@@ -94,4 +94,4 @@ const TimeMarker = React.memo(({ startTs, endTs, classes }) => {
 
 TimeMarker.propTypes = propTypes;
 
-export default withStyles(style)(TimeMarker);
+export default TimeMarker;

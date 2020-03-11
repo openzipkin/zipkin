@@ -35,7 +35,6 @@ i18n.activate('en');
 export default (ui, {
   route = '/',
   history = createMemoryHistory({ initialEntries: [route] }),
-  locale = 'en',
   uiConfig = {},
 } = {}) => {
   const store = configureStore({});

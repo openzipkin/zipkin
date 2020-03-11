@@ -13,9 +13,8 @@
  */
 import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
-import PropTypes from 'prop-types';
 import React from 'react';
-import { withStyles } from '@material-ui/styles';
+import { makeStyles } from '@material-ui/styles';
 import Box from '@material-ui/core/Box';
 import Table from '@material-ui/core/Table';
 import TableBody from '@material-ui/core/TableBody';
@@ -28,49 +27,50 @@ import { formatTimestampMicros } from '../../../util/timestamp';
 
 const propTypes = {
   annotation: spanAnnotationPropTypes.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
-const style = theme => ({
+const useStyles = makeStyles(theme => ({
   cell: {
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
   },
-});
+}));
 
-const SpanAnnotation = React.memo(({ annotation, classes }) => {
+const SpanAnnotation = React.memo(({ annotation }) => {
+  const classes = useStyles();
   const { i18n } = useLingui();
 
   return (
-  <Box>
-    <Box fontSize="1.1rem" mb={0.5}>
-      {annotation.value}
+    <Box>
+      <Box fontSize="1.1rem" mb={0.5}>
+        {annotation.value}
+      </Box>
+      <Paper>
+        <Table>
+          <TableBody data-testid="span-annotation--table-body">
+            {
+              [
+                { label: i18n._(t`Start Time`), value: formatTimestampMicros(annotation.timestamp) },
+                { label: i18n._(t`Relative Time`), value: annotation.relativeTime },
+                { label: i18n._(t`Address`), value: annotation.endpoint },
+              ].map(e => (
+                <TableRow key={e.label}>
+                  <TableCell className={classes.cell} data-testid="span-annotation--label">
+                    {e.label}
+                  </TableCell>
+                  <TableCell className={classes.cell} data-testid="span-annotation--value">
+                    {e.value}
+                  </TableCell>
+                </TableRow>
+              ))
+            }
+          </TableBody>
+        </Table>
+      </Paper>
     </Box>
-    <Paper>
-      <Table>
-        <TableBody data-testid="span-annotation--table-body">
-          {
-            [
-              { label: i18n._(t`Start Time`), value: formatTimestampMicros(annotation.timestamp) },
-              { label: i18n._(t`Relative Time`), value: annotation.relativeTime },
-              { label: i18n._(t`Address`), value: annotation.endpoint },
-            ].map(e => (
-              <TableRow key={e.label}>
-                <TableCell className={classes.cell} data-testid="span-annotation--label">
-                  {e.label}
-                </TableCell>
-                <TableCell className={classes.cell} data-testid="span-annotation--value">
-                  {e.value}
-                </TableCell>
-              </TableRow>
-            ))
-          }
-        </TableBody>
-      </Table>
-    </Paper>
-  </Box>
-)});
+  );
+});
 
 SpanAnnotation.propTypes = propTypes;
 
-export default withStyles(style)(SpanAnnotation);
+export default SpanAnnotation;

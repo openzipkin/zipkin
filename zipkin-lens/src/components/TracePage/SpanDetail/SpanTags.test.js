@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -12,28 +12,28 @@
  * the License.
  */
 import React from 'react';
-import { createShallow } from '@material-ui/core/test-utils';
 
 import SpanTags from './SpanTags';
+import render from '../../../test/util/render-with-default-settings';
 
 describe('<SpanTags />', () => {
-  let shallow;
-
-  beforeEach(() => {
-    shallow = createShallow();
-  });
-
   it('should render all tags', () => {
-    const wrapper = shallow(
-      <SpanTags.Naked
+    const { queryAllByTestId } = render(
+      <SpanTags
         tags={[
           { key: 'key1', value: 'value1' },
           { key: 'key2', value: 'value2' },
           { key: 'key3', value: 'value3' },
         ]}
-        classes={{}}
       />,
     );
-    expect(wrapper.find('[data-testid="span-tags--table-row"]').length).toBe(3);
+    const keys = queryAllByTestId('SpanTags-key');
+    const values = queryAllByTestId('SpanTags-value');
+    expect(keys[0]).toHaveTextContent('key1');
+    expect(values[0]).toHaveTextContent('value1');
+    expect(keys[1]).toHaveTextContent('key2');
+    expect(values[1]).toHaveTextContent('value2');
+    expect(keys[2]).toHaveTextContent('key3');
+    expect(values[2]).toHaveTextContent('value3');
   });
 });

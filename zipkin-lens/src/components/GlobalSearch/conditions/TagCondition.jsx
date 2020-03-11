@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,10 @@ const propTypes = {
   onFocus: PropTypes.func.isRequired,
   onBlur: PropTypes.func.isRequired,
   isFocused: PropTypes.bool.isRequired,
-  valueRef: PropTypes.shape({}).isRequired,
+  valueRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.instanceOf(Element) }),
+  ]).isRequired,
   addCondition: PropTypes.func.isRequired,
 };
 

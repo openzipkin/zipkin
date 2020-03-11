@@ -60,7 +60,7 @@ const LanguageSelector = () => {
   const currentLocale = i18n.locale;
 
   const onLanguageClick = useCallback((e) => {
-    const locale = e.currentTarget.dataset.locale;
+    const { locale } = e.currentTarget.dataset;
     if (locale === currentLocale) {
       return;
     }
@@ -82,10 +82,10 @@ const LanguageSelector = () => {
         anchorEl={changeLanguageLink.current}
         open={languageSelectorOpen}
         onClose={closeLanguageSelector}
-        anchorOrigin={{vertical: 'top', horizontal: 'right'}}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <List data-testid="language-list">
-          {LANGUAGES.map((language) => (
+          {LANGUAGES.map(language => (
             <ListItem
               button
               key={language.locale}
