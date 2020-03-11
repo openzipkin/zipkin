@@ -15,7 +15,9 @@ import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React from 'react';
-import { faQuestionCircle, faSearch, faProjectDiagram, faHome } from '@fortawesome/free-solid-svg-icons';
+import {
+  faQuestionCircle, faSearch, faProjectDiagram, faHome,
+} from '@fortawesome/free-solid-svg-icons';
 import Box from '@material-ui/core/Box';
 import Drawer from '@material-ui/core/Drawer';
 import CssBaseline from '@material-ui/core/CssBaseline';

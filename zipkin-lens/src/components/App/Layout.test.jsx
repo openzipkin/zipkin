@@ -22,8 +22,9 @@ describe('<Layout />', () => {
     // children is required so avoid warning by passing dummy children
     const { queryByTitle } = render(
       <Layout>
-        <span>Test</span><span>Test</span>
-      </Layout>
+        <span>Test</span>
+        <span>Test</span>
+      </Layout>,
     );
     expect(queryByTitle('Support')).not.toBeInTheDocument();
   });
@@ -32,13 +33,15 @@ describe('<Layout />', () => {
     // children is required so avoid warning by passing dummy children
     const { getByTitle } = render(
       <Layout>
-        <span>Test</span><span>Test</span>
+        <span>Test</span>
+        <span>Test</span>
       </Layout>,
       {
         uiConfig: {
           supportUrl: 'https://gitter.im/openzipkin/zipkin',
         },
-    });
+      },
+    );
     const helpLink = getByTitle('Support');
     expect(helpLink).toBeInTheDocument();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
