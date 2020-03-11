@@ -12,7 +12,6 @@
  * the License.
  */
 import { Plural } from '@lingui/macro';
-import PropTypes from 'prop-types';
 import React, { useState, useMemo, useCallback } from 'react';
 import { connect } from 'react-redux';
 import Box from '@material-ui/core/Box';
@@ -30,7 +29,6 @@ import { traceSummariesPropTypes } from '../../../prop-types';
 
 const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
-  classes: PropTypes.shape({}).isRequired,
 };
 
 const useStyles = makeStyles(theme => ({
