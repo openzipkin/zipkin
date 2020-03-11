@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -41,11 +41,11 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
   }
 
   /** Ensures we can still lookup fully 128-bit traces when strict trace ID id disabled */
-  @Test void getTraces_128BitTraceId() throws IOException {
+  @Test protected void getTraces_128BitTraceId() throws IOException {
     getTraces_128BitTraceId(accept128BitTrace(storage));
   }
 
-  @Test void getTraces_128BitTraceId_mixed() throws IOException {
+  @Test protected void getTraces_128BitTraceId_mixed() throws IOException {
     getTraces_128BitTraceId(acceptMixedTrace());
   }
 
@@ -66,13 +66,13 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
       .containsExactly(trace);
   }
 
-  @Test void getTrace_retrievesBy64Or128BitTraceId() throws IOException {
+  @Test protected void getTrace_retrievesBy64Or128BitTraceId() throws IOException {
     List<Span> trace = accept128BitTrace(storage);
 
     retrievesBy64Or128BitTraceId(trace);
   }
 
-  @Test void getTrace_retrievesBy64Or128BitTraceId_mixed() throws IOException {
+  @Test protected void getTrace_retrievesBy64Or128BitTraceId_mixed() throws IOException {
     List<Span> trace = acceptMixedTrace();
 
     retrievesBy64Or128BitTraceId(trace);
@@ -83,9 +83,9 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
     String traceId = trace.get(trace.size() - 1).traceId();
 
     assertThat(traces().getTrace(traceId.substring(16)).execute())
-      .containsOnlyElementsOf(trace);
+      .containsExactlyInAnyOrderElementsOf(trace);
     assertThat(traces().getTrace(traceId).execute())
-      .containsOnlyElementsOf(trace);
+      .containsExactlyInAnyOrderElementsOf(trace);
   }
 
   protected List<Span> accept128BitTrace(StorageComponent storage) throws IOException {
@@ -121,7 +121,7 @@ public abstract class ITStrictTraceIdFalse<T extends StorageComponent> extends I
     .traceId("ffffffffffffffff").id("2").timestamp(TODAY * 1000).build();
 
   /** current implementation cannot return exact form reported */
-  @Test void getTraces_retrievesBy64Or128BitTraceId() throws Exception {
+  @Test protected void getTraces_retrievesBy64Or128BitTraceId() throws Exception {
     accept(with128BitId1, with64BitId1, with128BitId2, with64BitId2, with128BitId3, with64BitId3);
 
     List<List<Span>> trace1And3 = asList(
