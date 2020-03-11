@@ -25,8 +25,24 @@ const propTypes = {
   children: PropTypes.element.isRequired,
 };
 
+export const defaultConfig = {
+  environment: '',
+  suggestLens: false,
+  queryLimit: 10,
+  defaultLookback: 15 * 60 * 1000, // 15 minutes
+  searchEnabled: true,
+  dependency: {
+    lowErrorRate: 0.5, // 50% of calls in error turns line yellow
+    highErrorRate: 0.75, // 75% of calls in error turns line red
+  },
+};
+
 export const UiConfig = ({ children }) => {
   const response = configResource.read();
+  Object.keys(defaultConfig).forEach((key) => {
+    response[key] = response[key] || defaultConfig[key];
+  });
+
   return (
     <ConfigContext.Provider value={response}>
       {children}
