@@ -11,6 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
+/* eslint-disable react/no-unescaped-entities */
 import { Trans } from '@lingui/macro';
 import PropTypes from 'prop-types';
 import React, { useEffect, useCallback } from 'react';
@@ -294,11 +295,9 @@ const DiscoverPageImpl = (props) => {
         <Box className={classes.explainBoxWrapper}>
           <Typography variant="body1">
             <Trans>
-              {
-                'Searching has been disabled via the searchEnabled property.'
-                  + 'You can still view specific traces of which you know the trace id'
-                  + 'by entering it in the "trace id..." textbox on the top-right.'
-              }
+              Searching has been disabled via the searchEnabled property.
+              You can still view specific traces of which you know the trace id
+              by entering it in the "trace id..." textbox on the top-right.
             </Trans>
           </Typography>
         </Box>
