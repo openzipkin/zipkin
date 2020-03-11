@@ -89,7 +89,7 @@ const Layout = ({ children }) => {
           </List>
         </Box>
         <List>
-          { config.supportUrl && (
+          {config.supportUrl && (
             <SidebarMenu title={i18n._(t`Support`)} path={config.supportUrl} icon={faQuestionCircle} />
           )}
           <SidebarMenu title={i18n._(t`Zipkin Home`)} path="https://zipkin.io/" icon={faHome} />
