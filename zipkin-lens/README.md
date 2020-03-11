@@ -1,108 +1,44 @@
-# Zipkin Lens
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
-Zipkin-lens is an alternative UI for [Zipkin](https://github.com/openzipkin/zipkin), which based on React, Netflix/vizceral and chartjs.
+## Available Scripts
 
-Here are a couple example screen shots:
+In the project directory, you can run:
 
-<img width="1920" alt="Search Screen" src="https://user-images.githubusercontent.com/64215/49579677-4602de00-f990-11e8-81b7-dd782ce91227.png">
-<img width="1920" alt="Trace Detail Screen" src="https://user-images.githubusercontent.com/64215/49579684-4d29ec00-f990-11e8-8799-5c53a503413e.png">
+### `npm start`
 
-## Quick start
+Runs the app in the development mode.<br />
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-Zipkin-lens required nodejs 10.2.0 to start. You could easily try Zipkin-lens at local using any zipkin deployment using below command:
+The page will reload if you make edits.<br />
+You will also see any lint errors in the console.
 
-```
-$ npm install --dev
-$ API_BASE="http://localhost:9411" npm run start
-```
+### `npm test`
 
-## URL to view development build
-```
-http://localhost:9000/zipkin
-```
+Launches the test runner in the interactive watch mode.<br />
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-## Production build
+### `npm run build`
 
-```
-$ npm run build
-```
+Builds the app for production to the `build` folder.<br />
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
-## Testing
+The build is minified and the filenames include the hashes.<br />
+Your app is ready to be deployed!
 
-To run the test suite,
+See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-```
-npm run test
-```
+### `npm run eject`
 
-To check code coverage,
+**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
 
-```
-npm run coverage
-```
+If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
 
-## Localization
+Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
 
-We use [LinguiJS](https://lingui.js.org/) for localization of the UI. Translations for strings are
-found in the JSON files under [here](./src/translations). The Javascript files in the directory are
-compiled from the JSON files. We're always excited to have help maintaining these translations - if
-you see a string in the UI that is not translated or mistranslated, please feel free to send a PR to
-the JSON file to fix it. If you can, please run `yarn run compile` to also compile the translation
-into the output. If it's tedious to set up an environment for it, though, don't worry we'll take care
-of it.
+You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
 
-### Adding a new locale
+## Learn More
 
-To add a new translated locale, first edit [.linguirc](./.linguirc) and add the locale to the
-`locales` section. Next, run `yarn run extract` to extract a new file under `src/translations` for
-the locale. Translate as many strings in the JSON file as you can. Then run `yarn run compile` to
-compile the strings.
+You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
-Finally, edit [App.jsx](./src/components/App/App.jsx) and
-[LanguageSelector.jsx](./src/components/App/LanguageSelector.jsx) to import the new translation and
-add an entry to the language selector respectively.
-
-## Authentication / Authorization
-
-Zipkin Lens can be secured by running it behind an authenticating proxy like [Apache HTTPD](https://httpd.apache.org/docs/current/howto/auth.html), [Nginx](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html) or similar.
-
-## Acknowledgements
-Zipkin Lens design includes facets of old and new designs. Here are
-some notable new aspects borrowed or adapted from others.
-
-### Overall Design
-Zipkin Lens was originally an internal UI at LINE called IMON. One driving feature was to
-allow site-specific tags like "Phase" and "Instance Id" to be choices for trace queries.
-The UI was originally matching color schemes of other tools like Grafana and fit in with
-the Observability ecosystem of LINE engineering. IMON was created by Igarashi Takuma and
-Huy Do who later contributed it as the initial version of Zipkin Lens.
-
-### Trace Mini Map
-The original Zipkin UI trace detail screen had a Zoom feature which is
-helpful for looking at nuance in a large trace by expanding the
-timeline around a group of spans. However, it did not help with
-navigating to these spans. We discussed the idea of a mini-map,
-similar to what video games use to quickly scroll to a place of
-interest in a game. This is especially important in messaging spans
-where there can be a large time gap separating clusters of spans. The
-initial mini-map implementation in Lens is very similar to work in
-Jaeger Ui, as a mini-map occurs over the trace and lets you zoom to a
-timeframe similar to Chrome or FireFox debug tools. The implementation
-was different as it is implemented with SVG, which is easier to debug
-than Canvas.
-
-### Span Detail pop-under
-The original Zipkin UI trace detail screen would pop-out span details
-when clicking on a span. This had two problems: One was that the
-pop-out blocked your position in the trace, so after you close the
-pop-out you need to find it again. Another problem was that you cannot
-view two span details at the same time. Lens pops these details under
-a selected span. Although the data is the same as the old Zipkin UI,
-the gesture is the same as in Jaeger's UI and inspired by them.
-
-### Vizceral Dependencies graph
-The original Zipkin UI dependencies screen used a D3 library which
-connected services with curved arrows. These arrows varied in
-thickness depending on the traffic. When you clicked an arrow, details
-would pop out. The initial version of Lens uses the same library as
-Haystack Ui to present service dependencies: Netflix Vizceral.
+To learn React, check out the [React documentation](https://reactjs.org/).
