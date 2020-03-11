@@ -294,9 +294,11 @@ const DiscoverPageImpl = (props) => {
         <Box className={classes.explainBoxWrapper}>
           <Typography variant="body1">
             <Trans>
-              Searching has been disabled via the searchEnabled property.
-              You can still view specific traces of which you know the trace id
-              by entering it in the &quot;trace id...&quot; textbox on the top-right.
+              {
+                'Searching has been disabled via the searchEnabled property.'
+                  + 'You can still view specific traces of which you know the trace id'
+                  + 'by entering it in the "trace id..." textbox on the top-right.'
+              }
             </Trans>
           </Typography>
         </Box>
