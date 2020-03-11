@@ -59,7 +59,7 @@ const TimeMarker = React.memo(({ startTs, endTs }) => {
         position="absolute"
         className={classes.marker}
         style={{ left: `${portion * 100}%` }}
-        data-testid="time-marker--marker"
+        data-testid="TimeMarker-marker"
       >
         <Box
           component="span"
@@ -70,7 +70,7 @@ const TimeMarker = React.memo(({ startTs, endTs }) => {
               { [classes['label--last']]: portion >= 1 },
             )
           }
-          data-testid="time-marker--label"
+          data-testid="TimeMarker-label"
         >
           {formatDuration(label)}
         </Box>
