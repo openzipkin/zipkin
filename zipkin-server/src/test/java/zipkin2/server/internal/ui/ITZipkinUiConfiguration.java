@@ -59,7 +59,7 @@ public class ITZipkinUiConfiguration {
       + "  \"defaultLookback\" : 900000,\n"
       + "  \"searchEnabled\" : true,\n"
       + "  \"logsUrl\" : null,\n"
-      + "  \"helpUrl\" : null,\n"
+      + "  \"supportUrl\" : null,\n"
       + "  \"dependency\" : {\n"
       + "    \"lowErrorRate\" : 0.5,\n"
       + "    \"highErrorRate\" : 0.75\n"
