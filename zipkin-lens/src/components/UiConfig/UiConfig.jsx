@@ -27,7 +27,6 @@ const propTypes = {
 
 export const defaultConfig = {
   environment: '',
-  suggestLens: false,
   queryLimit: 10,
   defaultLookback: 15 * 60 * 1000, // 15 minutes
   searchEnabled: true,
