@@ -178,7 +178,7 @@ if is_pull_request; then
 # If we are on master, we will deploy the latest snapshot or release version
 #   - If a release commit fails to deploy for a transient reason, delete the broken version from bintray and click rebuild
 elif is_travis_branch_master; then
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests -Dlicense.skip=true deploy
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DskipTests deploy
 
   # If the deployment succeeded, sync it to Maven Central and build the Docker image.
   # Note: this needs to be done once per project, not module, hence -N
@@ -191,6 +191,6 @@ elif is_travis_branch_master; then
 # If we are on a release tag, the following will update any version references and push a version tag for deployment.
 elif build_started_by_tag; then
   safe_checkout_master
-  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests -Dlicense.skip=true" release:prepare
+  ./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion="$(release_version)" -Darguments="-DskipTests" release:prepare
 fi
 
