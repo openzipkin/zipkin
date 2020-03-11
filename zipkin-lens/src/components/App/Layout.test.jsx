@@ -25,7 +25,7 @@ describe('<Layout />', () => {
         <span>Test</span><span>Test</span>
       </Layout>
     );
-    expect(queryByTitle('Help')).not.toBeInTheDocument();
+    expect(queryByTitle('Support')).not.toBeInTheDocument();
   });
 
   it('does render help link when defined', () => {
@@ -36,10 +36,10 @@ describe('<Layout />', () => {
       </Layout>,
       {
         uiConfig: {
-          helpUrl: 'https://gitter.im/openzipkin/zipkin',
+          supportUrl: 'https://gitter.im/openzipkin/zipkin',
         },
     });
-    const helpLink = getByTitle('Help');
+    const helpLink = getByTitle('Support');
     expect(helpLink).toBeInTheDocument();
     expect(helpLink.href).toEqual('https://gitter.im/openzipkin/zipkin');
   });

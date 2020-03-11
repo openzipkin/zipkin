@@ -83,11 +83,11 @@ public class ZipkinUiConfigurationTest {
   }
 
   @Test
-  public void canOverrideProperty_helpUrl() {
+  public void canOverrideProperty_supportUrl() {
     final String url = "http://mycompany.com/file-a-bug";
-    context = createContextWithOverridenProperty("zipkin.ui.help-url:" + url);
+    context = createContextWithOverridenProperty("zipkin.ui.support-url:" + url);
 
-    assertThat(context.getBean(ZipkinUiProperties.class).getHelpUrl()).isEqualTo(url);
+    assertThat(context.getBean(ZipkinUiProperties.class).getSupportUrl()).isEqualTo(url);
   }
 
   @Test

@@ -140,7 +140,7 @@ public class ZipkinUiConfiguration {
       generator.writeNumberField("defaultLookback", ui.getDefaultLookback());
       generator.writeBooleanField("searchEnabled", ui.isSearchEnabled());
       generator.writeStringField("logsUrl", ui.getLogsUrl());
-      generator.writeStringField("helpUrl", ui.getHelpUrl());
+      generator.writeStringField("supportUrl", ui.getSupportUrl());
       generator.writeObjectFieldStart("dependency");
       generator.writeNumberField("lowErrorRate", ui.getDependency().getLowErrorRate());
       generator.writeNumberField("highErrorRate", ui.getDependency().getHighErrorRate());

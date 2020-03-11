@@ -27,7 +27,7 @@ class ZipkinUiProperties {
   private int defaultLookback = (int) TimeUnit.DAYS.toMillis(7);
   private String instrumented = ".*";
   private String logsUrl = null;
-  private String helpUrl = null;
+  private String supportUrl = null;
   private String basepath = DEFAULT_BASEPATH;
   private boolean searchEnabled = true;
   private Dependency dependency = new Dependency();
@@ -74,13 +74,13 @@ class ZipkinUiProperties {
     }
   }
 
-  public String getHelpUrl() {
-    return helpUrl;
+  public String getSupportUrl() {
+    return supportUrl;
   }
 
-  public void setHelpUrl(String helpUrl) {
-    if (!StringUtils.isEmpty(helpUrl)) {
-      this.helpUrl = helpUrl;
+  public void setSupportUrl(String supportUrl) {
+    if (!StringUtils.isEmpty(supportUrl)) {
+      this.supportUrl = supportUrl;
     }
   }
 
