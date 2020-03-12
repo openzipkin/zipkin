@@ -1,6 +1,6 @@
 {
-  "name": "zipkin-lens-next",
-  "version": "0.1.0",
+  "name": "zipkin-lens",
+  "version": "0.0.1",
   "homepage": ".",
   "private": true,
   "dependencies": {
