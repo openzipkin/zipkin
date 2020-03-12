@@ -28,7 +28,7 @@ describe('<TimeMarker />', () => {
     expect(markers[0]).toHaveStyle('left: 0%');
     expect(markers[1]).toHaveStyle(`left: ${1 / 3 * 100}%`);
     expect(markers[2]).toHaveStyle(`left: ${2 / 3 * 100}%`);
-    expect(markers[3]).toHaveStyle(`left: 100%`);
+    expect(markers[3]).toHaveStyle('left: 100%');
   });
   it('should render labels correctly', () => {
     const { queryAllByTestId } = render(

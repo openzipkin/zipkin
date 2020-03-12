@@ -64,7 +64,7 @@
   "scripts": {
     "compile": "lingui compile --namespace es",
     "extract": "lingui extract",
-    "lint": "eslint --ext .js,.jsx \"src/**\"",
+    "lint": "eslint \"src/**/*.{js,jsx}\"",
     "start": "react-scripts start",
     "build": "react-scripts build",
     "postbuild": "mvy -f build target/classes/zipkin-lens",
