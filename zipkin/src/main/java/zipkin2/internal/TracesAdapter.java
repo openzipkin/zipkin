@@ -41,11 +41,11 @@ public final class TracesAdapter implements Traces {
     }
 
     if (calls.isEmpty()) return Call.emptyList();
-    if (calls.size() == 1) return calls.get(0).map(ToListOfList.INSTANCE);
+    if (calls.size() == 1) return calls.get(0).map(ToListOfTraces.INSTANCE);
     return new ScatterGather(calls);
   }
 
-  enum ToListOfList implements Call.Mapper<List<Span>, List<List<Span>>> {
+  enum ToListOfTraces implements Call.Mapper<List<Span>, List<List<Span>>> {
     INSTANCE;
 
     @Override public List<List<Span>> map(List<Span> input) {
@@ -53,7 +53,7 @@ public final class TracesAdapter implements Traces {
     }
 
     @Override public String toString() {
-      return "ToListOfList()";
+      return "ToListOfTraces()";
     }
   }
 
