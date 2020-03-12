@@ -9,6 +9,7 @@
     "react/no-array-index-key": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
+    "react/no-unescaped-entities": "off",
     "no-console": 0,
     "no-underscore-dangle": ["off"],
     "no-continue": ["off"],
