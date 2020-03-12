@@ -15,6 +15,8 @@ package zipkin2.collector.scribe;
 
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.thrift.async.AsyncMethodCallback;
 import org.junit.Test;
 import zipkin2.Call;
@@ -48,12 +50,16 @@ public class ScribeSpanConsumerTest {
     ResultCode resultCode;
     Exception error;
 
+    CountDownLatch latch = new CountDownLatch(1);
+
     @Override public void onComplete(ResultCode resultCode) {
       this.resultCode = resultCode;
+      latch.countDown();
     }
 
     @Override public void onError(Exception error) {
       this.error = error;
+      latch.countDown();
     }
   }
 
@@ -91,7 +97,7 @@ public class ScribeSpanConsumerTest {
   byte[] bytes = SpanBytesEncoder.THRIFT.encode(v2);
   String encodedSpan = new String(Base64.getEncoder().encode(bytes), UTF_8);
 
-  @Test public void entriesWithSpansAreConsumed() {
+  @Test public void entriesWithSpansAreConsumed() throws Exception {
     ScribeSpanConsumer scribe = newScribeSpanConsumer("zipkin", consumer);
 
     LogEntry entry = new LogEntry();
@@ -109,7 +115,7 @@ public class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
-  @Test public void entriesWithoutSpansAreSkipped() {
+  @Test public void entriesWithoutSpansAreSkipped() throws Exception {
     SpanConsumer consumer = (callback) -> {
       throw new AssertionError(); // as we shouldn't get here.
     };
@@ -129,9 +135,10 @@ public class ScribeSpanConsumerTest {
     assertThat(scribeMetrics.spansDropped()).isZero();
   }
 
-  private void expectSuccess(ScribeSpanConsumer scribe, LogEntry entry) {
+  private void expectSuccess(ScribeSpanConsumer scribe, LogEntry entry) throws Exception {
     CaptureAsyncMethodCallback callback = new CaptureAsyncMethodCallback();
     scribe.Log(asList(entry), callback);
+    callback.latch.await(10, TimeUnit.SECONDS);
     assertThat(callback.resultCode).isEqualTo(ResultCode.OK);
   }
 
@@ -181,7 +188,7 @@ public class ScribeSpanConsumerTest {
    * Callbacks are performed asynchronously. If they throw, it hints that we are chaining futures
    * when we shouldn't
    */
-  @Test public void callbackExceptionDoesntThrow() {
+  @Test public void callbackExceptionDoesntThrow() throws Exception {
     consumer = (input) -> new Call.Base<Void>() {
       @Override protected Void doExecute() {
         throw new AssertionError();

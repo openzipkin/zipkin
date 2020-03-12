@@ -20,6 +20,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import java.net.InetSocketAddress;
 
 import static zipkin2.Call.propagateIfFatal;
@@ -46,7 +47,9 @@ final class NettyScribeServer {
         .channel(EventLoopGroups.serverChannelType(bossGroup))
         .childHandler(new ChannelInitializer<SocketChannel>() {
           @Override protected void initChannel(SocketChannel ch) {
-            ch.pipeline().addLast(new ScribeInboundHandler(scribe));
+            ch.pipeline()
+              .addLast(new LengthFieldBasedFrameDecoder(Integer.MAX_VALUE, 0, 4, 0, 4))
+              .addLast(new ScribeInboundHandler(scribe));
           }
         })
         .bind(port)
