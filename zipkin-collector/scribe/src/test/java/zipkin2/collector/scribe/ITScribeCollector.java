@@ -47,15 +47,18 @@ import static org.mockito.Mockito.verify;
 
 public class ITScribeCollector {
 
-  private static InMemoryStorage storage;
   private static Collector collector;
   private static CollectorMetrics metrics;
 
   private static NettyScribeServer server;
 
   @BeforeClass public static void startServer() {
-    storage = InMemoryStorage.newBuilder().build();
-    collector = spy(Collector.newBuilder(ITScribeCollector.class).storage(storage).build());
+    collector = mock(Collector.class);
+    doAnswer(invocation -> {
+      Callback<Void> callback = invocation.getArgument(1);
+      callback.onSuccess(null);
+      return null;
+    }).when(collector).accept(any(), any(), any());
 
     metrics = mock(CollectorMetrics.class);
 
