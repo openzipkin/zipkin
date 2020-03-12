@@ -41,15 +41,15 @@ public final class TracesAdapter implements Traces {
     }
 
     if (calls.isEmpty()) return Call.emptyList();
-    if (calls.size() == 1) return calls.get(0).map(ToSingletonList.INSTANCE);
+    if (calls.size() == 1) return calls.get(0).map(ToListOfList.INSTANCE);
     return new ScatterGather(calls);
   }
 
-  enum ToSingletonList implements Call.Mapper<List<Span>, List<List<Span>>> {
+  enum ToListOfList implements Call.Mapper<List<Span>, List<List<Span>>> {
     INSTANCE;
 
     @Override public List<List<Span>> map(List<Span> input) {
-      return Collections.singletonList(input);
+      return input.isEmpty() ? Collections.emptyList() : Collections.singletonList(input);
     }
 
     @Override public String toString() {
