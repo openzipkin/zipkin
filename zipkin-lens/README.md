@@ -1,6 +1,15 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Zipkin Lens
 
-## Available Scripts
+Zipkin-lens is an alternative UI for [Zipkin](https://github.com/openzipkin/zipkin), which based on React, Netflix/vizceral and chartjs.
+
+Here are a couple example screen shots:
+
+<img width="1920" alt="Search Screen" src="https://user-images.githubusercontent.com/64215/49579677-4602de00-f990-11e8-81b7-dd782ce91227.png">
+<img width="1920" alt="Trace Detail Screen" src="https://user-images.githubusercontent.com/64215/49579684-4d29ec00-f990-11e8-8799-5c53a503413e.png">
+
+## Quick start
+
+This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 In the project directory, you can run:
 
@@ -22,23 +31,29 @@ See the section about [running tests](https://facebook.github.io/create-react-ap
 Builds the app for production to the `build` folder.<br />
 It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.<br />
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
-
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
-
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
-
-## Learn More
+### Learn More
 
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+## Localization
+
+We use [LinguiJS](https://lingui.js.org/) for localization of the UI. Translations for strings are
+found in the JSON files under [here](./src/translations). The Javascript files in the directory are
+compiled from the JSON files. We're always excited to have help maintaining these translations - if
+you see a string in the UI that is not translated or mistranslated, please feel free to send a PR to
+the JSON file to fix it. If you can, please run `yarn run compile` to also compile the translation
+into the output. If it's tedious to set up an environment for it, though, don't worry we'll take care
+of it.
+
+### Adding a new locale
+
+To add a new translated locale, first edit [.linguirc](./.linguirc) and add the locale to the
+`locales` section. Next, run `yarn run extract` to extract a new file under `src/translations` for
+the locale. Translate as many strings in the JSON file as you can. Then run `yarn run compile` to
+compile the strings.
+
+Finally, edit [App.jsx](./src/components/App/App.jsx) and
+[LanguageSelector.jsx](./src/components/App/LanguageSelector.jsx) to import the new translation and
+add an entry to the language selector respectively.
