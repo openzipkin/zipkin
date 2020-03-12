@@ -19,7 +19,7 @@ import React, {
   useEffect,
 } from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import { AutoSizer } from 'react-virtualized';
 import moment from 'moment';
 import { makeStyles } from '@material-ui/styles';

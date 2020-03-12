@@ -12,15 +12,13 @@
  * the License.
  */
 
-/* eslint-disable import/no-extraneous-dependencies */
+import '@testing-library/jest-dom/extend-expect';
 
-import '@testing-library/jest-dom';
+import Enzyme from 'enzyme';
+import EnzymeAdapter from 'enzyme-adapter-react-16';
 import fetchMock from 'fetch-mock';
 
 import { UI_CONFIG } from './constants/api';
-
-const Enzyme = require('enzyme');
-const EnzymeAdapter = require('enzyme-adapter-react-16');
 
 Enzyme.configure({ adapter: new EnzymeAdapter() });
 
@@ -28,28 +26,28 @@ Enzyme.configure({ adapter: new EnzymeAdapter() });
 fetchMock.mock(UI_CONFIG, {});
 
 // Mock out browser refresh.
-const location = { window };
+const { location } = window;
 
 // Allow redefining browser language.
 const { language } = window.navigator;
 
 // Mock out createRange until jest-environment-jsdom is updated to latest jsdom
 // https://github.com/mui-org/material-ui/issues/15726
-global.document.createRange = () => ({
+document.createRange = () => ({
   setStart: () => {},
   setEnd: () => {},
   commonAncestorContainer: {
     nodeName: 'BODY',
     ownerDocument: document,
   },
-});
+}) as any; // Only partial mock so don't enforce full type.
 
 beforeAll(() => {
   delete window.location;
   window.location = {
     ...location,
     reload: jest.fn(),
-  };
+  } as any; // Only partial mock so don't enforce full type.
 });
 
 beforeEach(() => {

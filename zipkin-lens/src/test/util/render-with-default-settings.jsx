@@ -15,7 +15,7 @@ import { setupI18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import React from 'react';
 import { Provider } from 'react-redux';
-import { Router } from 'react-router';
+import { Router } from 'react-router-dom';
 import { createMemoryHistory } from 'history';
 import { ThemeProvider } from '@material-ui/styles';
 import { MuiPickersUtilsProvider } from '@material-ui/pickers';

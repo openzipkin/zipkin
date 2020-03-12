@@ -28,7 +28,8 @@ import { useUiConfig } from '../UiConfig';
 
 import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
-import Logo from '../../img/zipkin-logo.svg';
+
+import logoSrc from '../../img/zipkin-logo.png';
 
 const drawerWidth = '3.2rem';
 
@@ -83,7 +84,7 @@ const Layout = ({ children }) => {
       <Drawer open variant="permanent" className={classes.drawer} classes={{ paper: classes.drawerPaper }}>
         <Box>
           <Box className={classes.zipkinLogoWrapper}>
-            <Logo className={classes.zipkinLogo} />
+            <img src={logoSrc} alt={i18n._(t`Zipkin`)} className={classes.zipkinLogo} />
           </Box>
           <List>
             <SidebarMenu title={i18n._(t`Discover Page`)} path="/" icon={faSearch} />

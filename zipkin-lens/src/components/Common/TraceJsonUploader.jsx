@@ -16,7 +16,7 @@ import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React, { useRef, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
-import { withRouter } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import { faUpload } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { makeStyles } from '@material-ui/styles';

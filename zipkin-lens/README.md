@@ -9,37 +9,27 @@ Here are a couple example screen shots:
 
 ## Quick start
 
-Zipkin-lens required nodejs 10.2.0 to start. You could easily try Zipkin-lens at local using any zipkin deployment using below command:
+In the project directory, you can run:
 
-```
-$ npm install --dev
-$ API_BASE="http://localhost:9411" npm run start
-```
+### `npm start`
 
-## URL to view development build
-```
-http://localhost:9000/zipkin
-```
+Runs the app in the development mode.<br />
+Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
 
-## Production build
+The page will reload if you make edits.<br />
+You will also see any lint errors in the console.
 
-```
-$ npm run build
-```
+### `npm test`
 
-## Testing
+Launches the test runner in the interactive watch mode.<br />
+See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
 
-To run the test suite,
+To get a coverage report as well, run `npm test -- --coverage`.
 
-```
-npm run test
-```
+### `npm run build`
 
-To check code coverage,
-
-```
-npm run coverage
-```
+Builds the app for production to the `build` folder.<br />
+It correctly bundles React in production mode and optimizes the build for the best performance.
 
 ## Localization
 
@@ -61,6 +51,7 @@ compile the strings.
 Finally, edit [App.jsx](./src/components/App/App.jsx) and
 [LanguageSelector.jsx](./src/components/App/LanguageSelector.jsx) to import the new translation and
 add an entry to the language selector respectively.
+
 
 ## Authentication / Authorization
 

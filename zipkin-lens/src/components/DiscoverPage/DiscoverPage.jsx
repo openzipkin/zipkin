@@ -15,7 +15,7 @@ import { Trans } from '@lingui/macro';
 import PropTypes from 'prop-types';
 import React, { useEffect, useCallback } from 'react';
 import { connect } from 'react-redux';
-import { withRouter } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import moment from 'moment';
 import queryString from 'query-string';
 import isEmpty from 'lodash/isEmpty';

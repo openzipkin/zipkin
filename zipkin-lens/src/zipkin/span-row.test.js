@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -16,7 +16,7 @@ import { clean } from './span-cleaner';
 
 // bad traces from https://github.com/openzipkin/zipkin/issues/2829
 import malformedTrace from '../test/data/malformed'; // Many data problems from Kong
-import envoyTrace from '../../testdata/envoy'; // Slight problem: missing the local service name
+import envoyTrace from '../../testdata/envoy.json'; // Slight problem: missing the local service name
 
 // endpoints from zipkin2.TestObjects
 const frontend = {

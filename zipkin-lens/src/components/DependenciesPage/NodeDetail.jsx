@@ -13,7 +13,7 @@
  */
 import PropTypes from 'prop-types';
 import React, { useMemo, useCallback } from 'react';
-import { withRouter } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import Box from '@material-ui/core/Box';
 import Button from '@material-ui/core/Button';
 import Paper from '@material-ui/core/Paper';

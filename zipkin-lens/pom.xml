@@ -67,6 +67,12 @@
         <configuration>
           <installDirectory>target</installDirectory>
           <nodeVersion>v10.18.1</nodeVersion>
+          <environmentVariables>
+            <!--
+            create-react-app runs tests in watch mode unless this is defined. We define it here for running Maven locally.
+            -->
+            <CI>true</CI>
+          </environmentVariables>
         </configuration>
         <executions>
           <execution>

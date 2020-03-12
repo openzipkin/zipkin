@@ -13,5 +13,9 @@
 *.properties text=auto eol=lf
 
 *.js text=auto eol=lf
+*.jsx text=auto eol=lf
+*.ts text=auto eol=lf
+*.tsx text=auto eol=lf
+*.json text=auto eol=lf
 *.mustache text=auto eol=lf
 *.css text=auto eol=lf

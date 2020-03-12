@@ -15,7 +15,7 @@ import { t } from '@lingui/macro';
 import { useLingui } from '@lingui/react';
 import PropTypes from 'prop-types';
 import React, { useState, useCallback } from 'react';
-import { withRouter } from 'react-router';
+import { withRouter } from 'react-router-dom';
 import { makeStyles } from '@material-ui/styles';
 import TextField from '@material-ui/core/TextField';
 import Tooltip from '@material-ui/core/Tooltip';

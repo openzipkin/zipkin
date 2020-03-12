@@ -11,14 +11,7 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-import React from 'react';
-import ReactDOM from 'react-dom';
+// / <reference types="react-scripts" />
 
-import App from './components/App';
-
-import '../css/main.css';
-
-ReactDOM.render(
-  <App />,
-  document.getElementById('app'),
-);
+// This file imports type definitions set up by react-scripts, for example the ability to
+// import image files into the bundle.
