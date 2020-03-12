@@ -11,7 +11,6 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-/* eslint-disable react/no-unescaped-entities */
 import { Trans } from '@lingui/macro';
 import PropTypes from 'prop-types';
 import React, { useEffect, useCallback } from 'react';
