@@ -29,7 +29,7 @@ import { useUiConfig } from '../UiConfig';
 import LanguageSelector from './LanguageSelector';
 import SidebarMenu from './SidebarMenu';
 
-import logoSrc from '../../img/zipkin-logo.svg';
+import logoSrc from '../../img/zipkin-logo.png';
 
 const drawerWidth = '3.2rem';
 

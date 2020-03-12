@@ -621,6 +621,7 @@
                 <java>SLASHSTAR_STYLE</java>
                 <kt>SLASHSTAR_STYLE</kt>
                 <jsx>SLASHSTAR_STYLE</jsx>
+                <ts>SLASHSTAR_STYLE</ts>
                 <tsx>SLASHSTAR_STYLE</tsx>
                 <bnd>SCRIPT_STYLE</bnd>
                 <ejs>XML_STYLE</ejs>
@@ -651,6 +652,7 @@
                 <exclude>**/.eslintrc</exclude>
                 <exclude>**/.eslintrc</exclude>
                 <exclude>**/.eslintrc.js</exclude>
+                <exclude>**/.linguirc</exclude>
                 <exclude>**/testdata/**/*.json</exclude>
                 <exclude>**/test/data/**/*.json</exclude>
                 <exclude>**/src/translations/**</exclude>
