@@ -1,4 +1,4 @@
-[
+export default [
   {
     traceId: '1e223ff1f80f1c69',
     parentId: '74280ae0c10d8062',

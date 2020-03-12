@@ -17,7 +17,7 @@ import {
   merge,
   mergeV2ById,
 } from './span-cleaner';
-import yelpTrace from '../../testdata/yelp';
+import yelpTrace from '../../testdata/yelp.json';
 
 // endpoints from zipkin2.TestObjects
 const frontend = {
