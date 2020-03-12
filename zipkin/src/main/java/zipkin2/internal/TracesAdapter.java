@@ -53,7 +53,7 @@ public final class TracesAdapter implements Traces {
     }
 
     @Override public String toString() {
-      return "Collections.singletonList()";
+      return "ToListOfList()";
     }
   }
 
