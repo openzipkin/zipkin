@@ -34,14 +34,12 @@ import zipkin2.collector.CollectorMetrics;
 import zipkin2.collector.scribe.generated.LogEntry;
 import zipkin2.collector.scribe.generated.ResultCode;
 import zipkin2.collector.scribe.generated.Scribe;
-import zipkin2.storage.InMemoryStorage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
