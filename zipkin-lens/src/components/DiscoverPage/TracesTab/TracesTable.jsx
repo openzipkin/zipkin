@@ -44,7 +44,7 @@ const TracesTable = ({
           ({ height, width }) => (
             <Box width={width} height={height} overflow="auto">
               {
-                traceSummaries.map(traceSummary => (
+                traceSummaries.map((traceSummary) => (
                   <TracesTableRow
                     key={traceSummary.traceId}
                     traceSummary={traceSummary}

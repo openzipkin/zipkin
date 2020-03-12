@@ -47,7 +47,7 @@ export const allColors = [
   colors.blueGrey,
 ];
 
-export const allColorThemes = allColors.map(color => createMuiTheme({
+export const allColorThemes = allColors.map((color) => createMuiTheme({
   palette: {
     primary: {
       main: color[500],
@@ -72,7 +72,7 @@ export const selectServiceTheme = (serviceName) => {
   return allColorThemes[hash % allColors.length];
 };
 
-export const selectServiceColor = serviceName => selectServiceTheme(
+export const selectServiceColor = (serviceName) => selectServiceTheme(
   serviceName,
 ).palette.primary.dark;
 

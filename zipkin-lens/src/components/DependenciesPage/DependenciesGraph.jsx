@@ -41,8 +41,8 @@ const filterNodes = (object, value) => {
   if (object.name === value) {
     return true;
   }
-  return object.incomingConnections.find(conn => conn.source.name === value)
-    || object.outgoingConnections.find(conn => conn.target.name === value);
+  return object.incomingConnections.find((conn) => conn.source.name === value)
+    || object.outgoingConnections.find((conn) => conn.target.name === value);
 };
 
 const useStyles = makeStyles({
@@ -61,7 +61,7 @@ const useStyles = makeStyles({
 });
 
 const reactSelectStyles = {
-  control: base => ({
+  control: (base) => ({
     ...base,
     width: '15rem',
   }),
@@ -119,13 +119,13 @@ const DependenciesGraph = React.memo(({
 
   const maxVolume = useMemo(() => {
     if (edges.length > 0) {
-      return edges.map(edge => edge.metrics.normal + edge.metrics.danger)
+      return edges.map((edge) => edge.metrics.normal + edge.metrics.danger)
         .reduce((a, b) => Math.max(a, b));
     }
     return 0;
   }, [edges]);
 
-  const filterOptions = useMemo(() => nodes.map(node => ({
+  const filterOptions = useMemo(() => nodes.map((node) => ({
     value: node.name,
     label: node.name,
   })), [nodes]);

@@ -13,6 +13,6 @@
  */
 import useEffectOnce from './useEffectOnce';
 
-const useUnmount = f => useEffectOnce(() => f, []);
+const useUnmount = (f) => useEffectOnce(() => f, []);
 
 export default useUnmount;

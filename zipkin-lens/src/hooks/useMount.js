@@ -13,7 +13,7 @@
  */
 import useEffectOnce from './useEffectOnce';
 
-const useMount = f => useEffectOnce(() => {
+const useMount = (f) => useEffectOnce(() => {
   f();
 });
 

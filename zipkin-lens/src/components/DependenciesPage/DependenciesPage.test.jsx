@@ -20,12 +20,13 @@ import render from '../../test/util/render-with-default-settings';
 jest.mock('./VizceralExt', () => jest.fn(({ objectHighlighted }) => (
   <div>
     <button
+      aria-label="button"
       type="button"
       data-testid="graph-background"
       onClick={() => objectHighlighted(undefined)}
     />
     {
-      ['serviceA', 'serviceB', 'serviceC', 'serviceD', 'serviceE', 'serviceF', 'serviceG'].map(nodeName => (
+      ['serviceA', 'serviceB', 'serviceC', 'serviceD', 'serviceE', 'serviceF', 'serviceG'].map((nodeName) => (
         <button
           key={nodeName}
           type="button"

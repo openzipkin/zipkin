@@ -31,7 +31,7 @@ const ServiceFilter = ({ filters, ...props }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const { i18n } = useLingui();
 
-  const handleButtonClick = useCallback(event => setAnchorEl(event.currentTarget), []);
+  const handleButtonClick = useCallback((event) => setAnchorEl(event.currentTarget), []);
 
   const handleMenuClose = useCallback(() => setAnchorEl(null), []);
 

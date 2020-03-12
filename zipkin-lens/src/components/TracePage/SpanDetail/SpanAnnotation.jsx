@@ -29,7 +29,7 @@ const propTypes = {
   annotation: spanAnnotationPropTypes.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   cell: {
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
@@ -53,7 +53,7 @@ const SpanAnnotation = React.memo(({ annotation }) => {
                 { label: i18n._(t`Start Time`), value: formatTimestampMicros(annotation.timestamp) },
                 { label: i18n._(t`Relative Time`), value: annotation.relativeTime },
                 { label: i18n._(t`Address`), value: annotation.endpoint },
-              ].map(e => (
+              ].map((e) => (
                 <TableRow key={e.label}>
                   <TableCell className={classes.cell} data-testid="span-annotation--label">
                     {e.label}

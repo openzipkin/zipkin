@@ -22,7 +22,7 @@ import TableCell from '@material-ui/core/TableCell';
 import { makeStyles } from '@material-ui/styles';
 import ServiceBadge from '../Common/ServiceBadge';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     marginTop: theme.spacing(0.75),
   },

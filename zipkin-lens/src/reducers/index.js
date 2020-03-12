@@ -24,7 +24,7 @@ import autocompleteKeys from './autocomplete-keys';
 import autocompleteValues from './autocomplete-values';
 import traceViewer from './trace-viewer';
 
-const createReducer = config => combineReducers({
+const createReducer = (config) => combineReducers({
   remoteServices,
   spans,
   trace,

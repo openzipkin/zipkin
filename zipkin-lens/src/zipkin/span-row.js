@@ -21,7 +21,7 @@ export function getErrorType(span, currentErrorType) {
   if (span.tags.error !== undefined) { // empty error tag is ok
     return 'critical';
   }
-  if (span.annotations.findIndex(ann => ann.value === 'error') !== -1) {
+  if (span.annotations.findIndex((ann) => ann.value === 'error') !== -1) {
     return 'transient';
   }
   return currentErrorType;
@@ -250,14 +250,14 @@ function parseTagRows(span) {
 
 // This ensures we don't add duplicate annotations on merge
 function maybePushAnnotation(annotations, a) {
-  if (annotations.findIndex(b => a.timestamp === b.timestamp && a.value === b.value) === -1) {
+  if (annotations.findIndex((b) => a.timestamp === b.timestamp && a.value === b.value) === -1) {
     annotations.push(a);
   }
 }
 
 // This ensures we only add rows for tags that are unique on key and value on merge
 function maybePushTag(tags, a) {
-  const sameKeyAndValue = tags.filter(b => a.key === b.key && a.value === b.value);
+  const sameKeyAndValue = tags.filter((b) => a.key === b.key && a.value === b.value);
   if (sameKeyAndValue.length === 0) {
     tags.push(a);
     return;
@@ -279,7 +279,7 @@ function maybePushTag(tags, a) {
 // This guards to ensure we don't add duplicate service names on merge
 function maybePushServiceName(serviceNames, serviceName) {
   if (!serviceName) return;
-  if (serviceNames.findIndex(s => s === serviceName) === -1) {
+  if (serviceNames.findIndex((s) => s === serviceName) === -1) {
     serviceNames.push(serviceName);
   }
 }
@@ -333,8 +333,8 @@ export function newSpanRow(spansToMerge, isLeafSpan) {
     maybePushServiceName(res.serviceNames, nextLocalServiceName);
     maybePushServiceName(res.serviceNames, nextRemoteServiceName);
 
-    parseAnnotationRows(next).forEach(a => maybePushAnnotation(res.annotations, a));
-    parseTagRows(next).forEach(t => maybePushTag(res.tags, t));
+    parseAnnotationRows(next).forEach((a) => maybePushAnnotation(res.annotations, a));
+    parseTagRows(next).forEach((t) => maybePushTag(res.tags, t));
 
     res.errorType = getErrorType(next, res.errorType);
 

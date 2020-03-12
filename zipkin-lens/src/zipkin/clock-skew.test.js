@@ -209,7 +209,7 @@ describe('getClockSkew', () => {
 
     expect(getClockSkew(child).skew).toEqual(
       server.timestamp - client.timestamp // how much the server is behind
-      - (client.duration - server.duration) / 2, // center the server by splitting what's left
+      - ((client.duration - server.duration) / 2), // center the server by splitting what's left
     );
   });
 
@@ -302,7 +302,7 @@ function expectChildrenToBeInOrder(root) {
     }
 
     // process the next level of the tree
-    current.children.forEach(child => queue.push(child));
+    current.children.forEach((child) => queue.push(child));
   }
 }
 
@@ -325,7 +325,7 @@ describe('treeCorrectedForClockSkew', () => {
 
   it('should skip on duplicate root', () => {
     const duplicate = [];
-    skewedTrace.forEach(span => duplicate.push(span));
+    skewedTrace.forEach((span) => duplicate.push(span));
     duplicate.push(clean({
       traceId: skewedTrace[0].traceId,
       id: 'cafebabe',

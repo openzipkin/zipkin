@@ -54,13 +54,13 @@ const lookbackOptions = [
 ];
 
 const lookbackMenuOptions = nonCustomLookbackOptions
-  .filter(option => option.quick)
+  .filter((option) => option.quick)
   .concat([{
     value: 'more',
     label: 'More...',
   }]);
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   lookbackButton: {
     height: '100%',
     whiteSpace: 'nowrap',
@@ -88,7 +88,7 @@ const LookbackCondition = () => {
   const classes = useStyles();
   const dispatch = useDispatch();
 
-  const lookbackCondition = useSelector(state => state.globalSearch.lookbackCondition);
+  const lookbackCondition = useSelector((state) => state.globalSearch.lookbackCondition);
 
   const isCustom = lookbackCondition.value === 'custom';
 
@@ -101,7 +101,7 @@ const LookbackCondition = () => {
 
   const [menuAnchor, setMenuAnchor] = useState(null);
 
-  const handleButtonClick = event => setMenuAnchor(event.currentTarget);
+  const handleButtonClick = (event) => setMenuAnchor(event.currentTarget);
   const handleMenuClose = () => setMenuAnchor(null);
 
   const handleMoreClick = () => {

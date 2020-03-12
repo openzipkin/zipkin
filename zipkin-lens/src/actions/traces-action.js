@@ -63,7 +63,7 @@ const calculateTraceSummaries = async (traces, serviceName) => {
   };
 };
 
-export const loadTraces = params => async (dispatch) => {
+export const loadTraces = (params) => async (dispatch) => {
   dispatch(loadTracesRequest());
   try {
     const query = queryString.stringify(params);

@@ -42,7 +42,7 @@ export function ipsMatch(a, b) { // export for testing
 function adjustTimestamps(span, skew) {
   if (!ipsMatch(skew.endpoint, span.localEndpoint)) return span;
 
-  const result = Object.assign({}, span);
+  const result = { ...span };
   if (span.timestamp) result.timestamp = span.timestamp - skew.skew;
   const annotationLength = span.annotations.length;
   if (annotationLength > 0) result.annotations = [];
@@ -132,7 +132,7 @@ function adjust(node, skewFromParent) {
     skew = skewFromParent;
   }
   // propagate skew to any children
-  node.children.forEach(child => adjust(child, skew));
+  node.children.forEach((child) => adjust(child, skew));
 }
 
 export function treeCorrectedForClockSkew(spans, debug = false) {

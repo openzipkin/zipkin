@@ -132,7 +132,7 @@ const DurationCondition = ({
   }, [unit, value]);
 
   const styles = useMemo(() => ({
-    control: base => ({
+    control: (base) => ({
       ...base,
       width: '3rem',
       height: '2.4rem',
@@ -145,16 +145,16 @@ const DurationCondition = ({
       },
       cursor: 'pointer',
     }),
-    menu: base => ({
+    menu: (base) => ({
       ...base,
       zIndex: 10000,
       width: '3rem',
     }),
-    singleValue: base => ({
+    singleValue: (base) => ({
       ...base,
       color: theme.palette.primary.contrastText,
     }),
-    indicatorsContainer: base => ({
+    indicatorsContainer: (base) => ({
       ...base,
       display: 'none',
     }),
@@ -176,7 +176,7 @@ const DurationCondition = ({
       />
       <ReactSelect
         isSearchable={false}
-        options={unitOptions.map(opt => ({ value: opt, label: opt }))}
+        options={unitOptions.map((opt) => ({ value: opt, label: opt }))}
         onChange={handleUnitChange}
         styles={styles}
         value={{ value: unit, label: unit }}

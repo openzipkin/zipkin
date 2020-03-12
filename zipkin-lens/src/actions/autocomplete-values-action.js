@@ -20,7 +20,7 @@ export const fetchAutocompleteValuesRequest = () => ({
   type: types.FETCH_AUTOCOMPLETE_VALUES_REQUEST,
 });
 
-export const fetchAutocompleteValuesSuccess = autocompleteValues => ({
+export const fetchAutocompleteValuesSuccess = (autocompleteValues) => ({
   type: types.FETCH_AUTOCOMPLETE_VALUES_SUCCESS,
   autocompleteValues,
 });
@@ -29,7 +29,7 @@ export const fetchAutocompleteValuesFailure = () => ({
   type: types.FETCH_AUTOCOMPLETE_VALUES_FAILURE,
 });
 
-export const fetchAutocompleteValues = autocompleteKey => async (dispatch) => {
+export const fetchAutocompleteValues = (autocompleteKey) => async (dispatch) => {
   dispatch(fetchAutocompleteValuesRequest());
   try {
     const query = queryString.stringify({ key: autocompleteKey });

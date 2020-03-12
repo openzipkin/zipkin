@@ -38,8 +38,8 @@ const GlobalSearchConditionKey = ({
 }) => {
   const dispatch = useDispatch();
 
-  const autocompleteKeys = useSelector(state => state.autocompleteKeys.autocompleteKeys);
-  const conditions = useSelector(state => state.globalSearch.conditions);
+  const autocompleteKeys = useSelector((state) => state.autocompleteKeys.autocompleteKeys);
+  const conditions = useSelector((state) => state.globalSearch.conditions);
 
   const { key: conditionKey } = conditions[conditionIndex];
 
@@ -69,7 +69,7 @@ const GlobalSearchConditionKey = ({
       conditionKey,
       conditions,
       autocompleteKeys,
-    ).map(opt => ({
+    ).map((opt) => ({
       value: opt.conditionKey,
       label: opt.conditionKey,
       isDisabled: opt.isDisabled,
@@ -78,7 +78,7 @@ const GlobalSearchConditionKey = ({
   );
 
   const styles = {
-    control: base => ({
+    control: (base) => ({
       ...base,
       width: isFocused
         ? '15rem'
@@ -96,20 +96,20 @@ const GlobalSearchConditionKey = ({
       },
       cursor: 'pointer',
     }),
-    menu: base => ({
+    menu: (base) => ({
       ...base,
       zIndex: 10000,
       width: '15rem',
     }),
-    singleValue: base => ({
+    singleValue: (base) => ({
       ...base,
       color: theme.palette.primary.contrastText,
     }),
-    indicatorsContainer: base => ({
+    indicatorsContainer: (base) => ({
       ...base,
       display: 'none',
     }),
-    input: base => ({
+    input: (base) => ({
       ...base,
       color: theme.palette.primary.contrastText,
     }),

@@ -34,7 +34,7 @@ import Graph from '../../util/dependencies-graph';
 import ExplainBox from './ExplainBox';
 import { buildQueryParameters } from '../../util/api';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   header: {
     borderBottom: `1px solid ${theme.palette.grey[300]}`,
   },
@@ -230,13 +230,13 @@ export const DependenciesPageImpl = React.memo(({
 
 DependenciesPageImpl.propTypes = propTypes;
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   isLoading: state.dependencies.isLoading,
   dependencies: state.dependencies.dependencies,
 });
 
-const mapDispatchToProps = dispatch => ({
-  fetchDependencies: params => dispatch(
+const mapDispatchToProps = (dispatch) => ({
+  fetchDependencies: (params) => dispatch(
     dependenciesActionCreators.fetchDependencies(params),
   ),
   clearDependencies: () => dispatch(dependenciesActionCreators.clearDependencies()),

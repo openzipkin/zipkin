@@ -20,7 +20,7 @@ export const fetchDependenciesRequest = () => ({
   type: types.FETCH_DEPENDENCIES_REQUEST,
 });
 
-export const fetchDependenciesSuccess = dependencies => ({
+export const fetchDependenciesSuccess = (dependencies) => ({
   type: types.FETCH_DEPENDENCIES_SUCCESS,
   dependencies,
 });
@@ -31,14 +31,14 @@ export const fetchDependenciesFailure = () => ({
 
 const fetchDependenciesTimeout = 500;
 
-export const fetchDependencies = params => async (dispatch) => {
+export const fetchDependencies = (params) => async (dispatch) => {
   dispatch(fetchDependenciesRequest());
   try {
     const query = queryString.stringify(params);
 
     const res = await Promise.all([
       fetch(`${api.DEPENDENCIES}?${query}`),
-      new Promise(resolve => setTimeout(resolve, fetchDependenciesTimeout)),
+      new Promise((resolve) => setTimeout(resolve, fetchDependenciesTimeout)),
     ]);
     if (!res[0].ok) {
       throw Error(res[0].statusText);

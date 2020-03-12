@@ -66,7 +66,7 @@ const DoughnutGraph = React.memo(({ edgeNames, edgeData }) => {
                   label={renderLabel}
                 >
                   {
-                    data.map(entry => (
+                    data.map((entry) => (
                       <Cell key={entry.name} fill={selectServiceColor(entry.name)} />
                     ))
                   }

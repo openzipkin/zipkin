@@ -81,7 +81,7 @@ export class DependencyLinker {
     const queue = traceTree.queueRootMostSpans();
     while (queue.length > 0) {
       const current = queue.shift();
-      current.children.forEach(n => queue.push(n));
+      current.children.forEach((n) => queue.push(n));
 
       const currentSpan = current.span;
       if (debug) console.log(`processing ${JSON.stringify(currentSpan)}`);

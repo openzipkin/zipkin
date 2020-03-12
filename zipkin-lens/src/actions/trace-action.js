@@ -22,7 +22,7 @@ export const loadTraceRequest = () => ({
   type: types.TRACE_LOAD_REQUEST,
 });
 
-export const loadTraceSuccess = traceSummary => ({
+export const loadTraceSuccess = (traceSummary) => ({
   type: types.TRACE_LOAD_SUCCESS,
   traceSummary,
 });
@@ -31,9 +31,9 @@ export const loadTraceFailure = () => ({
   type: types.TRACE_LOAD_FAILURE,
 });
 
-const calculateCorrectedTrace = async trace => treeCorrectedForClockSkew(trace);
+const calculateCorrectedTrace = async (trace) => treeCorrectedForClockSkew(trace);
 
-const calculateDetailedTraceSummary = async correctedTrace => buildDetailedTraceSummary(
+const calculateDetailedTraceSummary = async (correctedTrace) => buildDetailedTraceSummary(
   correctedTrace,
 );
 

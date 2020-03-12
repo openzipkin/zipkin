@@ -18,7 +18,7 @@ export const fetchServicesRequest = () => ({
   type: types.FETCH_SERVICES_REQUEST,
 });
 
-export const fetchServicesSuccess = services => ({
+export const fetchServicesSuccess = (services) => ({
   type: types.FETCH_SERVICES_SUCCESS,
   services,
 });

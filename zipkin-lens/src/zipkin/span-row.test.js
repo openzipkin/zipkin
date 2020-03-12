@@ -846,7 +846,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
     });
 
     const spanRow = newSpanRow([v2], false);
-    expect(spanRow.tags.map(s => s.value)).toEqual(['[2001:db8::c001]:80 (there)']);
+    expect(spanRow.tags.map((s) => s.value)).toEqual(['[2001:db8::c001]:80 (there)']);
   });
 
   it('should not require endpoint serviceName', () => {
@@ -861,7 +861,7 @@ describe('SPAN v2 -> spanRow Conversion', () => {
     });
 
     const spanRow = newSpanRow([v2], false);
-    expect(spanRow.annotations.map(s => s.endpoint)).toEqual(['[2001:db8::c001]']);
+    expect(spanRow.annotations.map((s) => s.endpoint)).toEqual(['[2001:db8::c001]']);
   });
 
   it('converts client leaf spans using its remote service name', () => {

@@ -31,7 +31,7 @@ const propTypes = {
   traceSummaries: traceSummariesPropTypes.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   header: {
     borderColor: theme.palette.grey[300],
   },
@@ -58,7 +58,7 @@ export const TracesTab = ({ traceSummaries }) => { // Export for testing.
   }, [filters]);
 
   const handleDeleteFilter = useCallback((filter) => {
-    setFilters(filters.filter(f => f !== filter));
+    setFilters(filters.filter((f) => f !== filter));
   }, [filters]);
 
   const filteredTraceSummaries = useMemo(() => sortTraceSummaries(
@@ -97,7 +97,7 @@ export const TracesTab = ({ traceSummaries }) => { // Export for testing.
 
 TracesTab.propTypes = propTypes;
 
-const mapStateToProps = state => ({
+const mapStateToProps = (state) => ({
   traceSummaries: state.traces.traceSummaries,
 });
 

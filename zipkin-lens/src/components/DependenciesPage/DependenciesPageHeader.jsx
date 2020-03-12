@@ -26,7 +26,7 @@ import { makeStyles } from '@material-ui/styles';
 import TraceJsonUploader from '../Common/TraceJsonUploader';
 import TraceIdSearchInput from '../Common/TraceIdSearchInput';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     boxShadow: theme.shadows[3],
     zIndex: 1, // for box-shadow

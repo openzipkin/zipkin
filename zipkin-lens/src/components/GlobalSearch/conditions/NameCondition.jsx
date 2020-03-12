@@ -45,7 +45,7 @@ const NameCondition = ({
   isLoading,
 }) => {
   const styles = useMemo(() => ({
-    control: base => ({
+    control: (base) => ({
       ...base,
       width: isFocused
         ? '18rem'
@@ -60,20 +60,20 @@ const NameCondition = ({
       },
       cursor: 'pointer',
     }),
-    menu: base => ({
+    menu: (base) => ({
       ...base,
       zIndex: 10000,
       width: '18rem',
     }),
-    singleValue: base => ({
+    singleValue: (base) => ({
       ...base,
       color: theme.palette.primary.contrastText,
     }),
-    indicatorsContainer: base => ({
+    indicatorsContainer: (base) => ({
       ...base,
       display: 'none',
     }),
-    input: base => ({
+    input: (base) => ({
       ...base,
       color: theme.palette.primary.contrastText,
     }),
@@ -88,7 +88,7 @@ const NameCondition = ({
     <ReactSelect
       ref={valueRef}
       value={{ value, label: value }}
-      options={options.map(opt => ({ value: opt, label: opt }))}
+      options={options.map((opt) => ({ value: opt, label: opt }))}
       isLoading={isLoading}
       styles={styles}
       onFocus={onFocus}

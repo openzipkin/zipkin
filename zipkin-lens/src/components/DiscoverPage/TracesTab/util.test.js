@@ -19,8 +19,8 @@ import {
 } from './util';
 
 describe('sortTraceSummaries', () => {
-  const pairsToTraceSummaries = pairs => pairs.map(
-    pair => ({ duration: pair[0], timestamp: pair[1] }),
+  const pairsToTraceSummaries = (pairs) => pairs.map(
+    (pair) => ({ duration: pair[0], timestamp: pair[1] }),
   );
 
   const input = pairsToTraceSummaries([

@@ -13,7 +13,7 @@
  */
 
 // Annotation's value may not be unique, so timestamp is also used in annotation key.
-export const generateAnnotationKey = annotation => `${annotation.value}-${annotation.timestamp}`;
+export const generateAnnotationKey = (annotation) => `${annotation.value}-${annotation.timestamp}`;
 
 // Tag's key may not be unique, so value is also used.
-export const generateTagKey = tag => `${tag.key}-${tag.value}`;
+export const generateTagKey = (tag) => `${tag.key}-${tag.value}`;

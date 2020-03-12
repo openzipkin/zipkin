@@ -64,7 +64,7 @@ export class SpanNode {
     const queue = [];
     // since the input data could be headless, we first push onto the queue the root-most spans
     if (typeof this.span === 'undefined') { // synthetic root
-      this.children.forEach(child => queue.push(child));
+      this.children.forEach((child) => queue.push(child));
     } else {
       queue.push(this);
     }

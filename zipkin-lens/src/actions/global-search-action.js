@@ -13,12 +13,12 @@
  */
 import * as types from '../constants/action-types';
 
-export const setLookbackCondition = lookbackCondition => ({
+export const setLookbackCondition = (lookbackCondition) => ({
   type: types.GLOBAL_SEARCH_SET_LOOKBACK_CONDITION,
   lookbackCondition,
 });
 
-export const setLimitCondition = limitCondition => ({
+export const setLimitCondition = (limitCondition) => ({
   type: types.GLOBAL_SEARCH_SET_LIMIT_CONDITION,
   limitCondition,
 });
@@ -28,12 +28,12 @@ export const addCondition = (condition = null) => ({
   condition,
 });
 
-export const deleteCondition = index => ({
+export const deleteCondition = (index) => ({
   type: types.GLOBAL_SEARCH_DELETE_CONDITION,
   index,
 });
 
-export const setConditions = conditions => ({
+export const setConditions = (conditions) => ({
   type: types.GLOBAL_SEARCH_SET_CONDITIONS,
   conditions,
 });

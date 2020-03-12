@@ -20,7 +20,7 @@ class Graph {
     this._createdTs = moment().valueOf();
 
     rawDependencies.forEach(
-      edge => this.addEdge(edge),
+      (edge) => this.addEdge(edge),
     );
   }
 
@@ -46,7 +46,7 @@ class Graph {
   }
 
   allNodeNames() {
-    return this.nodes.map(node => node.name);
+    return this.nodes.map((node) => node.name);
   }
 
   allNodes() {
@@ -62,11 +62,11 @@ class Graph {
   }
 
   getTargetEdges(serviceName) {
-    return this.allEdges().filter(edge => edge.source === serviceName);
+    return this.allEdges().filter((edge) => edge.source === serviceName);
   }
 
   getSourceEdges(serviceName) {
-    return this.allEdges().filter(edge => edge.target === serviceName);
+    return this.allEdges().filter((edge) => edge.target === serviceName);
   }
 }
 

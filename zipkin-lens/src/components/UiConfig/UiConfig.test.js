@@ -38,7 +38,7 @@ const UiConfig = () => {
     <Suspense fallback="Suspended">
       <RawUiConfig>
         <UiConfigConsumer>
-          {value => (
+          {(value) => (
             <div>{JSON.stringify(value)}</div>
           )}
         </UiConfigConsumer>
@@ -71,7 +71,7 @@ describe('<UiConfig />', () => {
 
     // We need to get off the processing loop to allow the promise to complete and resolve the
     // config.
-    await new Promise(resolve => setTimeout(resolve, 1));
+    await new Promise((resolve) => setTimeout(resolve, 1));
 
     rerender(<UiConfig />);
     expect(getByText(JSON.stringify(config))).toBeInTheDocument();

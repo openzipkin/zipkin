@@ -95,7 +95,7 @@ const defaultProps = {
   currentAnnotationKey: '',
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   svg: {
     stroke: theme.palette.grey[500],
     strokeWidth: '1px',
@@ -157,8 +157,8 @@ const SpanAnnotationGraph = React.memo(({
         {
           annotations.map((annotation) => {
             const annotationKey = generateAnnotationKey(annotation);
-            const cx = (100 - (leftOffsetPercent + rightOffsetPercent))
-              * ((annotation.timestamp - minTs) / duration) + leftOffsetPercent;
+            const cx = ((100 - (leftOffsetPercent + rightOffsetPercent))
+              * ((annotation.timestamp - minTs) / duration)) + leftOffsetPercent;
             return (
               <circle
                 key={annotationKey}

@@ -23,7 +23,7 @@ import Paper from '@material-ui/core/Paper';
 import { generateTagKey } from './util';
 import { spanTagsPropTypes } from '../../../prop-types';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   cell: {
     paddingTop: theme.spacing(1),
     paddingBottom: theme.spacing(1),
@@ -46,7 +46,7 @@ const SpanTags = React.memo(({ tags }) => {
       <Table>
         <TableBody>
           {
-            tags.map(tag => (
+            tags.map((tag) => (
               <TableRow key={generateTagKey(tag)}>
                 <TableCell className={classes.cell}>
                   <Box className={classes.key} data-testid="SpanTags-key">

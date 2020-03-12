@@ -24,7 +24,7 @@ import GlobalSearchConditionKey from './GlobalSearchConditionKey';
 import GlobalSearchConditionValue from './GlobalSearchConditionValue';
 import { deleteCondition } from '../../actions/global-search-action';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
     alignItems: 'center',
@@ -62,7 +62,7 @@ const GlobalSearchCondition = ({ conditionIndex, addCondition }) => {
 
   const dispatch = useDispatch();
 
-  const conditions = useSelector(state => state.globalSearch.conditions);
+  const conditions = useSelector((state) => state.globalSearch.conditions);
 
   const [isKeyFocused, setIsKeyFocused] = useState(false);
   const [isValueFocused, setIsValueFocused] = useState(false);

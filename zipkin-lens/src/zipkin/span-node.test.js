@@ -96,7 +96,7 @@ describe('SpanNode', () => {
    */
   it('should traverse breadth first', () => {
     const ids = [];
-    a.traverse(s => ids.push(s.id));
+    a.traverse((s) => ids.push(s.id));
 
     expect(ids).toEqual([
       'a', 'b', 'c', 'd', 'e', 'f', '1', '2',
@@ -131,10 +131,10 @@ describe('SpanNodeBuilder', () => {
     const root = new SpanNodeBuilder({}).build(trace.slice(0).reverse());
 
     expect(root.span).toEqual(trace[0]);
-    expect(root.children.map(n => n.span)).toEqual([trace[1]]);
+    expect(root.children.map((n) => n.span)).toEqual([trace[1]]);
 
     const [child] = root.children;
-    expect(child.children.map(n => n.span)).toEqual([trace[2]]);
+    expect(child.children.map((n) => n.span)).toEqual([trace[2]]);
   });
 
   // input should be merged, but this ensures we are fine anyway
@@ -167,10 +167,10 @@ describe('SpanNodeBuilder', () => {
     const root = new SpanNodeBuilder({}).build(trace);
 
     const spans = [];
-    root.traverse(span => spans.push(span));
+    root.traverse((span) => spans.push(span));
     expect(spans).toEqual(trace);
     expect(root.span.id).toBe('000000000000000b');
-    expect(root.children.map(n => n.span)).toEqual(trace.slice(1));
+    expect(root.children.map((n) => n.span)).toEqual(trace.slice(1));
   });
 
   // spans are often reported depth-first, so it is possible to not have a root yet
@@ -186,7 +186,7 @@ describe('SpanNodeBuilder', () => {
     expect(root.span).toBeUndefined();
 
     const spans = [];
-    root.traverse(span => spans.push(span));
+    root.traverse((span) => spans.push(span));
     expect(spans).toEqual(trace);
   });
 
@@ -223,7 +223,7 @@ describe('SpanNodeBuilder', () => {
 
     const root = new SpanNodeBuilder({}).build(trace);
 
-    expect(root.children.map(n => n.span))
+    expect(root.children.map((n) => n.span))
       .toEqual([trace[3], trace[2], trace[1]]); // null first
   });
 
@@ -258,7 +258,7 @@ describe('SpanNodeBuilder', () => {
     const root = new SpanNodeBuilder({}).build(trace);
 
     const spans = [];
-    root.traverse(span => spans.push(span));
+    root.traverse((span) => spans.push(span));
     expect(spans).toEqual(trace);
   });
 });

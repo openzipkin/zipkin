@@ -21,7 +21,7 @@ import Paper from '@material-ui/core/Paper';
 
 import { selectServiceTheme } from '../../colors';
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     display: 'flex',
   },

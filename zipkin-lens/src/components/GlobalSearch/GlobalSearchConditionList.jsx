@@ -43,8 +43,8 @@ const GlobalSearchConditionList = () => {
 
   const dispatch = useDispatch();
 
-  const conditions = useSelector(state => state.globalSearch.conditions);
-  const autocompleteKeys = useSelector(state => state.autocompleteKeys.autocompleteKeys);
+  const conditions = useSelector((state) => state.globalSearch.conditions);
+  const autocompleteKeys = useSelector((state) => state.autocompleteKeys.autocompleteKeys);
 
   const addNewCondition = useCallback(
     () => {

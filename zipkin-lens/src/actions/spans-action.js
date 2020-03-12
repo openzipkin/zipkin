@@ -20,7 +20,7 @@ export const fetchSpansRequest = () => ({
   type: types.FETCH_SPANS_REQUEST,
 });
 
-export const fetchSpansSuccess = spans => ({
+export const fetchSpansSuccess = (spans) => ({
   type: types.FETCH_SPANS_SUCCESS,
   spans,
 });
@@ -29,7 +29,7 @@ export const fetchSpansFailure = () => ({
   type: types.FETCH_SPANS_FAILURE,
 });
 
-export const fetchSpans = serviceName => async (dispatch) => {
+export const fetchSpans = (serviceName) => async (dispatch) => {
   dispatch(fetchSpansRequest());
   try {
     const query = queryString.stringify({ serviceName });

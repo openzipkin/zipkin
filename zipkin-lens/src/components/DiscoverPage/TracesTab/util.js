@@ -53,7 +53,7 @@ export const filterTraceSummaries = (traceSummaries, filters) => traceSummaries.
   (traceSummary) => {
     for (let i = 0; i < filters.length; i += 1) {
       if (!traceSummary.serviceSummaries.find(
-        serviceSummary => serviceSummary.serviceName === filters[i],
+        (serviceSummary) => serviceSummary.serviceName === filters[i],
       )) {
         return false;
       }

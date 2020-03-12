@@ -96,7 +96,7 @@ export function traceSummary(root) {
 // This is used to create servicePercentage for index.mustache when a service is selected
 export function totalDuration(timestampAndDurations) {
   const filtered = timestampAndDurations
-    .filter(s => !!s.duration) // filter out anything we can't make an interval out of
+    .filter((s) => !!s.duration) // filter out anything we can't make an interval out of
     .sort((a, b) => a.timestamp - b.timestamp);
 
   if (filtered.length === 0) {
@@ -157,10 +157,10 @@ export function getServiceSummaries(groupedTimestamps) {
     .map(([serviceName, sts]) => ({
       serviceName,
       spanCount: sts.length,
-      maxSpanDuration: Math.max(...sts.map(t => t.duration)),
+      maxSpanDuration: Math.max(...sts.map((t) => t.duration)),
     }));
   return orderBy(services, ['maxSpanDuration', 'serviceName'], ['desc', 'asc'])
-    .map(summary => ({
+    .map((summary) => ({
       serviceName: summary.serviceName,
       spanCount: summary.spanCount,
       maxSpanDurationStr: mkDurationStr(summary.maxSpanDuration),
@@ -168,7 +168,7 @@ export function getServiceSummaries(groupedTimestamps) {
 }
 
 export function traceSummaries(serviceName, summaries, utc = false) {
-  const maxDuration = Math.max(...summaries.map(s => s.duration));
+  const maxDuration = Math.max(...summaries.map((s) => s.duration));
 
   return summaries.map((t) => {
     const { timestamp } = t;
@@ -225,7 +225,7 @@ function incrementEntry(dict, key) {
 // as that is used for positioning spans later.
 function getTraceTimestampAndDuration(root) {
   const timestamps = [];
-  root.traverse(span => addTimestamps(span, timestamps));
+  root.traverse((span) => addTimestamps(span, timestamps));
   return {
     timestamp: timestamps[0] || 0,
     duration: getMaxDuration(timestamps),
@@ -288,7 +288,7 @@ export function detailedTraceSummary(root, logsUrl) {
     current.children.forEach((child) => {
       if (current.span.id === child.span.id) {
         spansToMerge.push(child.span);
-        child.children.forEach(grandChild => children.push(grandChild));
+        child.children.forEach((grandChild) => children.push(grandChild));
       } else {
         children.push(child);
       }
@@ -298,7 +298,7 @@ export function detailedTraceSummary(root, logsUrl) {
     // timestamp order.
     children.sort(nodeByTimestamp);
     queue = children.concat(queue);
-    const childIds = children.map(child => child.span.id);
+    const childIds = children.map((child) => child.span.id);
 
     // The mustache template expects one row per span ID. To get the correct depth class, we need to
     // count distinct span IDs above us.
@@ -318,7 +318,7 @@ export function detailedTraceSummary(root, logsUrl) {
     //
     // TODO: We should only do this if it is a leaf span and a client or producer. If we are at the
     // bottom of the tree, it can be helpful to count also against a remote uninstrumented service.
-    spanRow.serviceNames.forEach(serviceName => incrementEntry(serviceNameToCount, serviceName));
+    spanRow.serviceNames.forEach((serviceName) => incrementEntry(serviceNameToCount, serviceName));
 
     modelview.spans.push(spanRow);
   }
@@ -335,9 +335,11 @@ export function detailedTraceSummary(root, logsUrl) {
     };
   }
 
-  modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount).sort().map(serviceName => ({
-    serviceName, spanCount: serviceNameToCount[serviceName],
-  }));
+  modelview.serviceNameAndSpanCounts = Object.keys(serviceNameToCount)
+    .sort()
+    .map((serviceName) => ({
+      serviceName, spanCount: serviceNameToCount[serviceName],
+    }));
 
   // the zoom feature needs backups and timeMarkers regardless of if there is a trace duration
   modelview.spansBackup = modelview.spans;

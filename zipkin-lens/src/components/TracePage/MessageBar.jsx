@@ -25,7 +25,7 @@ const propTypes = {
   message: PropTypes.string.isRequired,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   error: {
     backgroundColor: theme.palette.error.dark,
   },

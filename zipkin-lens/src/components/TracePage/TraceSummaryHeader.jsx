@@ -40,7 +40,7 @@ const defaultProps = {
   rootSpanIndex: 0,
 };
 
-const useStyles = makeStyles(theme => ({
+const useStyles = makeStyles((theme) => ({
   root: {
     paddingLeft: theme.spacing(3),
     paddingRight: theme.spacing(3),
@@ -109,7 +109,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
       return;
     }
     fetch(`${api.TRACE}/${traceSummary.traceId}`)
-      .then(resp => resp.blob())
+      .then((resp) => resp.blob())
       .then((blob) => {
         const a = document.createElement('a');
         a.href = window.URL.createObjectURL(blob);
@@ -136,7 +136,7 @@ const TraceSummaryHeader = React.memo(({ traceSummary, rootSpanIndex }) => {
               ? traceSummary.traceId
               : `${traceSummary.traceId} - ${traceSummary.spans[rootSpanIndex].spanId}`,
           },
-        ].map(entry => (
+        ].map((entry) => (
           <Box key={entry.label} className={classes.traceInfoEntry}>
             <Box className={classes.traceInfoLabel}>
               {`${entry.label}:`}

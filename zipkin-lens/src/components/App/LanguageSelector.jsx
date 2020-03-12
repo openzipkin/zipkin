@@ -85,7 +85,7 @@ const LanguageSelector = () => {
         anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
       >
         <List data-testid="language-list">
-          {LANGUAGES.map(language => (
+          {LANGUAGES.map((language) => (
             <ListItem
               button
               key={language.locale}
