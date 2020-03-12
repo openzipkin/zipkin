@@ -15,6 +15,7 @@ import { render } from '@testing-library/react';
 import fetchMock from 'fetch-mock';
 import React, { Suspense } from 'react';
 
+import { defaultConfig } from './UiConfig';
 import { UI_CONFIG } from '../../constants/api';
 
 afterEach(() => {
@@ -59,6 +60,10 @@ describe('<UiConfig />', () => {
 
   it('provides config when resolved', async () => {
     const config = { defaultLookback: 100 };
+    Object.keys(defaultConfig).forEach((key) => {
+      config[key] = config[key] || defaultConfig[key];
+    });
+
     fetchMock.once(UI_CONFIG, config, { overwriteRoutes: true });
 
     const { getByText, rerender } = render(<UiConfig />);

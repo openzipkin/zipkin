@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -67,7 +67,7 @@ public final class TracesAdapter implements Traces {
     }
 
     @Override protected void append(List<Span> input, List<List<Span>> output) {
-      output.add(input);
+      if (!input.isEmpty()) output.add(input);
     }
 
     @Override protected boolean isEmpty(List<List<Span>> output) {
@@ -80,6 +80,6 @@ public final class TracesAdapter implements Traces {
   }
 
   @Override public String toString() {
-    return "TraceReader{" + delegate + "}";
+    return "TracesAdapter{" + delegate + "}";
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -153,7 +153,7 @@ public class ZipkinQueryApiV2 {
   public AggregatedHttpResponse getTrace(@Param("traceId") String traceId) throws IOException {
     traceId = Span.normalizeTraceId(traceId);
     List<Span> trace = storage.traces().getTrace(traceId).execute();
-    if (trace == null) {
+    if (trace.isEmpty()) {
       return AggregatedHttpResponse.of(NOT_FOUND, ANY_TEXT_TYPE, traceId + " not found");
     }
     return jsonResponse(SpanBytesEncoder.JSON_V2.encodeList(trace));

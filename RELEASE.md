@@ -87,7 +87,7 @@ SONATYPE_PASSWORD=your_sonatype_password
 VERSION=xx-version-to-release-xx
 
 # now from latest master, prepare the release. We are intentionally deferring pushing commits
-./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion=$VERSION -Darguments="-DskipTests -Dlicense.skip=true" release:prepare  -DpushChanges=false
+./mvnw --batch-mode -s ./.settings.xml -Prelease -nsu -DreleaseVersion=$VERSION -Darguments="-DskipTests" release:prepare  -DpushChanges=false
 
 # once this works, deploy and synchronize to maven central
 git checkout $VERSION

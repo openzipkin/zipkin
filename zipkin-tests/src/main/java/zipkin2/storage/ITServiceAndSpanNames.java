@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -36,7 +36,7 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
     // Defaults are fine.
   }
 
-  @Test void getLocalServiceNames_includesLocalServiceName() throws Exception {
+  @Test protected void getLocalServiceNames_includesLocalServiceName() throws Exception {
     assertThat(names().getServiceNames().execute())
       .isEmpty();
 
@@ -46,13 +46,13 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
       .containsOnly("frontend");
   }
 
-  @Test void getLocalServiceNames_noServiceName() throws IOException {
+  @Test protected void getLocalServiceNames_noServiceName() throws IOException {
     accept(Span.newBuilder().traceId("a").id("a").build());
 
     assertThat(names().getServiceNames().execute()).isEmpty();
   }
 
-  @Test void getRemoteServiceNames() throws Exception {
+  @Test protected void getRemoteServiceNames() throws Exception {
     assertThat(names().getRemoteServiceNames("frontend").execute())
       .isEmpty();
 
@@ -65,7 +65,7 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
       .contains(CLIENT_SPAN.remoteServiceName());
   }
 
-  @Test void getRemoteServiceNames_allReturned() throws IOException {
+  @Test protected void getRemoteServiceNames_allReturned() throws IOException {
     // Assure a default store limit isn't hit by assuming if 50 are returned, all are returned
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> {
@@ -83,7 +83,7 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
   }
 
   /** Ensures the service name index returns distinct results */
-  @Test void getRemoteServiceNames_dedupes() throws IOException {
+  @Test protected void getRemoteServiceNames_dedupes() throws IOException {
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> CLIENT_SPAN.toBuilder().id(i + 1).build())
       .collect(Collectors.toList());
@@ -93,27 +93,27 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
       .containsExactly(CLIENT_SPAN.remoteServiceName());
   }
 
-  @Test void getRemoteServiceNames_noRemoteServiceName() throws IOException {
+  @Test protected void getRemoteServiceNames_noRemoteServiceName() throws IOException {
     accept(Span.newBuilder().traceId("a").id("a").localEndpoint(FRONTEND).build());
 
     assertThat(names().getRemoteServiceNames("frontend").execute()).isEmpty();
   }
 
-  @Test void getRemoteServiceNames_serviceNameGoesLowercase() throws IOException {
+  @Test protected void getRemoteServiceNames_serviceNameGoesLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
     assertThat(names().getRemoteServiceNames("FrOnTeNd").execute())
       .containsExactly(CLIENT_SPAN.remoteServiceName());
   }
 
-  @Test void getSpanNames_doesNotMapNameToRemoteServiceName() throws Exception {
+  @Test protected void getSpanNames_doesNotMapNameToRemoteServiceName() throws Exception {
     accept(CLIENT_SPAN);
 
     assertThat(names().getSpanNames(CLIENT_SPAN.remoteServiceName()).execute())
       .isEmpty();
   }
 
-  @Test void getSpanNames() throws Exception {
+  @Test protected void getSpanNames() throws Exception {
     assertThat(names().getSpanNames("frontend").execute())
       .isEmpty();
 
@@ -126,7 +126,7 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
       .contains(CLIENT_SPAN.name());
   }
 
-  @Test void getSpanNames_allReturned() throws IOException {
+  @Test protected void getSpanNames_allReturned() throws IOException {
     // Assure a default store limit isn't hit by assuming if 50 are returned, all are returned
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> {
@@ -141,7 +141,7 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
   }
 
   /** Ensures the span name index returns distinct results */
-  @Test void getSpanNames_dedupes() throws IOException {
+  @Test protected void getSpanNames_dedupes() throws IOException {
     List<Span> spans = IntStream.rangeClosed(0, 50)
       .mapToObj(i -> CLIENT_SPAN.toBuilder().id(i + 1).build())
       .collect(Collectors.toList());
@@ -151,13 +151,13 @@ public abstract class ITServiceAndSpanNames<T extends StorageComponent> extends 
       .containsExactly(CLIENT_SPAN.name());
   }
 
-  @Test void getSpanNames_noSpanName() throws IOException {
+  @Test protected void getSpanNames_noSpanName() throws IOException {
     accept(Span.newBuilder().traceId("a").id("a").localEndpoint(FRONTEND).build());
 
     assertThat(names().getSpanNames("frontend").execute()).isEmpty();
   }
 
-  @Test void getSpanNames_serviceNameGoesLowercase() throws IOException {
+  @Test protected void getSpanNames_serviceNameGoesLowercase() throws IOException {
     accept(CLIENT_SPAN);
 
     assertThat(names().getSpanNames("FrOnTeNd").execute()).containsExactly("get");

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 The OpenZipkin Authors
+ * Copyright 2015-2020 The OpenZipkin Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  * in compliance with the License. You may obtain a copy of the License at
@@ -34,7 +34,7 @@ public abstract class ITTraces<T extends StorageComponent> extends ITStorage<T> 
     // Defaults are fine.
   }
 
-  @Test void getTrace_returnsEmptyOnNotFound() throws IOException {
+  @Test protected void getTrace_returnsEmptyOnNotFound() throws IOException {
     assertThat(traces().getTrace(CLIENT_SPAN.traceId()).execute())
       .isEmpty();
 
@@ -48,7 +48,7 @@ public abstract class ITTraces<T extends StorageComponent> extends ITStorage<T> 
   }
 
 
-  @Test void getTraces_onlyReturnsTracesThatMatch() throws IOException {
+  @Test protected void getTraces_onlyReturnsTracesThatMatch() throws IOException {
     List<String> traceIds = asList(LOTS_OF_SPANS[0].traceId(), LOTS_OF_SPANS[1].traceId());
 
     assertThat(traces().getTraces(traceIds).execute())
@@ -64,7 +64,7 @@ public abstract class ITTraces<T extends StorageComponent> extends ITStorage<T> 
       .isEmpty();
   }
 
-  @Test void getTraces_returnsEmptyOnNotFound() throws IOException {
+  @Test protected void getTraces_returnsEmptyOnNotFound() throws IOException {
     List<String> traceIds = asList(LOTS_OF_SPANS[0].traceId(), LOTS_OF_SPANS[1].traceId());
 
     assertThat(traces().getTraces(traceIds).execute())
@@ -86,7 +86,7 @@ public abstract class ITTraces<T extends StorageComponent> extends ITStorage<T> 
    * exists, it is known not all backends will be able to cheaply make it pass. In other words, it
    * is optional.
    */
-  @Test public void getTrace_deduplicates() throws IOException {
+  @Test protected void getTrace_deduplicates() throws IOException {
     // simulate a re-processed message
     accept(LOTS_OF_SPANS[0]);
     accept(LOTS_OF_SPANS[0]);

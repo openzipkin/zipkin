@@ -546,82 +546,6 @@
       </plugin>
 
       <plugin>
-        <groupId>com.mycila</groupId>
-        <artifactId>license-maven-plugin</artifactId>
-        <version>${license-maven-plugin.version}</version>
-        <configuration>
-          <!-- session.executionRootDirectory resolves properly even with nested modules -->
-          <header>${main.basedir}/src/etc/header.txt</header>
-          <mapping>
-            <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
-            <java>SLASHSTAR_STYLE</java>
-            <kt>SLASHSTAR_STYLE</kt>
-            <jsx>SLASHSTAR_STYLE</jsx>
-            <bnd>SCRIPT_STYLE</bnd>
-            <ejs>XML_STYLE</ejs>
-            <css>SLASHSTAR_STYLE</css>
-            <Dockerfile.release>SCRIPT_STYLE</Dockerfile.release>
-            <post_push>SCRIPT_STYLE</post_push>
-            <build>SCRIPT_STYLE</build>
-          </mapping>
-          <excludes>
-            <exclude>**/simplelogger.properties</exclude>
-            <exclude>.travis.yml</exclude>
-            <exclude>**/*.dockerignore</exclude>
-            <exclude>.editorconfig</exclude>
-            <exclude>.gitattributes</exclude>
-            <exclude>.gitignore</exclude>
-            <exclude>.github/**</exclude>
-            <exclude>.mvn/**</exclude>
-            <exclude>mvnw*</exclude>
-            <exclude>etc/header.txt</exclude>
-            <exclude>docker/**/*_profile</exclude>
-            <exclude>hooks/**</exclude>
-            <exclude>**/nginx.conf</exclude>
-            <exclude>**/.idea/**</exclude>
-            <exclude>**/node_modules/**</exclude>
-            <exclude>**/.babelrc</exclude>
-            <exclude>**/.bowerrc</exclude>
-            <exclude>**/.editorconfig</exclude>
-            <exclude>**/.eslintrc</exclude>
-            <exclude>**/.eslintrc</exclude>
-            <exclude>**/.eslintrc.js</exclude>
-            <exclude>**/testdata/**/*.json</exclude>
-            <exclude>**/test/data/**/*.json</exclude>
-            <exclude>**/src/translations/**</exclude>
-            <exclude>LICENSE</exclude>&gt;
-            <exclude>**/*.md</exclude>
-            <exclude>**/*.bnd</exclude>
-            <exclude>**/src/main/resources/zipkin.txt</exclude>
-            <exclude>**/src/main/resources/*.yml</exclude>
-            <exclude>**/spring.factories</exclude>
-            <!-- Cassandra integration tests break when license headers are present -->
-            <exclude>**/src/main/resources/*.cql</exclude>
-            <exclude>kafka_*/**</exclude>
-            <exclude>**/nohup.out</exclude>
-            <exclude>src/test/resources/**</exclude>
-            <exclude>**/generated/**</exclude>
-          </excludes>
-          <strictCheck>true</strictCheck>
-        </configuration>
-        <dependencies>
-          <dependency>
-            <groupId>com.mycila</groupId>
-            <artifactId>license-maven-plugin-git</artifactId>
-            <version>${license-maven-plugin.version}</version>
-          </dependency>
-        </dependencies>
-        <executions>
-          <execution>
-            <goals>
-              <goal>check</goal>
-            </goals>
-            <phase>compile</phase>
-          </execution>
-        </executions>
-      </plugin>
-
-      <plugin>
         <artifactId>maven-release-plugin</artifactId>
         <version>${maven-release-plugin.version}</version>
         <configuration>
@@ -675,6 +599,93 @@
       <modules>
         <module>zipkin-lens</module>
       </modules>
+    </profile>
+    <profile>
+      <id>license-check</id>
+      <activation>
+        <property>
+          <name>!skipTests</name>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.mycila</groupId>
+            <artifactId>license-maven-plugin</artifactId>
+            <version>${license-maven-plugin.version}</version>
+            <configuration>
+              <!-- session.executionRootDirectory resolves properly even with nested modules -->
+              <header>${main.basedir}/src/etc/header.txt</header>
+              <mapping>
+                <!-- Don't use javadoc style as this makes code formatters break it by adding tags! -->
+                <java>SLASHSTAR_STYLE</java>
+                <kt>SLASHSTAR_STYLE</kt>
+                <jsx>SLASHSTAR_STYLE</jsx>
+                <bnd>SCRIPT_STYLE</bnd>
+                <ejs>XML_STYLE</ejs>
+                <css>SLASHSTAR_STYLE</css>
+                <Dockerfile.release>SCRIPT_STYLE</Dockerfile.release>
+                <post_push>SCRIPT_STYLE</post_push>
+                <build>SCRIPT_STYLE</build>
+              </mapping>
+              <excludes>
+                <exclude>**/simplelogger.properties</exclude>
+                <exclude>.travis.yml</exclude>
+                <exclude>**/*.dockerignore</exclude>
+                <exclude>.editorconfig</exclude>
+                <exclude>.gitattributes</exclude>
+                <exclude>.gitignore</exclude>
+                <exclude>.github/**</exclude>
+                <exclude>.mvn/**</exclude>
+                <exclude>mvnw*</exclude>
+                <exclude>etc/header.txt</exclude>
+                <exclude>docker/**/*_profile</exclude>
+                <exclude>hooks/**</exclude>
+                <exclude>**/nginx.conf</exclude>
+                <exclude>**/.idea/**</exclude>
+                <exclude>**/node_modules/**</exclude>
+                <exclude>**/.babelrc</exclude>
+                <exclude>**/.bowerrc</exclude>
+                <exclude>**/.editorconfig</exclude>
+                <exclude>**/.eslintrc</exclude>
+                <exclude>**/.eslintrc</exclude>
+                <exclude>**/.eslintrc.js</exclude>
+                <exclude>**/testdata/**/*.json</exclude>
+                <exclude>**/test/data/**/*.json</exclude>
+                <exclude>**/src/translations/**</exclude>
+                <exclude>LICENSE</exclude>&gt;
+                <exclude>**/*.md</exclude>
+                <exclude>**/*.bnd</exclude>
+                <exclude>**/src/main/resources/zipkin.txt</exclude>
+                <exclude>**/src/main/resources/*.yml</exclude>
+                <exclude>**/spring.factories</exclude>
+                <!-- Cassandra integration tests break when license headers are present -->
+                <exclude>**/src/main/resources/*.cql</exclude>
+                <exclude>kafka_*/**</exclude>
+                <exclude>**/nohup.out</exclude>
+                <exclude>src/test/resources/**</exclude>
+                <exclude>**/generated/**</exclude>
+              </excludes>
+              <strictCheck>true</strictCheck>
+            </configuration>
+            <dependencies>
+              <dependency>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin-git</artifactId>
+                <version>${license-maven-plugin.version}</version>
+              </dependency>
+            </dependencies>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+                <phase>compile</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <!-- don't JDK 13 until https://github.com/google/error-prone/issues/1106 -->
