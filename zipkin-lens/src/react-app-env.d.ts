@@ -12,3 +12,6 @@
  * the License.
  */
 // / <reference types="react-scripts" />
+
+// This file imports type definitions set up by react-scripts, for example the ability to
+// import image files into the bundle.

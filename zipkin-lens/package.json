@@ -3,6 +3,12 @@
   "version": "0.0.1",
   "homepage": ".",
   "private": true,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/openzipkin/zipkin"
+  },
+  "author": "https://gitter.im/openzipkin/zipkin",
+  "license": "Apache-2.0",
   "dependencies": {
     "@date-io/moment": "^1.3.7",
     "@fortawesome/fontawesome-svg-core": "^1.2.25",
