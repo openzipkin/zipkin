@@ -2,7 +2,7 @@
 !.dockerignore
 !.git
 !docker/zipkin/**
-!**/.eslintrc
+!**/.eslintrc*
 
 **/*.test.yml
 
